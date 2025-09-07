@@ -1,0 +1,340 @@
+:root {
+  /* --- Logo Typography --- */
+  --font-logo: "Nunito", sans-serif;
+
+  /* --- Logo Colors (Updated Palette) --- */
+
+  /* YOUR PRIMARY BRAND COLOR for "coach" */
+  --color-logo-primary: #3b94ff;
+
+  /* ACCENT COLOR for "easy" - A sophisticated, deep navy that complements the
+     bright primary blue without the harshness of pure black. */
+  --color-logo-accent: #1d2b48;
+
+  /* LIGHT COLOR for use on dark backgrounds */
+  --color-logo-light: #ffffff;
+
+  /* --- Logo Font Weights --- */
+  --weight-logo-primary: 800; /* ExtraBold for "coach" to establish expertise */
+  --weight-logo-accent: 400; /* Regular for "easy" to feel effortless */
+
+  /* --- Logo Font Sizes (Responsive) --- */
+  /* Using clamp() for fluid typography that scales with the viewport */
+  --size-logo-sm: clamp(1.25rem, 4vw, 1.5rem); /* For navigation headers */
+  --size-logo-md: clamp(1.75rem, 6vw, 2.5rem); /* For page heroes and titles */
+  --size-logo-lg: clamp(2.5rem, 8vw, 4rem); /* For splash/login screens */
+
+  /* Custom theme starts */
+
+  font-size: 16px;
+
+  --ce-scalefactor: 1.618;
+  --ce-wholestep: 1.618;
+  --ce-halfstep: 1.272;
+  --ce-quarterstep: 1.128;
+  --ce-eighthstep: 1.062;
+
+  --ce-wholestep-dec: 0.618;
+  --ce-halfstep-dec: 0.272;
+  --ce-quarterstep-dec: 0.128;
+  --ce-eighthstep-dec: 0.062;
+
+  --ce-size-md: 1em;
+
+  --ce-size-sm: calc(1em / var(--ce-scalefactor));
+  --ce-size-xs: calc(var(--ce-size-sm) / var(--ce-scalefactor));
+  --ce-size-2xs: calc(var(--ce-size-xs) / var(--ce-scalefactor));
+  --ce-size-3xs: calc(var(--ce-size-2xs) / var(--ce-scalefactor));
+  --ce-size-lg: calc(1em * var(--ce-scalefactor));
+  --ce-size-xl: calc(var(--ce-size-lg) * var(--ce-scalefactor));
+  --ce-size-2xl: calc(var(--ce-size-xl) * var(--ce-scalefactor));
+  --ce-size-3xl: calc(var(--ce-size-2xl) * var(--ce-scalefactor));
+  --ce-size-4xl: calc(var(--ce-size-3xl) * var(--ce-scalefactor));
+
+  /* DEBUGGING TIP: The CSS rules for calc() define unique laws for adding, subtracating, multiplying, and dividing.
+   * In addition and subtraction, both sides must have the same unit.
+   * In multiplication, one side must be unitless.
+   * In division, the right side must be unitless.
+  */
+
+  --display1-font-size: calc(1em * pow(var(--ce-wholestep), 3));
+  --display2-font-size: calc(1em * var(--ce-wholestep) * var(--ce-wholestep));
+  --title1-font-size: calc(1em * var(--ce-wholestep) * var(--ce-halfstep));
+  --title2-font-size: calc(1em * var(--ce-wholestep));
+  --title3-font-size: calc(1em * var(--ce-halfstep));
+  --heading-font-size: calc(1em * var(--ce-quarterstep));
+  --subheading-font-size: calc(1em / var(--ce-quarterstep));
+  --body-font-size: 1em;
+  --callout-font-size: calc(1em / var(--ce-eighthstep));
+  --label-font-size: calc((1em / var(--ce-quarterstep)) / var(--ce-eighthstep));
+  --caption-font-size: calc(1em / var(--ce-halfstep));
+  --capline-font-size: calc(1em / var(--ce-halfstep));
+
+  /* Font Line Height Vars (UNITLESS!) */
+
+  --display1-line-height: var(--ce-quarterstep);
+  --display2-line-height: var(--ce-halfstep);
+  --title1-line-height: var(--ce-halfstep);
+  --title2-line-height: var(--ce-halfstep);
+  --title3-line-height: var(--ce-halfstep);
+  --heading-line-height: var(--ce-halfstep);
+  --subheading-line-height: var(--ce-halfstep);
+  --body-line-height: var(--ce-wholestep);
+  --callout-line-height: var(--ce-halfstep);
+  --label-line-height: var(--ce-halfstep);
+  --caption-line-height: var(--ce-halfstep);
+  --capline-line-height: var(--ce-halfstep);
+
+  /* Optical Top Padding Offsets and Border Radii for Cards */
+  --display1-offset: calc(
+    var(--display1-font-size) *
+      calc(var(--display1-line-height) / var(--ce-wholestep))
+  );
+  --display2-offset: calc(
+    var(--display2-font-size) *
+      calc(var(--display2-line-height) / var(--ce-wholestep))
+  );
+  --title1-offset: calc(
+    var(--title1-font-size) *
+      calc(var(--title1-line-height) / var(--ce-wholestep))
+  );
+  --title2-offset: calc(
+    var(--title2-font-size) *
+      calc(var(--title2-line-height) / var(--ce-wholestep))
+  );
+  --title3-offset: calc(
+    var(--title3-font-size) *
+      calc(var(--title3-line-height) / var(--ce-wholestep))
+  );
+  --heading-offset: calc(
+    var(--heading-font-size) *
+      calc(var(--heading-line-height) / var(--ce-wholestep))
+  );
+  --subheading-offset: calc(
+    var(--subheading-font-size) *
+      calc(var(--subheading-line-height) / var(--ce-wholestep))
+  );
+  --body-offset: calc(var(--body-font-size) / var(--ce-wholestep));
+  --callout-offset: calc(
+    var(--callout-font-size) *
+      calc(var(--callout-line-height) / var(--ce-wholestep))
+  );
+  --label-offset: calc(
+    var(--label-font-size) *
+      calc(var(--label-line-height) / var(--ce-wholestep))
+  );
+  --caption-offset: calc(
+    var(--caption-font-size) *
+      calc(var(--caption-line-height) / var(--ce-wholestep))
+  );
+  --capline-offset: calc(
+    var(--capline-font-size) *
+      calc(var(--capline-line-height) / var(--ce-wholestep))
+  );
+
+  /* shadows */
+  --shadow-sm: 0 0 1px 0 var(--ce-shadow);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.11),
+    0 0 1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 11px 15px -3px rgba(0, 0, 0, 0.11),
+    0 2px 6px rgba(0, 0, 0, 0.07), 0 0 1px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0px 0px 1px 0px var(--ce-outline),
+    0px 50px 100px 0px rgba(0, 0, 0, 0.15);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.23), 0 9px 18px rgba(0, 0, 0, 0.1),
+    0 0 1px rgba(0, 0, 0, 0.4);
+
+  /* Make text look sharper */
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smooth: never;
+
+  --mantine-z-index-app: 100;
+  --mantine-z-index-modal: 200;
+  --mantine-z-index-popover: 300;
+  --mantine-z-index-overlay: 400;
+  --mantine-z-index-max: 9999;
+
+  --mantine-scale: 1;
+  --mantine-cursor-type: default;
+  --mantine-webkit-font-smoothing: antialiased;
+  --mantine-moz-font-smoothing: grayscale;
+  --mantine-color-white: #fff;
+  --mantine-color-black: #000;
+  --mantine-line-height: 1.55;
+
+  --mantine-font-family: "Inter Variable", sans-serif;
+  --mantine-font-family-monospace: "Roboto Mono Variable", monospace;
+  --mantine-font-family-headings: "Inter Variable", sans-serif;
+
+  --mantine-font-weight-normal: 400;
+  --mantine-font-weight-bold: 600;
+
+  --mantine-heading-font-weight: var(--mantine-font-weight-bold);
+  --mantine-heading-text-wrap: wrap;
+
+  --mantine-letter-spacing-tight: -0.02em;
+  --mantine-letter-spacing-normal: 0;
+  --mantine-letter-spacing-wide: 0.02em;
+  --mantine-radius-default: calc(4px * var(--mantine-scale));
+
+  --mantine-primary-color-filled: var(--mantine-color-blue-filled);
+  --mantine-primary-color-filled-hover: var(--mantine-color-blue-filled-hover);
+  --mantine-primary-color-light: var(--mantine-color-blue-light);
+  --mantine-primary-color-light-hover: var(--mantine-color-blue-light-hover);
+  --mantine-primary-color-light-color: var(--mantine-color-blue-light-color);
+
+  --mantine-breakpoint-xs: 36em;
+  --mantine-breakpoint-sm: 48em;
+  --mantine-breakpoint-md: 62em;
+  --mantine-breakpoint-lg: 75em;
+  --mantine-breakpoint-xl: 88em;
+
+  --mantine-spacing-xs: var(--ce-size-xs);
+  --mantine-spacing-sm: var(--ce-size-sm);
+  --mantine-spacing-md: var(--ce-size-md);
+  --mantine-spacing-lg: var(--ce-size-lg);
+  --mantine-spacing-xl: var(--ce-size-xl);
+
+  --mantine-font-size-xs: var(--caption-font-size);
+  --mantine-font-size-sm: var(--label-font-size);
+  --mantine-font-size-md: var(--body-font-size);
+  --mantine-font-size-lg: var(--callout-font-size);
+  --mantine-font-size-xl: var(--heading-font-size);
+
+  --mantine-font-size-xxl: var(--title3-font-size);
+  --mantine-font-size-xxxl: var(--title2-font-size);
+
+  --mantine-line-height-xs: var(--caption-line-height);
+  --mantine-line-height-sm: var(--label-line-height);
+  --mantine-line-height-md: var(--body-line-height);
+  --mantine-line-height-lg: var(--callout-line-height);
+  --mantine-line-height-xl: var(--heading-line-height);
+
+  /* Typography-specific line heights mapped to CE variables */
+  --mantine-line-height-body: var(
+    --body-line-height
+  ); /* Golden ratio for body text */
+  --mantine-line-height-heading: var(
+    --heading-line-height
+  ); /* Tighter for headings */
+  --mantine-line-height-display: var(
+    --display1-line-height
+  ); /* Tightest for large display text */
+
+  /* Shadows using CE custom shadow system */
+  --mantine-shadow-xs: var(--shadow-sm);
+  --mantine-shadow-sm: var(--shadow-md);
+  --mantine-shadow-md: var(--shadow-lg);
+  --mantine-shadow-lg: var(--shadow-xl);
+  --mantine-shadow-xl: var(--shadow-2xl);
+
+  /* Encore-specific shadow variables for consistency */
+  --mantine-shadow-overlay: var(--shadow-lg);
+  --mantine-shadow-focus: 0 3px 0 0;
+
+  /* Radius variables using CE sizing scale for consistency */
+  --mantine-radius-xs: var(--ce-size-3xs);
+  --mantine-radius-sm: var(--ce-size-2xs);
+  --mantine-radius-md: var(--ce-size-xs);
+  --mantine-radius-lg: var(--ce-size-sm);
+  --mantine-radius-xl: var(--ce-size-md);
+
+  /* Special radius for fully rounded elements */
+  --mantine-radius-rounded: 9999px;
+
+  --mantine-h1-font-size: var(--display1-font-size);
+  --mantine-h1-line-height: var(--display1-line-height);
+  --mantine-h1-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h1-letter-spacing: var(--mantine-letter-spacing-tight);
+  --mantine-h2-font-size: var(--display2-font-size);
+  --mantine-h2-line-height: var(--display2-line-height);
+  --mantine-h2-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h2-letter-spacing: var(--mantine-letter-spacing-tight);
+  --mantine-h3-font-size: var(--title1-font-size);
+  --mantine-h3-line-height: var(--title1-line-height);
+  --mantine-h3-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h3-letter-spacing: var(--mantine-letter-spacing-normal);
+  --mantine-h4-font-size: var(--title2-font-size);
+  --mantine-h4-line-height: var(--title2-line-height);
+  --mantine-h4-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h4-letter-spacing: var(--mantine-letter-spacing-normal);
+  --mantine-h5-font-size: var(--title3-font-size);
+  --mantine-h5-line-height: var(--title3-line-height);
+  --mantine-h5-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h5-letter-spacing: var(--mantine-letter-spacing-normal);
+  --mantine-h6-font-size: var(--heading-font-size);
+  --mantine-h6-line-height: var(--heading-line-height);
+  --mantine-h6-font-weight: var(--mantine-font-weight-bold);
+  --mantine-h6-letter-spacing: var(--mantine-letter-spacing-normal);
+
+  --mantine-color-text-primary: #1a1a1a;
+  --mantine-color-text-secondary: #6b7280;
+  --mantine-color-text-tertiary: #9ca3af;
+  --mantine-color-text-inverse: #ffffff;
+  --mantine-color-text-disabled: #d1d5db;
+
+  /* Body text defaults using CE variables for golden ratio scaling */
+  --mantine-text-body-font-size: var(--body-font-size); /* 1em base size */
+  --mantine-text-body-line-height: var(
+    --body-line-height
+  ); /* Golden ratio line height */
+  --mantine-text-body-font-weight: var(--mantine-font-weight-normal);
+  --mantine-text-body-color: var(--mantine-color-text-primary);
+
+  /* Small text for captions, footnotes using CE variables */
+  --mantine-text-small-font-size: var(--caption-font-size);
+  --mantine-text-small-line-height: var(--caption-line-height);
+  --mantine-text-small-color: var(--mantine-color-text-secondary);
+
+  --mantine-text-max-width: 65ch;
+}
+
+/* Logo Styles */
+
+.logo {
+  font-family: var(--font-logo);
+  font-size: var(--size-logo-sm);
+  text-decoration: none;
+  display: inline-block;
+  letter-spacing: -0.5px;
+  user-select: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+.logo-primary {
+  font-weight: var(--weight-logo-primary);
+  color: var(--color-logo-primary);
+}
+
+.logo-accent {
+  font-weight: var(--weight-logo-accent);
+  color: var(--color-logo-accent);
+  margin-left: 0.1em;
+}
+
+/* --- Variants --- */
+
+.logo.logo-md {
+  font-size: var(--size-logo-md);
+}
+
+.logo.logo-lg {
+  font-size: var(--size-logo-lg);
+}
+
+.on-dark .logo-primary,
+.logo.on-dark .logo-primary,
+.on-dark .logo-accent,
+.logo.on-dark .logo-accent {
+  color: var(--color-logo-light);
+}
+
+.mantine-InputWrapper-label,
+.mantine-TextInput-label {
+  font-weight: 600;
+}

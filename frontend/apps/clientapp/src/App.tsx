@@ -1,0 +1,36 @@
+import { MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import AuthProvider from "./Providers/AuthProvider";
+
+import { AppProvider } from "./Providers/AppProvider";
+
+import { theme } from "./theme/index";
+import { DrawerStackProvider } from "./Providers/StackProvider";
+import AppRouterProvider from "./router";
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 5 * 60 * 1000 } },
+});
+
+function App() {
+  return (
+    <MantineProvider theme={theme}>
+      <Notifications position={"top-center"} />
+      {/*    <DatesProvider> */}
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <DrawerStackProvider>
+            <AppProvider>
+              <AppRouterProvider />
+            </AppProvider>
+          </DrawerStackProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+      {/* </DatesProvider> */}
+    </MantineProvider>
+  );
+}
+
+export default App;

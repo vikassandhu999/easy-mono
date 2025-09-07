@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "es2015",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "outDir": "./",
+    "composite": true,
+    "incremental": true
+  },
+  "exclude": ["node_modules"],
+  "files": [],
+  "references": [
+    { "path": "apps/coachapp/tsconfig.json" },
+    { "path": "apps/clientapp/tsconfig.json" }
+  ]
+}

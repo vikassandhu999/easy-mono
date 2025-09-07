@@ -98,7 +98,7 @@ const parseMedia = (mediaType: string, url: string) => {
 };
 
 export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChange}) => {
-    const selectedType = value?.type || 'video';
+    const selectedType = value?.type ?? 'video';
 
     const onChangeInternal = (mediaType: string, url: string) => {
         onChange(parseMedia(mediaType, url));
@@ -106,26 +106,6 @@ export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChang
 
     // Media handling logic
     const renderMediaFields = () => {
-        if (selectedType === 'none') {
-            return (
-                <Alert
-                    color="blue"
-                    variant="light"
-                    mt="md"
-                    styles={{
-                        root: {
-                            borderRadius: 8,
-                        },
-                    }}
-                >
-                    <Text size="sm">
-                        Text-based content will use the instructions you provide below. No additional media files are
-                        required.
-                    </Text>
-                </Alert>
-            );
-        }
-
         const mediaUrl = value?.url || '';
         const mediaPlaceholder =
             {

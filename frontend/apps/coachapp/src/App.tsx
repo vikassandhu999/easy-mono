@@ -2,13 +2,13 @@ import {MantineProvider} from '@mantine/core';
 import {Notifications} from '@mantine/notifications';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
-import AuthProvider from './Providers/AuthProvider';
+import AuthProvider from '@/providers/AuthProvider';
 
-import {AppProvider} from './Providers/AppProvider';
+import {AppProvider} from '@/providers/AppProvider';
 
 import {theme} from './theme/index';
-import {DrawerStackProvider} from './Providers/StackProvider';
-import AppRouterProvider from './router';
+import {DrawerStackProvider} from '@/providers/StackProvider';
+import AppRouterProvider from './Router.tsx';
 import {ModalsProvider} from '@mantine/modals';
 
 const queryClient = new QueryClient({defaultOptions: {queries: {staleTime: 5 * 60 * 1000}}});

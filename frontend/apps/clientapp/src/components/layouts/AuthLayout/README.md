@@ -1,7 +1,7 @@
-# AuthLayout - Mantine-Only Implementation
+# Index - Mantine-Only Implementation
 
 ## Overview
-The AuthLayout component is built entirely using Mantine components, following Mantine's design system and layout patterns. This approach ensures consistency with the rest of the application and reduces custom CSS maintenance.
+The Index component is built entirely using Mantine components, following Mantine's design system and layout patterns. This approach ensures consistency with the rest of the application and reduces custom CSS maintenance.
 
 ## Key Features
 
@@ -76,34 +76,34 @@ interface AuthLayoutProps extends PropsWithChildren {
 
 ### Basic Login Form
 ```tsx
-<AuthLayout
+<Index
     title="Welcome back"
     subtitle="Sign in to your account"
 >
     <LoginForm />
-</AuthLayout>
+</Index>
 ```
 
 ### Loading State
 ```tsx
-<AuthLayout
+<Index
     title="Creating Account"
     subtitle="Please wait..."
     loading={true}
 >
     <SignupForm />
-</AuthLayout>
+</Index>
 ```
 
 ### Error State
 ```tsx
-<AuthLayout
+<Index
     title="Authentication Failed"
     subtitle="Please try again"
     error={true}
 >
     <ErrorForm />
-</AuthLayout>
+</Index>
 ```
 
 ## Benefits of Mantine-Only Approach
@@ -165,7 +165,7 @@ Since the component uses only Mantine components, styling can be customized thro
 
 ### Example: Custom Styling
 ```tsx
-<AuthLayout
+<Index
     title="Custom Title"
     subtitle="Custom subtitle"
 >
@@ -180,7 +180,7 @@ Since the component uses only Mantine components, styling can be customized thro
             variant="gradient" 
         />
     </Stack>
-</AuthLayout>
+</Index>
 ```
 
 ## Migration Notes

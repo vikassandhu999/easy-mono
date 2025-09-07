@@ -6,7 +6,7 @@ export {MediaDetails as ContentTypeSelector} from './MediaDetails';
 export {MetricsPicker} from './MetricsPicker';
 export {OptionSelector} from './OptionSelector';
 
-// Hooks
+// hooks
 export {useContentFormState} from './useContentFormState';
 
 // Types

@@ -14,7 +14,7 @@ A comprehensive set of reusable and composable listing components designed follo
 - Content benefiting from visual separation
 
 ```tsx
-import { ListCard } from '@/Components/layouts';
+import { ListCard } from '@/components/layouts';
 
 <ListCard
   title="Morning Yoga Program"
@@ -48,7 +48,7 @@ import { ListCard } from '@/Components/layouts';
 - Secondary lists within cards or modals
 
 ```tsx
-import { SimpleListItem } from '@/Components/layouts';
+import { SimpleListItem } from '@/components/layouts';
 
 <SimpleListItem
   title="John Doe"
@@ -83,7 +83,7 @@ import { SimpleListItem } from '@/Components/layouts';
 - Dividers for simple layouts
 
 ```tsx
-import { EnhancedRecordsList } from '@/Components/layouts';
+import { EnhancedRecordsList } from '@/components/layouts';
 
 <EnhancedRecordsList
   records={programs}

@@ -25,7 +25,7 @@ import { FixedBottom } from "../Containers/FixedBottom";
 import { notifications } from "@mantine/notifications";
 import { IconTarget } from "@tabler/icons-react";
 
-// Components
+// components
 import { MetricsPicker } from "./MetricsPicker";
 import { MediaDetails } from "./MediaDetails";
 import { FormSection } from "@/Components/Containers/FormSection";

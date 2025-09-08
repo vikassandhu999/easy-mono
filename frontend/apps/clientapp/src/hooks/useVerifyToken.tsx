@@ -2,8 +2,8 @@ import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 import {useMutation} from '@tanstack/react-query';
 import {AuthAPI, LoginResponse} from '@/api/auth';
-import {Result} from '@/utils/result';
 import {notifications} from '@mantine/notifications';
+import { Result } from '@/utils/error';
 
 export const useVerifyToken = () => {
     const [searchParams] = useSearchParams();

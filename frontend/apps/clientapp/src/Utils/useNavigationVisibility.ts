@@ -1,6 +1,6 @@
-import {useLocation} from 'react-router';
-import {useMemo} from 'react';
-import {shouldShowNavigation} from './navigationConfig';
+import { useLocation } from "react-router";
+import { useMemo } from "react";
+import { shouldShowNavigation } from "./navigation_config";
 
 /**
  * Hook to determine if navigation should be hidden for the current route.
@@ -23,9 +23,9 @@ import {shouldShowNavigation} from './navigationConfig';
  * }
  */
 export function useNavigationVisibility(): boolean {
-    const location = useLocation();
+  const location = useLocation();
 
-    return useMemo(() => {
-        return shouldShowNavigation(location.pathname);
-    }, [location.pathname]);
+  return useMemo(() => {
+    return shouldShowNavigation(location.pathname);
+  }, [location.pathname]);
 }

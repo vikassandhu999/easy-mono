@@ -1,10 +1,10 @@
 import { useState } from "react";
-import PagePaper from "@/Components/Containers/PagePaper";
-import ScheduleHeader from "./header";
+import PagePaper from "@/components/container/PagePaper";
 import { Box, SegmentedControl } from "@mantine/core";
+import PaddingContainer from "@/components/container/PaddingContainer";
 import CurrentDayView from "./currenDayView";
 import CurrentWeekView from "./currenWeekView";
-import PaddingContainer from "@/Components/Containers/PaddingContainer";
+import ScheduleHeader from "./header";
 
 type View = "daily" | "weekly";
 

@@ -8,9 +8,9 @@ import { EmptyState } from "@/Components/Layouts/EmptyState";
 import RecordsList from "@/Components/Layouts/RecordsList";
 import { Program } from "@/Api/Programs";
 import { Button } from "@mantine/core";
-import PagePaper from "@/Components/Containers/PagePaper";
-import PaddingContainer from "@/Components/Containers/PaddingContainer";
-import { useDrawerStack } from "@/Providers/StackProvider";
+import PagePaper from "@/components/container/PagePaper";
+import PaddingContainer from "@/components/container/PaddingContainer";
+import { useDrawerStack } from "@/providers/StackProvider";
 
 function ProgramListPage() {
   const navigate = useNavigate();
@@ -59,9 +59,7 @@ function ProgramListPage() {
             <EmptyState
               icon={<IconTrendingUp size={32} />}
               title={
-                search
-                  ? "Couldn’t find any plan"
-                  : "Ready to Build a Plan?"
+                search ? "Couldn’t find any plan" : "Ready to Build a Plan?"
               }
               description={
                 search

@@ -1,13 +1,9 @@
 import React, { useCallback, useState } from "react";
 import { SignInRequest, AuthAPI } from "@/Api/auth";
 import { createSearchParams, Navigate, useNavigate } from "react-router";
-import { useAuth } from "@/Providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { useForm } from "@mantine/form";
-import {
-  TextInput,
-  Button,
-  Stack,
-} from "@mantine/core";
+import { TextInput, Button, Stack } from "@mantine/core";
 import { IconMail, IconCheck, IconX } from "@tabler/icons-react";
 import { AuthLayout } from "@/Components/Layouts/AuthLayout";
 import { ArrowRightIcon } from "@phosphor-icons/react";
@@ -35,7 +31,7 @@ const SignInPage: React.FC = () => {
   });
 
   const singInMutation = useMutation({
-    mutationFn: async (data: SignInRequest) => { 
+    mutationFn: async (data: SignInRequest) => {
       return AuthAPI.signIn(data);
     },
     onMutate: () => {
@@ -67,7 +63,8 @@ const SignInPage: React.FC = () => {
       const result = res.getValue();
       notifications.show({
         title: "Success!",
-        message: result.message || "We've sent a verification code to your email",
+        message:
+          result.message || "We've sent a verification code to your email",
         color: "green",
         icon: <IconCheck size={16} />,
       });
@@ -95,13 +92,11 @@ const SignInPage: React.FC = () => {
     return <Navigate to={"/"} />;
   }
 
-
   return (
     <AuthLayout
       title="Welcome back!"
       subtitle="Sign in to access your coaching schedules."
     >
-   
       {/* Form */}
       <form onSubmit={form.onSubmit(onSubmit)}>
         <Stack gap="sm" align="start">
@@ -124,12 +119,10 @@ const SignInPage: React.FC = () => {
             rightSection={<ArrowRightIcon />}
             loading={loading}
           >
-           Continue
+            Continue
           </Button>
         </Stack>
       </form>
-
-     
     </AuthLayout>
   );
 };

@@ -1,10 +1,10 @@
-import {ReactNode} from 'react';
-import {MainLayout} from './MainLayout/MainLayout';
+import { ReactNode } from "react";
+import { MainLayout } from "./MainLayout.tsx/MainLayout";
 
 interface ProtectedLayoutProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
-export function ProtectedLayout({children}: ProtectedLayoutProps) {
-    return <MainLayout>{children}</MainLayout>;
+export function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  return <MainLayout>{children}</MainLayout>;
 }

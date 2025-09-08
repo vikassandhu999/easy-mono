@@ -1,19 +1,13 @@
 import { AuthAPI, SignInCodeRequest } from "@/Api/auth";
 import { AuthLayout } from "@/Components/Layouts/AuthLayout";
-import { useAuth } from "@/Providers/AuthProvider";
-import {
-  Button,
-  Group,
-  PinInput,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { useAuth } from "@/providers/AuthProvider";
+import { Button, Group, PinInput, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
 import React, { useState } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router";
-import { notifications } from '@mantine/notifications';
+import { notifications } from "@mantine/notifications";
 import { useMutation } from "@tanstack/react-query";
 
 const SignInCodePage: React.FC = () => {
@@ -21,8 +15,6 @@ const SignInCodePage: React.FC = () => {
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-
 
   const form = useForm<SignInCodeRequest>({
     initialValues: {
@@ -37,7 +29,6 @@ const SignInCodePage: React.FC = () => {
       },
     },
   });
-
 
   const singInMutation = useMutation({
     mutationFn: async (data: SignInCodeRequest) => {
@@ -94,13 +85,11 @@ const SignInCodePage: React.FC = () => {
     return <Navigate to="/" />;
   }
 
-  
   return (
     <AuthLayout
       title="Email verification"
       subtitle={`We sent a 6-digit verification code to ${params.get("email")}`}
     >
-
       <form onSubmit={form.onSubmit(onSubmit)} style={{ width: "100%" }}>
         <Stack gap="sm" align="start">
           <Stack gap="xs" justify={"center"} align={"center"}>
@@ -133,8 +122,6 @@ const SignInCodePage: React.FC = () => {
           </Button>
         </Stack>
       </form>
-
-
     </AuthLayout>
   );
 };

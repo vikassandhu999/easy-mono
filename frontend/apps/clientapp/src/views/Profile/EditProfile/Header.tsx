@@ -1,4 +1,4 @@
-import HeadingContainer from "@/Components/Containers/HeaderContainer";
+import HeadingContainer from "@/components/container/HeaderContainer";
 import { Title, Group, Stack, ActionIcon } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useNavigate } from "react-router";

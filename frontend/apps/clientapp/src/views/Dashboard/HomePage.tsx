@@ -3,10 +3,9 @@ import { useDisclosure } from "@mantine/hooks";
 import { BellIcon } from "@phosphor-icons/react";
 
 import { useNavigate } from "react-router";
-import NotificationDrawer from "../../Components/Notification/NotificationDrawer";
+import NotificationDrawer from "../../components/notification/NotificationDrawer";
 import Hero from "./Hero";
 import ProgramSection from "./ProgramSection";
-import SpaceSwitcher from "../../Components/SpaceSwitcher/SpaceSwitcher";
 
 export default function HomePage() {
   const navigate = useNavigate();

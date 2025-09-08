@@ -124,7 +124,7 @@ const EasyDrawer = factory<DrawerFactory>((_props, ref) => {
     );
 });
 
-EasyDrawer.displayName = '@mantine/core/EasyOptionSelector';
+EasyDrawer.displayName = 'EasyDrawer';
 EasyDrawer.Root = DrawerRoot;
 EasyDrawer.Overlay = DrawerOverlay;
 EasyDrawer.Content = DrawerContent;

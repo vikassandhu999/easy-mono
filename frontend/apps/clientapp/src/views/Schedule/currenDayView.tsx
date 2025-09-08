@@ -1,5 +1,3 @@
-import TimeSlotList from "@/Components/Listing/TimeSlotList";
-import TaskItem from "@/Components/Listing/TaskItem";
 import {
   IconHaze,
   IconMoon,
@@ -11,8 +9,9 @@ import {
 import { useState } from "react";
 import { Select } from "@mantine/core";
 import classes from "./tabs.module.css";
-import { SCHEDULE_TIME_SLOTS } from "@/components/layouts/MainLayout/constants";
-
+import { SCHEDULE_TIME_SLOTS } from "@/components/layouts/MainLayout.tsx/constants";
+import TimeSlotList from "@/components/listing/TimeSlotList";
+import TaskItem from "@/components/listing/TaskItem";
 
 const TimeSlotConfig = SCHEDULE_TIME_SLOTS.map((slot) => ({
   ...slot,

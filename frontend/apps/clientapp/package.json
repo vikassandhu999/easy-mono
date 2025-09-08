@@ -40,8 +40,6 @@
     "axios": "^1.2.2",
     "dayjs": "^1.11.13",
     "dompurify": "^3.2.5",
-    "firebase": "^10.13.1",
-    "firebaseui": "^6.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.48.2",

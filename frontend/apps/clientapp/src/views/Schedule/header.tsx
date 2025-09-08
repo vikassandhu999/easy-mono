@@ -1,4 +1,4 @@
-import HeadingContainer from "@/Components/Containers/HeaderContainer";
+import HeadingContainer from "@/components/container/HeaderContainer";
 import { Title, Group, Stack } from "@mantine/core";
 
 const ScheduleHeader = () => {

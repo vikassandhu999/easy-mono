@@ -1,6 +1,6 @@
-import PagePaper from "@/Components/Containers/PagePaper";
+import PagePaper from "@/components/container/PagePaper";
 import ProfileContent from "./ProfileContent";
-import PaddingContainer from "@/Components/Containers/PaddingContainer";
+import PaddingContainer from "@/components/container/PaddingContainer";
 
 const ProfilePage = () => {
   return (

@@ -95,12 +95,6 @@ importers:
       dompurify:
         specifier: ^3.2.5
         version: 3.2.6
-      firebase:
-        specifier: ^10.13.1
-        version: 10.14.1
-      firebaseui:
-        specifier: ^6.1.0
-        version: 6.1.0(firebase@10.14.1)
       react:
         specifier: ^19.1.0
         version: 19.1.1

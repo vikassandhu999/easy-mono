@@ -2,12 +2,12 @@ import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import AuthProvider from "./Providers/AuthProvider";
+import AuthProvider from "./providers/AuthProvider";
 
-import { AppProvider } from "./Providers/AppProvider";
+import { AppProvider } from "./providers/AppProvider";
 
 import { theme } from "./theme/index";
-import { DrawerStackProvider } from "./Providers/StackProvider";
+import { DrawerStackProvider } from "./providers/StackProvider";
 import AppRouterProvider from "./router";
 
 const queryClient = new QueryClient({

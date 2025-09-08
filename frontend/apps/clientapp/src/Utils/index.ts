@@ -1,11 +1,11 @@
 // Navigation utilities
 export {
-    shouldShowNavigation as shouldHideNavigation,
-    ROUTES_WITH_NAVIGATION as ROUTES_WITH_HIDDEN_NAVIGATION,
-    ROUTE_PATTERNS_WITH_NAVIGATION as ROUTE_PATTERNS_WITH_HIDDEN_NAVIGATION,
-} from './navigationConfig';
-export {useNavigationVisibility} from './useNavigationVisibility';
+  shouldShowNavigation as shouldHideNavigation,
+  ROUTES_WITH_NAVIGATION as ROUTES_WITH_HIDDEN_NAVIGATION,
+  ROUTE_PATTERNS_WITH_NAVIGATION as ROUTE_PATTERNS_WITH_HIDDEN_NAVIGATION,
+} from "./navigation_config";
+export { useNavigationVisibility } from "./useNavigationVisibility";
 
 // Other utilities
-export {default as PrivateRoute} from './PrivateRoute';
-export {default as PublicRoute} from './PublicRoute';
+export { default as PrivateRoute } from "./PrivateRoute";
+export { default as PublicRoute } from "./PublicRoute";

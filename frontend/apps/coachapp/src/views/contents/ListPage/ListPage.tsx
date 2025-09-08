@@ -12,7 +12,7 @@ import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import ContentForm from '@/components/ContentForm';
-import {CEDrawer} from '@/components/EasyDrawer';
+import CEDrawer from '@/components/EasyDrawer/EasyDrawer';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
 import {useContent, useContentMutations, useContents} from '@/hooks/useContentsQueries';

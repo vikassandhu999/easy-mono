@@ -1,5 +1,5 @@
 import { Title, Group, Stack, ActionIcon } from "@mantine/core";
-import HeadingContainer from "../Containers/HeaderContainer";
+import HeadingContainer from "../container/HeaderContainer";
 import { IconX } from "@tabler/icons-react";
 
 const DrawerHeader = ({ onClose }: { onClose: () => void }) => {

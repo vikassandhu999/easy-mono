@@ -1,11 +1,11 @@
 import { Group, ScrollArea, SegmentedControl } from "@mantine/core";
 import { useMemo, useState } from "react";
-import CurrentDayView from "./currenDayView";
+import CurrentDayView from "./CurrenDayView";
 import dayjs from "dayjs";
 import {
   SCHEDULE_WEEK_DAYS,
   ScheduleWeekDay,
-} from "@/components/layouts/MainLayout/constants";
+} from "@/components/layouts/MainLayout.tsx/constants";
 
 const getCurrentDay = () => {
   // Get current day using dayjs (0=Sunday, 1=Monday, etc.)

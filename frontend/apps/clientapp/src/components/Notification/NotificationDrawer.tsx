@@ -15,7 +15,7 @@ import {
   IconMessage,
   IconTrendingUp,
 } from "@tabler/icons-react";
-import PaddingContainer from "../Containers/PaddingContainer";
+import PaddingContainer from "../container/PaddingContainer";
 import DrawerHeader from "./DrawerHeader";
 
 const notifications = [

@@ -1,6 +1,6 @@
-import PagePaper from "@/Components/Containers/PagePaper";
+import PagePaper from "@/components/container/PagePaper";
 import ProfileEditHeader from "./Header";
-import PaddingContainer from "@/Components/Containers/PaddingContainer";
+import PaddingContainer from "@/components/container/PaddingContainer";
 import {
   Button,
   Group,

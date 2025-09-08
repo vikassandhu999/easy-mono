@@ -7,7 +7,7 @@ import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper.tsx';
 import ContentForm from '@/components/ContentForm';
-import {CEDrawer} from '@/components/EasyDrawer';
+import CEDrawer from '@/components/EasyDrawer/EasyDrawer';
 import Header from '@/components/layouts/Header';
 
 export default function ContentCreateDrawer({

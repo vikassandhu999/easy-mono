@@ -1,8 +1,8 @@
 import { useOutlet, useLocation } from "react-router";
 import { useMemo } from "react";
-import { MainLayout } from "../Components/Layouts";
-import { shouldShowNavigation } from "./navigationConfig";
-import ScrollToTop from "../Components/ScrollToTop";
+import { shouldShowNavigation } from "./navigation_config";
+import ScrollToTop from "@/components/ScrollToTop";
+import { MainLayout } from "@/components/layouts";
 
 export default function ProtectedRouteLayout() {
   const Outlet = useOutlet();

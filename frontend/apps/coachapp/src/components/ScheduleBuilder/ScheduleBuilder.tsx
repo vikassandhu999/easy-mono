@@ -12,7 +12,7 @@ import {useDrawerActions, useDrawerData} from '@/hooks/useDrawerStackRouter';
 import {SCHEDULE_ENTRIES_QUERY_KEYS} from '@/hooks/useScheduleEntriesQueries';
 import {useSchedule} from '@/hooks/useScheduleQueries';
 
-import {CEDrawer} from '../EasyDrawer';
+import CEDrawer from '../EasyDrawer/EasyDrawer';
 import Header from '../layouts/Header';
 import ScheduleEntriesView from '../ScheduleEntriesView/ScheduleEntriesView';
 import SessionBuilder from '../SessionBuilder/SessionBuilder';

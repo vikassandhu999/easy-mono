@@ -1,35 +1,37 @@
-import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
+
+import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
+
 import {useApp} from './AppProvider';
 
 type AuthContextValue = {
-    isAuthenticated: boolean;
     error?: string;
+    isAuthenticated: boolean;
     isAuthenticating: boolean;
-    verifyAuth: (silent: boolean) => Promise<void>;
     logout: () => Promise<void>;
     saveAuthToken: (token: AccessToken) => Promise<unknown>;
+    verifyAuth: (silent: boolean) => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthContextValue>({} as undefined);
 AuthContext.displayName = 'AuthContext';
 
 type AuthState = {
+    error?: string;
     isAuthenticated: boolean;
     isAuthenticating: boolean;
-    error?: string;
 };
 
 const initialAuthState = {
+    error: undefined,
     isAuthenticated: false,
     isAuthenticating: true,
-    error: undefined,
 };
 
 type UpdateStateFn = (state: AuthState) => Partial<AuthState>;
 
-function authReducer(state: AuthState, updateState: UpdateStateFn | Partial<AuthState>): AuthState {
+function authReducer(state: AuthState, updateState: Partial<AuthState> | UpdateStateFn): AuthState {
     return {
         ...state,
         ...(typeof updateState === 'function' ? updateState(state) : updateState),
@@ -78,8 +80,8 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
         async (accessToken: AccessToken | null) => {
             setTokenForAuthedClient(accessToken.access_token);
             setState({
-                isAuthenticating: false,
                 isAuthenticated: true,
+                isAuthenticating: false,
             });
             startRefreshTokenJob(accessToken.expires_in);
         },
@@ -93,9 +95,9 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
             const accessToken = await AuthAPI.refreshToken();
             if (accessToken.isError) {
                 return setState({
+                    error: 'Unauthorized',
                     isAuthenticated: false,
                     isAuthenticating: false,
-                    error: 'Unauthorized',
                 });
             }
             await saveAuthToken(accessToken.getValue());
@@ -123,7 +125,7 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     }, [initSocket, verifyAuth]);
 
     const value = useMemo(
-        () => ({...state, verifyAuth, saveAuthToken, logout}),
+        () => ({...state, logout, saveAuthToken, verifyAuth}),
         [logout, saveAuthToken, state, verifyAuth],
     );
 

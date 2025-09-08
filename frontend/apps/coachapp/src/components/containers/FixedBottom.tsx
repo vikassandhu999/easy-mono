@@ -1,17 +1,19 @@
-import React, {useLayoutEffect} from 'react';
-import {Button, Box, useMantineTheme} from '@mantine/core';
-import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
-import PaddingContainer from './PaddingContainer';
+import {Box, Button, useMantineTheme} from '@mantine/core';
 import {IconArrowRight} from '@tabler/icons-react';
+import React, {useLayoutEffect} from 'react';
+
+import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
+
+import PaddingContainer from './PaddingContainer';
 
 interface Props {
     isSubmitting?: boolean;
+    label: string;
     onSubmit?: () => void;
     withArrow?: boolean;
-    label: string;
 }
 
-export const FixedBottom: React.FC<Props> = ({label, onSubmit, isSubmitting = false, withArrow = false}) => {
+export const FixedBottom: React.FC<Props> = ({isSubmitting = false, label, onSubmit, withArrow = false}) => {
     const theme = useMantineTheme();
     const isKeyboardVisible = useKeyboardVisible();
 
@@ -34,28 +36,28 @@ export const FixedBottom: React.FC<Props> = ({label, onSubmit, isSubmitting = fa
         <Box
             ref={ref}
             style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
                 backgroundColor: 'white',
                 borderTop: `1px solid ${theme.colors.gray[3]}`,
-                padding: theme.spacing.sm,
-                paddingTop: theme.spacing.sm,
+                bottom: 0,
                 boxShadow: theme.shadows.xs,
-                zIndex: 999,
                 display: isKeyboardVisible ? 'none' : 'block',
+                left: 0,
+                padding: theme.spacing.sm,
                 paddingBottom: ` calc(var(--ce-size-md) + env(safe-area-inset-bottom))`,
+                paddingTop: theme.spacing.sm,
+                position: 'fixed',
+                right: 0,
+                zIndex: 999,
             }}
         >
             <PaddingContainer>
                 <Button
                     fullWidth
-                    onClick={onSubmit}
                     loading={isSubmitting}
+                    onClick={onSubmit}
+                    radius={9999}
                     rightSection={withArrow ? <IconArrowRight /> : null}
                     size={'lg'}
-                    radius={9999}
                     type={onSubmit ? 'button' : 'submit'}
                 >
                     {label}

@@ -57,7 +57,7 @@ xl: 32px  /* Major layout divisions */
 ### **Typography Scale**
 ```css
 /* Consistent text sizing hierarchy */
---text-xs: 11px      /* Metadata, small labels */
+--text-xs: 11px      /* taxonomy, small labels */
 --text-sm: 13px      /* Secondary text, descriptions */
 --text-base: 14px    /* Body text, main content */
 --text-lg: 16px      /* Prominent text, titles */

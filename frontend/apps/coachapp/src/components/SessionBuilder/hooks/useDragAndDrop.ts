@@ -1,26 +1,27 @@
-import {useState, useCallback} from 'react';
 import {
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
     DragEndEvent,
     DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
     UniqueIdentifier,
+    useSensor,
+    useSensors,
 } from '@dnd-kit/core';
-import {sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
+import {sortableKeyboardCoordinates} from '@dnd-kit/sortable';
+import {useCallback, useState} from 'react';
+
 import {SessionDefItemConfig} from '@/api/session_defs.ts';
 
 interface UseDragAndDropProps {
+    disabled?: boolean;
     items: SessionDefItemConfig[];
     onReorder: (oldIndex: number, newIndex: number) => void;
-    disabled?: boolean;
 }
 
-export function useDragAndDrop({items, onReorder, disabled = false}: UseDragAndDropProps) {
-    const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+export function useDragAndDrop({disabled = false, items, onReorder}: UseDragAndDropProps) {
+    const [activeId, setActiveId] = useState<null | UniqueIdentifier>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -53,11 +54,11 @@ export function useDragAndDrop({items, onReorder, disabled = false}: UseDragAndD
     const activeItem = activeId ? items.find((item) => item.content_id === activeId) : null;
 
     const dragContextProps = {
-        sensors,
         collisionDetection: closestCenter,
-        onDragStart: handleDragStart,
-        onDragEnd: handleDragEnd,
         modifiers: [restrictToVerticalAxis],
+        onDragEnd: handleDragEnd,
+        onDragStart: handleDragStart,
+        sensors,
     };
 
     const sortableContextProps = {
@@ -66,8 +67,8 @@ export function useDragAndDrop({items, onReorder, disabled = false}: UseDragAndD
     };
 
     return {
-        activeItem,
         activeId,
+        activeItem,
         dragContextProps,
         sortableContextProps,
     };

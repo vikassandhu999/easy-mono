@@ -1,34 +1,26 @@
-import React from 'react';
-import {TextInput, Textarea, Stack} from '@mantine/core';
+import {Stack, Textarea, TextInput} from '@mantine/core';
 import {useForm} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
+import React from 'react';
+
+import {CreateClientProps} from '@/api/clients.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import {FormSection} from '@/components/containers/FormSection';
-import {CreateClientProps} from '@/api/clients.ts';
 
 interface InviteClientFormProps {
-    submitText: string;
     onSubmit: (data: CreateClientProps) => Promise<void>;
+    submitText: string;
 }
 
-export const InviteClientForm: React.FC<InviteClientFormProps> = ({submitText, onSubmit}) => {
+export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, submitText}) => {
     const form = useForm<CreateClientProps>({
         initialValues: {
-            name: '',
             invitation_email: '',
             invitation_phone: '',
+            name: '',
             notes: '',
         },
         validate: {
-            name: (value) => {
-                if (!value || value.trim().length === 0) {
-                    return 'Name is required';
-                }
-                if (value.length > 200) {
-                    return 'Name must be less than 200 characters';
-                }
-                return null;
-            },
             invitation_email: (value) => {
                 if (!value || value.trim().length === 0) {
                     return 'Email is required';
@@ -44,6 +36,15 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({submitText, o
                 }
                 return null;
             },
+            name: (value) => {
+                if (!value || value.trim().length === 0) {
+                    return 'Name is required';
+                }
+                if (value.length > 200) {
+                    return 'Name must be less than 200 characters';
+                }
+                return null;
+            },
             notes: (value) => {
                 if (value && value.length > 1000) {
                     return 'Notes must be less than 1000 characters';
@@ -56,11 +57,11 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({submitText, o
     const handleFormSubmit = async (values: CreateClientProps) => {
         if (form.validate().hasErrors) {
             notifications.show({
-                title: 'Validation Error',
-                message: 'Please fix the errors in the form',
-                color: 'red',
-                position: 'top-center',
                 autoClose: 3000,
+                color: 'red',
+                message: 'Please fix the errors in the form',
+                position: 'top-center',
+                title: 'Validation Error',
             });
             return;
         }
@@ -73,34 +74,34 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({submitText, o
             <Stack gap="md">
                 <FormSection>
                     <TextInput
+                        description="The full name of the client"
                         label="Name"
                         placeholder="Enter client's full name"
-                        description="The full name of the client"
                         required
-                        withAsterisk
                         size="md"
+                        withAsterisk
                         {...form.getInputProps('name')}
                     />
                 </FormSection>
 
                 <FormSection>
                     <TextInput
+                        description="The email address for sending the invitation"
                         label="Email"
                         placeholder="Enter email address"
-                        description="The email address for sending the invitation"
                         required
-                        withAsterisk
                         size="md"
                         type="email"
+                        withAsterisk
                         {...form.getInputProps('invitation_email')}
                     />
                 </FormSection>
 
                 <FormSection>
                     <TextInput
+                        description="The client's phone number"
                         label="Phone Number"
                         placeholder="Enter phone number (optional)"
-                        description="The client's phone number"
                         size="md"
                         type="tel"
                         {...form.getInputProps('invitation_phone')}
@@ -109,20 +110,20 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({submitText, o
 
                 <FormSection>
                     <Textarea
+                        description="Any additional information about the client"
                         label="Notes"
                         placeholder="Add any notes about this client (optional)"
-                        description="Any additional information about the client"
-                        size="md"
                         rows={3}
+                        size="md"
                         {...form.getInputProps('notes')}
                     />
                 </FormSection>
             </Stack>
 
             <FixedBottom
-                onSubmit={() => handleFormSubmit(form.values)}
                 isSubmitting={form.submitting}
                 label={submitText}
+                onSubmit={() => handleFormSubmit(form.values)}
             />
         </form>
     );

@@ -1,7 +1,9 @@
+import {Badge, Divider, SegmentedControl, Stack, Text} from '@mantine/core';
 import {useMemo, useState} from 'react';
-import {Stack, SegmentedControl, Text, Badge, Divider} from '@mantine/core';
-import ContentSelect from '../ContentSelect';
+
 import {SessionType} from '@/api/session_defs.ts';
+
+import ContentSelect from '../ContentSelect';
 
 /**
  * TypedContentSelect
@@ -14,15 +16,15 @@ import {SessionType} from '@/api/session_defs.ts';
  */
 
 interface TypedContentSelectProps {
-    sessionType: SessionType;
-    onComplete: (ids: string[]) => void;
     onCancel: () => void;
+    onComplete: (ids: string[]) => void;
+    sessionType: SessionType;
 }
 
 const WORKOUT_ALLOWED = ['exercise'];
 const MEAL_ALLOWED = ['food', 'recipe'];
 
-export default function TypedContentSelect({sessionType, onComplete, onCancel}: TypedContentSelectProps) {
+export default function TypedContentSelect({onCancel, onComplete, sessionType}: TypedContentSelectProps) {
     const [activeFilter, setActiveFilter] = useState<string>('all');
 
     const allowedTypes = useMemo(() => {
@@ -44,15 +46,15 @@ export default function TypedContentSelect({sessionType, onComplete, onCancel}: 
         <Stack gap="md">
             <Stack gap={4}>
                 <Text
-                    size="sm"
                     fw={600}
+                    size="sm"
                     style={{color: 'var(--mantine-color-gray-8)'}}
                 >
                     Select Content
                 </Text>
                 <Text
-                    size="xs"
                     c="dimmed"
+                    size="xs"
                 >
                     {sessionType === 'workout'
                         ? 'Add exercises to structure the workout session.'
@@ -61,21 +63,21 @@ export default function TypedContentSelect({sessionType, onComplete, onCancel}: 
             </Stack>
 
             <SegmentedControl
-                value={activeFilter}
-                onChange={setActiveFilter}
                 data={segments}
+                onChange={setActiveFilter}
                 size="xs"
+                value={activeFilter}
             />
 
             <Divider
-                labelPosition="center"
                 label={<Badge variant="light">Library</Badge>}
+                labelPosition="center"
             />
 
             <ContentSelect
                 contentType={activeFilter === 'all' ? undefined : activeFilter}
-                onComplete={onComplete}
                 onCancel={onCancel}
+                onComplete={onComplete}
             />
         </Stack>
     );

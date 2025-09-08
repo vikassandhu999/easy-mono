@@ -1,6 +1,7 @@
-import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {ContentsAPI, CreateContentProps, ListContentsProps, UpdateContentProps} from '@/api/contents.ts';
 import {notifications} from '@mantine/notifications';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
+import {ContentsAPI, CreateContentProps, ListContentsProps, UpdateContentProps} from '@/api/contents.ts';
 
 export interface ContentFilters extends Omit<ListContentsProps, 'page' | 'page_size'> {
     is_published?: boolean; // client-side filtering only
@@ -11,16 +12,21 @@ export interface ContentFilters extends Omit<ListContentsProps, 'page' | 'page_s
 // Query keys
 export const CONTENTS_QUERY_KEYS = {
     all: ['contents'] as const,
-    lists: () => [...CONTENTS_QUERY_KEYS.all, 'list'] as const,
-    list: (params: ContentFilters) => [...CONTENTS_QUERY_KEYS.lists(), params] as const,
-    details: () => [...CONTENTS_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...CONTENTS_QUERY_KEYS.details(), id] as const,
+    details: () => [...CONTENTS_QUERY_KEYS.all, 'detail'] as const,
+    list: (params: ContentFilters) => [...CONTENTS_QUERY_KEYS.lists(), params] as const,
+    lists: () => [...CONTENTS_QUERY_KEYS.all, 'list'] as const,
 };
 
 // List contents with infinite query
 export const useContents = (params: ContentFilters) => {
     return useInfiniteQuery({
-        queryKey: CONTENTS_QUERY_KEYS.list(params),
+        enabled: true,
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.records.length < (params.page_size || 20)) return undefined;
+            return allPages.length + 1;
+        },
+        initialPageParam: 1,
         queryFn: async ({pageParam = 1}) => {
             const {...rest} = params;
             const result = await ContentsAPI.list({
@@ -28,34 +34,26 @@ export const useContents = (params: ContentFilters) => {
                 page: pageParam,
                 page_size: params.page_size || 20,
             });
-            console.log('Fetched contents:', result);
             if (result.isError) {
                 throw result.getError();
             }
-            console.log('Fetched contents:', result);
-
             return result.getValue();
         },
-        getNextPageParam: (lastPage, allPages) => {
-            if (lastPage.records.length < (params.page_size || 20)) return undefined;
-            return allPages.length + 1;
-        },
-        initialPageParam: 1,
+        queryKey: CONTENTS_QUERY_KEYS.list(params),
         staleTime: 5 * 60 * 1000, // 5 minutes
-        enabled: true,
     });
 };
 
 // Get single content
 export const useContent = (id: string | undefined) => {
     return useQuery({
-        queryKey: CONTENTS_QUERY_KEYS.detail(id || ''),
+        enabled: !!id,
         queryFn: async () => {
             if (!id) throw new Error('Content ID is required');
             const result = await ContentsAPI.get(id);
             return result.getValue();
         },
-        enabled: !!id,
+        queryKey: CONTENTS_QUERY_KEYS.detail(id || ''),
     });
 };
 
@@ -68,19 +66,19 @@ export const useCreateContent = () => {
             const result = await ContentsAPI.create(data);
             return result.getValue();
         },
+        onError: () => {
+            notifications.show({
+                color: 'red',
+                message: 'Failed to create content',
+                title: 'Error',
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.lists()});
             notifications.show({
-                title: 'Success',
-                message: 'Content created successfully',
                 color: 'green',
-            });
-        },
-        onError: () => {
-            notifications.show({
-                title: 'Error',
-                message: 'Failed to create content',
-                color: 'red',
+                message: 'Content created successfully',
+                title: 'Success',
             });
         },
     });
@@ -90,24 +88,24 @@ export const useUpdateContent = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({id, data}: {id: string; data: UpdateContentProps}) => {
+        mutationFn: async ({data, id}: {data: UpdateContentProps; id: string}) => {
             const result = await ContentsAPI.update(id, data);
             return result.getValue();
+        },
+        onError: () => {
+            notifications.show({
+                color: 'red',
+                message: 'Failed to update content',
+                title: 'Error',
+            });
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.lists()});
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.detail(variables.id)});
             notifications.show({
-                title: 'Success',
-                message: 'Content updated successfully',
                 color: 'green',
-            });
-        },
-        onError: () => {
-            notifications.show({
-                title: 'Error',
-                message: 'Failed to update content',
-                color: 'red',
+                message: 'Content updated successfully',
+                title: 'Success',
             });
         },
     });
@@ -121,19 +119,19 @@ export const useDeleteContent = () => {
             const result = await ContentsAPI.archive(id);
             return result.getValue();
         },
+        onError: () => {
+            notifications.show({
+                color: 'red',
+                message: 'Failed to delete content',
+                title: 'Error',
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.lists()});
             notifications.show({
-                title: 'Success',
-                message: 'Content deleted successfully',
                 color: 'green',
-            });
-        },
-        onError: () => {
-            notifications.show({
-                title: 'Error',
-                message: 'Failed to delete content',
-                color: 'red',
+                message: 'Content deleted successfully',
+                title: 'Success',
             });
         },
     });
@@ -147,16 +145,16 @@ export const useToggleContentPublish = () => {
             const result = await ContentsAPI.update(id, {});
             return result.getValue();
         },
+        onError: () => {
+            notifications.show({
+                color: 'red',
+                message: 'Failed to update publish status',
+                title: 'Error',
+            });
+        },
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.lists()});
             queryClient.invalidateQueries({queryKey: CONTENTS_QUERY_KEYS.detail(id)});
-        },
-        onError: () => {
-            notifications.show({
-                title: 'Error',
-                message: 'Failed to update publish status',
-                color: 'red',
-            });
         },
     });
 };
@@ -170,12 +168,12 @@ export const useContentMutations = () => {
 
     return {
         createContent: createMutation.mutate,
-        updateContent: updateMutation.mutate,
         deleteContent: deleteMutation.mutate,
-        togglePublish: togglePublishMutation.mutate,
         isCreating: createMutation.isPending,
-        isUpdating: updateMutation.isPending,
         isDeleting: deleteMutation.isPending,
         isTogglingPublish: togglePublishMutation.isPending,
+        isUpdating: updateMutation.isPending,
+        togglePublish: togglePublishMutation.mutate,
+        updateContent: updateMutation.mutate,
     };
 };

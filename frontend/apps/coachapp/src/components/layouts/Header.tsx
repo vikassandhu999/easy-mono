@@ -1,34 +1,34 @@
-import {Group, ActionIcon, Title} from '@mantine/core';
+import {ActionIcon, Group, Title} from '@mantine/core';
 import {ArrowLeftIcon} from '@phosphor-icons/react';
 
 type Props = {
+    actions?: React.ReactNode;
+    onBack?: () => void;
     showTitle?: boolean;
     title: string;
-    onBack?: () => void;
-    actions?: React.ReactNode;
 };
 
-export default function Header({title, showTitle = true, onBack, actions}: Props) {
+export default function Header({actions, onBack, showTitle = true, title}: Props) {
     return (
         <Group
-            gap="sm"
-            style={{width: '100%'}}
-            justify={'space-between'}
             align="center"
+            gap="sm"
+            justify={'space-between'}
+            style={{width: '100%'}}
             wrap="nowrap"
         >
             <Group
-                style={{minWidth: 0, flex: 1}}
-                wrap={'nowrap'}
                 gap={'sm'}
+                style={{flex: 1, minWidth: 0}}
+                wrap={'nowrap'}
             >
                 {onBack && (
                     <ActionIcon
-                        size={'xl'}
-                        variant={'subtle'}
-                        onClick={onBack}
                         c={'dark'}
+                        onClick={onBack}
+                        size={'xl'}
                         style={{borderRadius: 9999}}
+                        variant={'subtle'}
                     >
                         <ArrowLeftIcon size={24} />
                     </ActionIcon>

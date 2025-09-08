@@ -1,6 +1,8 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
 import React from 'react';
+
 import {Program} from '@/api/programs.ts';
+
 import SessionBuilder from './SessionBuilder';
 
 type RenderProps = {

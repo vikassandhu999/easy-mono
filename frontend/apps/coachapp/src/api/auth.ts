@@ -1,20 +1,21 @@
-import {Result} from '@/utils/error.ts';
 import axios, {AxiosInstance} from 'axios';
 import {z} from 'zod';
 
-// Auth schemas
+import {Result} from '@/utils/error.ts';
+
+// auth schemas
 export const SignupRequest_zod = z.object({
     email: z.string().email(),
     role: z.enum(['coach', 'client']),
 });
 
 export const VerifySignupRequest_zod = z.object({
-    token_id: z.string(),
-    passcode: z.string(),
     email: z.string().email(),
-    password: z.string().min(6),
     first_name: z.string().min(1),
     last_name: z.string().min(1),
+    passcode: z.string(),
+    password: z.string().min(6),
+    token_id: z.string(),
 });
 
 export const SignInRequest_zod = z.object({
@@ -23,9 +24,9 @@ export const SignInRequest_zod = z.object({
 });
 
 export const SignInCodeRequest_zod = z.object({
-    token_id: z.string(),
-    passcode: z.string(),
     email: z.string().email(),
+    passcode: z.string(),
+    token_id: z.string(),
 });
 
 export const LoginRequest_zod = z.object({
@@ -42,9 +43,9 @@ export const PasswordResetRequest_zod = z.object({
 });
 
 export const PasswordConfirmRequest_zod = z.object({
-    token_id: z.string(),
     passcode: z.string(),
     password: z.string().min(6),
+    token_id: z.string(),
 });
 
 export const SendPasscodeRequest_zod = z.object({
@@ -52,30 +53,30 @@ export const SendPasscodeRequest_zod = z.object({
     role: z.enum(['coach', 'client']),
 });
 
-// Types
-export type SignupRequest = z.infer<typeof SignupRequest_zod>;
-export type VerifySignupRequest = z.infer<typeof VerifySignupRequest_zod>;
-export type SignInRequest = z.infer<typeof SignInRequest_zod>;
-export type SignInCodeRequest = z.infer<typeof SignInCodeRequest_zod>;
-export type LoginProps = z.infer<typeof LoginRequest_zod>;
-export type ResendVerifyRequest = z.infer<typeof ResendVerifyRequest_zod>;
-export type PasswordResetRequest = z.infer<typeof PasswordResetRequest_zod>;
-export type PasswordConfirmRequest = z.infer<typeof PasswordConfirmRequest_zod>;
-export type SendPasscodeRequest = z.infer<typeof SendPasscodeRequest_zod>;
-
 // Interfaces
 export interface AccessToken {
     access_token: string;
-    token_type: string;
     expires_in: number;
     scope: string;
+    token_type: string;
 }
+export type LoginProps = z.infer<typeof LoginRequest_zod>;
+export type PasswordConfirmRequest = z.infer<typeof PasswordConfirmRequest_zod>;
+export type PasswordResetRequest = z.infer<typeof PasswordResetRequest_zod>;
+export type ResendVerifyRequest = z.infer<typeof ResendVerifyRequest_zod>;
+export type SendPasscodeRequest = z.infer<typeof SendPasscodeRequest_zod>;
+export type SignInCodeRequest = z.infer<typeof SignInCodeRequest_zod>;
+export type SignInRequest = z.infer<typeof SignInRequest_zod>;
+// Types
+export type SignupRequest = z.infer<typeof SignupRequest_zod>;
 
 export interface TokenValidation {
-    token_id: string;
     email: string;
     expires_at: string;
+    token_id: string;
 }
+
+export type VerifySignupRequest = z.infer<typeof VerifySignupRequest_zod>;
 
 let baseURL: string = import.meta.env.VITE_API_BASE_URL;
 if (window.origin.startsWith('http://')) {
@@ -126,20 +127,40 @@ export const setTokenForAuthedClient = (token: string) => {
 export const authedClient = addAuthInterceptor(axios.create(client.defaults));
 
 export const AuthAPI = {
-    // POST /v1/auth/signup
-    signup: async (data: SignupRequest): Promise<Result<TokenValidation>> => {
+    // POST /v1/auth/token (grant_type: password)
+    login: async (data: LoginProps): Promise<Result<AccessToken>> => {
         try {
-            const response = await client.post('/v1/auth/signup', data);
+            const response = await client.post(
+                '/v1/auth/token',
+                {
+                    email: data.email,
+                    grant_type: 'password',
+                    password: data.password,
+                },
+                {
+                    withCredentials: true,
+                },
+            );
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
         }
     },
 
-    // POST /v1/auth/verify
-    verifySignup: async (data: VerifySignupRequest): Promise<Result<AccessToken>> => {
+    // POST /v1/auth/logout
+    logout: async (): Promise<Result<{message: string}>> => {
         try {
-            const response = await client.post('/v1/auth/verify', data, {
+            const response = await authedClient.post('/v1/auth/logout');
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/auth/password-confirm
+    passwordConfirm: async (data: PasswordConfirmRequest): Promise<Result<AccessToken>> => {
+        try {
+            const response = await client.post('/v1/auth/password-confirm', data, {
                 withCredentials: true,
             });
             return Result.success(response.data);
@@ -148,51 +169,10 @@ export const AuthAPI = {
         }
     },
 
-    // POST /v1/auth/signin
-    signIn: async (data: SignInRequest): Promise<Result<TokenValidation>> => {
+    // POST /v1/auth/password-reset
+    passwordReset: async (data: PasswordResetRequest): Promise<Result<TokenValidation>> => {
         try {
-            const response = await client.post('/v1/auth/send-passcode', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/token (grant_type: passcode)
-    signInCode: async (data: SignInCodeRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post(
-                '/v1/auth/token',
-                {
-                    grant_type: 'passcode',
-                    token_id: data.token_id,
-                    passcode: data.passcode,
-                    email: data.email,
-                },
-                {
-                    withCredentials: true,
-                },
-            );
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/token (grant_type: password)
-    login: async (data: LoginProps): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post(
-                '/v1/auth/token',
-                {
-                    grant_type: 'password',
-                    email: data.email,
-                    password: data.password,
-                },
-                {
-                    withCredentials: true,
-                },
-            );
+            const response = await client.post('/v1/auth/password-reset', data);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
@@ -217,16 +197,6 @@ export const AuthAPI = {
         }
     },
 
-    // POST /v1/auth/logout
-    logout: async (): Promise<Result<{message: string}>> => {
-        try {
-            const response = await authedClient.post('/v1/auth/logout');
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
     // POST /v1/auth/verify-resend
     resendVerifyCode: async (data: ResendVerifyRequest): Promise<Result<TokenValidation>> => {
         try {
@@ -237,32 +207,63 @@ export const AuthAPI = {
         }
     },
 
-    // POST /v1/auth/password-reset
-    passwordReset: async (data: PasswordResetRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/password-reset', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/password-confirm
-    passwordConfirm: async (data: PasswordConfirmRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post('/v1/auth/password-confirm', data, {
-                withCredentials: true,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
     // POST /v1/auth/send-passcode
     sendPasscode: async (data: SendPasscodeRequest): Promise<Result<TokenValidation>> => {
         try {
             const response = await client.post('/v1/auth/send-passcode', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/auth/signin
+    signIn: async (data: SignInRequest): Promise<Result<TokenValidation>> => {
+        try {
+            const response = await client.post('/v1/auth/send-passcode', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/auth/token (grant_type: passcode)
+    signInCode: async (data: SignInCodeRequest): Promise<Result<AccessToken>> => {
+        try {
+            const response = await client.post(
+                '/v1/auth/token',
+                {
+                    email: data.email,
+                    grant_type: 'passcode',
+                    passcode: data.passcode,
+                    token_id: data.token_id,
+                },
+                {
+                    withCredentials: true,
+                },
+            );
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/auth/signup
+    signup: async (data: SignupRequest): Promise<Result<TokenValidation>> => {
+        try {
+            const response = await client.post('/v1/auth/signup', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/auth/verify
+    verifySignup: async (data: VerifySignupRequest): Promise<Result<AccessToken>> => {
+        try {
+            const response = await client.post('/v1/auth/verify', data, {
+                withCredentials: true,
+            });
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

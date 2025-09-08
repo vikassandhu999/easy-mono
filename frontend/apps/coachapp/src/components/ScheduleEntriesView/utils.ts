@@ -1,4 +1,5 @@
 import {ScheduleEntry} from '@/api/schedule_entries.ts';
+
 import {TIME_SLOT_LABELS} from './constants';
 
 export const formatTime = (minutes: number): string => {

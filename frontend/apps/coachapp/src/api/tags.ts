@@ -1,5 +1,7 @@
 import {z} from 'zod';
+
 import {Result} from '@/utils/error.ts';
+
 import {authedClient} from './auth';
 
 export const ContentTypeEnum = z.enum(['exercise', 'food', 'technique', 'activity', 'guide', 'lesson']);
@@ -13,38 +15,38 @@ export const ListTags_zod = z.object({
 });
 
 export type ListTagGroupsProps = z.infer<typeof ListTagGroups_zod>;
-export type ListTagsProps = z.infer<typeof ListTags_zod>;
-
-export interface Tag {
-    id: string;
-    tag_group_id: string;
-    name: string;
-    description: string;
-    color: string;
-    sort_order: number;
-}
-
-export interface TagGroup {
-    id: string;
-    name: string;
-    description: string;
-    color: string;
-    sort_order: number;
-    show_in_listing: boolean;
-    tags: Tag[];
-}
-
 export interface ListTagGroupsResult {
+    page: number;
+    page_size: number;
     records: TagGroup[];
     total: number;
+}
+
+export type ListTagsProps = z.infer<typeof ListTags_zod>;
+
+export interface ListTagsResult {
     page: number;
     page_size: number;
-}
-export interface ListTagsResult {
     records: Tag[];
     total: number;
-    page: number;
-    page_size: number;
+}
+
+export interface Tag {
+    color: string;
+    description: string;
+    id: string;
+    name: string;
+    sort_order: number;
+    tag_group_id: string;
+}
+export interface TagGroup {
+    color: string;
+    description: string;
+    id: string;
+    name: string;
+    show_in_listing: boolean;
+    sort_order: number;
+    tags: Tag[];
 }
 
 export const TagsAPI = {

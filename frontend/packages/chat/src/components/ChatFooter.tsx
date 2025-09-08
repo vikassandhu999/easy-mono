@@ -1,14 +1,14 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import {ChatContext} from './ChatProvider';
-import React, {RefCallback, useCallback, useContext, useEffect} from 'react';
-import {IconSend} from '@tabler/icons-react'; // Tabler Icon
+import {RefCallback, useCallback, useContext, useEffect} from 'react';
+import {IconSend} from '@tabler/icons-react';
 import Input from './Input'; // Custom Rich Text Input
 import {Message} from '../types';
 import {useQueryClient} from '@tanstack/react-query';
 import {latestLastSorter, MessagesQueryData} from './Hooks/useChatMessages';
 import {create} from 'mutative'; // Assuming 'mutative' is for immutable updates
+import React from "react";
 
-// Ensure Orbit spacing tokens are used, e.g., spaceSmall, spaceXSmall
 const ChatFooter = ({footerRef}: {footerRef: RefCallback<HTMLElement>}) => {
     const context = useContext(ChatContext);
     if (!context) return null;
@@ -54,10 +54,6 @@ const ChatFooter = ({footerRef}: {footerRef: RefCallback<HTMLElement>}) => {
 
     const handleSendMessage = async (messageContent: {content: string}) => {
         await chatApi.sendMessage(chat.id, messageContent);
-        // Optimistically update or rely on the onMessageReceived from WebSocket
-        // If sendMessage also pushes to the subscription, onMessageReceived will handle it.
-        // If not, you might need to call onMessageReceived(message) here too.
-        // For now, assuming the subscription handles the sent message display.
     };
 
     return (

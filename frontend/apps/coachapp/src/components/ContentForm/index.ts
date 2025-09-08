@@ -1,1 +1,1 @@
-export {ContentForm as default} from './ContentForm.tsx';
+export {default} from './ContentForm.tsx';

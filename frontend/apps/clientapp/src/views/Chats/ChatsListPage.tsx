@@ -293,7 +293,7 @@ export default function ChatsListPage() {
                                     loading={isFetchingNextPage}
                                     leftSection={<IconClock size={16} />}
                                 >
-                                    {isFetchingNextPage ? 'Loading...' : 'Load More Chats'}
+                                    {isFetchingNextPage ? 'Loading...' : 'Load More chats'}
                                 </Button>
                             </Box>
                         )}

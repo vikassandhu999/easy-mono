@@ -1,50 +1,205 @@
-import {useState} from 'react';
-import {Box, Group, Text, Badge, ActionIcon, Stack, Card, Collapse, Divider} from '@mantine/core';
-import {DotsSixVerticalIcon, PencilIcon, TrashIcon, CaretDownIcon, CaretUpIcon} from '@phosphor-icons/react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
+import {ActionIcon, Badge, Box, Card, Collapse, Divider, Group, Stack, Text} from '@mantine/core';
+import {CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, PencilIcon, TrashIcon} from '@phosphor-icons/react';
+import {useState} from 'react';
+
 import {SessionDefItemConfig} from '@/api/session_defs.ts';
+
 import EditableFields from './EditableFields';
 
 interface SessionItemProps {
-    item: SessionDefItemConfig;
     index: number;
+    isDragDisabled?: boolean;
     isEditing?: boolean;
-    onEdit?: () => void;
-    onSave?: (updatedItem: SessionDefItemConfig) => void;
+    item: SessionDefItemConfig;
     onCancel?: () => void;
     onDelete?: () => void;
-    isDragDisabled?: boolean;
+    onEdit?: () => void;
+    onSave?: (updatedItem: SessionDefItemConfig) => void;
 }
 
-function SessionItemContent({item, index}: {item: SessionDefItemConfig; index: number}) {
+export default function SessionItem({
+    index,
+    isDragDisabled = false,
+    isEditing = false,
+    item,
+    onCancel,
+    onDelete,
+    onEdit,
+    onSave,
+}: SessionItemProps) {
+    const [showDetails, setShowDetails] = useState(false);
+
+    const {attributes, isDragging, listeners, setNodeRef, transform, transition} = useSortable({
+        disabled: isDragDisabled || isEditing,
+        id: item.content_id,
+    });
+
+    const style = {
+        opacity: isDragging ? 0.5 : 1,
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    const handleEdit = () => {
+        onEdit?.();
+    };
+
+    const handleDelete = () => {
+        onDelete?.();
+    };
+
+    const handleToggleDetails = () => {
+        setShowDetails(!showDetails);
+    };
+
+    return (
+        <Card
+            className={isDragging ? 'dragging' : ''}
+            p={'sm'}
+            radius={'var(--body-offset)'}
+            ref={setNodeRef}
+            style={style}
+        >
+            <Stack gap={'sm'}>
+                <Group
+                    align="flex-start"
+                    justify="space-between"
+                    wrap="nowrap"
+                >
+                    {/* Drag Handle */}
+                    <ActionIcon
+                        color="gray"
+                        size="lg"
+                        style={{cursor: isDragDisabled || isEditing ? 'default' : 'grab'}}
+                        variant="subtle"
+                        {...attributes}
+                        {...listeners}
+                    >
+                        <DotsSixVerticalIcon size={16} />
+                    </ActionIcon>
+
+                    {/* Content */}
+                    <Box style={{flex: 1, minWidth: 0}}>
+                        <SessionItemContent
+                            index={index}
+                            item={item}
+                        />
+                        {/* Actions */}
+                        <SessionItemActions
+                            isEditing={isEditing}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            onToggleDetails={handleToggleDetails}
+                            showDetails={showDetails}
+                        />
+                    </Box>
+                </Group>
+
+                {/* Details Section */}
+                <Collapse in={showDetails && !isEditing}>
+                    <Divider mb={'sm'} />
+                    <SessionItemDetails item={item} />
+                </Collapse>
+
+                {/* Editing Mode */}
+                {isEditing && onSave && onCancel && (
+                    <>
+                        <Divider />
+                        <EditableFields
+                            item={item}
+                            onCancel={onCancel}
+                            onSave={onSave}
+                        />
+                    </>
+                )}
+            </Stack>
+        </Card>
+    );
+}
+
+function SessionItemActions({
+    isEditing,
+    onDelete,
+    onEdit,
+    onToggleDetails,
+    showDetails,
+}: {
+    isEditing: boolean;
+    onDelete?: () => void;
+    onEdit?: () => void;
+    onToggleDetails: () => void;
+    showDetails: boolean;
+}) {
+    if (isEditing) return null;
+
+    return (
+        <Group
+            align="center"
+            gap={'xs'}
+            justify={'space-between'}
+            p={'sm'}
+        >
+            <Group>
+                <ActionIcon
+                    color="blue"
+                    onClick={onEdit}
+                    size="sm"
+                    variant="subtle"
+                >
+                    <PencilIcon size={24} />
+                </ActionIcon>
+                <ActionIcon
+                    color="red"
+                    onClick={onDelete}
+                    size="sm"
+                    variant="subtle"
+                >
+                    <TrashIcon size={24} />
+                </ActionIcon>
+            </Group>
+
+            <ActionIcon
+                color="gray"
+                onClick={onToggleDetails}
+                size="sm"
+                variant="subtle"
+            >
+                {showDetails ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
+            </ActionIcon>
+        </Group>
+    );
+}
+
+function SessionItemContent({index, item}: {index: number; item: SessionDefItemConfig}) {
     const {content} = item;
 
     return (
         <>
             <Group
-                gap={'xs'}
                 align="center"
+                gap={'xs'}
                 mb={'xs'}
             >
                 <Text
-                    size="sm"
-                    fw={500}
                     c="dark"
+                    fw={500}
+                    size="sm"
                     style={{
-                        fontSize: 'var(--body-font-size)',
-                        lineHeight: 'var(--body-line-height)',
                         color: 'var(--mantine-color-gray-9)',
                         flex: 1,
+                        fontSize: 'var(--body-font-size)',
+                        lineHeight: 'var(--body-line-height)',
                     }}
                 >
                     {index + 1}. {content?.name || 'Unknown Content'}
                 </Text>
                 <Badge
-                    size="xs"
-                    variant="light"
                     color="blue"
                     radius={'var(--body-offset)'}
+                    size="xs"
+                    variant="light"
                 >
                     {content?.type || 'content'}
                 </Badge>
@@ -52,10 +207,10 @@ function SessionItemContent({item, index}: {item: SessionDefItemConfig; index: n
 
             {content?.description && (
                 <Text
-                    size="xs"
                     c="dimmed"
                     lineClamp={2}
                     mb={'xs'}
+                    size="xs"
                     style={{
                         fontSize: 'var(--callout-font-size)',
                         lineHeight: 'var(--callout-line-height)',
@@ -71,39 +226,39 @@ function SessionItemContent({item, index}: {item: SessionDefItemConfig; index: n
             >
                 {item.sets_count > 0 && (
                     <Badge
+                        radius={'var(--body-offset)'}
                         size="xs"
                         variant="outline"
-                        radius={'var(--body-offset)'}
                     >
                         {item.sets_count} sets
                     </Badge>
                 )}
                 {item.rest_seconds > 0 && (
                     <Badge
-                        size="xs"
-                        variant="outline"
                         color="orange"
                         radius={'var(--body-offset)'}
+                        size="xs"
+                        variant="outline"
                     >
                         {item.rest_seconds}s rest
                     </Badge>
                 )}
                 {content?.duration && (
                     <Badge
-                        size="xs"
-                        variant="outline"
                         color="green"
                         radius={'var(--body-offset)'}
+                        size="xs"
+                        variant="outline"
                     >
                         {content.duration}min
                     </Badge>
                 )}
                 {item.custom_instructions && (
                     <Badge
-                        size="xs"
-                        variant="outline"
                         color="yellow"
                         radius={'var(--body-offset)'}
+                        size="xs"
+                        variant="outline"
                     >
                         Has notes
                     </Badge>
@@ -121,10 +276,10 @@ function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
             {content?.instructions && (
                 <Box>
                     <Text
-                        size="xs"
-                        fw={500}
                         c="dimmed"
+                        fw={500}
                         mb={4}
+                        size="xs"
                         style={{
                             fontSize: 'var(--callout-font-size)',
                             lineHeight: 'var(--callout-line-height)',
@@ -133,8 +288,8 @@ function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
                         Instructions:
                     </Text>
                     <Text
-                        size="xs"
                         c="dark"
+                        size="xs"
                         style={{
                             fontSize: 'var(--callout-font-size)',
                             lineHeight: 'var(--callout-line-height)',
@@ -147,10 +302,10 @@ function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
             {item.custom_instructions && (
                 <Box>
                     <Text
-                        size="xs"
-                        fw={500}
                         c="dimmed"
+                        fw={500}
                         mb={4}
+                        size="xs"
                         style={{
                             fontSize: 'var(--callout-font-size)',
                             lineHeight: 'var(--callout-line-height)',
@@ -159,9 +314,9 @@ function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
                         Custom Notes:
                     </Text>
                     <Text
-                        size="xs"
                         c="dark"
                         fs="italic"
+                        size="xs"
                         style={{
                             fontSize: 'var(--callout-font-size)',
                             lineHeight: 'var(--callout-line-height)',
@@ -172,158 +327,5 @@ function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
                 </Box>
             )}
         </Stack>
-    );
-}
-
-function SessionItemActions({
-    isEditing,
-    showDetails,
-    onToggleDetails,
-    onEdit,
-    onDelete,
-}: {
-    isEditing: boolean;
-    showDetails: boolean;
-    onToggleDetails: () => void;
-    onEdit?: () => void;
-    onDelete?: () => void;
-}) {
-    if (isEditing) return null;
-
-    return (
-        <Group
-            gap={'xs'}
-            p={'sm'}
-            align="center"
-            justify={'space-between'}
-        >
-            <Group>
-                <ActionIcon
-                    variant="subtle"
-                    color="blue"
-                    size="sm"
-                    onClick={onEdit}
-                >
-                    <PencilIcon size={24} />
-                </ActionIcon>
-                <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    size="sm"
-                    onClick={onDelete}
-                >
-                    <TrashIcon size={24} />
-                </ActionIcon>
-            </Group>
-
-            <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                onClick={onToggleDetails}
-            >
-                {showDetails ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
-            </ActionIcon>
-        </Group>
-    );
-}
-
-export default function SessionItem({
-    item,
-    index,
-    isEditing = false,
-    onEdit,
-    onSave,
-    onCancel,
-    onDelete,
-    isDragDisabled = false,
-}: SessionItemProps) {
-    const [showDetails, setShowDetails] = useState(false);
-
-    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
-        id: item.content_id,
-        disabled: isDragDisabled || isEditing,
-    });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-    };
-
-    const handleEdit = () => {
-        onEdit?.();
-    };
-
-    const handleDelete = () => {
-        onDelete?.();
-    };
-
-    const handleToggleDetails = () => {
-        setShowDetails(!showDetails);
-    };
-
-    return (
-        <Card
-            ref={setNodeRef}
-            style={style}
-            radius={'var(--body-offset)'}
-            p={'sm'}
-            className={isDragging ? 'dragging' : ''}
-        >
-            <Stack gap={'sm'}>
-                <Group
-                    justify="space-between"
-                    align="flex-start"
-                    wrap="nowrap"
-                >
-                    {/* Drag Handle */}
-                    <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="lg"
-                        style={{cursor: isDragDisabled || isEditing ? 'default' : 'grab'}}
-                        {...attributes}
-                        {...listeners}
-                    >
-                        <DotsSixVerticalIcon size={16} />
-                    </ActionIcon>
-
-                    {/* Content */}
-                    <Box style={{flex: 1, minWidth: 0}}>
-                        <SessionItemContent
-                            item={item}
-                            index={index}
-                        />
-                        {/* Actions */}
-                        <SessionItemActions
-                            isEditing={isEditing}
-                            showDetails={showDetails}
-                            onToggleDetails={handleToggleDetails}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
-                    </Box>
-                </Group>
-
-                {/* Details Section */}
-                <Collapse in={showDetails && !isEditing}>
-                    <Divider mb={'sm'} />
-                    <SessionItemDetails item={item} />
-                </Collapse>
-
-                {/* Editing Mode */}
-                {isEditing && onSave && onCancel && (
-                    <>
-                        <Divider />
-                        <EditableFields
-                            item={item}
-                            onSave={onSave}
-                            onCancel={onCancel}
-                        />
-                    </>
-                )}
-            </Stack>
-        </Card>
     );
 }

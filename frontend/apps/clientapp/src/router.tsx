@@ -13,7 +13,7 @@ import  TokenVerifyPage  from "./views/Auth/TokenVerify/TokenVerifyPage";
 
 import { ProgramsAPI } from "@/api/Programs";
 
-// Onboarding components
+// onboarding components
 import SignUpStepPage from "./views/Onboarding/SignUpStepPage";
 import SignUpCodeStepPage from "./views/Onboarding/SignUpCodeStepPage";
 import BusinessInfoStepPage from "./views/Onboarding/BusinessInfoStepPage";
@@ -47,7 +47,7 @@ export async function programDetailLoader({ params }: LoaderFunctionArgs) {
 
 const router = createBrowserRouter([
 
-  // Auth routes - redirect to "/" if already authenticated
+  // auth routes - redirect to "/" if already authenticated
   {
     element: <PublicRoute />,
     children: [
@@ -67,7 +67,7 @@ const router = createBrowserRouter([
         path: "/signup",
         element: <SignUpStepPage />,
       },
-      // Onboarding Routes
+      // onboarding Routes
       {
         path: "/signup/verify",
         element: <SignUpCodeStepPage />,

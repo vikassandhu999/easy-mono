@@ -1,28 +1,32 @@
-import {useQuery, useMutation, useQueryClient, useInfiniteQuery} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
 import {
-    SessionDefsAPI,
     CreateSessionDef,
-    UpdateSessionDef,
     ListSessionDefs,
+    SessionDefsAPI,
+    UpdateSessionDef,
     UpdateSessionDefItemsInput,
 } from '@/api/session_defs.ts';
 
 // Query keys
 export const SESSION_DEFS_QUERY_KEYS = {
     all: ['sessiondefs'] as const,
-    lists: () => [...SESSION_DEFS_QUERY_KEYS.all, 'list'] as const,
-    list: (params: ListSessionDefs) => [...SESSION_DEFS_QUERY_KEYS.lists(), params] as const,
-    details: () => [...SESSION_DEFS_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...SESSION_DEFS_QUERY_KEYS.details(), id] as const,
+    details: () => [...SESSION_DEFS_QUERY_KEYS.all, 'detail'] as const,
     items: () => [...SESSION_DEFS_QUERY_KEYS.all, 'items'] as const,
     itemsBySessionDef: (sessionDefId: string) => [...SESSION_DEFS_QUERY_KEYS.items(), sessionDefId] as const,
+    list: (params: ListSessionDefs) => [...SESSION_DEFS_QUERY_KEYS.lists(), params] as const,
+    lists: () => [...SESSION_DEFS_QUERY_KEYS.all, 'list'] as const,
 };
 
 // List session definitions
 export const useSessionDefs = (params?: ListSessionDefs) => {
     return useInfiniteQuery({
-        queryKey: SESSION_DEFS_QUERY_KEYS.list(params || {}),
+        getNextPageParam: (lastPage) => {
+            return lastPage.records.length === lastPage.page_size ? lastPage.page + 1 : undefined;
+        },
+        initialPageParam: 1,
         queryFn: async ({pageParam = 1}) => {
             const result = await SessionDefsAPI.listSessionDefs({...params, page: pageParam});
             if (result.isError) {
@@ -30,10 +34,7 @@ export const useSessionDefs = (params?: ListSessionDefs) => {
             }
             return result.getValue();
         },
-        getNextPageParam: (lastPage) => {
-            return lastPage.records.length === lastPage.page_size ? lastPage.page + 1 : undefined;
-        },
-        initialPageParam: 1,
+        queryKey: SESSION_DEFS_QUERY_KEYS.list(params || {}),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };
@@ -41,7 +42,7 @@ export const useSessionDefs = (params?: ListSessionDefs) => {
 // Get a single session definition
 export const useSessionDef = (id: string, options?: {include_contents?: boolean; include_template?: boolean}) => {
     return useQuery({
-        queryKey: SESSION_DEFS_QUERY_KEYS.detail(id),
+        enabled: !!id,
         queryFn: async () => {
             const result = await SessionDefsAPI.getSessionDef(id, options);
             if (result.isError) {
@@ -49,7 +50,7 @@ export const useSessionDef = (id: string, options?: {include_contents?: boolean;
             }
             return result.getValue();
         },
-        enabled: !!id,
+        queryKey: SESSION_DEFS_QUERY_KEYS.detail(id),
     });
 };
 
@@ -65,20 +66,20 @@ export const useCreateSessionDef = () => {
             }
             return result.value!;
         },
+        onError: (error: any) => {
+            notifications.show({
+                color: 'red',
+                message: error?.message || 'Failed to create session definition',
+                title: 'Error',
+            });
+        },
         onSuccess: () => {
             // Invalidate and refetch
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.lists()});
             notifications.show({
-                title: 'Success',
-                message: 'Session definition created successfully',
                 color: 'green',
-            });
-        },
-        onError: (error: any) => {
-            notifications.show({
-                title: 'Error',
-                message: error?.message || 'Failed to create session definition',
-                color: 'red',
+                message: 'Session definition created successfully',
+                title: 'Success',
             });
         },
     });
@@ -89,28 +90,28 @@ export const useUpdateSessionDef = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({id, data}: {id: string; data: UpdateSessionDef}) => {
+        mutationFn: async ({data, id}: {data: UpdateSessionDef; id: string}) => {
             const result = await SessionDefsAPI.updateSessionDef(id, data);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
         },
+        onError: (error: any) => {
+            notifications.show({
+                color: 'red',
+                message: error?.message || 'Failed to update session definition',
+                title: 'Error',
+            });
+        },
         onSuccess: (_, {id}) => {
             // Invalidate and refetch
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.lists()});
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.detail(id)});
             notifications.show({
-                title: 'Success',
-                message: 'Session definition updated successfully',
                 color: 'green',
-            });
-        },
-        onError: (error: any) => {
-            notifications.show({
-                title: 'Error',
-                message: error?.message || 'Failed to update session definition',
-                color: 'red',
+                message: 'Session definition updated successfully',
+                title: 'Success',
             });
         },
     });
@@ -128,20 +129,20 @@ export const useDeleteSessionDef = () => {
             }
             return result.value!;
         },
+        onError: (error: any) => {
+            notifications.show({
+                color: 'red',
+                message: error?.message || 'Failed to delete session definition',
+                title: 'Error',
+            });
+        },
         onSuccess: () => {
             // Invalidate and refetch
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.lists()});
             notifications.show({
-                title: 'Success',
-                message: 'Session definition deleted successfully',
                 color: 'green',
-            });
-        },
-        onError: (error: any) => {
-            notifications.show({
-                title: 'Error',
-                message: error?.message || 'Failed to delete session definition',
-                color: 'red',
+                message: 'Session definition deleted successfully',
+                title: 'Success',
             });
         },
     });
@@ -150,7 +151,7 @@ export const useDeleteSessionDef = () => {
 // Get session definition items
 export const useSessionDefItems = (sessionDefId: string, options?: {include_contents?: boolean}) => {
     return useQuery({
-        queryKey: SESSION_DEFS_QUERY_KEYS.itemsBySessionDef(sessionDefId),
+        enabled: !!sessionDefId,
         queryFn: async () => {
             const result = await SessionDefsAPI.getSessionDefItems(sessionDefId, options);
             if (result.isError) {
@@ -158,7 +159,7 @@ export const useSessionDefItems = (sessionDefId: string, options?: {include_cont
             }
             return result.getValue();
         },
-        enabled: !!sessionDefId,
+        queryKey: SESSION_DEFS_QUERY_KEYS.itemsBySessionDef(sessionDefId),
     });
 };
 
@@ -167,12 +168,19 @@ export const useUpdateSessionDefItems = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({sessionDefId, data}: {sessionDefId: string; data: UpdateSessionDefItemsInput}) => {
+        mutationFn: async ({data, sessionDefId}: {data: UpdateSessionDefItemsInput; sessionDefId: string}) => {
             const result = await SessionDefsAPI.updateSessionDefItems(sessionDefId, data);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
+        },
+        onError: (error: any) => {
+            notifications.show({
+                color: 'red',
+                message: error?.message || 'Failed to update session items',
+                title: 'Error',
+            });
         },
         onSuccess: (_, {sessionDefId}) => {
             // Invalidate and refetch
@@ -180,16 +188,9 @@ export const useUpdateSessionDefItems = () => {
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.detail(sessionDefId)});
             queryClient.invalidateQueries({queryKey: SESSION_DEFS_QUERY_KEYS.itemsBySessionDef(sessionDefId)});
             notifications.show({
-                title: 'Success',
-                message: 'Session items updated successfully',
                 color: 'green',
-            });
-        },
-        onError: (error: any) => {
-            notifications.show({
-                title: 'Error',
-                message: error?.message || 'Failed to update session items',
-                color: 'red',
+                message: 'Session items updated successfully',
+                title: 'Success',
             });
         },
     });

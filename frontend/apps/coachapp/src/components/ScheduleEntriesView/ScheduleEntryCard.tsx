@@ -1,43 +1,45 @@
-import {useMemo} from 'react';
-import {Group, Text, Card, Badge, ActionIcon, Box, Menu} from '@mantine/core';
-import {DotsThreeIcon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
-import {ScheduleEntry} from '@/api/schedule_entries.ts';
-import {useSessionDef} from '@/hooks/useSessionDefsQueries';
-import {SESSION_TYPE_CONFIG} from '@/components/ScheduleBuilder/sessionTypeConfig';
-import {getTimeDisplay} from './utils';
-import {IconClock, IconTimeDuration0} from '@tabler/icons-react';
+import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
 import {modals} from '@mantine/modals';
+import {DotsThreeIcon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
+import {IconClock, IconTimeDuration0} from '@tabler/icons-react';
 import {UseMutationResult} from '@tanstack/react-query';
+import {useMemo} from 'react';
+
+import {ScheduleEntry} from '@/api/schedule_entries.ts';
+import {SESSION_TYPE_CONFIG} from '@/components/ScheduleBuilder/sessionTypeConfig';
+import {useSessionDef} from '@/hooks/useSessionDefsQueries';
+
+import {getTimeDisplay} from './utils';
+
+interface ScheduleEntryCardProps {
+    deleteEntry: UseMutationResult<void, Error, string, unknown>;
+    entry: ScheduleEntry;
+}
 
 function CaptionBadge({icon, text}: {icon: React.ComponentType<any>; text: string}) {
     const IconComponent = icon;
     return (
         <Group
-            style={{gap: 'var(--ce-size-xs)'}}
             align={'center'}
+            style={{gap: 'var(--ce-size-xs)'}}
         >
             <IconComponent
-                size={18}
                 color={'var(--mantine-color-gray-6)'}
+                size={18}
             />
             <Text
                 c="gray.6"
                 style={{
-                    wordBreak: 'break-word',
                     fontSize: 'var(--callout-font-size)',
-                    lineHeight: 'var(--callout-line-height)',
                     fontWeight: 400,
+                    lineHeight: 'var(--callout-line-height)',
+                    wordBreak: 'break-word',
                 }}
             >
                 {text}
             </Text>
         </Group>
     );
-}
-
-interface ScheduleEntryCardProps {
-    entry: ScheduleEntry;
-    deleteEntry: UseMutationResult<void, Error, string, unknown>;
 }
 
 export const getSessionTypeColor = (type: string): string => {
@@ -52,52 +54,52 @@ export const getSessionTypeLabel = (type: string): string => {
     return SESSION_TYPE_CONFIG[type]?.label || type.charAt(0).toUpperCase() + type.slice(1);
 };
 
-function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
+function ScheduleEntryCard({deleteEntry, entry}: ScheduleEntryCardProps) {
     const {data: sessionDef} = useSessionDef(entry.session_def_id);
 
     const timeDisplay = useMemo(() => getTimeDisplay(entry), [entry]);
 
     return (
         <Card
-            withBorder
-            shadow={'xxs'}
-            role="button"
-            tabIndex={0}
             aria-label={sessionDef ? `${sessionDef.name} session` : 'Session entry'}
+            role="button"
+            shadow={'xxs'}
             style={{
-                cursor: 'pointer',
-                paddingTop: 'var(--body-offset)',
-                paddingInline: 'var(--ce-size-md)',
-                paddingBottom: 'var(--ce-size-md)',
                 borderRadius: 'var(--body-offset)',
+                cursor: 'pointer',
+                paddingBottom: 'var(--ce-size-md)',
+                paddingInline: 'var(--ce-size-md)',
+                paddingTop: 'var(--body-offset)',
             }}
+            tabIndex={0}
+            withBorder
         >
             {sessionDef && (
                 <Group
-                    gap={0}
                     align={'start'}
+                    gap={0}
                 >
                     <Box flex={1}>
                         <Group
-                            style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
                             gap={'xs'}
+                            style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
                         >
                             <Text
                                 c={'dark.6'}
                                 style={{
                                     fontSize: 'var(--body-font-size)',
-                                    lineHeight: 'var(--body-line-height)',
                                     fontWeight: 600,
+                                    lineHeight: 'var(--body-line-height)',
                                 }}
                             >
                                 {sessionDef.name}
                             </Text>
                             <Badge
-                                variant="dot"
                                 color={getSessionTypeColor(sessionDef.session_type)}
+                                fw={600}
                                 size={'md'}
                                 tt={'capitalize'}
-                                fw={600}
+                                variant="dot"
                             >
                                 {getSessionTypeLabel(sessionDef.session_type)}
                             </Badge>
@@ -107,9 +109,9 @@ function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
                             <Text
                                 c="gray.6"
                                 style={{
-                                    marginBottom: 'var(--ce-size-xs)',
                                     fontSize: 'var(--callout-font-size)',
                                     lineHeight: 'var(--callout-line-height)',
+                                    marginBottom: 'var(--ce-size-xs)',
                                 }}
                             >
                                 {sessionDef.description}
@@ -117,8 +119,8 @@ function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
                         )}
 
                         <Group
-                            wrap={'nowrap'}
                             align={'center'}
+                            wrap={'nowrap'}
                         >
                             <CaptionBadge
                                 icon={IconClock}
@@ -132,21 +134,21 @@ function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
                     </Box>
 
                     <Group
-                        justify="space-between"
                         align="center"
+                        justify="space-between"
                     >
                         <Menu
-                            shadow={'lg'}
                             position={'bottom-end'}
+                            shadow={'lg'}
                         >
                             <Menu.Target>
                                 <ActionIcon
-                                    variant={'subtle'}
-                                    color={'dark'}
-                                    size={'xl'}
-                                    radius={9999}
                                     aria-label="Session options"
+                                    color={'dark'}
                                     onClick={(e) => e.stopPropagation()}
+                                    radius={9999}
+                                    size={'xl'}
+                                    variant={'subtle'}
                                 >
                                     <DotsThreeIcon size={18} />
                                 </ActionIcon>
@@ -174,23 +176,12 @@ function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
                                 <Menu.Divider />
 
                                 <Menu.Item
-                                    leftSection={<TrashIcon size={20} />}
                                     color="red"
+                                    leftSection={<TrashIcon size={20} />}
                                     onClick={() => {
                                         modals.openConfirmModal({
-                                            id: 'delete-session-modal',
-                                            zIndex: 99999,
-                                            title: (
-                                                <Text
-                                                    style={{
-                                                        fontSize: 'var(--body-font-size)',
-                                                        lineHeight: 'var(--body-line-height)',
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    Delete Session
-                                                </Text>
-                                            ),
+                                            cancelProps: {radius: 'lg', style: {flex: 1}, variant: 'light'},
+                                            centered: true,
                                             children: (
                                                 <Text
                                                     style={{
@@ -203,17 +194,28 @@ function ScheduleEntryCard({entry, deleteEntry}: ScheduleEntryCardProps) {
                                                     session?
                                                 </Text>
                                             ),
-                                            centered: true,
-                                            labels: {
-                                                confirm: 'Delete',
-                                                cancel: 'Cancel',
-                                            },
                                             confirmProps: {color: 'red', radius: 'lg', style: {flex: 1}},
-                                            cancelProps: {variant: 'light', radius: 'lg', style: {flex: 1}},
+                                            id: 'delete-session-modal',
+                                            labels: {
+                                                cancel: 'Cancel',
+                                                confirm: 'Delete',
+                                            },
                                             onCancel: () => modals.close('delete-session-modal'),
                                             onConfirm: async () => {
                                                 await deleteEntry.mutateAsync(entry.id);
                                             },
+                                            title: (
+                                                <Text
+                                                    style={{
+                                                        fontSize: 'var(--body-font-size)',
+                                                        fontWeight: 600,
+                                                        lineHeight: 'var(--body-line-height)',
+                                                    }}
+                                                >
+                                                    Delete Session
+                                                </Text>
+                                            ),
+                                            zIndex: 99999,
                                         });
                                     }}
                                 >

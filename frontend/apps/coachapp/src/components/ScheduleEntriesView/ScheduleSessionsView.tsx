@@ -1,21 +1,61 @@
+import {Box, Stack} from '@mantine/core';
 import {useMemo} from 'react';
-import {Stack, Box} from '@mantine/core';
-import PaddingContainer from '@/components/containers/PaddingContainer';
+
 import {Schedule} from '@/api/schedules.ts';
+import PaddingContainer from '@/components/containers/PaddingContainer';
 import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
-import {DAY_NAMES} from './constants';
-import {groupEntriesByDay} from './utils';
-import {LoadingState} from './components';
-import {ScheduleHeader} from './ScheduleHeader';
-import {DayColumn} from './DayColumn';
+
 import {SCHEDULE_CATEGORIES} from '../Configs';
+import {LoadingState} from './components';
+import {DAY_NAMES} from './constants';
+import {DayColumn} from './DayColumn';
+import {ScheduleHeader} from './ScheduleHeader';
+import {groupEntriesByDay} from './utils';
 
 interface ScheduleSessionsViewProps {
-    schedule: Schedule;
     onAddEntry: (day?: number) => void;
+    schedule: Schedule;
 }
 
-export function WeeklySessions({schedule, onAddEntry}: ScheduleSessionsViewProps) {
+export function DailySessions({onAddEntry, schedule}: ScheduleSessionsViewProps) {
+    const {data: entriesData, isLoading} = useScheduleEntries(schedule.id);
+
+    const entries = useMemo(() => {
+        return entriesData?.records || [];
+    }, [entriesData]);
+
+    if (isLoading) {
+        return (
+            <PaddingContainer>
+                <LoadingState message="Loading daily schedule..." />
+            </PaddingContainer>
+        );
+    }
+
+    return (
+        <Stack gap="sm">
+            <ScheduleHeader
+                isWeekly={false}
+                schedule={schedule}
+                totalSessions={entries.length}
+            />
+
+            <Box
+                style={{
+                    margin: '0 auto',
+                    width: '100%',
+                }}
+            >
+                <DayColumn
+                    entries={entries}
+                    onAddEntry={onAddEntry}
+                />
+            </Box>
+        </Stack>
+    );
+}
+
+export function WeeklySessions({onAddEntry, schedule}: ScheduleSessionsViewProps) {
     const {data: entriesData, isLoading} = useScheduleEntries(schedule.id);
 
     const entriesByDay = useMemo(() => {
@@ -37,10 +77,10 @@ export function WeeklySessions({schedule, onAddEntry}: ScheduleSessionsViewProps
     return (
         <>
             <ScheduleHeader
+                activeDaysCount={activeDaysCount}
+                isWeekly={true}
                 schedule={schedule}
                 totalSessions={totalSessions}
-                isWeekly={true}
-                activeDaysCount={activeDaysCount}
             />
 
             <Stack gap={'lg'}>
@@ -52,55 +92,17 @@ export function WeeklySessions({schedule, onAddEntry}: ScheduleSessionsViewProps
                             style={{marginTop: 'var(--title3-offset)'}}
                         >
                             <DayColumn
-                                schedule={schedule}
+                                addButtonLabel={'Add ' + SCHEDULE_CATEGORIES[schedule.category].label}
                                 day={dayIndex}
+                                dayLabel={dayName}
                                 entries={dayEntries}
                                 onAddEntry={onAddEntry}
-                                dayLabel={dayName}
-                                addButtonLabel={'Add ' + SCHEDULE_CATEGORIES[schedule.category].label}
+                                schedule={schedule}
                             />
                         </Box>
                     );
                 })}
             </Stack>
         </>
-    );
-}
-
-export function DailySessions({schedule, onAddEntry}: ScheduleSessionsViewProps) {
-    const {data: entriesData, isLoading} = useScheduleEntries(schedule.id);
-
-    const entries = useMemo(() => {
-        return entriesData?.records || [];
-    }, [entriesData]);
-
-    if (isLoading) {
-        return (
-            <PaddingContainer>
-                <LoadingState message="Loading daily schedule..." />
-            </PaddingContainer>
-        );
-    }
-
-    return (
-        <Stack gap="sm">
-            <ScheduleHeader
-                schedule={schedule}
-                totalSessions={entries.length}
-                isWeekly={false}
-            />
-
-            <Box
-                style={{
-                    margin: '0 auto',
-                    width: '100%',
-                }}
-            >
-                <DayColumn
-                    entries={entries}
-                    onAddEntry={onAddEntry}
-                />
-            </Box>
-        </Stack>
     );
 }

@@ -1,11 +1,11 @@
-import React, {PropsWithChildren} from 'react';
 import {Stack, Text} from '@mantine/core';
+import React, {PropsWithChildren} from 'react';
 
 interface Props extends PropsWithChildren {
     label?: string;
 }
 
-export const FormSection: React.FC<Props> = ({label, children}) => {
+export const FormSection: React.FC<Props> = ({children, label}) => {
     return (
         <Stack
             gap="md"
@@ -14,10 +14,10 @@ export const FormSection: React.FC<Props> = ({label, children}) => {
             {label && (
                 <Text
                     style={{
-                        fontSize: 'var(--heading-font-size)',
-                        lineHeight: 'var(--heading-line-height)',
-                        fontWeight: 600,
                         color: 'var(--mantine-color-dimmed)',
+                        fontSize: 'var(--heading-font-size)',
+                        fontWeight: 600,
+                        lineHeight: 'var(--heading-line-height)',
                     }}
                 >
                     {label}

@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
-import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
+
 import {Schedule} from '@/api/schedules.ts';
+import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
 
 export const useScheduleType = (schedule: Schedule) => {
     const {data: entriesData} = useScheduleEntries(schedule.id);

@@ -1,14 +1,16 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
-import React from 'react';
-import {ProgramForm} from '../ProgramForm/Form';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {CreateProgramProps, Program, ProgramsAPI} from '@/api/programs.ts';
 import {notifications} from '@mantine/notifications';
-import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
-import {ScheduleChoice} from './ScheduleChoice';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import React from 'react';
 import {useNavigate} from 'react-router';
+
+import {CreateProgramProps, Program, ProgramsAPI} from '@/api/programs.ts';
 import {CreateScheduleProps, SchedulesAPI} from '@/api/schedules.ts';
 import {SCHEDULES_QUERY_KEYS} from '@/views/Schedules/hooks/useSchedules';
+
+import {ProgramForm} from '../ProgramForm/Form';
+import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
+import {ScheduleChoice} from './ScheduleChoice';
 
 type RenderProps = {
     onClick: () => void;
@@ -21,7 +23,7 @@ type ScheduleEntryAddWithTriggerProps = {
 export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTriggerProps) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [program, setProgram] = React.useState<Program | null>(null);
+    const [program, setProgram] = React.useState<null | Program>(null);
     const stack = useDrawersStack(['create-program', 'choose-schedule', 'build-schedule']);
 
     const createProgram = useMutation({
@@ -32,23 +34,30 @@ export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTrig
             }
             return result.getValue();
         },
+        onError: () => {
+            notifications.show({
+                autoClose: 1000,
+                color: 'red',
+                message: 'Failed to create program',
+                title: 'Error',
+            });
+        },
         onSuccess: (data) => {
             setProgram(data);
             stack.open('choose-schedule');
             queryClient.invalidateQueries({queryKey: ['programs']});
         },
-        onError: () => {
-            notifications.show({
-                title: 'Error',
-                message: 'Failed to create program',
-                color: 'red',
-                autoClose: 1000,
-            });
-        },
     });
 
     const createSchedule = useMutation({
         mutationFn: (data: CreateScheduleProps) => SchedulesAPI.createSchedule(data),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to create schedule',
+            });
+        },
         onSuccess: (result) => {
             if (!result.isError) {
                 // Invalidate schedules list
@@ -57,18 +66,11 @@ export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTrig
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to create schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to create schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to create schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 
@@ -89,13 +91,13 @@ export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTrig
                 withCloseButton={false}
             >
                 <ProgramForm
-                    title={'Create program'}
-                    submitText={'Create'}
+                    onCancel={() => stack.close('create-program')}
                     onSubmit={async (values) => {
                         await createProgram.mutateAsync(values);
                         stack.close('create-program');
                     }}
-                    onCancel={() => stack.close('create-program')}
+                    submitText={'Create'}
+                    title={'Create program'}
                 />
             </Drawer>
             <Drawer
@@ -117,16 +119,16 @@ export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTrig
                 withCloseButton={false}
             >
                 <ScheduleForm
-                    title={program ? `${program?.name} schedule` : 'Create schedule'}
-                    submitText={'Create'}
-                    schedule={{
-                        name: program?.name,
-                    }}
+                    onCancel={() => goToProgram()}
                     onSubmit={async (values) => {
                         await createSchedule.mutateAsync(values);
                         goToProgram();
                     }}
-                    onCancel={() => goToProgram()}
+                    schedule={{
+                        name: program?.name,
+                    }}
+                    submitText={'Create'}
+                    title={program ? `${program?.name} schedule` : 'Create schedule'}
                 />
             </Drawer>
         </>

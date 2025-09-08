@@ -1,7 +1,9 @@
 import {AppShell} from '@mantine/core';
 import {useDisclosure, useMediaQuery} from '@mantine/hooks';
 import {ReactNode} from 'react';
+
 import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
+
 import {DesktopNavbar} from './components/DesktopNavbar';
 import {MobileBottomNav} from './components/MobileBottomNav';
 import {navItems} from './constants';
@@ -9,23 +11,23 @@ import {useNavigationState} from './hooks/useNavigationState.ts';
 
 interface MainLayoutProps {
     children: ReactNode;
-    showNavigation: boolean;
     disableTopMargin?: boolean;
+    showNavigation: boolean;
 }
 
-export function MainLayout({children, showNavigation, disableTopMargin}: MainLayoutProps) {
+export function MainLayout({children, disableTopMargin, showNavigation}: MainLayoutProps) {
     const [opened, {close}] = useDisclosure();
     const isMobile = useMediaQuery(`(max-width: 768px)`);
     const isKeyboardVisible = useKeyboardVisible();
 
-    const {handleNavigation, handleLogout} = useNavigationState(isMobile ? close : undefined);
+    const {handleLogout, handleNavigation} = useNavigationState(isMobile ? close : undefined);
 
     const navbarStyles = isMobile
         ? undefined
         : {
-              width: {base: '100%', md: 280},
               breakpoint: 'sm',
-              collapsed: {mobile: !opened, desktop: false},
+              collapsed: {desktop: false, mobile: !opened},
+              width: {base: '100%', md: 280},
           };
     const showDesktopNavbar = !isMobile;
     const showMobileNavbar = isMobile && showNavigation;
@@ -46,16 +48,16 @@ export function MainLayout({children, showNavigation, disableTopMargin}: MainLay
                 >
                     <DesktopNavbar
                         navItems={navItems}
-                        onNavigate={handleNavigation}
                         onLogout={handleLogout}
+                        onNavigate={handleNavigation}
                     />
                 </AppShell.Navbar>
             )}
 
             <AppShell.Main
                 style={{
-                    marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-size-xl)',
                     background: 'transparent',
+                    marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-size-xl)',
                 }}
             >
                 {children}
@@ -63,9 +65,9 @@ export function MainLayout({children, showNavigation, disableTopMargin}: MainLay
 
             {showMobileNavbar && (
                 <MobileBottomNav
+                    isVisible={!isKeyboardVisible}
                     navItems={navItems}
                     onNavigate={handleNavigation}
-                    isVisible={!isKeyboardVisible}
                 />
             )}
         </AppShell>

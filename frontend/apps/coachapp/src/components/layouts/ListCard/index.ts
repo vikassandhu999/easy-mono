@@ -1,2 +1,2 @@
 export {ListCard as default} from './ListCard';
-export type {ListCardProps, ListCardAction, ListCardBadge} from './ListCard';
+export type {ListCardAction, ListCardBadge, ListCardProps} from './ListCard';

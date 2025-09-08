@@ -11,8 +11,8 @@ export const parse_input_props = ({
 }): InputProps => {
     return {
         ...field,
+        disabled: field.disabled,
         error: fieldState.error?.message,
         required: fieldState.isTouched,
-        disabled: field.disabled,
     };
 };

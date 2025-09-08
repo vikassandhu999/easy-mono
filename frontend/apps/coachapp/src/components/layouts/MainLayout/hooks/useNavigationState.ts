@@ -1,5 +1,6 @@
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router';
+
 import {useAuth} from '@/providers/AuthProvider';
 
 export function useNavigationState(onClose?: () => void) {
@@ -24,7 +25,7 @@ export function useNavigationState(onClose?: () => void) {
     }, [logout, navigate]);
 
     return {
-        handleNavigation,
         handleLogout,
+        handleNavigation,
     };
 }

@@ -1,67 +1,69 @@
+import {ActionIcon, Image, Stack, TextInput} from '@mantine/core';
+import {IconLink, IconMusic, IconPdf, IconPhoto, IconTrash, IconVideo, IconWorldWww} from '@tabler/icons-react';
 import React from 'react';
-import {Stack, TextInput, ActionIcon, Image} from '@mantine/core';
-import {IconPhoto, IconVideo, IconPdf, IconMusic, IconWorldWww, IconLink, IconTrash} from '@tabler/icons-react';
-import {Index, OptionItem} from '../OptionSelector';
-import {Content, MediaType} from '@/api/contents.ts';
+
+import {Content} from '@/api/contents.ts';
+import EasyOptionSelector from '@/components/EasyOptionSelector';
+import {OptionItem} from '@/components/EasyOptionSelector/EasyOptionSelector.tsx';
 
 const MEDIA_TYPES: OptionItem[] = [
     {
-        value: 'video',
-        label: 'Video',
-        icon: IconVideo,
-        description: 'YouTube, Vimeo or other video content',
         color: 'var(--mantine-color-red-1)',
+        description: 'YouTube, Vimeo or other video content',
+        icon: IconVideo,
+        label: 'Video',
+        value: 'video',
     },
     {
-        value: 'image',
-        label: 'Image',
-        icon: IconPhoto,
-        description: 'Image-based content or diagram',
         color: 'var(--mantine-color-green-1)',
+        description: 'Image-based content or diagram',
+        icon: IconPhoto,
+        label: 'Image',
+        value: 'image',
     },
     {
-        value: 'pdf',
-        label: 'PDF',
-        icon: IconPdf,
-        description: 'PDF document with content',
         color: 'var(--mantine-color-orange-1)',
+        description: 'PDF document with content',
+        icon: IconPdf,
+        label: 'PDF',
+        value: 'pdf',
     },
     {
-        value: 'audio',
-        label: 'Audio',
-        icon: IconMusic,
-        description: 'Audio track or recording',
         color: 'var(--mantine-color-purple-1)',
+        description: 'Audio track or recording',
+        icon: IconMusic,
+        label: 'Audio',
+        value: 'audio',
     },
     {
-        value: 'link',
-        label: 'Link',
-        icon: IconWorldWww,
-        description: 'External resource or website link',
         color: 'var(--mantine-color-blue-1)',
+        description: 'External resource or website link',
+        icon: IconWorldWww,
+        label: 'Link',
+        value: 'link',
     },
 ];
 
 interface MediaDetailsProps {
+    error?: string;
     onChange: (value: Content['media'] | undefined) => void;
     value?: Content['media'];
-    error?: string;
 }
 
 const parseVideoUrl = (url: string) => {
     // YouTube URL parsing
     const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
     if (youtubeMatch) {
-        return {source: 'youtube', external_id: youtubeMatch[1], url};
+        return {external_id: youtubeMatch[1], source: 'youtube', url};
     }
 
     // Vimeo URL parsing
     const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
     if (vimeoMatch) {
-        return {source: 'vimeo', external_id: vimeoMatch[1], url};
+        return {external_id: vimeoMatch[1], source: 'vimeo', url};
     }
 
-    return {source: 'direct', url, type: 'video'};
+    return {source: 'direct', type: 'video', url};
 };
 
 const parseMedia = (mediaType: string, url: string) => {
@@ -71,24 +73,24 @@ const parseMedia = (mediaType: string, url: string) => {
 
     let mediaData;
     switch (mediaType) {
-        case 'video':
-            mediaData = {...parseVideoUrl(url), type: 'video'};
+        case 'audio':
+            mediaData = {type: 'audio', url};
             break;
         case 'image':
             mediaData = {type: 'image', url};
             break;
-        case 'pdf':
-            mediaData = {
-                type: 'document',
-                url,
-                mime_type: 'application/pdf',
-            };
-            break;
-        case 'audio':
-            mediaData = {type: 'audio', url};
-            break;
         case 'link':
             mediaData = {type: 'url', url};
+            break;
+        case 'pdf':
+            mediaData = {
+                mime_type: 'application/pdf',
+                type: 'document',
+                url,
+            };
+            break;
+        case 'video':
+            mediaData = {...parseVideoUrl(url), type: 'video'};
             break;
         default:
             mediaData = undefined;
@@ -97,7 +99,7 @@ const parseMedia = (mediaType: string, url: string) => {
     return mediaData;
 };
 
-export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChange}) => {
+export const MediaDetails: React.FC<MediaDetailsProps> = ({error, onChange, value}) => {
     const selectedType = value?.type ?? 'video';
 
     const onChangeInternal = (mediaType: string, url: string) => {
@@ -109,35 +111,34 @@ export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChang
         const mediaUrl = value?.url || '';
         const mediaPlaceholder =
             {
-                video: 'https://www.youtube.com/watch?v=...',
-                image: 'https://example.com/image.jpg',
-                pdf: 'https://example.com/document.pdf',
                 audio: 'https://example.com/audio.mp3',
+                image: 'https://example.com/image.jpg',
                 link: 'https://example.com',
+                pdf: 'https://example.com/document.pdf',
+                video: 'https://www.youtube.com/watch?v=...',
             }[selectedType] || '';
 
         const mediaDescription =
             {
-                video: 'Video Link (from YouTube, Vimeo, etc.)',
-                image: 'Image Link',
-                pdf: 'PDF Link',
                 audio: 'Audio Link',
+                image: 'Image Link',
                 link: 'External Resource Link',
+                pdf: 'PDF Link',
+                video: 'Video Link (from YouTube, Vimeo, etc.)',
             }[selectedType] || '';
 
         return (
             <Stack gap={'xs'}>
                 <TextInput
-                    placeholder={mediaPlaceholder}
                     description={mediaDescription}
-                    leftSection={<IconLink size={16} />}
                     error={error}
-                    size={'md'}
+                    leftSection={<IconLink size={16} />}
+                    onChange={(e) => onChangeInternal(selectedType, e.currentTarget.value)}
+                    placeholder={mediaPlaceholder}
                     rightSection={
                         mediaUrl ? (
                             <ActionIcon
                                 color="red"
-                                variant="subtle"
                                 onClick={() => onChangeInternal(selectedType, '')}
                                 styles={{
                                     root: {
@@ -146,60 +147,61 @@ export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChang
                                         },
                                     },
                                 }}
+                                variant="subtle"
                             >
                                 <IconTrash size={16} />
                             </ActionIcon>
                         ) : null
                     }
-                    value={mediaUrl}
-                    onChange={(e) => onChangeInternal(selectedType, e.currentTarget.value)}
+                    size={'md'}
                     styles={{
                         input: {
                             borderRadius: 8,
                         },
                     }}
+                    value={mediaUrl}
                 />
 
                 {/* Video previews */}
                 {selectedType === 'video' && value?.source === 'youtube' && value?.external_id && (
                     <iframe
-                        width="100%"
+                        allowFullScreen
                         height="200"
                         src={`https://www.youtube.com/embed/${value.external_id}`}
-                        title="YouTube video"
-                        allowFullScreen
                         style={{
-                            borderRadius: 8,
                             border: '1px solid var(--mantine-color-gray-3)',
+                            borderRadius: 8,
                         }}
+                        title="YouTube video"
+                        width="100%"
                     />
                 )}
 
                 {selectedType === 'video' && value?.source === 'vimeo' && value?.external_id && (
                     <iframe
-                        width="100%"
+                        allowFullScreen
                         height="200"
                         src={`https://player.vimeo.com/video/${value.external_id}`}
-                        title="Vimeo video"
-                        allowFullScreen
                         style={{
-                            borderRadius: 8,
                             border: '1px solid var(--mantine-color-gray-3)',
+                            borderRadius: 8,
                         }}
+                        title="Vimeo video"
+                        width="100%"
                     />
                 )}
 
                 {/* Image preview */}
                 {selectedType === 'image' && mediaUrl && (
                     <Image
-                        src={mediaUrl}
-                        height={200}
-                        fit="contain"
-                        style={{
-                            borderRadius: 8,
-                            border: '1px solid var(--mantine-color-gray-3)',
-                        }}
                         fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgZmlsbD0iIzY5NzA3NyIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0Ij5JbnZhbGlkIGltYWdlIFVSTDwvdGV4dD4KPHN2Zz4="
+                        fit="contain"
+                        height={200}
+                        src={mediaUrl}
+                        style={{
+                            border: '1px solid var(--mantine-color-gray-3)',
+                            borderRadius: 8,
+                        }}
                     />
                 )}
             </Stack>
@@ -211,14 +213,14 @@ export const MediaDetails: React.FC<MediaDetailsProps> = ({value, error, onChang
             gap={0}
             mb={'sm'}
         >
-            <Index
-                value={selectedType}
+            <EasyOptionSelector
+                columns={3}
+                description="Select media format"
+                label="Media"
                 onChange={(newType) => onChangeInternal(newType, value?.url || '')}
                 options={MEDIA_TYPES}
-                label="Media"
                 placeholder="Choose the type of content you want to create"
-                description="Select media format"
-                columns={3}
+                value={selectedType}
             />
             {selectedType && renderMediaFields()}
         </Stack>

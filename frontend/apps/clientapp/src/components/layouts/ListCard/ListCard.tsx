@@ -301,7 +301,7 @@ export function ListCard({
                     </Group>
                 )}
 
-                {/* Metadata */}
+                {/* taxonomy */}
                 {metadata.length > 0 && (
                     <Group
                         gap="lg"

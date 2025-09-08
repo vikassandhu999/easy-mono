@@ -1,5 +1,7 @@
 import {z} from 'zod';
+
 import {Result} from '@/utils/error.ts';
+
 import {authedClient} from './auth';
 
 export const ContentTypeEnum = z.enum(['exercise', 'food', 'technique', 'activity', 'guide', 'lesson']);
@@ -10,29 +12,29 @@ export const ListMetrics_zod = z.object({
 
 export type ListMetricsProps = z.infer<typeof ListMetrics_zod>;
 
-export interface Metric {
-    key: string;
-    display_name: string;
-    description: string;
-    metric_type: 'number' | 'scale' | 'duration' | 'text' | 'boolean' | 'choice';
-    scope: 'per_set' | 'per_session';
-    is_global: boolean;
-    display_order: number;
-    unit?: string;
-    category?: string;
-    min_value?: number;
-    max_value?: number;
-    default_value?: number;
-    chart_type?: string;
-    icon?: string;
-    options?: any; // JSON data for choice metrics
-}
-
 export interface ListMetricsResult {
-    records: Metric[];
-    total: number;
     page: number;
     page_size: number;
+    records: Metric[];
+    total: number;
+}
+
+export interface Metric {
+    category?: string;
+    chart_type?: string;
+    default_value?: number;
+    description: string;
+    display_name: string;
+    display_order: number;
+    icon?: string;
+    is_global: boolean;
+    key: string;
+    max_value?: number;
+    metric_type: 'boolean' | 'choice' | 'duration' | 'number' | 'scale' | 'text';
+    min_value?: number;
+    options?: any; // JSON data for choice metrics
+    scope: 'per_session' | 'per_set';
+    unit?: string;
 }
 
 export const MetricsAPI = {

@@ -1,10 +1,11 @@
 import {useMemo} from 'react';
-import {useSchedule} from '@/hooks/useScheduleQueries';
+
 import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
+import {useSchedule} from '@/hooks/useScheduleQueries';
 
 export function useScheduleData(scheduleId: string) {
-    const {data: schedule, isLoading: scheduleLoading, error: scheduleError} = useSchedule(scheduleId);
-    const {data, isLoading: entriesLoading, error: entriesError} = useScheduleEntries(scheduleId);
+    const {data: schedule, error: scheduleError, isLoading: scheduleLoading} = useSchedule(scheduleId);
+    const {data, error: entriesError, isLoading: entriesLoading} = useScheduleEntries(scheduleId);
 
     const entries = useMemo(() => {
         return data?.records ?? [];
@@ -54,12 +55,12 @@ export function useScheduleData(scheduleId: string) {
           : 1;
 
     return {
-        schedule,
+        dailyDayIndex,
         entries,
         entriesByDay: sortedEntriesByDay,
-        isWeeklySchedule,
-        dailyDayIndex,
-        isLoading: scheduleLoading || entriesLoading,
         error: scheduleError || entriesError,
+        isLoading: scheduleLoading || entriesLoading,
+        isWeeklySchedule,
+        schedule,
     };
 }

@@ -3,12 +3,12 @@ import {TimeSlot} from '@/api/schedule_entries.ts';
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
 export const TIME_SLOT_LABELS: Record<TimeSlot, string> = {
-    morning: 'Morning',
     afternoon: 'Afternoon',
-    evening: 'Evening',
-    night: 'Night',
-    custom: 'Custom Time',
     'all-day': 'All Day',
+    custom: 'Custom Time',
+    evening: 'Evening',
+    morning: 'Morning',
+    night: 'Night',
 } as const;
 
 export const SESSION_COUNT_THRESHOLD = 1;

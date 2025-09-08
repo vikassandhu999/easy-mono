@@ -1,109 +1,111 @@
+import {Icon, IconBowl, IconChefHat, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
+import React from 'react';
+
 import {Content} from '@/api/contents.ts';
 import {ScheduleCategory} from '@/api/schedules.ts';
-import {Icon, IconTreadmill, IconBowl, IconChefHat, IconListDetails, IconRun} from '@tabler/icons-react';
 
 export const SCHEDULE_CATEGORIES: Record<
     ScheduleCategory,
     {
-        label: string;
-        description: string;
-        icon: Icon;
         color: string;
-        iconColor: string;
-        optional?: boolean;
+        description: string;
         form: {
-            namePlaceholder?: string;
             nameDescription?: string;
+            namePlaceholder?: string;
         };
+        icon: Icon;
+        iconColor: string;
+        label: string;
+        optional?: boolean;
     }
 > = {
-    workout: {
-        label: 'Workout',
-        description: 'Create a workout plan to build strength and conditioning.',
-        icon: IconTreadmill,
-        color: 'var(--mantine-color-orange-6)',
-        iconColor: 'var(--mantine-color-orange-0)',
-        form: {
-            namePlaceholder: 'e.g., Strength Training Plan',
-            nameDescription: 'A clear, descriptive name of the workout plan.',
-        },
-    },
     nutrition: {
-        label: 'Nutrition',
-        description: 'Build a nutrition plan to optimize meals and habits.',
-        icon: IconBowl,
         color: 'var(--mantine-color-lime-6)',
-        iconColor: 'var(--mantine-color-lime-0)',
+        description: 'Build a nutrition plan to optimize meals and habits.',
         form: {
-            namePlaceholder: 'e.g., Weight Loss Nutrition Plan',
             nameDescription: 'A clear, descriptive name of the nutrition plan.',
+            namePlaceholder: 'e.g., Weight Loss Nutrition Plan',
         },
+        icon: IconBowl,
+        iconColor: 'var(--mantine-color-lime-0)',
+        label: 'Nutrition',
+    },
+    workout: {
+        color: 'var(--mantine-color-orange-6)',
+        description: 'Create a workout plan to build strength and conditioning.',
+        form: {
+            nameDescription: 'A clear, descriptive name of the workout plan.',
+            namePlaceholder: 'e.g., Strength Training Plan',
+        },
+        icon: IconTreadmill,
+        iconColor: 'var(--mantine-color-orange-0)',
+        label: 'Workout',
     },
 };
 
 export const SCHEDULE_STATUS = {
+    archived: {
+        color: 'var(--mantine-color-red-4)',
+        label: 'Archived',
+    },
     draft: {
-        label: 'Draft',
         color: 'var(--mantine-color-gray-5)',
+        label: 'Draft',
     },
     published: {
-        label: 'Published',
         color: 'var(--mantine-color-green-6)',
-    },
-    archived: {
-        label: 'Archived',
-        color: 'var(--mantine-color-red-4)',
+        label: 'Published',
     },
 };
 
 export interface SessionTypeConfig {
-    icon: React.ComponentType<any>;
     color: string;
+    description: string;
+    icon: React.ComponentType<any>;
     iconColor: string;
     label: string;
-    description: string;
 }
 
 export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
-    workout: {
-        icon: IconTreadmill,
-        color: SCHEDULE_CATEGORIES.workout.color,
-        iconColor: SCHEDULE_CATEGORIES.workout.iconColor,
-        label: 'Workout',
-        description: 'Exercise routines and fitness training',
-    },
     meal: {
-        icon: IconBowl,
         color: SCHEDULE_CATEGORIES.nutrition.color,
+        description: 'Nutrition plans and meal guidance',
+        icon: IconBowl,
         iconColor: SCHEDULE_CATEGORIES.nutrition.iconColor,
         label: 'Meal',
-        description: 'Nutrition plans and meal guidance',
+    },
+    workout: {
+        color: SCHEDULE_CATEGORIES.workout.color,
+        description: 'Exercise routines and fitness training',
+        icon: IconTreadmill,
+        iconColor: SCHEDULE_CATEGORIES.workout.iconColor,
+        label: 'Workout',
     },
 } as const;
 
 export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {value: string}> = {
     exercise: {
-        value: 'exercise',
-        label: 'Exercise',
-        icon: IconRun,
-        description: 'Physical movements, drills, and workout routines',
         color: 'var(--mantine-color-red-6)',
+        description: 'Physical movements, drills, and workout routines',
+        icon: IconRun,
         iconColor: 'var(--mantine-color-red-0)',
+        label: 'Exercise',
+        value: 'exercise',
     },
     food: {
-        value: 'food',
-        label: 'Food',
-        icon: IconChefHat,
-        description: 'Individual foods and nutritional items',
         color: 'var(--mantine-color-green-6)',
+        description: 'Individual foods and nutritional items',
+        icon: IconChefHat,
         iconColor: 'var(--mantine-color-green-0)',
+        label: 'Food',
+        value: 'food',
     },
     recipe: {
-        value: 'recipe',
-        label: 'Recipe',
-        icon: IconListDetails,
-        description: 'Complete recipes and meal preparations',
         color: 'var(--mantine-color-blue-6)',
+        description: 'Complete recipes and meal preparations',
+        icon: IconListDetails,
         iconColor: 'var(--mantine-color-blue-0)',
+        label: 'Recipe',
+        value: 'recipe',
     },
 } as const;

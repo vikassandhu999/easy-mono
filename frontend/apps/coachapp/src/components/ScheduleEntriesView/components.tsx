@@ -1,4 +1,5 @@
-import {Stack, Center, Loader, Text} from '@mantine/core';
+import {Center, Loader, Stack, Text} from '@mantine/core';
+
 import {LOADING_HEIGHT} from './constants';
 
 interface LoadingStateProps {
@@ -8,17 +9,17 @@ interface LoadingStateProps {
 export const LoadingState = ({message}: LoadingStateProps) => (
     <Center h={LOADING_HEIGHT}>
         <Stack
-            gap="sm"
             align="center"
+            gap="sm"
         >
             <Loader
-                size="md"
                 color="blue"
+                size="md"
             />
             <Text
-                size="sm"
                 c="dimmed"
                 fw={600}
+                size="sm"
                 ta="center"
             >
                 {message}
@@ -28,27 +29,27 @@ export const LoadingState = ({message}: LoadingStateProps) => (
 );
 
 interface SessionErrorStateProps {
-    title: string;
     description: string;
+    title: string;
 }
 
-export const SessionErrorState = ({title, description}: SessionErrorStateProps) => (
+export const SessionErrorState = ({description, title}: SessionErrorStateProps) => (
     <Center h={80}>
         <Stack
-            gap="xs"
             align="center"
+            gap="xs"
         >
             <Text
+                c="red.7"
                 fw={700}
                 size="sm"
-                c="red.7"
                 ta="center"
             >
                 {title}
             </Text>
             <Text
-                size="xs"
                 c="red.6"
+                size="xs"
                 ta="center"
             >
                 {description}

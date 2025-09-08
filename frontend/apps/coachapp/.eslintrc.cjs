@@ -1,20 +1,20 @@
 module.exports = {
-    root: true,
     extends: ['@easy/eslint-config'],
+    ignorePatterns: ['node_modules', 'dist', 'dev-dist'],
     parserOptions: {
-        parser: '@typescript-eslint/parser',
-        tsconfigRootDir: __dirname,
-        project: ['tsconfig.app.json', 'tsconfig.node.json'],
         ecmaFeatures: {
             jsx: true,
         },
         ecmaVersion: 12,
+        parser: '@typescript-eslint/parser',
+        project: ['tsconfig.app.json', 'tsconfig.node.json'],
         sourceType: 'module',
+        tsconfigRootDir: __dirname,
     },
-    ignorePatterns: ['node_modules', 'dist', 'dev-dist'],
+    root: true,
     rules: {
-        camelcase: ['off'],
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
+        camelcase: ['off'],
     },
 };

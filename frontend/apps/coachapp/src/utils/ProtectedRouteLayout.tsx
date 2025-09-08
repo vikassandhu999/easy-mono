@@ -1,6 +1,8 @@
-import {useLocation, Outlet} from 'react-router';
 import {useMemo} from 'react';
+import {Outlet, useLocation} from 'react-router';
+
 import {MainLayout} from '@/components/layouts';
+
 import {shouldShowNavigation} from './navigation_config.ts';
 
 export default function ProtectedRouteLayout() {

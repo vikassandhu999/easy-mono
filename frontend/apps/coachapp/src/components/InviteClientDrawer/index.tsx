@@ -1,19 +1,21 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
-import PagePaper from '@/components/containers/PagePaper.tsx';
-import Header from '../layouts/Header.tsx';
-import PaddingContainer from '@/components/containers/PaddingContainer.tsx';
-import {InviteClientForm} from '@/components/InviteClientForm';
+
 import {type Client} from '@/api/clients.ts';
+import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
+import PaddingContainer from '@/components/containers/PaddingContainer.tsx';
+import PagePaper from '@/components/containers/PagePaper.tsx';
+import {InviteClientForm} from '@/components/InviteClientForm';
 import {useCreateClient} from '@/hooks/useClientQueries.ts';
 
+import Header from '../layouts/Header.tsx';
+
 type InviteClientDrawerProps = {
-    stack: ReturnType<typeof useDrawersStack<'invite-client' | any>>;
     onClientCreated?: (client: Client) => void;
+    stack: ReturnType<typeof useDrawersStack<'invite-client' | any>>;
 };
 
-export function InviteClientDrawer({stack, onClientCreated}: InviteClientDrawerProps) {
+export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerProps) {
     const createClient = useCreateClient();
 
     return (
@@ -24,27 +26,26 @@ export function InviteClientDrawer({stack, onClientCreated}: InviteClientDrawerP
             >
                 <PagePaper>
                     <HeadingContainer
+                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
-                        style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                     >
                         <Header
-                            title="Invite Client"
                             onBack={() => stack.close('invite-client')}
+                            title="Invite Client"
                         />
                     </HeadingContainer>
                     <PaddingContainer>
                         <InviteClientForm
-                            submitText="Send Invite"
                             onSubmit={async (data) => {
                                 try {
                                     const client = await createClient.mutateAsync(data);
 
                                     notifications.show({
-                                        title: 'Success',
-                                        message: 'Client invited successfully!',
-                                        color: 'green',
-                                        position: 'top-center',
                                         autoClose: 3000,
+                                        color: 'green',
+                                        message: 'Client invited successfully!',
+                                        position: 'top-center',
+                                        title: 'Success',
                                     });
 
                                     // Call the callback with the created client
@@ -55,14 +56,15 @@ export function InviteClientDrawer({stack, onClientCreated}: InviteClientDrawerP
                                     stack.close('invite-client');
                                 } catch (error: any) {
                                     notifications.show({
-                                        title: 'Error',
-                                        message: error.message || 'Failed to invite client',
-                                        color: 'red',
-                                        position: 'top-center',
                                         autoClose: 5000,
+                                        color: 'red',
+                                        message: error.message || 'Failed to invite client',
+                                        position: 'top-center',
+                                        title: 'Error',
                                     });
                                 }
                             }}
+                            submitText="Send Invite"
                         />
                     </PaddingContainer>
                 </PagePaper>

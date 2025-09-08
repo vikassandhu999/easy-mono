@@ -1,110 +1,67 @@
 // PWA and Performance utilities
 const PWAUtils = {
-    // Enhanced service worker registration with error handling
-    async registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.register('/sw.js', {
-                    scope: '/',
-                    updateViaCache: 'none',
+    // Get First Paint timing
+    getFirstPaint() {
+        const paintEntries = performance.getEntriesByType('paint');
+        const firstPaint = paintEntries.find((entry) => entry.name === 'first-paint');
+        return firstPaint ? firstPaint.startTime : 0;
+    },
+
+    // Get Largest Contentful Paint
+    getLCP() {
+        return new Promise((resolve) => {
+            if ('PerformanceObserver' in window) {
+                const observer = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    const lastEntry = entries[entries.length - 1];
+                    resolve(lastEntry.startTime);
                 });
+                observer.observe({entryTypes: ['largest-contentful-paint']});
 
-                console.log('Service Worker registered successfully:', registration);
+                // Fallback timeout
+                setTimeout(() => resolve(0), 5000);
+            } else {
+                resolve(0);
+            }
+        });
+    },
 
-                // Handle service worker updates
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    if (newWorker) {
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New content available, notify user
-                                this.showUpdateNotification();
-                            }
-                        });
-                    }
-                });
+    // Detect if app is running as PWA
+    isPWA() {
+        return (
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.matchMedia('(display-mode: fullscreen)').matches ||
+            (window.navigator as any).standalone === true
+        );
+    },
 
-                // Send message to prevent Chrome nudges
-                const channel = new MessageChannel();
-                channel.port1.onmessage = (event) => {
-                    console.log('Chrome nudges prevention:', event.data.message);
+    // Enhanced performance monitoring
+    measurePerformance() {
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                // Core Web Vitals monitoring
+                const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+
+                const startTime = perfData.fetchStart || perfData.connectStart;
+                const metrics = {
+                    // Time to Interactive
+                    domContentLoaded: perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart,
+                    // First Paint
+                    firstPaint: this.getFirstPaint(),
+                    // Largest Contentful Paint
+                    largestContentfulPaint: this.getLCP(),
+                    // Load Complete
+                    loadComplete: perfData.loadEventEnd - perfData.loadEventStart,
+                    // Total Page Load
+                    totalTime: perfData.loadEventEnd - startTime,
                 };
 
-                if (registration.active) {
-                    registration.active.postMessage({type: 'PREVENT_CHROME_NUDGES'}, [channel.port2]);
-                }
+                console.log('Performance Metrics:', metrics);
 
-                return registration;
-            } catch (error) {
-                console.error('Service Worker registration failed:', error);
-            }
-        }
-    },
-
-    // Show update notification to user
-    showUpdateNotification() {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const notification = new Notification('CoachEasy Update Available', {
-                body: 'A new version is available. Restart the app to update.',
-                icon: '/android-chrome-192x192.png',
-                badge: '/android-chrome-192x192.png',
-                tag: 'app-update',
+                // Report to analytics if needed
+                this.reportPerformanceMetrics(metrics);
             });
-
-            // Auto-close after 5 seconds
-            setTimeout(() => notification.close(), 5000);
-        } else {
-            // Fallback to console or show in-app notification
-            console.log('App update available - restart to get latest version');
         }
-    },
-
-    // Request notification permission at appropriate time
-    async requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission === 'default') {
-            try {
-                const permission = await Notification.requestPermission();
-                console.log('Notification permission:', permission);
-                return permission;
-            } catch (error) {
-                console.error('Error requesting notification permission:', error);
-                return 'denied';
-            }
-        }
-        return Notification.permission;
-    },
-
-    // Enhanced install prompt handling
-    setupInstallPrompt() {
-        let deferredPrompt: any = null;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            console.log('Install prompt available');
-
-            // Store it globally for custom install button
-            (window as any).deferredPrompt = deferredPrompt;
-
-            // Optionally show custom install banner after user interaction
-            this.showInstallPrompt(deferredPrompt);
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed successfully');
-            deferredPrompt = null;
-            (window as any).deferredPrompt = null;
-        });
-    },
-
-    // Show custom install prompt
-    showInstallPrompt(deferredPrompt: any) {
-        // This can be customized to show a beautiful install prompt
-        // For now, we'll just store it for later use
-        const installPromptEvent = new CustomEvent('pwa-install-available', {
-            detail: {deferredPrompt},
-        });
-        window.dispatchEvent(installPromptEvent);
     },
 
     // Comprehensive Chrome intervention prevention
@@ -181,59 +138,45 @@ const PWAUtils = {
         });
     },
 
-    // Enhanced performance monitoring
-    measurePerformance() {
-        if ('performance' in window) {
-            window.addEventListener('load', () => {
-                // Core Web Vitals monitoring
-                const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    // Enhanced service worker registration with error handling
+    async registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/',
+                    updateViaCache: 'none',
+                });
 
-                const startTime = perfData.fetchStart || perfData.connectStart;
-                const metrics = {
-                    // Time to Interactive
-                    domContentLoaded: perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart,
-                    // Load Complete
-                    loadComplete: perfData.loadEventEnd - perfData.loadEventStart,
-                    // Total Page Load
-                    totalTime: perfData.loadEventEnd - startTime,
-                    // First Paint
-                    firstPaint: this.getFirstPaint(),
-                    // Largest Contentful Paint
-                    largestContentfulPaint: this.getLCP(),
+                console.log('Service Worker registered successfully:', registration);
+
+                // Handle service worker updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New content available, notify user
+                                this.showUpdateNotification();
+                            }
+                        });
+                    }
+                });
+
+                // Send message to prevent Chrome nudges
+                const channel = new MessageChannel();
+                channel.port1.onmessage = (event) => {
+                    console.log('Chrome nudges prevention:', event.data.message);
                 };
 
-                console.log('Performance Metrics:', metrics);
+                if (registration.active) {
+                    registration.active.postMessage({type: 'PREVENT_CHROME_NUDGES'}, [channel.port2]);
+                }
 
-                // Report to analytics if needed
-                this.reportPerformanceMetrics(metrics);
-            });
-        }
-    },
-
-    // Get First Paint timing
-    getFirstPaint() {
-        const paintEntries = performance.getEntriesByType('paint');
-        const firstPaint = paintEntries.find((entry) => entry.name === 'first-paint');
-        return firstPaint ? firstPaint.startTime : 0;
-    },
-
-    // Get Largest Contentful Paint
-    getLCP() {
-        return new Promise((resolve) => {
-            if ('PerformanceObserver' in window) {
-                const observer = new PerformanceObserver((list) => {
-                    const entries = list.getEntries();
-                    const lastEntry = entries[entries.length - 1];
-                    resolve(lastEntry.startTime);
-                });
-                observer.observe({entryTypes: ['largest-contentful-paint']});
-
-                // Fallback timeout
-                setTimeout(() => resolve(0), 5000);
-            } else {
-                resolve(0);
+                return registration;
+            } catch (error) {
+                console.error('Service Worker registration failed:', error);
             }
-        });
+        }
     },
 
     // Report performance metrics (extend as needed)
@@ -242,6 +185,44 @@ const PWAUtils = {
         if (metrics.totalTime > 3000) {
             console.warn('Slow page load detected:', metrics.totalTime + 'ms');
         }
+    },
+
+    // Request notification permission at appropriate time
+    async requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            try {
+                const permission = await Notification.requestPermission();
+                console.log('Notification permission:', permission);
+                return permission;
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                return 'denied';
+            }
+        }
+        return Notification.permission;
+    },
+
+    // Enhanced install prompt handling
+    setupInstallPrompt() {
+        let deferredPrompt: any = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('Install prompt available');
+
+            // Store it globally for custom install button
+            (window as any).deferredPrompt = deferredPrompt;
+
+            // Optionally show custom install banner after user interaction
+            this.showInstallPrompt(deferredPrompt);
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed successfully');
+            deferredPrompt = null;
+            (window as any).deferredPrompt = null;
+        });
     },
 
     // Enhanced network status monitoring
@@ -269,21 +250,6 @@ const PWAUtils = {
         updateOnlineStatus(); // Initial check
     },
 
-    // Show offline notification
-    showOfflineNotification() {
-        console.log('App is now offline - cached content available');
-        // Can be extended to show in-app notification
-    },
-
-    // Detect if app is running as PWA
-    isPWA() {
-        return (
-            window.matchMedia('(display-mode: standalone)').matches ||
-            window.matchMedia('(display-mode: fullscreen)').matches ||
-            (window.navigator as any).standalone === true
-        );
-    },
-
     // Handle PWA-specific behaviors
     setupPWABehaviors() {
         if (this.isPWA()) {
@@ -292,6 +258,40 @@ const PWAUtils = {
 
             // Prevent pull-to-refresh on PWA
             document.body.style.overscrollBehavior = 'none';
+        }
+    },
+
+    // Show custom install prompt
+    showInstallPrompt(deferredPrompt: any) {
+        // This can be customized to show a beautiful install prompt
+        // For now, we'll just store it for later use
+        const installPromptEvent = new CustomEvent('pwa-install-available', {
+            detail: {deferredPrompt},
+        });
+        window.dispatchEvent(installPromptEvent);
+    },
+
+    // Show offline notification
+    showOfflineNotification() {
+        console.log('App is now offline - cached content available');
+        // Can be extended to show in-app notification
+    },
+
+    // Show update notification to user
+    showUpdateNotification() {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification('CoachEasy Update Available', {
+                badge: '/android-chrome-192x192.png',
+                body: 'A new version is available. Restart the app to update.',
+                icon: '/android-chrome-192x192.png',
+                tag: 'app-update',
+            });
+
+            // Auto-close after 5 seconds
+            setTimeout(() => notification.close(), 5000);
+        } else {
+            // Fallback to console or show in-app notification
+            console.log('App update available - restart to get latest version');
         }
     },
 };

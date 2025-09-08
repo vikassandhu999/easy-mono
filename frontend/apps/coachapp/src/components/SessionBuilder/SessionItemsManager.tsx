@@ -1,133 +1,55 @@
-import {useState} from 'react';
-import {Stack, Button, Group, Text, ActionIcon, Alert, Drawer} from '@mantine/core';
-import {PlusIcon} from '@phosphor-icons/react';
 import {
-    DndContext,
     closestCenter,
+    DndContext,
+    DragOverlay,
     KeyboardSensor,
     PointerSensor,
     useSensor,
     useSensors,
-    DragOverlay,
 } from '@dnd-kit/core';
-import {SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
+import {SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from '@dnd-kit/sortable';
+import {ActionIcon, Alert, Button, Drawer, Group, Stack, Text} from '@mantine/core';
+import {PlusIcon} from '@phosphor-icons/react';
+import {useState} from 'react';
 
-import SessionItem from './SessionItem';
-import {SessionDefItemConfig, ContentDetail} from '@/api/session_defs.ts';
-import {useDrawerStack} from '@/providers/StackProvider';
-import ContentSelect from '../ContentSelect';
-import {useSessionItems} from './hooks/useSessionItems';
-import {useDragAndDrop} from './hooks/useDragAndDrop';
+import {ContentDetail, SessionDefItemConfig} from '@/api/session_defs.ts';
 import PaddingContainer from '@/components/containers/PaddingContainer';
+import {useDrawerStack} from '@/providers/StackProvider';
+
+import ContentSelect from '../ContentSelect';
+import {useDragAndDrop} from './hooks/useDragAndDrop';
+import {useSessionItems} from './hooks/useSessionItems';
+import SessionItem from './SessionItem';
 
 interface SessionItemsManagerProps {
-    sessionDefId: string;
-    items: SessionDefItemConfig[];
-    itemContents: ContentDetail[];
-    onItemsUpdate?: (items: SessionDefItemConfig[]) => void;
     isEditable?: boolean;
-}
-
-function EmptyState({
-    isEditable,
-    onAddContent,
-    isLoading,
-}: {
-    isEditable: boolean;
-    onAddContent: () => void;
-    isLoading: boolean;
-}) {
-    if (!isEditable) {
-        return (
-            <Alert
-                color="gray"
-                variant="light"
-            >
-                <Text
-                    size="sm"
-                    c="dimmed"
-                    style={{
-                        fontSize: 'var(--callout-font-size)',
-                        lineHeight: 'var(--callout-line-height)',
-                    }}
-                >
-                    No items added to this session yet
-                </Text>
-            </Alert>
-        );
-    }
-
-    return (
-        <Button
-            variant="light"
-            color="blue"
-            leftSection={<PlusIcon size={16} />}
-            onClick={onAddContent}
-            loading={isLoading}
-            fullWidth
-        >
-            Add Your First Item
-        </Button>
-    );
-}
-
-function ItemsList({
-    items,
-    editingItemId,
-    isEditable,
-    onEdit,
-    onSave,
-    onCancel,
-    onDelete,
-}: {
+    itemContents: ContentDetail[];
     items: SessionDefItemConfig[];
-    editingItemId: string | null;
-    isEditable: boolean;
-    onEdit: (contentId: string) => void;
-    onSave: (updatedItem: SessionDefItemConfig) => void;
-    onCancel: () => void;
-    onDelete: (contentId: string) => void;
-}) {
-    return (
-        <Stack gap={'xs'}>
-            {items.map((item, index) => (
-                <SessionItem
-                    key={item.content_id}
-                    item={item}
-                    index={index}
-                    isEditing={editingItemId === item.content_id}
-                    onEdit={() => onEdit(item.content_id)}
-                    onSave={onSave}
-                    onCancel={onCancel}
-                    onDelete={() => onDelete(item.content_id)}
-                    isDragDisabled={!isEditable}
-                />
-            ))}
-        </Stack>
-    );
+    onItemsUpdate?: (items: SessionDefItemConfig[]) => void;
+    sessionDefId: string;
 }
 
 export default function SessionItemsManager({
-    sessionDefId,
+    isEditable = true,
     items: initialItems,
     onItemsUpdate,
-    isEditable = true,
+    sessionDefId,
 }: SessionItemsManagerProps) {
-    const [editingItemId, setEditingItemId] = useState<string | null>(null);
+    const [editingItemId, setEditingItemId] = useState<null | string>(null);
     const drawerStack = useDrawerStack();
 
     // Use custom hooks for business logic
-    const {items, isLoading, reorderItems, updateItem, deleteItem, addItems} = useSessionItems({
-        sessionDefId,
+    const {addItems, deleteItem, isLoading, items, reorderItems, updateItem} = useSessionItems({
         initialItems,
         onItemsUpdate,
+        sessionDefId,
     });
 
     const {activeItem, dragContextProps} = useDragAndDrop({
+        disabled: !isEditable,
         items,
         onReorder: reorderItems,
-        disabled: !isEditable,
     });
 
     // Set up sensors for drag and drop
@@ -165,28 +87,28 @@ export default function SessionItemsManager({
             <Stack gap={'md'}>
                 {/* Header */}
                 <Group
-                    justify="space-between"
                     align="center"
+                    justify="space-between"
                 >
                     <Text
-                        size="sm"
-                        fw={500}
                         c="dark"
+                        fw={500}
+                        size="sm"
                         style={{
+                            color: 'var(--mantine-color-gray-8)',
                             fontSize: 'var(--callout-font-size)',
                             lineHeight: 'var(--callout-line-height)',
-                            color: 'var(--mantine-color-gray-8)',
                         }}
                     >
                         Session Items ({items.length})
                     </Text>
                     {isEditable && (
                         <ActionIcon
-                            variant="filled"
                             color="blue"
-                            size="lg"
-                            onClick={handleAddContent}
                             loading={isLoading}
+                            onClick={handleAddContent}
+                            size="lg"
+                            variant="filled"
                         >
                             <PlusIcon size={16} />
                         </ActionIcon>
@@ -197,13 +119,13 @@ export default function SessionItemsManager({
                 {items.length === 0 ? (
                     <EmptyState
                         isEditable={isEditable}
-                        onAddContent={handleAddContent}
                         isLoading={isLoading}
+                        onAddContent={handleAddContent}
                     />
                 ) : (
                     <DndContext
-                        sensors={sensors}
                         collisionDetection={closestCenter}
+                        sensors={sensors}
                         {...dragContextProps}
                         modifiers={[restrictToVerticalAxis]}
                     >
@@ -212,22 +134,22 @@ export default function SessionItemsManager({
                             strategy={verticalListSortingStrategy}
                         >
                             <ItemsList
-                                items={items}
                                 editingItemId={editingItemId}
                                 isEditable={isEditable}
-                                onEdit={handleItemEdit}
-                                onSave={handleItemSave}
+                                items={items}
                                 onCancel={handleItemCancel}
                                 onDelete={deleteItem}
+                                onEdit={handleItemEdit}
+                                onSave={handleItemSave}
                             />
                         </SortableContext>
 
                         <DragOverlay>
                             {activeItem && (
                                 <SessionItem
-                                    item={activeItem}
                                     index={0}
                                     isDragDisabled={false}
+                                    item={activeItem}
                                 />
                             )}
                         </DragOverlay>
@@ -242,11 +164,90 @@ export default function SessionItemsManager({
             >
                 <PaddingContainer>
                     <ContentSelect
-                        onComplete={handleContentSelect}
                         onCancel={() => drawerStack.close('content-picker')}
+                        onComplete={handleContentSelect}
                     />
                 </PaddingContainer>
             </Drawer>
         </>
+    );
+}
+
+function EmptyState({
+    isEditable,
+    isLoading,
+    onAddContent,
+}: {
+    isEditable: boolean;
+    isLoading: boolean;
+    onAddContent: () => void;
+}) {
+    if (!isEditable) {
+        return (
+            <Alert
+                color="gray"
+                variant="light"
+            >
+                <Text
+                    c="dimmed"
+                    size="sm"
+                    style={{
+                        fontSize: 'var(--callout-font-size)',
+                        lineHeight: 'var(--callout-line-height)',
+                    }}
+                >
+                    No items added to this session yet
+                </Text>
+            </Alert>
+        );
+    }
+
+    return (
+        <Button
+            color="blue"
+            fullWidth
+            leftSection={<PlusIcon size={16} />}
+            loading={isLoading}
+            onClick={onAddContent}
+            variant="light"
+        >
+            Add Your First Item
+        </Button>
+    );
+}
+
+function ItemsList({
+    editingItemId,
+    isEditable,
+    items,
+    onCancel,
+    onDelete,
+    onEdit,
+    onSave,
+}: {
+    editingItemId: null | string;
+    isEditable: boolean;
+    items: SessionDefItemConfig[];
+    onCancel: () => void;
+    onDelete: (contentId: string) => void;
+    onEdit: (contentId: string) => void;
+    onSave: (updatedItem: SessionDefItemConfig) => void;
+}) {
+    return (
+        <Stack gap={'xs'}>
+            {items.map((item, index) => (
+                <SessionItem
+                    index={index}
+                    isDragDisabled={!isEditable}
+                    isEditing={editingItemId === item.content_id}
+                    item={item}
+                    key={item.content_id}
+                    onCancel={onCancel}
+                    onDelete={() => onDelete(item.content_id)}
+                    onEdit={() => onEdit(item.content_id)}
+                    onSave={onSave}
+                />
+            ))}
+        </Stack>
     );
 }

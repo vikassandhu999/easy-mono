@@ -1,27 +1,28 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
 import {
+    CreateScheduleEntryProps,
+    ListScheduleEntriesParams,
     ScheduleEntriesAPI,
     ScheduleEntry,
-    CreateScheduleEntryProps,
     UpdateScheduleEntryProps,
-    ListScheduleEntriesParams,
 } from '@/api/schedule_entries.ts';
 
 // Query keys
 export const SCHEDULE_ENTRIES_QUERY_KEYS = {
     all: ['schedule-entries'] as const,
+    entry: (scheduleId: string, entryId: string) =>
+        [...SCHEDULE_ENTRIES_QUERY_KEYS.schedule(scheduleId), entryId] as const,
     schedule: (scheduleId: string) => [...SCHEDULE_ENTRIES_QUERY_KEYS.all, scheduleId] as const,
     scheduleList: (scheduleId: string, params?: ListScheduleEntriesParams) =>
         [...SCHEDULE_ENTRIES_QUERY_KEYS.schedule(scheduleId), 'list', params] as const,
-    entry: (scheduleId: string, entryId: string) =>
-        [...SCHEDULE_ENTRIES_QUERY_KEYS.schedule(scheduleId), entryId] as const,
 };
 
 // List schedule entries
 export const useScheduleEntries = (scheduleId: string, params?: ListScheduleEntriesParams) => {
     return useQuery({
-        queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.scheduleList(scheduleId, params),
+        enabled: !!scheduleId,
         queryFn: async () => {
             const result = await ScheduleEntriesAPI.listEntries(scheduleId, params);
             if (result.isError) {
@@ -29,14 +30,14 @@ export const useScheduleEntries = (scheduleId: string, params?: ListScheduleEntr
             }
             return result.getValue();
         },
-        enabled: !!scheduleId,
+        queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.scheduleList(scheduleId, params),
     });
 };
 
 // Get single schedule entry
 export const useScheduleEntry = (scheduleId: string, entryId: string, enabled = true) => {
     return useQuery({
-        queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.entry(scheduleId, entryId),
+        enabled: enabled && !!scheduleId && !!entryId,
         queryFn: async () => {
             const result = await ScheduleEntriesAPI.getEntry(scheduleId, entryId);
             if (result.isError) {
@@ -44,7 +45,7 @@ export const useScheduleEntry = (scheduleId: string, entryId: string, enabled = 
             }
             return result.value!;
         },
-        enabled: enabled && !!scheduleId && !!entryId,
+        queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.entry(scheduleId, entryId),
     });
 };
 
@@ -53,12 +54,19 @@ export const useCreateScheduleEntry = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({scheduleId, data}: {scheduleId: string; data: CreateScheduleEntryProps}) => {
+        mutationFn: async ({data, scheduleId}: {data: CreateScheduleEntryProps; scheduleId: string}) => {
             const result = await ScheduleEntriesAPI.createEntry(scheduleId, data);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
+        },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to add entry',
+            });
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
@@ -66,16 +74,9 @@ export const useCreateScheduleEntry = () => {
             });
 
             notifications.show({
-                title: 'Entry added',
-                message: 'Schedule entry has been added successfully',
                 color: 'green',
-            });
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to add entry',
-                message: error.message || 'Something went wrong',
-                color: 'red',
+                message: 'Schedule entry has been added successfully',
+                title: 'Entry added',
             });
         },
     });
@@ -87,19 +88,26 @@ export const useUpdateScheduleEntry = () => {
 
     return useMutation({
         mutationFn: async ({
-            scheduleId,
-            entryId,
             data,
+            entryId,
+            scheduleId,
         }: {
-            scheduleId: string;
-            entryId: string;
             data: UpdateScheduleEntryProps;
+            entryId: string;
+            scheduleId: string;
         }) => {
             const result = await ScheduleEntriesAPI.updateEntry(scheduleId, entryId, data);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
+        },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to update entry',
+            });
         },
         onSuccess: (updatedEntry, variables) => {
             // Update the specific entry cache
@@ -114,16 +122,9 @@ export const useUpdateScheduleEntry = () => {
             });
 
             notifications.show({
-                title: 'Entry updated',
-                message: 'Schedule entry has been updated successfully',
                 color: 'green',
-            });
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to update entry',
-                message: error.message || 'Something went wrong',
-                color: 'red',
+                message: 'Schedule entry has been updated successfully',
+                title: 'Entry updated',
             });
         },
     });
@@ -134,12 +135,19 @@ export const useDeleteScheduleEntry = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({scheduleId, entryId}: {scheduleId: string; entryId: string}) => {
+        mutationFn: async ({entryId, scheduleId}: {entryId: string; scheduleId: string}) => {
             const result = await ScheduleEntriesAPI.deleteEntry(scheduleId, entryId);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
+        },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to delete entry',
+            });
         },
         onSuccess: (_, variables) => {
             // Remove from cache
@@ -153,16 +161,9 @@ export const useDeleteScheduleEntry = () => {
             });
 
             notifications.show({
-                title: 'Entry deleted',
-                message: 'Schedule entry has been deleted successfully',
                 color: 'green',
-            });
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to delete entry',
-                message: error.message || 'Something went wrong',
-                color: 'red',
+                message: 'Schedule entry has been deleted successfully',
+                title: 'Entry deleted',
             });
         },
     });
@@ -178,10 +179,10 @@ export const useBulkUpdateScheduleEntries = () => {
             updates,
         }: {
             scheduleId: string;
-            updates: Array<{entryId: string; data: UpdateScheduleEntryProps}>;
+            updates: Array<{data: UpdateScheduleEntryProps; entryId: string}>;
         }) => {
             const results = await Promise.all(
-                updates.map(({entryId, data}) => ScheduleEntriesAPI.updateEntry(scheduleId, entryId, data)),
+                updates.map(({data, entryId}) => ScheduleEntriesAPI.updateEntry(scheduleId, entryId, data)),
             );
 
             // Check if any failed
@@ -192,6 +193,13 @@ export const useBulkUpdateScheduleEntries = () => {
 
             return results.map((result) => result.value!);
         },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Some entries failed to update',
+                title: 'Failed to update entries',
+            });
+        },
         onSuccess: (_, variables) => {
             // Invalidate the entire schedule entries cache
             queryClient.invalidateQueries({
@@ -199,16 +207,9 @@ export const useBulkUpdateScheduleEntries = () => {
             });
 
             notifications.show({
-                title: 'Entries updated',
-                message: `${variables.updates.length} entries updated successfully`,
                 color: 'green',
-            });
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to update entries',
-                message: error.message || 'Some entries failed to update',
-                color: 'red',
+                message: `${variables.updates.length} entries updated successfully`,
+                title: 'Entries updated',
             });
         },
     });
@@ -219,7 +220,7 @@ export const useBulkDeleteScheduleEntries = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({scheduleId, entryIds}: {scheduleId: string; entryIds: string[]}) => {
+        mutationFn: async ({entryIds, scheduleId}: {entryIds: string[]; scheduleId: string}) => {
             const results = await Promise.all(
                 entryIds.map((entryId) => ScheduleEntriesAPI.deleteEntry(scheduleId, entryId)),
             );
@@ -231,6 +232,13 @@ export const useBulkDeleteScheduleEntries = () => {
             }
 
             return results.map((result) => result.value!);
+        },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Some entries failed to delete',
+                title: 'Failed to delete entries',
+            });
         },
         onSuccess: (_, variables) => {
             // Remove all deleted entries from cache
@@ -246,16 +254,9 @@ export const useBulkDeleteScheduleEntries = () => {
             });
 
             notifications.show({
-                title: 'Entries deleted',
-                message: `${variables.entryIds.length} entries deleted successfully`,
                 color: 'green',
-            });
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to delete entries',
-                message: error.message || 'Some entries failed to delete',
-                color: 'red',
+                message: `${variables.entryIds.length} entries deleted successfully`,
+                title: 'Entries deleted',
             });
         },
     });
@@ -272,8 +273,8 @@ export const useOptimisticScheduleEntryUpdate = () => {
                 if (oldData) {
                     return {
                         ...oldData,
-                        week_number: newWeek,
                         day_of_week: newDay,
+                        week_number: newWeek,
                     };
                 }
                 return oldData;
@@ -296,7 +297,6 @@ export const usePrefetchScheduleEntries = () => {
 
     const prefetchScheduleEntries = (scheduleId: string) => {
         queryClient.prefetchQuery({
-            queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.scheduleList(scheduleId),
             queryFn: async () => {
                 const result = await ScheduleEntriesAPI.listEntries(scheduleId);
                 if (result.isError) {
@@ -304,6 +304,7 @@ export const usePrefetchScheduleEntries = () => {
                 }
                 return result.value!;
             },
+            queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.scheduleList(scheduleId),
             staleTime: 30000, // Consider data fresh for 30 seconds
         });
     };

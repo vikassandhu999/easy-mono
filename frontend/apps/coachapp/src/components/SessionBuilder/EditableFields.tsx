@@ -1,14 +1,15 @@
+import {Button, Group, NumberInput, Stack, Switch, Textarea, TextInput} from '@mantine/core';
 import {useState} from 'react';
-import {Stack, Group, NumberInput, Textarea, Button, TextInput, Switch} from '@mantine/core';
+
 import {SessionDefItemConfig} from '@/api/session_defs.ts';
 
 interface EditableFieldsProps {
     item: SessionDefItemConfig;
-    onSave: (updatedItem: SessionDefItemConfig) => void;
     onCancel: () => void;
+    onSave: (updatedItem: SessionDefItemConfig) => void;
 }
 
-export default function EditableFields({item, onSave, onCancel}: EditableFieldsProps) {
+export default function EditableFields({item, onCancel, onSave}: EditableFieldsProps) {
     const [editedItem, setEditedItem] = useState<SessionDefItemConfig>(item);
 
     const handleSave = () => {
@@ -25,61 +26,61 @@ export default function EditableFields({item, onSave, onCancel}: EditableFieldsP
                 <Group grow>
                     <NumberInput
                         label="Sets"
-                        min={0}
                         max={99}
-                        value={editedItem.sets_count}
+                        min={0}
                         onChange={(value) => updateField('sets_count', Number(value) || 0)}
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.sets_count}
                     />
                     <TextInput
                         label="Reps Target"
-                        placeholder="e.g. 8-12"
-                        value={editedItem.reps_target || ''}
                         onChange={(e) => updateField('reps_target', e.currentTarget.value)}
+                        placeholder="e.g. 8-12"
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.reps_target || ''}
                     />
                     <TextInput
                         label="Weight Target"
-                        placeholder="e.g. 60kg / bodyweight / 80%"
-                        value={editedItem.weight_target || ''}
                         onChange={(e) => updateField('weight_target', e.currentTarget.value)}
+                        placeholder="e.g. 60kg / bodyweight / 80%"
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.weight_target || ''}
                     />
                     <NumberInput
                         label="Rest (seconds)"
-                        min={0}
                         max={3600}
-                        value={editedItem.rest_seconds}
+                        min={0}
                         onChange={(value) => updateField('rest_seconds', Number(value) || 0)}
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.rest_seconds}
                     />
                 </Group>
             )}
@@ -88,76 +89,76 @@ export default function EditableFields({item, onSave, onCancel}: EditableFieldsP
                 <Group grow>
                     <NumberInput
                         label="Quantity"
-                        min={0}
                         max={10000}
-                        value={editedItem.quantity}
+                        min={0}
                         onChange={(value) => updateField('quantity', Number(value) || 0)}
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.quantity}
                     />
                     <TextInput
                         label="Unit"
-                        placeholder="g / ml / cup"
-                        value={editedItem.unit || ''}
                         onChange={(e) => updateField('unit', e.currentTarget.value)}
+                        placeholder="g / ml / cup"
                         size="sm"
                         styles={{
                             label: {
+                                color: 'var(--mantine-color-gray-8)',
                                 fontWeight: 600,
                                 marginBottom: 'var(--ce-size-2xs)',
-                                color: 'var(--mantine-color-gray-8)',
                             },
                         }}
+                        value={editedItem.unit || ''}
                     />
                 </Group>
             )}
 
             <Switch
-                label="Optional Item"
                 checked={editedItem.is_optional || false}
+                label="Optional Item"
                 onChange={(e) => updateField('is_optional', e.currentTarget.checked)}
                 size="sm"
             />
 
             <Textarea
-                label="Custom Instructions"
-                placeholder="Add specific instructions for this exercise..."
-                value={editedItem.custom_instructions || ''}
-                onChange={(event) => updateField('custom_instructions', event.target.value)}
                 autosize
-                minRows={2}
+                label="Custom Instructions"
                 maxRows={4}
+                minRows={2}
+                onChange={(event) => updateField('custom_instructions', event.target.value)}
+                placeholder="Add specific instructions for this exercise..."
                 size="sm"
                 styles={{
                     label: {
+                        color: 'var(--mantine-color-gray-8)',
                         fontWeight: 600,
                         marginBottom: 'var(--ce-size-2xs)',
-                        color: 'var(--mantine-color-gray-8)',
                     },
                 }}
+                value={editedItem.custom_instructions || ''}
             />
 
             <Group
-                justify="flex-end"
                 gap={'xs'}
+                justify="flex-end"
             >
                 <Button
-                    variant="subtle"
                     color="gray"
-                    size="sm"
                     onClick={onCancel}
+                    size="sm"
+                    variant="subtle"
                 >
                     Cancel
                 </Button>
                 <Button
-                    size="sm"
                     onClick={handleSave}
+                    size="sm"
                 >
                     Save Changes
                 </Button>

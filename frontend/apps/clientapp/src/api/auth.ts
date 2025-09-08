@@ -2,7 +2,7 @@ import {Result} from '@/Utils/Error';
 import axios, {AxiosInstance} from 'axios';
 import {z} from 'zod';
 
-// Auth schemas
+// auth schemas
 export const SignInRequest_zod = z.object({
     email: z.string().email(),
     invitation_token: z.string().optional(),

@@ -1,28 +1,30 @@
-import {Card, Group, Stack, TextInput, Text, Center, Box} from '@mantine/core';
-import {MagnifyingGlassIcon, BookOpenIcon} from '@phosphor-icons/react';
-import {useState, useEffect} from 'react';
+import {Box, Card, Center, Group, Stack, Text, TextInput} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
+import {BookOpenIcon, MagnifyingGlassIcon} from '@phosphor-icons/react';
 import {IconPlus} from '@tabler/icons-react';
+import {useMutation} from '@tanstack/react-query';
+import {useEffect, useState} from 'react';
+
 import {SessionDef} from '@/api/session_defs.ts';
+import {FixedBottom} from '@/components/containers/FixedBottom';
 import {useSessionDefs} from '@/hooks/useSessionDefsQueries';
+
 import RecordsList from '../layouts/RecordsList';
 import SessionDefItem from './SessionItem';
-import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useMutation} from '@tanstack/react-query';
 
 interface SessionSelectProps {
-    sessionType: SessionDef['session_type'];
     multiple?: boolean;
+    onCreateNew?: () => void;
     onSelect: (selected: string | string[]) => PromiseLike<void>;
     selectedIds?: string[];
-    onCreateNew?: () => void;
+    sessionType: SessionDef['session_type'];
 }
 
-const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedIds}: SessionSelectProps) => {
+const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionType}: SessionSelectProps) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(selectedIds ?? []);
     const onSearchChangeDebounced = useDebouncedCallback(setSearchTerm, 300);
-    const {data, isLoading, fetchNextPage, isFetchingNextPage} = useSessionDefs({
+    const {data, fetchNextPage, isFetchingNextPage, isLoading} = useSessionDefs({
         search: searchTerm,
         session_type: sessionType,
     });
@@ -63,55 +65,55 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
         <Stack gap={'md'}>
             {onCreateNew && (
                 <Card
-                    styles={{
-                        root: {
-                            border: '2px dashed var(--mantine-color-brand-3)',
-                            backgroundColor: 'var(--mantine-color-brand-0)',
-                            cursor: 'pointer',
-                            borderRadius: 'var(--body-offset)',
-                            paddingTop: 'var(--body-offset)',
-                            paddingInline: 'var(--ce-size-md)',
-                            paddingBottom: 'var(--ce-size-md)',
-                        },
-                    }}
-                    onClick={() => onCreateNew()}
-                    role="button"
-                    tabIndex={0}
                     aria-label="Create new custom session"
+                    onClick={() => onCreateNew()}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             onCreateNew();
                         }
                     }}
+                    role="button"
+                    styles={{
+                        root: {
+                            backgroundColor: 'var(--mantine-color-brand-0)',
+                            border: '2px dashed var(--mantine-color-brand-3)',
+                            borderRadius: 'var(--body-offset)',
+                            cursor: 'pointer',
+                            paddingBottom: 'var(--ce-size-md)',
+                            paddingInline: 'var(--ce-size-md)',
+                            paddingTop: 'var(--body-offset)',
+                        },
+                    }}
+                    tabIndex={0}
                 >
                     <Group
+                        align="center"
                         gap="md"
                         wrap="nowrap"
-                        align="center"
                     >
                         <Center
-                            w={40}
                             h={40}
                             style={{
                                 backgroundColor: 'var(--mantine-color-brand-2)',
                                 borderRadius: 8,
                                 flexShrink: 0,
                             }}
+                            w={40}
                         >
                             <IconPlus
-                                size={20}
                                 color={'var(--mantine-color-brand-6)'}
+                                size={20}
                             />
                         </Center>
                         <Box style={{flex: 1, minWidth: 0}}>
                             <Text
                                 c={'dark'}
                                 style={{
-                                    fontSize: 'var(--body-font-size)',
-                                    lineHeight: 'var(--body-line-height)',
                                     color: 'var(--mantine-color-gray-9)',
+                                    fontSize: 'var(--body-font-size)',
                                     fontWeight: 600,
+                                    lineHeight: 'var(--body-line-height)',
                                 }}
                             >
                                 Create new {sessionType}
@@ -119,10 +121,10 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
                             <Text
                                 c={'dark'}
                                 style={{
-                                    fontSize: 'var(--callout-font-size)',
-                                    lineHeight: 'var(--callout-line-height)',
                                     color: 'var(--mantine-color-gray-9)',
+                                    fontSize: 'var(--callout-font-size)',
                                     fontWeight: 400,
+                                    lineHeight: 'var(--callout-line-height)',
                                 }}
                             >
                                 Define a custom {sessionType} with your own content
@@ -134,13 +136,13 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
 
             <Box>
                 <Group
-                    justify="space-between"
                     align="center"
+                    justify="space-between"
                     mb="md"
                 >
                     <Text
-                        size={'sm'}
                         fw={600}
+                        size={'sm'}
                         style={{color: 'var(--mantine-color-gray-7)'}}
                     >
                         Or choose from existing library
@@ -161,53 +163,49 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
                 <Stack gap="md">
                     {/* Mobile-First Search Bar */}
                     <TextInput
-                        placeholder="Search sessions..."
                         leftSection={
                             <MagnifyingGlassIcon
-                                size={18}
                                 color="var(--mantine-color-gray-5)"
+                                size={18}
                             />
                         }
                         onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
+                        placeholder="Search sessions..."
                         size={'md'}
                         styles={{
                             input: {
-                                borderColor: 'var(--mantine-color-gray-3)',
                                 '&:focus': {
                                     borderColor: 'var(--mantine-color-brand-5)',
                                     boxShadow: '0 0 0 1px var(--mantine-color-brand-5)',
                                 },
+                                borderColor: 'var(--mantine-color-gray-3)',
                             },
                         }}
                     />
 
                     <RecordsList
-                        isLoading={isLoading}
-                        isFetchingNextPage={isFetchingNextPage}
-                        records={sessionDefs}
-                        fetchNextPage={fetchNextPage}
                         emptyState={
                             <Center py="xl">
                                 <Stack
-                                    gap="md"
                                     align="center"
+                                    gap="md"
                                     maw={320}
                                     ta="center"
                                 >
                                     <Box
-                                        w={48}
                                         h={48}
                                         style={{
+                                            alignItems: 'center',
                                             backgroundColor: 'var(--mantine-color-gray-1)',
                                             borderRadius: '50%',
                                             display: 'flex',
-                                            alignItems: 'center',
                                             justifyContent: 'center',
                                         }}
+                                        w={48}
                                     >
                                         <BookOpenIcon
-                                            size={24}
                                             color="var(--mantine-color-gray-5)"
+                                            size={24}
                                         />
                                     </Box>
                                     <Text
@@ -218,8 +216,8 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
                                         No sessions found
                                     </Text>
                                     <Text
-                                        size="sm"
                                         c="dimmed"
+                                        size="sm"
                                         style={{lineHeight: 1.4}}
                                     >
                                         {searchTerm
@@ -229,13 +227,17 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
                                 </Stack>
                             </Center>
                         }
+                        fetchNextPage={fetchNextPage}
+                        isFetchingNextPage={isFetchingNextPage}
+                        isLoading={isLoading}
+                        records={sessionDefs}
                         renderItem={(sessionDef) => {
                             return (
                                 <SessionDefItem
-                                    key={sessionDef.id}
-                                    sessionDef={sessionDef}
-                                    onToggle={handleSelect}
                                     isSelected={currentSelectedIds.includes(sessionDef.id)}
+                                    key={sessionDef.id}
+                                    onToggle={handleSelect}
+                                    sessionDef={sessionDef}
                                 />
                             );
                         }}
@@ -244,9 +246,9 @@ const SessionSelect = ({onSelect, sessionType, onCreateNew, multiple, selectedId
             </Box>
             {multiple && currentSelectedIds.length ? (
                 <FixedBottom
+                    isSubmitting={save.isPending}
                     label={`${currentSelectedIds.length} selected`}
                     onSubmit={() => save.mutate()}
-                    isSubmitting={save.isPending}
                 />
             ) : null}
         </Stack>

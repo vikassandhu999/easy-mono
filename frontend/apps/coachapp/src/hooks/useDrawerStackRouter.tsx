@@ -1,5 +1,20 @@
-import {useState, useEffect, useCallback, useMemo, createContext, useContext} from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useLocation, useNavigate, useSearchParams} from 'react-router';
+
+interface DrawerData {
+    [key: string]: any;
+}
+
+interface DrawerStackContextValue {
+    closeAllDrawers: () => void;
+    closeDrawer: (id: string) => void;
+    isOpen: (id: string) => boolean;
+    openDrawer: (id: string, data?: DrawerData) => void;
+    register: (id: string) => {onClose: () => void; opened: boolean; stackId: string};
+    replaceDrawer: (id: string, data?: DrawerData) => void;
+    setDrawerData: (id: string, data: DrawerData) => void;
+    toggle: (id: string, data?: DrawerData) => void;
+}
 
 interface DrawerStackRouterOptions {
     baseRoutePath: string;
@@ -8,27 +23,34 @@ interface DrawerStackRouterOptions {
     paramPrefix?: string;
 }
 
-interface DrawerData {
-    [key: string]: any;
-}
-
 interface DrawerState {
-    id: string;
     data?: DrawerData;
-}
-
-interface DrawerStackContextValue {
-    openDrawer: (id: string, data?: DrawerData) => void;
-    closeDrawer: (id: string) => void;
-    replaceDrawer: (id: string, data?: DrawerData) => void;
-    closeAllDrawers: () => void;
-    setDrawerData: (id: string, data: DrawerData) => void;
-    register: (id: string) => {opened: boolean; onClose: () => void; stackId: string};
-    isOpen: (id: string) => boolean;
-    toggle: (id: string, data?: DrawerData) => void;
+    id: string;
 }
 
 const DrawerStackContext = createContext<DrawerStackContextValue | null>(null);
+
+// Hook to use drawer actions (memoized)
+export function useDrawerActions() {
+    const context = useContext(DrawerStackContext);
+    if (!context) {
+        throw new Error('useDrawerActions must be used within a DrawerStackRouter');
+    }
+
+    return useMemo(
+        () => ({
+            closeAllDrawers: context.closeAllDrawers,
+            closeDrawer: context.closeDrawer,
+            isOpen: context.isOpen,
+            openDrawer: context.openDrawer,
+            register: context.register,
+            replaceDrawer: context.replaceDrawer,
+            setDrawerData: context.setDrawerData,
+            toggle: context.toggle,
+        }),
+        [context],
+    );
+}
 
 // Optimized hook to get drawer data with selector pattern
 export function useDrawerData<T = DrawerData>(drawerId: string): T | undefined {
@@ -48,29 +70,31 @@ export function useDrawerData<T = DrawerData>(drawerId: string): T | undefined {
     }, [drawerId, searchParams]);
 }
 
-// Hook to use drawer actions (memoized)
-export function useDrawerActions() {
-    const context = useContext(DrawerStackContext);
-    if (!context) {
-        throw new Error('useDrawerActions must be used within a DrawerStackRouter');
-    }
-
-    return useMemo(
-        () => ({
-            openDrawer: context.openDrawer,
-            closeDrawer: context.closeDrawer,
-            replaceDrawer: context.replaceDrawer,
-            closeAllDrawers: context.closeAllDrawers,
-            setDrawerData: context.setDrawerData,
-            register: context.register,
-            isOpen: context.isOpen,
-            toggle: context.toggle,
-        }),
-        [context],
-    );
-}
-
 const urlCodec = {
+    decode: (encoded: string): DrawerState[] => {
+        if (!encoded) return [];
+
+        return encoded
+            .split(',')
+            .filter(Boolean)
+            .map((item) => {
+                const [id, dataStr] = item.split(':');
+
+                if (dataStr) {
+                    try {
+                        // Decode the base64 data
+                        const decodedData = JSON.parse(decodeURIComponent(atob(dataStr)));
+                        return {data: decodedData, id: id.trim()};
+                    } catch (e) {
+                        console.error('Failed to decode drawer data:', e);
+                        return {id: id.trim()};
+                    }
+                }
+
+                return {id: id.trim()};
+            });
+    },
+
     encode: (drawers: DrawerState[]): string => {
         if (drawers.length === 0) return '';
 
@@ -88,30 +112,6 @@ const urlCodec = {
             .join(',');
 
         return encoded;
-    },
-
-    decode: (encoded: string): DrawerState[] => {
-        if (!encoded) return [];
-
-        return encoded
-            .split(',')
-            .filter(Boolean)
-            .map((item) => {
-                const [id, dataStr] = item.split(':');
-
-                if (dataStr) {
-                    try {
-                        // Decode the base64 data
-                        const decodedData = JSON.parse(decodeURIComponent(atob(dataStr)));
-                        return {id: id.trim(), data: decodedData};
-                    } catch (e) {
-                        console.error('Failed to decode drawer data:', e);
-                        return {id: id.trim()};
-                    }
-                }
-
-                return {id: id.trim()};
-            });
     },
 };
 
@@ -188,9 +188,9 @@ export function useDrawerStackRouter({
                 const existingIndex = current.findIndex((d) => d.id === drawerId);
                 let newDrawers: DrawerState[];
                 if (existingIndex !== -1) {
-                    newDrawers = current.map((d, i) => (i === existingIndex ? {id: drawerId, data} : d));
+                    newDrawers = current.map((d, i) => (i === existingIndex ? {data, id: drawerId} : d));
                 } else {
-                    newDrawers = [...current, {id: drawerId, data}];
+                    newDrawers = [...current, {data, id: drawerId}];
                 }
                 updateUrl(newDrawers);
                 return newDrawers;
@@ -213,7 +213,7 @@ export function useDrawerStackRouter({
                 }
 
                 const updated = [...current];
-                updated[updated.length - 1] = {id: drawerId, data};
+                updated[updated.length - 1] = {data, id: drawerId};
                 updateUrl(updated, true);
                 return updated;
             });
@@ -287,8 +287,8 @@ export function useDrawerStackRouter({
     const register = useCallback(
         (id: string) => {
             return {
-                opened: isOpen(id),
                 onClose: () => closeDrawer(id),
+                opened: isOpen(id),
                 stackId: id,
             };
         },
@@ -309,28 +309,28 @@ export function useDrawerStackRouter({
 
     const contextValue = useMemo<DrawerStackContextValue>(
         () => ({
-            openDrawer,
-            closeDrawer,
-            replaceDrawer,
             closeAllDrawers,
-            setDrawerData,
-            register,
+            closeDrawer,
             isOpen,
+            openDrawer,
+            register,
+            replaceDrawer,
+            setDrawerData,
             toggle,
         }),
         [openDrawer, closeDrawer, replaceDrawer, closeAllDrawers, setDrawerData, register, isOpen, toggle],
     );
 
     return {
+        close: closeDrawer,
+        closeAll: closeAllDrawers,
+        open: openDrawer,
+        openDrawer,
         Provider: ({children}: {children: React.ReactNode}) => (
             <DrawerStackContext.Provider value={contextValue}>{children}</DrawerStackContext.Provider>
         ),
         register,
-        openDrawer,
         state: openState,
-        close: closeDrawer,
-        open: openDrawer,
-        closeAll: closeAllDrawers,
         toggle,
     };
 }

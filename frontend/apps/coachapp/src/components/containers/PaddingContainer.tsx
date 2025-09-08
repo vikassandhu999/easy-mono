@@ -1,22 +1,22 @@
 import {Container, MantineSpacing} from '@mantine/core';
 import {PropsWithChildren} from 'react';
 
-type Props = {
-    paddingY?: MantineSpacing;
-    paddingX?: MantineSpacing;
+type Props = PropsWithChildren & {
     marginBottom?: MantineSpacing;
+    paddingX?: MantineSpacing;
+    paddingY?: MantineSpacing;
     ref?: React.Ref<HTMLDivElement>;
     style?: React.CSSProperties;
-} & PropsWithChildren;
+};
 
-export default function PaddingContainer({paddingY, paddingX, marginBottom, children, ref, style}: Props) {
+export default function PaddingContainer({children, marginBottom, paddingX, paddingY, ref, style}: Props) {
     return (
         <Container
-            ref={ref}
-            size="lg"
+            mb={marginBottom ?? 0}
             px={paddingX}
             py={paddingY}
-            mb={marginBottom ?? 0}
+            ref={ref}
+            size="lg"
             style={style}
         >
             {children}

@@ -2,13 +2,13 @@ import {AuthToken, WebSocketClient} from '@easy/websocket';
 import React, {createContext, PropsWithChildren, useCallback, useMemo, useRef} from 'react';
 
 interface AppContextValue {
-    socket: WebSocketClient;
     initSocket: (connectionUrl: string, token: AuthToken) => void;
+    socket: WebSocketClient;
 }
 
 export const AppContext = createContext<AppContextValue>({
-    socket: null,
     initSocket: () => {},
+    socket: null,
 });
 
 const socket = new WebSocketClient();
@@ -27,7 +27,7 @@ export const AppProvider: React.FC<PropsWithChildren> = ({children}) => {
         }
     }, []);
 
-    const value = useMemo(() => ({socket, initSocket}), [initSocket]);
+    const value = useMemo(() => ({initSocket, socket}), [initSocket]);
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

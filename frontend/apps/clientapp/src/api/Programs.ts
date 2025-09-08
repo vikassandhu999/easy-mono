@@ -172,7 +172,7 @@ export const ProgramsAPI = {
         }
     },
 
-    // Program Contents
+    // Program contents
     createProgramContent: async (
         programId: string,
         data: CreateProgramContentProps,

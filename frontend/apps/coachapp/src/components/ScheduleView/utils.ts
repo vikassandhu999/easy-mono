@@ -1,16 +1,17 @@
-import {IconClock, IconSun, IconMoon, IconSunset, IconSunrise} from '@tabler/icons-react';
+import {IconClock, IconMoon, IconSun, IconSunrise, IconSunset} from '@tabler/icons-react';
+
 import {NamedSlot} from '@/api/schedule_entries.ts';
 
 export const statusColors = {
-    draft: 'gray',
     active: 'green',
     archived: 'red',
+    draft: 'gray',
 } as const;
 
 export const visibilityLabels = {
     private: 'Private',
     program: 'Program',
-    shared_library: 'Shared Library',
+    shared_library: 'Shared library',
 } as const;
 
 export const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -18,12 +19,12 @@ export const dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export const getSlotIcon = (slotName?: NamedSlot) => {
     switch (slotName) {
-        case 'morning':
-            return IconSunrise;
         case 'afternoon':
             return IconSun;
         case 'evening':
             return IconSunset;
+        case 'morning':
+            return IconSunrise;
         case 'night':
             return IconMoon;
         default:
@@ -58,10 +59,10 @@ export const getDifficultyValue = (difficultyLevel: string) => {
     switch (difficultyLevel) {
         case 'easy':
             return 25;
-        case 'medium':
-            return 50;
         case 'hard':
             return 75;
+        case 'medium':
+            return 50;
         default:
             return 100;
     }

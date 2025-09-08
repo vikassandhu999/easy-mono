@@ -78,7 +78,7 @@ export function ProgramCardExample({
         ],
         metadata: [
             {
-                label: 'Clients',
+                label: 'clients',
                 value: program.clientCount.toString(),
                 icon: <IconUsers size={14} />,
             },

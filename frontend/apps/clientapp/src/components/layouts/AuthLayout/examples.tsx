@@ -2,7 +2,7 @@ import React from 'react';
 import {Button, TextInput, PasswordInput, Stack, Text, Anchor} from '@mantine/core';
 import {AuthLayout} from './AuthLayout';
 
-// Example: Login Form using improved Index
+// Example: Login Form using improved EasyOptionSelector
 export function LoginExample() {
     return (
         <AuthLayout

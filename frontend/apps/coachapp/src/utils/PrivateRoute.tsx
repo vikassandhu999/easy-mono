@@ -1,5 +1,6 @@
+import {Center, Loader} from '@mantine/core';
 import {Navigate, Outlet} from 'react-router';
-import {Loader, Center} from '@mantine/core';
+
 import {useAuth} from '@/providers/AuthProvider';
 
 const PrivateRoute = () => {

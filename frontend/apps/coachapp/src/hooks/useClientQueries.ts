@@ -1,26 +1,31 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
 import {
     ClientsAPI,
-    type ListClientsProps,
     type CreateClientProps,
-    type UpdateClientProps,
+    type ListClientsProps,
     MembershipStatusType,
+    type UpdateClientProps,
 } from '@/api/clients.ts';
 
 // Query Keys
 export const CLIENT_QUERY_KEYS = {
     all: ['clients'] as const,
-    lists: () => [...CLIENT_QUERY_KEYS.all, 'list'] as const,
-    list: (params: ListClientsProps) => [...CLIENT_QUERY_KEYS.lists(), params] as const,
-    details: () => [...CLIENT_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...CLIENT_QUERY_KEYS.details(), id] as const,
+    details: () => [...CLIENT_QUERY_KEYS.all, 'detail'] as const,
+    list: (params: ListClientsProps) => [...CLIENT_QUERY_KEYS.lists(), params] as const,
+    lists: () => [...CLIENT_QUERY_KEYS.all, 'list'] as const,
     stats: () => [...CLIENT_QUERY_KEYS.all, 'stats'] as const,
 };
 
-// List Clients Hook
+// List clients Hook
 export const useClients = (params?: Omit<ListClientsProps, 'page'>) => {
     return useInfiniteQuery({
-        queryKey: CLIENT_QUERY_KEYS.list(params || {}),
+        getNextPageParam: (lastPage) => {
+            const totalPages = Math.ceil(lastPage.total / lastPage.page_size);
+            return lastPage.page < totalPages ? lastPage.page + 1 : undefined;
+        },
+        initialPageParam: 1,
         queryFn: async ({pageParam = 1}) => {
             const result = await ClientsAPI.listClients({
                 ...params,
@@ -30,24 +35,20 @@ export const useClients = (params?: Omit<ListClientsProps, 'page'>) => {
                 throw result.error;
             }
             return {
-                records: result.value.records,
-                total: result.value.total,
                 page: result.value.page || pageParam,
                 page_size: result.value.page_size || 20,
+                records: result.value.records,
+                total: result.value.total,
             };
         },
-        initialPageParam: 1,
-        getNextPageParam: (lastPage) => {
-            const totalPages = Math.ceil(lastPage.total / lastPage.page_size);
-            return lastPage.page < totalPages ? lastPage.page + 1 : undefined;
-        },
+        queryKey: CLIENT_QUERY_KEYS.list(params || {}),
     });
 };
 
 // Get Single Client Hook
 export const useClient = (clientId: string) => {
     return useQuery({
-        queryKey: CLIENT_QUERY_KEYS.detail(clientId),
+        enabled: !!clientId,
         queryFn: async () => {
             const result = await ClientsAPI.getClient(clientId);
             if (result.isError) {
@@ -55,14 +56,13 @@ export const useClient = (clientId: string) => {
             }
             return result.value;
         },
-        enabled: !!clientId,
+        queryKey: CLIENT_QUERY_KEYS.detail(clientId),
     });
 };
 
 // Get Membership Stats Hook
 export const useMembershipStats = () => {
     return useQuery({
-        queryKey: CLIENT_QUERY_KEYS.stats(),
         queryFn: async () => {
             const result = await ClientsAPI.getMembershipStats();
             if (result.isError) {
@@ -70,6 +70,7 @@ export const useMembershipStats = () => {
             }
             return result.value;
         },
+        queryKey: CLIENT_QUERY_KEYS.stats(),
     });
 };
 
@@ -97,7 +98,7 @@ export const useUpdateClient = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (variables: {id: string; data: UpdateClientProps}) => {
+        mutationFn: async (variables: {data: UpdateClientProps; id: string}) => {
             const result = await ClientsAPI.updateClient(variables.id, variables.data);
             if (result.isError) {
                 throw result.error;

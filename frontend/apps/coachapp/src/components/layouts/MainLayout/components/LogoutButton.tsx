@@ -1,4 +1,4 @@
-import {UnstyledButton, Group, Text, Menu} from '@mantine/core';
+import {Group, Menu, Text, UnstyledButton} from '@mantine/core';
 import {IconLogout} from '@tabler/icons-react';
 
 interface LogoutButtonProps {
@@ -11,18 +11,18 @@ export function LogoutButton({onLogout}: LogoutButtonProps) {
             <Menu.Target>
                 <UnstyledButton
                     onClick={onLogout}
-                    w="100%"
-                    p="sm"
-                    style={{
-                        borderRadius: '8px',
-                        transition: 'background-color 0.2s ease',
-                    }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = 'var(--mantine-color-red-0)';
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                     }}
+                    p="sm"
+                    style={{
+                        borderRadius: '8px',
+                        transition: 'background-color 0.2s ease',
+                    }}
+                    w="100%"
                 >
                     <Group gap="sm">
                         <IconLogout
@@ -30,9 +30,9 @@ export function LogoutButton({onLogout}: LogoutButtonProps) {
                             stroke={1.5}
                         />
                         <Text
-                            size="sm"
-                            fw={400}
                             c="red.6"
+                            fw={400}
+                            size="sm"
                         >
                             Logout
                         </Text>

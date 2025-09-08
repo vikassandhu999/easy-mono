@@ -1,13 +1,14 @@
 import React from 'react';
+
 import LogoSrc from '../../../public/logo.png';
 
-type TextLogoProps = {
-    size?: 'sm' | 'md' | 'lg';
+type TextLogoProps = React.HTMLAttributes<HTMLElement> & {
     as?: React.ElementType;
+    className?: string;
     href?: string;
     onDark?: boolean;
-    className?: string;
-} & React.HTMLAttributes<HTMLElement>;
+    size?: 'lg' | 'md' | 'sm';
+};
 
 /**
  * Renders the "Coach Easy" text logo with support for different sizes and themes.
@@ -21,11 +22,11 @@ type TextLogoProps = {
  * @param {string} [props.className] - Allows passing additional CSS classes to the component.
  */
 export default function TextLogo({
-    size = 'sm',
     as: Component = 'a', // Render as an 'a' tag by default
+    className = '',
     href = '/',
     onDark = false,
-    className = '',
+    size = 'sm',
     ...rest // Pass through any other props like aria-label, etc.
 }: TextLogoProps) {
     // Construct the CSS class string based on props
@@ -33,9 +34,9 @@ export default function TextLogo({
 
     // Define image width based on size
     const sizeToWidth = {
-        sm: '120px',
-        md: '160px',
         lg: '200px',
+        md: '160px',
+        sm: '120px',
     };
 
     // Prepare props for the component, adding href only if it's a link
@@ -48,9 +49,9 @@ export default function TextLogo({
     return (
         <Component {...componentProps}>
             <img
-                src={LogoSrc}
                 alt="Coach Easy Logo"
-                style={{width: sizeToWidth[size], verticalAlign: 'middle'}}
+                src={LogoSrc}
+                style={{verticalAlign: 'middle', width: sizeToWidth[size]}}
             />
         </Component>
     );

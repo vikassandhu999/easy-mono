@@ -4,7 +4,7 @@ import {NavItem} from './types';
 export const navItems: NavItem[] = [
     {icon: HouseIcon, label: 'Home', href: '/'},
     {icon: CalendarIcon, label: 'Schedule', href: '/schedule'},
-    {icon: ChatsIcon, label: 'Chats', href: '/chats'},
+    {icon: ChatsIcon, label: 'chats', href: '/chats'},
     {icon: UserIcon, label: 'Profile', href: '/profile'},
     // {icon: GearIcon, label: 'Settings', href: '/settings'},
 ];

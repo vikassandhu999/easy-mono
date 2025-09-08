@@ -1,5 +1,6 @@
 import {Badge, Box, Stack, Text, useMantineTheme} from '@mantine/core';
 import {useLocation} from 'react-router';
+
 import {NavItem} from '../types';
 
 interface MobileNavItemProps {
@@ -16,20 +17,20 @@ export function MobileNavItem({item, onNavigate}: MobileNavItemProps) {
 
     return (
         <Box
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={item.label}
             component="button"
             onClick={() => onNavigate(item.href)}
             p="xs"
             style={{
-                border: 'none',
                 background: 'transparent',
-                cursor: 'pointer',
-                position: 'relative',
-                minWidth: '60px',
+                border: 'none',
                 color: isActive ? theme.colors.blue[6] : theme.colors.gray[6],
+                cursor: 'pointer',
+                minWidth: '60px',
+                position: 'relative',
                 transition: 'color 0.2s ease',
             }}
-            aria-label={item.label}
-            aria-current={isActive ? 'page' : undefined}
         >
             <Stack
                 align="center"
@@ -37,27 +38,27 @@ export function MobileNavItem({item, onNavigate}: MobileNavItemProps) {
             >
                 <Icon size={20} />
                 <Text
-                    size="xs"
                     fw={isActive ? 600 : 400}
-                    truncate
+                    size="xs"
                     style={{maxWidth: '60px'}}
+                    truncate
                 >
                     {item.label}
                 </Text>
                 {item.badge && (
                     <Badge
-                        size="xs"
-                        variant="filled"
-                        color="red"
                         circle
+                        color="red"
+                        size="xs"
                         style={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '8px',
-                            minWidth: '16px',
-                            height: '16px',
                             fontSize: '10px',
+                            height: '16px',
+                            minWidth: '16px',
+                            position: 'absolute',
+                            right: '8px',
+                            top: '4px',
                         }}
+                        variant="filled"
                     >
                         {item.badge}
                     </Badge>

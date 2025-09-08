@@ -1,4 +1,5 @@
 import {Stack} from '@mantine/core';
+
 import {NavItem} from '../types';
 import {NavItemButton} from './NavItemButton';
 
@@ -12,8 +13,8 @@ export function NavItems({items, onNavigate}: NavItemsProps) {
         <Stack gap="xs">
             {items.map((item) => (
                 <NavItemButton
-                    key={item.href}
                     item={item}
+                    key={item.href}
                     onNavigate={onNavigate}
                 />
             ))}

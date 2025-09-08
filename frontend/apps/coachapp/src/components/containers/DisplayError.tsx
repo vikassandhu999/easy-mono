@@ -4,11 +4,11 @@ import {IconAlertCircle} from '@tabler/icons-react';
 
 interface DisplayErrorProps {
     codesMap: Map<string, string>;
-    error?: Error | AppError;
+    error?: AppError | Error;
     onRetry?: () => void;
 }
 
-export function DisplayError({error, codesMap, onRetry}: DisplayErrorProps) {
+export function DisplayError({codesMap, error, onRetry}: DisplayErrorProps) {
     if (!error) return null;
 
     const errorCode = (error as AppError)?.code;
@@ -16,9 +16,9 @@ export function DisplayError({error, codesMap, onRetry}: DisplayErrorProps) {
 
     return (
         <Alert
+            color="red"
             icon={<IconAlertCircle size={16} />}
             title="Error"
-            color="red"
         >
             {errorMessage}
 

@@ -1,25 +1,27 @@
-import {PropsWithChildren} from 'react';
-import {Grid, Container, Stack, Title, Text, Image, Center, Box, Loader} from '@mantine/core';
+import {Box, Center, Container, Grid, Image, Loader, Stack, Text, Title} from '@mantine/core';
 import {useMediaQuery} from '@mantine/hooks';
-// eslint-disable-next-line prettier/prettier, import/no-absolute-path
-import AuthIllustration from '/auth-background.png';
+import {PropsWithChildren} from 'react';
+
 import TextLogo from '@/components/TextLogo/TextLogo';
 
+// eslint-disable-next-line prettier/prettier, import/no-absolute-path
+import AuthIllustration from '/auth-background.png';
+
 interface AuthLayoutProps extends PropsWithChildren {
-    title?: string;
-    subtitle?: string;
-    loading?: boolean;
     error?: boolean;
     illustrationAlt?: string;
+    loading?: boolean;
+    subtitle?: string;
+    title?: string;
 }
 
 export default function Index({
     children,
-    title,
-    subtitle,
-    loading = false,
     error = false,
     illustrationAlt = 'Authentication background illustration',
+    loading = false,
+    subtitle,
+    title,
 }: AuthLayoutProps) {
     const isSmallScreen = useMediaQuery('(max-width: 767px)');
 
@@ -32,38 +34,38 @@ export default function Index({
         >
             {/* Content Section */}
             <Grid.Col
-                span={{xs: 12, md: 6}}
+                span={{md: 6, xs: 12}}
                 style={{
-                    display: 'flex',
                     alignItems: 'start',
+                    display: 'flex',
                     justifyContent: 'start',
                     minHeight: '100vh',
                     padding: 0,
                 }}
             >
                 <Container
+                    p={{base: 'md', sm: 'lg'}}
                     size="sm"
                     style={{
-                        width: '100%',
-                        maxWidth: '420px',
                         display: 'block',
+                        maxWidth: '420px',
+                        width: '100%',
                     }}
-                    p={{base: 'md', sm: 'lg'}}
                 >
                     <Stack
-                        gap="md"
                         align="center"
+                        gap="md"
                         style={{
-                            minHeight: isSmallScreen ? 'auto' : '60vh',
                             justifyContent: 'center',
+                            minHeight: isSmallScreen ? 'auto' : '60vh',
                         }}
                     >
                         {/* Brand Section */}
                         <Box ta="center">
                             <TextLogo
-                                size={'lg'}
-                                as="div"
                                 aria-label="Coach Easy Logo"
+                                as="div"
+                                size={'lg'}
                             />
                         </Box>
 
@@ -75,18 +77,18 @@ export default function Index({
                             >
                                 {title && (
                                     <Title
-                                        order={6}
-                                        fw={600}
                                         c={error ? 'red' : 'dark'}
+                                        fw={600}
+                                        order={6}
                                     >
                                         {title}
                                     </Title>
                                 )}
                                 {subtitle && (
                                     <Text
-                                        size={'sm'}
                                         c="dimmed"
                                         fw={400}
+                                        size={'sm'}
                                     >
                                         {subtitle}
                                     </Text>
@@ -103,8 +105,8 @@ export default function Index({
 
                         {/* Form Content */}
                         <Box
-                            w="100%"
                             mt={'lg'}
+                            w="100%"
                         >
                             <Stack gap="lg">{children}</Stack>
                         </Box>
@@ -117,24 +119,24 @@ export default function Index({
                 <Grid.Col
                     span={6}
                     style={{
-                        display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        minHeight: '100vh',
                         background:
                             'linear-gradient(135deg, var(--mantine-color-primary-0) 0%, var(--mantine-color-primary-1) 100%)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        minHeight: '100vh',
                         overflow: 'hidden',
                     }}
                 >
                     <Image
-                        src={AuthIllustration}
                         alt={illustrationAlt}
+                        loading="lazy"
+                        src={AuthIllustration}
                         style={{
-                            width: '100%',
                             height: '100%',
                             objectFit: 'cover',
+                            width: '100%',
                         }}
-                        loading="lazy"
                     />
                 </Grid.Col>
             )}

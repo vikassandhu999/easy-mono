@@ -1,38 +1,38 @@
-import React, {useCallback, useEffect, useRef} from 'react';
-import {Stack, Button, Center, Loader, Transition, Text} from '@mantine/core';
+import {Button, Center, Loader, Stack, Text, Transition} from '@mantine/core';
 import {useIntersection} from '@mantine/hooks';
+import React, {useCallback, useEffect, useRef} from 'react';
 
 interface RecordsListProps<T> {
-    records: T[];
-    hasNextPage?: boolean;
+    className?: string;
+    emptyState: React.ReactNode;
+    enableInfiniteScroll?: boolean;
+    error?: Error | null;
     fetchNextPage: () => void;
+    gap?: number | string;
+    hasNextPage?: boolean;
     isFetchingNextPage?: boolean;
     isLoading?: boolean;
-    emptyState: React.ReactNode;
+    itemKey?: (item: T, index: number) => number | string;
     loadMoreText?: string;
-    itemKey?: (item: T, index: number) => string | number;
-    renderItem: (item: T, index: number) => React.ReactNode;
-    enableInfiniteScroll?: boolean;
-    gap?: number | string;
-    className?: string;
     onItemClick?: (item: T) => void;
-    testId?: string;
-    error?: Error | null;
+    records: T[];
+    renderItem: (item: T, index: number) => React.ReactNode;
     retryOnError?: boolean;
+    testId?: string;
 }
 
 // Memoized item wrapper to prevent unnecessary re-renders
 const RecordItem = React.memo(
     <T,>({
-        item,
         index,
-        renderItem,
+        item,
         onClick,
+        renderItem,
     }: {
-        item: T;
         index: number;
-        renderItem: (item: T, index: number) => React.ReactNode;
+        item: T;
         onClick?: (item: T) => void;
+        renderItem: (item: T, index: number) => React.ReactNode;
     }) => {
         const handleClick = useCallback(() => {
             onClick?.(item);
@@ -41,9 +41,6 @@ const RecordItem = React.memo(
         return (
             <div
                 onClick={onClick ? handleClick : undefined}
-                style={onClick ? {cursor: 'pointer'} : undefined}
-                role={onClick ? 'button' : undefined}
-                tabIndex={onClick ? 0 : undefined}
                 onKeyDown={
                     onClick
                         ? (e) => {
@@ -54,6 +51,9 @@ const RecordItem = React.memo(
                           }
                         : undefined
                 }
+                role={onClick ? 'button' : undefined}
+                style={onClick ? {cursor: 'pointer'} : undefined}
+                tabIndex={onClick ? 0 : undefined}
             >
                 {renderItem(item, index)}
             </div>
@@ -64,31 +64,31 @@ const RecordItem = React.memo(
 RecordItem.displayName = 'RecordItem';
 
 export default function RecordsList<T>({
+    className,
+    emptyState,
+    enableInfiniteScroll = true,
+    error = null,
     fetchNextPage,
+    gap = 'sm',
     hasNextPage = false,
     isFetchingNextPage = false,
     isLoading = false,
-    renderItem,
-    records,
-    emptyState,
-    loadMoreText = 'Load More',
     itemKey = (item: T, index: number) => {
         return (item as any).id ?? index;
     },
-    enableInfiniteScroll = true,
-    gap = 'sm',
-    className,
+    loadMoreText = 'Load More',
     onItemClick,
-    testId = 'records-list',
-    error = null,
+    records,
+    renderItem,
     retryOnError = true,
+    testId = 'records-list',
 }: RecordsListProps<T>) {
     // Use refs to track state across renders
     const lastCallTimeRef = useRef(0);
     const hasMountedRef = useRef(false);
 
     // Use a more reliable intersection observer with smaller rootMargin
-    const {ref, entry} = useIntersection({
+    const {entry, ref} = useIntersection({
         root: null,
         rootMargin: '100px',
         threshold: 0.1,
@@ -122,8 +122,8 @@ export default function RecordsList<T>({
     if (isLoading && records.length === 0) {
         return (
             <Center
-                py="xl"
                 data-testid={`${testId}-loading`}
+                py="xl"
             >
                 <Loader size="md" />
             </Center>
@@ -134,15 +134,15 @@ export default function RecordsList<T>({
     if (!isLoading && records.length === 0) {
         return (
             <Transition
-                mounted={true}
-                transition="fade"
                 duration={200}
+                mounted={true}
                 timingFunction="ease"
+                transition="fade"
             >
                 {(styles) => (
                     <div
-                        style={styles}
                         data-testid={`${testId}-empty`}
+                        style={styles}
                     >
                         {emptyState}
                     </div>
@@ -155,16 +155,16 @@ export default function RecordsList<T>({
     if (error && records.length === 0) {
         return (
             <Center
-                py="xl"
                 data-testid={`${testId}-error`}
+                py="xl"
             >
                 <Stack align="center">
                     <Text c="dimmed">Failed to load data</Text>
                     {retryOnError && (
                         <Button
-                            variant="outline"
                             onClick={handleFetchNextPage}
                             size="sm"
+                            variant="outline"
                         >
                             Retry
                         </Button>
@@ -176,18 +176,18 @@ export default function RecordsList<T>({
 
     return (
         <Stack
-            gap={gap}
             className={className}
             data-testid={testId}
+            gap={gap}
         >
             {/* Records list */}
             {records.map((record, index) => (
                 <RecordItem
-                    key={itemKey(record, index)}
-                    item={record}
                     index={index}
-                    renderItem={renderItem}
+                    item={record}
+                    key={itemKey(record, index)}
                     onClick={onItemClick}
+                    renderItem={renderItem}
                 />
             ))}
 
@@ -195,19 +195,19 @@ export default function RecordsList<T>({
             {hasNextPage &&
                 (enableInfiniteScroll ? (
                     <div
+                        data-testid={`${testId}-trigger`}
                         ref={ref}
                         style={{height: 10, margin: '10px 0'}}
-                        data-testid={`${testId}-trigger`}
                     />
                 ) : (
                     <Center py="md">
                         <Button
-                            onClick={handleFetchNextPage}
-                            loading={isFetchingNextPage}
-                            disabled={isFetchingNextPage}
-                            variant="outline"
-                            size="md"
                             data-testid={`${testId}-load-more`}
+                            disabled={isFetchingNextPage}
+                            loading={isFetchingNextPage}
+                            onClick={handleFetchNextPage}
+                            size="md"
+                            variant="outline"
                         >
                             {loadMoreText}
                         </Button>
@@ -225,10 +225,10 @@ export default function RecordsList<T>({
             {error && records.length > 0 && hasNextPage && (
                 <Center py="md">
                     <Button
-                        variant="subtle"
                         color="red"
                         onClick={handleFetchNextPage}
                         size="sm"
+                        variant="subtle"
                     >
                         Error loading more items. Tap to retry.
                     </Button>

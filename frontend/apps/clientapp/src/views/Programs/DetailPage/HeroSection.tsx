@@ -88,7 +88,7 @@ export default function HeroSection({program, stats, titleRef}: Props) {
                 {stats && (
                     <Group style={{marginTop: 'var(--title1-offset)', gap: 'var(--title1-font-size)'}}>
                         <DisplayStat
-                            label={'Clients'}
+                            label={'clients'}
                             text={stats.activeClients}
                         />
                         {/* <Divider orientation={'vertical'} /> */}

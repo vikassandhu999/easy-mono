@@ -13,9 +13,9 @@ export class AppError extends Error {
 }
 
 export class Result<T> {
+    error?: AppError;
     isError: boolean;
     value?: T;
-    error?: AppError;
 
     private constructor(isError: boolean, value?: T, error?: AppError) {
         this.isError = isError;
@@ -23,25 +23,7 @@ export class Result<T> {
         this.error = error;
     }
 
-    getValue(): T {
-        if (this.isError) {
-            throw new Error('Tyring to get value of an errored result');
-        }
-        return this.value!;
-    }
-
-    getError(): AppError {
-        if (!this.isError) {
-            throw new Error('Trying to get error of success result');
-        }
-        return this.error!;
-    }
-
-    static success<T>(value: T): Result<T> {
-        return new Result<T>(false, value);
-    }
-
-    static failure<T>(e: AxiosError | AppError | Error | unknown): Result<T> {
+    static failure<T>(e: AppError | AxiosError | Error | unknown): Result<T> {
         let err: AppError;
         if (e instanceof AxiosError) {
             if (e?.response?.status && e.response.status < 500) {
@@ -60,5 +42,23 @@ export class Result<T> {
         }
 
         return new Result<T>(true, undefined, err);
+    }
+
+    static success<T>(value: T): Result<T> {
+        return new Result<T>(false, value);
+    }
+
+    getError(): AppError {
+        if (!this.isError) {
+            throw new Error('Trying to get error of success result');
+        }
+        return this.error!;
+    }
+
+    getValue(): T {
+        if (this.isError) {
+            throw new Error('Tyring to get value of an errored result');
+        }
+        return this.value!;
     }
 }

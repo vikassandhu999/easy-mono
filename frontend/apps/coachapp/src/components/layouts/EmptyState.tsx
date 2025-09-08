@@ -3,15 +3,15 @@ import {useMediaQuery} from '@mantine/hooks';
 import {ReactNode} from 'react';
 
 interface EmptyStateProps {
-    icon?: ReactNode;
-    title: string;
-    description: string;
     action?: ReactNode;
+    description: string;
+    icon?: ReactNode;
     iconColor?: string;
     iconSize?: number | string;
+    title: string;
 }
 
-export const EmptyState = ({title, description, action}: EmptyStateProps) => {
+export const EmptyState = ({action, description, title}: EmptyStateProps) => {
     const isMobile = useMediaQuery('(max-width: 768px)');
     return (
         <Stack
@@ -26,8 +26,8 @@ export const EmptyState = ({title, description, action}: EmptyStateProps) => {
                 {title}
             </Title>
             <Text
-                size={isMobile ? 'xs' : 'sm'}
                 c={'dimmed'}
+                size={isMobile ? 'xs' : 'sm'}
                 ta={'center'}
             >
                 {description}

@@ -1,11 +1,12 @@
+import {Button, Group, Text, Title} from '@mantine/core';
 import React from 'react';
-import {Group, Title, Text, Button} from '@mantine/core';
-import PagePaper from '@/components/containers/PagePaper';
+
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
+import PagePaper from '@/components/containers/PagePaper';
 
 interface ScheduleChoiceProps {
-    onSelect: (data: 'now' | 'later') => void;
+    onSelect: (data: 'later' | 'now') => void;
 }
 
 export const ScheduleChoice: React.FC<ScheduleChoiceProps> = ({onSelect}) => {
@@ -18,8 +19,8 @@ export const ScheduleChoice: React.FC<ScheduleChoiceProps> = ({onSelect}) => {
                     wrap={'nowrap'}
                 >
                     <Title
-                        order={4}
                         lineClamp={1}
+                        order={4}
                     >
                         Build Schedule?
                     </Title>
@@ -31,16 +32,16 @@ export const ScheduleChoice: React.FC<ScheduleChoiceProps> = ({onSelect}) => {
                 paddingY={'xl'}
             >
                 <Text
-                    size="md"
                     mb="md"
+                    size="md"
                 >
                     Do you want to set up a schedule for this program now? A schedule maps out your sessions, keeps
                     clients on track, and makes progress easy to follow.
                 </Text>
                 <Group grow>
                     <Button
-                        variant="outline"
                         onClick={() => onSelect('later')}
+                        variant="outline"
                     >
                         Skip for now
                     </Button>

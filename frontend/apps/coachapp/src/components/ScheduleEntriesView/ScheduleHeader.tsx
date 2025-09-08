@@ -1,15 +1,16 @@
-import {Group, Text, Stack, Title} from '@mantine/core';
+import {Group, Stack, Text, Title} from '@mantine/core';
 import {CalendarIcon, ClockIcon} from '@phosphor-icons/react';
+
 import {Schedule} from '@/api/schedules.ts';
 
 interface ScheduleHeaderProps {
+    activeDaysCount?: number;
+    isWeekly: boolean;
     schedule: Schedule;
     totalSessions: number;
-    isWeekly: boolean;
-    activeDaysCount?: number;
 }
 
-export const ScheduleHeader = ({schedule, totalSessions, isWeekly, activeDaysCount}: ScheduleHeaderProps) => {
+export const ScheduleHeader = ({activeDaysCount, isWeekly, schedule, totalSessions}: ScheduleHeaderProps) => {
     const icon = isWeekly ? CalendarIcon : ClockIcon;
     const IconComponent = icon;
     const iconColor = isWeekly ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-orange-6)';
@@ -22,35 +23,35 @@ export const ScheduleHeader = ({schedule, totalSessions, isWeekly, activeDaysCou
 
     return (
         <Group
-            justify="space-between"
             align="flex-start"
+            justify="space-between"
             py={'md'}
         >
             <Stack gap={0}>
                 <Group
-                    gap="sm"
                     align="center"
+                    gap="sm"
                     mb={'var(--ce-size-sm)'}
                 >
                     <IconComponent
-                        size={28}
                         color={iconColor}
+                        size={28}
                     />
                     <Title
-                        order={4}
                         fw={700}
+                        order={4}
                     >
                         {title}
                     </Title>
                 </Group>
                 <Text
-                    size="sm"
                     c="dimmed"
+                    size="sm"
                     style={{
-                        wordBreak: 'break-word',
                         fontSize: 'var(--callout-font-size)',
                         lineHeight: 'var(--callout-line-height)',
                         marginBottom: 'var(--callout-offset)',
+                        wordBreak: 'break-word',
                     }}
                 >
                     {description}

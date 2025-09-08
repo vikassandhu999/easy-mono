@@ -1,31 +1,32 @@
 import {Box, MantineColor, MantineSpacing, useMantineTheme} from '@mantine/core';
 import {PropsWithChildren} from 'react';
+
 import PaddingContainer from './PaddingContainer';
 
-type Props = {
-    paddingY?: MantineSpacing;
-    paddingX?: MantineSpacing;
-    withBorder?: boolean;
+type Props = PropsWithChildren & {
     bg?: MantineColor;
+    paddingX?: MantineSpacing;
+    paddingY?: MantineSpacing;
     ref?: React.Ref<HTMLDivElement>;
     style?: React.CSSProperties;
-} & PropsWithChildren;
+    withBorder?: boolean;
+};
 
-export default function HeadingContainer({bg = 'white', withBorder = false, children, ref, style}: Props) {
+export default function HeadingContainer({bg = 'white', children, ref, style, withBorder = false}: Props) {
     const theme = useMantineTheme();
     return (
         <Box
-            ref={ref}
             bg={bg}
+            ref={ref}
             style={{
                 borderBottom: withBorder ? `1px solid ${theme.colors.gray[2]}` : undefined,
                 position: 'sticky',
                 top: 0,
-                zIndex: 100,
                 width: '100%',
+                zIndex: 100,
             }}
         >
-            <PaddingContainer style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-sm)', ...style}}>
+            <PaddingContainer style={{paddingBlock: 'var(--ce-size-sm)', paddingInline: 'var(--ce-size-xs)', ...style}}>
                 {children}
             </PaddingContainer>
         </Box>

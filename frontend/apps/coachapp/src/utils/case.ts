@@ -1,4 +1,4 @@
-export function toTitleCase(str: string | number) {
+export function toTitleCase(str: number | string) {
     return (str || '')
         .toString()
         .replace('_', ' ')

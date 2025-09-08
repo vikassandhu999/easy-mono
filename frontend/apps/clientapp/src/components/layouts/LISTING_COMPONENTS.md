@@ -30,7 +30,7 @@ import { ListCard } from '@/components/layouts';
     { label: 'Delete', icon: <IconTrash />, onClick: handleDelete, destructive: true }
   ]}
   metadata={[
-    { label: 'Clients', value: '12', icon: <IconUsers /> },
+    { label: 'clients', value: '12', icon: <IconUsers /> },
     { label: 'Duration', value: '8 weeks', icon: <IconClock /> }
   ]}
   onClick={handleView}

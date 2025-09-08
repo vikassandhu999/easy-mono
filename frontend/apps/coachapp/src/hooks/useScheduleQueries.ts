@@ -1,28 +1,32 @@
-import {useQuery, useMutation, useQueryClient, useInfiniteQuery} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
+import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+
 import {
-    SchedulesAPI,
-    Schedule,
-    CreateScheduleProps,
-    UpdateScheduleProps,
-    ListSchedulesParams,
     AssignScheduleProps,
+    CreateScheduleProps,
+    ListSchedulesParams,
+    Schedule,
+    SchedulesAPI,
+    UpdateScheduleProps,
 } from '@/api/schedules.ts';
 
 // Query keys
 export const SCHEDULES_QUERY_KEYS = {
     all: ['schedules'] as const,
-    lists: () => [...SCHEDULES_QUERY_KEYS.all, 'list'] as const,
-    list: (params: ListSchedulesParams) => [...SCHEDULES_QUERY_KEYS.lists(), params] as const,
-    details: () => [...SCHEDULES_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...SCHEDULES_QUERY_KEYS.details(), id] as const,
+    details: () => [...SCHEDULES_QUERY_KEYS.all, 'detail'] as const,
+    list: (params: ListSchedulesParams) => [...SCHEDULES_QUERY_KEYS.lists(), params] as const,
+    lists: () => [...SCHEDULES_QUERY_KEYS.all, 'list'] as const,
     program: (programId: string) => [...SCHEDULES_QUERY_KEYS.all, 'program', programId] as const,
 };
 
 // List schedules
 export const useSchedules = (params?: ListSchedulesParams) => {
     return useInfiniteQuery({
-        queryKey: SCHEDULES_QUERY_KEYS.list(params || {}),
+        getNextPageParam: (lastPage) => {
+            return lastPage.total === lastPage.page_size ? lastPage.page + 1 : undefined;
+        },
+        initialPageParam: 1,
         queryFn: async () => {
             const result = await SchedulesAPI.listSchedules(params);
             if (result.isError) {
@@ -30,10 +34,7 @@ export const useSchedules = (params?: ListSchedulesParams) => {
             }
             return result.value!;
         },
-        getNextPageParam: (lastPage) => {
-            return lastPage.total === lastPage.page_size ? lastPage.page + 1 : undefined;
-        },
-        initialPageParam: 1,
+        queryKey: SCHEDULES_QUERY_KEYS.list(params || {}),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };
@@ -41,9 +42,9 @@ export const useSchedules = (params?: ListSchedulesParams) => {
 // Get single schedule
 export const useSchedule = (scheduleId: string, enabled = true) => {
     return useQuery({
-        queryKey: SCHEDULES_QUERY_KEYS.detail(scheduleId),
-        queryFn: () => SchedulesAPI.getSchedule(scheduleId),
         enabled: enabled && !!scheduleId,
+        queryFn: () => SchedulesAPI.getSchedule(scheduleId),
+        queryKey: SCHEDULES_QUERY_KEYS.detail(scheduleId),
         select: (result) => {
             if (result.isError) {
                 throw result.getError();
@@ -56,9 +57,9 @@ export const useSchedule = (scheduleId: string, enabled = true) => {
 // List program schedules
 export const useProgramSchedules = (programId: string, params?: {page?: number; page_size?: number}) => {
     return useQuery({
-        queryKey: SCHEDULES_QUERY_KEYS.program(programId),
-        queryFn: () => SchedulesAPI.listProgramSchedules(programId, params),
         enabled: !!programId,
+        queryFn: () => SchedulesAPI.listProgramSchedules(programId, params),
+        queryKey: SCHEDULES_QUERY_KEYS.program(programId),
         select: (result) => {
             if (result.isError) {
                 throw new Error(result.error?.message || 'Failed to fetch program schedules');
@@ -74,6 +75,13 @@ export const useCreateSchedule = () => {
 
     return useMutation({
         mutationFn: (data: CreateScheduleProps) => SchedulesAPI.createSchedule(data),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to create schedule',
+            });
+        },
         onSuccess: (result) => {
             if (!result.isError) {
                 // Invalidate schedules list
@@ -82,24 +90,17 @@ export const useCreateSchedule = () => {
                 });
 
                 notifications.show({
-                    title: 'Schedule created',
-                    message: 'Your schedule has been created successfully',
                     color: 'green',
+                    message: 'Your schedule has been created successfully',
+                    title: 'Schedule created',
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to create schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to create schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to create schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 };
@@ -109,8 +110,15 @@ export const useCreateProgramSchedule = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({programId, data}: {programId: string; data: CreateScheduleProps}) =>
+        mutationFn: ({data, programId}: {data: CreateScheduleProps; programId: string}) =>
             SchedulesAPI.createProgramSchedule(programId, data),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to create program schedule',
+            });
+        },
         onSuccess: (result, variables) => {
             if (!result.isError) {
                 // Invalidate both general schedules and program-specific schedules
@@ -122,24 +130,17 @@ export const useCreateProgramSchedule = () => {
                 });
 
                 notifications.show({
-                    title: 'Program schedule created',
-                    message: 'Your program schedule has been created successfully',
                     color: 'green',
+                    message: 'Your program schedule has been created successfully',
+                    title: 'Program schedule created',
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to create program schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to create program schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to create program schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 };
@@ -149,8 +150,15 @@ export const useUpdateSchedule = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({scheduleId, data}: {scheduleId: string; data: UpdateScheduleProps}) =>
+        mutationFn: ({data, scheduleId}: {data: UpdateScheduleProps; scheduleId: string}) =>
             SchedulesAPI.updateSchedule(scheduleId, data),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to update schedule',
+            });
+        },
         onSuccess: (result, variables) => {
             if (!result.isError) {
                 // Update the specific schedule cache
@@ -162,24 +170,17 @@ export const useUpdateSchedule = () => {
                 });
 
                 notifications.show({
-                    title: 'Schedule updated',
-                    message: 'Your schedule has been updated successfully',
                     color: 'green',
+                    message: 'Your schedule has been updated successfully',
+                    title: 'Schedule updated',
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to update schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to update schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to update schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 };
@@ -190,6 +191,13 @@ export const useDeleteSchedule = () => {
 
     return useMutation({
         mutationFn: (scheduleId: string) => SchedulesAPI.deleteSchedule(scheduleId),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to delete schedule',
+            });
+        },
         onSuccess: (result, scheduleId) => {
             if (!result.isError) {
                 // Remove from cache
@@ -203,24 +211,17 @@ export const useDeleteSchedule = () => {
                 });
 
                 notifications.show({
-                    title: 'Schedule deleted',
-                    message: 'The schedule has been deleted successfully',
                     color: 'green',
+                    message: 'The schedule has been deleted successfully',
+                    title: 'Schedule deleted',
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to delete schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to delete schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to delete schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 };
@@ -230,8 +231,15 @@ export const useAssignSchedule = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({scheduleId, data}: {scheduleId: string; data: AssignScheduleProps}) =>
+        mutationFn: ({data, scheduleId}: {data: AssignScheduleProps; scheduleId: string}) =>
             SchedulesAPI.assignSchedule(scheduleId, data),
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to assign schedule',
+            });
+        },
         onSuccess: (result) => {
             if (!result.isError) {
                 // Invalidate schedules to show new client assignments
@@ -240,24 +248,17 @@ export const useAssignSchedule = () => {
                 });
 
                 notifications.show({
-                    title: 'Schedule assigned',
-                    message: 'The schedule has been assigned to the client',
                     color: 'green',
+                    message: 'The schedule has been assigned to the client',
+                    title: 'Schedule assigned',
                 });
             } else {
                 notifications.show({
-                    title: 'Failed to assign schedule',
-                    message: result.error?.message || 'Something went wrong',
                     color: 'red',
+                    message: result.error?.message || 'Something went wrong',
+                    title: 'Failed to assign schedule',
                 });
             }
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to assign schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 };
@@ -290,8 +291,8 @@ export const usePrefetchSchedule = () => {
 
     const prefetchSchedule = (scheduleId: string) => {
         queryClient.prefetchQuery({
-            queryKey: SCHEDULES_QUERY_KEYS.detail(scheduleId),
             queryFn: () => SchedulesAPI.getSchedule(scheduleId),
+            queryKey: SCHEDULES_QUERY_KEYS.detail(scheduleId),
             staleTime: 30000, // Consider data fresh for 30 seconds
         });
     };

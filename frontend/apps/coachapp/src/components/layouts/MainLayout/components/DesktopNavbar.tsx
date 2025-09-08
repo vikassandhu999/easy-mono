@@ -1,13 +1,15 @@
 import {Box, Stack} from '@mantine/core';
-import {NavItem} from '../types';
-import {UserInfo} from './UserInfo';
-import {NavItems} from './NavItems';
+
 import TextLogo from '@/components/TextLogo/TextLogo';
+
+import {NavItem} from '../types';
+import {NavItems} from './NavItems';
+import {UserInfo} from './UserInfo';
 
 interface DesktopNavbarProps {
     navItems: NavItem[];
-    onNavigate: (href: string) => void;
     onLogout: () => void;
+    onNavigate: (href: string) => void;
 }
 
 export function DesktopNavbar({navItems, onNavigate}: DesktopNavbarProps) {

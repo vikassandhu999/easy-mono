@@ -1,20 +1,22 @@
-import {useSchedule} from '@/hooks/useScheduleQueries';
 import {Button, Drawer, Group, LoadingOverlay} from '@mantine/core';
-import {DisplayError} from '@/components/containers/DisplayError';
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import ScheduleEntriesView from '../ScheduleEntriesView/ScheduleEntriesView';
-import Header from '../layouts/Header';
-import HeadingContainer from '@/components/containers/HeaderContainer';
-import SessionSelect from '../SessionDefSelect/SessionSelect';
-import {CreateScheduleEntryProps, ScheduleEntriesAPI} from '@/api/schedule_entries.ts';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {SCHEDULE_ENTRIES_QUERY_KEYS} from '@/hooks/useScheduleEntriesQueries';
 import {notifications} from '@mantine/notifications';
-import SessionBuilder from '../SessionBuilder/SessionBuilder';
-import {useDrawerActions, useDrawerData} from '@/hooks/useDrawerStackRouter';
-import PagePaper from '@/components/containers/PagePaper';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+
+import {CreateScheduleEntryProps, ScheduleEntriesAPI} from '@/api/schedule_entries.ts';
+import {DisplayError} from '@/components/containers/DisplayError';
 import {FixedBottomBar} from '@/components/containers/FixedBottomBar';
-import {Index} from '../CEDrawer';
+import HeadingContainer from '@/components/containers/HeaderContainer';
+import PaddingContainer from '@/components/containers/PaddingContainer';
+import PagePaper from '@/components/containers/PagePaper';
+import {useDrawerActions, useDrawerData} from '@/hooks/useDrawerStackRouter';
+import {SCHEDULE_ENTRIES_QUERY_KEYS} from '@/hooks/useScheduleEntriesQueries';
+import {useSchedule} from '@/hooks/useScheduleQueries';
+
+import {CEDrawer} from '../EasyDrawer';
+import Header from '../layouts/Header';
+import ScheduleEntriesView from '../ScheduleEntriesView/ScheduleEntriesView';
+import SessionBuilder from '../SessionBuilder/SessionBuilder';
+import SessionSelect from '../SessionDefSelect/SessionSelect';
 
 export default function ScheduleBuilder() {
     const queryClient = useQueryClient();
@@ -38,17 +40,24 @@ export default function ScheduleBuilder() {
         createSessionData?.addingToDay ??
         null;
 
-    const {data: schedule, isLoading, error} = useSchedule(scheduleId || '', !!scheduleId);
+    const {data: schedule, error, isLoading} = useSchedule(scheduleId || '', !!scheduleId);
 
     const sessionType = schedule?.category ?? 'workout';
 
     const createEntry = useMutation({
-        mutationFn: async ({scheduleId, data}: {scheduleId: string; data: CreateScheduleEntryProps}) => {
+        mutationFn: async ({data, scheduleId}: {data: CreateScheduleEntryProps; scheduleId: string}) => {
             const result = await ScheduleEntriesAPI.createEntry(scheduleId, data);
             if (result.isError) {
                 throw result.error;
             }
             return result.value!;
+        },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to add entry',
+            });
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
@@ -56,26 +65,16 @@ export default function ScheduleBuilder() {
             });
             stackRouter.closeDrawer('add-entry');
         },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to add entry',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
-        },
     });
 
     return (
         <Drawer.Stack>
-            <Index
+            <CEDrawer
                 {...stackRouter.register('entries-view')}
-                onClose={() => stackRouter.closeDrawer('entries-view')}
-                withCloseButton={false}
-                translate={'yes'}
                 header={
                     <HeadingContainer
+                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
-                        style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                     >
                         <Header
                             onBack={() => stackRouter.closeDrawer('entries-view')}
@@ -83,25 +82,28 @@ export default function ScheduleBuilder() {
                         />
                     </HeadingContainer>
                 }
+                onClose={() => stackRouter.closeDrawer('entries-view')}
+                translate={'yes'}
+                withCloseButton={false}
             >
                 <PagePaper bottomGutter>
                     <div style={{flex: 1, overflow: 'auto'}}>
                         <PaddingContainer>
                             {error && (
                                 <DisplayError
-                                    error={error}
                                     codesMap={new Map()}
+                                    error={error}
                                 />
                             )}
                             {isLoading && <LoadingOverlay />}
                             {schedule && (
                                 <ScheduleEntriesView
-                                    schedule={schedule}
                                     onAddEntry={(day) => {
                                         stackRouter.openDrawer('select-session', {
                                             addingToDay: day,
                                         });
                                     }}
+                                    schedule={schedule}
                                 />
                             )}
                         </PaddingContainer>
@@ -109,25 +111,24 @@ export default function ScheduleBuilder() {
                     <FixedBottomBar>
                         <Group justify={'end'}>
                             <Button
-                                variant={'filled'}
-                                size={'md'}
-                                radius={9999}
                                 fullWidth
+                                radius={9999}
+                                size={'md'}
+                                variant={'filled'}
                             >
                                 Save and close
                             </Button>
                         </Group>
                     </FixedBottomBar>
                 </PagePaper>
-            </Index>
+            </CEDrawer>
 
-            <Index
+            <CEDrawer
                 {...stackRouter.register('select-session')}
-                withCloseButton={false}
                 header={
                     <HeadingContainer
+                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
-                        style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                     >
                         <Header
                             onBack={() => stackRouter.closeDrawer('select-session')}
@@ -135,44 +136,45 @@ export default function ScheduleBuilder() {
                         />
                     </HeadingContainer>
                 }
+                withCloseButton={false}
             >
                 <PagePaper bottomGutter>
-                    <div style={{flex: 1, overflow: 'auto', marginTop: 'var(--ce-size-md)'}}>
+                    <div style={{flex: 1, marginTop: 'var(--ce-size-md)', overflow: 'auto'}}>
                         <PaddingContainer>
                             <SessionSelect
-                                sessionType={sessionType as any}
+                                multiple
                                 onCreateNew={() => {
                                     stackRouter.replaceDrawer('create-session', {
-                                        sessionType,
                                         addingToDay,
+                                        sessionType,
                                     });
                                 }}
                                 onSelect={async (id) => {
                                     stackRouter.replaceDrawer('add-entry', {
+                                        addingToDay,
                                         sessionDefID: id,
                                         sessionType,
-                                        addingToDay,
                                     });
 
                                     await createEntry.mutateAsync({
-                                        scheduleId,
                                         data: {day: addingToDay, session_def_id: id[0], time_slot: 'all-day'},
+                                        scheduleId,
                                     });
                                 }}
-                                multiple
+                                sessionType={sessionType as any}
                             />
                         </PaddingContainer>
                     </div>
                 </PagePaper>
-            </Index>
+            </CEDrawer>
 
             <Drawer
                 {...stackRouter.register('create-session')}
                 withCloseButton={false}
             >
                 <HeadingContainer
+                    style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                     withBorder={false}
-                    style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                 >
                     <Header
                         onBack={() => stackRouter.closeDrawer('create-session')}
@@ -181,9 +183,9 @@ export default function ScheduleBuilder() {
                 </HeadingContainer>
                 <div style={{flex: 1, overflow: 'auto'}}>
                     <SessionBuilder
-                        stackRouter={stackRouter}
-                        sessionType={sessionType as any}
                         onComplete={async () => {}}
+                        sessionType={sessionType as any}
+                        stackRouter={stackRouter}
                     />
                 </div>
             </Drawer>

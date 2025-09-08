@@ -1,27 +1,29 @@
-import {Schedule} from '@/api/schedules.ts';
-import {useScheduleType} from './hooks';
-import {WeeklySessions, DailySessions} from './ScheduleSessionsView';
 import {memo} from 'react';
 
+import {Schedule} from '@/api/schedules.ts';
+
+import {useScheduleType} from './hooks';
+import {DailySessions, WeeklySessions} from './ScheduleSessionsView';
+
 interface ScheduleEntriesViewProps {
-    schedule: Schedule;
     onAddEntry: (day?: number) => void;
+    schedule: Schedule;
 }
 
-function ScheduleEntriesView({schedule, onAddEntry}: ScheduleEntriesViewProps) {
+function ScheduleEntriesView({onAddEntry, schedule}: ScheduleEntriesViewProps) {
     const isWeeklySchedule = useScheduleType(schedule);
 
     console.log('Re-rendering ScheduleEntriesView');
 
     return isWeeklySchedule ? (
         <WeeklySessions
-            schedule={schedule}
             onAddEntry={onAddEntry}
+            schedule={schedule}
         />
     ) : (
         <DailySessions
-            schedule={schedule}
             onAddEntry={onAddEntry}
+            schedule={schedule}
         />
     );
 }

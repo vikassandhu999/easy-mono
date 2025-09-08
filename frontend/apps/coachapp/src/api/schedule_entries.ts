@@ -1,5 +1,7 @@
-import {Result} from '@/utils/error.ts';
 import {z} from 'zod';
+
+import {Result} from '@/utils/error.ts';
+
 import {authedClient} from './auth';
 
 // =============================
@@ -12,42 +14,42 @@ export type TimeSlot = z.infer<typeof TimeSlotEnum>;
 // Create / Update Schemas (align domain.NewScheduleEntryInput / UpdateScheduleEntryInput)
 // =============================
 export const CreateScheduleEntry_zod = z.object({
-    session_def_id: z.string().uuid(),
     day: z.number().int().min(0).max(6),
-    is_required: z.boolean().optional(),
+    due_by_offset_minutes: z.number().int().min(1).max(2880).optional(),
     is_active: z.boolean().optional(),
+    is_required: z.boolean().optional(),
+    reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
+    session_def_id: z.string().uuid(),
     time_slot: TimeSlotEnum.optional(),
-    window_start: z
-        .string()
-        .regex(/^\d{2}:\d{2}$/)
-        .optional(),
+    timezone: z.string().max(64).optional(),
     window_end: z
         .string()
         .regex(/^\d{2}:\d{2}$/)
         .optional(),
-    timezone: z.string().max(64).optional(),
-    reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
-    due_by_offset_minutes: z.number().int().min(1).max(2880).optional(),
+    window_start: z
+        .string()
+        .regex(/^\d{2}:\d{2}$/)
+        .optional(),
 });
 export type CreateScheduleEntryProps = z.infer<typeof CreateScheduleEntry_zod>;
 
 export const UpdateScheduleEntry_zod = z.object({
-    session_def_id: z.string().uuid().optional(),
     day: z.number().int().min(0).max(6).optional(),
-    is_required: z.boolean().optional(),
+    due_by_offset_minutes: z.number().int().min(1).max(2880).optional(),
     is_active: z.boolean().optional(),
+    is_required: z.boolean().optional(),
+    reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
+    session_def_id: z.string().uuid().optional(),
     time_slot: TimeSlotEnum.optional(),
-    window_start: z
-        .string()
-        .regex(/^\d{2}:\d{2}$/)
-        .optional(),
+    timezone: z.string().max(64).optional(),
     window_end: z
         .string()
         .regex(/^\d{2}:\d{2}$/)
         .optional(),
-    timezone: z.string().max(64).optional(),
-    reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
-    due_by_offset_minutes: z.number().int().min(1).max(2880).optional(),
+    window_start: z
+        .string()
+        .regex(/^\d{2}:\d{2}$/)
+        .optional(),
 });
 export type UpdateScheduleEntryProps = z.infer<typeof UpdateScheduleEntry_zod>;
 
@@ -57,39 +59,39 @@ export type UpdateScheduleEntryProps = z.infer<typeof UpdateScheduleEntry_zod>;
 export const ListScheduleEntries_zod = z.object({
     day: z.number().int().optional(),
 });
-export type ListScheduleEntriesParams = z.infer<typeof ListScheduleEntries_zod>;
-
 // =============================
 // Response Types (mirrors resp.ScheduleEntry)
 // =============================
 export interface EffectiveWindow {
-    start_minutes: number;
     end_minutes: number;
+    start_minutes: number;
     wraps: boolean;
 }
 
-export interface ScheduleEntry {
-    id: string;
-    schedule_id: string;
-    session_def_id: string;
-    day: number;
-    sort_order: number;
-    is_required: boolean;
-    is_active: boolean;
-    time_slot: TimeSlot;
-    window_start_minutes?: number;
-    window_end_minutes?: number;
-    timezone: string;
-    reminder_offset_minutes?: number;
-    due_by_offset_minutes?: number;
-    is_fixed_time: boolean;
-    effective_window: EffectiveWindow;
-    created_at: string;
-    updated_at: string;
-}
+export type ListScheduleEntriesParams = z.infer<typeof ListScheduleEntries_zod>;
 
 export interface ListScheduleEntriesResult {
     records: ScheduleEntry[];
+}
+
+export interface ScheduleEntry {
+    created_at: string;
+    day: number;
+    due_by_offset_minutes?: number;
+    effective_window: EffectiveWindow;
+    id: string;
+    is_active: boolean;
+    is_fixed_time: boolean;
+    is_required: boolean;
+    reminder_offset_minutes?: number;
+    schedule_id: string;
+    session_def_id: string;
+    sort_order: number;
+    time_slot: TimeSlot;
+    timezone: string;
+    updated_at: string;
+    window_end_minutes?: number;
+    window_start_minutes?: number;
 }
 
 // =============================
@@ -100,6 +102,16 @@ export const ScheduleEntriesAPI = {
     createEntry: async (scheduleId: string, data: CreateScheduleEntryProps): Promise<Result<ScheduleEntry>> => {
         try {
             const response = await authedClient.post(`/v1/coach/schedules/${scheduleId}/entries`, data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // DELETE /v1/coach/schedules/:scheduleId/entries/:entryId
+    deleteEntry: async (scheduleId: string, entryId: string): Promise<Result<{message: string}>> => {
+        try {
+            const response = await authedClient.delete(`/v1/coach/schedules/${scheduleId}/entries/${entryId}`);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
@@ -137,16 +149,6 @@ export const ScheduleEntriesAPI = {
     ): Promise<Result<ScheduleEntry>> => {
         try {
             const response = await authedClient.patch(`/v1/coach/schedules/${scheduleId}/entries/${entryId}`, data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // DELETE /v1/coach/schedules/:scheduleId/entries/:entryId
-    deleteEntry: async (scheduleId: string, entryId: string): Promise<Result<{message: string}>> => {
-        try {
-            const response = await authedClient.delete(`/v1/coach/schedules/${scheduleId}/entries/${entryId}`);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

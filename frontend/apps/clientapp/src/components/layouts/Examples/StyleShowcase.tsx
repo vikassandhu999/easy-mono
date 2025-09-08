@@ -119,7 +119,7 @@ export function StyleShowcase() {
                     ]}
                     metadata={[
                         {
-                            label: 'Clients',
+                            label: 'clients',
                             value: program.clientCount.toString(),
                             icon: <IconUsers size={14} />,
                         },
@@ -384,7 +384,7 @@ export function StyleShowcase() {
 
             <Divider my="xl" />
 
-            {/* Clients Section */}
+            {/* clients Section */}
             <Stack gap="md">
                 <Group
                     justify="space-between"

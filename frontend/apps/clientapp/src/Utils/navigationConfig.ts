@@ -7,11 +7,11 @@ export const ROUTES_WITH_NAVIGATION = [
     '/',
     '/schedule', // Schedule page
     '/programs', // Program list page
-    '/clients', // Clients list page
+    '/clients', // clients list page
     '/content', // Content list page
-    '/chats', // Chats list page
+    '/chats', // chats list page
     '/settings', // Settings list page
-    '/library', // Library list page
+    '/library', // library list page
 ];
 
 export const ROUTE_PATTERNS_WITH_NAVIGATION = [];

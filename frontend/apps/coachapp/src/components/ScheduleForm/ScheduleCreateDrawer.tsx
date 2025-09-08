@@ -1,26 +1,28 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
-import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
-import {CreateScheduleProps, ScheduleCategory, SchedulesAPI} from '@/api/schedules.ts';
-import {SCHEDULES_QUERY_KEYS} from '@/hooks/useScheduleQueries';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
-import ScheduleCategorySelect from './ScheduleCategorySelect';
+
+import {CreateScheduleProps, ScheduleCategory, SchedulesAPI} from '@/api/schedules.ts';
 import HeadingContainer from '@/components/containers/HeaderContainer';
-import PagePaper from '@/components/containers/PagePaper';
-import Header from '../layouts/Header';
 import PaddingContainer from '@/components/containers/PaddingContainer';
+import PagePaper from '@/components/containers/PagePaper';
+import {SCHEDULES_QUERY_KEYS} from '@/hooks/useScheduleQueries';
+
 import {SCHEDULE_CATEGORIES} from '../Configs';
+import Header from '../layouts/Header';
+import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
+import ScheduleCategorySelect from './ScheduleCategorySelect';
 
 type ProgramCreateWithTriggerProps = {
-    stack: ReturnType<typeof useDrawersStack<'create-schedule' | 'select-plan-type' | any>>;
     onCreated?: (scheduleId: string) => void;
+    stack: ReturnType<typeof useDrawersStack<'create-schedule' | 'select-plan-type' | any>>;
 };
 
-export function ScheduleCreateDrawer({stack, onCreated}: ProgramCreateWithTriggerProps) {
+export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerProps) {
     const queryClient = useQueryClient();
 
-    const [planType, setPlanType] = useState<ScheduleCategory | null>(null);
+    const [planType, setPlanType] = useState<null | ScheduleCategory>(null);
 
     const createSchedule = useMutation({
         mutationFn: async (data: CreateScheduleProps) => {
@@ -30,18 +32,18 @@ export function ScheduleCreateDrawer({stack, onCreated}: ProgramCreateWithTrigge
             }
             return res.getValue();
         },
+        onError: (error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message || 'Something went wrong',
+                title: 'Failed to create schedule',
+            });
+        },
         onSuccess: (result) => {
             queryClient.invalidateQueries({
                 queryKey: SCHEDULES_QUERY_KEYS.lists(),
             });
             onCreated?.(result.id);
-        },
-        onError: (error) => {
-            notifications.show({
-                title: 'Failed to create schedule',
-                message: error.message || 'Something went wrong',
-                color: 'red',
-            });
         },
     });
 
@@ -55,12 +57,12 @@ export function ScheduleCreateDrawer({stack, onCreated}: ProgramCreateWithTrigge
             >
                 <PagePaper>
                     <HeadingContainer
+                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
-                        style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                     >
                         <Header
-                            title={'Create plan'}
                             onBack={() => stack.close('select-plan-type')}
+                            title={'Create plan'}
                         />
                     </HeadingContainer>
                     <div style={{flex: 1, overflow: 'auto'}}>
@@ -82,22 +84,22 @@ export function ScheduleCreateDrawer({stack, onCreated}: ProgramCreateWithTrigge
             >
                 <PagePaper>
                     <HeadingContainer
+                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
-                        style={{paddingInline: 'var(--ce-size-xs)', paddingBlock: 'var(--ce-size-md)'}}
                     >
                         <Header
-                            title={formTitle}
                             onBack={() => stack.close('create-schedule')}
+                            title={formTitle}
                         />
                     </HeadingContainer>
                     <PaddingContainer>
                         <ScheduleForm
-                            submitText={'Create'}
-                            schedule={{}}
+                            category={planType!}
                             onSubmit={async (values) => {
                                 await createSchedule.mutateAsync(values);
                             }}
-                            category={planType!}
+                            schedule={{}}
+                            submitText={'Create'}
                         />
                     </PaddingContainer>
                 </PagePaper>

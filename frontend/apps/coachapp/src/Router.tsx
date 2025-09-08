@@ -1,144 +1,143 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
+import SignInCodePage from '@/views/auth/SignInCodePage';
+import SignInPage from '@/views/auth/SignInPage';
+import ChatsListPage from '@/views/chats/ChatsListPage';
+import ChatViewPage from '@/views/chats/ChatView/ChatViewPage';
+import DetailClientPage from '@/views/clients/DetailClientPage/DetailClientPage';
+import ClientsListPage from '@/views/clients/ListPage/ListPage';
+import ContentDetailPage from '@/views/contents/DetailPage/DetailPage';
+import ContentListPage from '@/views/contents/ListPage/ListPage';
+import HomePage from '@/views/dashboard/HomePage';
+import LibraryPage from '@/views/library/LibraryPage';
+import BusinessInfoStepPage from '@/views/onboarding/BusinessInfoStepPage';
+import CoachInfoStepPage from '@/views/onboarding/CoachInfoStepPage';
+import SignUpCodeStepPage from '@/views/onboarding/SignUpCodeStepPage';
+// onboarding components
+import SignUpStepPage from '@/views/onboarding/SignUpStepPage';
+import PlansListPage from '@/views/plans/ListPage/ListPage';
 
-import HomePage from '@/views/Dashboard/HomePage';
-import SignInPage from '@/views/Auth/SignInPage';
-import SignInCodePage from '@/views/Auth/SignInCodePage';
-import ContentListPage from '@/views/Contents/ListPage/ListPage';
-import ContentDetailPage from '@/views/Contents/DetailPage/DetailPage';
-import ChatViewPage from '@/views/Chats/ChatView/ChatViewPage';
-import ChatsListPage from '@/views/Chats/ChatsListPage';
-
-// Onboarding components
-import SignUpStepPage from '@/views/Onboarding/SignUpStepPage';
-import SignUpCodeStepPage from '@/views/Onboarding/SignUpCodeStepPage';
-import BusinessInfoStepPage from '@/views/Onboarding/BusinessInfoStepPage';
-import CoachInfoStepPage from '@/views/Onboarding/CoachInfoStepPage';
-import LibraryPage from '@/views/Library/LibraryPage';
 import {PrivateRoute} from './utils';
-import PlansListPage from '@/views/Plans/ListPage/ListPage';
-import ClientsListPage from '@/views/Clients/ListPage/ListPage';
-import DetailClientPage from '@/views/Clients/DetailClientPage/DetailClientPage';
 
 const router = createBrowserRouter([
     {
-        path: '/signin',
         element: <SignInPage />,
+        path: '/signin',
     },
     {
-        path: '/signin/code',
         element: <SignInCodePage />,
+        path: '/signin/code',
     },
     {
-        path: '/signup',
         element: <SignUpStepPage />,
+        path: '/signup',
     },
 
-    // Onboarding Routes
+    // onboarding Routes
     {
-        path: '/signup/verify',
         element: <SignUpCodeStepPage />,
+        path: '/signup/verify',
     },
     {
-        path: '/onboarding/business',
         element: <BusinessInfoStepPage />,
+        path: '/onboarding/business',
     },
     {
-        path: '/onboarding/profile',
         element: <CoachInfoStepPage />,
+        path: '/onboarding/profile',
     },
 
     // Legacy route redirects - keeping for backward compatibility
     {
-        path: '/login',
         element: <SignInPage />,
+        path: '/login',
     },
     {
-        path: '/login/code',
         element: <SignInCodePage />,
+        path: '/login/code',
     },
     {
-        path: '/ob/signup',
         element: <SignUpStepPage />,
+        path: '/ob/signup',
     },
     {
-        path: '/ob/signup-otp',
         element: <SignUpCodeStepPage />,
+        path: '/ob/signup-otp',
     },
     {
-        path: '/ob/business-info',
         element: <BusinessInfoStepPage />,
+        path: '/ob/business-info',
     },
     {
-        path: '/ob/coach-info',
         element: <CoachInfoStepPage />,
+        path: '/ob/coach-info',
     },
 
     {
-        element: <PrivateRoute />,
         children: [
             {
-                element: <ProtectedRouteLayout />,
                 children: [
                     {
+                        element: <></>,
                         path: '/schedules/:scheduleId/entries/new',
-                        element: <></>,
                     },
                     {
+                        element: <></>,
                         path: '/schedules/:scheduleId/entries/:entryId/edit',
-                        element: <></>,
                     },
                     {
-                        path: '/contents/:id',
                         element: <ContentListPage />,
+                        path: '/contents/:id',
                     },
                     {
-                        path: '/content/:id',
                         element: <ContentDetailPage />,
+                        path: '/content/:id',
                     },
                     {
-                        path: '/chats/:chatId',
                         element: <ChatViewPage />,
+                        path: '/chats/:chatId',
                     },
 
                     // Routes with layout
                     {
-                        path: '/',
                         element: <HomePage />,
+                        path: '/',
                     },
                     {
-                        path: '/clients',
                         element: <ClientsListPage />,
+                        path: '/clients',
                     },
                     {
-                        path: '/clients/:id',
                         element: <DetailClientPage />,
+                        path: '/clients/:id',
                     },
                     {
+                        element: <ContentListPage />,
                         path: '/contents',
-                        element: <ContentListPage />,
                     },
                     {
-                        path: '/library',
                         element: <LibraryPage />,
+                        path: '/library',
                     },
                     {
-                        path: '/content',
                         element: <ContentListPage />,
+                        path: '/content',
                     },
                     {
-                        path: '/chats',
                         element: <ChatsListPage />,
+                        path: '/chats',
                     },
 
                     {
-                        path: '/plans',
                         element: <PlansListPage />,
+                        path: '/plans',
                     },
                 ],
+                element: <ProtectedRouteLayout />,
             },
         ],
+        element: <PrivateRoute />,
     },
 ]);
 

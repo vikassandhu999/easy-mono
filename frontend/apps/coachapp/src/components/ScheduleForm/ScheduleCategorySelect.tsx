@@ -1,6 +1,8 @@
-import {Text, Center, Box, Card, Group, Stack, ActionIcon} from '@mantine/core';
+import {ActionIcon, Box, Card, Center, Group, Stack, Text} from '@mantine/core';
 import {CaretRightIcon} from '@phosphor-icons/react';
+
 import {ScheduleCategory} from '@/api/schedules.ts';
+
 import {SCHEDULE_CATEGORIES} from '../Configs';
 
 interface ScheduleCategorySelectProps {
@@ -16,58 +18,58 @@ const ScheduleCategorySelect = ({onSelect}: ScheduleCategorySelectProps) => {
 
                 return (
                     <Card
-                        key={key}
-                        withBorder
-                        style={{
-                            cursor: 'pointer',
-                            borderRadius: 'var(--body-offset)',
-                            paddingTop: 'var(--body-offset)',
-                            paddingInline: 'var(--ce-size-md)',
-                            paddingBottom: 'var(--ce-size-md)',
-                        }}
-                        onClick={() => onSelect(key as any)}
-                        role="button"
-                        tabIndex={0}
                         aria-label={`Select ${config.label}: ${config.description}`}
+                        key={key}
+                        onClick={() => onSelect(key as any)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
                                 onSelect(key as any);
                             }
                         }}
+                        role="button"
+                        style={{
+                            borderRadius: 'var(--body-offset)',
+                            cursor: 'pointer',
+                            paddingBottom: 'var(--ce-size-md)',
+                            paddingInline: 'var(--ce-size-md)',
+                            paddingTop: 'var(--body-offset)',
+                        }}
+                        tabIndex={0}
+                        withBorder
                     >
                         <Group
-                            justify="space-between"
                             align="center"
+                            justify="space-between"
                             wrap={'nowrap'}
                         >
                             <Group
                                 gap={'md'}
-                                wrap={'nowrap'}
                                 style={{flex: 1, minWidth: 0}}
+                                wrap={'nowrap'}
                             >
                                 <Center
-                                    w={48}
                                     h={48}
                                     style={{
                                         backgroundColor: config.color || 'var(--mantine-color-brand-1)',
                                         borderRadius: 12,
                                         flexShrink: 0,
                                     }}
+                                    w={48}
                                 >
                                     <IconComponent
-                                        size={24}
                                         color={config.iconColor || 'var(--mantine-color-brand-6)'}
+                                        size={24}
                                     />
                                 </Center>
-                                <Box style={{flex: 1, minWidth: 0, gap: 0}}>
+                                <Box style={{flex: 1, gap: 0, minWidth: 0}}>
                                     <Text
                                         c={'dark'}
                                         style={{
-                                            fontSize: 'var(--body-font-size)',
-                                            lineHeight: 'var(--body-line-height)',
                                             color: 'var(--mantine-color-gray-9)',
+                                            fontSize: 'var(--body-font-size)',
                                             fontWeight: 600,
+                                            lineHeight: 'var(--body-line-height)',
                                         }}
                                     >
                                         {config.label}
@@ -75,10 +77,10 @@ const ScheduleCategorySelect = ({onSelect}: ScheduleCategorySelectProps) => {
                                     <Text
                                         c={'dark'}
                                         style={{
-                                            fontSize: 'var(--callout-font-size)',
-                                            lineHeight: 'var(--callout-line-height)',
                                             color: 'var(--mantine-color-gray-9)',
+                                            fontSize: 'var(--callout-font-size)',
                                             fontWeight: 400,
+                                            lineHeight: 'var(--callout-line-height)',
                                         }}
                                     >
                                         {config.description}
@@ -87,10 +89,10 @@ const ScheduleCategorySelect = ({onSelect}: ScheduleCategorySelectProps) => {
                             </Group>
 
                             <ActionIcon
-                                variant={'subtle'}
                                 color={'gray'}
                                 size={'lg'}
                                 style={{flexShrink: 0}}
+                                variant={'subtle'}
                             >
                                 <CaretRightIcon size={20} />
                             </ActionIcon>

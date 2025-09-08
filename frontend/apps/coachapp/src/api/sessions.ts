@@ -1,5 +1,7 @@
-import {Result} from '@/utils/error.ts';
 import {z} from 'zod';
+
+import {Result} from '@/utils/error.ts';
+
 import {authedClient} from './auth';
 
 // =============================
@@ -13,16 +15,16 @@ export type SessionStatus = z.infer<typeof SessionStatusEnum>;
 // =============================
 export const CreateSession_zod = z.object({
     client_id: z.string().uuid(),
-    schedule_id: z.string().uuid(),
-    session_def_id: z.string().uuid(),
-    scheduled_at: z.string().datetime().optional(),
     notes: z.string().max(2000).optional(),
+    schedule_id: z.string().uuid(),
+    scheduled_at: z.string().datetime().optional(),
+    session_def_id: z.string().uuid(),
 });
 export type CreateSessionProps = z.infer<typeof CreateSession_zod>;
 
 export const UpdateSession_zod = z.object({
-    scheduled_at: z.string().datetime().optional(),
     notes: z.string().max(2000).optional(),
+    scheduled_at: z.string().datetime().optional(),
 });
 export type UpdateSessionProps = z.infer<typeof UpdateSession_zod>;
 
@@ -46,8 +48,8 @@ export type SkipSessionProps = z.infer<typeof SkipSession_zod>;
 // =============================
 export const UpdateSessionItem_zod = z.object({
     completed: z.boolean().optional(),
-    notes: z.string().max(1000).optional(),
     metrics: z.record(z.any()).optional(),
+    notes: z.string().max(1000).optional(),
 });
 export type UpdateSessionItemProps = z.infer<typeof UpdateSessionItem_zod>;
 
@@ -56,113 +58,160 @@ export type UpdateSessionItemProps = z.infer<typeof UpdateSessionItem_zod>;
 // =============================
 export const ListSessions_zod = z.object({
     client_id: z.string().uuid().optional(),
-    schedule_id: z.string().uuid().optional(),
-    status: SessionStatusEnum.optional(),
-    start_date: z.string().datetime().optional(),
     end_date: z.string().datetime().optional(),
     include_metrics: z.boolean().optional(),
     page: z.number().int().min(1).optional().default(1),
     page_size: z.number().int().min(1).max(50).optional().default(20),
+    schedule_id: z.string().uuid().optional(),
+    start_date: z.string().datetime().optional(),
+    status: SessionStatusEnum.optional(),
 });
 export type ListSessionsParams = z.infer<typeof ListSessions_zod>;
+
+export interface ListSessionsResult {
+    page: number;
+    page_size: number;
+    records: Session[];
+    total: number;
+}
+
+export interface Session {
+    business_id: string;
+    client?: SessionClient;
+    client_id: string;
+    completed_at?: null | string;
+    created_at: string;
+    id: string;
+    notes: string;
+    schedule_id: string;
+    scheduled_at?: null | string;
+    session_def?: SessionDef;
+    session_def_id: string;
+    session_items?: SessionItem[];
+    started_at?: null | string;
+    status: SessionStatus;
+    updated_at: string;
+}
 
 // =============================
 // Response Types
 // =============================
 export interface SessionClient {
     id: string;
-    name: string;
     invitation_email: string;
+    name: string;
 }
 
 export interface SessionDef {
-    id: string;
-    name: string;
-    description: string;
-    session_type: 'workout' | 'meal';
-    duration_minutes: number;
-    is_template: boolean;
-    template_id?: string;
-    metadata?: Record<string, any>;
-    created_by: string;
     created_at: string;
+    created_by: string;
+    description: string;
+    duration_minutes: number;
+    id: string;
+    is_template: boolean;
+    metadata?: Record<string, any>;
+    name: string;
+    session_type: 'meal' | 'workout';
+    template_id?: string;
     updated_at: string;
 }
 
 export interface SessionItem {
-    id: string;
-    session_id: string;
-    content_id: string;
-    order: number;
     completed: boolean;
-    notes: string;
-    created_at: string;
-    updated_at: string;
     content?: {
-        id: string;
-        name: string;
-        description: string;
-        type: string;
-        instructions_type?: string;
-        instructions?: string;
-        media?: Record<string, any>;
-        thumbnail_url?: string;
-        tags?: string[];
-        duration?: number;
-        is_published: boolean;
-        is_archived: boolean;
-        created_by_id: string;
-        last_edited_by_id?: string;
-        created_at: string;
-        updated_at: string;
         archived_at?: string;
+        created_at: string;
+        created_by_id: string;
+        description: string;
+        duration?: number;
+        id: string;
+        instructions?: string;
+        instructions_type?: string;
+        is_archived: boolean;
+        is_published: boolean;
+        last_edited_by_id?: string;
+        media?: Record<string, any>;
         metric_keys?: string[];
+        name: string;
+        tags?: string[];
+        thumbnail_url?: string;
+        type: string;
+        updated_at: string;
     };
-}
-
-export interface Session {
-    id: string;
-    business_id: string;
-    client_id: string;
-    schedule_id: string;
-    session_def_id: string;
-    status: SessionStatus;
-    scheduled_at?: string | null;
-    started_at?: string | null;
-    completed_at?: string | null;
-    notes: string;
+    content_id: string;
     created_at: string;
+    id: string;
+    notes: string;
+    order: number;
+    session_id: string;
     updated_at: string;
-    client?: SessionClient;
-    session_def?: SessionDef;
-    session_items?: SessionItem[];
-}
-
-export interface ListSessionsResult {
-    records: Session[];
-    total: number;
-    page: number;
-    page_size: number;
 }
 
 export interface SessionsOverview {
-    total_sessions: number;
+    completed_items: number;
     completed_sessions: number;
-    skipped_sessions: number;
     in_progress_sessions: number;
     scheduled_sessions: number;
+    skipped_sessions: number;
     total_items: number;
-    completed_items: number;
+    total_sessions: number;
 }
 
 // =============================
 // API Client
 // =============================
 export const SessionsAPI = {
+    // POST /v1/coach/sessions/:sessionId/complete
+    completeSession: async (sessionId: string, data?: CompleteSessionProps): Promise<Result<Session>> => {
+        try {
+            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/complete`, data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
     // POST /v1/coach/sessions
     createSession: async (data: CreateSessionProps): Promise<Result<Session>> => {
         try {
             const response = await authedClient.post('/v1/coach/sessions', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // GET /v1/coach/clients/:clientId/metrics
+    getClientMetrics: async (
+        clientId: string,
+        params?: {
+            end_date?: string;
+            metric_key?: string;
+            page?: number;
+            page_size?: number;
+            start_date?: string;
+        },
+    ): Promise<Result<any>> => {
+        try {
+            const response = await authedClient.get(`/v1/coach/clients/${clientId}/metrics`, {params});
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // GET /v1/coach/clients/:clientId/sessions/history
+    getClientSessionHistory: async (
+        clientId: string,
+        params?: {
+            end_date?: string;
+            page?: number;
+            page_size?: number;
+            start_date?: string;
+        },
+    ): Promise<Result<ListSessionsResult>> => {
+        try {
+            const response = await authedClient.get(`/v1/coach/clients/${clientId}/sessions/history`, {params});
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
@@ -191,37 +240,10 @@ export const SessionsAPI = {
         }
     },
 
-    // GET /v1/coach/clients/:clientId/sessions/history
-    getClientSessionHistory: async (
-        clientId: string,
-        params?: {
-            start_date?: string;
-            end_date?: string;
-            page?: number;
-            page_size?: number;
-        },
-    ): Promise<Result<ListSessionsResult>> => {
+    // POST /v1/coach/sessions/:sessionId/skip
+    skipSession: async (sessionId: string, data?: SkipSessionProps): Promise<Result<Session>> => {
         try {
-            const response = await authedClient.get(`/v1/coach/clients/${clientId}/sessions/history`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // GET /v1/coach/clients/:clientId/metrics
-    getClientMetrics: async (
-        clientId: string,
-        params?: {
-            metric_key?: string;
-            start_date?: string;
-            end_date?: string;
-            page?: number;
-            page_size?: number;
-        },
-    ): Promise<Result<any>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/clients/${clientId}/metrics`, {params});
+            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/skip`, data);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
@@ -233,26 +255,6 @@ export const SessionsAPI = {
     startSession: async (sessionId: string, data?: StartSessionProps): Promise<Result<Session>> => {
         try {
             const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/start`, data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/coach/sessions/:sessionId/complete
-    completeSession: async (sessionId: string, data?: CompleteSessionProps): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/complete`, data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/coach/sessions/:sessionId/skip
-    skipSession: async (sessionId: string, data?: SkipSessionProps): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/skip`, data);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

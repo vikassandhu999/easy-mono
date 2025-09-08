@@ -10,7 +10,7 @@ export const statusColors = {
 export const visibilityLabels = {
     private: 'Private',
     program: 'Program',
-    shared_library: 'Shared Library',
+    shared_library: 'Shared library',
 } as const;
 
 export const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

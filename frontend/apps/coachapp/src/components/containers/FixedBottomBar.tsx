@@ -1,6 +1,8 @@
-import React, {PropsWithChildren, useLayoutEffect} from 'react';
 import {Box, useMantineTheme} from '@mantine/core';
+import React, {PropsWithChildren, useLayoutEffect} from 'react';
+
 import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
+
 import PaddingContainer from './PaddingContainer';
 
 export const FixedBottomBar: React.FC<PropsWithChildren> = ({children}) => {
@@ -26,18 +28,18 @@ export const FixedBottomBar: React.FC<PropsWithChildren> = ({children}) => {
         <Box
             ref={ref}
             style={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
                 backgroundColor: 'white',
                 borderTop: `1px solid ${theme.colors.gray[3]}`,
-                padding: theme.spacing.sm,
-                paddingTop: theme.spacing.sm,
+                bottom: 0,
                 boxShadow: theme.shadows.xs,
-                zIndex: 999,
                 display: isKeyboardVisible ? 'none' : 'block',
+                left: 0,
+                padding: theme.spacing.sm,
                 paddingBottom: ` calc(var(--ce-size-md) + env(safe-area-inset-bottom))`,
+                paddingTop: theme.spacing.sm,
+                position: 'fixed',
+                right: 0,
+                zIndex: 999,
             }}
         >
             <PaddingContainer>{children}</PaddingContainer>

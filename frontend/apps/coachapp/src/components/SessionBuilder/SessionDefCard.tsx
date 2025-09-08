@@ -1,23 +1,25 @@
-import {SessionDef, SessionDefItemConfig} from '@/api/session_defs.ts';
-import {Stack, Text, Group, Badge, Divider, Box, ActionIcon} from '@mantine/core';
+import {ActionIcon, Badge, Box, Divider, Group, Stack, Text} from '@mantine/core';
 import {ClockIcon, PencilIcon} from '@phosphor-icons/react';
+
+import {SessionDef, SessionDefItemConfig} from '@/api/session_defs.ts';
+
 import {SESSION_TYPE_CONFIG} from '../ScheduleBuilder/sessionTypeConfig';
 import SessionItemsManager from './SessionItemsManager';
 
 interface SessionDefCardProps {
-    sessionDef: SessionDef;
-    onEdit?: () => void;
-    showEditButton?: boolean;
     isManagementMode?: boolean;
+    onEdit?: () => void;
     onItemsUpdate?: (items: SessionDefItemConfig[]) => void;
+    sessionDef: SessionDef;
+    showEditButton?: boolean;
 }
 
 export default function SessionDefCard({
-    sessionDef,
-    onEdit,
-    showEditButton = false,
     isManagementMode = false,
+    onEdit,
     onItemsUpdate,
+    sessionDef,
+    showEditButton = false,
 }: SessionDefCardProps) {
     const typeConfig = SESSION_TYPE_CONFIG[sessionDef.session_type] || SESSION_TYPE_CONFIG.other;
     const IconComponent = typeConfig.icon;
@@ -29,30 +31,30 @@ export default function SessionDefCard({
         <Stack gap={'md'}>
             {/* Header */}
             <Group
-                justify="space-between"
                 align="flex-start"
+                justify="space-between"
             >
                 <Stack
                     gap={'xs'}
                     style={{flex: 1}}
                 >
                     <Group
-                        gap={'sm'}
                         align="center"
+                        gap={'sm'}
                     >
                         <Box
                             style={{
+                                alignItems: 'center',
                                 backgroundColor: typeConfig.color,
-                                padding: 8,
                                 borderRadius: 8,
                                 display: 'flex',
-                                alignItems: 'center',
                                 justifyContent: 'center',
+                                padding: 8,
                             }}
                         >
                             <IconComponent
-                                size={20}
                                 color={typeConfig.iconColor}
+                                size={20}
                             />
                         </Box>
                         <Stack gap={2}>
@@ -60,18 +62,18 @@ export default function SessionDefCard({
                                 fw={600}
                                 size="lg"
                                 style={{
+                                    color: 'var(--mantine-color-gray-9)',
                                     fontSize: 'var(--body-font-size)',
                                     lineHeight: 'var(--body-line-height)',
-                                    color: 'var(--mantine-color-gray-9)',
                                 }}
                             >
                                 {sessionDef.name}
                             </Text>
                             <Badge
-                                size="sm"
-                                variant="light"
                                 color={typeConfig.iconColor}
                                 radius={'var(--body-offset)'}
+                                size="sm"
+                                variant="light"
                             >
                                 {typeConfig.label}
                             </Badge>
@@ -80,9 +82,9 @@ export default function SessionDefCard({
 
                     {sessionDef.description && (
                         <Text
-                            size="sm"
                             c="dimmed"
                             lineClamp={2}
+                            size="sm"
                             style={{
                                 fontSize: 'var(--callout-font-size)',
                                 lineHeight: 'var(--callout-line-height)',
@@ -95,16 +97,16 @@ export default function SessionDefCard({
 
                 <Group gap={'xs'}>
                     <Group
-                        gap={'xs'}
                         align="center"
+                        gap={'xs'}
                     >
                         <ClockIcon
-                            size={16}
                             color="var(--mantine-color-gray-6)"
+                            size={16}
                         />
                         <Text
-                            size="sm"
                             c="dimmed"
+                            size="sm"
                             style={{
                                 fontSize: 'var(--callout-font-size)',
                                 lineHeight: 'var(--callout-line-height)',
@@ -116,9 +118,9 @@ export default function SessionDefCard({
 
                     {showEditButton && onEdit && (
                         <ActionIcon
-                            variant="light"
-                            size="sm"
                             onClick={onEdit}
+                            size="sm"
+                            variant="light"
                         >
                             <PencilIcon size={16} />
                         </ActionIcon>
@@ -130,11 +132,11 @@ export default function SessionDefCard({
             <>
                 <Divider />
                 <SessionItemsManager
-                    sessionDefId={sessionDef.id}
-                    items={sortedItems}
-                    itemContents={sessionDef.item_contents || []}
-                    onItemsUpdate={onItemsUpdate}
                     isEditable={isManagementMode}
+                    itemContents={sessionDef.item_contents || []}
+                    items={sortedItems}
+                    onItemsUpdate={onItemsUpdate}
+                    sessionDefId={sessionDef.id}
                 />
             </>
         </Stack>

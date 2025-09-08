@@ -1,62 +1,21 @@
-import {useState} from 'react';
-import {useMutation, useQuery} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
+import {useMutation, useQuery} from '@tanstack/react-query';
+import {useState} from 'react';
 
 import {CreateSessionDef, SessionDef, SessionDefsAPI} from '@/api/session_defs.ts';
-import SessionCreateForm from './SessionCreateForm';
-import SessionDefCard from './SessionDefCard';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 
+import SessionCreateForm from './SessionCreateForm';
+import SessionDefCard from './SessionDefCard';
+
 interface SessionBuilderProps {
-    sessionType: SessionDef['session_type'];
     onComplete: (id: string) => void;
-}
-
-function CreatePhase({
-    sessionType,
-    onSessionCreated,
-}: {
     sessionType: SessionDef['session_type'];
-    onSessionCreated: (values: CreateSessionDef) => Promise<void>;
-}) {
-    return (
-        <SessionCreateForm
-            sessionType={sessionType}
-            onSubmit={onSessionCreated}
-        />
-    );
-}
-
-function EditPhase({sessionDef, onItemsUpdate}: {sessionDef: SessionDef; onItemsUpdate: () => void}) {
-    const handleEdit = () => {
-        console.log('Edit session definition - not yet implemented');
-    };
-
-    return (
-        <SessionDefCard
-            sessionDef={sessionDef}
-            showEditButton={true}
-            isManagementMode={true}
-            onEdit={handleEdit}
-            onItemsUpdate={onItemsUpdate}
-        />
-    );
-}
-
-function LoadingState() {
-    return (
-        <PaddingContainer
-            paddingX={'sm'}
-            paddingY={'lg'}
-        >
-            <div>Loading session definition...</div>
-        </PaddingContainer>
-    );
 }
 
 export default function SessionBuilder({sessionType}: SessionBuilderProps) {
-    const [sessionDefId, setSessionDefId] = useState<string | null>(null);
+    const [sessionDefId, setSessionDefId] = useState<null | string>(null);
 
     const createSessionDefMutation = useMutation({
         mutationFn: async (data: CreateSessionDef) => {
@@ -66,20 +25,20 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
             }
             return result.getValue();
         },
-        onSuccess: async (result) => {
-            setSessionDefId(result.id);
-        },
         onError: () => {
             notifications.show({
-                title: 'Error',
-                message: 'Failed to create session',
                 color: 'red',
+                message: 'Failed to create session',
+                title: 'Error',
             });
+        },
+        onSuccess: async (result) => {
+            setSessionDefId(result.id);
         },
     });
 
     const sessionDefQuery = useQuery({
-        queryKey: ['sessiondef', sessionDefId],
+        enabled: !!sessionDefId,
         queryFn: async () => {
             if (!sessionDefId) return null;
             const result = await SessionDefsAPI.getSessionDef(sessionDefId, {
@@ -90,7 +49,7 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
             }
             return result.getValue();
         },
-        enabled: !!sessionDefId,
+        queryKey: ['sessiondef', sessionDefId],
     });
 
     const handleSessionCreated = async (values: CreateSessionDef) => {
@@ -109,8 +68,8 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
             >
                 {!sessionDefId && (
                     <CreatePhase
-                        sessionType={sessionType}
                         onSessionCreated={handleSessionCreated}
+                        sessionType={sessionType}
                     />
                 )}
 
@@ -118,11 +77,53 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
 
                 {sessionDefId && sessionDefQuery.data && (
                     <EditPhase
-                        sessionDef={sessionDefQuery.data}
                         onItemsUpdate={handleItemsUpdate}
+                        sessionDef={sessionDefQuery.data}
                     />
                 )}
             </PaddingContainer>
         </PagePaper>
+    );
+}
+
+function CreatePhase({
+    onSessionCreated,
+    sessionType,
+}: {
+    onSessionCreated: (values: CreateSessionDef) => Promise<void>;
+    sessionType: SessionDef['session_type'];
+}) {
+    return (
+        <SessionCreateForm
+            onSubmit={onSessionCreated}
+            sessionType={sessionType}
+        />
+    );
+}
+
+function EditPhase({onItemsUpdate, sessionDef}: {onItemsUpdate: () => void; sessionDef: SessionDef}) {
+    const handleEdit = () => {
+        console.log('Edit session definition - not yet implemented');
+    };
+
+    return (
+        <SessionDefCard
+            isManagementMode={true}
+            onEdit={handleEdit}
+            onItemsUpdate={onItemsUpdate}
+            sessionDef={sessionDef}
+            showEditButton={true}
+        />
+    );
+}
+
+function LoadingState() {
+    return (
+        <PaddingContainer
+            paddingX={'sm'}
+            paddingY={'lg'}
+        >
+            <div>Loading session definition...</div>
+        </PaddingContainer>
     );
 }

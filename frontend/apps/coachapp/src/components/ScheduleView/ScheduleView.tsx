@@ -1,55 +1,56 @@
 import {
-    Badge,
-    Stack,
-    Title,
-    Text,
-    Grid,
-    Card,
     ActionIcon,
-    Center,
-    Group,
+    Badge,
     Box,
     Button,
+    Card,
+    Center,
+    Grid,
+    Group,
     Modal,
-    TextInput,
     Select,
+    Stack,
+    Text,
     Textarea,
+    TextInput,
+    Title,
 } from '@mantine/core';
-import {IconChevronLeft, IconChevronRight, IconEdit, IconTrash, IconPlus} from '@tabler/icons-react';
-import {useState} from 'react';
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {notifications} from '@mantine/notifications';
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import {useScheduleData} from './useScheduleData';
-import PagePaper from '@/components/containers/PagePaper';
-import {dayNames, dayShort, getSlotIcon, getTimeDisplay} from './utils';
-import {ScheduleEntriesAPI, CreateScheduleEntryProps} from '@/api/schedule_entries.ts';
+import {IconChevronLeft, IconChevronRight, IconEdit, IconPlus, IconTrash} from '@tabler/icons-react';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useState} from 'react';
+
+import {CreateScheduleEntryProps, ScheduleEntriesAPI} from '@/api/schedule_entries.ts';
 import {listSessionDefs} from '@/api/session_defs.ts';
+import PaddingContainer from '@/components/containers/PaddingContainer';
+import PagePaper from '@/components/containers/PagePaper';
+
+import {useScheduleData} from './useScheduleData';
+import {dayNames, dayShort, getSlotIcon, getTimeDisplay} from './utils';
 
 type ScheduleViewProps = {
+    onDateChange?: (date: Date) => void;
     scheduleId: string;
     selectedDate?: Date;
-    onDateChange?: (date: Date) => void;
 };
 
-export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChange}: ScheduleViewProps) {
-    const {schedule, entriesByDay, isWeeklySchedule, isLoading, error} = useScheduleData(scheduleId);
-    const [selectedDay, setSelectedDay] = useState<number | null>(null);
+export function ScheduleView({onDateChange, scheduleId, selectedDate = new Date()}: ScheduleViewProps) {
+    const {entriesByDay, error, isLoading, isWeeklySchedule, schedule} = useScheduleData(scheduleId);
+    const [selectedDay, setSelectedDay] = useState<null | number>(null);
     const [editingEntry, setEditingEntry] = useState<any>(null);
     const [addModalOpened, setAddModalOpened] = useState(false);
     const [formData, setFormData] = useState({
-        title: '',
         description: '',
+        endTime: '',
         sessionDefId: '',
         startTime: '',
-        endTime: '',
+        title: '',
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const queryClient = useQueryClient();
 
     // Fetch session definitions for the form
     const {data: sessionDefsData} = useQuery({
-        queryKey: ['sessionDefs'],
         queryFn: async () => {
             const result = await listSessionDefs({page: 1, page_size: 100});
             if (!result.isError) {
@@ -57,6 +58,7 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
             }
             throw new Error(result.getError().message || 'Failed to fetch session definitions');
         },
+        queryKey: ['sessionDefs'],
     });
 
     const sessionDefs = sessionDefsData?.records || [];
@@ -78,16 +80,16 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
         if (editingEntry) {
             // TODO: Implement edit functionality when backend API is ready
             notifications.show({
-                title: 'Coming Soon',
-                message: 'Edit functionality will be available soon',
                 color: 'blue',
+                message: 'Edit functionality will be available soon',
+                title: 'Coming Soon',
             });
         } else {
             const createData = {
-                session_def_id: formData.sessionDefId,
                 day: selectedDay || 0,
-                window_start: formData.startTime || undefined,
+                session_def_id: formData.sessionDefId,
                 window_end: formData.endTime || undefined,
+                window_start: formData.startTime || undefined,
             };
             createEntryMutation.mutate(createData);
         }
@@ -102,30 +104,30 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
             }
             return result.getValue();
         },
+        onError: (error: Error) => {
+            notifications.show({
+                color: 'red',
+                message: error.message,
+                title: 'Error',
+            });
+        },
         onSuccess: () => {
             notifications.show({
-                title: 'Success',
-                message: 'Schedule entry created successfully',
                 color: 'green',
+                message: 'Schedule entry created successfully',
+                title: 'Success',
             });
             queryClient.invalidateQueries({queryKey: ['schedule-entries', scheduleId]});
             setAddModalOpened(false);
             setEditingEntry(null);
             setFormData({
-                title: '',
                 description: '',
+                endTime: '',
                 sessionDefId: '',
                 startTime: '',
-                endTime: '',
+                title: '',
             });
             setFormErrors({});
-        },
-        onError: (error: Error) => {
-            notifications.show({
-                title: 'Error',
-                message: error.message,
-                color: 'red',
-            });
         },
     });
 
@@ -138,20 +140,20 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
             }
             return result.getValue();
         },
-        onSuccess: () => {
-            notifications.show({
-                title: 'Success',
-                message: 'Schedule entry deleted successfully',
-                color: 'green',
-            });
-            queryClient.invalidateQueries({queryKey: ['schedule-entries', scheduleId]});
-        },
         onError: (error: Error) => {
             notifications.show({
-                title: 'Error',
-                message: error.message,
                 color: 'red',
+                message: error.message,
+                title: 'Error',
             });
+        },
+        onSuccess: () => {
+            notifications.show({
+                color: 'green',
+                message: 'Schedule entry deleted successfully',
+                title: 'Success',
+            });
+            queryClient.invalidateQueries({queryKey: ['schedule-entries', scheduleId]});
         },
     });
 
@@ -159,11 +161,11 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
         setSelectedDay(day);
         setEditingEntry(null);
         setFormData({
-            title: '',
             description: '',
+            endTime: '',
             sessionDefId: '',
             startTime: '',
-            endTime: '',
+            title: '',
         });
         setFormErrors({});
         setAddModalOpened(true);
@@ -172,11 +174,11 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
     const openEditEntryModal = (entry: any) => {
         setEditingEntry(entry);
         setFormData({
-            title: entry.title,
             description: entry.description || '',
+            endTime: entry.end_time || '',
             sessionDefId: entry.session_def_id,
             startTime: entry.start_time || '',
-            endTime: entry.end_time || '',
+            title: entry.title,
         });
         setAddModalOpened(true);
     };
@@ -194,8 +196,8 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                 <PaddingContainer>
                     <Center h={200}>
                         <Text
-                            size="sm"
                             c="dimmed"
+                            size="sm"
                         >
                             Loading...
                         </Text>
@@ -216,14 +218,14 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                             ta="center"
                         >
                             <Text
-                                size="sm"
                                 fw={500}
+                                size="sm"
                             >
                                 Unable to load schedule
                             </Text>
                             <Text
-                                size="xs"
                                 c="dimmed"
+                                size="xs"
                             >
                                 {error.message}
                             </Text>
@@ -241,8 +243,8 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                 <PaddingContainer>
                     <Center h={200}>
                         <Text
-                            size="sm"
                             c="dimmed"
+                            size="sm"
                         >
                             Schedule not found
                         </Text>
@@ -265,7 +267,7 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
         }
     };
 
-    const navigateDate = (direction: 'prev' | 'next') => {
+    const navigateDate = (direction: 'next' | 'prev') => {
         if (!onDateChange) return;
 
         const newDate = new Date(selectedDate);
@@ -285,28 +287,28 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                 key={entry.id}
                 padding="md"
                 radius="md"
-                withBorder
                 style={{
                     transition: 'all 0.2s ease',
                 }}
                 styles={{
                     root: {
                         '&:hover': {
-                            transform: 'translateY(-1px)',
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                            transform: 'translateY(-1px)',
                         },
                     },
                 }}
+                withBorder
             >
                 <Stack gap="xs">
                     <Group
-                        justify="space-between"
                         align="flex-start"
+                        justify="space-between"
                     >
                         <Text
                             fw={600}
-                            size="sm"
                             lineClamp={2}
+                            size="sm"
                         >
                             {entry.title}
                         </Text>
@@ -315,19 +317,19 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                             style={{flexShrink: 0}}
                         >
                             <ActionIcon
-                                variant="subtle"
-                                size="sm"
-                                onClick={() => openEditEntryModal(entry)}
                                 aria-label="Edit entry"
+                                onClick={() => openEditEntryModal(entry)}
+                                size="sm"
+                                variant="subtle"
                             >
                                 <IconEdit size={14} />
                             </ActionIcon>
                             <ActionIcon
-                                variant="subtle"
-                                size="sm"
+                                aria-label="Delete entry"
                                 color="red"
                                 onClick={() => handleDeleteEntry(entry.id)}
-                                aria-label="Delete entry"
+                                size="sm"
+                                variant="subtle"
                             >
                                 <IconTrash size={14} />
                             </ActionIcon>
@@ -335,16 +337,16 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                     </Group>
 
                     <Group
-                        gap={4}
                         align="center"
+                        gap={4}
                     >
                         <SlotIcon
-                            size={14}
                             color="var(--mantine-color-dimmed)"
+                            size={14}
                         />
                         <Text
-                            size="xs"
                             c="dimmed"
+                            size="xs"
                             style={{whiteSpace: 'nowrap'}}
                         >
                             {getTimeDisplay(entry)}
@@ -353,9 +355,9 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
 
                     {entry.description && (
                         <Text
-                            size="xs"
                             c="dimmed"
                             lineClamp={2}
+                            size="xs"
                             style={{lineHeight: 1.5}}
                         >
                             {entry.description}
@@ -373,61 +375,61 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
         return (
             <Stack gap="xl">
                 <Group
-                    justify="space-between"
                     align="center"
+                    justify="space-between"
                 >
                     <Stack gap={4}>
                         <Title
-                            order={3}
                             fw={600}
+                            order={3}
                         >
                             {dayNames[dayOfWeek]}
                         </Title>
                         <Text
-                            size="sm"
                             c="dimmed"
+                            size="sm"
                         >
                             {selectedDate.toLocaleDateString('en-US', {
+                                day: 'numeric',
+                                month: 'long',
                                 weekday: 'long',
                                 year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
                             })}
                         </Text>
                     </Stack>
                     {onDateChange && (
                         <Group gap="xs">
                             <ActionIcon
-                                variant="light"
-                                size="lg"
-                                onClick={() => openAddEntryModal(dayOfWeek)}
                                 aria-label="Add entry"
                                 color="blue"
+                                onClick={() => openAddEntryModal(dayOfWeek)}
+                                size="lg"
                                 style={{
                                     transition: 'all 0.2s ease',
                                 }}
+                                variant="light"
                             >
                                 <IconPlus size={18} />
                             </ActionIcon>
                             <ActionIcon
-                                variant="subtle"
-                                size="lg"
-                                onClick={() => navigateDate('prev')}
                                 aria-label="Previous day"
+                                onClick={() => navigateDate('prev')}
+                                size="lg"
                                 style={{
                                     transition: 'all 0.2s ease',
                                 }}
+                                variant="subtle"
                             >
                                 <IconChevronLeft size={18} />
                             </ActionIcon>
                             <ActionIcon
-                                variant="subtle"
-                                size="lg"
-                                onClick={() => navigateDate('next')}
                                 aria-label="Next day"
+                                onClick={() => navigateDate('next')}
+                                size="lg"
                                 style={{
                                     transition: 'all 0.2s ease',
                                 }}
+                                variant="subtle"
                             >
                                 <IconChevronRight size={18} />
                             </ActionIcon>
@@ -439,10 +441,10 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                     <Stack gap="md">
                         {dayEntries.map(renderEntryCard)}
                         <Button
-                            variant="light"
+                            fullWidth
                             leftSection={<IconPlus size={16} />}
                             onClick={() => openAddEntryModal(dayOfWeek)}
-                            fullWidth
+                            variant="light"
                         >
                             Add Another Entry
                         </Button>
@@ -458,23 +460,23 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                 ta="center"
                             >
                                 <Text
-                                    size="sm"
                                     c="dimmed"
+                                    size="sm"
                                 >
                                     No entries for this day
                                 </Text>
                                 <Text
-                                    size="xs"
                                     c="dimmed"
+                                    size="xs"
                                 >
                                     Get started by adding your first entry
                                 </Text>
                             </Stack>
                             <Button
-                                variant="filled"
                                 leftSection={<IconPlus size={16} />}
                                 onClick={() => openAddEntryModal(dayOfWeek)}
                                 size="sm"
+                                variant="filled"
                             >
                                 Add Entry
                             </Button>
@@ -492,24 +494,24 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
         return (
             <Stack gap="xl">
                 <Group
-                    justify="space-between"
                     align="center"
+                    justify="space-between"
                 >
                     <Stack gap={4}>
                         <Title
-                            order={3}
                             fw={600}
+                            order={3}
                         >
                             Week view
                         </Title>
                         <Text
-                            size="sm"
                             c="dimmed"
+                            size="sm"
                         >
-                            {startOfWeek.toLocaleDateString('en-US', {month: 'long', day: 'numeric'})} -{' '}
+                            {startOfWeek.toLocaleDateString('en-US', {day: 'numeric', month: 'long'})} -{' '}
                             {new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                                month: 'long',
                                 day: 'numeric',
+                                month: 'long',
                                 year: 'numeric',
                             })}
                         </Text>
@@ -517,24 +519,24 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                     {onDateChange && (
                         <Group gap="xs">
                             <ActionIcon
-                                variant="subtle"
-                                size="lg"
-                                onClick={() => navigateDate('prev')}
                                 aria-label="Previous week"
+                                onClick={() => navigateDate('prev')}
+                                size="lg"
                                 style={{
                                     transition: 'all 0.2s ease',
                                 }}
+                                variant="subtle"
                             >
                                 <IconChevronLeft size={18} />
                             </ActionIcon>
                             <ActionIcon
-                                variant="subtle"
-                                size="lg"
-                                onClick={() => navigateDate('next')}
                                 aria-label="Next week"
+                                onClick={() => navigateDate('next')}
+                                size="lg"
                                 style={{
                                     transition: 'all 0.2s ease',
                                 }}
+                                variant="subtle"
                             >
                                 <IconChevronRight size={18} />
                             </ActionIcon>
@@ -552,48 +554,48 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                         return (
                             <Grid.Col
                                 key={dayIndex}
-                                span={{base: 12, sm: 6, md: 4, lg: 12 / 7}}
+                                span={{base: 12, lg: 12 / 7, md: 4, sm: 6}}
                             >
                                 <Card
+                                    h="100%"
                                     padding="md"
                                     radius="md"
-                                    withBorder
-                                    h="100%"
                                     style={{
                                         borderColor: isToday ? 'var(--mantine-primary-color-filled)' : undefined,
                                         borderWidth: isToday ? 2 : 1,
                                     }}
+                                    withBorder
                                 >
                                     <Stack
                                         gap="sm"
                                         h="100%"
                                     >
                                         <Group
-                                            justify="space-between"
                                             align="center"
+                                            justify="space-between"
                                         >
                                             <Stack gap={2}>
                                                 <Text
+                                                    c={isToday ? 'var(--mantine-primary-color-filled)' : undefined}
                                                     fw={600}
                                                     size="sm"
-                                                    c={isToday ? 'var(--mantine-primary-color-filled)' : undefined}
                                                 >
                                                     {dayShort[dayIndex]}
                                                 </Text>
                                                 <Text
-                                                    size="xs"
                                                     c={isToday ? 'var(--mantine-primary-color-filled)' : 'dimmed'}
                                                     fw={isToday ? 600 : 400}
+                                                    size="xs"
                                                 >
                                                     {currentDate.getDate()}
                                                 </Text>
                                             </Stack>
                                             <ActionIcon
-                                                variant="subtle"
-                                                size="sm"
-                                                onClick={() => openAddEntryModal(dayIndex)}
                                                 aria-label={`Add entry for ${dayShort[dayIndex]}`}
                                                 color="blue"
+                                                onClick={() => openAddEntryModal(dayIndex)}
+                                                size="sm"
+                                                variant="subtle"
                                             >
                                                 <IconPlus size={14} />
                                             </ActionIcon>
@@ -608,15 +610,15 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                                     {dayEntries.slice(0, 3).map((entry) => (
                                                         <Box key={entry.id}>
                                                             <Text
-                                                                size="xs"
                                                                 fw={500}
                                                                 lineClamp={1}
+                                                                size="xs"
                                                             >
                                                                 {entry.title}
                                                             </Text>
                                                             <Text
-                                                                size="xs"
                                                                 c="dimmed"
+                                                                size="xs"
                                                             >
                                                                 {getTimeDisplay(entry)}
                                                             </Text>
@@ -624,8 +626,8 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                                     ))}
                                                     {dayEntries.length > 3 && (
                                                         <Text
-                                                            size="xs"
                                                             c="dimmed"
+                                                            size="xs"
                                                             ta="center"
                                                         >
                                                             +{dayEntries.length - 3} more
@@ -639,16 +641,16 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                                         ta="center"
                                                     >
                                                         <Text
-                                                            size="xs"
                                                             c="dimmed"
+                                                            size="xs"
                                                         >
                                                             No entries
                                                         </Text>
                                                         <Button
-                                                            variant="subtle"
-                                                            size="xs"
                                                             leftSection={<IconPlus size={12} />}
                                                             onClick={() => openAddEntryModal(dayIndex)}
+                                                            size="xs"
+                                                            variant="subtle"
                                                         >
                                                             Add
                                                         </Button>
@@ -673,13 +675,13 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                     {/* Header with improved hierarchy */}
                     <Stack gap="md">
                         <Group
-                            justify="space-between"
                             align="flex-start"
+                            justify="space-between"
                         >
                             <Stack gap={4}>
                                 <Title
-                                    order={2}
                                     fw={700}
+                                    order={2}
                                 >
                                     {schedule.name}
                                 </Title>
@@ -687,16 +689,16 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                     <Group gap="md">
                                         {schedule.duration_weeks && (
                                             <Text
-                                                size="sm"
                                                 c="dimmed"
+                                                size="sm"
                                             >
                                                 {schedule.duration_weeks} week{schedule.duration_weeks > 1 ? 's' : ''}
                                             </Text>
                                         )}
                                         {schedule.goal && (
                                             <Text
-                                                size="sm"
                                                 c="dimmed"
+                                                size="sm"
                                             >
                                                 Goal: {schedule.goal}
                                             </Text>
@@ -707,16 +709,16 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                             <Group gap="xs">
                                 <Badge
                                     color={getStatusColor(schedule.status)}
-                                    variant="light"
                                     size="sm"
                                     style={{textTransform: 'capitalize'}}
+                                    variant="light"
                                 >
                                     {schedule.status}
                                 </Badge>
                                 <Badge
-                                    variant="outline"
-                                    size="sm"
                                     c="dimmed"
+                                    size="sm"
+                                    variant="outline"
                                 >
                                     {schedule.frequency}
                                 </Badge>
@@ -742,24 +744,24 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
                                     ta="center"
                                 >
                                     <Text
-                                        size="lg"
-                                        fw={600}
                                         c="dimmed"
+                                        fw={600}
+                                        size="lg"
                                     >
                                         No schedule entries yet
                                     </Text>
                                     <Text
-                                        size="sm"
                                         c="dimmed"
+                                        size="sm"
                                     >
                                         Create your first entry to start building your schedule
                                     </Text>
                                 </Stack>
                                 <Button
-                                    variant="filled"
-                                    size="md"
                                     leftSection={<IconPlus size={20} />}
                                     onClick={() => openAddEntryModal(new Date().getDay())}
+                                    size="md"
+                                    variant="filled"
                                 >
                                     Create First Entry
                                 </Button>
@@ -771,96 +773,96 @@ export function ScheduleView({scheduleId, selectedDate = new Date(), onDateChang
 
             {/* Add/Edit Entry Modal */}
             <Modal
-                opened={addModalOpened}
                 onClose={() => {
                     setAddModalOpened(false);
                     setEditingEntry(null);
                     setFormData({
-                        title: '',
                         description: '',
+                        endTime: '',
                         sessionDefId: '',
                         startTime: '',
-                        endTime: '',
+                        title: '',
                     });
                     setFormErrors({});
                 }}
-                title={editingEntry ? 'Edit Schedule Entry' : 'Add Schedule Entry'}
+                opened={addModalOpened}
                 size="md"
+                title={editingEntry ? 'Edit Schedule Entry' : 'Add Schedule Entry'}
             >
                 <Stack gap="md">
                     <TextInput
-                        label="Title"
-                        placeholder="Enter entry title"
-                        value={formData.title}
-                        onChange={(e) => setFormData((prev) => ({...prev, title: e.target.value}))}
                         error={formErrors.title}
+                        label="Title"
+                        onChange={(e) => setFormData((prev) => ({...prev, title: e.target.value}))}
+                        placeholder="Enter entry title"
                         required
+                        value={formData.title}
                     />
 
                     <Select
-                        label="Session Definition"
-                        placeholder="Select session type"
                         data={
                             sessionDefs?.map((def) => ({
-                                value: def.id,
                                 label: def.name,
+                                value: def.id,
                             })) || []
                         }
-                        value={formData.sessionDefId}
-                        onChange={(value) => setFormData((prev) => ({...prev, sessionDefId: value || ''}))}
                         error={formErrors.sessionDefId}
+                        label="Session Definition"
+                        onChange={(value) => setFormData((prev) => ({...prev, sessionDefId: value || ''}))}
+                        placeholder="Select session type"
                         required
+                        value={formData.sessionDefId}
                     />
 
                     <Group grow>
                         <TextInput
+                            error={formErrors.startTime}
                             label="Start Time"
+                            onChange={(e) => setFormData((prev) => ({...prev, startTime: e.target.value}))}
                             placeholder="HH:MM"
                             value={formData.startTime}
-                            onChange={(e) => setFormData((prev) => ({...prev, startTime: e.target.value}))}
-                            error={formErrors.startTime}
                         />
                         <TextInput
+                            error={formErrors.endTime}
                             label="End Time"
+                            onChange={(e) => setFormData((prev) => ({...prev, endTime: e.target.value}))}
                             placeholder="HH:MM"
                             value={formData.endTime}
-                            onChange={(e) => setFormData((prev) => ({...prev, endTime: e.target.value}))}
-                            error={formErrors.endTime}
                         />
                     </Group>
 
                     <Textarea
                         label="Description"
-                        placeholder="Enter description (optional)"
-                        value={formData.description}
                         onChange={(e) => setFormData((prev) => ({...prev, description: e.target.value}))}
+                        placeholder="Enter description (optional)"
                         rows={3}
+                        value={formData.description}
                     />
 
                     <Group
-                        justify="flex-end"
                         gap="sm"
+                        justify="flex-end"
                     >
                         <Button
-                            variant="subtle"
                             onClick={() => {
                                 setAddModalOpened(false);
                                 setEditingEntry(null);
                                 setFormData({
-                                    title: '',
                                     description: '',
+                                    endTime: '',
                                     sessionDefId: '',
                                     startTime: '',
-                                    endTime: '',
+                                    title: '',
                                 });
                                 setFormErrors({});
                             }}
+                            variant="subtle"
                         >
                             Cancel
                         </Button>
                         <Button
-                            onClick={handleFormSubmit}
                             loading={createEntryMutation.isPending}
+                            onClick={handleFormSubmit}
                         >
                             {editingEntry ? 'Update' : 'Add'} Entry
                         </Button>

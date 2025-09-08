@@ -1,7 +1,7 @@
-# Index - Mantine-Only Implementation
+# EasyOptionSelector - Mantine-Only Implementation
 
 ## Overview
-The Index component is built entirely using Mantine components, following Mantine's design system and layout patterns. This approach ensures consistency with the rest of the application and reduces custom CSS maintenance.
+The EasyOptionSelector component is built entirely using Mantine components, following Mantine's design system and layout patterns. This approach ensures consistency with the rest of the application and reduces custom CSS maintenance.
 
 ## Key Features
 
@@ -76,34 +76,34 @@ interface AuthLayoutProps extends PropsWithChildren {
 
 ### Basic Login Form
 ```tsx
-<Index
+<EasyOptionSelector
     title="Welcome back"
     subtitle="Sign in to your account"
 >
     <LoginForm />
-</Index>
+</EasyOptionSelector>
 ```
 
 ### Loading State
 ```tsx
-<Index
+<EasyOptionSelector
     title="Creating Account"
     subtitle="Please wait..."
     loading={true}
 >
     <SignupForm />
-</Index>
+</EasyOptionSelector>
 ```
 
 ### Error State
 ```tsx
-<Index
+<EasyOptionSelector
     title="Authentication Failed"
     subtitle="Please try again"
     error={true}
 >
     <ErrorForm />
-</Index>
+</EasyOptionSelector>
 ```
 
 ## Benefits of Mantine-Only Approach
@@ -165,7 +165,7 @@ Since the component uses only Mantine components, styling can be customized thro
 
 ### Example: Custom Styling
 ```tsx
-<Index
+<EasyOptionSelector
     title="Custom Title"
     subtitle="Custom subtitle"
 >
@@ -180,7 +180,7 @@ Since the component uses only Mantine components, styling can be customized thro
             variant="gradient" 
         />
     </Stack>
-</Index>
+</EasyOptionSelector>
 ```
 
 ## Migration Notes

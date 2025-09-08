@@ -1,63 +1,63 @@
-import {Group, Burger, ActionIcon, Avatar, rem} from '@mantine/core';
-import {IconSearch, IconBell} from '@tabler/icons-react';
+import {ActionIcon, Avatar, Burger, Group, rem} from '@mantine/core';
+import {IconBell, IconSearch} from '@tabler/icons-react';
 
 interface DesktopHeaderProps {
-    opened: boolean;
     onToggle: () => void;
+    opened: boolean;
 }
 
-export function DesktopHeader({opened, onToggle}: DesktopHeaderProps) {
+export function DesktopHeader({onToggle, opened}: DesktopHeaderProps) {
     return (
         <Group
             h="100%"
-            px="md"
             justify="space-between"
+            px="md"
         >
             <Group>
                 <Burger
-                    opened={opened}
-                    onClick={onToggle}
+                    aria-label="Toggle navigation menu"
                     hiddenFrom="sm"
+                    onClick={onToggle}
+                    opened={opened}
                     size="md"
                     style={{
-                        minWidth: rem(44),
                         minHeight: rem(44),
+                        minWidth: rem(44),
                     }}
-                    aria-label="Toggle navigation menu"
                 />
             </Group>
 
             <Group gap="sm">
                 <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="lg"
-                    radius="md"
-                    style={{
-                        minWidth: rem(44),
-                        minHeight: rem(44),
-                    }}
                     aria-label="Search"
+                    color="gray"
+                    radius="md"
+                    size="lg"
+                    style={{
+                        minHeight: rem(44),
+                        minWidth: rem(44),
+                    }}
+                    variant="subtle"
                 >
                     <IconSearch size={18} />
                 </ActionIcon>
                 <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="lg"
-                    radius="md"
-                    style={{
-                        minWidth: rem(44),
-                        minHeight: rem(44),
-                    }}
                     aria-label="Notifications"
+                    color="gray"
+                    radius="md"
+                    size="lg"
+                    style={{
+                        minHeight: rem(44),
+                        minWidth: rem(44),
+                    }}
+                    variant="subtle"
                 >
                     <IconBell size={18} />
                 </ActionIcon>
                 <Avatar
-                    size="sm"
-                    radius="xl"
                     alt="User"
+                    radius="xl"
+                    size="sm"
                 />
             </Group>
         </Group>

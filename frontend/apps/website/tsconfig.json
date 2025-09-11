@@ -1,0 +1,17 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@easy/ui": ["../../packages/ui/src"],
+      "@easy/utils": ["../../packages/utils/src"],
+      "@easy/hooks": ["../../packages/hooks/src"],
+      "@easy/typings": ["../../packages/typings/src"]
+    },
+    "composite": true,
+    "incremental": true
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["node_modules"]
+}

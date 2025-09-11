@@ -1,0 +1,16 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/shared/header.astro";
+import { Content as PrivacyPolicyContent } from "../content/privacy-policy.md";
+---
+
+<BaseLayout>
+  <section
+    class="min-h-screen w-full bg-gradient-to-br from-white via-[#ffe4ee] via-40% to-[#3a93fe]/10"
+  >
+    <Header />
+    <section class="prose container mx-auto px-4 py-16">
+      <PrivacyPolicyContent />
+    </section>
+  </section>
+</BaseLayout>

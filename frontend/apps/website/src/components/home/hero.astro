@@ -1,0 +1,70 @@
+---
+import Header from "../shared/header.astro";
+// Firebase helpers available for client-side use:
+// import { uploadBlob, getDownloadURLFor } from "../../lib/firebase";
+---
+
+<section
+  class="min-h-screen w-full"
+  style="background: linear-gradient(135deg, #ffffff, #ffe4ee, #3a93fe, #ffffff);"
+>
+  <Header />
+  <div class="container text-center flex flex-col justify-start items-center h-full mx-auto gap-6 px-4 pt-20 pb-8">
+    <h1 class="text-[#1b2947] text-3xl sm:text-4xl md:text-5xl lg:text-6xl max-w-[800px] font-bold text-center leading-tight">
+      All-in-One App to Grow Your Coaching Business
+    </h1>
+
+    <p class="text-[#1b2947] text-base sm:text-lg max-w-prose text-center px-2">
+      Finally, a single platform to handle client communication, scheduling, and
+      program delivery. Spend less time on admin and more time coaching.
+    </p>
+    
+  <form id="waitlist-form" class="w-full max-w-md flex flex-col items-center gap-4" action="#" method="POST" aria-label="Join waitlist">
+      <label for="email" class="sr-only">Email address</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        placeholder="Enter your email"
+        required
+        class="w-full rounded-xl px-4 py-3 text-[#1b2947] text-base sm:text-lg placeholder:text-[#94a3b8] bg-white/90 border border-transparent focus:outline-none focus:ring-2 focus:ring-[#3a93fe]/30 shadow-sm"
+      />
+
+      <button type="submit" class="group bg-white p-2 px-8 text-lg sm:text-xl rounded-2xl shadow-xl cursor-pointer flex items-center gap-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out font-semibold text-[#1b2947] border-2 border-transparent hover:border-white/20 backdrop-blur-sm">
+        Join waitlist
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-300 group-hover:translate-x-1">
+          <path d="M5 12h14"/>
+          <path d="m12 5 7 7-7 7"/>
+        </svg>
+      </button>
+    </form>
+
+    <p id="waitlist-status" class="text-sm text-[#1b2947]/80"></p>
+
+  </div>
+</section>
+
+<script>
+  import { addToWaitlist } from "../../lib/firebase";
+  const form = document.getElementById('waitlist-form') as HTMLFormElement | null;
+  const statusEl = document.getElementById('waitlist-status') as HTMLParagraphElement | null;
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById('email') as HTMLInputElement | null;
+    const email = emailInput?.value.trim();
+    if (!email) return;
+    try {
+      statusEl && (statusEl.textContent = 'Adding you to the waitlist...');
+      const { status } = await addToWaitlist(email);
+      if (status === 'exists') {
+        statusEl && (statusEl.textContent = 'You\'re already on the list ❤ We\'ll keep you posted.');
+      } else {
+        statusEl && (statusEl.textContent = 'You\'re on the list! Check your inbox for updates.');
+      }
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      statusEl && (statusEl.textContent = 'Something went wrong. Please try again.');
+    }
+  });
+  </script>

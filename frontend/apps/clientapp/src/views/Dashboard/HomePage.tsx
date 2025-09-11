@@ -6,10 +6,15 @@ import { useNavigate } from "react-router";
 import NotificationDrawer from "../../components/notification/NotificationDrawer";
 import Hero from "./Hero";
 import ProgramSection from "./ProgramSection";
+import { useAuth } from "@/providers/AuthProvider";
+import NoClientHero from "./NoClientHero";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [opened, { open, close }] = useDisclosure(false);
+
+  const { isClient } = useAuth();
+
 
   return (
     <>
@@ -55,8 +60,14 @@ export default function HomePage() {
           </ActionIcon>
         </Group>
 
-        <Hero />
-        <ProgramSection />
+        {
+          isClient ? <>
+              <Hero />
+               <ProgramSection />
+          </> : <NoClientHero /> 
+        }
+
+       
       </Stack>
 
       <NotificationDrawer opened={opened} open={open} onClose={close} />

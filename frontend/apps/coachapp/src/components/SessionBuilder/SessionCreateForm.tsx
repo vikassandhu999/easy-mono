@@ -132,7 +132,7 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
                 <Stack gap={'md'}>
                     <TextInput
                         label="Name"
-                        placeholder={`Enter ${typeConfig.label.toLowerCase()} name`}
+                        placeholder={`Enter ${typeConfig?.label.toLowerCase()} name`}
                         required
                         size={'md'}
                         {...form.getInputProps('name')}
@@ -144,7 +144,6 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
                             },
                         }}
                     />
-
                     {/* Duration */}
                     <NumberInput
                         label="Duration (minutes)"
@@ -161,13 +160,11 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
                             },
                         }}
                     />
-
                     {workoutSection}
                     {mealSection}
-
                     <FixedBottom
                         isSubmitting={form.submitting}
-                        label={`Create ${typeConfig.label}`}
+                        label={`Create ${typeConfig?.label}`}
                     />
                 </Stack>
             </form>

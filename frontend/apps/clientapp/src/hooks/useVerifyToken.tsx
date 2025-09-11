@@ -27,7 +27,6 @@ export const useVerifyToken = () => {
         onSuccess: (result: Result<LoginResponse>) => {
 
             if (!result.isError) {
-                const {token_id} = result.value;
 
                 notifications.show({
                             title: 'Invitation Verified',

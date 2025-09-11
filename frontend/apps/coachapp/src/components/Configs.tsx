@@ -19,16 +19,16 @@ export const SCHEDULE_CATEGORIES: Record<
         optional?: boolean;
     }
 > = {
-    nutrition: {
+    meal: {
         color: 'var(--mantine-color-lime-6)',
-        description: 'Build a nutrition plan to optimize meals and habits.',
+        description: 'Build a meal plan to optimize meals and habits.',
         form: {
-            nameDescription: 'A clear, descriptive name of the nutrition plan.',
-            namePlaceholder: 'e.g., Weight Loss Nutrition Plan',
+            nameDescription: 'A clear, descriptive name of the meal plan.',
+            namePlaceholder: 'e.g., Weight Loss Meal Plan',
         },
         icon: IconBowl,
         iconColor: 'var(--mantine-color-lime-0)',
-        label: 'Nutrition',
+        label: 'Meal',
     },
     workout: {
         color: 'var(--mantine-color-orange-6)',
@@ -68,10 +68,10 @@ export interface SessionTypeConfig {
 
 export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
     meal: {
-        color: SCHEDULE_CATEGORIES.nutrition.color,
-        description: 'Nutrition plans and meal guidance',
+        color: SCHEDULE_CATEGORIES.meal.color,
+        description: 'Meal plans and nutrition guidance',
         icon: IconBowl,
-        iconColor: SCHEDULE_CATEGORIES.nutrition.iconColor,
+        iconColor: SCHEDULE_CATEGORIES.meal.iconColor,
         label: 'Meal',
     },
     workout: {

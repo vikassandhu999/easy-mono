@@ -1,0 +1,27 @@
+{
+  "name": "@easy/root",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint",
+    "format": "pnpm --recursive format",
+    "clean": "pnpm --recursive clean",
+    "dev:clientapp": "pnpm --filter @easy/clientapp dev",
+    "dev:coachapp": "pnpm --filter @easy/coachapp dev",
+    "dev:website": "pnpm --filter @easy/website dev",
+    "build:clientapp": "pnpm --filter @easy/clientapp build",
+    "build:coachapp": "pnpm --filter @easy/coachapp build",
+    "build:website": "pnpm --filter @easy/website build"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.3"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

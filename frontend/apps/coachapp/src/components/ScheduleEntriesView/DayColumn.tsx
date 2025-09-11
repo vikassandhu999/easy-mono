@@ -16,7 +16,7 @@ interface DayColumnProps {
     dayLabel?: string;
     entries: ScheduleEntry[];
     onAddEntry: (day?: number) => void;
-    schedule: Schedule;
+    schedule?: Schedule;
 }
 
 export const DayColumn = ({addButtonLabel, day, dayLabel, entries, onAddEntry, schedule}: DayColumnProps) => {

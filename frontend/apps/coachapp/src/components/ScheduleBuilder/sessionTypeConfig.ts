@@ -31,6 +31,13 @@ export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
         iconColor: 'var(--mantine-color-blue-6)',
         label: 'Measurement',
     },
+    nutrition: {
+        color: 'var(--mantine-color-orange-1)',
+        description: 'Nutrition plans and meal guidance',
+        icon: ForkKnifeIcon,
+        iconColor: 'var(--mantine-color-orange-6)',
+        label: 'Nutrition   ',
+    },
     workout: {
         color: 'var(--mantine-color-orange-1)',
         description: 'Exercise routines and fitness training',

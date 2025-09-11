@@ -1,10 +1,10 @@
-import { AuthAPI, SignInCodeRequest } from "@/Api/auth";
-import { AuthLayout } from "@/Components/Layouts/AuthLayout";
+import { AuthAPI, SignInCodeRequest } from "@/api/auth";
+import { AuthLayout } from "@/components/layouts/AuthLayout";
 import { useAuth } from "@/providers/AuthProvider";
-import { Button, Group, PinInput, Stack, Text } from "@mantine/core";
+import { Button, PinInput, Stack, Text } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { ArrowRightIcon } from "@phosphor-icons/react";
-import { IconArrowLeft, IconCheck, IconX } from "@tabler/icons-react";
+import {  IconCheck, IconX } from "@tabler/icons-react";
 import React, { useState } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router";
 import { notifications } from "@mantine/notifications";
@@ -20,6 +20,7 @@ const SignInCodePage: React.FC = () => {
     initialValues: {
       token_id: params.get("token_id") || "",
       passcode: "",
+      invitation_token: params.get("invitation_token") || undefined,
     },
     validate: {
       passcode: (value) => {

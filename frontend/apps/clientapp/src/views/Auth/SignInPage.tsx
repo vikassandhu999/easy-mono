@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from "react";
-import { SignInRequest, AuthAPI } from "@/Api/auth";
+import { SignInRequest, AuthAPI } from "@/api/auth";
 import { createSearchParams, Navigate, useNavigate } from "react-router";
 import { useAuth } from "@/providers/AuthProvider";
 import { useForm } from "@mantine/form";
 import { TextInput, Button, Stack } from "@mantine/core";
 import { IconMail, IconCheck, IconX } from "@tabler/icons-react";
-import { AuthLayout } from "@/Components/Layouts/AuthLayout";
+import { AuthLayout } from "@/components/layouts/AuthLayout";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";

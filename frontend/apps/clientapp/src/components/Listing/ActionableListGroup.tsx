@@ -7,6 +7,7 @@ type ActionableListItemProps = {
   icon: React.ReactNode;
   counter?: number;
   onClick?: () => void;
+  disabled?: boolean;
 };
 
 export const ActionableListItem = ({
@@ -14,9 +15,10 @@ export const ActionableListItem = ({
   icon,
   counter: badgeCount = 0,
   onClick,
+  disabled = false,
 }: ActionableListItemProps) => {
   return (
-    <button className={styles.menuItem} onClick={onClick}>
+    <button className={styles.menuItem} onClick={onClick} disabled={disabled}>
       <Group gap="md" style={{ flex: 1 }}>
         <div className={styles.menuIcon}>{icon}</div>
         <Text className={styles.menuItemText}>{title}</Text>

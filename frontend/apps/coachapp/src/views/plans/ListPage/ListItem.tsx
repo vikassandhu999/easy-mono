@@ -96,7 +96,7 @@ const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
                     </Group>
 
                     <Badge
-                        color={categoryConfig.color}
+                        color={categoryConfig?.color}
                         size={'lg'}
                         style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
                         tt={'capitalize'}

@@ -1,4 +1,4 @@
-import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/Api/auth';
+import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
 import {useApp} from './AppProvider';
@@ -7,6 +7,7 @@ type AuthContextValue = {
     isAuthenticated: boolean;
     error?: string;
     isAuthenticating: boolean;
+    isClient : boolean;
     verifyAuth: (silent: boolean) => Promise<void>;
     logout: () => Promise<void>;
     saveAuthToken: (token: AccessToken) => Promise<unknown>;
@@ -17,12 +18,14 @@ AuthContext.displayName = 'AuthContext';
 
 type AuthState = {
     isAuthenticated: boolean;
+    isClient : boolean;
     isAuthenticating: boolean;
     error?: string;
 };
 
 const initialAuthState = {
     isAuthenticated: false,
+    isClient : false,
     isAuthenticating: true,
     error: undefined,
 };
@@ -90,16 +93,22 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
         async (silent = false) => {
             if (!silent) setState({isAuthenticating: true});
 
-            const accessToken = await AuthAPI.refreshToken();
-            if (accessToken.isError) {
+            const tokenResponse = await AuthAPI.refreshToken();
+            if (tokenResponse.isError) {
                 return setState({
                     isAuthenticated: false,
                     isAuthenticating: false,
                     error: 'Unauthorized',
                 });
             }
-            await saveAuthToken(accessToken.getValue());
-            return accessToken.getValue();
+
+            if(tokenResponse.getValue().client) {
+                setState({isClient: true});
+            } else {
+                setState({isClient: false});
+            }
+            await saveAuthToken(tokenResponse.getValue());
+            return tokenResponse.getValue();
         },
         [saveAuthToken],
     );

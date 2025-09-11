@@ -42,7 +42,8 @@ export default function ScheduleBuilder() {
 
     const {data: schedule, error, isLoading} = useSchedule(scheduleId || '', !!scheduleId);
 
-    const sessionType = schedule?.category ?? 'workout';
+    // FIX : backend should return meal instead of nutrition
+    const sessionType = schedule?.category === 'nutrition' ? 'meal' : (schedule?.category ?? 'workout');
 
     const createEntry = useMutation({
         mutationFn: async ({data, scheduleId}: {data: CreateScheduleEntryProps; scheduleId: string}) => {

@@ -9,6 +9,7 @@ import {SCHEDULE_CATEGORIES} from '../Configs';
 import {LoadingState} from './components';
 import {DAY_NAMES} from './constants';
 import {DayColumn} from './DayColumn';
+import {NutritionDayColumn} from './NutrtionDayColumn';
 import {ScheduleHeader} from './ScheduleHeader';
 import {groupEntriesByDay} from './utils';
 
@@ -46,10 +47,17 @@ export function DailySessions({onAddEntry, schedule}: ScheduleSessionsViewProps)
                     width: '100%',
                 }}
             >
-                <DayColumn
-                    entries={entries}
-                    onAddEntry={onAddEntry}
-                />
+                {schedule.category === 'nutrition' ? (
+                    <NutritionDayColumn
+                        entries={entries}
+                        onAddEntry={onAddEntry}
+                    />
+                ) : (
+                    <DayColumn
+                        entries={entries}
+                        onAddEntry={onAddEntry}
+                    />
+                )}
             </Box>
         </Stack>
     );

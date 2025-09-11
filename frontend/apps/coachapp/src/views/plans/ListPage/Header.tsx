@@ -36,7 +36,7 @@ export default function PlansListHeader({onCreateClick, onSearchChange, ref}: Pl
                             Create
                         </Button>
                     }
-                    title={'plans'}
+                    title={'Plans'}
                 />
 
                 <TextInput

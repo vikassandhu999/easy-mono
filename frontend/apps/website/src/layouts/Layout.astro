@@ -1,0 +1,48 @@
+---
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>CoachEasy – All-in-One Coaching Business Platform</title>
+		<meta name="description" content="CoachEasy is the all-in-one SaaS platform for professional coaches to manage clients, scheduling, messaging, program delivery, and progress tracking—save time and scale your coaching business." />
+		<meta name="keywords" content="coaching software, client management for coaches, coaching platform, scheduling for coaches, progress tracking, coaching SaaS" />
+		<meta name="author" content="CoachEasy" />
+		<meta name="robots" content="index,follow" />
+		<link rel="canonical" href="https://coacheasyapp.com/" />
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="CoachEasy" />
+		<meta property="og:title" content="CoachEasy – All-in-One Coaching Business Platform" />
+		<meta property="og:description" content="Manage clients, sessions, messaging, content and progress in one simple platform built for coaches." />
+		<meta property="og:url" content="https://coacheasyapp.com/" />
+		<meta property="og:image" content="https://coacheasyapp.com/og-image.jpg" />
+		<meta property="og:image:alt" content="CoachEasy platform dashboard preview" />
+
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="CoachEasy – All-in-One Coaching Business Platform" />
+		<meta name="twitter:description" content="Powerful client & program management for modern coaching businesses." />
+		<meta name="twitter:image" content="https://coacheasyapp.com/og-image.jpg" />
+
+		<meta name="theme-color" content="#3a93fe" />
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		width: 100%;
+		height: 100%;
+	}
+</style>

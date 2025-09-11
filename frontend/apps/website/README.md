@@ -6,6 +6,9 @@ The marketing website for CoachEasy built with Astro and Tailwind CSS.
 
 This is part of the CoachEasy monorepo. Inside of this website project, you'll see the following folders and files:
 
+
+
+
 ```text
 /
 ├── public/

@@ -71,54 +71,44 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
 
     return (
         <form onSubmit={form.onSubmit(handleFormSubmit)}>
-            <Stack gap="md">
-                <FormSection>
-                    <TextInput
-                        description="The full name of the client"
-                        label="Name"
-                        placeholder="Enter client's full name"
-                        required
-                        size="md"
-                        withAsterisk
-                        {...form.getInputProps('name')}
-                    />
-                </FormSection>
+            <FormSection>
+                <TextInput
+                    description="The full name of the client"
+                    label="Name"
+                    placeholder="Enter client's full name"
+                    required
+                    size="md"
+                    withAsterisk
+                    {...form.getInputProps('name')}
+                />
 
-                <FormSection>
-                    <TextInput
-                        description="The email address for sending the invitation"
-                        label="Email"
-                        placeholder="Enter email address"
-                        required
-                        size="md"
-                        type="email"
-                        withAsterisk
-                        {...form.getInputProps('invitation_email')}
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <TextInput
-                        description="The client's phone number"
-                        label="Phone Number"
-                        placeholder="Enter phone number (optional)"
-                        size="md"
-                        type="tel"
-                        {...form.getInputProps('invitation_phone')}
-                    />
-                </FormSection>
-
-                <FormSection>
-                    <Textarea
-                        description="Any additional information about the client"
-                        label="Notes"
-                        placeholder="Add any notes about this client (optional)"
-                        rows={3}
-                        size="md"
-                        {...form.getInputProps('notes')}
-                    />
-                </FormSection>
-            </Stack>
+                <TextInput
+                    description="The email address for sending the invitation"
+                    label="Email"
+                    placeholder="Enter email address"
+                    required
+                    size="md"
+                    type="email"
+                    withAsterisk
+                    {...form.getInputProps('invitation_email')}
+                />
+                <TextInput
+                    description="The client's phone number"
+                    label="Phone Number"
+                    placeholder="Enter phone number (optional)"
+                    size="md"
+                    type="tel"
+                    {...form.getInputProps('invitation_phone')}
+                />
+                <Textarea
+                    description="Any additional information about the client"
+                    label="Notes"
+                    placeholder="Add any notes about this client (optional)"
+                    rows={3}
+                    size="md"
+                    {...form.getInputProps('notes')}
+                />
+            </FormSection>
 
             <FixedBottom
                 isSubmitting={form.submitting}

@@ -36,6 +36,14 @@ module.exports = {
                 type: 'natural',
             },
         ],
+        'perfectionist/sort-objects': [
+            'error',
+            {
+                ignoreCase: true,
+                order: 'asc',
+                type: 'unsorted',
+            },
+        ],
         'perfectionist/sort-variable-declarations': [
             'error',
             {

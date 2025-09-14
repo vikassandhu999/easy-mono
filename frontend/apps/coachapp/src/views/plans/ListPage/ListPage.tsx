@@ -1,6 +1,6 @@
 import {Button, useDrawersStack} from '@mantine/core';
 import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {Schedule} from '@/api/schedules.ts';
 import PaddingContainer from '@/components/containers/PaddingContainer';
@@ -8,16 +8,17 @@ import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
+import ScheduleCopyToClientDrawer from '@/components/ScheduleCopyToClientDrawer/ScheduleCopyToClientDrawer';
 import {ScheduleCreateDrawer} from '@/components/ScheduleForm/ScheduleCreateDrawer';
+import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
 import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
 import {useSchedules} from '@/hooks/useScheduleQueries';
 
 import Header from './Header';
-import ListItem from './ListItem';
 
 function PlansListPage() {
     const [search, setSearch] = useState('');
-
+    const [copyScheduleId, setCopyScheduleId] = useState<null | string>(null);
     const scheduleBuilderStack = useDrawerStackRouter({
         baseRoutePath: `/plans`,
         drawerIds: [
@@ -34,15 +35,11 @@ function PlansListPage() {
         ],
     });
 
-    const stack = useDrawersStack(['select-plan-type', 'create-schedule']);
+    const stack = useDrawersStack(['select-plan-type', 'create-schedule', 'copy-to-client']);
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useSchedules({
+    const {fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, schedules} = useSchedules({
         search: search?.trim(),
     });
-
-    const schedules = useMemo(() => {
-        return data?.pages.flatMap((page) => page.records) ?? [];
-    }, [data]);
 
     const handleCreate = () => stack.open('select-plan-type');
 
@@ -94,8 +91,12 @@ function PlansListPage() {
                         loadMoreText="Load More Programs"
                         records={schedules}
                         renderItem={(schedule) => (
-                            <ListItem
+                            <ScheduleListItem
                                 key={schedule.id}
+                                onCopyToClient={(id) => {
+                                    setCopyScheduleId(id);
+                                    stack.open('copy-to-client');
+                                }}
                                 onEdit={handleEdit}
                                 onView={handleEdit}
                                 schedule={schedule}
@@ -109,6 +110,11 @@ function PlansListPage() {
                     onCreated={(id) => {
                         scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id});
                     }}
+                    stack={stack}
+                />
+
+                <ScheduleCopyToClientDrawer
+                    scheduleId={copyScheduleId}
                     stack={stack}
                 />
 

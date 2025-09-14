@@ -1,14 +1,13 @@
 import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
-import {useDisclosure} from '@mantine/hooks';
 import {CopySimpleIcon, DotsThreeVerticalIcon, PencilSimpleIcon, TrashIcon} from '@phosphor-icons/react';
 import {IconCalendar, IconClock} from '@tabler/icons-react';
 import React, {FC} from 'react';
 
 import {Schedule} from '@/api/schedules.ts';
-import AssignClientSelector from '@/components/AssignClientSelector/AssignClientSelector';
 import {SCHEDULE_CATEGORIES, SCHEDULE_STATUS} from '@/components/Configs';
 
 type ScheduleCardProps = {
+    onCopyToClient?: (schedule_id: string) => void;
     onEdit?: (id: string) => void;
     onView: (id: string) => void;
     schedule: Schedule;
@@ -40,8 +39,7 @@ function CaptionBadge({icon, text}: {icon: React.ComponentType<any>; text: strin
     );
 }
 
-const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
-    const [opened, {close, open}] = useDisclosure(false);
+const ScheduleListItem: FC<ScheduleCardProps> = ({onEdit, onView, onCopyToClient, schedule}) => {
     const categoryConfig = SCHEDULE_CATEGORIES[schedule.category];
     const statusConfig = SCHEDULE_STATUS[schedule.status];
 
@@ -58,12 +56,6 @@ const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
 
     return (
         <>
-            <AssignClientSelector
-                onClose={close}
-                open={open}
-                opened={opened}
-                scheduleId={schedule.id}
-            />
             <Card
                 onClick={() => onView(schedule.id)}
                 shadow={'xxs'}
@@ -152,12 +144,14 @@ const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
                             </Menu.Target>
 
                             <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-                                <Menu.Item
-                                    leftSection={<CopySimpleIcon size={20} />}
-                                    onClick={open}
-                                >
-                                    Copy to client
-                                </Menu.Item>
+                                {!schedule.client_id ? (
+                                    <Menu.Item
+                                        leftSection={<CopySimpleIcon size={20} />}
+                                        onClick={() => onCopyToClient?.(schedule.id)}
+                                    >
+                                        Copy to client
+                                    </Menu.Item>
+                                ) : null}
 
                                 <Menu.Item
                                     leftSection={<PencilSimpleIcon size={20} />}
@@ -188,4 +182,4 @@ const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
     );
 };
 
-export default ListItem;
+export default ScheduleListItem;

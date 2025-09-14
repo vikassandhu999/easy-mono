@@ -1,4 +1,5 @@
 import {useInfiniteQuery, useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useMemo} from 'react';
 
 import {
     ClientsAPI,
@@ -20,11 +21,7 @@ export const CLIENT_QUERY_KEYS = {
 
 // List clients Hook
 export const useClients = (params?: Omit<ListClientsProps, 'page'>) => {
-    return useInfiniteQuery({
-        getNextPageParam: (lastPage) => {
-            const totalPages = Math.ceil(lastPage.total / lastPage.page_size);
-            return lastPage.page < totalPages ? lastPage.page + 1 : undefined;
-        },
+    const {data, ...rest} = useInfiniteQuery({
         initialPageParam: 1,
         queryFn: async ({pageParam = 1}) => {
             const result = await ClientsAPI.listClients({
@@ -42,7 +39,18 @@ export const useClients = (params?: Omit<ListClientsProps, 'page'>) => {
             };
         },
         queryKey: CLIENT_QUERY_KEYS.list(params || {}),
+        getNextPageParam: (lastPage) => {
+            const totalPages = Math.ceil(lastPage.total / lastPage.page_size);
+            return lastPage.page < totalPages ? lastPage.page + 1 : undefined;
+        },
     });
+
+    const clients = useMemo(() => data?.pages.flatMap((page) => page.records) ?? [], [data]);
+
+    return {
+        ...rest,
+        clients,
+    };
 };
 
 // Get Single Client Hook

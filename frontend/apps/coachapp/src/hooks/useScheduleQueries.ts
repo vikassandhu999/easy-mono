@@ -22,7 +22,7 @@ export const SCHEDULES_QUERY_KEYS = {
 
 // List schedules
 export const useSchedules = (params?: ListSchedulesParams) => {
-    return useInfiniteQuery({
+    const {data, ...rest} = useInfiniteQuery({
         getNextPageParam: (lastPage) => {
             return lastPage.total === lastPage.page_size ? lastPage.page + 1 : undefined;
         },
@@ -37,6 +37,10 @@ export const useSchedules = (params?: ListSchedulesParams) => {
         queryKey: SCHEDULES_QUERY_KEYS.list(params || {}),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
+    return {
+        ...rest,
+        schedules: (data?.pages.flatMap((page) => page.records) as Schedule[]) ?? [],
+    };
 };
 
 // Get single schedule

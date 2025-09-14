@@ -1,6 +1,6 @@
 import {Button, useDrawersStack} from '@mantine/core';
 import {IconPlus, IconUsers} from '@tabler/icons-react';
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {Client} from '@/api/clients.ts';
@@ -18,13 +18,11 @@ const ClientsListPage: React.FC = () => {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClients({
+    const {clients, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClients({
         search: search?.trim(),
     });
 
     const stack = useDrawersStack(['invite-client']);
-
-    const allClients = useMemo(() => data?.pages.flatMap((page) => page.records) ?? [], [data]);
 
     const handleEdit = (id: string) => navigate(`/clients/${id}/edit`);
     const handleView = (id: string) => navigate(`/clients/${id}`);
@@ -74,7 +72,7 @@ const ClientsListPage: React.FC = () => {
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}
                         loadMoreText="Load More Clients"
-                        records={allClients}
+                        records={clients}
                         renderItem={(client) => (
                             <ListItem
                                 client={client}

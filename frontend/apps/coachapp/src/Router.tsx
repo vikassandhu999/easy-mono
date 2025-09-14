@@ -5,7 +5,7 @@ import SignInCodePage from '@/views/auth/SignInCodePage';
 import SignInPage from '@/views/auth/SignInPage';
 import ChatsListPage from '@/views/chats/ChatsListPage';
 import ChatViewPage from '@/views/chats/ChatView/ChatViewPage';
-import DetailClientPage from '@/views/clients/DetailClientPage/DetailClientPage';
+import ClientDetailPage from '@/views/clients/DetailPage/DetailPage';
 import ClientsListPage from '@/views/clients/ListPage/ListPage';
 import ContentDetailPage from '@/views/contents/DetailPage/DetailPage';
 import ContentListPage from '@/views/contents/ListPage/ListPage';
@@ -109,7 +109,7 @@ const router = createBrowserRouter([
                         path: '/clients',
                     },
                     {
-                        element: <DetailClientPage />,
+                        element: <ClientDetailPage />,
                         path: '/clients/:id',
                     },
                     {

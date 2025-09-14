@@ -85,26 +85,26 @@ export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
 
 export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {value: string}> = {
     exercise: {
-        color: 'var(--mantine-color-red-6)',
+        color: 'var(--mantine-color-red-1)',
         description: 'Physical movements, drills, and workout routines',
         icon: IconRun,
-        iconColor: 'var(--mantine-color-red-0)',
+        iconColor: 'var(--mantine-color-red-7)',
         label: 'Exercise',
         value: 'exercise',
     },
     food: {
-        color: 'var(--mantine-color-green-6)',
+        color: 'var(--mantine-color-green-1)',
         description: 'Individual foods and nutritional items',
         icon: IconChefHat,
-        iconColor: 'var(--mantine-color-green-0)',
+        iconColor: 'var(--mantine-color-green-7)',
         label: 'Food',
         value: 'food',
     },
     recipe: {
-        color: 'var(--mantine-color-blue-6)',
+        color: 'var(--mantine-color-blue-1)',
         description: 'Complete recipes and meal preparations',
         icon: IconListDetails,
-        iconColor: 'var(--mantine-color-blue-0)',
+        iconColor: 'var(--mantine-color-blue-7)',
         label: 'Recipe',
         value: 'recipe',
     },

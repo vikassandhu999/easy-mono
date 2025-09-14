@@ -1,4 +1,4 @@
-import {Badge, Box, Card, Flex, Group, Stack, Text, ThemeIcon, Title} from '@mantine/core';
+import {Badge, Box, Card, Flex, Group, Stack, Text, Title} from '@mantine/core';
 import {
     IconApple,
     IconBarbell,
@@ -10,10 +10,10 @@ import {
     IconUsers,
 } from '@tabler/icons-react';
 import DOMPurify from 'dompurify';
-import React from 'react';
 
 import {Content, isMediaEmpty} from '@/api/contents.ts';
 import {CONTENT_TYPE_CONFIG} from '@/components/Configs';
+import {TaxonomyBadge} from '@/components/taxonomy/TaxonomyBadge';
 import {toTitleCase} from '@/utils/case';
 
 import MediaDisplay from './MediaDisplay';
@@ -161,7 +161,7 @@ function ExerciseMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.difficulty) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="exercise"
                 icon={IconBarbell}
                 key="difficulty"
@@ -173,7 +173,7 @@ function ExerciseMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.calories_burned_per_minute) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="exercise"
                 icon={IconFlame}
                 key="calories"
@@ -187,7 +187,7 @@ function ExerciseMetadataDisplay({metadata}: {metadata: any}) {
         const muscleText = metadata.muscle_groups.map((m: string) => toTitleCase(m)).join(', ');
 
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="exercise"
                 icon={IconRun}
                 key="muscles"
@@ -200,7 +200,7 @@ function ExerciseMetadataDisplay({metadata}: {metadata: any}) {
     if (metadata.equipment?.length > 0) {
         const equipmentText = metadata.equipment.map((e: string) => toTitleCase(e)).join(', ');
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="exercise"
                 icon={IconBarbell}
                 key="equipment"
@@ -228,7 +228,7 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.calories_per_100g) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="food"
                 icon={IconFlame}
                 key="calories"
@@ -240,7 +240,7 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.macros_per_100g?.protein_g) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="food"
                 icon={IconApple}
                 key="protein"
@@ -252,7 +252,7 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.macros_per_100g?.carbs_g) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="food"
                 icon={IconApple}
                 key="carbs"
@@ -264,7 +264,7 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.macros_per_100g?.fats_g) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="food"
                 icon={IconApple}
                 key="fats"
@@ -282,7 +282,7 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
         const moreText = metadata.dietary_flags.length > 2 ? ` +${metadata.dietary_flags.length - 2}` : '';
 
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="food"
                 icon={IconChefHat}
                 key="dietary"
@@ -302,63 +302,6 @@ function FoodMetadataDisplay({metadata}: {metadata: any}) {
     ) : null;
 }
 
-function MetricBadge({
-    color = 'gray',
-    icon,
-    label,
-    value,
-}: {
-    color?: string;
-    icon: React.ComponentType<any>;
-    label: string;
-    value: string | string[];
-}) {
-    const IconComponent = icon;
-    const contentConfig = CONTENT_TYPE_CONFIG[color as keyof typeof CONTENT_TYPE_CONFIG];
-
-    const text = Array.isArray(value)
-        ? value.map((m: string) => toTitleCase(m)).join(', ')
-        : toTitleCase(value.toString());
-
-    return (
-        <Group
-            gap="sm"
-            style={{maxWidth: '300px'}}
-            wrap={'wrap'}
-        >
-            <ThemeIcon
-                color={
-                    contentConfig?.color
-                        ? contentConfig.color.replace('var(--mantine-color-', '').replace(')', '')
-                        : 'gray'
-                }
-                radius="md"
-                size={'md'}
-                variant="light"
-            >
-                <IconComponent size={24} />
-            </ThemeIcon>
-            <Stack gap={1}>
-                <Text
-                    c="dimmed"
-                    fw={500}
-                    size="xs"
-                    style={{lineHeight: 1.2}}
-                >
-                    {label}
-                </Text>
-                <Text
-                    fw={600}
-                    size="sm"
-                    style={{lineHeight: 1.2, textWrap: 'wrap'}}
-                >
-                    {text}
-                </Text>
-            </Stack>
-        </Group>
-    );
-}
-
 // Recipe-specific metadata display
 function RecipeMetadataDisplay({metadata}: {metadata: any}) {
     if (!metadata) return null;
@@ -367,7 +310,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.servings_yield) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconUsers}
                 key="servings"
@@ -380,7 +323,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
     const totalTime = (metadata.prep_time_minutes || 0) + (metadata.cook_time_minutes || 0);
     if (totalTime > 0) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconClock}
                 key="time"
@@ -392,7 +335,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.prep_time_minutes) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconClock}
                 key="prep"
@@ -404,7 +347,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.difficulty) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconListDetails}
                 key="difficulty"
@@ -416,7 +359,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.nutrition_per_serving?.calories) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconFlame}
                 key="calories"
@@ -428,7 +371,7 @@ function RecipeMetadataDisplay({metadata}: {metadata: any}) {
 
     if (metadata.meal_types?.length > 0) {
         displayItems.push(
-            <MetricBadge
+            <TaxonomyBadge
                 color="recipe"
                 icon={IconChefHat}
                 key="meal-types"

@@ -40,6 +40,29 @@ export const CompleteProfileRequest_zod = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+// Phone authentication schemas
+export const SendClientInvitationOTPRequest_zod = z.object({
+  phone_number: z.string().min(1),
+  invitation_token: z.string(),
+});
+
+export const VerifyClientInvitationOTPRequest_zod = z.object({
+  phone_number: z.string().min(1),
+  otp: z.string().length(6),
+  token_id: z.string(),
+  invitation_token: z.string(),
+});
+
+export const SendClientPhoneLoginOTPRequest_zod = z.object({
+  phone_number: z.string().min(1),
+});
+
+export const VerifyClientPhoneLoginOTPRequest_zod = z.object({
+  phone_number: z.string().min(1),
+  otp: z.string().length(6),
+  token_id: z.string(),
+});
+
 // Types
 export type SignInRequest = z.infer<typeof SignInRequest_zod>;
 export type SignInCodeRequest = z.infer<typeof SignInCodeRequest_zod>;
@@ -50,6 +73,10 @@ export type RequestPasswordResetRequest = z.infer<
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequest_zod>;
 export type SetPasswordRequest = z.infer<typeof SetPasswordRequest_zod>;
 export type CompleteProfileRequest = z.infer<typeof CompleteProfileRequest_zod>;
+export type SendClientInvitationOTPRequest = z.infer<typeof SendClientInvitationOTPRequest_zod>;
+export type VerifyClientInvitationOTPRequest = z.infer<typeof VerifyClientInvitationOTPRequest_zod>;
+export type SendClientPhoneLoginOTPRequest = z.infer<typeof SendClientPhoneLoginOTPRequest_zod>;
+export type VerifyClientPhoneLoginOTPRequest = z.infer<typeof VerifyClientPhoneLoginOTPRequest_zod>;
 
 // API Response Interfaces
 export interface LoginResponse {
@@ -62,7 +89,8 @@ export interface LoginResponse {
 
 export interface ApiUser {
   id: string;
-  email: string;
+  email?: string;
+  phone_number?: string;
 }
 
 export interface ApiClient {
@@ -260,6 +288,59 @@ export const AuthAPI = {
         "/v1/client/profile/complete",
         data
       );
+      return Result.success(response.data);
+    } catch (error: unknown) {
+      return Result.failure(error);
+    }
+  },
+
+  // Phone authentication methods
+  // POST /v1/client/auth/send-invitation-otp
+  sendClientInvitationOTP: async (
+    data: SendClientInvitationOTPRequest
+  ): Promise<Result<LoginResponse>> => {
+    try {
+      const response = await client.post("/v1/client/auth/send-invitation-otp", data);
+      return Result.success(response.data);
+    } catch (error: unknown) {
+      return Result.failure(error);
+    }
+  },
+
+  // POST /v1/client/auth/verify-invitation-otp
+  verifyClientInvitationOTP: async (
+    data: VerifyClientInvitationOTPRequest
+  ): Promise<Result<AccessTokenResponse>> => {
+    try {
+      const response = await client.post("/v1/client/auth/verify-invitation-otp", data, {
+        withCredentials: true,
+      });
+      return Result.success(response.data);
+    } catch (error: unknown) {
+      return Result.failure(error);
+    }
+  },
+
+  // POST /v1/client/auth/send-phone-login-otp
+  sendClientPhoneLoginOTP: async (
+    data: SendClientPhoneLoginOTPRequest
+  ): Promise<Result<LoginResponse>> => {
+    try {
+      const response = await client.post("/v1/client/auth/send-phone-login-otp", data);
+      return Result.success(response.data);
+    } catch (error: unknown) {
+      return Result.failure(error);
+    }
+  },
+
+  // POST /v1/client/auth/verify-phone-login-otp
+  verifyClientPhoneLoginOTP: async (
+    data: VerifyClientPhoneLoginOTPRequest
+  ): Promise<Result<AccessTokenResponse>> => {
+    try {
+      const response = await client.post("/v1/client/auth/verify-phone-login-otp", data, {
+        withCredentials: true,
+      });
       return Result.success(response.data);
     } catch (error: unknown) {
       return Result.failure(error);

@@ -53,6 +53,25 @@ export const SendPasscodeRequest_zod = z.object({
     role: z.enum(['coach', 'client']),
 });
 
+// Phone authentication schemas
+export const SendPhoneLoginOTPRequest_zod = z.object({
+    phone_number: z.string().min(1),
+});
+
+export const VerifyPhoneLoginOTPRequest_zod = z.object({
+    otp: z.string().length(6),
+    phone_number: z.string().min(1),
+    token_id: z.string(),
+});
+
+export const RegisterWithPhoneRequest_zod = z.object({
+    first_name: z.string().min(1),
+    last_name: z.string().min(1),
+    otp: z.string().length(6),
+    phone_number: z.string().min(1),
+    token_id: z.string(),
+});
+
 // Interfaces
 export interface AccessToken {
     access_token: string;
@@ -63,18 +82,21 @@ export interface AccessToken {
 export type LoginProps = z.infer<typeof LoginRequest_zod>;
 export type PasswordConfirmRequest = z.infer<typeof PasswordConfirmRequest_zod>;
 export type PasswordResetRequest = z.infer<typeof PasswordResetRequest_zod>;
+export type RegisterWithPhoneRequest = z.infer<typeof RegisterWithPhoneRequest_zod>;
 export type ResendVerifyRequest = z.infer<typeof ResendVerifyRequest_zod>;
 export type SendPasscodeRequest = z.infer<typeof SendPasscodeRequest_zod>;
+export type SendPhoneLoginOTPRequest = z.infer<typeof SendPhoneLoginOTPRequest_zod>;
 export type SignInCodeRequest = z.infer<typeof SignInCodeRequest_zod>;
 export type SignInRequest = z.infer<typeof SignInRequest_zod>;
 // Types
 export type SignupRequest = z.infer<typeof SignupRequest_zod>;
-
 export interface TokenValidation {
     email: string;
     expires_at: string;
     token_id: string;
 }
+
+export type VerifyPhoneLoginOTPRequest = z.infer<typeof VerifyPhoneLoginOTPRequest_zod>;
 
 export type VerifySignupRequest = z.infer<typeof VerifySignupRequest_zod>;
 
@@ -197,6 +219,19 @@ export const AuthAPI = {
         }
     },
 
+    // Phone authentication methods
+    // POST /v1/coach/auth/register-with-phone
+    registerWithPhone: async (data: RegisterWithPhoneRequest): Promise<Result<AccessToken>> => {
+        try {
+            const response = await client.post('/v1/coach/auth/register-with-phone', data, {
+                withCredentials: true,
+            });
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
     // POST /v1/auth/verify-resend
     resendVerifyCode: async (data: ResendVerifyRequest): Promise<Result<TokenValidation>> => {
         try {
@@ -211,6 +246,16 @@ export const AuthAPI = {
     sendPasscode: async (data: SendPasscodeRequest): Promise<Result<TokenValidation>> => {
         try {
             const response = await client.post('/v1/auth/send-passcode', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/coach/auth/send-phone-login-otp
+    sendPhoneLoginOTP: async (data: SendPhoneLoginOTPRequest): Promise<Result<TokenValidation>> => {
+        try {
+            const response = await client.post('/v1/coach/auth/send-phone-login-otp', data);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
@@ -252,6 +297,18 @@ export const AuthAPI = {
     signup: async (data: SignupRequest): Promise<Result<TokenValidation>> => {
         try {
             const response = await client.post('/v1/auth/signup', data);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    // POST /v1/coach/auth/verify-phone-login-otp
+    verifyPhoneLoginOTP: async (data: VerifyPhoneLoginOTPRequest): Promise<Result<AccessToken>> => {
+        try {
+            const response = await client.post('/v1/coach/auth/verify-phone-login-otp', data, {
+                withCredentials: true,
+            });
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

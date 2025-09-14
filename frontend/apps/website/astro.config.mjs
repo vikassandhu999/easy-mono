@@ -16,6 +16,12 @@ export default defineConfig({
                 '@easy/hooks': '/../../packages/hooks/src',
                 '@easy/typings': '/../../packages/typings/src'
             }
-        }
+        },
+        define: {
+            // Make environment variables available at build time
+            __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+            __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+        },
+        envPrefix: ['VITE_', 'PUBLIC_'],
     }
 });

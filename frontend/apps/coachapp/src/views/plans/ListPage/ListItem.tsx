@@ -1,9 +1,11 @@
 import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
 import {CopySimpleIcon, DotsThreeVerticalIcon, PencilSimpleIcon, TrashIcon} from '@phosphor-icons/react';
 import {IconCalendar, IconClock} from '@tabler/icons-react';
 import React, {FC} from 'react';
 
 import {Schedule} from '@/api/schedules.ts';
+import AssignClientSelector from '@/components/AssignClientSelector/AssignClientSelector';
 import {SCHEDULE_CATEGORIES, SCHEDULE_STATUS} from '@/components/Configs';
 
 type ScheduleCardProps = {
@@ -39,6 +41,7 @@ function CaptionBadge({icon, text}: {icon: React.ComponentType<any>; text: strin
 }
 
 const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
+    const [opened, {close, open}] = useDisclosure(false);
     const categoryConfig = SCHEDULE_CATEGORIES[schedule.category];
     const statusConfig = SCHEDULE_STATUS[schedule.status];
 
@@ -54,128 +57,134 @@ const ListItem: FC<ScheduleCardProps> = ({onEdit, onView, schedule}) => {
     };
 
     return (
-        <Card
-            onClick={() => onView(schedule.id)}
-            shadow={'xxs'}
-            style={{
-                borderRadius: 'var(--body-offset)',
-                cursor: 'pointer',
-                paddingBottom: 'var(--ce-size-md)',
-                paddingInline: 'var(--ce-size-md)',
-                paddingTop: 'var(--body-offset)',
-            }}
-            withBorder
-        >
-            <Group
-                align={'start'}
-                gap={0}
+        <>
+            <AssignClientSelector
+                onClose={close}
+                open={open}
+                opened={opened}
+                scheduleId={schedule.id}
+            />
+            <Card
+                onClick={() => onView(schedule.id)}
+                shadow={'xxs'}
+                style={{
+                    borderRadius: 'var(--body-offset)',
+                    cursor: 'pointer',
+                    paddingBottom: 'var(--ce-size-md)',
+                    paddingInline: 'var(--ce-size-md)',
+                    paddingTop: 'var(--body-offset)',
+                }}
+                withBorder
             >
-                <Box flex={1}>
-                    <Group
-                        gap={'xs'}
-                        style={{flex: 1, marginBottom: 'var(--ce-size-2xs)'}}
-                    >
-                        <Text
-                            c={'dark.6'}
-                            style={{
-                                fontSize: 'var(--body-font-size)',
-                                fontWeight: 600,
-                                lineHeight: 'var(--body-line-height)',
-                            }}
+                <Group
+                    align={'start'}
+                    gap={0}
+                >
+                    <Box flex={1}>
+                        <Group
+                            gap={'xs'}
+                            style={{flex: 1, marginBottom: 'var(--ce-size-2xs)'}}
                         >
-                            {schedule.name}
-                        </Text>
+                            <Text
+                                c={'dark.6'}
+                                style={{
+                                    fontSize: 'var(--body-font-size)',
+                                    fontWeight: 600,
+                                    lineHeight: 'var(--body-line-height)',
+                                }}
+                            >
+                                {schedule.name}
+                            </Text>
+                            <Badge
+                                color={statusConfig.color}
+                                size={'md'}
+                                tt={'capitalize'}
+                                variant="light"
+                            >
+                                {statusConfig.label}
+                            </Badge>
+                        </Group>
+
                         <Badge
-                            color={statusConfig.color}
-                            size={'md'}
+                            color={categoryConfig?.color}
+                            size={'lg'}
+                            style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
                             tt={'capitalize'}
                             variant="light"
                         >
-                            {statusConfig.label}
+                            {categoryConfig.label}
                         </Badge>
-                    </Group>
 
-                    <Badge
-                        color={categoryConfig?.color}
-                        size={'lg'}
-                        style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
-                        tt={'capitalize'}
-                        variant="light"
-                    >
-                        {categoryConfig.label}
-                    </Badge>
+                        <Group
+                            align={'center'}
+                            wrap={'nowrap'}
+                        >
+                            <CaptionBadge
+                                icon={IconClock}
+                                text={`${schedule.duration_weeks} weeks`}
+                            />
 
+                            <CaptionBadge
+                                icon={IconCalendar}
+                                text={getFrequencyText(schedule.frequency)}
+                            />
+                        </Group>
+                    </Box>
                     <Group
-                        align={'center'}
-                        wrap={'nowrap'}
+                        align="center"
+                        justify="space-between"
                     >
-                        <CaptionBadge
-                            icon={IconClock}
-                            text={`${schedule.duration_weeks} weeks`}
-                        />
+                        <Menu
+                            position={'bottom-end'}
+                            shadow={'lg'}
+                        >
+                            <Menu.Target>
+                                <ActionIcon
+                                    aria-label="Schedule actions"
+                                    color={'dark'}
+                                    onClick={(e) => e.stopPropagation()}
+                                    radius={9999}
+                                    size={'xl'}
+                                    variant={'subtle'}
+                                >
+                                    <DotsThreeVerticalIcon size={18} />
+                                </ActionIcon>
+                            </Menu.Target>
 
-                        <CaptionBadge
-                            icon={IconCalendar}
-                            text={getFrequencyText(schedule.frequency)}
-                        />
+                            <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+                                <Menu.Item
+                                    leftSection={<CopySimpleIcon size={20} />}
+                                    onClick={open}
+                                >
+                                    Copy to client
+                                </Menu.Item>
+
+                                <Menu.Item
+                                    leftSection={<PencilSimpleIcon size={20} />}
+                                    onClick={() => {
+                                        onEdit?.(schedule.id);
+                                    }}
+                                >
+                                    Edit plan
+                                </Menu.Item>
+
+                                <Menu.Divider />
+
+                                <Menu.Item
+                                    color="red"
+                                    leftSection={<TrashIcon size={20} />}
+                                    onClick={() => {
+                                        console.log('Delete schedule:', schedule.id);
+                                    }}
+                                >
+                                    Delete plan
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
                     </Group>
-                </Box>
-                <Group
-                    align="center"
-                    justify="space-between"
-                >
-                    <Menu
-                        position={'bottom-end'}
-                        shadow={'lg'}
-                    >
-                        <Menu.Target>
-                            <ActionIcon
-                                aria-label="Schedule actions"
-                                color={'dark'}
-                                onClick={(e) => e.stopPropagation()}
-                                radius={9999}
-                                size={'xl'}
-                                variant={'subtle'}
-                            >
-                                <DotsThreeVerticalIcon size={18} />
-                            </ActionIcon>
-                        </Menu.Target>
-
-                        <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-                            <Menu.Item
-                                leftSection={<CopySimpleIcon size={20} />}
-                                onClick={() => {
-                                    console.log('Copy schedule:', schedule.id);
-                                }}
-                            >
-                                Copy to client
-                            </Menu.Item>
-
-                            <Menu.Item
-                                leftSection={<PencilSimpleIcon size={20} />}
-                                onClick={() => {
-                                    onEdit?.(schedule.id);
-                                }}
-                            >
-                                Edit schedule
-                            </Menu.Item>
-
-                            <Menu.Divider />
-
-                            <Menu.Item
-                                color="red"
-                                leftSection={<TrashIcon size={20} />}
-                                onClick={() => {
-                                    console.log('Delete schedule:', schedule.id);
-                                }}
-                            >
-                                Delete schedule
-                            </Menu.Item>
-                        </Menu.Dropdown>
-                    </Menu>
                 </Group>
-            </Group>
-        </Card>
+            </Card>
+        </>
     );
 };
 

@@ -1,16 +1,20 @@
-import { Notification } from "@mantine/core";
+import {Notification} from '@mantine/core';
 
-type AlertErrorProps =  {
-    message : string ,
-    description?: string
-}
+type AlertErrorProps = {
+    description?: string;
+    message: string;
+};
 
-const AlertError = ({ message, description }: AlertErrorProps) => {
+const AlertError = ({description, message}: AlertErrorProps) => {
     return (
-        <Notification color="red" title={message} withCloseButton={false}>
+        <Notification
+            color="red"
+            title={message}
+            withCloseButton={false}
+        >
             {description && <p>{description}</p>}
         </Notification>
     );
-}
+};
 
-export default AlertError;  
+export default AlertError;

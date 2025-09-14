@@ -1,14 +1,27 @@
-import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { FIREBASE_CONFIG, validateEnvVars } from "./env";
+
+// Validate environment variables on initialization
+const envValidation = validateEnvVars();
+if (!envValidation.isValid) {
+  console.warn(
+    "Missing Firebase environment variables:",
+    envValidation.missing
+  );
+  console.warn(
+    "Please check your .env file and ensure all required variables are set."
+  );
+}
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBs0bDJoJE5sn3bSFfwJqIu09yBfeDKPjU",
-  authDomain: "waitlisting-b8db9.firebaseapp.com",
-  projectId: "waitlisting-b8db9",
-  storageBucket: "waitlisting-b8db9.firebasestorage.app",
-  messagingSenderId: "989523701063",
-  appId: "1:989523701063:web:55f3c492911ec0ef133062",
-  measurementId: "G-KJQPV02GQK"
+  apiKey: FIREBASE_CONFIG.apiKey,
+  authDomain: FIREBASE_CONFIG.authDomain,
+  projectId: FIREBASE_CONFIG.projectId,
+  storageBucket: FIREBASE_CONFIG.storageBucket,
+  messagingSenderId: FIREBASE_CONFIG.messagingSenderId,
+  appId: FIREBASE_CONFIG.appId,
+  measurementId: FIREBASE_CONFIG.measurementId,
 };
 
 let app: FirebaseApp | undefined;
@@ -30,31 +43,24 @@ export const getFirebaseStorage = (): FirebaseStorage => {
 
 // Firestore helpers (lazy-loaded to avoid SSR issues when not used on the client)
 export const getFirebaseFirestore = async () => {
-  const { getFirestore } = await import('firebase/firestore');
+  const { getFirestore } = await import("firebase/firestore");
   return getFirestore(getFirebaseApp());
 };
 
 export const addToWaitlist = async (
   email: string,
   extra?: Record<string, unknown>
-): Promise<{ status: 'exists' | 'created'; id?: string }> => {
+): Promise<{ status: "exists" | "created"; id?: string }> => {
   const db = await getFirebaseFirestore();
-  const {
-    collection,
-    addDoc,
-    serverTimestamp,
-    query,
-    where,
-    limit,
-    getDocs,
-  } = await import('firebase/firestore');
+  const { collection, addDoc, serverTimestamp, query, where, limit, getDocs } =
+    await import("firebase/firestore");
 
   const emailLower = email.trim().toLowerCase();
-  const col = collection(db, 'waitlist');
-  const q = query(col, where('email_lower', '==', emailLower), limit(1));
+  const col = collection(db, "waitlist");
+  const q = query(col, where("email_lower", "==", emailLower), limit(1));
   const snap = await getDocs(q);
   if (!snap.empty) {
-    return { status: 'exists', id: snap.docs[0].id };
+    return { status: "exists", id: snap.docs[0].id };
   }
 
   const docRef = await addDoc(col, {
@@ -63,6 +69,5 @@ export const addToWaitlist = async (
     createdAt: serverTimestamp(),
     ...extra,
   });
-  return { status: 'created', id: docRef.id };
+  return { status: "created", id: docRef.id };
 };
-

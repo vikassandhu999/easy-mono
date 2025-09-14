@@ -1,48 +1,69 @@
-import { Alert, Stack, Text, Box, ThemeIcon } from "@mantine/core";
-import { IconAlertCircle, IconMail } from "@tabler/icons-react";
-import { useVerifyToken } from "@/hooks/useVerifyToken";
-import PagePaper from "@/components/container/PagePaper";
-import PaddingContainer from "@/components/container/PaddingContainer";
-import TextLogo from "@/components/TextLogo/TextLogo";
-import HeadingContainer from "@/components/container/HeaderContainer";
+import {Alert, Box, Stack, Text, ThemeIcon} from '@mantine/core';
+import {IconAlertCircle, IconMail} from '@tabler/icons-react';
+
+import HeadingContainer from '@/components/container/HeaderContainer';
+import PaddingContainer from '@/components/container/PaddingContainer';
+import PagePaper from '@/components/container/PagePaper';
+import TextLogo from '@/components/TextLogo/TextLogo';
+import {useVerifyToken} from '@/hooks/useVerifyToken';
 
 const VeficationLoader = () => (
-  <Stack align="center" justify="center" mih={200}>
-    <ThemeIcon variant="light" color="yellow" size={80} radius={80}>
-      <IconMail size={64} />
-    </ThemeIcon>
-    <Text size="lg">Verifying your invitation, please wait...</Text>
-  </Stack>
+    <Stack
+        align="center"
+        justify="center"
+        mih={200}
+    >
+        <ThemeIcon
+            color="yellow"
+            radius={80}
+            size={80}
+            variant="light"
+        >
+            <IconMail size={64} />
+        </ThemeIcon>
+        <Text size="lg">Verifying your invitation, please wait...</Text>
+    </Stack>
 );
 
 const VerifyInvitationLinkPage = () => {
-  const { loading, error } = useVerifyToken();
+    const {error, loading} = useVerifyToken();
 
-  return (
-    <PagePaper>
-      <HeadingContainer withBorder={false}>
-        <Box ta="center" py="md">
-          <TextLogo size={"lg"} as="div" aria-label="Coach Easy Logo" />
-        </Box>
-      </HeadingContainer>
+    return (
+        <PagePaper>
+            <HeadingContainer withBorder={false}>
+                <Box
+                    py="md"
+                    ta="center"
+                >
+                    <TextLogo
+                        aria-label="Coach Easy Logo"
+                        as="div"
+                        size={'lg'}
+                    />
+                </Box>
+            </HeadingContainer>
 
-      <PaddingContainer>
-        <Stack align="center" justify="center" mih={200}>
-          {loading && <VeficationLoader />}
-          {error && (
-            <Alert
-              icon={<IconAlertCircle size={16} />}
-              title="Verification Failed"
-              color="red"
-              radius="md"
-              w={"100%"}
-            >
-              <Text size="sm">{error}</Text>
-            </Alert>
-          )}
-        </Stack>
-      </PaddingContainer>
-    </PagePaper>
-  );
+            <PaddingContainer>
+                <Stack
+                    align="center"
+                    justify="center"
+                    mih={200}
+                >
+                    {loading && <VeficationLoader />}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertCircle size={16} />}
+                            radius="md"
+                            title="Verification Failed"
+                            w={'100%'}
+                        >
+                            <Text size="sm">{error}</Text>
+                        </Alert>
+                    )}
+                </Stack>
+            </PaddingContainer>
+        </PagePaper>
+    );
 };
 export default VerifyInvitationLinkPage;

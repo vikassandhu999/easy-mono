@@ -1,130 +1,142 @@
-import { AuthAPI, SignInCodeRequest } from "@/api/auth";
-import { AuthLayout } from "@/components/layouts/AuthLayout";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button, PinInput, Stack, Text } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { ArrowRightIcon } from "@phosphor-icons/react";
-import {  IconCheck, IconX } from "@tabler/icons-react";
-import React, { useState } from "react";
-import { useNavigate, useSearchParams, Navigate } from "react-router";
-import { notifications } from "@mantine/notifications";
-import { useMutation } from "@tanstack/react-query";
+import {Button, PinInput, Stack, Text} from '@mantine/core';
+import {useForm} from '@mantine/form';
+import {notifications} from '@mantine/notifications';
+import {ArrowRightIcon} from '@phosphor-icons/react';
+import {IconCheck, IconX} from '@tabler/icons-react';
+import {useMutation} from '@tanstack/react-query';
+import React, {useState} from 'react';
+import {Navigate, useSearchParams} from 'react-router';
+
+import {AuthAPI, SignInCodeRequest} from '@/api/auth';
+import {AuthLayout} from '@/components/layouts/AuthLayout';
+import {useAuth} from '@/providers/AuthProvider';
 
 const SignInCodePage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const [params] = useSearchParams();
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+    const {isAuthenticated} = useAuth();
+    const [params] = useSearchParams();
+    const [loading, setLoading] = useState(false);
 
-  const form = useForm<SignInCodeRequest>({
-    initialValues: {
-      token_id: params.get("token_id") || "",
-      passcode: "",
-      invitation_token: params.get("invitation_token") || undefined,
-    },
-    validate: {
-      passcode: (value) => {
-        if (!value) return "Please enter the verification code";
-        if (value.length !== 6) return "Code must be 6 digits";
-        return null;
-      },
-    },
-  });
+    const form = useForm<SignInCodeRequest>({
+        initialValues: {
+            invitation_token: params.get('invitation_token') || undefined,
+            passcode: '',
+            token_id: params.get('token_id') || '',
+        },
+        validate: {
+            passcode: (value) => {
+                if (!value) return 'Please enter the verification code';
+                if (value.length !== 6) return 'Code must be 6 digits';
+                return null;
+            },
+        },
+    });
 
-  const singInMutation = useMutation({
-    mutationFn: async (data: SignInCodeRequest) => {
-      return AuthAPI.signInCode(data);
-    },
-    onMutate: () => {
-      setLoading(true);
-    },
-    onSuccess: async (res) => {
-      console.log(res);
+    const singInMutation = useMutation({
+        mutationFn: async (data: SignInCodeRequest) => {
+            return AuthAPI.signInCode(data);
+        },
+        onError: (err) => {
+            notifications.show({
+                color: 'red',
+                icon: <IconX size={16} />,
+                message: err instanceof Error ? err.message : 'Something went wrong',
+                title: 'Sign in failed',
+            });
+        },
+        onMutate: () => {
+            setLoading(true);
+        },
+        onSettled: () => {
+            setLoading(false);
+        },
+        onSuccess: async (res) => {
+            console.log(res);
 
-      if (res.isError) {
-        notifications.show({
-          title: "Verification failed",
-          message: res.getError().message || "Invalid verification code",
-          color: "red",
-          icon: <IconX size={16} />,
-        });
-        return;
-      }
+            if (res.isError) {
+                notifications.show({
+                    color: 'red',
+                    icon: <IconX size={16} />,
+                    message: res.getError().message || 'Invalid verification code',
+                    title: 'Verification failed',
+                });
+                return;
+            }
 
-      // Show success notification
-      notifications.show({
-        title: "Success!",
-        message: "You have been signed in successfully",
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
+            notifications.show({
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                message: 'You have been signed in successfully',
+                title: 'Success!',
+            });
 
-      // Force page reload to let the backend cookies take effect and update auth state
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1000); // Small delay to let user see the success message
-    },
-    onError: (err) => {
-      notifications.show({
-        title: "Sign in failed",
-        message: err instanceof Error ? err.message : "Something went wrong",
-        color: "red",
-        icon: <IconX size={16} />,
-      });
-    },
-    onSettled: () => {
-      setLoading(false);
-    },
-  });
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        },
+    });
 
-  const onSubmit = (values: SignInCodeRequest) => {
-    singInMutation.mutate(values);
-  };
+    const onSubmit = (values: SignInCodeRequest) => {
+        singInMutation.mutate(values);
+    };
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/" />;
-  }
+    if (isAuthenticated) {
+        return <Navigate to="/" />;
+    }
 
-  return (
-    <AuthLayout
-      title="Email verification"
-      subtitle={`We sent a 6-digit verification code to ${params.get("email")}`}
-    >
-      <form onSubmit={form.onSubmit(onSubmit)} style={{ width: "100%" }}>
-        <Stack gap="sm" align="start">
-          <Stack gap="xs" justify={"center"} align={"center"}>
-            <PinInput
-              length={6}
-              type="number"
-              radius="md"
-              placeholder="○"
-              {...form.getInputProps("passcode")}
-              size={"lg"}
-              w={"max-content"}
-            />
-            {form.errors.passcode && (
-              <Text size="sm" c="red" ta="center" w={"100%"}>
-                {form.errors.passcode}
-              </Text>
-            )}
-          </Stack>
+    return (
+        <AuthLayout
+            subtitle={`We sent a 6-digit verification code to ${params.get('email')}`}
+            title="Email verification"
+        >
+            <form
+                onSubmit={form.onSubmit(onSubmit)}
+                style={{width: '100%'}}
+            >
+                <Stack
+                    align="start"
+                    gap="sm"
+                >
+                    <Stack
+                        align={'center'}
+                        gap="xs"
+                        justify={'center'}
+                    >
+                        <PinInput
+                            length={6}
+                            placeholder="○"
+                            radius="md"
+                            type="number"
+                            {...form.getInputProps('passcode')}
+                            size={'lg'}
+                            w={'max-content'}
+                        />
+                        {form.errors.passcode && (
+                            <Text
+                                c="red"
+                                size="sm"
+                                ta="center"
+                                w={'100%'}
+                            >
+                                {form.errors.passcode}
+                            </Text>
+                        )}
+                    </Stack>
 
-          <Button
-            type="submit"
-            variant="filled"
-            fullWidth
-            size="md"
-            radius="md"
-            loading={loading}
-            rightSection={<ArrowRightIcon size={16} />}
-          >
-            Continue
-          </Button>
-        </Stack>
-      </form>
-    </AuthLayout>
-  );
+                    <Button
+                        fullWidth
+                        loading={loading}
+                        radius="md"
+                        rightSection={<ArrowRightIcon size={16} />}
+                        size="md"
+                        type="submit"
+                        variant="filled"
+                    >
+                        Continue
+                    </Button>
+                </Stack>
+            </form>
+        </AuthLayout>
+    );
 };
 
 export default SignInCodePage;

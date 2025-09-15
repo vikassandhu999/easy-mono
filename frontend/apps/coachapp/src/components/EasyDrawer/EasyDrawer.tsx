@@ -71,6 +71,7 @@ const defaultProps = {
     withinPortal: true,
     withOverlay: true,
     zIndex: getDefaultZIndex('modal'),
+    size: 'md',
 } satisfies Partial<DrawerProps>;
 
 const EasyDrawer = factory<DrawerFactory>((_props, ref) => {

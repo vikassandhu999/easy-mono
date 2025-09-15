@@ -16,7 +16,7 @@ export default function PaddingContainer({children, marginBottom, paddingX, padd
             px={paddingX}
             py={paddingY}
             ref={ref}
-            size="lg"
+            size="md"
             style={style}
         >
             {children}

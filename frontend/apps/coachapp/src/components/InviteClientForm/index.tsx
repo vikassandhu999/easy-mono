@@ -1,4 +1,4 @@
-import {Stack, Textarea, TextInput} from '@mantine/core';
+import {Textarea, TextInput} from '@mantine/core';
 import {useForm} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
 import React from 'react';

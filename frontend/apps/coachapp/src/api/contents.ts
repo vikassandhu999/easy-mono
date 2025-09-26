@@ -4,7 +4,7 @@ import {Result} from '@/utils/error.ts';
 
 import {authedClient} from './auth';
 
-export const ContentTypeEnum = z.enum(['exercise', 'food', 'recipe']);
+export const ContentTypeEnum = z.enum(['exercise', 'ingredient', 'recipe']);
 
 export const InstructionsTypeEnum = z.enum(['text', 'media', 'text_with_media']);
 
@@ -60,7 +60,7 @@ export interface FixedMetricDisplay {
     value: any;
 }
 
-export interface FoodMetadata {
+export interface IngredientMetadata {
     allergens: string[];
     calories_per_100g: number;
     common_serving_sizes: ServingSize[];
@@ -106,19 +106,30 @@ export interface RecipeIngredient {
     unit: string;
 }
 
+export interface RecipeInstructions {
+    instructions?: RecipeInstructionSteps[];
+    media_url?: string;
+}
+
+export interface RecipeInstructionSteps {
+    instruction: string;
+    media_url?: string;
+}
+
 export interface RecipeMetadata {
     cook_time_minutes: number;
     cooking_methods: string[];
     derived_metrics: DerivedMetricDefinition[];
-    dietary_flags: string[];
+    diet_types: string[];
     difficulty: string;
     equipment_needed: string[];
-    ingredients: RecipeIngredient[];
+    ingredients: IngredientMetadata[];
+    instructions?: RecipeInstructions;
     meal_prep_friendly: boolean;
     meal_types: string[];
     nutrition_per_serving: NutritionProfile;
     prep_time_minutes: number;
-    servings_yield: number;
+    servings: number;
     storage_instructions: string[];
     total_time_minutes: number;
     trackable_metrics: TrackableMetricDefinition[];
@@ -171,9 +182,10 @@ export const ContentMedia_zod = z.object({
 
 // Create / Update schemas - Updated to remove tags, focus on domain properties only
 export const CreateContent_zod = z.object({
+    description: z.string().optional(),
     duration: z.number().min(0).optional(),
     exercise_metadata: z.any().optional(),
-    food_metadata: z.any().optional(),
+    ingredient_metadata: z.any().optional(),
     instructions: z.string().optional(),
     instructions_type: InstructionsTypeEnum.optional(),
     media: ContentMedia_zod.optional(),
@@ -184,9 +196,10 @@ export const CreateContent_zod = z.object({
 });
 
 export const UpdateContent_zod = z.object({
+    description: z.string().optional(),
     duration: z.number().min(0).optional(),
     exercise_metadata: z.any().optional(),
-    food_metadata: z.any().optional(),
+    ingredient_metadata: z.any().optional(),
     instructions: z.string().optional(),
     instructions_type: InstructionsTypeEnum.optional(),
     media: ContentMedia_zod.optional(),
@@ -198,7 +211,7 @@ export const UpdateContent_zod = z.object({
 
 export const ListContents_zod = z.object({
     archived_only: z.boolean().optional(),
-    content_type: z.enum(['exercise', 'food', 'recipe']).optional(),
+    content_type: z.enum(['exercise', 'ingredient', 'recipe']).optional(),
     include_archived: z.boolean().optional(),
     include_metadata: z.boolean().optional(),
     include_ui_structure: z.boolean().optional(),
@@ -231,11 +244,12 @@ export interface Content {
     created_at: string;
     created_by?: {id: string; name: string};
     created_by_id: string;
+    description?: string;
     duration?: null | number;
     // taxonomy fields
     exercise_metadata?: ExerciseMetadata;
-    food_metadata?: FoodMetadata;
     id: string;
+    ingredient_metadata?: IngredientMetadata;
     instructions?: string;
     instructions_type: InstructionsType;
     is_archived: boolean;

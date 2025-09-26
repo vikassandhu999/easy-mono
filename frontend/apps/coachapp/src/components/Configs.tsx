@@ -92,13 +92,13 @@ export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {v
         label: 'Exercise',
         value: 'exercise',
     },
-    food: {
+    ingredient: {
         color: 'var(--mantine-color-green-1)',
-        description: 'Individual foods and nutritional items',
+        description: 'Individual ingredients and nutritional items',
         icon: IconChefHat,
         iconColor: 'var(--mantine-color-green-7)',
-        label: 'Food',
-        value: 'food',
+        label: 'Ingredient',
+        value: 'ingredient',
     },
     recipe: {
         color: 'var(--mantine-color-blue-1)',

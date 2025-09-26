@@ -9,23 +9,26 @@ import {
     Divider,
     Group,
     LoadingOverlay,
+    Menu,
     ScrollArea,
     Stack,
     Tabs,
     Text,
     ThemeIcon,
     useDrawersStack,
+    useMantineTheme,
 } from '@mantine/core';
 import {useInViewport, useMediaQuery} from '@mantine/hooks';
 import {
     IconAlertCircle,
     IconCalendar,
     IconCalendarTime,
+    IconChevronDown,
     IconClock,
     IconMail,
     IconNotes,
+    IconPackage,
     IconPhone,
-    IconPlus,
     IconTrendingUp,
     IconUser,
     IconUserCheck,
@@ -56,6 +59,7 @@ const ClientDetailPage = () => {
     const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLHeadingElement>();
     const {topHeight, useElementRef} = useContentHeight();
     const headerRef = useElementRef('top');
+    const theme = useMantineTheme();
 
     const {
         fetchNextPage,
@@ -351,21 +355,58 @@ const ClientDetailPage = () => {
                         <ClientInfoTab client={client} />
                     </Tabs.Panel>
                     <Tabs.Panel value="plans">
+                        <Group justify="flex-end">
+                            <Menu
+                                position="bottom-end"
+                                radius="lg"
+                                transitionProps={{transition: 'pop-top-right'}}
+                                width={220}
+                                withinPortal
+                            >
+                                <Menu.Target>
+                                    <Button
+                                        radius="xl"
+                                        rightSection={
+                                            <IconChevronDown
+                                                size={18}
+                                                stroke={1.5}
+                                            />
+                                        }
+                                    >
+                                        Add Plan
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={
+                                            <IconPackage
+                                                color={theme.colors.blue[6]}
+                                                size={16}
+                                                stroke={1.5}
+                                            />
+                                        }
+                                    >
+                                        Assign from existing
+                                    </Menu.Item>
+
+                                    <Menu.Item
+                                        leftSection={
+                                            <IconCalendar
+                                                color={theme.colors.violet[6]}
+                                                size={16}
+                                                stroke={1.5}
+                                            />
+                                        }
+                                    >
+                                        Create new plan
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
+                        </Group>
+
                         <RecordsList
                             emptyState={
                                 <EmptyState
-                                    action={
-                                        <Button
-                                            leftSection={<IconPlus size={16} />}
-                                            my="lg"
-                                            onClick={() => createStack.open('select-plan-type')}
-                                            radius={9999}
-                                            size="md"
-                                            variant="filled"
-                                        >
-                                            Create Plan
-                                        </Button>
-                                    }
                                     description={`No plans found for ${client.name}. Create the first plan to kickstart progress.`}
                                     icon={<IconTrendingUp size={32} />}
                                     iconColor="gray.5"

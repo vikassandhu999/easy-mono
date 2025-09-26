@@ -1,10 +1,10 @@
 import {useMemo} from 'react';
 
 import {Schedule} from '@/api/schedules.ts';
-import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
+import {useListScheduleEntriesQuery} from '@/store/services/scheduleEntriesApi';
 
 export const useScheduleType = (schedule: Schedule) => {
-    const {data: entriesData} = useScheduleEntries(schedule.id);
+    const {data: entriesData} = useListScheduleEntriesQuery({scheduleId: schedule.id});
 
     return useMemo(() => {
         if (!entriesData?.records) return schedule.frequency === 'weekly';

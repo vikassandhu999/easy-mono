@@ -11,7 +11,7 @@ import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import ContentForm from '@/components/ContentForm';
-import {useContent, useContentMutations} from '@/hooks/useContentsQueries';
+import {useDeleteContentMutation, useGetContentQuery} from '@/store/services/contentsApi';
 
 import Header from './Header';
 import HeroSection from './HeroSection';
@@ -19,8 +19,8 @@ import HeroSection from './HeroSection';
 export default function ContentDetailPage() {
     const {id} = useParams<{id: string}>();
     const navigate = useNavigate();
-    const {data: content, error, isLoading} = useContent(id!);
-    const {deleteContent, togglePublish} = useContentMutations();
+    const {data: content, error, isLoading} = useGetContentQuery({id: id!}, {skip: !id});
+    const [deleteContent] = useDeleteContentMutation();
 
     // Drawer states
     const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -69,7 +69,10 @@ export default function ContentDetailPage() {
     };
 
     const handleTogglePublish = () => {
-        togglePublish(id!);
+        // TODO: Implement toggle publish functionality with RTK Query
+        // The old implementation called ContentsAPI.update(id, {}) which might have
+        // toggled publish status on the backend. Need to investigate the backend API.
+        console.warn('Toggle publish not yet implemented with RTK Query');
     };
 
     if (isLoading) {

@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 
 import {Schedule} from '@/api/schedules.ts';
 import PaddingContainer from '@/components/containers/PaddingContainer';
-import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
+import {useListScheduleEntriesQuery} from '@/store/services/scheduleEntriesApi';
 
 import {SCHEDULE_CATEGORIES} from '../Configs';
 import {LoadingState} from './components';
@@ -19,7 +19,7 @@ interface ScheduleSessionsViewProps {
 }
 
 export function DailySessions({onAddEntry, schedule}: ScheduleSessionsViewProps) {
-    const {data: entriesData, isLoading} = useScheduleEntries(schedule.id);
+    const {data: entriesData, isLoading} = useListScheduleEntriesQuery({scheduleId: schedule.id});
 
     const entries = useMemo(() => {
         return entriesData?.records || [];
@@ -47,7 +47,7 @@ export function DailySessions({onAddEntry, schedule}: ScheduleSessionsViewProps)
                     width: '100%',
                 }}
             >
-                {schedule.category === 'nutrition' ? (
+                {schedule.category === 'meal' ? (
                     <NutritionDayColumn
                         entries={entries}
                         onAddEntry={onAddEntry}
@@ -64,7 +64,7 @@ export function DailySessions({onAddEntry, schedule}: ScheduleSessionsViewProps)
 }
 
 export function WeeklySessions({onAddEntry, schedule}: ScheduleSessionsViewProps) {
-    const {data: entriesData, isLoading} = useScheduleEntries(schedule.id);
+    const {data: entriesData, isLoading} = useListScheduleEntriesQuery({scheduleId: schedule.id});
 
     const entriesByDay = useMemo(() => {
         if (!entriesData?.records) return {};

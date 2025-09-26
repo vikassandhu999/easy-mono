@@ -22,7 +22,7 @@ import {useMemo, useState} from 'react';
 import {Content} from '@/api/contents.ts';
 import {CONTENT_TYPE_CONFIG} from '@/components/Configs.tsx';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useContents} from '@/hooks/useContentsQueries';
+import {useListContentsInfiniteQuery} from '@/store/services/contentsApi';
 
 import RecordsList from '../layouts/RecordsList';
 
@@ -306,7 +306,7 @@ export default function ContentSelect(props: ContentSelectProps) {
 
     const onSearchChangeDebounced = useDebouncedCallback(setSearchTerm, 300);
 
-    const {data, fetchNextPage, isFetchingNextPage, isLoading} = useContents({
+    const {data, fetchNextPage, isFetchingNextPage, isLoading} = useListContentsInfiniteQuery({
         page_size: 20,
         search: searchTerm,
     });

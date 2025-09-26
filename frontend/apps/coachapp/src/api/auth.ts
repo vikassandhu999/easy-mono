@@ -1,7 +1,7 @@
 import axios, {AxiosInstance} from 'axios';
 import {z} from 'zod';
 
-import {Result} from '@/utils/error.ts';
+import {setApiAuthToken} from '@/store/services/apiSlice';
 
 // auth schemas
 export const SignupRequest_zod = z.object({
@@ -88,8 +88,8 @@ export type SendPasscodeRequest = z.infer<typeof SendPasscodeRequest_zod>;
 export type SendPhoneLoginOTPRequest = z.infer<typeof SendPhoneLoginOTPRequest_zod>;
 export type SignInCodeRequest = z.infer<typeof SignInCodeRequest_zod>;
 export type SignInRequest = z.infer<typeof SignInRequest_zod>;
-// Types
 export type SignupRequest = z.infer<typeof SignupRequest_zod>;
+
 export interface TokenValidation {
     email: string;
     expires_at: string;
@@ -97,7 +97,6 @@ export interface TokenValidation {
 }
 
 export type VerifyPhoneLoginOTPRequest = z.infer<typeof VerifyPhoneLoginOTPRequest_zod>;
-
 export type VerifySignupRequest = z.infer<typeof VerifySignupRequest_zod>;
 
 let baseURL: string = import.meta.env.VITE_API_BASE_URL;
@@ -128,8 +127,17 @@ const addAuthInterceptor = (instance: AxiosInstance) => {
             if (error.response?.status === 401 && !originalRequest._retry) {
                 originalRequest._retry = true;
                 try {
-                    const authToken = await AuthAPI.refreshToken();
-                    instance.defaults.authToken = authToken.getValue().access_token;
+                    const {data: authToken} = await client.post<AccessToken>(
+                        '/v1/auth/token',
+                        {
+                            grant_type: 'refresh_token',
+                        },
+                        {
+                            withCredentials: true,
+                        },
+                    );
+                    instance.defaults.authToken = authToken.access_token;
+                    setApiAuthToken(authToken.access_token);
                 } catch (e) {
                     return Promise.reject(error);
                 }
@@ -144,186 +152,7 @@ const addAuthInterceptor = (instance: AxiosInstance) => {
 
 export const setTokenForAuthedClient = (token: string) => {
     authedClient.defaults.authToken = token;
+    setApiAuthToken(token);
 };
 
 export const authedClient = addAuthInterceptor(axios.create(client.defaults));
-
-export const AuthAPI = {
-    // POST /v1/auth/token (grant_type: password)
-    login: async (data: LoginProps): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post(
-                '/v1/auth/token',
-                {
-                    email: data.email,
-                    grant_type: 'password',
-                    password: data.password,
-                },
-                {
-                    withCredentials: true,
-                },
-            );
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/logout
-    logout: async (): Promise<Result<{message: string}>> => {
-        try {
-            const response = await authedClient.post('/v1/auth/logout');
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/password-confirm
-    passwordConfirm: async (data: PasswordConfirmRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post('/v1/auth/password-confirm', data, {
-                withCredentials: true,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/password-reset
-    passwordReset: async (data: PasswordResetRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/password-reset', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/token (grant_type: refresh_token)
-    refreshToken: async (): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post(
-                '/v1/auth/token',
-                {
-                    grant_type: 'refresh_token',
-                },
-                {
-                    withCredentials: true,
-                },
-            );
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // Phone authentication methods
-    // POST /v1/coach/auth/register-with-phone
-    registerWithPhone: async (data: RegisterWithPhoneRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post('/v1/coach/auth/register-with-phone', data, {
-                withCredentials: true,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/verify-resend
-    resendVerifyCode: async (data: ResendVerifyRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/verify-resend', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/send-passcode
-    sendPasscode: async (data: SendPasscodeRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/send-passcode', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/coach/auth/send-phone-login-otp
-    sendPhoneLoginOTP: async (data: SendPhoneLoginOTPRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/coach/auth/send-phone-login-otp', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/signin
-    signIn: async (data: SignInRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/send-passcode', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/token (grant_type: passcode)
-    signInCode: async (data: SignInCodeRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post(
-                '/v1/auth/token',
-                {
-                    email: data.email,
-                    grant_type: 'passcode',
-                    passcode: data.passcode,
-                    token_id: data.token_id,
-                },
-                {
-                    withCredentials: true,
-                },
-            );
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/signup
-    signup: async (data: SignupRequest): Promise<Result<TokenValidation>> => {
-        try {
-            const response = await client.post('/v1/auth/signup', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/coach/auth/verify-phone-login-otp
-    verifyPhoneLoginOTP: async (data: VerifyPhoneLoginOTPRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post('/v1/coach/auth/verify-phone-login-otp', data, {
-                withCredentials: true,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/auth/verify
-    verifySignup: async (data: VerifySignupRequest): Promise<Result<AccessToken>> => {
-        try {
-            const response = await client.post('/v1/auth/verify', data, {
-                withCredentials: true,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-};

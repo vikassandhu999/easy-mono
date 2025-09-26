@@ -1,6 +1,6 @@
 import {Button, useDrawersStack} from '@mantine/core';
 import {IconPlus, IconUsers} from '@tabler/icons-react';
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {Client} from '@/api/clients.ts';
@@ -9,7 +9,7 @@ import PagePaper from '@/components/containers/PagePaper';
 import {InviteClientDrawer} from '@/components/InviteClientDrawer';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
-import {useClients} from '@/hooks/useClientQueries';
+import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
 
 import Header from './Header';
 import ListItem from './ListItem';
@@ -18,9 +18,14 @@ const ClientsListPage: React.FC = () => {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
 
-    const {clients, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useClients({
-        search: search?.trim(),
-    });
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListClientsInfiniteQuery(
+        search?.trim() ? {search: search.trim()} : undefined,
+    );
+
+    const clients = useMemo(() => {
+        if (!data) return [];
+        return data.pages.flatMap((page) => page.records);
+    }, [data]);
 
     const stack = useDrawersStack(['invite-client']);
 

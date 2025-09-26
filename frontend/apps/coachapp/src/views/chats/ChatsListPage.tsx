@@ -19,8 +19,8 @@ import {IconArrowLeft, IconClock, IconMessageCircle, IconSearch, IconUsers} from
 import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
-import {useChats} from '@/hooks/useChatsQueries';
 import {useDebouncedValue} from '@/hooks/useDebouncedValue';
+import {useListChatsInfiniteQuery} from '@/store/services/chatsApi';
 
 import ChatListRow from './ChatListRow';
 import ChatSearchDialog from './ChatSearchDialog';
@@ -31,7 +31,9 @@ export default function ChatsListPage() {
     const [quickSearch, setQuickSearch] = useState('');
     const [debouncedQuickSearch] = useDebouncedValue(quickSearch, 300);
 
-    const {data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useChats(debouncedQuickSearch);
+    const {data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListChatsInfiniteQuery({
+        search_text: debouncedQuickSearch || undefined,
+    });
 
     const chats = useMemo(() => {
         return data?.pages.flatMap((p) => p.chats) ?? [];
@@ -210,7 +212,7 @@ export default function ChatsListPage() {
                                 c="dimmed"
                                 size="sm"
                             >
-                                {chats.filter((chat) => chat.client).length} online
+                                {chats.filter((chat) => (chat as any).client).length} online
                             </Text>
                         </Group>
 
@@ -280,7 +282,7 @@ export default function ChatsListPage() {
                     <Stack gap={0}>
                         {chats.map((chat, index) => (
                             <React.Fragment key={chat.id}>
-                                <ChatListRow chat={chat} />
+                                <ChatListRow chat={chat as any} />
                                 {index < chats.length - 1 && <Divider mx="md" />}
                             </React.Fragment>
                         ))}

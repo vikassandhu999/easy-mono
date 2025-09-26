@@ -5,16 +5,18 @@ import {IconAlertCircle, IconArrowLeft} from '@tabler/icons-react';
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import {AuthAPI, SignInCodeRequest} from '@/api/auth';
+import {SignInCodeRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import {useSignInCodeMutation} from '@/store/services/authApi';
 
 const SignInCodePage: React.FC = () => {
     const {saveAuthToken} = useAuth();
     const [params] = useSearchParams();
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<null | string>(null);
     const navigate = useNavigate();
+    const [signInCode, {isLoading}] = useSignInCodeMutation();
 
     const form = useForm<SignInCodeRequest>({
         initialValues: {
@@ -31,21 +33,27 @@ const SignInCodePage: React.FC = () => {
         },
     });
 
+    const getErrorMessage = (err: unknown) => {
+        const apiError = err as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return apiError?.message ?? 'Something went wrong';
+    };
+
     const onSubmit = async (data: SignInCodeRequest) => {
-        setLoading(true);
         setError(null);
 
         try {
-            const res = await AuthAPI.signInCode(data);
-            if (res.isError) {
-                throw new Error(res.getError().message || 'Verification failed');
-            }
-            await saveAuthToken(res.getValue());
+            const response = await signInCode(data).unwrap();
+            await saveAuthToken(response);
             navigate('/');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Something went wrong');
-        } finally {
-            setLoading(false);
+            setError(getErrorMessage(err));
         }
     };
 
@@ -108,7 +116,7 @@ const SignInCodePage: React.FC = () => {
 
                     <Button
                         fullWidth
-                        loading={loading}
+                        loading={isLoading}
                         radius="md"
                         rightSection={<ArrowRightIcon size={16} />}
                         size="md"

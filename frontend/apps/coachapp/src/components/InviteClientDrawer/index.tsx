@@ -6,7 +6,7 @@ import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
 import PaddingContainer from '@/components/containers/PaddingContainer.tsx';
 import PagePaper from '@/components/containers/PagePaper.tsx';
 import {InviteClientForm} from '@/components/InviteClientForm';
-import {useCreateClient} from '@/hooks/useClientQueries.ts';
+import {useCreateClientMutation} from '@/store/services/clientsApi';
 
 import Header from '../layouts/Header.tsx';
 
@@ -16,7 +16,7 @@ type InviteClientDrawerProps = {
 };
 
 export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerProps) {
-    const createClient = useCreateClient();
+    const [createClient] = useCreateClientMutation();
 
     return (
         <>
@@ -38,7 +38,7 @@ export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerP
                         <InviteClientForm
                             onSubmit={async (data) => {
                                 try {
-                                    const client = await createClient.mutateAsync(data);
+                                    const client = await createClient(data).unwrap();
 
                                     notifications.show({
                                         autoClose: 3000,

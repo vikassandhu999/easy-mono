@@ -5,13 +5,15 @@ import {IconAlertCircle, IconMail} from '@tabler/icons-react';
 import React, {useCallback, useState} from 'react';
 import {createSearchParams, useNavigate} from 'react-router';
 
-import {AuthAPI, SignInRequest} from '@/api/auth';
+import {SignInRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import {useSignInMutation} from '@/store/services/authApi';
 
 const SignInPage: React.FC = () => {
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<null | string>(null);
     const navigate = useNavigate();
+    const [signIn, {isLoading}] = useSignInMutation();
 
     const form = useForm<SignInRequest>({
         initialValues: {
@@ -28,28 +30,34 @@ const SignInPage: React.FC = () => {
         },
     });
 
+    const getErrorMessage = useCallback((err: unknown) => {
+        const apiError = err as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return apiError?.message ?? 'Something went wrong';
+    }, []);
+
     const onSubmit = useCallback(
         async (data: SignInRequest) => {
-            setLoading(true);
             setError(null);
 
             try {
-                const res = await AuthAPI.signIn(data);
-                if (res.isError) {
-                    throw new Error(res.getError().message || 'Sign in failed');
-                }
+                const response = await signIn(data).unwrap();
                 const params = createSearchParams([
-                    ['token_id', res.getValue().token_id],
+                    ['token_id', response.token_id],
                     ['email', data.email],
                 ]);
                 navigate('/signin/code?' + params.toString());
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Something went wrong');
-            } finally {
-                setLoading(false);
+                setError(getErrorMessage(err));
             }
         },
-        [navigate],
+        [getErrorMessage, navigate, signIn],
     );
 
     return (
@@ -87,7 +95,7 @@ const SignInPage: React.FC = () => {
 
                     <Button
                         fullWidth
-                        loading={loading}
+                        loading={isLoading}
                         radius="md"
                         rightSection={<ArrowRightIcon />}
                         size="md"

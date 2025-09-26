@@ -1,13 +1,12 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useState} from 'react';
 
-import {CreateScheduleProps, ScheduleCategory, SchedulesAPI} from '@/api/schedules.ts';
+import {ScheduleCategory} from '@/api/schedules.ts';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {SCHEDULES_QUERY_KEYS} from '@/hooks/useScheduleQueries';
+import {useCreateScheduleMutation} from '@/store/services/schedulesApi';
 
 import {SCHEDULE_CATEGORIES} from '../Configs';
 import Header from '../layouts/Header';
@@ -20,32 +19,9 @@ type ProgramCreateWithTriggerProps = {
 };
 
 export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerProps) {
-    const queryClient = useQueryClient();
-
     const [planType, setPlanType] = useState<null | ScheduleCategory>(null);
 
-    const createSchedule = useMutation({
-        mutationFn: async (data: CreateScheduleProps) => {
-            const res = await SchedulesAPI.createSchedule(data);
-            if (res.isError) {
-                throw res.getError();
-            }
-            return res.getValue();
-        },
-        onError: (error) => {
-            notifications.show({
-                color: 'red',
-                message: error.message || 'Something went wrong',
-                title: 'Failed to create schedule',
-            });
-        },
-        onSuccess: (result) => {
-            queryClient.invalidateQueries({
-                queryKey: SCHEDULES_QUERY_KEYS.lists(),
-            });
-            onCreated?.(result.id);
-        },
-    });
+    const [createSchedule] = useCreateScheduleMutation();
 
     const formTitle = planType ? `Create ${SCHEDULE_CATEGORIES[planType].label} Plan` : 'Create Plan';
 
@@ -96,7 +72,18 @@ export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTrigge
                         <ScheduleForm
                             category={planType!}
                             onSubmit={async (values) => {
-                                await createSchedule.mutateAsync(values);
+                                try {
+                                    const result = await createSchedule(values);
+                                    if ('data' in result) {
+                                        onCreated?.(result.data.id);
+                                    }
+                                } catch (error) {
+                                    notifications.show({
+                                        color: 'red',
+                                        message: 'Failed to create schedule',
+                                        title: 'Error',
+                                    });
+                                }
                             }}
                             schedule={{}}
                             submitText={'Create'}

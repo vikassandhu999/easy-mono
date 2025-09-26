@@ -1,16 +1,14 @@
 import {Button, Drawer, Group, LoadingOverlay} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 
-import {CreateScheduleEntryProps, ScheduleEntriesAPI} from '@/api/schedule_entries.ts';
 import {DisplayError} from '@/components/containers/DisplayError';
 import {FixedBottomBar} from '@/components/containers/FixedBottomBar';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {useDrawerActions, useDrawerData} from '@/hooks/useDrawerStackRouter';
-import {SCHEDULE_ENTRIES_QUERY_KEYS} from '@/hooks/useScheduleEntriesQueries';
-import {useSchedule} from '@/hooks/useScheduleQueries';
+import {useCreateScheduleEntryMutation} from '@/store/services/scheduleEntriesApi';
+import {useGetScheduleQuery} from '@/store/services/schedulesApi';
 
 import CEDrawer from '../EasyDrawer/EasyDrawer';
 import Header from '../layouts/Header';
@@ -19,7 +17,6 @@ import SessionBuilder from '../SessionBuilder/SessionBuilder';
 import SessionSelect from '../SessionDefSelect/SessionSelect';
 
 export default function ScheduleBuilder() {
-    const queryClient = useQueryClient();
     const stackRouter = useDrawerActions();
 
     // Always get entries-view data when it's open
@@ -40,33 +37,11 @@ export default function ScheduleBuilder() {
         createSessionData?.addingToDay ??
         null;
 
-    const {data: schedule, error, isLoading} = useSchedule(scheduleId || '', !!scheduleId);
+    const {data: schedule, error, isLoading} = useGetScheduleQuery(scheduleId || '', {skip: !scheduleId});
 
-    // FIX : backend should return meal instead of nutrition
-    const sessionType = schedule?.category === 'nutrition' ? 'meal' : (schedule?.category ?? 'workout');
+    const sessionType = schedule?.category === 'meal' ? 'meal' : 'workout';
 
-    const createEntry = useMutation({
-        mutationFn: async ({data, scheduleId}: {data: CreateScheduleEntryProps; scheduleId: string}) => {
-            const result = await ScheduleEntriesAPI.createEntry(scheduleId, data);
-            if (result.isError) {
-                throw result.error;
-            }
-            return result.value!;
-        },
-        onError: (error) => {
-            notifications.show({
-                color: 'red',
-                message: error.message || 'Something went wrong',
-                title: 'Failed to add entry',
-            });
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.schedule(variables.scheduleId),
-            });
-            stackRouter.closeDrawer('add-entry');
-        },
-    });
+    const [createEntry] = useCreateScheduleEntryMutation();
 
     return (
         <Drawer.Stack>
@@ -93,7 +68,7 @@ export default function ScheduleBuilder() {
                             {error && (
                                 <DisplayError
                                     codesMap={new Map()}
-                                    error={error}
+                                    error={new Error('Failed to load schedule')}
                                 />
                             )}
                             {isLoading && <LoadingOverlay />}
@@ -157,10 +132,19 @@ export default function ScheduleBuilder() {
                                         sessionType,
                                     });
 
-                                    await createEntry.mutateAsync({
-                                        data: {day: addingToDay, session_def_id: id[0], time_slot: 'all-day'},
-                                        scheduleId,
-                                    });
+                                    try {
+                                        await createEntry({
+                                            scheduleId,
+                                            data: {day: addingToDay, session_def_id: id[0], time_slot: 'all-day'},
+                                        }).unwrap();
+                                        stackRouter.closeDrawer('add-entry');
+                                    } catch (error: any) {
+                                        notifications.show({
+                                            color: 'red',
+                                            message: error.message || 'Something went wrong',
+                                            title: 'Failed to add entry',
+                                        });
+                                    }
                                 }}
                                 sessionType={sessionType as any}
                             />
@@ -184,9 +168,8 @@ export default function ScheduleBuilder() {
                 </HeadingContainer>
                 <div style={{flex: 1, overflow: 'auto'}}>
                     <SessionBuilder
-                        onComplete={async () => {}}
+                        onComplete={() => {}}
                         sessionType={sessionType as any}
-                        stackRouter={stackRouter}
                     />
                 </div>
             </Drawer>

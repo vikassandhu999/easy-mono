@@ -1,9 +1,11 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
+import {Provider} from 'react-redux';
 
-import App from './App.tsx';
 import './index.css';
+import App from './App.tsx';
 import initializePWA from './pwa.tsx';
+import {store} from './store';
 
 // DOM Content Loaded handler
 document.addEventListener('DOMContentLoaded', initializePWA);
@@ -27,6 +29,8 @@ const root = createRoot(rootElement);
 
 root.render(
     <StrictMode>
-        <App />
+        <Provider store={store}>
+            <App />
+        </Provider>
     </StrictMode>,
 );

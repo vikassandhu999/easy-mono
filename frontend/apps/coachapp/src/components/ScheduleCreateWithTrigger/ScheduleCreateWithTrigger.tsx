@@ -1,12 +1,10 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 import React from 'react';
 import {useNavigate} from 'react-router';
 
 import {Program} from '@/api/programs.ts';
-import {CreateScheduleProps, SchedulesAPI} from '@/api/schedules.ts';
-import {SCHEDULES_QUERY_KEYS} from '@/hooks/useScheduleQueries';
+import {useCreateProgramScheduleMutation} from '@/store/services/schedulesApi';
 
 import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
 
@@ -19,38 +17,11 @@ type ScheduleCreateWithTriggerProps = {
 };
 
 export function ScheduleCreateWithTrigger({children}: ScheduleCreateWithTriggerProps) {
-    const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [program, setProgram] = React.useState<null | Program>(null);
     const stack = useDrawersStack(['create-schedule']);
 
-    const createSchedule = useMutation({
-        mutationFn: async (data: CreateScheduleProps) => {
-            const res = await SchedulesAPI.createSchedule({
-                ...data,
-                program_id: program?.id, // Associate with the selected program
-            } as CreateScheduleProps);
-            if (res.isError) {
-                throw res.getError();
-            }
-            return res.getValue();
-        },
-        onError: (error) => {
-            notifications.show({
-                color: 'red',
-                message: error.message || 'Something went wrong',
-                title: 'Failed to create schedule',
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: SCHEDULES_QUERY_KEYS.lists(),
-            });
-            queryClient.invalidateQueries({
-                queryKey: SCHEDULES_QUERY_KEYS.program(program?.id),
-            });
-        },
-    });
+    const [createSchedule] = useCreateProgramScheduleMutation();
 
     const goToProgram = () => {
         navigate(`/programs/${program?.id}`, {replace: true});
@@ -70,16 +41,28 @@ export function ScheduleCreateWithTrigger({children}: ScheduleCreateWithTriggerP
                 withCloseButton={false}
             >
                 <ScheduleForm
-                    onCancel={() => goToProgram()}
+                    category={'workout'}
                     onSubmit={async (values) => {
-                        await createSchedule.mutateAsync(values);
-                        goToProgram();
+                        try {
+                            if (program?.id) {
+                                await createSchedule({
+                                    programId: program.id,
+                                    data: values,
+                                });
+                            }
+                            goToProgram();
+                        } catch (error) {
+                            notifications.show({
+                                color: 'red',
+                                message: 'Failed to create schedule',
+                                title: 'Error',
+                            });
+                        }
                     }}
                     schedule={{
                         name: program?.name,
                     }}
                     submitText={'Create'}
-                    title={program ? `${program?.name} schedule` : 'Create schedule'}
                 />
             </Drawer>
         </>

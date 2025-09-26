@@ -21,7 +21,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {Client} from '@/api/clients.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useClients} from '@/hooks/useClientQueries';
+import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
 
 import RecordsList from '../layouts/RecordsList';
 
@@ -302,10 +302,15 @@ export default function ClientSelect({multiple = true, onComplete, selectedIds}:
     const [searchTerm, setSearchTerm] = useState('');
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(selectedIds ?? []);
 
-    const {clients, fetchNextPage, isFetchingNextPage, isLoading} = useClients({
+    const {data, fetchNextPage, isFetchingNextPage, isLoading} = useListClientsInfiniteQuery({
         page_size: 20,
         search: searchTerm,
     });
+
+    const clients = useMemo(() => {
+        if (!data) return [];
+        return data.pages.flatMap((page) => page.records);
+    }, [data]);
 
     const save = useMutation({
         mutationFn: async () => {

@@ -15,7 +15,7 @@ import ContentForm from '@/components/ContentForm';
 import CEDrawer from '@/components/EasyDrawer/EasyDrawer';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
-import {useContent, useContentMutations, useContents} from '@/hooks/useContentsQueries';
+import {useDeleteContentMutation, useGetContentQuery, useListContentsInfiniteQuery} from '@/store/services/contentsApi';
 
 import {EmptyState} from './EmptyState';
 import ContentHeader from './ListHeader';
@@ -35,14 +35,19 @@ function ContentListPage() {
 
     const queryClient = useQueryClient();
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useContents({
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListContentsInfiniteQuery({
         content_type: (contentType as any) || undefined,
         page_size: 20,
         search: search?.trim(),
     });
 
-    const {deleteContent} = useContentMutations();
-    const {data: editingContent, isLoading: editingContentLoading} = useContent(editingContentId);
+    const [deleteContent] = useDeleteContentMutation();
+    const {data: editingContent, isLoading: editingContentLoading} = useGetContentQuery(
+        {id: editingContentId!},
+        {
+            skip: !editingContentId,
+        },
+    );
 
     // Content creation mutation
     const createContentMutation = useMutation({

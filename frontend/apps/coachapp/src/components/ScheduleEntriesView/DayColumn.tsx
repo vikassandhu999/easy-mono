@@ -1,11 +1,10 @@
 import {Button, Group, Stack, Text} from '@mantine/core';
 import {PlusIcon} from '@phosphor-icons/react';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useMemo} from 'react';
 
-import {ScheduleEntriesAPI, ScheduleEntry} from '@/api/schedule_entries.ts';
+import {ScheduleEntry} from '@/api/schedule_entries.ts';
 import {Schedule} from '@/api/schedules.ts';
-import {SCHEDULE_ENTRIES_QUERY_KEYS} from '@/hooks/useScheduleEntriesQueries';
+import {useDeleteScheduleEntryMutation} from '@/store/services/scheduleEntriesApi';
 
 import ScheduleEntryCard from './ScheduleEntryCard';
 import {sortEntriesByOrder} from './utils';
@@ -20,16 +19,15 @@ interface DayColumnProps {
 }
 
 export const DayColumn = ({addButtonLabel, day, dayLabel, entries, onAddEntry, schedule}: DayColumnProps) => {
-    const queryClient = useQueryClient();
-    const deleteEntry = useMutation({
-        mutationFn: async (entryId: string) => {
-            await ScheduleEntriesAPI.deleteEntry(schedule.id, entryId);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: SCHEDULE_ENTRIES_QUERY_KEYS.schedule(schedule.id)});
-        },
-    });
+    const [deleteScheduleEntry] = useDeleteScheduleEntryMutation();
     const sortedEntries = useMemo(() => sortEntriesByOrder(entries), [entries]);
+
+    // Create a wrapper to match the expected interface
+    const deleteEntry = {
+        mutateAsync: async (entryId: string) => {
+            await deleteScheduleEntry({scheduleId: schedule.id, entryId}).unwrap();
+        },
+    } as any;
 
     return (
         <>

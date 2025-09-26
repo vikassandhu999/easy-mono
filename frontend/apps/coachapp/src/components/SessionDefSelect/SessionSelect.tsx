@@ -7,7 +7,7 @@ import {useEffect, useState} from 'react';
 
 import {SessionDef} from '@/api/session_defs.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useSessionDefs} from '@/hooks/useSessionDefsQueries';
+import {useListSessionDefsQuery} from '@/store/services/sessionDefsApi';
 
 import RecordsList from '../layouts/RecordsList';
 import SessionDefItem from './SessionItem';
@@ -24,10 +24,13 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
     const [searchTerm, setSearchTerm] = useState('');
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(selectedIds ?? []);
     const onSearchChangeDebounced = useDebouncedCallback(setSearchTerm, 300);
-    const {data, fetchNextPage, isFetchingNextPage, isLoading} = useSessionDefs({
+    // TODO: Convert back to infinite query when RTK Query infinite query is working
+    const {data, isLoading} = useListSessionDefsQuery({
         search: searchTerm,
         session_type: sessionType,
     });
+    const fetchNextPage = () => {}; // Placeholder
+    const isFetchingNextPage = false; // Placeholder
 
     const save = useMutation({
         mutationFn: async () => {
@@ -35,7 +38,7 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
         },
     });
 
-    const sessionDefs = data?.pages.flatMap((page) => page.records) || [];
+    const sessionDefs = data?.records || [];
 
     // Sync external selectedIds changes
     useEffect(() => {
@@ -234,8 +237,8 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                         renderItem={(sessionDef) => {
                             return (
                                 <SessionDefItem
-                                    isSelected={currentSelectedIds.includes(sessionDef.id)}
-                                    key={sessionDef.id}
+                                    isSelected={currentSelectedIds.includes((sessionDef as any).id)}
+                                    key={(sessionDef as any).id}
                                     onToggle={handleSelect}
                                     sessionDef={sessionDef}
                                 />

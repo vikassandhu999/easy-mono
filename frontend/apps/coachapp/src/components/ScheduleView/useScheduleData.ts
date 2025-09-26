@@ -1,11 +1,11 @@
 import {useMemo} from 'react';
 
-import {useScheduleEntries} from '@/hooks/useScheduleEntriesQueries';
-import {useSchedule} from '@/hooks/useScheduleQueries';
+import {useListScheduleEntriesQuery} from '@/store/services/scheduleEntriesApi';
+import {useGetScheduleQuery} from '@/store/services/schedulesApi';
 
 export function useScheduleData(scheduleId: string) {
-    const {data: schedule, error: scheduleError, isLoading: scheduleLoading} = useSchedule(scheduleId);
-    const {data, error: entriesError, isLoading: entriesLoading} = useScheduleEntries(scheduleId);
+    const {data: schedule, error: scheduleError, isLoading: scheduleLoading} = useGetScheduleQuery(scheduleId);
+    const {data, error: entriesError, isLoading: entriesLoading} = useListScheduleEntriesQuery({scheduleId});
 
     const entries = useMemo(() => {
         return data?.records ?? [];

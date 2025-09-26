@@ -46,32 +46,34 @@ import RecordsList from '@/components/layouts/RecordsList';
 import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
 import {ScheduleCreateDrawer} from '@/components/ScheduleForm/ScheduleCreateDrawer';
 import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
-import {useClient} from '@/hooks/useClientQueries';
 import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
-import {useAssignSchedule, useSchedules} from '@/hooks/useScheduleQueries';
+import {useGetClientQuery} from '@/store/services/clientsApi';
+import {useAssignScheduleMutation, useListSchedulesInfiniteQuery} from '@/store/services/schedulesApi';
 
 const ClientDetailPage = () => {
     const {id} = useParams<{id: string}>();
     const [activeTab, setActiveTab] = useState<string>('info');
 
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const {data: client, error, isError, isLoading} = useClient(id!);
+    const {data: client, error, isError, isLoading} = useGetClientQuery(id!, {skip: !id});
     const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLHeadingElement>();
     const {topHeight, useElementRef} = useContentHeight();
     const headerRef = useElementRef('top');
     const theme = useMantineTheme();
 
     const {
+        data,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
         isLoading: isSchedulesLoading,
-        schedules,
-    } = useSchedules({client_id: id!});
+    } = useListSchedulesInfiniteQuery({client_id: id!});
+
+    const schedules = data?.pages?.flatMap((page) => page.records) || [];
 
     // Drawer stack for plan creation (select type -> create)
     const createStack = useDrawersStack(['select-plan-type', 'create-schedule']);
-    const assignSchedule = useAssignSchedule();
+    const [assignSchedule] = useAssignScheduleMutation();
 
     const scheduleBuilderStack = useDrawerStackRouter({
         baseRoutePath: `/clients/${id}`,
@@ -436,9 +438,9 @@ const ClientDetailPage = () => {
                         <ScheduleCreateDrawer
                             onCreated={async (newId) => {
                                 try {
-                                    await assignSchedule.mutateAsync({
-                                        data: {client_id: id!, customize_now: true},
+                                    await assignSchedule({
                                         scheduleId: newId,
+                                        data: {client_id: id!, customize_now: true},
                                     });
                                     scheduleBuilderStack.openDrawer('entries-view', {scheduleId: newId});
                                 } finally {

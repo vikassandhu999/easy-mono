@@ -16,8 +16,8 @@ import {
 import {IconClock, IconMessageCircle, IconSearch, IconX} from '@tabler/icons-react';
 import React, {useEffect, useMemo, useState} from 'react';
 
-import {useChats} from '@/hooks/useChatsQueries';
 import {useDebouncedValue} from '@/hooks/useDebouncedValue';
+import {useListChatsInfiniteQuery} from '@/store/services/chatsApi';
 
 import ChatListRow from './ChatListRow';
 
@@ -30,9 +30,13 @@ export default function ChatSearchDialog({onClose, opened}: ChatSearchDialogProp
     const [searchText, setSearchText] = useState('');
     const [debouncedSearchText] = useDebouncedValue(searchText, 300);
 
-    const {data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useChats(
-        debouncedSearchText,
-        opened,
+    const {data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListChatsInfiniteQuery(
+        {
+            search_text: debouncedSearchText || undefined,
+        },
+        {
+            skip: !opened,
+        },
     );
 
     const chats = useMemo(() => {
@@ -261,7 +265,7 @@ export default function ChatSearchDialog({onClose, opened}: ChatSearchDialogProp
                         {chats.map((chat, index) => (
                             <React.Fragment key={chat.id}>
                                 <ChatListRow
-                                    chat={chat}
+                                    chat={chat as any}
                                     onClick={handleChatClick}
                                 />
                                 {index < chats.length - 1 && <Divider mx="md" />}

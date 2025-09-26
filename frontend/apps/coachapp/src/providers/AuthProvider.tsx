@@ -1,7 +1,8 @@
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
 
-import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
+import {AccessToken, setTokenForAuthedClient} from '@/api/auth';
+import {useRefreshTokenMutation} from '@/store/services/authApi';
 
 import {useApp} from './AppProvider';
 
@@ -10,8 +11,8 @@ type AuthContextValue = {
     isAuthenticated: boolean;
     isAuthenticating: boolean;
     logout: () => Promise<void>;
-    saveAuthToken: (token: AccessToken) => Promise<unknown>;
-    verifyAuth: (silent: boolean) => Promise<void>;
+    saveAuthToken: (token: AccessToken) => Promise<void>;
+    verifyAuth: (silent?: boolean) => Promise<AccessToken | null>;
 };
 
 const AuthContext = React.createContext<AuthContextValue>({} as undefined);
@@ -53,6 +54,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL;
 const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     const [state, setState] = React.useReducer(authReducer, initialAuthState);
     const {initSocket} = useApp();
+    const [refreshTokenTrigger] = useRefreshTokenMutation();
 
     const onceRef = React.useRef(false);
     const refreshRef = React.useRef<NodeJS.Timeout>(null);
@@ -77,7 +79,7 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     );
 
     const saveAuthToken = useCallback(
-        async (accessToken: AccessToken | null) => {
+        async (accessToken: AccessToken) => {
             setTokenForAuthedClient(accessToken.access_token);
             setState({
                 isAuthenticated: true,
@@ -92,29 +94,35 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
         async (silent = false) => {
             if (!silent) setState({isAuthenticating: true});
 
-            const accessToken = await AuthAPI.refreshToken();
-            if (accessToken.isError) {
-                return setState({
+            try {
+                const accessToken = await refreshTokenTrigger().unwrap();
+                await saveAuthToken(accessToken);
+                return accessToken;
+            } catch (error) {
+                setState({
                     error: 'Unauthorized',
                     isAuthenticated: false,
                     isAuthenticating: false,
                 });
+                return null;
             }
-            await saveAuthToken(accessToken.getValue());
-            return accessToken.getValue();
         },
-        [saveAuthToken],
+        [refreshTokenTrigger, saveAuthToken],
     );
 
     const logout = useCallback(async () => {
-        // TODO: implement logout endpoint to remove refresh_token cookie
-        await verifyAuth();
+        await verifyAuth(true);
+        setState({
+            isAuthenticated: false,
+            isAuthenticating: false,
+        });
     }, [verifyAuth]);
 
     useEffect(() => {
         if (!onceRef.current) {
             onceRef.current = true;
-            verifyAuth().then((token: AccessToken) => {
+            verifyAuth().then((token) => {
+                if (!token) return;
                 initSocket(createWebsocketUrl(baseURL), {
                     token: token.access_token,
                     user_type: 'coach',

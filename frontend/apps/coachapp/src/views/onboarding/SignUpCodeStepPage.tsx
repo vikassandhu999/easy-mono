@@ -6,9 +6,11 @@ import React, {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import {UsersAPI, Verify_zod, VerifyProps} from '@/api/users.ts';
+import {Verify_zod, VerifyProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import {useVerifySignupMutation} from '@/store/services/usersApi';
 
 const verifyResolver = zodResolver(Verify_zod);
 
@@ -17,10 +19,14 @@ const SignUpCodeStepPage: React.FC = () => {
     const navigate = useNavigate();
     const [params] = useSearchParams();
     const [code, setCode] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string>('');
+    const [verifySignup, {isLoading}] = useVerifySignupMutation();
 
-    const {handleSubmit, setValue} = useForm<VerifyProps>({
+    const {
+        handleSubmit,
+        setValue,
+        formState: {isSubmitting},
+    } = useForm<VerifyProps>({
         defaultValues: {
             passcode: '',
             token_id: params.get('token_id') ?? '',
@@ -28,29 +34,30 @@ const SignUpCodeStepPage: React.FC = () => {
         resolver: verifyResolver,
     });
 
+    const getErrorMessage = (err: unknown) => {
+        const apiError = err as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return apiError?.message ?? 'Failed to verify code. Please try again.';
+    };
+
     const onSubmit = async (data: VerifyProps) => {
         if (code.length !== 6) {
             setError('Please enter the complete 6-digit code');
             return;
         }
 
-        setIsSubmitting(true);
         setError('');
 
         try {
-            const res = await UsersAPI.verify({...data, passcode: code});
-            if (res.isError) {
-                const errorMessage = res.getError().message;
-                setError(errorMessage);
-                notifications.show({
-                    color: 'red',
-                    message: errorMessage,
-                    title: 'Verification Failed',
-                });
-                return;
-            }
+            const response = await verifySignup({...data, passcode: code}).unwrap();
 
-            await saveAuthToken(res.getValue());
+            await saveAuthToken(response);
             notifications.show({
                 color: 'green',
                 message: 'Account verified successfully',
@@ -58,15 +65,13 @@ const SignUpCodeStepPage: React.FC = () => {
             });
             navigate('/onboarding/business');
         } catch (err) {
-            const errorMessage = 'Failed to verify code. Please try again.';
+            const errorMessage = getErrorMessage(err);
             setError(errorMessage);
             notifications.show({
                 color: 'red',
                 message: errorMessage,
                 title: 'Error',
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -139,7 +144,7 @@ const SignUpCodeStepPage: React.FC = () => {
                     disabled={code.length !== 6}
                     fullWidth
                     h={48}
-                    loading={isSubmitting}
+                    loading={isSubmitting || isLoading}
                     radius="sm"
                     rightSection={<IconArrowRight size={16} />}
                     size="md"

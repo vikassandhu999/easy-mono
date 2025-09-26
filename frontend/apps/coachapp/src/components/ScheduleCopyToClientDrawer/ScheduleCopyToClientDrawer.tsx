@@ -1,12 +1,10 @@
 import {Button, Group, Stack, Text, useDrawersStack} from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {notifications} from '@mantine/notifications';
-import {useMutation} from '@tanstack/react-query';
 import {useNavigate} from 'react-router';
 
 import {Client} from '@/api/clients';
-import {SchedulesAPI} from '@/api/schedules';
-import {useSchedule} from '@/hooks/useScheduleQueries';
+import {useCopyScheduleToClientMutation, useGetScheduleQuery} from '@/store/services/schedulesApi';
 
 import ClientSelect from '../ClientSelect';
 import HeadingContainer from '../containers/HeaderContainer';
@@ -21,33 +19,9 @@ type ScheduleAssignDrawerProps = {
 
 const ScheduleCopyToClientDrawer = ({stack, scheduleId}: ScheduleAssignDrawerProps) => {
     const navigate = useNavigate();
-    const {data: schedule} = useSchedule(scheduleId, !!scheduleId);
+    const {data: schedule} = useGetScheduleQuery(scheduleId, {skip: !scheduleId});
 
-    const copyToClient = useMutation({
-        mutationFn: async (clientId: string) => {
-            const result = await SchedulesAPI.copyToClient(scheduleId, {
-                client_id: clientId,
-            });
-            if (result.isError) {
-                throw result.getError();
-            }
-            return result.getValue();
-        },
-        onError: (error) => {
-            notifications.show({
-                color: 'red',
-                message: error.message || 'Something went wrong',
-                title: 'Failed to add entry',
-            });
-        },
-        onSuccess: () => {
-            notifications.show({
-                color: 'green',
-                message: 'Schedule copied to client.',
-                title: 'Success',
-            });
-        },
-    });
+    const [copyToClient, {isLoading: iscopying}] = useCopyScheduleToClientMutation();
 
     const openConfirm = (client: Client) => {
         const modalId = 'copy-to-client-confirm';
@@ -81,16 +55,28 @@ const ScheduleCopyToClientDrawer = ({stack, scheduleId}: ScheduleAssignDrawerPro
                         </Button>
                         <Group>
                             <Button
-                                loading={copyToClient.isPending}
+                                loading={iscopying}
                                 onClick={async () => {
                                     try {
-                                        await copyToClient.mutateAsync(client.id);
+                                        await copyToClient({
+                                            scheduleId,
+                                            data: {client_id: client.id},
+                                        });
                                         modals.close(modalId);
                                         // Close the drawer and take coach back to the client profile
                                         stack.close('copy-to-client');
                                         navigate(`/clients/${client.id}`);
+                                        notifications.show({
+                                            color: 'green',
+                                            message: 'Schedule copied to client.',
+                                            title: 'Success',
+                                        });
                                     } catch (e) {
-                                        // Error toast is handled in onError
+                                        notifications.show({
+                                            color: 'red',
+                                            message: 'Failed to copy schedule',
+                                            title: 'Error',
+                                        });
                                     }
                                 }}
                                 variant="default"
@@ -99,21 +85,34 @@ const ScheduleCopyToClientDrawer = ({stack, scheduleId}: ScheduleAssignDrawerPro
                             </Button>
                             <Button
                                 color="blue"
-                                loading={copyToClient.isPending}
+                                loading={iscopying}
                                 onClick={async () => {
                                     try {
-                                        const data = await copyToClient.mutateAsync(client.id);
+                                        const result = await copyToClient({
+                                            scheduleId,
+                                            data: {client_id: client.id},
+                                        });
                                         modals.close(modalId);
                                         stack.close('copy-to-client');
                                         // Go directly to the copied schedule for customization
-                                        navigate(`/clients/${data.client_id}/schedules/${data.id}`);
+                                        if ('data' in result) {
+                                            navigate(`/clients/${client.id}/schedules/${result.data.id}`);
+                                        }
+                                        notifications.show({
+                                            color: 'green',
+                                            message: 'Schedule copied to client.',
+                                            title: 'Success',
+                                        });
                                     } catch (e) {
-                                        // Error toast is handled in onError
+                                        notifications.show({
+                                            color: 'red',
+                                            message: 'Failed to copy schedule',
+                                            title: 'Error',
+                                        });
                                     }
                                 }}
-                                variant="filled"
                             >
-                                Copy and customize
+                                Copy & Customize
                             </Button>
                         </Group>
                     </Group>

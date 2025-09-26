@@ -7,13 +7,16 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {createSearchParams, useNavigate} from 'react-router';
 
-import {SignUp_zod, SignUpProps, UsersAPI} from '@/api/users.ts';
+import {SignUp_zod, SignUpProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import {useSignUpMutation} from '@/store/services/usersApi';
 
 const signUpResolver = zodResolver(SignUp_zod);
 
 const SignUpStepPage: React.FC = () => {
     const navigate = useNavigate();
+    const [signUp, {isLoading}] = useSignUpMutation();
 
     const {
         control,
@@ -24,18 +27,21 @@ const SignUpStepPage: React.FC = () => {
         resolver: signUpResolver,
     });
 
+    const getErrorMessage = (error: unknown) => {
+        const apiError = error as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return apiError?.message ?? 'Something went wrong. Please try again.';
+    };
+
     const onSubmit = async (data: SignUpProps) => {
         try {
-            const res = await UsersAPI.signUp(data);
-            if (res.isError) {
-                notifications.show({
-                    color: 'red',
-                    icon: <IconInfoCircle size={16} />,
-                    message: res.getError().message,
-                    title: 'Error',
-                });
-                throw res.getError();
-            }
+            const response = await signUp(data).unwrap();
 
             notifications.show({
                 color: 'green',
@@ -46,12 +52,18 @@ const SignUpStepPage: React.FC = () => {
             navigate(
                 '/signup/verify?' +
                     createSearchParams([
-                        ['token_id', res.getValue().token_id],
+                        ['token_id', response.token_id],
                         ['email', data.email],
                     ]).toString(),
             );
         } catch (error) {
-            // Error already handled above
+            const message = getErrorMessage(error);
+            notifications.show({
+                color: 'red',
+                icon: <IconInfoCircle size={16} />,
+                message,
+                title: 'Error',
+            });
         }
     };
 
@@ -85,7 +97,7 @@ const SignUpStepPage: React.FC = () => {
                 <Button
                     fullWidth
                     h={48}
-                    loading={isSubmitting}
+                    loading={isSubmitting || isLoading}
                     radius="sm"
                     rightSection={<ArrowRightIcon size={20} />}
                     size="md"

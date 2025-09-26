@@ -12,7 +12,7 @@ import ScheduleCopyToClientDrawer from '@/components/ScheduleCopyToClientDrawer/
 import {ScheduleCreateDrawer} from '@/components/ScheduleForm/ScheduleCreateDrawer';
 import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
 import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
-import {useSchedules} from '@/hooks/useScheduleQueries';
+import {useListSchedulesInfiniteQuery} from '@/store/services/schedulesApi';
 
 import Header from './Header';
 
@@ -37,9 +37,11 @@ function PlansListPage() {
 
     const stack = useDrawersStack(['select-plan-type', 'create-schedule', 'copy-to-client']);
 
-    const {fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, schedules} = useSchedules({
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListSchedulesInfiniteQuery({
         search: search?.trim(),
     });
+
+    const schedules = data?.pages?.flatMap((page) => page.records) || [];
 
     const handleCreate = () => stack.open('select-plan-type');
 

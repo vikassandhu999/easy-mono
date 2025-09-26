@@ -7,7 +7,7 @@ import {useMemo} from 'react';
 
 import {ScheduleEntry} from '@/api/schedule_entries.ts';
 import {SESSION_TYPE_CONFIG} from '@/components/ScheduleBuilder/sessionTypeConfig';
-import {useSessionDef} from '@/hooks/useSessionDefsQueries';
+import {useGetSessionDefQuery} from '@/store/services/sessionDefsApi';
 
 import {getTimeDisplay} from './utils';
 
@@ -55,7 +55,7 @@ export const getSessionTypeLabel = (type: string): string => {
 };
 
 function ScheduleEntryCard({deleteEntry, entry}: ScheduleEntryCardProps) {
-    const {data: sessionDef} = useSessionDef(entry.session_def_id);
+    const {data: sessionDef} = useGetSessionDefQuery({id: entry.session_def_id});
 
     const timeDisplay = useMemo(() => getTimeDisplay(entry), [entry]);
 

@@ -1,6 +1,5 @@
 import {z} from 'zod';
 
-
 export const SignUp_zod = z.object({
     email: z.string().email(),
 });
@@ -47,4 +46,3 @@ export interface User {
 }
 
 export type VerifyProps = z.infer<typeof Verify_zod>;
-

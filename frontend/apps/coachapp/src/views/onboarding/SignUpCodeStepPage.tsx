@@ -6,10 +6,11 @@ import React, {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+
 import {Verify_zod, VerifyProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
 import {useVerifySignupMutation} from '@/store/services/usersApi';
 
 const verifyResolver = zodResolver(Verify_zod);

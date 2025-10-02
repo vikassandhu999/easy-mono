@@ -8,7 +8,7 @@ interface Props extends PropsWithChildren {
 export const FormSection: React.FC<Props> = ({children, label}) => {
     return (
         <Stack
-            gap="md"
+            gap="xl"
             pt={'var(--heading-offset)'}
         >
             {label && (
@@ -23,7 +23,7 @@ export const FormSection: React.FC<Props> = ({children, label}) => {
                     {label}
                 </Text>
             )}
-            <Stack gap={0}>{children}</Stack>
+            <Stack gap="md">{children}</Stack>
         </Stack>
     );
 };

@@ -6,10 +6,11 @@ import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 
+import ExerciseListPage from './exercise/ExerciseListPage';
 import RecipeListPage from './recipe/RecipeListPage';
 
 export default function LibraryPage() {
-    const [selectedTab, setSelectedTab] = React.useState('recipe');
+    const [selectedTab, setSelectedTab] = React.useState('exercise');
 
     const onSelect = (value: string) => {
         setSelectedTab(value);
@@ -26,7 +27,9 @@ export default function LibraryPage() {
             >
                 <Stack
                     gap="xs"
-                    style={{flex: 1}}
+                    style={{
+                        flex: 1,
+                    }}
                 >
                     <Title order={5}>Library</Title>
                     <Text
@@ -65,13 +68,14 @@ export default function LibraryPage() {
                             fullWidth
                             onChange={onSelect}
                             radius={'lg'}
-                            size="lg"
+                            size="sm"
                             style={{minWidth: 'max-content'}}
                             value={selectedTab}
                         />
                     </ScrollArea>
                 </Stack>
 
+                {selectedTab === 'exercise' && <ExerciseListPage />}
                 {selectedTab === 'recipe' && <RecipeListPage />}
             </PaddingContainer>
         </PagePaper>

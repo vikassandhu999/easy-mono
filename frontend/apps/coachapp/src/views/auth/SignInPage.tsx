@@ -5,9 +5,10 @@ import {IconAlertCircle, IconMail} from '@tabler/icons-react';
 import React, {useCallback, useState} from 'react';
 import {createSearchParams, useNavigate} from 'react-router';
 
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+
 import {SignInRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
 import {useSignInMutation} from '@/store/services/authApi';
 
 const SignInPage: React.FC = () => {

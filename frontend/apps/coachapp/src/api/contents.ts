@@ -34,19 +34,23 @@ export interface DerivedMetricDisplay {
 
 export interface ExerciseMetadata {
     calories_burned_per_minute: number;
+    category: string;
     common_mistakes: string[];
     common_rep_ranges: string[];
     contraindications: string[];
     default_sets: number;
     derived_metrics: DerivedMetricDefinition[];
-    difficulty: string;
     equipment: string[];
+    force: string;
     form_cues: string[];
+    images: string[];
+    instructions: string[];
+    level: string;
     mechanics: string;
-    movement_pattern: string;
-    muscle_groups: string[];
+    primary_muscle: string[];
     range_of_motion: string;
     rest_recommendation: string;
+    secondary_muscle: string[];
     tempo: string;
     trackable_metrics: TrackableMetricDefinition[];
 }
@@ -209,14 +213,18 @@ export const UpdateContent_zod = z.object({
     type: ContentTypeEnum.optional(),
 });
 
+export const LIST_CONTENTS_FILTER = ['all', 'public', 'private', 'archived'] as const;
+export const ListContentsFilter_zod = z.enum(LIST_CONTENTS_FILTER).optional().default('all');
+export type ListContentFilter = z.infer<typeof ListContentsFilter_zod>;
+
 export const ListContents_zod = z.object({
-    archived_only: z.boolean().optional(),
     content_type: z.enum(['exercise', 'ingredient', 'recipe']).optional(),
     include_archived: z.boolean().optional(),
     include_metadata: z.boolean().optional(),
     include_ui_structure: z.boolean().optional(),
     page: z.number().min(1).optional().default(1),
     page_size: z.number().min(1).max(20).optional().default(20),
+    filter: z.enum(['all', 'public', 'private', 'archived']).optional().default('all'),
     search: z.string().max(60).optional(),
 });
 

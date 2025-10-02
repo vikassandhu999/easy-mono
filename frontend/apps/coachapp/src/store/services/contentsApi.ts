@@ -2,9 +2,11 @@ import {
     type Content,
     type ContentType,
     type ContentUIStructure,
+    CreateContent_zod,
     type CreateContentProps,
     type ListContentsProps,
     type ListContentsResult,
+    UpdateContent_zod,
     type UpdateContentProps,
 } from '@/api/contents.ts';
 
@@ -104,19 +106,27 @@ export const contentsApi = apiSlice.injectEndpoints({
             providesTags: (_result, _error, contentType) => [{type: 'Contents', id: `ui-structure-${contentType}`}],
         }),
         createContent: build.mutation<Content, CreateContentProps>({
-            query: (body) => ({
-                url: '/v1/coach/contents',
-                method: 'post',
-                data: body,
-            }),
+            query: (body) => {
+                // Validate input using Zod schema
+                const validatedBody = CreateContent_zod.parse(body);
+                return {
+                    url: '/v1/coach/contents',
+                    method: 'post',
+                    data: validatedBody,
+                };
+            },
             invalidatesTags: [{type: 'Contents', id: 'LIST'}],
         }),
         updateContent: build.mutation<Content, {data: UpdateContentProps; id: string}>({
-            query: ({id, data}) => ({
-                url: `/v1/coach/contents/${id}`,
-                method: 'patch',
-                data,
-            }),
+            query: ({id, data}) => {
+                // Validate input using Zod schema
+                const validatedData = UpdateContent_zod.parse(data);
+                return {
+                    url: `/v1/coach/contents/${id}`,
+                    method: 'patch',
+                    data: validatedData,
+                };
+            },
             invalidatesTags: (_result, _error, {id}) => [
                 {type: 'Contents', id},
                 {type: 'Contents', id: 'LIST'},

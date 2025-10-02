@@ -5,10 +5,11 @@ import {IconAlertCircle, IconArrowLeft} from '@tabler/icons-react';
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+
 import {SignInCodeRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
 import {useSignInCodeMutation} from '@/store/services/authApi';
 
 const SignInCodePage: React.FC = () => {

@@ -62,12 +62,14 @@ const RecipeListPage = () => {
                 <TextInput
                     flex={1}
                     placeholder="Search recipes.."
+                    radius="md"
                     size="sm"
                 />
                 <Button
                     onClick={() => {
                         stack.open('create-recipe');
                     }}
+                    radius="md"
                     rightSection={<IconPlus size={16} />}
                     size="sm"
                 >

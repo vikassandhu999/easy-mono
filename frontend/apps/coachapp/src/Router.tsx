@@ -1,24 +1,22 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 
-import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
-import SignInCodePage from '@/views/auth/SignInCodePage';
-import SignInPage from '@/views/auth/SignInPage';
-import ChatsListPage from '@/views/chats/ChatsListPage';
-import ChatViewPage from '@/views/chats/ChatView/ChatViewPage';
-import ClientDetailPage from '@/views/clients/DetailPage/DetailPage';
-import ClientsListPage from '@/views/clients/ListPage/ListPage';
-import ContentDetailPage from '@/views/contents/DetailPage/DetailPage';
-import ContentListPage from '@/views/contents/ListPage/ListPage';
-import HomePage from '@/views/dashboard/HomePage';
-import LibraryPage from '@/views/library/LibraryPage';
-import BusinessInfoStepPage from '@/views/onboarding/BusinessInfoStepPage';
-import CoachInfoStepPage from '@/views/onboarding/CoachInfoStepPage';
-import SignUpCodeStepPage from '@/views/onboarding/SignUpCodeStepPage';
-// onboarding components
-import SignUpStepPage from '@/views/onboarding/SignUpStepPage';
-import PlansListPage from '@/views/plans/ListPage/ListPage';
-
 import {PrivateRoute} from './utils';
+import ProtectedRouteLayout from './utils/ProtectedRouteLayout';
+import SignInCodePage from './views/auth/SignInCodePage';
+import SignInPage from './views/auth/SignInPage';
+import ChatsListPage from './views/chats/ChatsListPage';
+import ChatViewPage from './views/chats/ChatView/ChatViewPage';
+import ClientDetailPage from './views/clients/DetailPage/DetailPage';
+import ClientsListPage from './views/clients/ListPage/ListPage';
+import ContentDetailPage from './views/contents/DetailPage/DetailPage';
+import ContentListPage from './views/contents/ListPage/ListPage';
+import HomePage from './views/dashboard/HomePage';
+import LibraryPage from './views/library/LibraryPage';
+import BusinessInfoStepPage from './views/onboarding/BusinessInfoStepPage';
+import CoachInfoStepPage from './views/onboarding/CoachInfoStepPage';
+import SignUpCodeStepPage from './views/onboarding/SignUpCodeStepPage';
+import SignUpStepPage from './views/onboarding/SignUpStepPage';
+import PlansListPage from './views/plans/ListPage/ListPage';
 
 const router = createBrowserRouter([
     {

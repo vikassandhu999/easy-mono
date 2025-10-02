@@ -7,9 +7,10 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {createSearchParams, useNavigate} from 'react-router';
 
+import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+
 import {SignUp_zod, SignUpProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
 import {useSignUpMutation} from '@/store/services/usersApi';
 
 const signUpResolver = zodResolver(SignUp_zod);

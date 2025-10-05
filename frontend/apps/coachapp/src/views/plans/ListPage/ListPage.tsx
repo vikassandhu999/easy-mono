@@ -1,6 +1,6 @@
-import {Button, useDrawersStack} from '@mantine/core';
+import {Button} from '@mantine/core';
 import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
-import {useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {Plan} from '@/api/plans';
@@ -8,17 +8,17 @@ import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
-import {PlanCreateDrawer} from '@/components/PlanForm/PlanCreateDrawer';
+import {PlanDrawerContext, planDrawerRegistry} from '@/components/PlanForm/planDrawerRegistry';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
+import {DrawerOutlet, DrawerRouterProvider, useDrawerRouter} from '@/hooks/drawerRegistry';
 import {useListPlans} from '@/store/services/plans';
 
 import Header from './Header';
 
-function PlansListPage() {
+function PlansListPageContent() {
     const [search, setSearch] = useState('');
     const navigate = useNavigate();
-
-    const stack = useDrawersStack(['select-plan-type', 'create-schedule']);
+    const router = useDrawerRouter<PlanDrawerContext, typeof planDrawerRegistry>();
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans({
         search: search?.trim() || undefined,
@@ -26,10 +26,36 @@ function PlansListPage() {
 
     const plans = data?.pages?.flatMap((page) => page.records) ?? [];
 
-    const handleCreate = () => stack.open('select-plan-type');
+    const navigateRef = useRef(navigate);
+    useEffect(() => {
+        navigateRef.current = navigate;
+    }, [navigate]);
 
+    const refetchRef = useRef(refetch);
+    useEffect(() => {
+        refetchRef.current = refetch;
+    }, [refetch]);
+
+    const handlePlanCreated = useCallback(async (planId: string) => {
+        await refetchRef.current();
+        navigateRef.current(`/plans/${planId}/edit`);
+    }, []);
+
+    useEffect(() => {
+        router.setContext((prev) => {
+            if (prev && prev.onPlanCreated === handlePlanCreated) {
+                return prev;
+            }
+
+            return {
+                ...(prev ?? {}),
+                onPlanCreated: handlePlanCreated,
+            };
+        });
+    }, [handlePlanCreated, router]);
+
+    const handleCreate = () => router.open('selectDiscipline');
     const handleView = (id: string) => navigate(`/plans/${id}`);
-
     const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
     return (
@@ -87,19 +113,20 @@ function PlansListPage() {
                         )}
                     />
                 </PaddingContainer>
-
-                {/* Create Plan Drawer */}
-                <PlanCreateDrawer
-                    onCreated={(id) => {
-                        refetch();
-                        stack.close('create-schedule');
-                        stack.close('select-plan-type');
-                        navigate(`/plans/${id}/edit`);
-                    }}
-                    stack={stack}
-                />
             </PagePaper>
+            <DrawerOutlet<PlanDrawerContext, typeof planDrawerRegistry> />
         </>
+    );
+}
+
+function PlansListPage() {
+    return (
+        <DrawerRouterProvider<PlanDrawerContext, typeof planDrawerRegistry>
+            basePath="/plans"
+            registry={planDrawerRegistry}
+        >
+            <PlansListPageContent />
+        </DrawerRouterProvider>
     );
 }
 

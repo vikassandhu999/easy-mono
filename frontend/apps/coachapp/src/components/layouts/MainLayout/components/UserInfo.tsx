@@ -8,7 +8,13 @@ export function UserInfo() {
             <Menu position="top-end">
                 <Menu.Target>
                     <Box
-                        component="button"
+                        component="div"
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                event.currentTarget.click();
+                            }
+                        }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
                         }}
@@ -16,15 +22,16 @@ export function UserInfo() {
                             e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                         p="xs"
+                        role="button"
                         style={{
                             background: 'transparent',
-                            border: 'none',
                             borderRadius: '8px',
                             cursor: 'pointer',
                             textAlign: 'left',
                             transition: 'background-color 0.2s ease',
                             width: '100%',
                         }}
+                        tabIndex={0}
                     >
                         <Group
                             gap="sm"
@@ -55,6 +62,7 @@ export function UserInfo() {
                             </Box>
                             <ActionIcon
                                 color="gray"
+                                component="div"
                                 size="sm"
                                 variant="subtle"
                             >

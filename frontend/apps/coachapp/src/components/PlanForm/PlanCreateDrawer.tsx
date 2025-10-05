@@ -1,11 +1,11 @@
-import {Drawer, useDrawersStack} from '@mantine/core';
+import {Drawer} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useState} from 'react';
 
 import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
+import {DrawerStackRouter, useDrawerData} from '@/hooks/useDrawerStackRouter';
 import {useCreatePlan} from '@/store/services/plans';
 
 import {PLAN_DISCIPLINES} from '../Configs';
@@ -16,13 +16,14 @@ import {PlanForm} from './PlanForm';
 type ProgramCreateWithTriggerProps = {
     initialPlan?: Partial<Plan>;
     onCreated?: (scheduleId: string) => void;
-    stack: ReturnType<typeof useDrawersStack<'create-schedule' | 'select-plan-type' | any>>;
+    stack: DrawerStackRouter;
 };
 
 export function PlanCreateDrawer({initialPlan, onCreated, stack}: ProgramCreateWithTriggerProps) {
-    const [planType, setPlanType] = useState<null | PlanDiscipline>(null);
-
     const [createPlan] = useCreatePlan();
+
+    const planDrawerData = useDrawerData<{discipline?: PlanDiscipline}>('create-plan');
+    const planType = planDrawerData?.discipline ?? null;
 
     const formTitle = planType ? `Create ${PLAN_DISCIPLINES[planType].label} Plan` : 'Create Plan';
 
@@ -46,9 +47,7 @@ export function PlanCreateDrawer({initialPlan, onCreated, stack}: ProgramCreateW
                         <PaddingContainer>
                             <PlanDisciplineSelect
                                 onSelect={(discipline) => {
-                                    setPlanType(discipline);
-                                    stack.close('select-plan-type');
-                                    stack.open('create-schedule');
+                                    stack.openDrawer('create-plan', {discipline});
                                 }}
                             />
                         </PaddingContainer>
@@ -56,7 +55,7 @@ export function PlanCreateDrawer({initialPlan, onCreated, stack}: ProgramCreateW
                 </PagePaper>
             </Drawer>
             <Drawer
-                {...stack.register('create-schedule')}
+                {...stack.register('create-plan')}
                 withCloseButton={false}
             >
                 <PagePaper>
@@ -65,7 +64,7 @@ export function PlanCreateDrawer({initialPlan, onCreated, stack}: ProgramCreateW
                         withBorder={false}
                     >
                         <Header
-                            onBack={() => stack.close('create-schedule')}
+                            onBack={() => stack.close('create-plan')}
                             title={formTitle}
                         />
                     </HeadingContainer>

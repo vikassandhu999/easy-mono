@@ -15,7 +15,6 @@ import {
     Tabs,
     Text,
     ThemeIcon,
-    useDrawersStack,
     useMantineTheme,
 } from '@mantine/core';
 import {useInViewport, useMediaQuery} from '@mantine/hooks';
@@ -33,7 +32,7 @@ import {
     IconUser,
     IconUserCheck,
 } from '@tabler/icons-react';
-import {useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
 import {Client} from '@/api/clients.ts';
@@ -44,18 +43,20 @@ import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
-import {PlanCreateDrawer} from '@/components/PlanForm/PlanCreateDrawer';
+import {PlanDrawerContext, planDrawerRegistry} from '@/components/PlanForm/planDrawerRegistry';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
+import {DrawerOutlet, DrawerRouterProvider, useDrawerRouter} from '@/hooks/drawerRegistry';
 import {useGetClientQuery} from '@/store/services/clientsApi';
 import {useListPlans} from '@/store/services/plans';
 
-const ClientDetailPage = () => {
-    const {id} = useParams<{id: string}>();
+const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<string>('info');
 
+    const router = useDrawerRouter<PlanDrawerContext, typeof planDrawerRegistry>();
+
     const isMobile = useMediaQuery('(max-width: 768px)');
-    const {data: client, error, isError, isLoading} = useGetClientQuery(id!, {skip: !id});
+    const {data: client, error, isError, isLoading} = useGetClientQuery(clientId, {skip: !clientId});
     const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLHeadingElement>();
     const {topHeight, useElementRef} = useContentHeight();
     const headerRef = useElementRef('top');
@@ -68,12 +69,40 @@ const ClientDetailPage = () => {
         isFetchingNextPage,
         isLoading: isPlansLoading,
         refetch: refetchPlans,
-    } = useListPlans({client_id: id!});
+    } = useListPlans({client_id: clientId});
 
     const plans = plansData?.pages?.flatMap((page) => page.records) ?? [];
 
-    // Drawer stack for plan creation (select type -> create)
-    const createStack = useDrawersStack(['select-plan-type', 'create-schedule']);
+    const navigateRef = useRef(navigate);
+    const refetchPlansRef = useRef(refetchPlans);
+
+    useEffect(() => {
+        navigateRef.current = navigate;
+    }, [navigate]);
+
+    useEffect(() => {
+        refetchPlansRef.current = refetchPlans;
+    }, [refetchPlans]);
+
+    const handlePlanCreated = useCallback(async (newId: string) => {
+        await refetchPlansRef.current();
+        navigateRef.current(`/plans/${newId}/edit`);
+    }, []);
+
+    useEffect(() => {
+        router.setContext((prev) => {
+            if (prev && prev.onPlanCreated === handlePlanCreated) {
+                return prev;
+            }
+
+            const next: PlanDrawerContext = {
+                ...(prev ?? {}),
+                onPlanCreated: handlePlanCreated,
+            };
+
+            return next;
+        });
+    }, [handlePlanCreated, router]);
 
     if (isLoading) {
         return (
@@ -97,7 +126,12 @@ const ClientDetailPage = () => {
         );
     }
 
-    return (
+    const handleCreatePlan = () =>
+        router.open('selectDiscipline', {
+            initialPlan: {client_id: clientId, kind: 'client_copy'},
+        });
+
+    const pageContent = (
         <PagePaper>
             <HeadingContainer
                 ref={headerRef}
@@ -384,7 +418,7 @@ const ClientDetailPage = () => {
                                                 stroke={1.5}
                                             />
                                         }
-                                        onClick={() => createStack.open('select-plan-type')}
+                                        onClick={handleCreatePlan}
                                     >
                                         Create new plan
                                     </Menu.Item>
@@ -420,21 +454,30 @@ const ClientDetailPage = () => {
                             )}
                         />
 
-                        {/* Create + assign to client flow */}
-                        <PlanCreateDrawer
-                            initialPlan={{client_id: id!, kind: 'client_copy'}}
-                            onCreated={async (newId) => {
-                                createStack.close('create-schedule');
-                                createStack.close('select-plan-type');
-                                await refetchPlans();
-                                navigate(`/plans/${newId}/edit`);
-                            }}
-                            stack={createStack}
-                        />
+                        <DrawerOutlet<PlanDrawerContext, typeof planDrawerRegistry> />
                     </Tabs.Panel>
                 </PaddingContainer>
             </Tabs>
         </PagePaper>
+    );
+
+    return pageContent;
+};
+
+const ClientDetailPage = () => {
+    const {id} = useParams<{id: string}>();
+
+    if (!id) {
+        return null;
+    }
+
+    return (
+        <DrawerRouterProvider<PlanDrawerContext, typeof planDrawerRegistry>
+            basePath={`/clients/${id}`}
+            registry={planDrawerRegistry}
+        >
+            <ClientDetailPageContent clientId={id} />
+        </DrawerRouterProvider>
     );
 };
 

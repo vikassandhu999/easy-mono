@@ -1,5 +1,4 @@
-import {Plan} from '@/api/business';
-import {CreatePlanProps, PlansList, PlansListOpts, UpdatePlanProps} from '@/api/plans';
+import {CreatePlanProps, Plan, PlansList, PlansListOpts, UpdatePlanProps} from '@/api/plans';
 import {
     type AssignScheduleProps,
     type CopyToClientProps,
@@ -59,6 +58,35 @@ const getNextPlanPage = (lastPage: PlansList, lastPageParam: number) => {
     return currentPage + 1;
 };
 
+const getNextSchedulePage = (lastPage: ListSchedulesResult, lastPageParam: number) => {
+    const currentPage = lastPage.page ?? lastPageParam;
+    const pageSize = lastPage.page_size ?? DEFAULT_PAGE_SIZE;
+
+    if (!pageSize || pageSize <= 0) {
+        return undefined;
+    }
+
+    if (typeof lastPage.total === 'number') {
+        if (lastPage.total <= 0) {
+            return undefined;
+        }
+
+        const totalPages = Math.ceil(lastPage.total / pageSize);
+
+        if (currentPage >= totalPages) {
+            return undefined;
+        }
+
+        return currentPage + 1;
+    }
+
+    if (lastPage.records.length < pageSize) {
+        return undefined;
+    }
+
+    return currentPage + 1;
+};
+
 export const plansApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({
         createPlan: build.mutation<Plan, CreatePlanProps>({
@@ -71,6 +99,14 @@ export const plansApi = apiSlice.injectEndpoints({
                 {type: 'Plans', id},
                 {type: 'Plans', id: 'LIST'},
             ],
+        }),
+
+        getPlan: build.query<Plan, string>({
+            query: (planId) => ({
+                url: `/v1/coach/plans/${planId}`,
+                method: 'get',
+            }),
+            providesTags: (_result, _error, planId) => [{type: 'Plans', id: planId}],
         }),
 
         updatePlan: build.mutation<Plan, UpdatePlanProps>({
@@ -263,6 +299,7 @@ export const plansApi = apiSlice.injectEndpoints({
 export const {
     useCreatePlanMutation: useCreatePlan,
     useUpdatePlanMutation: useUpdatePlan,
+    useGetPlanQuery,
     useListPlansInfiniteQuery: useListPlans,
 
     useListSchedulesByCategoryInfiniteQuery,

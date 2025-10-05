@@ -8,8 +8,8 @@ import {CreateProgramProps, Program, ProgramsAPI} from '@/api/programs.ts';
 import {CreateScheduleProps, SchedulesAPI} from '@/api/schedules.ts';
 import {SCHEDULES_QUERY_KEYS} from '@/views/Schedules/hooks/useSchedules';
 
-import {ProgramForm} from '../ProgramForm/Form';
 import {PlanForm} from '../PlanForm/PlanForm';
+import {ProgramForm} from '../ProgramForm/Form';
 import {ScheduleChoice} from './ScheduleChoice';
 
 type RenderProps = {

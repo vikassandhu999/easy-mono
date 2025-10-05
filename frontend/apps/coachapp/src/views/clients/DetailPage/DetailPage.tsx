@@ -34,24 +34,24 @@ import {
     IconUserCheck,
 } from '@tabler/icons-react';
 import {useState} from 'react';
-import {useParams} from 'react-router';
+import {useNavigate, useParams} from 'react-router';
 
 import {Client} from '@/api/clients.ts';
+import {Plan} from '@/api/plans';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
-import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
-import {PlanCreateDrawer} from '@/components/ScheduleForm/PlanCreateDrawer';
-import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
-import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
+import {PlanCreateDrawer} from '@/components/PlanForm/PlanCreateDrawer';
+import PlanListItem from '@/components/PlanListItem/PlanListItem';
 import {useGetClientQuery} from '@/store/services/clientsApi';
-import {useAssignScheduleMutation, useListSchedulesInfiniteQuery} from '@/store/services/schedulesApi';
+import {useListPlans} from '@/store/services/plans';
 
 const ClientDetailPage = () => {
     const {id} = useParams<{id: string}>();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<string>('info');
 
     const isMobile = useMediaQuery('(max-width: 768px)');
@@ -62,34 +62,18 @@ const ClientDetailPage = () => {
     const theme = useMantineTheme();
 
     const {
-        data,
+        data: plansData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading: isSchedulesLoading,
-    } = useListSchedulesInfiniteQuery({client_id: id!});
+        isLoading: isPlansLoading,
+        refetch: refetchPlans,
+    } = useListPlans({client_id: id!});
 
-    const schedules = data?.pages?.flatMap((page) => page.records) || [];
+    const plans = plansData?.pages?.flatMap((page) => page.records) ?? [];
 
     // Drawer stack for plan creation (select type -> create)
     const createStack = useDrawersStack(['select-plan-type', 'create-schedule']);
-    const [assignSchedule] = useAssignScheduleMutation();
-
-    const scheduleBuilderStack = useDrawerStackRouter({
-        baseRoutePath: `/clients/${id}`,
-        drawerIds: [
-            'entries-view',
-            'select-session',
-            'select-session-type',
-            'add-entry',
-            'create-session',
-            'edit-entry',
-            'manage-content',
-            'add-content-item',
-            'session-form',
-            'content-select',
-        ],
-    });
 
     if (isLoading) {
         return (
@@ -387,6 +371,7 @@ const ClientDetailPage = () => {
                                                 stroke={1.5}
                                             />
                                         }
+                                        onClick={() => navigate('/plans')}
                                     >
                                         Assign from existing
                                     </Menu.Item>
@@ -399,6 +384,7 @@ const ClientDetailPage = () => {
                                                 stroke={1.5}
                                             />
                                         }
+                                        onClick={() => createStack.open('select-plan-type')}
                                     >
                                         Create new plan
                                     </Menu.Item>
@@ -406,7 +392,7 @@ const ClientDetailPage = () => {
                             </Menu>
                         </Group>
 
-                        <RecordsList
+                        <RecordsList<Plan>
                             emptyState={
                                 <EmptyState
                                     description={`No plans found for ${client.name}. Create the first plan to kickstart progress.`}
@@ -420,39 +406,31 @@ const ClientDetailPage = () => {
                             gap="md"
                             hasNextPage={hasNextPage}
                             isFetchingNextPage={isFetchingNextPage}
-                            isLoading={isSchedulesLoading}
+                            isLoading={isPlansLoading}
                             itemKey={(item) => item.id}
                             loadMoreText="Load More Plans"
-                            records={schedules}
-                            renderItem={(schedule) => (
-                                <ScheduleListItem
-                                    key={schedule.id}
-                                    onEdit={(id) => scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id})}
-                                    onView={(id) => scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id})}
-                                    schedule={schedule}
+                            records={plans}
+                            renderItem={(plan) => (
+                                <PlanListItem
+                                    key={plan.id}
+                                    onEdit={(planId) => navigate(`/plans/${planId}/edit`)}
+                                    onView={(planId) => navigate(`/plans/${planId}`)}
+                                    plan={plan}
                                 />
                             )}
                         />
 
                         {/* Create + assign to client flow */}
                         <PlanCreateDrawer
+                            initialPlan={{client_id: id!, kind: 'client_copy'}}
                             onCreated={async (newId) => {
-                                try {
-                                    await assignSchedule({
-                                        scheduleId: newId,
-                                        data: {client_id: id!, customize_now: true},
-                                    });
-                                    scheduleBuilderStack.openDrawer('entries-view', {scheduleId: newId});
-                                } finally {
-                                    createStack.close('create-schedule');
-                                }
+                                createStack.close('create-schedule');
+                                createStack.close('select-plan-type');
+                                await refetchPlans();
+                                navigate(`/plans/${newId}/edit`);
                             }}
                             stack={createStack}
                         />
-
-                        <scheduleBuilderStack.Provider>
-                            <ScheduleBuilder />
-                        </scheduleBuilderStack.Provider>
                     </Tabs.Panel>
                 </PaddingContainer>
             </Tabs>

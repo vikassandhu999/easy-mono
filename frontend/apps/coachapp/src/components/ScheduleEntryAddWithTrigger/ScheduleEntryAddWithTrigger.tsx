@@ -9,7 +9,7 @@ import {CreateScheduleProps, SchedulesAPI} from '@/api/schedules.ts';
 import {SCHEDULES_QUERY_KEYS} from '@/views/Schedules/hooks/useSchedules';
 
 import {ProgramForm} from '../ProgramForm/Form';
-import {PlanForm} from '../ScheduleForm/PlanForm';
+import {PlanForm} from '../PlanForm/PlanForm';
 import {ScheduleChoice} from './ScheduleChoice';
 
 type RenderProps = {

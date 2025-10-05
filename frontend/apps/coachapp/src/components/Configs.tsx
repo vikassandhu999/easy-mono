@@ -3,7 +3,8 @@ import React from 'react';
 
 import {Content} from '@/api/contents.ts';
 
-export const SCHEDULE_CATEGORIES: Record<
+// Plan Disciplines - matches backend PlanDiscipline enum (workout, nutrition)
+export const PLAN_DISCIPLINES: Record<
     'nutrition' | 'workout',
     {
         color: string;
@@ -27,7 +28,7 @@ export const SCHEDULE_CATEGORIES: Record<
         },
         icon: IconBowl,
         iconColor: 'var(--mantine-color-lime-0)',
-        label: 'Meal',
+        label: 'Nutrition',
     },
     workout: {
         color: 'var(--mantine-color-orange-6)',
@@ -42,6 +43,43 @@ export const SCHEDULE_CATEGORIES: Record<
     },
 };
 
+// DEPRECATED: Use PLAN_DISCIPLINES instead - keeping for backward compatibility
+export const SCHEDULE_CATEGORIES: Record<
+    'meal' | 'nutrition' | 'workout',
+    {
+        color: string;
+        description: string;
+        form: {
+            nameDescription?: string;
+            namePlaceholder?: string;
+        };
+        icon: Icon;
+        iconColor: string;
+        label: string;
+        optional?: boolean;
+    }
+> = {
+    ...PLAN_DISCIPLINES,
+    meal: PLAN_DISCIPLINES.nutrition, // Alias for backward compatibility
+};
+
+// Plan Status - matches backend PlanStatus enum (draft, active, archived)
+export const PLAN_STATUS = {
+    archived: {
+        color: 'var(--mantine-color-red-4)',
+        label: 'Archived',
+    },
+    draft: {
+        color: 'var(--mantine-color-gray-5)',
+        label: 'Draft',
+    },
+    active: {
+        color: 'var(--mantine-color-green-6)',
+        label: 'Active',
+    },
+};
+
+// DEPRECATED: Use PLAN_STATUS instead
 export const SCHEDULE_STATUS = {
     archived: {
         color: 'var(--mantine-color-red-4)',
@@ -67,17 +105,17 @@ export interface SessionTypeConfig {
 
 export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
     meal: {
-        color: SCHEDULE_CATEGORIES.meal.color,
+        color: PLAN_DISCIPLINES.nutrition.color,
         description: 'Meal plans and nutrition guidance',
         icon: IconBowl,
-        iconColor: SCHEDULE_CATEGORIES.meal.iconColor,
+        iconColor: PLAN_DISCIPLINES.nutrition.iconColor,
         label: 'Meal',
     },
     workout: {
-        color: SCHEDULE_CATEGORIES.workout.color,
+        color: PLAN_DISCIPLINES.workout.color,
         description: 'Exercise routines and fitness training',
         icon: IconTreadmill,
-        iconColor: SCHEDULE_CATEGORIES.workout.iconColor,
+        iconColor: PLAN_DISCIPLINES.workout.iconColor,
         label: 'Workout',
     },
 } as const;

@@ -1,51 +1,36 @@
 import {Button, useDrawersStack} from '@mantine/core';
 import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
 import {useState} from 'react';
+import {useNavigate} from 'react-router';
 
-import {Schedule} from '@/api/schedules.ts';
+import {Plan} from '@/api/plans';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
-import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
-import ScheduleCopyToClientDrawer from '@/components/ScheduleCopyToClientDrawer/ScheduleCopyToClientDrawer';
-import {PlanCreateDrawer} from '@/components/ScheduleForm/PlanCreateDrawer';
-import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
-import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
-import {useListSchedulesInfiniteQuery} from '@/store/services/schedulesApi';
+import {PlanCreateDrawer} from '@/components/PlanForm/PlanCreateDrawer';
+import PlanListItem from '@/components/PlanListItem/PlanListItem';
+import {useListPlans} from '@/store/services/plans';
 
 import Header from './Header';
 
 function PlansListPage() {
     const [search, setSearch] = useState('');
-    const [copyScheduleId, setCopyScheduleId] = useState<null | string>(null);
-    const scheduleBuilderStack = useDrawerStackRouter({
-        baseRoutePath: `/plans`,
-        drawerIds: [
-            'entries-view',
-            'select-session',
-            'select-session-type',
-            'add-entry',
-            'create-session',
-            'edit-entry',
-            'manage-content',
-            'add-content-item',
-            'session-form',
-            'content-select',
-        ],
+    const navigate = useNavigate();
+
+    const stack = useDrawersStack(['select-plan-type', 'create-schedule']);
+
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans({
+        search: search?.trim() || undefined,
     });
 
-    const stack = useDrawersStack(['select-plan-type', 'create-schedule', 'copy-to-client']);
-
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListSchedulesInfiniteQuery({
-        search: search?.trim(),
-    });
-
-    const schedules = data?.pages?.flatMap((page) => page.records) || [];
+    const plans = data?.pages?.flatMap((page) => page.records) ?? [];
 
     const handleCreate = () => stack.open('select-plan-type');
 
-    const handleEdit = (id: string) => scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id});
+    const handleView = (id: string) => navigate(`/plans/${id}`);
+
+    const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
     return (
         <>
@@ -59,7 +44,7 @@ function PlansListPage() {
                     paddingX={'lg'}
                     paddingY={'md'}
                 >
-                    <RecordsList<Schedule>
+                    <RecordsList<Plan>
                         emptyState={
                             <EmptyState
                                 action={
@@ -90,18 +75,14 @@ function PlansListPage() {
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}
-                        loadMoreText="Load More Programs"
-                        records={schedules}
-                        renderItem={(schedule) => (
-                            <ScheduleListItem
-                                key={schedule.id}
-                                onCopyToClient={(id) => {
-                                    setCopyScheduleId(id);
-                                    stack.open('copy-to-client');
-                                }}
+                        loadMoreText="Load More Plans"
+                        records={plans}
+                        renderItem={(plan) => (
+                            <PlanListItem
+                                key={plan.id}
                                 onEdit={handleEdit}
-                                onView={handleEdit}
-                                schedule={schedule}
+                                onView={handleView}
+                                plan={plan}
                             />
                         )}
                     />
@@ -110,19 +91,13 @@ function PlansListPage() {
                 {/* Create Plan Drawer */}
                 <PlanCreateDrawer
                     onCreated={(id) => {
-                        scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id});
+                        refetch();
+                        stack.close('create-schedule');
+                        stack.close('select-plan-type');
+                        navigate(`/plans/${id}/edit`);
                     }}
                     stack={stack}
                 />
-
-                <ScheduleCopyToClientDrawer
-                    scheduleId={copyScheduleId}
-                    stack={stack}
-                />
-
-                <scheduleBuilderStack.Provider>
-                    <ScheduleBuilder />
-                </scheduleBuilderStack.Provider>
             </PagePaper>
         </>
     );

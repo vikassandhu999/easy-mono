@@ -1,30 +1,33 @@
 import {ActionIcon, Box, Card, Center, Group, Stack, Text} from '@mantine/core';
 import {CaretRightIcon} from '@phosphor-icons/react';
 
-import {ScheduleCategory} from '@/api/schedules.ts';
+import {PlanDiscipline} from '@/api/plans';
 
-import {SCHEDULE_CATEGORIES} from '../Configs';
+import {PLAN_DISCIPLINES} from '../Configs';
 
-interface ScheduleCategorySelectProps {
-    onSelect: (category: ScheduleCategory) => void;
+interface PlanDisciplineSelectProps {
+    onSelect: (discipline: PlanDiscipline) => void;
 }
 
-const PlanDisciplineSelect = ({onSelect}: ScheduleCategorySelectProps) => {
+const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
+    const entries = Object.entries(PLAN_DISCIPLINES) as Array<
+        [PlanDiscipline, (typeof PLAN_DISCIPLINES)[PlanDiscipline]]
+    >;
+
     return (
         <Stack gap={'sm'}>
-            {Object.keys(SCHEDULE_CATEGORIES).map((key) => {
-                const config = SCHEDULE_CATEGORIES[key];
+            {entries.map(([discipline, config]) => {
                 const IconComponent = config.icon;
 
                 return (
                     <Card
                         aria-label={`Select ${config.label}: ${config.description}`}
-                        key={key}
-                        onClick={() => onSelect(key as any)}
+                        key={discipline}
+                        onClick={() => onSelect(discipline)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                onSelect(key as any);
+                                onSelect(discipline);
                             }
                         }}
                         role="button"

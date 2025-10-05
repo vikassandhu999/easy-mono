@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router';
 import {Program} from '@/api/programs.ts';
 import {useCreateProgramScheduleMutation} from '@/store/services/schedulesApi';
 
-import {PlanForm} from '../ScheduleForm/PlanForm';
+import {PlanForm} from '../PlanForm/PlanForm';
 
 type RenderProps = {
     onClick: (program: Program) => void;

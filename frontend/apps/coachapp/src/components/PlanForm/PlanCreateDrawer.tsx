@@ -2,28 +2,29 @@ import {Drawer, useDrawersStack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {useState} from 'react';
 
-import {ScheduleCategory} from '@/api/schedules.ts';
+import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {useCreateScheduleMutation} from '@/store/services/schedulesApi';
+import {useCreatePlan} from '@/store/services/plans';
 
-import {SCHEDULE_CATEGORIES} from '../Configs';
+import {PLAN_DISCIPLINES} from '../Configs';
 import Header from '../layouts/Header';
 import PlanDisciplineSelect from './PlanDisciplineSelect';
 import {PlanForm} from './PlanForm';
 
 type ProgramCreateWithTriggerProps = {
+    initialPlan?: Partial<Plan>;
     onCreated?: (scheduleId: string) => void;
     stack: ReturnType<typeof useDrawersStack<'create-schedule' | 'select-plan-type' | any>>;
 };
 
-export function PlanCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerProps) {
-    const [planType, setPlanType] = useState<null | ScheduleCategory>(null);
+export function PlanCreateDrawer({initialPlan, onCreated, stack}: ProgramCreateWithTriggerProps) {
+    const [planType, setPlanType] = useState<null | PlanDiscipline>(null);
 
-    const [createSchedule] = useCreateScheduleMutation();
+    const [createPlan] = useCreatePlan();
 
-    const formTitle = planType ? `Create ${SCHEDULE_CATEGORIES[planType].label} Plan` : 'Create Plan';
+    const formTitle = planType ? `Create ${PLAN_DISCIPLINES[planType].label} Plan` : 'Create Plan';
 
     return (
         <>
@@ -44,8 +45,8 @@ export function PlanCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerPro
                     <div style={{flex: 1, overflow: 'auto'}}>
                         <PaddingContainer>
                             <PlanDisciplineSelect
-                                onSelect={(category) => {
-                                    setPlanType(category);
+                                onSelect={(discipline) => {
+                                    setPlanType(discipline);
                                     stack.close('select-plan-type');
                                     stack.open('create-schedule');
                                 }}
@@ -69,25 +70,27 @@ export function PlanCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerPro
                         />
                     </HeadingContainer>
                     <PaddingContainer>
-                        <PlanForm
-                            category={planType!}
-                            onSubmit={async (values) => {
-                                try {
-                                    const result = await createSchedule(values);
-                                    if ('data' in result) {
-                                        onCreated?.(result.data.id);
+                        {planType ? (
+                            <PlanForm
+                                discipline={planType}
+                                onSubmit={async (values) => {
+                                    try {
+                                        const result = await createPlan(values as CreatePlanProps);
+                                        if ('data' in result) {
+                                            onCreated?.(result.data.id);
+                                        }
+                                    } catch (error) {
+                                        notifications.show({
+                                            color: 'red',
+                                            message: 'Failed to create plan',
+                                            title: 'Error',
+                                        });
                                     }
-                                } catch (error) {
-                                    notifications.show({
-                                        color: 'red',
-                                        message: 'Failed to create schedule',
-                                        title: 'Error',
-                                    });
-                                }
-                            }}
-                            schedule={{}}
-                            submitText={'Create'}
-                        />
+                                }}
+                                plan={{...(initialPlan ?? {}), discipline: planType}}
+                                submitText={'Create'}
+                            />
+                        ) : null}
                     </PaddingContainer>
                 </PagePaper>
             </Drawer>

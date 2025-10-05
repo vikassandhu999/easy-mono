@@ -1,9 +1,10 @@
-import {Drawer, Text, useDrawersStack} from '@mantine/core';
+import {Drawer, useDrawersStack} from '@mantine/core';
 
 import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
 import PaddingContainer from '@/components/containers/PaddingContainer.tsx';
 import PagePaper from '@/components/containers/PagePaper.tsx';
 
+import ExerciseCreateForm from '../ExerciseCreateForm';
 import Header from '../layouts/Header.tsx';
 
 type ExerciseCreateDrawerProps = {
@@ -11,7 +12,7 @@ type ExerciseCreateDrawerProps = {
     stack: ReturnType<typeof useDrawersStack<'create-exercise' | any>>;
 };
 
-export function ExerciseCreateDrawer({stack}: ExerciseCreateDrawerProps) {
+export function ExerciseCreateDrawer({stack, onExerciseCreated}: ExerciseCreateDrawerProps) {
     return (
         <>
             <Drawer
@@ -29,7 +30,12 @@ export function ExerciseCreateDrawer({stack}: ExerciseCreateDrawerProps) {
                         />
                     </HeadingContainer>
                     <PaddingContainer>
-                        <Text>Exercise creation form will be implemented here.</Text>
+                        <ExerciseCreateForm
+                            onCreated={() => {
+                                onExerciseCreated?.();
+                                stack.close('create-exercise');
+                            }}
+                        />
                     </PaddingContainer>
                 </PagePaper>
             </Drawer>

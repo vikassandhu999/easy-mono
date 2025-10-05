@@ -1,11 +1,10 @@
 import '@fontsource-variable/inter';
 import '@fontsource-variable/roboto-mono';
 import '@fontsource-variable/nunito';
-import '@mantine/core/styles/baseline.css';
-import '@mantine/core/styles/default-css-variables.css';
+import '@mantine/core/styles.css';
 
 import './default-css-variables.css';
-import '@mantine/core/styles/global.css';
+
 import '@mantine/core/styles/ScrollArea.css';
 import '@mantine/core/styles/UnstyledButton.css';
 import '@mantine/core/styles/VisuallyHidden.css';

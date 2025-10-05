@@ -1,16 +1,20 @@
+import {Carousel} from '@mantine/carousel';
 import {
     Avatar,
     Badge,
     Box,
-    Divider,
+    Card,
     Drawer,
     Group,
+    Image,
     ScrollArea,
+    SimpleGrid,
     Stack,
     Text,
     Title,
     useDrawersStack,
 } from '@mantine/core';
+import '@mantine/carousel/styles.css';
 import {
     IconAlertTriangle,
     IconBarbell,
@@ -49,6 +53,15 @@ export function ExerciseDetailDrawer({stack, exercise}: ExerciseDetailDrawerProp
 
     const metadata = exercise.exercise_metadata;
 
+    // Prepare images to display
+    const fallbackImages = [
+        'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
+        'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80',
+        'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
+    ];
+
+    const imagesToShow = metadata?.images && metadata.images.length > 0 ? metadata.images : fallbackImages;
+
     return (
         <>
             <Drawer
@@ -71,333 +84,440 @@ export function ExerciseDetailDrawer({stack, exercise}: ExerciseDetailDrawerProp
                         h="calc(100vh - 80px)"
                         type="auto"
                     >
-                        <PaddingContainer>
-                            <Stack gap="lg">
-                                {/* Header Section */}
-                                <Group
-                                    align="start"
-                                    wrap="nowrap"
-                                >
-                                    <Avatar
+                        {/* Image Carousel Header */}
+                        <Carousel
+                            slideGap="md"
+                            slideSize="100%"
+                            withControls={false}
+                            withIndicators
+                        >
+                            {imagesToShow.map((imageUrl, idx) => (
+                                <Carousel.Slide key={idx}>
+                                    <Image
+                                        alt={`${exercise.name} - Image ${idx + 1}`}
+                                        fallbackSrc="https://placehold.co/600x400/e9ecef/495057?text=Exercise+Image"
+                                        fit="cover"
+                                        h={300}
                                         radius="md"
-                                        size={80}
-                                        src={exercise.thumbnail_url}
-                                    >
-                                        <IconBarbell size={40} />
-                                    </Avatar>
-                                    <Box flex={1}>
-                                        <Title
-                                            order={2}
-                                            size="h3"
-                                        >
-                                            {exercise.name}
-                                        </Title>
-                                        {exercise.description && (
-                                            <Text
-                                                c="dimmed"
-                                                mt="xs"
-                                                size="sm"
-                                            >
-                                                {exercise.description}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                </Group>
+                                        src={imageUrl}
+                                    />
+                                </Carousel.Slide>
+                            ))}
+                        </Carousel>
 
-                                {/* Badges Section */}
-                                <Group gap="xs">
-                                    {metadata?.level && (
-                                        <Badge
-                                            color={getLevelColor(metadata.level)}
-                                            leftSection={<IconTrendingUp size={14} />}
-                                            size="lg"
-                                            variant="light"
-                                        >
-                                            {metadata.level}
-                                        </Badge>
-                                    )}
-                                    {metadata?.mechanics && (
-                                        <Badge
-                                            color="blue"
-                                            size="lg"
-                                            variant="light"
-                                        >
-                                            {metadata.mechanics}
-                                        </Badge>
-                                    )}
-                                    {metadata?.category && (
-                                        <Badge
-                                            color="grape"
-                                            size="lg"
-                                            variant="light"
-                                        >
-                                            {metadata.category}
-                                        </Badge>
-                                    )}
-                                </Group>
-
-                                <Divider />
-
-                                {/* Classification Section */}
-                                <Box>
+                        <PaddingContainer>
+                            <Stack gap="xl">
+                                {/* Title Section */}
+                                <Box mt="lg">
                                     <Title
-                                        mb="sm"
-                                        order={4}
+                                        order={1}
+                                        size="h2"
                                     >
-                                        Classification
+                                        {exercise.name}
                                     </Title>
-                                    <Stack gap="sm">
-                                        {metadata?.primary_muscle && metadata.primary_muscle.length > 0 && (
-                                            <Group>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                    w={120}
-                                                >
-                                                    Primary Muscle:
-                                                </Text>
-                                                <Group gap={4}>
-                                                    {metadata.primary_muscle.map((muscle, idx) => (
-                                                        <Badge
-                                                            color="red"
-                                                            key={idx}
-                                                            size="sm"
-                                                            variant="dot"
-                                                        >
-                                                            {muscle}
-                                                        </Badge>
-                                                    ))}
-                                                </Group>
-                                            </Group>
+                                    {exercise.description && (
+                                        <Text
+                                            c="dimmed"
+                                            mt="xs"
+                                            size="sm"
+                                        >
+                                            {exercise.description}
+                                        </Text>
+                                    )}
+
+                                    {/* Level & Tags */}
+                                    <Group
+                                        gap="xs"
+                                        mt="md"
+                                    >
+                                        {metadata?.level && (
+                                            <Badge
+                                                color={getLevelColor(metadata.level)}
+                                                leftSection={<IconTrendingUp size={14} />}
+                                                radius="md"
+                                                size="lg"
+                                                tt="capitalize"
+                                                variant="light"
+                                            >
+                                                {metadata.level}
+                                            </Badge>
                                         )}
-                                        {metadata?.secondary_muscle && metadata.secondary_muscle.length > 0 && (
-                                            <Group>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                    w={120}
-                                                >
-                                                    Secondary:
-                                                </Text>
-                                                <Group gap={4}>
-                                                    {metadata.secondary_muscle.map((muscle, idx) => (
-                                                        <Badge
-                                                            color="orange"
-                                                            key={idx}
-                                                            size="sm"
-                                                            variant="dot"
-                                                        >
-                                                            {muscle}
-                                                        </Badge>
-                                                    ))}
-                                                </Group>
-                                            </Group>
+                                        {metadata?.mechanics && (
+                                            <Badge
+                                                color="blue"
+                                                radius="md"
+                                                size="lg"
+                                                tt="capitalize"
+                                                variant="light"
+                                            >
+                                                {metadata.mechanics}
+                                            </Badge>
                                         )}
                                         {metadata?.force && (
-                                            <Group>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                    w={120}
-                                                >
-                                                    Force Type:
-                                                </Text>
-                                                <Badge
-                                                    color="cyan"
-                                                    size="sm"
-                                                    variant="light"
-                                                >
-                                                    {metadata.force}
-                                                </Badge>
-                                            </Group>
+                                            <Badge
+                                                color="cyan"
+                                                radius="md"
+                                                size="lg"
+                                                tt="capitalize"
+                                                variant="light"
+                                            >
+                                                {metadata.force}
+                                            </Badge>
                                         )}
-                                    </Stack>
+                                    </Group>
                                 </Box>
 
-                                <Divider />
+                                {/* Stats Cards */}
+                                <SimpleGrid
+                                    cols={3}
+                                    spacing="sm"
+                                >
+                                    {metadata?.default_sets && (
+                                        <Card
+                                            padding="md"
+                                            radius="lg"
+                                            withBorder
+                                        >
+                                            <Stack
+                                                align="center"
+                                                gap="xs"
+                                            >
+                                                <IconTarget
+                                                    color="var(--mantine-color-blue-6)"
+                                                    size={24}
+                                                />
+                                                <Text
+                                                    fw={700}
+                                                    size="xl"
+                                                >
+                                                    {metadata.default_sets}
+                                                </Text>
+                                                <Text
+                                                    c="dimmed"
+                                                    size="xs"
+                                                    ta="center"
+                                                >
+                                                    Sets
+                                                </Text>
+                                            </Stack>
+                                        </Card>
+                                    )}
+                                    {metadata?.calories_burned_per_minute && (
+                                        <Card
+                                            padding="md"
+                                            radius="lg"
+                                            withBorder
+                                        >
+                                            <Stack
+                                                align="center"
+                                                gap="xs"
+                                            >
+                                                <IconFlame
+                                                    color="var(--mantine-color-orange-6)"
+                                                    size={24}
+                                                />
+                                                <Text
+                                                    fw={700}
+                                                    size="xl"
+                                                >
+                                                    {metadata.calories_burned_per_minute}
+                                                </Text>
+                                                <Text
+                                                    c="dimmed"
+                                                    size="xs"
+                                                    ta="center"
+                                                >
+                                                    Cal/Min
+                                                </Text>
+                                            </Stack>
+                                        </Card>
+                                    )}
+                                    {metadata?.rest_recommendation && (
+                                        <Card
+                                            padding="md"
+                                            radius="lg"
+                                            withBorder
+                                        >
+                                            <Stack
+                                                align="center"
+                                                gap="xs"
+                                            >
+                                                <IconClock
+                                                    color="var(--mantine-color-violet-6)"
+                                                    size={24}
+                                                />
+                                                <Text
+                                                    fw={700}
+                                                    size="sm"
+                                                    ta="center"
+                                                >
+                                                    {metadata.rest_recommendation}
+                                                </Text>
+                                                <Text
+                                                    c="dimmed"
+                                                    size="xs"
+                                                    ta="center"
+                                                >
+                                                    Rest
+                                                </Text>
+                                            </Stack>
+                                        </Card>
+                                    )}
+                                </SimpleGrid>
+
+                                {/* Muscle Groups Section */}
+                                {(metadata?.primary_muscle || metadata?.secondary_muscle) && (
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
+                                    >
+                                        <Stack gap="md">
+                                            <Title
+                                                order={4}
+                                                size="h6"
+                                            >
+                                                Target Muscles
+                                            </Title>
+                                            {metadata.primary_muscle && metadata.primary_muscle.length > 0 && (
+                                                <Box>
+                                                    <Text
+                                                        c="dimmed"
+                                                        mb="xs"
+                                                        size="xs"
+                                                        tt="uppercase"
+                                                    >
+                                                        Primary
+                                                    </Text>
+                                                    <Group gap={6}>
+                                                        {metadata.primary_muscle.map((muscle, idx) => (
+                                                            <Badge
+                                                                color="red"
+                                                                key={idx}
+                                                                radius="md"
+                                                                size="md"
+                                                                tt="capitalize"
+                                                                variant="dot"
+                                                            >
+                                                                {muscle}
+                                                            </Badge>
+                                                        ))}
+                                                    </Group>
+                                                </Box>
+                                            )}
+                                            {metadata.secondary_muscle && metadata.secondary_muscle.length > 0 && (
+                                                <Box>
+                                                    <Text
+                                                        c="dimmed"
+                                                        mb="xs"
+                                                        size="xs"
+                                                        tt="uppercase"
+                                                    >
+                                                        Secondary
+                                                    </Text>
+                                                    <Group gap={6}>
+                                                        {metadata.secondary_muscle.map((muscle, idx) => (
+                                                            <Badge
+                                                                color="orange"
+                                                                key={idx}
+                                                                radius="md"
+                                                                size="md"
+                                                                tt="capitalize"
+                                                                variant="dot"
+                                                            >
+                                                                {muscle}
+                                                            </Badge>
+                                                        ))}
+                                                    </Group>
+                                                </Box>
+                                            )}
+                                        </Stack>
+                                    </Card>
+                                )}
 
                                 {/* Equipment Section */}
                                 {metadata?.equipment && metadata.equipment.length > 0 && (
-                                    <>
-                                        <Box>
-                                            <Group
-                                                gap="xs"
-                                                mb="sm"
-                                            >
-                                                <IconBarbell size={20} />
-                                                <Title order={4}>Equipment Required</Title>
-                                            </Group>
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
+                                    >
+                                        <Stack gap="sm">
                                             <Group gap="xs">
+                                                <IconBarbell size={20} />
+                                                <Title
+                                                    order={4}
+                                                    size="h6"
+                                                >
+                                                    Equipment Required
+                                                </Title>
+                                            </Group>
+                                            <Group gap={6}>
                                                 {metadata.equipment.map((item, idx) => (
                                                     <Badge
                                                         color="teal"
                                                         key={idx}
+                                                        radius="md"
                                                         size="md"
+                                                        tt="capitalize"
                                                         variant="light"
                                                     >
                                                         {item}
                                                     </Badge>
                                                 ))}
                                             </Group>
-                                        </Box>
-                                        <Divider />
-                                    </>
+                                        </Stack>
+                                    </Card>
                                 )}
 
-                                {/* Programming Guidelines */}
-                                <Box>
-                                    <Group
-                                        gap="xs"
-                                        mb="sm"
+                                {/* Rep Ranges */}
+                                {metadata?.common_rep_ranges && metadata.common_rep_ranges.length > 0 && (
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
                                     >
-                                        <IconTarget size={20} />
-                                        <Title order={4}>Programming Guidelines</Title>
-                                    </Group>
-                                    <Stack gap="sm">
-                                        {metadata?.default_sets && (
-                                            <Group>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={150}
-                                                >
-                                                    Recommended Sets:
-                                                </Text>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                >
-                                                    {metadata.default_sets}
-                                                </Text>
+                                        <Stack gap="sm">
+                                            <Title
+                                                order={4}
+                                                size="h6"
+                                            >
+                                                Recommended Rep Ranges
+                                            </Title>
+                                            <Group gap={6}>
+                                                {metadata.common_rep_ranges.map((range, idx) => (
+                                                    <Badge
+                                                        color="indigo"
+                                                        key={idx}
+                                                        radius="md"
+                                                        size="lg"
+                                                        variant="light"
+                                                    >
+                                                        {range} reps
+                                                    </Badge>
+                                                ))}
                                             </Group>
-                                        )}
-                                        {metadata?.common_rep_ranges && metadata.common_rep_ranges.length > 0 && (
-                                            <Group>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={150}
+                                        </Stack>
+                                    </Card>
+                                )}
+
+                                {/* Execution Details */}
+                                {(metadata?.tempo || metadata?.range_of_motion) && (
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
+                                    >
+                                        <Stack gap="md">
+                                            <Title
+                                                order={4}
+                                                size="h6"
+                                            >
+                                                Execution Details
+                                            </Title>
+                                            {metadata.tempo && (
+                                                <Group
+                                                    justify="space-between"
+                                                    wrap="nowrap"
                                                 >
-                                                    Rep Ranges:
-                                                </Text>
-                                                <Group gap={4}>
-                                                    {metadata.common_rep_ranges.map((range, idx) => (
-                                                        <Badge
-                                                            color="indigo"
-                                                            key={idx}
-                                                            size="sm"
-                                                            variant="light"
-                                                        >
-                                                            {range}
-                                                        </Badge>
-                                                    ))}
+                                                    <Text
+                                                        c="dimmed"
+                                                        size="sm"
+                                                    >
+                                                        Tempo
+                                                    </Text>
+                                                    <Badge
+                                                        color="pink"
+                                                        radius="md"
+                                                        size="md"
+                                                        variant="light"
+                                                    >
+                                                        {metadata.tempo}
+                                                    </Badge>
                                                 </Group>
-                                            </Group>
-                                        )}
-                                        {metadata?.rest_recommendation && (
-                                            <Group>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={150}
+                                            )}
+                                            {metadata.range_of_motion && (
+                                                <Group
+                                                    justify="space-between"
+                                                    wrap="nowrap"
                                                 >
-                                                    Rest Period:
-                                                </Text>
-                                                <Badge
-                                                    color="violet"
-                                                    leftSection={<IconClock size={14} />}
-                                                    size="sm"
-                                                    variant="light"
-                                                >
-                                                    {metadata.rest_recommendation}
-                                                </Badge>
-                                            </Group>
-                                        )}
-                                    </Stack>
-                                </Box>
+                                                    <Text
+                                                        c="dimmed"
+                                                        size="sm"
+                                                    >
+                                                        Range of Motion
+                                                    </Text>
+                                                    <Text
+                                                        fw={500}
+                                                        size="sm"
+                                                        tt="capitalize"
+                                                    >
+                                                        {metadata.range_of_motion}
+                                                    </Text>
+                                                </Group>
+                                            )}
+                                        </Stack>
+                                    </Card>
+                                )}
 
-                                <Divider />
-
-                                {/* Execution Characteristics */}
-                                <Box>
-                                    <Title
-                                        mb="sm"
-                                        order={4}
+                                {/* Instructions */}
+                                {metadata?.instructions && metadata.instructions.length > 0 && (
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
                                     >
-                                        Execution Details
-                                    </Title>
-                                    <Stack gap="sm">
-                                        {metadata?.calories_burned_per_minute && (
-                                            <Group>
-                                                <IconFlame
-                                                    color="var(--mantine-color-orange-6)"
-                                                    size={18}
-                                                />
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={130}
-                                                >
-                                                    Calories/Min:
-                                                </Text>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                >
-                                                    {metadata.calories_burned_per_minute} cal
-                                                </Text>
-                                            </Group>
-                                        )}
-                                        {metadata?.tempo && (
-                                            <Group>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={150}
-                                                >
-                                                    Tempo:
-                                                </Text>
-                                                <Badge
-                                                    color="pink"
-                                                    size="sm"
-                                                    variant="light"
-                                                >
-                                                    {metadata.tempo}
-                                                </Badge>
-                                            </Group>
-                                        )}
-                                        {metadata?.range_of_motion && (
-                                            <Group>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                    w={150}
-                                                >
-                                                    Range of Motion:
-                                                </Text>
-                                                <Text
-                                                    fw={500}
-                                                    size="sm"
-                                                >
-                                                    {metadata.range_of_motion}
-                                                </Text>
-                                            </Group>
-                                        )}
-                                    </Stack>
-                                </Box>
-
-                                <Divider />
+                                        <Stack gap="md">
+                                            <Title
+                                                order={4}
+                                                size="h6"
+                                            >
+                                                How to Perform
+                                            </Title>
+                                            <Stack gap="md">
+                                                {metadata.instructions.map((instruction, idx) => (
+                                                    <Group
+                                                        align="start"
+                                                        key={idx}
+                                                        wrap="nowrap"
+                                                    >
+                                                        <Avatar
+                                                            color="blue"
+                                                            radius="xl"
+                                                            size="sm"
+                                                            variant="filled"
+                                                        >
+                                                            {idx + 1}
+                                                        </Avatar>
+                                                        <Text
+                                                            flex={1}
+                                                            size="sm"
+                                                        >
+                                                            {instruction}
+                                                        </Text>
+                                                    </Group>
+                                                ))}
+                                            </Stack>
+                                        </Stack>
+                                    </Card>
+                                )}
 
                                 {/* Form Cues */}
                                 {metadata?.form_cues && metadata.form_cues.length > 0 && (
-                                    <>
-                                        <Box>
-                                            <Group
-                                                gap="xs"
-                                                mb="sm"
-                                            >
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        withBorder
+                                    >
+                                        <Stack gap="md">
+                                            <Group gap="xs">
                                                 <IconInfoCircle size={20} />
-                                                <Title order={4}>Form Cues</Title>
+                                                <Title
+                                                    order={4}
+                                                    size="h6"
+                                                >
+                                                    Form Cues
+                                                </Title>
                                             </Group>
                                             <Stack gap="xs">
                                                 {metadata.form_cues.map((cue, idx) => (
@@ -408,32 +528,39 @@ export function ExerciseDetailDrawer({stack, exercise}: ExerciseDetailDrawerProp
                                                         <Text
                                                             c="blue"
                                                             fw={700}
-                                                            size="sm"
                                                         >
-                                                            •
+                                                            ✓
                                                         </Text>
                                                         <Text size="sm">{cue}</Text>
                                                     </Group>
                                                 ))}
                                             </Stack>
-                                        </Box>
-                                        <Divider />
-                                    </>
+                                        </Stack>
+                                    </Card>
                                 )}
 
                                 {/* Common Mistakes */}
                                 {metadata?.common_mistakes && metadata.common_mistakes.length > 0 && (
-                                    <>
-                                        <Box>
-                                            <Group
-                                                gap="xs"
-                                                mb="sm"
-                                            >
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        style={{
+                                            borderColor: 'var(--mantine-color-yellow-3)',
+                                        }}
+                                        withBorder
+                                    >
+                                        <Stack gap="md">
+                                            <Group gap="xs">
                                                 <IconAlertTriangle
                                                     color="var(--mantine-color-yellow-6)"
                                                     size={20}
                                                 />
-                                                <Title order={4}>Common Mistakes</Title>
+                                                <Title
+                                                    order={4}
+                                                    size="h6"
+                                                >
+                                                    Common Mistakes
+                                                </Title>
                                             </Group>
                                             <Stack gap="xs">
                                                 {metadata.common_mistakes.map((mistake, idx) => (
@@ -444,7 +571,6 @@ export function ExerciseDetailDrawer({stack, exercise}: ExerciseDetailDrawerProp
                                                         <Text
                                                             c="yellow"
                                                             fw={700}
-                                                            size="sm"
                                                         >
                                                             ⚠
                                                         </Text>
@@ -452,72 +578,59 @@ export function ExerciseDetailDrawer({stack, exercise}: ExerciseDetailDrawerProp
                                                     </Group>
                                                 ))}
                                             </Stack>
-                                        </Box>
-                                        <Divider />
-                                    </>
+                                        </Stack>
+                                    </Card>
                                 )}
 
                                 {/* Contraindications */}
                                 {metadata?.contraindications && metadata.contraindications.length > 0 && (
-                                    <Box>
-                                        <Group
-                                            gap="xs"
-                                            mb="sm"
-                                        >
-                                            <IconAlertTriangle
-                                                color="var(--mantine-color-red-6)"
-                                                size={20}
-                                            />
-                                            <Title order={4}>Contraindications</Title>
-                                        </Group>
-                                        <Stack gap="xs">
-                                            {metadata.contraindications.map((item, idx) => (
-                                                <Badge
-                                                    color="red"
-                                                    key={idx}
-                                                    size="md"
-                                                    variant="light"
+                                    <Card
+                                        padding="md"
+                                        radius="lg"
+                                        style={{
+                                            borderColor: 'var(--mantine-color-red-3)',
+                                        }}
+                                        withBorder
+                                    >
+                                        <Stack gap="md">
+                                            <Group gap="xs">
+                                                <IconAlertTriangle
+                                                    color="var(--mantine-color-red-6)"
+                                                    size={20}
+                                                />
+                                                <Title
+                                                    order={4}
+                                                    size="h6"
                                                 >
-                                                    {item}
-                                                </Badge>
-                                            ))}
+                                                    Contraindications
+                                                </Title>
+                                            </Group>
+                                            <Text
+                                                c="dimmed"
+                                                size="xs"
+                                            >
+                                                Avoid this exercise if you have:
+                                            </Text>
+                                            <Group gap={6}>
+                                                {metadata.contraindications.map((item, idx) => (
+                                                    <Badge
+                                                        color="red"
+                                                        key={idx}
+                                                        radius="md"
+                                                        size="md"
+                                                        tt="capitalize"
+                                                        variant="light"
+                                                    >
+                                                        {item}
+                                                    </Badge>
+                                                ))}
+                                            </Group>
                                         </Stack>
-                                    </Box>
+                                    </Card>
                                 )}
 
-                                {/* Instructions */}
-                                {metadata?.instructions && metadata.instructions.length > 0 && (
-                                    <>
-                                        <Divider />
-                                        <Box>
-                                            <Title
-                                                mb="sm"
-                                                order={4}
-                                            >
-                                                Instructions
-                                            </Title>
-                                            <Stack gap="sm">
-                                                {metadata.instructions.map((instruction, idx) => (
-                                                    <Group
-                                                        align="start"
-                                                        key={idx}
-                                                        wrap="nowrap"
-                                                    >
-                                                        <Badge
-                                                            circle
-                                                            color="gray"
-                                                            size="lg"
-                                                            variant="filled"
-                                                        >
-                                                            {idx + 1}
-                                                        </Badge>
-                                                        <Text size="sm">{instruction}</Text>
-                                                    </Group>
-                                                ))}
-                                            </Stack>
-                                        </Box>
-                                    </>
-                                )}
+                                {/* Bottom Spacing */}
+                                <Box h={40} />
                             </Stack>
                         </PaddingContainer>
                     </ScrollArea>

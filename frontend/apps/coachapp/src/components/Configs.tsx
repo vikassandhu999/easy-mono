@@ -2,10 +2,9 @@ import {Icon, IconBowl, IconChefHat, IconListDetails, IconRun, IconTreadmill} fr
 import React from 'react';
 
 import {Content} from '@/api/contents.ts';
-import {ScheduleCategory} from '@/api/schedules.ts';
 
 export const SCHEDULE_CATEGORIES: Record<
-    ScheduleCategory,
+    'nutrition' | 'workout',
     {
         color: string;
         description: string;
@@ -19,12 +18,12 @@ export const SCHEDULE_CATEGORIES: Record<
         optional?: boolean;
     }
 > = {
-    meal: {
+    nutrition: {
         color: 'var(--mantine-color-lime-6)',
-        description: 'Build a meal plan to optimize meals and habits.',
+        description: 'Build a nutrition plan to optimize meals and habits.',
         form: {
-            nameDescription: 'A clear, descriptive name of the meal plan.',
-            namePlaceholder: 'e.g., Weight Loss Meal Plan',
+            nameDescription: 'A clear, descriptive name of the nutrition plan.',
+            namePlaceholder: 'e.g., Weight Loss Nutrition Plan',
         },
         icon: IconBowl,
         iconColor: 'var(--mantine-color-lime-0)',

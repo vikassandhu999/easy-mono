@@ -36,22 +36,13 @@ module.exports = {
                 type: 'natural',
             },
         ],
-        'perfectionist/sort-objects': [
-            'error',
-            {
-                ignoreCase: true,
-                order: 'asc',
-                type: 'unsorted',
-            },
-        ],
-        'perfectionist/sort-variable-declarations': [
-            'error',
-            {
-                ignoreCase: true,
-                order: 'asc',
-                type: 'natural',
-            },
-        ],
+        'perfectionist/sort-variable-declarations': 'off',
+        'perfectionist/sort-modules': 'off',
+        'perfectionist/sort-objects': 'off',
+        'perfectionist/sort-classes': 'off',
+        'perfectionist/sort-interface': 'off',
+        'perfectionist/sort-object-types': 'off',
+        'perfectionist/sort-switch-case': 'off',
         'prettier/prettier': [
             'error',
             {

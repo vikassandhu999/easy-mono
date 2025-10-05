@@ -3,7 +3,8 @@ import {useForm} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
 import React from 'react';
 
-import {CreateScheduleProps, Schedule, ScheduleCategory, UpdateScheduleProps} from '@/api/schedules.ts';
+import {CreatePlanProps, UpdatePlanProps} from '@/api/plans';
+import {CreateScheduleProps, Schedule, ScheduleCategory} from '@/api/schedules.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import {FormSection} from '@/components/containers/FormSection';
 
@@ -11,7 +12,7 @@ import {SCHEDULE_CATEGORIES} from '../Configs';
 
 interface ScheduleFormProps {
     category: ScheduleCategory;
-    onSubmit: (data: CreateScheduleProps | UpdateScheduleProps) => Promise<void>;
+    onSubmit: (data: CreatePlanProps | UpdatePlanProps) => Promise<void>;
     schedule?: Partial<Schedule>;
     submitText: string;
 }
@@ -21,10 +22,10 @@ const frequencyOptions = [
     {description: 'Design 1 week; repeats every week', label: 'Weekly', value: 'weekly'},
 ];
 
-export const ScheduleForm: React.FC<ScheduleFormProps> = ({category, onSubmit, schedule, submitText}) => {
+export const PlanForm: React.FC<ScheduleFormProps> = ({category, onSubmit, schedule, submitText}) => {
     const form = useForm<CreateScheduleProps>({
         initialValues: {
-            category: schedule?.category || category,
+            description: schedule?.category || category,
             duration_weeks: schedule?.duration_weeks || 12,
             frequency: schedule?.frequency || 'weekly',
             name: schedule?.name || '',

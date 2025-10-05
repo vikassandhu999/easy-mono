@@ -9,7 +9,7 @@ import {CreateScheduleProps, SchedulesAPI} from '@/api/schedules.ts';
 import {SCHEDULES_QUERY_KEYS} from '@/views/Schedules/hooks/useSchedules';
 
 import {ProgramForm} from '../ProgramForm/Form';
-import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
+import {PlanForm} from '../ScheduleForm/PlanForm';
 import {ScheduleChoice} from './ScheduleChoice';
 
 type RenderProps = {
@@ -118,7 +118,7 @@ export function ScheduleEntryAddWithTrigger({children}: ScheduleEntryAddWithTrig
                 {...stack.register('build-schedule')}
                 withCloseButton={false}
             >
-                <ScheduleForm
+                <PlanForm
                     onCancel={() => goToProgram()}
                     onSubmit={async (values) => {
                         await createSchedule.mutateAsync(values);

@@ -10,15 +10,15 @@ import {useCreateScheduleMutation} from '@/store/services/schedulesApi';
 
 import {SCHEDULE_CATEGORIES} from '../Configs';
 import Header from '../layouts/Header';
-import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
-import ScheduleCategorySelect from './ScheduleCategorySelect';
+import PlanDisciplineSelect from './PlanDisciplineSelect';
+import {PlanForm} from './PlanForm';
 
 type ProgramCreateWithTriggerProps = {
     onCreated?: (scheduleId: string) => void;
     stack: ReturnType<typeof useDrawersStack<'create-schedule' | 'select-plan-type' | any>>;
 };
 
-export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerProps) {
+export function PlanCreateDrawer({onCreated, stack}: ProgramCreateWithTriggerProps) {
     const [planType, setPlanType] = useState<null | ScheduleCategory>(null);
 
     const [createSchedule] = useCreateScheduleMutation();
@@ -43,7 +43,7 @@ export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTrigge
                     </HeadingContainer>
                     <div style={{flex: 1, overflow: 'auto'}}>
                         <PaddingContainer>
-                            <ScheduleCategorySelect
+                            <PlanDisciplineSelect
                                 onSelect={(category) => {
                                     setPlanType(category);
                                     stack.close('select-plan-type');
@@ -69,7 +69,7 @@ export function ScheduleCreateDrawer({onCreated, stack}: ProgramCreateWithTrigge
                         />
                     </HeadingContainer>
                     <PaddingContainer>
-                        <ScheduleForm
+                        <PlanForm
                             category={planType!}
                             onSubmit={async (values) => {
                                 try {

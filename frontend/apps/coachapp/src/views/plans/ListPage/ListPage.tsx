@@ -9,7 +9,7 @@ import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
 import ScheduleCopyToClientDrawer from '@/components/ScheduleCopyToClientDrawer/ScheduleCopyToClientDrawer';
-import {ScheduleCreateDrawer} from '@/components/ScheduleForm/ScheduleCreateDrawer';
+import {PlanCreateDrawer} from '@/components/ScheduleForm/PlanCreateDrawer';
 import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
 import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
 import {useListSchedulesInfiniteQuery} from '@/store/services/schedulesApi';
@@ -108,7 +108,7 @@ function PlansListPage() {
                 </PaddingContainer>
 
                 {/* Create Plan Drawer */}
-                <ScheduleCreateDrawer
+                <PlanCreateDrawer
                     onCreated={(id) => {
                         scheduleBuilderStack.openDrawer('entries-view', {scheduleId: id});
                     }}

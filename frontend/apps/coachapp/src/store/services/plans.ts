@@ -1,3 +1,5 @@
+import {Plan} from '@/api/business';
+import {CreatePlanProps, PlansList, PlansListOpts, UpdatePlanProps} from '@/api/plans';
 import {
     type AssignScheduleProps,
     type CopyToClientProps,
@@ -15,9 +17,9 @@ type ListSchedulesQueryParams = Omit<ListSchedulesParams, 'page'> | undefined;
 
 const DEFAULT_PAGE_SIZE = 20;
 
-const buildScheduleListParams = (queryArg: ListSchedulesQueryParams, pageParam: number) => {
+const buildListParams = (opts: PlansListOpts, pageParam: number) => {
     const params: Record<string, unknown> = {
-        ...(queryArg ?? {}),
+        ...(opts ?? {}),
         page: pageParam,
     };
 
@@ -28,7 +30,7 @@ const buildScheduleListParams = (queryArg: ListSchedulesQueryParams, pageParam: 
     return params;
 };
 
-const getNextSchedulePage = (lastPage: ListSchedulesResult, lastPageParam: number) => {
+const getNextPlanPage = (lastPage: PlansList, lastPageParam: number) => {
     const currentPage = lastPage.page ?? lastPageParam;
     const pageSize = lastPage.page_size ?? DEFAULT_PAGE_SIZE;
 
@@ -57,17 +59,46 @@ const getNextSchedulePage = (lastPage: ListSchedulesResult, lastPageParam: numbe
     return currentPage + 1;
 };
 
-export const schedulesApi = apiSlice.injectEndpoints({
+export const plansApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({
-        listSchedules: build.infiniteQuery<ListSchedulesResult, ListSchedulesQueryParams, number>({
+        createPlan: build.mutation<Plan, CreatePlanProps>({
+            query: (body) => ({
+                url: '/v1/coach/plans',
+                method: 'post',
+                data: body,
+            }),
+            invalidatesTags: ({id}) => [
+                {type: 'Plans', id},
+                {type: 'Plans', id: 'LIST'},
+            ],
+        }),
+
+        updatePlan: build.mutation<Plan, UpdatePlanProps>({
+            query: (body) => ({
+                url: '/v1/coach/plans/' + body.id,
+                method: 'patch',
+                data: {
+                    ...body,
+                    id: undefined,
+                    created_at: undefined,
+                    updated_at: undefined,
+                },
+            }),
+            invalidatesTags: ({id}) => [
+                {type: 'Plans', id},
+                {type: 'Plans', id: 'LIST'},
+            ],
+        }),
+
+        listPlans: build.infiniteQuery<PlansList, PlansListOpts, number>({
             query: ({queryArg, pageParam = 1}) => ({
                 url: '/v1/coach/plans',
                 method: 'get',
-                params: buildScheduleListParams(queryArg, pageParam),
+                params: buildListParams(queryArg, pageParam),
             }),
             serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
             providesTags: (result) => {
-                const baseTag = [{type: 'Schedules' as const, id: 'LIST'}];
+                const baseTag = [{type: 'Plans' as const, id: 'LIST'}];
 
                 if (!result) {
                     return baseTag;
@@ -79,11 +110,11 @@ export const schedulesApi = apiSlice.injectEndpoints({
                     return baseTag;
                 }
 
-                return [...records.map((schedule) => ({type: 'Schedules' as const, id: schedule.id})), ...baseTag];
+                return [...records.map((plan) => ({type: 'Plans' as const, id: plan.id})), ...baseTag];
             },
             infiniteQueryOptions: {
                 initialPageParam: 1,
-                getNextPageParam: (lastPage, _allPages, lastPageParam) => getNextSchedulePage(lastPage, lastPageParam),
+                getNextPageParam: (lastPage, _allPages, lastPageParam) => getNextPlanPage(lastPage, lastPageParam),
             },
         }),
         listSchedulesByCategory: build.infiniteQuery<
@@ -94,7 +125,7 @@ export const schedulesApi = apiSlice.injectEndpoints({
             query: ({queryArg, pageParam = 1}) => ({
                 url: `/v1/coach/schedules/category/${queryArg.category}`,
                 method: 'get',
-                params: buildScheduleListParams(queryArg.params, pageParam),
+                params: buildListParams(queryArg.params, pageParam),
             }),
             serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
             providesTags: (result) => {
@@ -121,7 +152,7 @@ export const schedulesApi = apiSlice.injectEndpoints({
             query: ({queryArg, pageParam = 1}) => ({
                 url: '/v1/coach/schedules/templates',
                 method: 'get',
-                params: buildScheduleListParams(queryArg, pageParam),
+                params: buildListParams(queryArg, pageParam),
             }),
             serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
             providesTags: (result) => {
@@ -173,14 +204,7 @@ export const schedulesApi = apiSlice.injectEndpoints({
             }),
             providesTags: (_result, _error, scheduleId) => [{type: 'Schedules', id: scheduleId}],
         }),
-        createSchedule: build.mutation<Schedule, CreateScheduleProps>({
-            query: (body) => ({
-                url: '/v1/coach/schedules',
-                method: 'post',
-                data: body,
-            }),
-            invalidatesTags: [{type: 'Schedules', id: 'LIST'}],
-        }),
+
         createProgramSchedule: build.mutation<Schedule, {data: CreateScheduleProps; programId: string}>({
             query: ({programId, data}) => ({
                 url: `/v1/coach/programs/${programId}/schedules`,
@@ -237,15 +261,17 @@ export const schedulesApi = apiSlice.injectEndpoints({
 });
 
 export const {
-    useListSchedulesInfiniteQuery,
+    useCreatePlanMutation: useCreatePlan,
+    useUpdatePlanMutation: useUpdatePlan,
+    useListPlansInfiniteQuery: useListPlans,
+
     useListSchedulesByCategoryInfiniteQuery,
     useListTemplateSchedulesInfiniteQuery,
     useListProgramSchedulesQuery,
     useGetScheduleQuery,
-    useCreateScheduleMutation,
     useCreateProgramScheduleMutation,
     useUpdateScheduleMutation,
     useDeleteScheduleMutation,
     useAssignScheduleMutation,
     useCopyScheduleToClientMutation,
-} = schedulesApi;
+} = plansApi;

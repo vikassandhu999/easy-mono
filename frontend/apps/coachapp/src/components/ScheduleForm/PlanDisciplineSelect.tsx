@@ -9,7 +9,7 @@ interface ScheduleCategorySelectProps {
     onSelect: (category: ScheduleCategory) => void;
 }
 
-const ScheduleCategorySelect = ({onSelect}: ScheduleCategorySelectProps) => {
+const PlanDisciplineSelect = ({onSelect}: ScheduleCategorySelectProps) => {
     return (
         <Stack gap={'sm'}>
             {Object.keys(SCHEDULE_CATEGORIES).map((key) => {
@@ -104,4 +104,4 @@ const ScheduleCategorySelect = ({onSelect}: ScheduleCategorySelectProps) => {
     );
 };
 
-export default ScheduleCategorySelect;
+export default PlanDisciplineSelect;

@@ -44,7 +44,7 @@ import {EmptyState} from '@/components/layouts/EmptyState';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
 import ScheduleBuilder from '@/components/ScheduleBuilder/ScheduleBuilder';
-import {ScheduleCreateDrawer} from '@/components/ScheduleForm/ScheduleCreateDrawer';
+import {PlanCreateDrawer} from '@/components/ScheduleForm/PlanCreateDrawer';
 import ScheduleListItem from '@/components/ScheduleListItem/ScheduleListItem';
 import {useDrawerStackRouter} from '@/hooks/useDrawerStackRouter';
 import {useGetClientQuery} from '@/store/services/clientsApi';
@@ -435,7 +435,7 @@ const ClientDetailPage = () => {
                         />
 
                         {/* Create + assign to client flow */}
-                        <ScheduleCreateDrawer
+                        <PlanCreateDrawer
                             onCreated={async (newId) => {
                                 try {
                                     await assignSchedule({

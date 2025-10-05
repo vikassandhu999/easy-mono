@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router';
 import {Program} from '@/api/programs.ts';
 import {useCreateProgramScheduleMutation} from '@/store/services/schedulesApi';
 
-import {ScheduleForm} from '../ScheduleForm/ScheduleForm';
+import {PlanForm} from '../ScheduleForm/PlanForm';
 
 type RenderProps = {
     onClick: (program: Program) => void;
@@ -40,7 +40,7 @@ export function ScheduleCreateWithTrigger({children}: ScheduleCreateWithTriggerP
                 {...stack.register('create-schedule')}
                 withCloseButton={false}
             >
-                <ScheduleForm
+                <PlanForm
                     category={'workout'}
                     onSubmit={async (values) => {
                         try {

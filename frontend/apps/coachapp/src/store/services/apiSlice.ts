@@ -89,6 +89,7 @@ export const apiSlice = createApi({
         'Schedules',
         'ScheduleEntries',
         'SessionDefs',
+        'Plans',
     ],
     endpoints: () => ({}),
 });

@@ -4,7 +4,10 @@ import {DotsThreeIcon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phospho
 import {IconClock, IconTimeDuration0} from '@tabler/icons-react';
 
 import {PlanSession} from '@/api/plan_sessions';
-import {SESSION_TYPE_CONFIG} from '@/components/PlanBuilder/sessionTypeConfig';
+import {
+    getSessionTypeBadgeColor,
+    getSessionTypeLabel as getSessionTypeLabelFromConfig,
+} from '@/components/PlanBuilder/sessionTypes';
 
 import {getScheduleWindow, getSessionDuration} from './utils';
 
@@ -43,16 +46,9 @@ const CaptionBadge = ({icon: IconComponent, text}: CaptionBadgeProps) => (
     </Group>
 );
 
-export const getSessionTypeColor = (type: string): string => {
-    const config = SESSION_TYPE_CONFIG[type];
-    if (!config) return 'gray';
+export const getSessionTypeColor = (type: string): string => getSessionTypeBadgeColor(type);
 
-    return config.color.replace('var(--mantine-color-', '').replace(')', '');
-};
-
-export const getSessionTypeLabel = (type: string): string => {
-    return SESSION_TYPE_CONFIG[type]?.label || type.charAt(0).toUpperCase() + type.slice(1);
-};
+export const getSessionTypeLabel = (type: string): string => getSessionTypeLabelFromConfig(type);
 
 export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession}: PlanSessionCardProps) {
     const sessionName = planSession.override_name || planSession.session?.name || 'Untitled session';

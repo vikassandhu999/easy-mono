@@ -5,7 +5,7 @@ import {CreateSessionDef, SessionType} from '@/api/session_defs.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 
-import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
+import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 
 interface SessionCreateFormProps {
     onSubmit: (values: CreateSessionDef) => Promise<void>;
@@ -13,7 +13,7 @@ interface SessionCreateFormProps {
 }
 
 export default function SessionCreateForm({onSubmit, sessionType}: SessionCreateFormProps) {
-    const typeConfig = SESSION_TYPE_CONFIG[sessionType] || SESSION_TYPE_CONFIG.other;
+    const typeConfig = getSessionTypeConfig(sessionType);
 
     const form = useForm<CreateSessionDef & {meal_metadata?: any; workout_metadata?: any}>({
         initialValues: {

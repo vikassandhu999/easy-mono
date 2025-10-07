@@ -40,7 +40,24 @@ function PlansListPage() {
     const handleCreate = () => {
         setSearchParams({selected_drawer: 'create_plan'});
     };
-    const handleView = (id: string) => navigate(`/plans/${id}`);
+
+    const handleOpenPlanBuilder = (id: string) => {
+        setSearchParams(
+            (prev) => {
+                prev.set('selected_drawer', 'plan_builder');
+                prev.set('plan_id', id);
+                prev.delete('plan_builder_view');
+                prev.delete('plan_builder_kind');
+                prev.delete('plan_builder_day');
+                prev.delete('plan_builder_day_order');
+                prev.delete('plan_builder_date');
+                return prev;
+            },
+            {replace: true},
+        );
+    };
+
+    const handleView = (id: string) => handleOpenPlanBuilder(id);
     const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
     return (

@@ -1,7 +1,7 @@
 import {ActionIcon, Box, Card, Center, Group, Text} from '@mantine/core';
 import {IconCheck, IconPlus} from '@tabler/icons-react';
 
-import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
+import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 
 interface SessionDefCardProps {
     isSelected?: boolean;
@@ -10,8 +10,7 @@ interface SessionDefCardProps {
 }
 
 export default function SessionDefItem({isSelected, onToggle, sessionDef}: SessionDefCardProps) {
-    const typeConfig =
-        SESSION_TYPE_CONFIG[sessionDef.session_type as keyof typeof SESSION_TYPE_CONFIG] || SESSION_TYPE_CONFIG.other;
+    const typeConfig = getSessionTypeConfig(sessionDef.session_type);
     const IconComponent = typeConfig.icon;
 
     const handleClick = () => {

@@ -3,7 +3,7 @@ import {ClockIcon, PencilIcon} from '@phosphor-icons/react';
 
 import {SessionDef, SessionDefItemConfig} from '@/api/session_defs.ts';
 
-import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
+import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 import SessionItemsManager from './SessionItemsManager';
 
 interface SessionDefCardProps {
@@ -21,7 +21,7 @@ export default function SessionDefCard({
     sessionDef,
     showEditButton = false,
 }: SessionDefCardProps) {
-    const typeConfig = SESSION_TYPE_CONFIG[sessionDef.session_type] || SESSION_TYPE_CONFIG.other;
+    const typeConfig = getSessionTypeConfig(sessionDef.session_type);
     const IconComponent = typeConfig.icon;
 
     // Get items sorted by display order
@@ -70,7 +70,7 @@ export default function SessionDefCard({
                                 {sessionDef.name}
                             </Text>
                             <Badge
-                                color={typeConfig.iconColor}
+                                color={typeConfig.badgeColor}
                                 radius={'var(--body-offset)'}
                                 size="sm"
                                 variant="light"

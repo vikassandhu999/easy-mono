@@ -1,7 +1,11 @@
 import {Icon, IconBowl, IconChefHat, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
-import React from 'react';
 
 import {Content} from '@/api/contents.ts';
+
+import {
+    SESSION_TYPE_CONFIG as PLAN_SESSION_TYPE_CONFIG,
+    type SessionTypeConfig as PlanSessionTypeConfig,
+} from './PlanBuilder/sessionTypes';
 
 // Plan Disciplines - matches backend PlanDiscipline enum (workout, nutrition)
 export const PLAN_DISCIPLINES: Record<
@@ -95,33 +99,13 @@ export const SCHEDULE_STATUS = {
     },
 };
 
-export interface SessionTypeConfig {
-    color: string;
-    description: string;
-    icon: React.ComponentType<any>;
-    iconColor: string;
-    label: string;
-}
+export type SessionTypeConfig = PlanSessionTypeConfig;
 
-export const SESSION_TYPE_CONFIG: Record<string, SessionTypeConfig> = {
-    meal: {
-        color: PLAN_DISCIPLINES.nutrition.color,
-        description: 'Meal plans and nutrition guidance',
-        icon: IconBowl,
-        iconColor: PLAN_DISCIPLINES.nutrition.iconColor,
-        label: 'Meal',
-    },
-    workout: {
-        color: PLAN_DISCIPLINES.workout.color,
-        description: 'Exercise routines and fitness training',
-        icon: IconTreadmill,
-        iconColor: PLAN_DISCIPLINES.workout.iconColor,
-        label: 'Workout',
-    },
-} as const;
+export const SESSION_TYPE_CONFIG = PLAN_SESSION_TYPE_CONFIG;
 
 export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {value: string}> = {
     exercise: {
+        badgeColor: 'red',
         color: 'var(--mantine-color-red-1)',
         description: 'Physical movements, drills, and workout routines',
         icon: IconRun,
@@ -130,6 +114,7 @@ export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {v
         value: 'exercise',
     },
     ingredient: {
+        badgeColor: 'green',
         color: 'var(--mantine-color-green-1)',
         description: 'Individual ingredients and nutritional items',
         icon: IconChefHat,
@@ -138,6 +123,7 @@ export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {v
         value: 'ingredient',
     },
     recipe: {
+        badgeColor: 'blue',
         color: 'var(--mantine-color-blue-1)',
         description: 'Complete recipes and meal preparations',
         icon: IconListDetails,

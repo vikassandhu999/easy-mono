@@ -17,7 +17,7 @@ interface SessionSelectProps {
     onCreateNew?: () => void;
     onSelect: (selected: string | string[]) => PromiseLike<void>;
     selectedIds?: string[];
-    sessionType: SessionDef['session_type'];
+    sessionType?: SessionDef['session_type'];
 }
 
 const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionType}: SessionSelectProps) => {
@@ -27,7 +27,7 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
     // TODO: Convert back to infinite query when RTK Query infinite query is working
     const {data, isLoading} = useListSessionDefsQuery({
         search: searchTerm,
-        session_type: sessionType,
+        session_type: sessionType ?? undefined,
     });
     const fetchNextPage = () => {}; // Placeholder
     const isFetchingNextPage = false; // Placeholder

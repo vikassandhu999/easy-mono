@@ -16,8 +16,8 @@ import BusinessInfoStepPage from './views/onboarding/BusinessInfoStepPage';
 import CoachInfoStepPage from './views/onboarding/CoachInfoStepPage';
 import SignUpCodeStepPage from './views/onboarding/SignUpCodeStepPage';
 import SignUpStepPage from './views/onboarding/SignUpStepPage';
-import PlanDetailPage from './views/plans/DetailPage/DetailPage';
 import PlansListPage from './views/plans/ListPage/ListPage';
+import {PlansListPageDrawers} from './views/plans/ListPage/ListPageDrawers';
 
 const router = createBrowserRouter([
     {
@@ -127,18 +127,15 @@ const router = createBrowserRouter([
                         element: <ChatsListPage />,
                         path: '/chats',
                     },
-
                     {
                         element: <PlansListPage />,
                         path: '/plans',
-                    },
-                    {
-                        element: <PlanDetailPage />,
-                        path: '/plans/:id',
-                    },
-                    {
-                        element: <PlanDetailPage mode="edit" />,
-                        path: '/plans/:id/edit',
+                        children: [
+                            {
+                                index: true,
+                                element: <PlansListPageDrawers />,
+                            },
+                        ],
                     },
                 ],
                 element: <ProtectedRouteLayout />,

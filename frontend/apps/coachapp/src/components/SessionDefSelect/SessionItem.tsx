@@ -1,7 +1,7 @@
 import {ActionIcon, Box, Card, Center, Group, Text} from '@mantine/core';
 import {IconCheck, IconPlus} from '@tabler/icons-react';
 
-import {SESSION_TYPE_CONFIG} from '../ScheduleBuilder/sessionTypeConfig';
+import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
 
 interface SessionDefCardProps {
     isSelected?: boolean;

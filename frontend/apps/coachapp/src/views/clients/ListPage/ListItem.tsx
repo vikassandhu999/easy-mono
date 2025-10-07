@@ -74,7 +74,7 @@ function getMembershipStatusLabel(status: string): string {
         case MembershipStatus.PAUSED:
             return 'Paused';
         default:
-            return status.charAt(0).toUpperCase() + status.slice(1);
+            return status?.charAt(0).toUpperCase() + status?.slice(1);
     }
 }
 

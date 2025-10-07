@@ -1,4 +1,3 @@
-// Plan Types - matches backend Plan model
 export type PlanDiscipline = 'nutrition' | 'workout';
 export type PlanKind = 'client_copy' | 'template';
 export type PlanRecurrence = 'calendar' | 'daily' | 'weekly';

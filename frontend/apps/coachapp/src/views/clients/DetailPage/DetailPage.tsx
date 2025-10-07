@@ -43,9 +43,8 @@ import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import Header from '@/components/layouts/Header';
 import RecordsList from '@/components/layouts/RecordsList';
-import {PlanDrawerContext, planDrawerRegistry} from '@/components/PlanForm/planDrawerRegistry';
+import {PlanCreationDrawer, PlanCreationDrawerData} from '@/components/PlanForm/PlanCreateDrawer';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
-import {DrawerOutlet, DrawerRouterProvider, useDrawerRouter} from '@/hooks/drawerRegistry';
 import {useGetClientQuery} from '@/store/services/clientsApi';
 import {useListPlans} from '@/store/services/plans';
 
@@ -53,7 +52,8 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<string>('info');
 
-    const router = useDrawerRouter<PlanDrawerContext, typeof planDrawerRegistry>();
+    const [isPlanDrawerOpen, setPlanDrawerOpen] = useState(false);
+    const [planDrawerData, setPlanDrawerData] = useState<null | PlanCreationDrawerData>(null);
 
     const isMobile = useMediaQuery('(max-width: 768px)');
     const {data: client, error, isError, isLoading} = useGetClientQuery(clientId, {skip: !clientId});
@@ -89,20 +89,10 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
         navigateRef.current(`/plans/${newId}/edit`);
     }, []);
 
-    useEffect(() => {
-        router.setContext((prev) => {
-            if (prev && prev.onPlanCreated === handlePlanCreated) {
-                return prev;
-            }
-
-            const next: PlanDrawerContext = {
-                ...(prev ?? {}),
-                onPlanCreated: handlePlanCreated,
-            };
-
-            return next;
-        });
-    }, [handlePlanCreated, router]);
+    const handleClosePlanDrawer = useCallback(() => {
+        setPlanDrawerOpen(false);
+        setPlanDrawerData(null);
+    }, []);
 
     if (isLoading) {
         return (
@@ -126,10 +116,10 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
         );
     }
 
-    const handleCreatePlan = () =>
-        router.open('selectDiscipline', {
-            initialPlan: {client_id: clientId, kind: 'client_copy'},
-        });
+    const handleCreatePlan = () => {
+        setPlanDrawerData({initialPlan: {client_id: clientId, kind: 'client_copy'}});
+        setPlanDrawerOpen(true);
+    };
 
     const pageContent = (
         <PagePaper>
@@ -454,7 +444,13 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                             )}
                         />
 
-                        <DrawerOutlet<PlanDrawerContext, typeof planDrawerRegistry> />
+                        <PlanCreationDrawer
+                            initialDiscipline={planDrawerData?.initialDiscipline}
+                            initialPlan={planDrawerData?.initialPlan}
+                            onClose={handleClosePlanDrawer}
+                            onPlanCreated={handlePlanCreated}
+                            opened={isPlanDrawerOpen}
+                        />
                     </Tabs.Panel>
                 </PaddingContainer>
             </Tabs>
@@ -471,14 +467,7 @@ const ClientDetailPage = () => {
         return null;
     }
 
-    return (
-        <DrawerRouterProvider<PlanDrawerContext, typeof planDrawerRegistry>
-            basePath={`/clients/${id}`}
-            registry={planDrawerRegistry}
-        >
-            <ClientDetailPageContent clientId={id} />
-        </DrawerRouterProvider>
-    );
+    return <ClientDetailPageContent clientId={id} />;
 };
 
 // Client Info Tab Component

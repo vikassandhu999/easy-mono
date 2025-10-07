@@ -5,7 +5,7 @@ import {CreateSessionDef, SessionType} from '@/api/session_defs.ts';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 
-import {SESSION_TYPE_CONFIG} from '../ScheduleBuilder/sessionTypeConfig';
+import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
 
 interface SessionCreateFormProps {
     onSubmit: (values: CreateSessionDef) => Promise<void>;

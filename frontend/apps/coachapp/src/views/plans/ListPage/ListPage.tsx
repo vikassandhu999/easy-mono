@@ -1,28 +1,29 @@
 import {Button} from '@mantine/core';
 import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {useNavigate} from 'react-router';
+import {useEffect, useRef, useState} from 'react';
+import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
 import {Plan} from '@/api/plans';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
-import {PlanDrawerContext, planDrawerRegistry} from '@/components/PlanForm/planDrawerRegistry';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
-import {DrawerOutlet, DrawerRouterProvider, useDrawerRouter} from '@/hooks/drawerRegistry';
 import {useListPlans} from '@/store/services/plans';
 
-import Header from './Header';
+import Header from './ListHeader';
 
-function PlansListPageContent() {
+function PlansListPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState('');
     const navigate = useNavigate();
-    const router = useDrawerRouter<PlanDrawerContext, typeof planDrawerRegistry>();
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans({
-        search: search?.trim() || undefined,
-    });
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans(
+        {
+            search: search?.trim() || undefined,
+        },
+        {skip: !!searchParams.get('selected_drawer')},
+    );
 
     const plans = data?.pages?.flatMap((page) => page.records) ?? [];
 
@@ -36,25 +37,9 @@ function PlansListPageContent() {
         refetchRef.current = refetch;
     }, [refetch]);
 
-    const handlePlanCreated = useCallback(async (planId: string) => {
-        await refetchRef.current();
-        navigateRef.current(`/plans/${planId}/edit`);
-    }, []);
-
-    useEffect(() => {
-        router.setContext((prev) => {
-            if (prev && prev.onPlanCreated === handlePlanCreated) {
-                return prev;
-            }
-
-            return {
-                ...(prev ?? {}),
-                onPlanCreated: handlePlanCreated,
-            };
-        });
-    }, [handlePlanCreated, router]);
-
-    const handleCreate = () => router.open('selectDiscipline');
+    const handleCreate = () => {
+        setSearchParams({selected_drawer: 'create_plan'});
+    };
     const handleView = (id: string) => navigate(`/plans/${id}`);
     const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
@@ -114,19 +99,8 @@ function PlansListPageContent() {
                     />
                 </PaddingContainer>
             </PagePaper>
-            <DrawerOutlet<PlanDrawerContext, typeof planDrawerRegistry> />
+            <Outlet />
         </>
-    );
-}
-
-function PlansListPage() {
-    return (
-        <DrawerRouterProvider<PlanDrawerContext, typeof planDrawerRegistry>
-            basePath="/plans"
-            registry={planDrawerRegistry}
-        >
-            <PlansListPageContent />
-        </DrawerRouterProvider>
     );
 }
 

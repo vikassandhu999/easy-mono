@@ -68,6 +68,7 @@ export const SessionDef_zod = z.object({
     duration_minutes: z.number(),
     id: z.string().uuid(),
     is_template: z.boolean(),
+    definition: z.unknown().optional(),
     // Optional content details that can be included
     item_contents: z.array(ContentDetail_zod).optional(),
     // JSONB-based items configuration

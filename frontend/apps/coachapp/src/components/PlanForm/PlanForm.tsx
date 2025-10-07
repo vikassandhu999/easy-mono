@@ -81,7 +81,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
 
     React.useEffect(() => {
         form.setFieldValue('discipline', discipline);
-    }, [discipline, form]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [discipline]);
 
     const typeConfig = PLAN_DISCIPLINES[discipline]!;
 
@@ -134,7 +135,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                 />
 
                 <Radio.Group
-                    label="Plan Recurrence"
+                    label="Recurrence"
                     required
                     size={'md'}
                     withAsterisk

@@ -1,80 +1,59 @@
 import {Drawer} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useMemo} from 'react';
+import {useNavigate, useSearchParams} from 'react-router';
 
 import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
+import PlanDisciplineSelect from '@/components/PlanForm/PlanDisciplineSelect';
+import {PlanForm} from '@/components/PlanForm/PlanForm';
 import {useCreatePlan} from '@/store/services/plans';
 
-import PlanDisciplineSelect from './PlanDisciplineSelect';
-import {PlanForm} from './PlanForm';
+export type PlanCreateDrawerView = 'create-plan' | 'select-discipline';
 
-export type PlanCreationDrawerView = 'create-plan' | 'select-discipline';
-
-export type PlanCreationDrawerData = {
+export type PlanCreateDrawerData = {
     initialDiscipline?: PlanDiscipline;
     initialPlan?: Partial<Plan>;
 };
 
-export interface PlanCreationDrawerProps {
-    initialDiscipline?: PlanDiscipline;
-    initialPlan?: Partial<Plan>;
-    onClose: () => void;
-    onPlanCreated?: (planId: string) => void;
-    opened: boolean;
-}
+const useGoBack = () => {
+    const navigate = useNavigate();
+    return useCallback(() => {
+        navigate(-1);
+    }, [navigate]);
+};
 
-export function PlanCreationDrawer({
-    initialDiscipline,
-    initialPlan,
-    onClose,
-    onPlanCreated,
-    opened,
-}: PlanCreationDrawerProps) {
-    const [view, setView] = useState<PlanCreationDrawerView>(() =>
-        initialDiscipline ? 'create-plan' : 'select-discipline',
-    );
-    const [selectedDiscipline, setSelectedDiscipline] = useState<PlanDiscipline | undefined>(initialDiscipline);
+export const PlanCreateDrawer = React.memo(function CreateDrawer() {
+    const goBack = useGoBack();
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [createPlan, {isLoading: isCreatingPlan}] = useCreatePlan();
 
-    useEffect(() => {
-        if (!opened) {
-            return;
-        }
+    const {selectedDiscipline} = useMemo(() => {
+        const selectedDiscipline = searchParams.get('discipline') as null | PlanDiscipline;
 
-        setView(initialDiscipline ? 'create-plan' : 'select-discipline');
-        setSelectedDiscipline(initialDiscipline);
-    }, [opened, initialDiscipline]);
-
-    const planDefaults = useMemo(
-        () => ({...(initialPlan ?? {}), discipline: selectedDiscipline}) as Partial<Plan>,
-        [initialPlan, selectedDiscipline],
-    );
-
-    const handleClose = () => {
-        onClose();
-    };
-
-    const handleSelectDiscipline = (selected: PlanDiscipline) => {
-        setSelectedDiscipline(selected);
-        setView('create-plan');
-    };
+        return {
+            selectedDiscipline: selectedDiscipline ?? undefined,
+        };
+    }, [searchParams]);
 
     const handleSubmit = async (values: CreatePlanProps) => {
         try {
             const plan = await createPlan(values).unwrap();
+            setSearchParams(
+                (prev) => {
+                    prev.delete('discipline');
 
-            notifications.show({
-                color: 'green',
-                message: `${plan.name || 'Plan'} created successfully`,
-                title: 'Plan Created',
-            });
+                    prev.set('selected_drawer', 'plan_builder');
+                    prev.set('plan_id', plan.id);
 
-            onPlanCreated?.(plan.id);
-            onClose();
+                    return prev;
+                },
+                {replace: true},
+            );
         } catch (error) {
             console.error('Failed to create plan', error);
             notifications.show({
@@ -87,42 +66,47 @@ export function PlanCreationDrawer({
 
     return (
         <Drawer
-            onClose={handleClose}
-            opened={opened}
+            onClose={goBack}
+            opened={true}
             position="right"
-            size={view === 'create-plan' ? 'md' : 'sm'}
             withCloseButton={false}
         >
-            {view === 'select-discipline' ? (
+            {!selectedDiscipline ? (
                 <PagePaper>
                     <HeadingContainer
                         style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
                     >
                         <Header
-                            onBack={handleClose}
+                            onBack={goBack}
                             title="Create plan"
                         />
                     </HeadingContainer>
 
                     <div style={{flex: 1, overflow: 'auto'}}>
                         <PaddingContainer>
-                            <PlanDisciplineSelect onSelect={handleSelectDiscipline} />
+                            <PlanDisciplineSelect
+                                onSelect={(discipline) =>
+                                    setSearchParams(
+                                        (prev) => {
+                                            prev.set('discipline', discipline);
+                                            return prev;
+                                        },
+                                        {replace: true},
+                                    )
+                                }
+                            />
                         </PaddingContainer>
                     </div>
                 </PagePaper>
-            ) : null}
-
-            {view === 'create-plan' && selectedDiscipline ? (
+            ) : (
                 <PagePaper>
                     <HeadingContainer
                         style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
                         withBorder={false}
                     >
                         <Header
-                            onBack={() => {
-                                setView('select-discipline');
-                            }}
+                            onBack={goBack}
                             title="Create plan"
                         />
                     </HeadingContainer>
@@ -131,12 +115,12 @@ export function PlanCreationDrawer({
                         <PlanForm
                             discipline={selectedDiscipline}
                             onSubmit={handleSubmit}
-                            plan={planDefaults}
+                            plan={{}}
                             submitText={isCreatingPlan ? 'Creating…' : 'Create plan'}
                         />
                     </PaddingContainer>
                 </PagePaper>
-            ) : null}
+            )}
         </Drawer>
     );
-}
+});

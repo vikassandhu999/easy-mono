@@ -3,7 +3,7 @@ import {ClockIcon, PencilIcon} from '@phosphor-icons/react';
 
 import {SessionDef, SessionDefItemConfig} from '@/api/session_defs.ts';
 
-import {SESSION_TYPE_CONFIG} from '../ScheduleBuilder/sessionTypeConfig';
+import {SESSION_TYPE_CONFIG} from '../PlanBuilder/sessionTypeConfig';
 import SessionItemsManager from './SessionItemsManager';
 
 interface SessionDefCardProps {

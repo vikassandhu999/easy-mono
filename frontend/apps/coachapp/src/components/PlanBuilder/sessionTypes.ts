@@ -2,7 +2,7 @@ import type {ComponentType} from 'react';
 
 import {BarbellIcon, ChartBarIcon, ChatCircleDotsIcon, ForkKnifeIcon} from '@phosphor-icons/react';
 
-import {SessionType} from '@/api/session_defs';
+import {SessionType} from '@/api/sessions';
 
 export type ExtendedSessionType = 'check_in' | 'measurement' | 'other' | SessionType;
 
@@ -61,6 +61,7 @@ export const SESSION_TYPE_CONFIG: Record<ExtendedSessionType, SessionTypeConfig>
         iconColor: 'var(--mantine-color-gray-5)',
         label: 'Session',
     },
+    instruction: undefined,
 };
 
 export const ENABLED_SESSION_TYPES: ExtendedSessionType[] = ['workout', 'meal', 'measurement', 'check_in'];

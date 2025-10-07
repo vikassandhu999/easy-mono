@@ -1,0 +1,101 @@
+import {
+    type CreateSession,
+    type GetSessionItemsResponse,
+    type ListSessions,
+    type Session,
+    type SessionListResponse,
+    type UpdateSession,
+    type UpdateSessionItemsInput,
+    type UpdateSessionItemsResponse,
+} from '@/api/sessions';
+
+import {apiSlice} from './apiSlice';
+
+export const sessionsApi = apiSlice.injectEndpoints({
+    endpoints: (build) => ({
+        // List session definitions
+        listSessions: build.query<SessionListResponse, ListSessions | undefined>({
+            query: (queryArg) => ({
+                params: queryArg,
+                url: '/v1/coach/sessions',
+            }),
+            providesTags: [{type: 'Sessions', id: 'LIST'}],
+        }),
+
+        // Get single session definition
+        getSession: build.query<Session, {id: string; options?: {include_contents?: boolean}}>({
+            query: ({id, options}) => ({
+                params: options,
+                url: `/v1/coach/sessions/${id}`,
+            }),
+            providesTags: (_result, _error, {id}) => [{type: 'Sessions', id}],
+        }),
+
+        getSessionItems: build.query<GetSessionItemsResponse, {id: string; options?: {include_contents?: boolean}}>({
+            query: ({id, options}) => ({
+                params: options,
+                url: `/v1/coach/sessions/${id}/items`,
+            }),
+            providesTags: (_result, _error, {id}) => [{type: 'Sessions', id: `${id}_ITEMS`}],
+        }),
+
+        // Create session definition
+        createSession: build.mutation<Session, CreateSession>({
+            query: (data) => ({
+                body: data,
+                method: 'POST',
+                url: '/v1/coach/sessions',
+            }),
+            invalidatesTags: [{type: 'Sessions', id: 'LIST'}],
+        }),
+
+        // Update session definition
+        updateSession: build.mutation<Session, {data: UpdateSession; id: string}>({
+            query: ({id, data}) => ({
+                body: data,
+                method: 'PATCH',
+                url: `/v1/coach/sessions/${id}`,
+            }),
+            invalidatesTags: (_result, _error, {id}) => [
+                {type: 'Sessions', id},
+                {type: 'Sessions', id: 'LIST'},
+            ],
+        }),
+
+        updateSessionItems: build.mutation<UpdateSessionItemsResponse, {data: UpdateSessionItemsInput; id: string}>({
+            query: ({id, data}) => ({
+                body: data,
+                method: 'PUT',
+                url: `/v1/coach/sessions/${id}/items`,
+            }),
+            invalidatesTags: (_result, _error, {id}) => [
+                {type: 'Sessions', id},
+                {type: 'Sessions', id: `${id}_ITEMS`},
+                {type: 'Sessions', id: 'LIST'},
+            ],
+        }),
+
+        // Delete session definition
+        deleteSession: build.mutation<void, string>({
+            query: (id) => ({
+                method: 'DELETE',
+                url: `/v1/coach/sessions/${id}`,
+            }),
+            invalidatesTags: (_result, _error, id) => [
+                {type: 'Sessions', id},
+                {type: 'Sessions', id: 'LIST'},
+            ],
+        }),
+    }),
+    overrideExisting: false,
+});
+
+export const {
+    useListSessionsQuery,
+    useGetSessionQuery,
+    useGetSessionItemsQuery,
+    useCreateSessionMutation,
+    useUpdateSessionMutation,
+    useUpdateSessionItemsMutation,
+    useDeleteSessionMutation,
+} = sessionsApi;

@@ -1,63 +1,48 @@
 import {notifications} from '@mantine/notifications';
-import {useMutation, useQuery} from '@tanstack/react-query';
+import {skipToken} from '@reduxjs/toolkit/query';
 import {useState} from 'react';
 
-import {CreateSessionDef, SessionDef, SessionDefsAPI} from '@/api/session_defs.ts';
+import {CreateSession, Session} from '@/api/sessions';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
+import {useCreateSessionMutation, useGetSessionQuery} from '@/store/services/sessionsApi';
 
+import SessionCard from './SessionCard';
 import SessionCreateForm from './SessionCreateForm';
-import SessionDefCard from './SessionDefCard';
 
 interface SessionBuilderProps {
     onComplete: (id: string) => void;
-    sessionType: SessionDef['session_type'];
+    sessionType: Session['session_type'];
 }
 
 export default function SessionBuilder({sessionType}: SessionBuilderProps) {
-    const [sessionDefId, setSessionDefId] = useState<null | string>(null);
+    const [sessionId, setSessionId] = useState<null | string>(null);
 
-    const createSessionDefMutation = useMutation({
-        mutationFn: async (data: CreateSessionDef) => {
-            const result = await SessionDefsAPI.createSessionDef(data);
-            if (result.isError) {
-                throw result.getError();
-            }
-            return result.getValue();
-        },
-        onError: () => {
+    const [createSession, {isLoading: isCreatingSession}] = useCreateSessionMutation();
+
+    const sessionQuery = useGetSessionQuery(sessionId ? {id: sessionId, options: {include_contents: true}} : skipToken);
+
+    const handleSessionCreated = async (values: CreateSession) => {
+        try {
+            const result = await createSession(values).unwrap();
+            setSessionId(result.id);
+            notifications.show({
+                color: 'green',
+                message: 'Session created successfully',
+                title: 'Session saved',
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to create session';
             notifications.show({
                 color: 'red',
-                message: 'Failed to create session',
+                message,
                 title: 'Error',
             });
-        },
-        onSuccess: async (result) => {
-            setSessionDefId(result.id);
-        },
-    });
-
-    const sessionDefQuery = useQuery({
-        enabled: !!sessionDefId,
-        queryFn: async () => {
-            if (!sessionDefId) return null;
-            const result = await SessionDefsAPI.getSessionDef(sessionDefId, {
-                include_contents: true,
-            });
-            if (result.isError) {
-                throw result.getError();
-            }
-            return result.getValue();
-        },
-        queryKey: ['sessiondef', sessionDefId],
-    });
-
-    const handleSessionCreated = async (values: CreateSessionDef) => {
-        await createSessionDefMutation.mutateAsync(values);
+        }
     };
 
     const handleItemsUpdate = () => {
-        sessionDefQuery.refetch();
+        sessionQuery.refetch();
     };
 
     return (
@@ -66,19 +51,20 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
                 paddingX={'sm'}
                 paddingY={'lg'}
             >
-                {!sessionDefId && (
+                {!sessionId && (
                     <CreatePhase
+                        isSubmitting={isCreatingSession}
                         onSessionCreated={handleSessionCreated}
                         sessionType={sessionType}
                     />
                 )}
 
-                {sessionDefId && sessionDefQuery.isLoading && <LoadingState />}
+                {sessionId && sessionQuery.isLoading && <LoadingState />}
 
-                {sessionDefId && sessionDefQuery.data && (
+                {sessionId && sessionQuery.data && (
                     <EditPhase
                         onItemsUpdate={handleItemsUpdate}
-                        sessionDef={sessionDefQuery.data}
+                        session={sessionQuery.data}
                     />
                 )}
             </PaddingContainer>
@@ -87,31 +73,34 @@ export default function SessionBuilder({sessionType}: SessionBuilderProps) {
 }
 
 function CreatePhase({
+    isSubmitting,
     onSessionCreated,
     sessionType,
 }: {
-    onSessionCreated: (values: CreateSessionDef) => Promise<void>;
-    sessionType: SessionDef['session_type'];
+    isSubmitting: boolean;
+    onSessionCreated: (values: CreateSession) => Promise<void>;
+    sessionType: Session['session_type'];
 }) {
     return (
         <SessionCreateForm
+            isSubmitting={isSubmitting}
             onSubmit={onSessionCreated}
             sessionType={sessionType}
         />
     );
 }
 
-function EditPhase({onItemsUpdate, sessionDef}: {onItemsUpdate: () => void; sessionDef: SessionDef}) {
+function EditPhase({onItemsUpdate, session}: {onItemsUpdate: () => void; session: Session}) {
     const handleEdit = () => {
         console.log('Edit session definition - not yet implemented');
     };
 
     return (
-        <SessionDefCard
+        <SessionCard
             isManagementMode={true}
             onEdit={handleEdit}
             onItemsUpdate={onItemsUpdate}
-            sessionDef={sessionDef}
+            session={session}
             showEditButton={true}
         />
     );

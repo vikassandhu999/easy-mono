@@ -19,7 +19,7 @@ export const CreateScheduleEntry_zod = z.object({
     is_active: z.boolean().optional(),
     is_required: z.boolean().optional(),
     reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
-    session_def_id: z.string().uuid(),
+    session_id: z.string().uuid(),
     time_slot: TimeSlotEnum.optional(),
     timezone: z.string().max(64).optional(),
     window_end: z
@@ -39,7 +39,7 @@ export const UpdateScheduleEntry_zod = z.object({
     is_active: z.boolean().optional(),
     is_required: z.boolean().optional(),
     reminder_offset_minutes: z.number().int().min(1).max(1440).optional(),
-    session_def_id: z.string().uuid().optional(),
+    session_id: z.string().uuid().optional(),
     time_slot: TimeSlotEnum.optional(),
     timezone: z.string().max(64).optional(),
     window_end: z
@@ -85,7 +85,7 @@ export interface ScheduleEntry {
     is_required: boolean;
     reminder_offset_minutes?: number;
     schedule_id: string;
-    session_def_id: string;
+    session_id: string;
     sort_order: number;
     time_slot: TimeSlot;
     timezone: string;

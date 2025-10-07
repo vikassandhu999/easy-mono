@@ -4,11 +4,11 @@ export {useDragAndDrop} from './hooks/useDragAndDrop';
 export {useSessionItems} from './hooks/useSessionItems';
 // SessionBuilder components
 export {default as SessionBuilder} from './SessionBuilder';
+export {default as SessionCard} from './SessionCard';
 export {default as SessionCreateForm} from './SessionCreateForm';
-export {default as SessionDefCard} from './SessionDefCard';
 
 export {default as SessionItem} from './SessionItem';
 export {default as SessionItemsManager} from './SessionItemsManager';
 
 // Types
-export type {ContentDetail, SessionDef, SessionDefItemConfig} from '@/api/session_defs.ts';
+export type {ContentDetail, Session, SessionItemConfig} from '@/api/sessions';

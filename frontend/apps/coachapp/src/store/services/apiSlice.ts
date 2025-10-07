@@ -88,7 +88,7 @@ export const apiSlice = createApi({
         'Contents',
         'Schedules',
         'ScheduleEntries',
-        'SessionDefs',
+        'Sessions',
         'Plans',
         'PlanSessions',
     ],

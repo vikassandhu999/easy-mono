@@ -4,271 +4,264 @@ import {Result} from '@/utils/error.ts';
 
 import {authedClient} from './auth';
 
-// =============================
-// Enumerations
-// =============================
-export const SessionStatusEnum = z.enum(['scheduled', 'in_progress', 'completed', 'skipped']);
-export type SessionStatus = z.infer<typeof SessionStatusEnum>;
+// Session related types
+export const SessionType = z.enum(['workout', 'meal', 'instruction', 'measurement']);
 
-// =============================
-// Create / Update Schemas
-// =============================
-export const CreateSession_zod = z.object({
-    client_id: z.string().uuid(),
-    notes: z.string().max(2000).optional(),
-    schedule_id: z.string().uuid(),
-    scheduled_at: z.string().datetime().optional(),
-    session_def_id: z.string().uuid(),
+// New JSONB-based item configuration (replaces old normalized session item)
+export const SessionItemConfig_zod = z.object({
+    content: z.lazy(() => ContentDetail_zod).optional(),
+    content_id: z.string().uuid(),
+    custom_instructions: z.string().optional(),
+    display_order: z.number().int(),
+    is_optional: z.boolean().optional(),
+    metadata: z.record(z.any()).optional(),
+    sets: z.number().int().min(0).optional(),
+    reps: z.string().optional(),
+    weight: z.number().optional(),
+    distance: z.number().optional(),
+    duration: z.string().optional(),
+    rest_seconds: z.number().int().min(0).optional(),
+    quantity: z.number().optional(),
+    unit: z.string().optional(),
 });
-export type CreateSessionProps = z.infer<typeof CreateSession_zod>;
+
+// Content details that can be optionally included with items
+export const ContentDetail_zod = z.object({
+    archived_at: z.string().optional(),
+    created_at: z.string(),
+    created_by: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string(),
+        })
+        .optional(),
+    created_by_id: z.string().uuid(),
+    description: z.string(),
+    duration: z.number().optional(),
+    id: z.string().uuid(),
+    instructions: z.string().optional(),
+    instructions_type: z.string().optional(),
+    is_archived: z.boolean(),
+    is_published: z.boolean(),
+    last_edited_by: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string(),
+        })
+        .optional(),
+    last_edited_by_id: z.string().uuid().optional(),
+    media: z.record(z.any()).optional(),
+    metric_keys: z.array(z.string()).optional(),
+    name: z.string(),
+    tags: z.array(z.string()).optional(),
+    thumbnail_url: z.string().optional(),
+    type: z.string(),
+    updated_at: z.string(),
+});
+
+export const WorkoutSessionSettings_zod = z.object({
+    default_rest_seconds: z.number().int().min(0).optional(),
+    default_tempo: z.string().optional(),
+    warm_up_required: z.boolean().optional(),
+    cool_down_required: z.boolean().optional(),
+    estimated_duration_minutes: z.number().int().min(1).optional(),
+    difficulty: z.string().optional(),
+    focus_areas: z.array(z.string()).optional(),
+    equipment_needed: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+});
+
+export const MealSessionSettings_zod = z.object({
+    target_calories: z.number().optional(),
+    target_protein_g: z.number().optional(),
+    target_carbs_g: z.number().optional(),
+    target_fats_g: z.number().optional(),
+    meal_type: z.string().optional(),
+    preparation_time_minutes: z.number().int().min(0).optional(),
+    difficulty: z.string().optional(),
+    dietary_restrictions: z.array(z.string()).optional(),
+    allergen_warnings: z.array(z.string()).optional(),
+    meal_prep_friendly: z.boolean().optional(),
+    notes: z.string().optional(),
+    equipment_needed: z.array(z.string()).optional(),
+});
+
+export const InstructionSessionSettings_zod = z.object({
+    instruction_text: z.string().min(1),
+    media_urls: z.array(z.string()).optional(),
+    estimated_duration_minutes: z.number().int().min(1).optional(),
+    checklist_items: z.array(z.string()).optional(),
+    reminder_text: z.string().optional(),
+});
+
+export const MeasurementSessionSettings_zod = z.object({
+    metric_keys: z.array(z.string()).min(1),
+    measurement_instructions: z.string().optional(),
+    reminder_text: z.string().optional(),
+    frequency_recommendation: z.string().optional(),
+    best_time_of_day: z.string().optional(),
+});
+
+export const Session_zod = z.object({
+    id: z.string().uuid(),
+    business_id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    session_type: SessionType,
+    duration_minutes: z.number().nullable().optional(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    created_by: z.string().uuid().optional(),
+    definition: z.unknown().optional(),
+    items: z.array(SessionItemConfig_zod).optional(),
+    item_configs: z.array(SessionItemConfig_zod).optional(),
+    item_contents: z.array(ContentDetail_zod).optional(),
+    workout_settings: WorkoutSessionSettings_zod.optional(),
+    meal_settings: MealSessionSettings_zod.optional(),
+    instruction_settings: InstructionSessionSettings_zod.optional(),
+    measurement_settings: MeasurementSessionSettings_zod.optional(),
+    workout_items: z.array(SessionItemConfig_zod).optional(),
+    meal_items: z.array(SessionItemConfig_zod).optional(),
+});
+
+export const SessionListResponse_zod = z.object({
+    page: z.number(),
+    page_size: z.number(),
+    records: z.array(Session_zod),
+    total: z.number(),
+});
+
+export const CreateSession_zod = z.object({
+    name: z.string().min(1).max(255),
+    description: z.string().max(2000).optional(),
+    session_type: SessionType,
+    duration_minutes: z.number().min(1).max(480).optional(),
+    items: z.array(SessionItemConfig_zod).optional(),
+    workout_settings: WorkoutSessionSettings_zod.optional(),
+    meal_settings: MealSessionSettings_zod.optional(),
+    instruction_settings: InstructionSessionSettings_zod.optional(),
+    measurement_settings: MeasurementSessionSettings_zod.optional(),
+});
 
 export const UpdateSession_zod = z.object({
-    notes: z.string().max(2000).optional(),
-    scheduled_at: z.string().datetime().optional(),
+    name: z.string().min(1).max(255).optional(),
+    description: z.string().max(2000).optional(),
+    session_type: SessionType.optional(),
+    duration_minutes: z.number().min(1).max(480).optional(),
+    items: z.array(SessionItemConfig_zod).optional(),
+    workout_settings: WorkoutSessionSettings_zod.optional(),
+    meal_settings: MealSessionSettings_zod.optional(),
+    instruction_settings: InstructionSessionSettings_zod.optional(),
+    measurement_settings: MeasurementSessionSettings_zod.optional(),
 });
-export type UpdateSessionProps = z.infer<typeof UpdateSession_zod>;
 
-export const StartSession_zod = z.object({
-    notes: z.string().max(2000).optional(),
+// New simplified types for item management
+export const GetSessionItemsResponse_zod = z.object({
+    contents: z.array(ContentDetail_zod).optional(),
+    items: z.array(SessionItemConfig_zod),
+    session_id: z.string().uuid(),
 });
-export type StartSessionProps = z.infer<typeof StartSession_zod>;
 
-export const CompleteSession_zod = z.object({
-    notes: z.string().max(2000).optional(),
+export const UpdateSessionItemsInput_zod = z.object({
+    items: z.array(SessionItemConfig_zod),
 });
-export type CompleteSessionProps = z.infer<typeof CompleteSession_zod>;
 
-export const SkipSession_zod = z.object({
-    reason: z.string().max(2000).optional(),
+export const UpdateSessionItemsResponse_zod = z.object({
+    message: z.string(),
+    session: Session_zod,
 });
-export type SkipSessionProps = z.infer<typeof SkipSession_zod>;
 
-// =============================
-// Session Item Schemas
-// =============================
-export const UpdateSessionItem_zod = z.object({
-    completed: z.boolean().optional(),
-    metrics: z.record(z.any()).optional(),
-    notes: z.string().max(1000).optional(),
-});
-export type UpdateSessionItemProps = z.infer<typeof UpdateSessionItem_zod>;
-
-// =============================
-// List / Query Schemas
-// =============================
 export const ListSessions_zod = z.object({
-    client_id: z.string().uuid().optional(),
-    end_date: z.string().datetime().optional(),
-    include_metrics: z.boolean().optional(),
-    page: z.number().int().min(1).optional().default(1),
-    page_size: z.number().int().min(1).max(50).optional().default(20),
-    schedule_id: z.string().uuid().optional(),
-    start_date: z.string().datetime().optional(),
-    status: SessionStatusEnum.optional(),
+    include_contents: z.boolean().optional(),
+    page: z.number().min(1).optional().default(1),
+    page_size: z.number().min(1).max(50).optional().default(20),
+    search: z.string().optional(),
+    session_type: SessionType.optional(),
 });
-export type ListSessionsParams = z.infer<typeof ListSessions_zod>;
 
-export interface ListSessionsResult {
-    page: number;
-    page_size: number;
-    records: Session[];
-    total: number;
-}
-
-export interface Session {
-    business_id: string;
-    client?: SessionClient;
-    client_id: string;
-    completed_at?: null | string;
-    created_at: string;
-    id: string;
-    notes: string;
-    schedule_id: string;
-    scheduled_at?: null | string;
-    session_def?: SessionDef;
-    session_def_id: string;
-    session_items?: SessionItem[];
-    started_at?: null | string;
-    status: SessionStatus;
-    updated_at: string;
-}
-
-// =============================
-// Response Types
-// =============================
-export interface SessionClient {
-    id: string;
-    invitation_email: string;
-    name: string;
-}
-
-export interface SessionDef {
-    created_at: string;
-    created_by: string;
-    description: string;
-    duration_minutes: number;
-    id: string;
-    is_template: boolean;
-    metadata?: Record<string, any>;
-    name: string;
-    session_type: 'meal' | 'workout';
-    template_id?: string;
-    updated_at: string;
-}
-
-export interface SessionItem {
-    completed: boolean;
-    content?: {
-        archived_at?: string;
-        created_at: string;
-        created_by_id: string;
-        description: string;
-        duration?: number;
-        id: string;
-        instructions?: string;
-        instructions_type?: string;
-        is_archived: boolean;
-        is_published: boolean;
-        last_edited_by_id?: string;
-        media?: Record<string, any>;
-        metric_keys?: string[];
-        name: string;
-        tags?: string[];
-        thumbnail_url?: string;
-        type: string;
-        updated_at: string;
-    };
-    content_id: string;
-    created_at: string;
-    id: string;
-    notes: string;
-    order: number;
-    session_id: string;
-    updated_at: string;
-}
-
-export interface SessionsOverview {
-    completed_items: number;
-    completed_sessions: number;
-    in_progress_sessions: number;
-    scheduled_sessions: number;
-    skipped_sessions: number;
-    total_items: number;
-    total_sessions: number;
-}
+export type ContentDetail = z.infer<typeof ContentDetail_zod>;
+export type CreateSession = z.infer<typeof CreateSession_zod>;
+export type GetSessionItemsResponse = z.infer<typeof GetSessionItemsResponse_zod>;
+export type ListSessions = z.infer<typeof ListSessions_zod>;
+export type Session = z.infer<typeof Session_zod>;
+export type SessionItemConfig = z.infer<typeof SessionItemConfig_zod>;
+export type SessionListResponse = z.infer<typeof SessionListResponse_zod>;
+export type SessionType = z.infer<typeof SessionType>;
+export type UpdateSession = z.infer<typeof UpdateSession_zod>;
+export type UpdateSessionItemsInput = z.infer<typeof UpdateSessionItemsInput_zod>;
+export type UpdateSessionItemsResponse = z.infer<typeof UpdateSessionItemsResponse_zod>;
+export type WorkoutSessionSettings = z.infer<typeof WorkoutSessionSettings_zod>;
+export type MealSessionSettings = z.infer<typeof MealSessionSettings_zod>;
+export type InstructionSessionSettings = z.infer<typeof InstructionSessionSettings_zod>;
+export type MeasurementSessionSettings = z.infer<typeof MeasurementSessionSettings_zod>;
 
 // =============================
 // API Client
 // =============================
 export const SessionsAPI = {
-    // POST /v1/coach/sessions/:sessionId/complete
-    completeSession: async (sessionId: string, data?: CompleteSessionProps): Promise<Result<Session>> => {
+    createSession: async (input: CreateSession): Promise<Result<Session>> => {
         try {
-            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/complete`, data);
+            const response = await authedClient.post('/v1/coach/sessions', input);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
         }
     },
 
-    // POST /v1/coach/sessions
-    createSession: async (data: CreateSessionProps): Promise<Result<Session>> => {
+    deleteSession: async (id: string): Promise<Result<void>> => {
         try {
-            const response = await authedClient.post('/v1/coach/sessions', data);
+            await authedClient.delete(`/v1/coach/sessions/${id}`);
+            return Result.success(undefined);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    getSession: async (id: string, params?: {include_contents?: boolean}): Promise<Result<Session>> => {
+        try {
+            const response = await authedClient.get(`/v1/coach/sessions/${id}`, {params});
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);
         }
     },
 
-    // GET /v1/coach/clients/:clientId/metrics
-    getClientMetrics: async (
-        clientId: string,
-        params?: {
-            end_date?: string;
-            metric_key?: string;
-            page?: number;
-            page_size?: number;
-            start_date?: string;
-        },
-    ): Promise<Result<any>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/clients/${clientId}/metrics`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // GET /v1/coach/clients/:clientId/sessions/history
-    getClientSessionHistory: async (
-        clientId: string,
-        params?: {
-            end_date?: string;
-            page?: number;
-            page_size?: number;
-            start_date?: string;
-        },
-    ): Promise<Result<ListSessionsResult>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/clients/${clientId}/sessions/history`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // GET /v1/coach/sessions/:sessionId
-    getSession: async (sessionId: string): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/sessions/${sessionId}`);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // GET /v1/coach/sessions
-    listSessions: async (params?: ListSessionsParams): Promise<Result<ListSessionsResult>> => {
-        try {
-            const response = await authedClient.get('/v1/coach/sessions', {
-                params,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // POST /v1/coach/sessions/:sessionId/skip
-    skipSession: async (sessionId: string, data?: SkipSessionProps): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/skip`, data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // Client-specific session actions (for coach to perform on behalf of client)
-    // POST /v1/coach/sessions/:sessionId/start
-    startSession: async (sessionId: string, data?: StartSessionProps): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.post(`/v1/coach/sessions/${sessionId}/start`, data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // PATCH /v1/coach/sessions/:sessionId/items/:itemId
-    updateSessionItem: async (
+    getSessionItems: async (
         sessionId: string,
-        itemId: string,
-        data: UpdateSessionItemProps,
-    ): Promise<Result<SessionItem>> => {
+        params?: {include_contents?: boolean},
+    ): Promise<Result<GetSessionItemsResponse>> => {
         try {
-            const response = await authedClient.patch(`/v1/coach/sessions/${sessionId}/items/${itemId}`, data);
+            const response = await authedClient.get(`/v1/coach/sessions/${sessionId}/items`, {params});
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    listSessions: async (params?: ListSessions): Promise<Result<SessionListResponse>> => {
+        try {
+            const response = await authedClient.get('/v1/coach/sessions', {params});
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    updateSession: async (id: string, input: UpdateSession): Promise<Result<Session>> => {
+        try {
+            const response = await authedClient.patch(`/v1/coach/sessions/${id}`, input);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+
+    updateSessionItems: async (
+        sessionId: string,
+        input: UpdateSessionItemsInput,
+    ): Promise<Result<UpdateSessionItemsResponse>> => {
+        try {
+            const response = await authedClient.put(`/v1/coach/sessions/${sessionId}/items`, input);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

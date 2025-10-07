@@ -4,7 +4,7 @@ import {ActionIcon, Badge, Box, Card, Collapse, Divider, Group, Stack, Text} fro
 import {CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, PencilIcon, TrashIcon} from '@phosphor-icons/react';
 import {useState} from 'react';
 
-import {SessionDefItemConfig} from '@/api/session_defs.ts';
+import {SessionItemConfig} from '@/api/sessions';
 
 import EditableFields from './EditableFields';
 
@@ -12,11 +12,11 @@ interface SessionItemProps {
     index: number;
     isDragDisabled?: boolean;
     isEditing?: boolean;
-    item: SessionDefItemConfig;
+    item: SessionItemConfig;
     onCancel?: () => void;
     onDelete?: () => void;
     onEdit?: () => void;
-    onSave?: (updatedItem: SessionDefItemConfig) => void;
+    onSave?: (updatedItem: SessionItemConfig) => void;
 }
 
 export default function SessionItem({
@@ -172,7 +172,7 @@ function SessionItemActions({
     );
 }
 
-function SessionItemContent({index, item}: {index: number; item: SessionDefItemConfig}) {
+function SessionItemContent({index, item}: {index: number; item: SessionItemConfig}) {
     const {content} = item;
 
     return (
@@ -224,13 +224,13 @@ function SessionItemContent({index, item}: {index: number; item: SessionDefItemC
                 gap={'xs'}
                 wrap="wrap"
             >
-                {item.sets_count > 0 && (
+                {item.sets && item.sets > 0 && (
                     <Badge
                         radius={'var(--body-offset)'}
                         size="xs"
                         variant="outline"
                     >
-                        {item.sets_count} sets
+                        {item.sets} sets
                     </Badge>
                 )}
                 {item.rest_seconds > 0 && (
@@ -268,7 +268,7 @@ function SessionItemContent({index, item}: {index: number; item: SessionDefItemC
     );
 }
 
-function SessionItemDetails({item}: {item: SessionDefItemConfig}) {
+function SessionItemDetails({item}: {item: SessionItemConfig}) {
     const {content} = item;
 
     return (

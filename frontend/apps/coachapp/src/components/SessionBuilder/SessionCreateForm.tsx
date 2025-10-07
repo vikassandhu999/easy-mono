@@ -1,38 +1,69 @@
 import {Divider, Group, MultiSelect, NumberInput, Stack, Switch, Textarea, TextInput} from '@mantine/core';
 import {useForm} from '@mantine/form';
 
-import {CreateSessionDef, SessionType} from '@/api/session_defs.ts';
+import {CreateSession} from '@/api/sessions';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 
 import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 
 interface SessionCreateFormProps {
-    onSubmit: (values: CreateSessionDef) => Promise<void>;
-    sessionType: SessionType;
+    isSubmitting?: boolean;
+    onSubmit: (values: CreateSession) => Promise<void>;
+    sessionType: CreateSession['session_type'];
 }
 
-export default function SessionCreateForm({onSubmit, sessionType}: SessionCreateFormProps) {
+export default function SessionCreateForm({isSubmitting = false, onSubmit, sessionType}: SessionCreateFormProps) {
     const typeConfig = getSessionTypeConfig(sessionType);
 
-    const form = useForm<CreateSessionDef & {meal_metadata?: any; workout_metadata?: any}>({
+    const form = useForm<CreateSession>({
         initialValues: {
             description: '',
             duration_minutes: 30,
-            meal_metadata: sessionType === 'meal' ? {meal_prep_friendly: false} : undefined,
+            meal_settings:
+                sessionType === 'meal'
+                    ? {
+                          meal_prep_friendly: false,
+                          equipment_needed: [],
+                          dietary_restrictions: [],
+                          allergen_warnings: [],
+                          notes: '',
+                      }
+                    : undefined,
             name: '',
             session_type: sessionType,
-            workout_metadata: sessionType === 'workout' ? {cooldown_included: true, warmup_included: true} : undefined,
+            workout_settings:
+                sessionType === 'workout'
+                    ? {
+                          warm_up_required: true,
+                          cool_down_required: true,
+                          default_rest_seconds: 60,
+                          focus_areas: [],
+                          equipment_needed: [],
+                          notes: '',
+                      }
+                    : undefined,
         },
         transformValues(values) {
-            // Remove irrelevant metadata before submit
-            const v: any = {...values};
-            if (sessionType === 'workout') {
-                delete v.meal_metadata;
-            } else {
-                delete v.workout_metadata;
+            const payload: CreateSession = {...values};
+
+            if (payload.session_type !== 'workout') {
+                delete (payload as Partial<CreateSession>).workout_settings;
             }
-            return v;
+            if (payload.session_type !== 'meal') {
+                delete (payload as Partial<CreateSession>).meal_settings;
+            }
+            if (payload.session_type !== 'instruction') {
+                delete (payload as Partial<CreateSession>).instruction_settings;
+            }
+            if (payload.session_type !== 'measurement') {
+                delete (payload as Partial<CreateSession>).measurement_settings;
+            }
+            if (!payload.duration_minutes) {
+                delete (payload as Partial<CreateSession>).duration_minutes;
+            }
+
+            return payload;
         },
         validate: {
             duration_minutes: (value) => {
@@ -52,37 +83,54 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
             />
             <Group grow>
                 <Switch
-                    checked={form.values.workout_metadata?.warmup_included || false}
+                    checked={form.values.workout_settings?.warm_up_required ?? false}
                     label="Include Warm-up"
-                    onChange={(e) => form.setFieldValue('workout_metadata.warmup_included', e.currentTarget.checked)}
+                    onChange={(e) => form.setFieldValue('workout_settings.warm_up_required', e.currentTarget.checked)}
                 />
                 <Switch
-                    checked={form.values.workout_metadata?.cooldown_included || false}
+                    checked={form.values.workout_settings?.cool_down_required ?? false}
                     label="Include Cool-down"
-                    onChange={(e) => form.setFieldValue('workout_metadata.cooldown_included', e.currentTarget.checked)}
+                    onChange={(e) => form.setFieldValue('workout_settings.cool_down_required', e.currentTarget.checked)}
                 />
             </Group>
-            <TextInput
-                label="Rest Between Sets"
-                onChange={(e) => form.setFieldValue('workout_metadata.rest_between_sets', e.currentTarget.value)}
-                placeholder="e.g. 60-90 seconds"
-                value={form.values.workout_metadata?.rest_between_sets || ''}
-            />
+            <Group grow>
+                <NumberInput
+                    label="Default Rest (seconds)"
+                    max={3600}
+                    min={0}
+                    onChange={(value) => {
+                        const numericValue = typeof value === 'number' ? value : Number(value);
+                        form.setFieldValue(
+                            'workout_settings.default_rest_seconds',
+                            Number.isFinite(numericValue) ? numericValue : 0,
+                        );
+                    }}
+                    value={form.values.workout_settings?.default_rest_seconds ?? 0}
+                />
+                <MultiSelect
+                    data={form.values.workout_settings?.focus_areas || []}
+                    label="Focus Areas"
+                    onChange={(val) => form.setFieldValue('workout_settings.focus_areas', val)}
+                    placeholder="Add focus areas"
+                    searchable
+                    value={form.values.workout_settings?.focus_areas || []}
+                />
+            </Group>
             <MultiSelect
-                data={form.values.workout_metadata?.form_cues || []}
-                label="Form Cues"
-                onChange={(val) => form.setFieldValue('workout_metadata.form_cues', val)}
-                placeholder="Add cues"
+                data={form.values.workout_settings?.equipment_needed || []}
+                label="Equipment Needed"
+                onChange={(val) => form.setFieldValue('workout_settings.equipment_needed', val)}
+                placeholder="Add equipment"
                 searchable
-                value={form.values.workout_metadata?.form_cues || []}
+                value={form.values.workout_settings?.equipment_needed || []}
             />
             <Textarea
                 autosize
                 label="Coach Notes"
                 minRows={2}
-                onChange={(e) => form.setFieldValue('workout_metadata.notes', e.currentTarget.value)}
+                onChange={(e) => form.setFieldValue('workout_settings.notes', e.currentTarget.value)}
                 placeholder="General session notes"
-                value={form.values.workout_metadata?.notes || ''}
+                value={form.values.workout_settings?.notes || ''}
             />
         </Stack>
     );
@@ -93,32 +141,42 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
                 label="Meal Details"
                 labelPosition="left"
             />
-            <TextInput
-                label="Serving Size"
-                onChange={(e) => form.setFieldValue('meal_metadata.serving_size', e.currentTarget.value)}
-                placeholder="e.g. 1 bowl"
-                value={form.values.meal_metadata?.serving_size || ''}
-            />
             <Switch
-                checked={form.values.meal_metadata?.meal_prep_friendly || false}
+                checked={form.values.meal_settings?.meal_prep_friendly ?? false}
                 label="Meal Prep Friendly"
-                onChange={(e) => form.setFieldValue('meal_metadata.meal_prep_friendly', e.currentTarget.checked)}
+                onChange={(e) => form.setFieldValue('meal_settings.meal_prep_friendly', e.currentTarget.checked)}
             />
             <MultiSelect
-                data={form.values.meal_metadata?.equipment_needed || []}
+                data={form.values.meal_settings?.equipment_needed || []}
                 label="Equipment Needed"
-                onChange={(val) => form.setFieldValue('meal_metadata.equipment_needed', val)}
+                onChange={(val) => form.setFieldValue('meal_settings.equipment_needed', val)}
                 placeholder="Add equipment"
                 searchable
-                value={form.values.meal_metadata?.equipment_needed || []}
+                value={form.values.meal_settings?.equipment_needed || []}
             />
             <MultiSelect
-                data={form.values.meal_metadata?.storage_instructions || []}
-                label="Storage Instructions"
-                onChange={(val) => form.setFieldValue('meal_metadata.storage_instructions', val)}
-                placeholder="Add instructions"
+                data={form.values.meal_settings?.dietary_restrictions || []}
+                label="Dietary Restrictions"
+                onChange={(val) => form.setFieldValue('meal_settings.dietary_restrictions', val)}
+                placeholder="Add restrictions"
                 searchable
-                value={form.values.meal_metadata?.storage_instructions || []}
+                value={form.values.meal_settings?.dietary_restrictions || []}
+            />
+            <MultiSelect
+                data={form.values.meal_settings?.allergen_warnings || []}
+                label="Allergen Warnings"
+                onChange={(val) => form.setFieldValue('meal_settings.allergen_warnings', val)}
+                placeholder="Add allergens"
+                searchable
+                value={form.values.meal_settings?.allergen_warnings || []}
+            />
+            <Textarea
+                autosize
+                label="Coach Notes"
+                minRows={2}
+                onChange={(e) => form.setFieldValue('meal_settings.notes', e.currentTarget.value)}
+                placeholder="General session notes"
+                value={form.values.meal_settings?.notes || ''}
             />
         </Stack>
     );
@@ -163,7 +221,7 @@ export default function SessionCreateForm({onSubmit, sessionType}: SessionCreate
                     {workoutSection}
                     {mealSection}
                     <FixedBottom
-                        isSubmitting={form.submitting}
+                        isSubmitting={form.submitting || isSubmitting}
                         label={`Create ${typeConfig?.label}`}
                     />
                 </Stack>

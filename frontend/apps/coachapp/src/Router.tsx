@@ -1,5 +1,6 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 
+import PlanBuilder from './components/PlanBuilder/PlanBuilder';
 import {PrivateRoute} from './utils';
 import ProtectedRouteLayout from './utils/ProtectedRouteLayout';
 import SignInCodePage from './views/auth/SignInCodePage';
@@ -136,6 +137,10 @@ const router = createBrowserRouter([
                                 element: <PlansListPageDrawers />,
                             },
                         ],
+                    },
+                    {
+                        element: <PlanBuilder />,
+                        path: '/plans/:planId/builder',
                     },
                 ],
                 element: <ProtectedRouteLayout />,

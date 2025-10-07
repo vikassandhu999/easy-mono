@@ -1,7 +1,7 @@
 import {Badge, Divider, SegmentedControl, Stack, Text} from '@mantine/core';
 import {useMemo, useState} from 'react';
 
-import {SessionType} from '@/api/session_defs.ts';
+import {SessionType} from '@/api/sessions';
 
 import ContentSelect from '../ContentSelect';
 
@@ -10,7 +10,7 @@ import ContentSelect from '../ContentSelect';
  * UX helper that constrains selectable content items to the allowed taxonomy set
  * based on the parent Session Type.
  *
- * Taxonomy Mapping (SessionDef.SessionType -> Allowed Content Types):
+ * Taxonomy Mapping (Session.session_type -> Allowed Content Types):
  *  workout -> exercise only (atomic building blocks)
  *  meal    -> food + recipe (foods & composed recipes)
  */

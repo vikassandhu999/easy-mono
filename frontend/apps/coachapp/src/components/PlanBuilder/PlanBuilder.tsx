@@ -1,13 +1,12 @@
-import {Box, Button, Drawer, Group, LoadingOverlay, Stack, Text, TextInput} from '@mantine/core';
+import {Box, Drawer, Group, LoadingOverlay, Stack, Text, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {IconCalendar} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
-import {useSearchParams} from 'react-router';
+import {useNavigate, useParams, useSearchParams} from 'react-router';
 
 import {CreatePlanSessionInput} from '@/api/plan_sessions';
 import {DisplayError} from '@/components/containers/DisplayError';
-import {FixedBottomBar} from '@/components/containers/FixedBottomBar';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
@@ -22,7 +21,7 @@ import Header from '../layouts/Header';
 import {AddSessionContext, PlanSessionsView} from '../PlanSessionsView';
 import {DAY_NAMES} from '../PlanSessionsView/constants';
 import SessionBuilder from '../SessionBuilder/SessionBuilder';
-import SessionSelect from '../SessionDefSelect/SessionSelect';
+import SessionSelect from '../SessionSelect/SessionSelect';
 
 type DrawerView = 'create-session' | 'select-session';
 
@@ -33,11 +32,12 @@ const PLAN_BUILDER_DAY_ORDER_PARAM = 'plan_builder_day_order';
 const PLAN_BUILDER_DATE_PARAM = 'plan_builder_date';
 
 export default function PlanBuilder() {
+    const navigate = useNavigate();
+    const {planId: planIdParam} = useParams<{planId: string}>();
+    const planId = planIdParam ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const [calendarDateInput, setCalendarDateInput] = useState('');
 
-    const selectedDrawer = searchParams.get('selected_drawer');
-    const planId = searchParams.get('plan_id');
     const planBuilderKind = searchParams.get(PLAN_BUILDER_KIND_PARAM);
     const planBuilderDay = searchParams.get(PLAN_BUILDER_DAY_PARAM);
     const planBuilderDayOrder = searchParams.get(PLAN_BUILDER_DAY_ORDER_PARAM);
@@ -60,22 +60,20 @@ export default function PlanBuilder() {
         [setSearchParams],
     );
 
-    const clearPlanBuilderParams = useCallback((params: URLSearchParams) => {
-        params.delete('selected_drawer');
-        params.delete('plan_id');
-        params.delete(PLAN_BUILDER_VIEW_PARAM);
+    const clearPlanBuilderContextParams = useCallback((params: URLSearchParams) => {
         params.delete(PLAN_BUILDER_KIND_PARAM);
         params.delete(PLAN_BUILDER_DAY_PARAM);
         params.delete(PLAN_BUILDER_DAY_ORDER_PARAM);
         params.delete(PLAN_BUILDER_DATE_PARAM);
     }, []);
-    const clearPlanBuilderDrawerParams = useCallback((params: URLSearchParams) => {
-        params.delete(PLAN_BUILDER_VIEW_PARAM);
-        params.delete(PLAN_BUILDER_KIND_PARAM);
-        params.delete(PLAN_BUILDER_DAY_PARAM);
-        params.delete(PLAN_BUILDER_DAY_ORDER_PARAM);
-        params.delete(PLAN_BUILDER_DATE_PARAM);
-    }, []);
+
+    const clearPlanBuilderDrawerParams = useCallback(
+        (params: URLSearchParams) => {
+            params.delete(PLAN_BUILDER_VIEW_PARAM);
+            clearPlanBuilderContextParams(params);
+        },
+        [clearPlanBuilderContextParams],
+    );
 
     const selectedContext = useMemo<AddSessionContext | null>(() => {
         if (!planBuilderKind) return null;
@@ -115,11 +113,18 @@ export default function PlanBuilder() {
         setCalendarDateInput('');
     }, [drawerView, isNestedDrawerOpen, planBuilderDate, selectedContext]);
 
+    useEffect(() => {
+        if (!planId) {
+            navigate('/plans', {replace: true});
+        }
+    }, [navigate, planId]);
+
     const handleCloseDrawer = useCallback(() => {
         updateSearchParams((params) => {
-            clearPlanBuilderParams(params);
+            clearPlanBuilderDrawerParams(params);
         });
-    }, [clearPlanBuilderParams, updateSearchParams]);
+        navigate('/plans');
+    }, [clearPlanBuilderDrawerParams, navigate, updateSearchParams]);
 
     const handleCloseNestedDrawer = useCallback(() => {
         updateSearchParams((params) => {
@@ -129,7 +134,7 @@ export default function PlanBuilder() {
 
     const applyContextToSearchParams = useCallback(
         (params: URLSearchParams, context: AddSessionContext | null, fallbackDate?: null | string) => {
-            clearPlanBuilderDrawerParams(params);
+            clearPlanBuilderContextParams(params);
 
             if (!context) {
                 return;
@@ -150,7 +155,7 @@ export default function PlanBuilder() {
             const baseDate = context.calendarDate ?? fallbackDate ?? dayjs().format('YYYY-MM-DD');
             params.set(PLAN_BUILDER_DATE_PARAM, dayjs(baseDate).format('YYYY-MM-DD'));
         },
-        [clearPlanBuilderDrawerParams],
+        [clearPlanBuilderContextParams],
     );
 
     const {
@@ -215,16 +220,12 @@ export default function PlanBuilder() {
 
     const handleAddSession = useCallback(
         (context: AddSessionContext) => {
-            if (!planId) return;
-
             updateSearchParams((params) => {
-                params.set('selected_drawer', 'plan_builder');
-                params.set('plan_id', planId);
                 params.set(PLAN_BUILDER_VIEW_PARAM, 'select-session');
                 applyContextToSearchParams(params, context, plan?.start_date ?? null);
             });
         },
-        [applyContextToSearchParams, plan?.start_date, planId, updateSearchParams],
+        [applyContextToSearchParams, plan?.start_date, updateSearchParams],
     );
 
     const handleCreateSession = useCallback(() => {
@@ -237,8 +238,6 @@ export default function PlanBuilder() {
 
     const handleSelectSession = useCallback(
         async (ids: string | string[]) => {
-            if (!planId) return;
-
             const sessionIds = Array.isArray(ids) ? ids : [ids];
 
             if (!sessionIds.length || !selectedContext) {
@@ -292,8 +291,6 @@ export default function PlanBuilder() {
 
     const handleDeleteSession = useCallback(
         async (planSessionId: string) => {
-            if (!planId) return;
-
             try {
                 await deletePlanSession({planId, planSessionId}).unwrap();
                 notifications.show({
@@ -316,27 +313,26 @@ export default function PlanBuilder() {
         (planError as Error | undefined) ?? (planSessionsError as Error | undefined) ?? null;
     const isLoadingAny = isLoadingPlan || isFetchingPlan || isLoadingSessions || isFetchingSessions;
 
-    if (selectedDrawer !== 'plan_builder' || !planId) {
+    if (!planId) {
         return null;
     }
 
     return (
         <>
+            <HeadingContainer
+                style={{
+                    paddingBlock: 'var(--ce-size-md)',
+                    paddingInline: 'var(--ce-size-xs)',
+                }}
+                withBorder={false}
+            >
+                <Header
+                    onBack={handleCloseDrawer}
+                    title={plan?.name ? `Plan: ${plan.name}` : 'Plan builder'}
+                />
+            </HeadingContainer>
             <PagePaper bottomGutter>
                 <div style={{flex: 1, overflow: 'auto'}}>
-                    <HeadingContainer
-                        style={{
-                            paddingBlock: 'var(--ce-size-md)',
-                            paddingInline: 'var(--ce-size-xs)',
-                        }}
-                        withBorder={false}
-                    >
-                        <Header
-                            onBack={handleCloseDrawer}
-                            title={plan?.name ? `Plan: ${plan.name}` : 'Plan builder'}
-                        />
-                    </HeadingContainer>
-
                     <PaddingContainer>
                         {(planError || planSessionsError) && (
                             <DisplayError
@@ -357,20 +353,6 @@ export default function PlanBuilder() {
                         )}
                     </PaddingContainer>
                 </div>
-
-                <FixedBottomBar>
-                    <Group justify="end">
-                        <Button
-                            fullWidth
-                            onClick={handleCloseDrawer}
-                            radius={9999}
-                            size="md"
-                            variant="filled"
-                        >
-                            Save and close
-                        </Button>
-                    </Group>
-                </FixedBottomBar>
             </PagePaper>
 
             <Drawer
@@ -380,7 +362,7 @@ export default function PlanBuilder() {
                 size="md"
                 withCloseButton={false}
             >
-                {drawerView === 'select-session' && isNestedDrawerOpen && (
+                {drawerView === 'select-session' && (
                     <PagePaper bottomGutter>
                         <HeadingContainer
                             style={{
@@ -444,7 +426,7 @@ export default function PlanBuilder() {
                     </PagePaper>
                 )}
 
-                {drawerView === 'create-session' && isNestedDrawerOpen && (
+                {drawerView === 'create-session' && (
                     <PagePaper>
                         <HeadingContainer
                             style={{
@@ -470,7 +452,7 @@ export default function PlanBuilder() {
                     </PagePaper>
                 )}
 
-                {isCreatingSession && isNestedDrawerOpen && <LoadingOverlay visible />}
+                {isCreatingSession && <LoadingOverlay visible />}
             </Drawer>
         </>
     );

@@ -1,47 +1,43 @@
 import {notifications} from '@mantine/notifications';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useState} from 'react';
 
-import {SessionDefItemConfig, SessionDefsAPI} from '@/api/session_defs.ts';
+import {SessionItemConfig} from '@/api/sessions';
+import {useUpdateSessionItemsMutation} from '@/store/services/sessionsApi';
 
 interface UseSessionItemsProps {
-    initialItems: SessionDefItemConfig[];
-    onItemsUpdate?: (items: SessionDefItemConfig[]) => void;
-    sessionDefId: string;
+    initialItems: SessionItemConfig[];
+    onItemsUpdate?: (items: SessionItemConfig[]) => void;
+    sessionId: string;
 }
 
-export function useSessionItems({initialItems, onItemsUpdate, sessionDefId}: UseSessionItemsProps) {
-    const [items, setItems] = useState<SessionDefItemConfig[]>(initialItems);
-    const queryClient = useQueryClient();
-
-    const updateItemsMutation = useMutation({
-        mutationFn: async (updatedItems: SessionDefItemConfig[]) => {
-            const result = await SessionDefsAPI.updateSessionDef(sessionDefId, {items: updatedItems});
-            if (result.isError) {
-                throw result.getError();
-            }
-            return result.getValue();
-        },
-        onError: (error) => {
-            notifications.show({
-                color: 'red',
-                message: 'Failed to update session items',
-                title: 'Error',
-            });
-            console.error('Failed to update session items:', error);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ['sessiondef', sessionDefId]});
-            onItemsUpdate?.(items);
-        },
-    });
+export function useSessionItems({initialItems, onItemsUpdate, sessionId}: UseSessionItemsProps) {
+    const [items, setItems] = useState<SessionItemConfig[]>(initialItems);
+    const [updateSessionItems, {isLoading: isUpdating}] = useUpdateSessionItemsMutation();
 
     const updateItems = useCallback(
-        (newItems: SessionDefItemConfig[]) => {
+        async (newItems: SessionItemConfig[]) => {
+            const previousItems = items;
             setItems(newItems);
-            updateItemsMutation.mutate(newItems);
+
+            try {
+                const sanitizedItems = newItems.map((item) => {
+                    const rest = {...item};
+                    delete rest.content;
+                    return rest;
+                });
+                await updateSessionItems({id: sessionId, data: {items: sanitizedItems}}).unwrap();
+                onItemsUpdate?.(newItems);
+            } catch (error) {
+                setItems(previousItems);
+                notifications.show({
+                    color: 'red',
+                    message: 'Failed to update session items',
+                    title: 'Error',
+                });
+                console.error('Failed to update session items:', error);
+            }
         },
-        [updateItemsMutation],
+        [items, onItemsUpdate, sessionId, updateSessionItems],
     );
 
     const reorderItems = useCallback(
@@ -62,7 +58,7 @@ export function useSessionItems({initialItems, onItemsUpdate, sessionDefId}: Use
     );
 
     const updateItem = useCallback(
-        (contentId: string, updates: Partial<SessionDefItemConfig>) => {
+        (contentId: string, updates: Partial<SessionItemConfig>) => {
             const updatedItems = items.map((item) => (item.content_id === contentId ? {...item, ...updates} : item));
             updateItems(updatedItems);
         },
@@ -81,12 +77,12 @@ export function useSessionItems({initialItems, onItemsUpdate, sessionDefId}: Use
 
     const addItems = useCallback(
         (contentIds: string[]) => {
-            const newItems: SessionDefItemConfig[] = contentIds.map((contentId, index) => ({
+            const newItems: SessionItemConfig[] = contentIds.map((contentId, index) => ({
                 content_id: contentId,
                 custom_instructions: '',
                 display_order: items.length + index + 1,
                 rest_seconds: 0,
-                sets_count: 1,
+                sets: 1,
             }));
 
             const allItems = [...items, ...newItems];
@@ -98,7 +94,7 @@ export function useSessionItems({initialItems, onItemsUpdate, sessionDefId}: Use
     return {
         addItems,
         deleteItem,
-        isLoading: updateItemsMutation.isPending,
+        isLoading: isUpdating,
         items,
         reorderItems,
         updateItem,

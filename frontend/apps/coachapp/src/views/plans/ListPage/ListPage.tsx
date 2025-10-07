@@ -22,7 +22,7 @@ function PlansListPage() {
         {
             search: search?.trim() || undefined,
         },
-        {skip: !!searchParams.get('selected_drawer')},
+        {skip: searchParams.get('selected_drawer') === 'create_plan'},
     );
 
     const plans = data?.pages?.flatMap((page) => page.records) ?? [];
@@ -41,23 +41,30 @@ function PlansListPage() {
         setSearchParams({selected_drawer: 'create_plan'});
     };
 
-    const handleOpenPlanBuilder = (id: string) => {
-        setSearchParams(
-            (prev) => {
-                prev.set('selected_drawer', 'plan_builder');
-                prev.set('plan_id', id);
-                prev.delete('plan_builder_view');
-                prev.delete('plan_builder_kind');
-                prev.delete('plan_builder_day');
-                prev.delete('plan_builder_day_order');
-                prev.delete('plan_builder_date');
-                return prev;
-            },
-            {replace: true},
-        );
-    };
+    useEffect(() => {
+        const selectedDrawer = searchParams.get('selected_drawer');
+        const legacyPlanId = searchParams.get('plan_id');
 
-    const handleView = (id: string) => handleOpenPlanBuilder(id);
+        if (selectedDrawer === 'plan_builder' && legacyPlanId) {
+            setSearchParams(
+                (prev) => {
+                    prev.delete('selected_drawer');
+                    prev.delete('plan_id');
+                    prev.delete('plan_builder_view');
+                    prev.delete('plan_builder_kind');
+                    prev.delete('plan_builder_day');
+                    prev.delete('plan_builder_day_order');
+                    prev.delete('plan_builder_date');
+                    return prev;
+                },
+                {replace: true},
+            );
+
+            navigate(`/plans/${legacyPlanId}/builder`, {replace: true});
+        }
+    }, [navigate, searchParams, setSearchParams]);
+
+    const handleView = (id: string) => navigate(`/plans/${id}/builder`);
     const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
     return (

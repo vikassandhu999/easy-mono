@@ -34,7 +34,7 @@ import {
 import Header from '../layouts/Header';
 import {DAY_NAMES} from '../PlanSessionsView/constants';
 import SessionBuilder from '../SessionBuilder/SessionBuilder';
-import SessionSelect from '../SessionDefSelect/SessionSelect';
+import SessionSelect from '../SessionSelect/SessionSelect';
 
 type AddSessionContext =
     | {kind: 'calendar'; calendarDate: null | string}

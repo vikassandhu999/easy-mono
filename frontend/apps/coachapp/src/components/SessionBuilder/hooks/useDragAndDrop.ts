@@ -12,11 +12,11 @@ import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
 import {sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import {useCallback, useState} from 'react';
 
-import {SessionDefItemConfig} from '@/api/session_defs.ts';
+import {SessionItemConfig} from '@/api/sessions';
 
 interface UseDragAndDropProps {
     disabled?: boolean;
-    items: SessionDefItemConfig[];
+    items: SessionItemConfig[];
     onReorder: (oldIndex: number, newIndex: number) => void;
 }
 

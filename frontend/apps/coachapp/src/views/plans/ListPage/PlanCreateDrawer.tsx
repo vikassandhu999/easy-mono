@@ -19,15 +19,11 @@ export type PlanCreateDrawerData = {
     initialPlan?: Partial<Plan>;
 };
 
-const useGoBack = () => {
+export const PlanCreateDrawer = React.memo(function CreateDrawer() {
     const navigate = useNavigate();
-    return useCallback(() => {
+    const goBack = useCallback(() => {
         navigate(-1);
     }, [navigate]);
-};
-
-export const PlanCreateDrawer = React.memo(function CreateDrawer() {
-    const goBack = useGoBack();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [createPlan, {isLoading: isCreatingPlan}] = useCreatePlan();
@@ -46,14 +42,13 @@ export const PlanCreateDrawer = React.memo(function CreateDrawer() {
             setSearchParams(
                 (prev) => {
                     prev.delete('discipline');
-
-                    prev.set('selected_drawer', 'plan_builder');
-                    prev.set('plan_id', plan.id);
-
+                    prev.delete('selected_drawer');
                     return prev;
                 },
                 {replace: true},
             );
+
+            navigate(`/plans/${plan.id}/builder`);
         } catch (error) {
             console.error('Failed to create plan', error);
             notifications.show({

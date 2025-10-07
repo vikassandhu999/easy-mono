@@ -1,22 +1,22 @@
 import {Button, Group, NumberInput, Stack, Switch, Textarea, TextInput} from '@mantine/core';
 import {useState} from 'react';
 
-import {SessionDefItemConfig} from '@/api/session_defs.ts';
+import {SessionItemConfig} from '@/api/sessions';
 
 interface EditableFieldsProps {
-    item: SessionDefItemConfig;
+    item: SessionItemConfig;
     onCancel: () => void;
-    onSave: (updatedItem: SessionDefItemConfig) => void;
+    onSave: (updatedItem: SessionItemConfig) => void;
 }
 
 export default function EditableFields({item, onCancel, onSave}: EditableFieldsProps) {
-    const [editedItem, setEditedItem] = useState<SessionDefItemConfig>(item);
+    const [editedItem, setEditedItem] = useState<SessionItemConfig>(item);
 
     const handleSave = () => {
         onSave(editedItem);
     };
 
-    const updateField = (field: keyof SessionDefItemConfig, value: any) => {
+    const updateField = (field: keyof SessionItemConfig, value: any) => {
         setEditedItem((prev) => ({...prev, [field]: value}));
     };
 
@@ -28,7 +28,7 @@ export default function EditableFields({item, onCancel, onSave}: EditableFieldsP
                         label="Sets"
                         max={99}
                         min={0}
-                        onChange={(value) => updateField('sets_count', Number(value) || 0)}
+                        onChange={(value) => updateField('sets', Number(value) || 0)}
                         size="sm"
                         styles={{
                             label: {
@@ -37,11 +37,11 @@ export default function EditableFields({item, onCancel, onSave}: EditableFieldsP
                                 marginBottom: 'var(--ce-size-2xs)',
                             },
                         }}
-                        value={editedItem.sets_count}
+                        value={editedItem.sets ?? 0}
                     />
                     <TextInput
                         label="Reps Target"
-                        onChange={(e) => updateField('reps_target', e.currentTarget.value)}
+                        onChange={(e) => updateField('reps', e.currentTarget.value)}
                         placeholder="e.g. 8-12"
                         size="sm"
                         styles={{
@@ -51,12 +51,13 @@ export default function EditableFields({item, onCancel, onSave}: EditableFieldsP
                                 marginBottom: 'var(--ce-size-2xs)',
                             },
                         }}
-                        value={editedItem.reps_target || ''}
+                        value={editedItem.reps || ''}
                     />
-                    <TextInput
+                    <NumberInput
                         label="Weight Target"
-                        onChange={(e) => updateField('weight_target', e.currentTarget.value)}
-                        placeholder="e.g. 60kg / bodyweight / 80%"
+                        min={0}
+                        onChange={(value) => updateField('weight', Number(value) || 0)}
+                        placeholder="e.g. 60"
                         size="sm"
                         styles={{
                             label: {
@@ -65,7 +66,7 @@ export default function EditableFields({item, onCancel, onSave}: EditableFieldsP
                                 marginBottom: 'var(--ce-size-2xs)',
                             },
                         }}
-                        value={editedItem.weight_target || ''}
+                        value={editedItem.weight ?? 0}
                     />
                     <NumberInput
                         label="Rest (seconds)"
@@ -100,7 +101,7 @@ export default function EditableFields({item, onCancel, onSave}: EditableFieldsP
                                 marginBottom: 'var(--ce-size-2xs)',
                             },
                         }}
-                        value={editedItem.quantity}
+                        value={editedItem.quantity ?? 0}
                     />
                     <TextInput
                         label="Unit"

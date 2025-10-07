@@ -13,7 +13,7 @@ import {ActionIcon, Alert, Button, Drawer, Group, Stack, Text} from '@mantine/co
 import {PlusIcon} from '@phosphor-icons/react';
 import {useState} from 'react';
 
-import {ContentDetail, SessionDefItemConfig} from '@/api/session_defs.ts';
+import {ContentDetail, SessionItemConfig} from '@/api/sessions';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import {useDrawerStack} from '@/providers/StackProvider';
 
@@ -25,16 +25,16 @@ import SessionItem from './SessionItem';
 interface SessionItemsManagerProps {
     isEditable?: boolean;
     itemContents: ContentDetail[];
-    items: SessionDefItemConfig[];
-    onItemsUpdate?: (items: SessionDefItemConfig[]) => void;
-    sessionDefId: string;
+    items: SessionItemConfig[];
+    onItemsUpdate?: (items: SessionItemConfig[]) => void;
+    sessionId: string;
 }
 
 export default function SessionItemsManager({
     isEditable = true,
     items: initialItems,
     onItemsUpdate,
-    sessionDefId,
+    sessionId,
 }: SessionItemsManagerProps) {
     const [editingItemId, setEditingItemId] = useState<null | string>(null);
     const drawerStack = useDrawerStack();
@@ -43,7 +43,7 @@ export default function SessionItemsManager({
     const {addItems, deleteItem, isLoading, items, reorderItems, updateItem} = useSessionItems({
         initialItems,
         onItemsUpdate,
-        sessionDefId,
+        sessionId,
     });
 
     const {activeItem, dragContextProps} = useDragAndDrop({
@@ -64,7 +64,7 @@ export default function SessionItemsManager({
         setEditingItemId(contentId);
     };
 
-    const handleItemSave = (updatedItem: SessionDefItemConfig) => {
+    const handleItemSave = (updatedItem: SessionItemConfig) => {
         updateItem(updatedItem.content_id, updatedItem);
         setEditingItemId(null);
     };
@@ -227,11 +227,11 @@ function ItemsList({
 }: {
     editingItemId: null | string;
     isEditable: boolean;
-    items: SessionDefItemConfig[];
+    items: SessionItemConfig[];
     onCancel: () => void;
     onDelete: (contentId: string) => void;
     onEdit: (contentId: string) => void;
-    onSave: (updatedItem: SessionDefItemConfig) => void;
+    onSave: (updatedItem: SessionItemConfig) => void;
 }) {
     return (
         <Stack gap={'xs'}>

@@ -1,12 +1,26 @@
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {ActionIcon, Badge, Box, Card, Collapse, Divider, Group, Stack, Text} from '@mantine/core';
+import {
+    ActionIcon,
+    Badge,
+    Box,
+    Button,
+    Card,
+    Collapse,
+    Divider,
+    Group,
+    NumberInput,
+    Stack,
+    Switch,
+    Text,
+    Textarea,
+    TextInput,
+} from '@mantine/core';
 import {CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, PencilIcon, TrashIcon} from '@phosphor-icons/react';
 import {useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 
 import {SessionItemConfig} from '@/api/sessions';
-
-import EditableFields from './EditableFields';
 
 interface SessionItemProps {
     index: number;
@@ -107,7 +121,7 @@ export default function SessionItem({
                 {isEditing && onSave && onCancel && (
                     <>
                         <Divider />
-                        <EditableFields
+                        <EditableFieldsInline
                             item={item}
                             onCancel={onCancel}
                             onSave={onSave}
@@ -116,6 +130,179 @@ export default function SessionItem({
                 )}
             </Stack>
         </Card>
+    );
+}
+
+interface EditableFieldsInlineProps {
+    item: SessionItemConfig;
+    onCancel: () => void;
+    onSave: (updatedItem: SessionItemConfig) => void;
+}
+
+function EditableFieldsInline({item, onCancel, onSave}: EditableFieldsInlineProps) {
+    const {control, handleSubmit} = useForm<SessionItemConfig>({
+        defaultValues: item,
+    });
+
+    const onFormSubmit = (values: SessionItemConfig) => {
+        onSave(values);
+    };
+
+    return (
+        <form onSubmit={handleSubmit(onFormSubmit)}>
+            <Stack gap="sm">
+                {item.content?.type === 'exercise' && (
+                    <Group grow>
+                        <Controller
+                            control={control}
+                            name="sets"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    label="Sets"
+                                    max={99}
+                                    min={0}
+                                    onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
+                                    size="sm"
+                                    value={field.value ?? 0}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            control={control}
+                            name="reps"
+                            render={({field}) => (
+                                <TextInput
+                                    {...field}
+                                    label="Reps Target"
+                                    placeholder="e.g. 8-12"
+                                    size="sm"
+                                    value={field.value ?? ''}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            control={control}
+                            name="weight"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    label="Weight Target"
+                                    min={0}
+                                    onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
+                                    placeholder="e.g. 60"
+                                    size="sm"
+                                    value={field.value ?? 0}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            control={control}
+                            name="rest_seconds"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    label="Rest (seconds)"
+                                    max={3600}
+                                    min={0}
+                                    onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
+                                    size="sm"
+                                    value={field.value ?? 0}
+                                />
+                            )}
+                        />
+                    </Group>
+                )}
+
+                {['food', 'recipe'].includes(item.content?.type || '') && (
+                    <Group grow>
+                        <Controller
+                            control={control}
+                            name="quantity"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    label="Quantity"
+                                    max={10000}
+                                    min={0}
+                                    onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
+                                    size="sm"
+                                    value={field.value ?? 0}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            control={control}
+                            name="unit"
+                            render={({field}) => (
+                                <TextInput
+                                    {...field}
+                                    label="Unit"
+                                    placeholder="g / ml / cup"
+                                    size="sm"
+                                    value={field.value ?? ''}
+                                />
+                            )}
+                        />
+                    </Group>
+                )}
+
+                <Controller
+                    control={control}
+                    name="is_optional"
+                    render={({field}) => (
+                        <Switch
+                            checked={field.value ?? false}
+                            label="Optional Item"
+                            onChange={(event) => field.onChange(event.currentTarget.checked)}
+                            size="sm"
+                        />
+                    )}
+                />
+
+                <Controller
+                    control={control}
+                    name="custom_instructions"
+                    render={({field}) => (
+                        <Textarea
+                            {...field}
+                            autosize
+                            label="Custom Instructions"
+                            maxRows={4}
+                            minRows={2}
+                            placeholder="Add specific instructions for this exercise..."
+                            size="sm"
+                            value={field.value ?? ''}
+                        />
+                    )}
+                />
+
+                <Group
+                    gap="xs"
+                    justify="flex-end"
+                >
+                    <Button
+                        color="gray"
+                        onClick={onCancel}
+                        size="sm"
+                        type="button"
+                        variant="subtle"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        size="sm"
+                        type="submit"
+                    >
+                        Save Changes
+                    </Button>
+                </Group>
+            </Stack>
+        </form>
     );
 }
 

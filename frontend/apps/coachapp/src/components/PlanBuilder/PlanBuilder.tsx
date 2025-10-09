@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router';
 
-import {CreatePlanSessionInput} from '@/api/plan_sessions';
+import {CreatePlanSessionInput, PlanSession} from '@/api/plan_sessions';
 import {DisplayError} from '@/components/containers/DisplayError';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
@@ -23,13 +23,14 @@ import {DAY_NAMES} from '../PlanSessionsView/constants';
 import SessionBuilder from '../SessionBuilder/SessionBuilder';
 import SessionSelect from '../SessionSelect/SessionSelect';
 
-type DrawerView = 'create-session' | 'select-session';
+type DrawerView = 'create-session' | 'edit-session' | 'select-session';
 
 const PLAN_BUILDER_VIEW_PARAM = 'plan_builder_view';
 const PLAN_BUILDER_KIND_PARAM = 'plan_builder_kind';
 const PLAN_BUILDER_DAY_PARAM = 'plan_builder_day';
 const PLAN_BUILDER_DAY_ORDER_PARAM = 'plan_builder_day_order';
 const PLAN_BUILDER_DATE_PARAM = 'plan_builder_date';
+const PLAN_BUILDER_PLAN_SESSION_PARAM = 'plan_builder_plan_session';
 
 export default function PlanBuilder() {
     const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function PlanBuilder() {
     const planBuilderDay = searchParams.get(PLAN_BUILDER_DAY_PARAM);
     const planBuilderDayOrder = searchParams.get(PLAN_BUILDER_DAY_ORDER_PARAM);
     const planBuilderDate = searchParams.get(PLAN_BUILDER_DATE_PARAM);
+    const planBuilderPlanSessionId = searchParams.get(PLAN_BUILDER_PLAN_SESSION_PARAM);
     const drawerViewParam = searchParams.get(PLAN_BUILDER_VIEW_PARAM) as DrawerView | null;
     const drawerView: DrawerView = drawerViewParam ?? 'select-session';
     const isNestedDrawerOpen = drawerViewParam !== null;
@@ -70,6 +72,7 @@ export default function PlanBuilder() {
     const clearPlanBuilderDrawerParams = useCallback(
         (params: URLSearchParams) => {
             params.delete(PLAN_BUILDER_VIEW_PARAM);
+            params.delete(PLAN_BUILDER_PLAN_SESSION_PARAM);
             clearPlanBuilderContextParams(params);
         },
         [clearPlanBuilderContextParams],
@@ -170,6 +173,7 @@ export default function PlanBuilder() {
         error: planSessionsError,
         isFetching: isFetchingSessions,
         isLoading: isLoadingSessions,
+        refetch: refetchPlanSessions,
     } = useListPlanSessionsQuery(
         {
             planId: planId ?? '',
@@ -186,7 +190,12 @@ export default function PlanBuilder() {
     const [createPlanSession, {isLoading: isCreatingSession}] = useCreatePlanSessionMutation();
     const [deletePlanSession] = useDeletePlanSessionMutation();
 
-    const sessions = planSessions?.records ?? [];
+    const sessions = useMemo(() => planSessions?.records ?? [], [planSessions]);
+    const editingPlanSession = useMemo<null | PlanSession>(
+        () => sessions.find((item) => item.id === planBuilderPlanSessionId) ?? null,
+        [planBuilderPlanSessionId, sessions],
+    );
+    const editingSessionId = editingPlanSession?.session?.id ?? null;
 
     const sessionTypeFilter = useMemo(() => {
         if (!plan) return undefined;
@@ -213,6 +222,9 @@ export default function PlanBuilder() {
         (nextView: DrawerView) => {
             updateSearchParams((params) => {
                 params.set(PLAN_BUILDER_VIEW_PARAM, nextView);
+                if (nextView !== 'edit-session') {
+                    params.delete(PLAN_BUILDER_PLAN_SESSION_PARAM);
+                }
             });
         },
         [updateSearchParams],
@@ -235,6 +247,11 @@ export default function PlanBuilder() {
     const handleSessionCreated = useCallback(() => {
         setDrawerView('select-session');
     }, [setDrawerView]);
+
+    const handleSessionUpdated = useCallback(() => {
+        refetchPlanSessions();
+        handleCloseNestedDrawer();
+    }, [handleCloseNestedDrawer, refetchPlanSessions]);
 
     const handleSelectSession = useCallback(
         async (ids: string | string[]) => {
@@ -273,11 +290,6 @@ export default function PlanBuilder() {
 
             try {
                 await createPlanSession({planId, data: payload}).unwrap();
-                notifications.show({
-                    color: 'green',
-                    message: 'Session added to plan',
-                    title: 'Plan updated',
-                });
             } catch (mutationError) {
                 notifications.show({
                     color: 'red',
@@ -287,6 +299,27 @@ export default function PlanBuilder() {
             }
         },
         [calendarDateInput, createPlanSession, planBuilderDate, planId, selectedContext],
+    );
+
+    const handleEditSession = useCallback(
+        (planSessionId: string) => {
+            const targetPlanSession = sessions.find((item) => item.id === planSessionId);
+            if (!targetPlanSession || !targetPlanSession.session?.id) {
+                notifications.show({
+                    color: 'red',
+                    message: 'We could not load that session for editing.',
+                    title: 'Session unavailable',
+                });
+                return;
+            }
+
+            updateSearchParams((params) => {
+                params.set(PLAN_BUILDER_VIEW_PARAM, 'edit-session');
+                params.set(PLAN_BUILDER_PLAN_SESSION_PARAM, planSessionId);
+                clearPlanBuilderContextParams(params);
+            });
+        },
+        [clearPlanBuilderContextParams, sessions, updateSearchParams],
     );
 
     const handleDeleteSession = useCallback(
@@ -347,6 +380,7 @@ export default function PlanBuilder() {
                             <PlanSessionsView
                                 onAddSession={handleAddSession}
                                 onDeleteSession={handleDeleteSession}
+                                onEditSession={handleEditSession}
                                 plan={plan}
                                 sessions={sessions}
                             />
@@ -359,7 +393,7 @@ export default function PlanBuilder() {
                 onClose={handleCloseNestedDrawer}
                 opened={isNestedDrawerOpen}
                 position="right"
-                size="md"
+                size="lg"
                 withCloseButton={false}
             >
                 {drawerView === 'select-session' && (
@@ -448,6 +482,43 @@ export default function PlanBuilder() {
                                 onComplete={handleSessionCreated}
                                 sessionType={(sessionTypeFilter as any) ?? 'workout'}
                             />
+                        </div>
+                    </PagePaper>
+                )}
+
+                {drawerView === 'edit-session' && (
+                    <PagePaper>
+                        <HeadingContainer
+                            style={{
+                                paddingBlock: 'var(--ce-size-md)',
+                                paddingInline: 'var(--ce-size-xs)',
+                            }}
+                            withBorder={false}
+                        >
+                            <Header
+                                onBack={() => {
+                                    setDrawerView('select-session');
+                                }}
+                                title={
+                                    editingPlanSession?.session?.name
+                                        ? `Edit ${editingPlanSession.session.name}`
+                                        : 'Edit session'
+                                }
+                            />
+                        </HeadingContainer>
+
+                        <div style={{flex: 1, overflow: 'auto'}}>
+                            {editingSessionId ? (
+                                <SessionBuilder
+                                    onComplete={handleSessionUpdated}
+                                    sessionId={editingSessionId}
+                                    sessionType={(editingPlanSession?.session?.session_type as any) ?? 'workout'}
+                                />
+                            ) : (
+                                <PaddingContainer>
+                                    <Text c="dimmed">We couldn&apos;t load that session. Close and try again.</Text>
+                                </PaddingContainer>
+                            )}
                         </div>
                     </PagePaper>
                 )}

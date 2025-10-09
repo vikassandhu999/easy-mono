@@ -60,14 +60,7 @@ export const ContentDetail_zod = z.object({
 });
 
 export const WorkoutSessionSettings_zod = z.object({
-    default_rest_seconds: z.number().int().min(0).optional(),
-    default_tempo: z.string().optional(),
-    warm_up_required: z.boolean().optional(),
-    cool_down_required: z.boolean().optional(),
     estimated_duration_minutes: z.number().int().min(1).optional(),
-    difficulty: z.string().optional(),
-    focus_areas: z.array(z.string()).optional(),
-    equipment_needed: z.array(z.string()).optional(),
     notes: z.string().optional(),
 });
 
@@ -102,6 +95,164 @@ export const MeasurementSessionSettings_zod = z.object({
     best_time_of_day: z.string().optional(),
 });
 
+export const RepsValue_zod = z.object({
+    value: z.number().int().min(1),
+});
+
+export const WeightValue_zod = z.object({
+    value: z.number(),
+    unit: z.string(),
+});
+
+export const TimeValue_zod = z.object({
+    value: z.number().int().min(0),
+});
+
+export const WorkoutSet_zod = z.object({
+    reps: RepsValue_zod.optional(),
+    weight: WeightValue_zod.optional(),
+    duration: TimeValue_zod.optional(),
+    rest_seconds: TimeValue_zod.optional(),
+});
+
+export const WorkoutExercise_zod = z.object({
+    id: z.string(),
+    content_id: z.string().uuid(),
+    each_side: z.boolean().optional(),
+    tempo: z.string().optional(),
+    sets: z.array(WorkoutSet_zod).optional(),
+});
+
+export const WorkoutSection_zod = z.object({
+    id: z.string(),
+    type: z.string().optional(),
+    title: z.string().optional(),
+    format: z.string().optional(),
+    note: z.string().optional(),
+    target_rounds: z.number().int().min(1).optional(),
+    target_duration_seconds: z.number().int().min(1).optional(),
+    exercises: z.array(WorkoutExercise_zod).nonempty(),
+});
+
+export const MealItemMacros_zod = z.object({
+    calories: z.number().optional(),
+    protein: z.number().optional(),
+    carbs: z.number().optional(),
+    fats: z.number().optional(),
+});
+
+export const MealItem_zod = z.object({
+    key: z.string(),
+    content_id: z.string().uuid(),
+    order: z.number().int(),
+    quantity: z.number().optional(),
+    unit: z.string().optional(),
+    preparation: z.string().optional(),
+    notes: z.string().optional(),
+    is_optional: z.boolean(),
+    swappable: z.boolean().optional(),
+    macros: MealItemMacros_zod.optional(),
+    metadata: z.record(z.any()).optional(),
+});
+
+export const MealBlock_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    type: z.string().optional(),
+    order: z.number().int(),
+    items: z.array(MealItem_zod),
+});
+
+export const MealSection_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    order: z.number().int(),
+    note: z.string().optional(),
+    blocks: z.array(MealBlock_zod),
+});
+
+export const InstructionResource_zod = z.object({
+    label: z.string(),
+    url: z.string().url(),
+    description: z.string().optional(),
+});
+
+export const InstructionStep_zod = z.object({
+    order: z.number().int(),
+    text: z.string(),
+    required: z.boolean(),
+    media_urls: z.array(z.string()).optional(),
+    target_duration_seconds: z.number().int().min(0).optional(),
+});
+
+export const InstructionBlock_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    order: z.number().int(),
+    steps: z.array(InstructionStep_zod),
+    resources: z.array(InstructionResource_zod).optional(),
+});
+
+export const InstructionSection_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    order: z.number().int(),
+    note: z.string().optional(),
+    blocks: z.array(InstructionBlock_zod),
+});
+
+export const MeasurementMetric_zod = z.object({
+    key: z.string(),
+    label: z.string().optional(),
+    content_id: z.string().uuid().optional(),
+    order: z.number().int(),
+    target_value: z.number().optional(),
+    target_unit: z.string().optional(),
+    notes: z.string().optional(),
+    metadata: z.record(z.any()).optional(),
+});
+
+export const MeasurementBlock_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    order: z.number().int(),
+    metrics: z.array(MeasurementMetric_zod),
+});
+
+export const MeasurementSection_zod = z.object({
+    key: z.string(),
+    title: z.string().optional(),
+    order: z.number().int(),
+    note: z.string().optional(),
+    blocks: z.array(MeasurementBlock_zod),
+});
+
+export const WorkoutDefinition_zod = z.object({
+    settings: WorkoutSessionSettings_zod.optional(),
+    sections: z.array(WorkoutSection_zod).nonempty(),
+});
+
+export const MealDefinition_zod = z
+    .object({
+        settings: MealSessionSettings_zod.optional(),
+        sections: z.array(MealSection_zod).nonempty().optional(),
+        items: z.array(SessionItemConfig_zod).nonempty().optional(),
+    })
+    .refine((value) => (value.sections?.length ?? 0) > 0 || (value.items?.length ?? 0) > 0, {
+        message: 'meal_definition requires sections or items',
+        path: ['sections'],
+    });
+
+export const InstructionDefinition_zod = z.object({
+    settings: InstructionSessionSettings_zod,
+    sections: z.array(InstructionSection_zod).optional(),
+});
+
+export const MeasurementDefinition_zod = z.object({
+    settings: MeasurementSessionSettings_zod,
+    sections: z.array(MeasurementSection_zod).optional(),
+});
+
 export const Session_zod = z.object({
     id: z.string().uuid(),
     business_id: z.string().uuid(),
@@ -113,15 +264,19 @@ export const Session_zod = z.object({
     updated_at: z.string(),
     created_by: z.string().uuid().optional(),
     definition: z.unknown().optional(),
-    items: z.array(SessionItemConfig_zod).optional(),
-    item_configs: z.array(SessionItemConfig_zod).optional(),
-    item_contents: z.array(ContentDetail_zod).optional(),
+    content_details: z.array(ContentDetail_zod).optional(),
     workout_settings: WorkoutSessionSettings_zod.optional(),
+    workout_sections: z.array(WorkoutSection_zod).optional(),
     meal_settings: MealSessionSettings_zod.optional(),
+    meal_sections: z.array(MealSection_zod).optional(),
     instruction_settings: InstructionSessionSettings_zod.optional(),
+    instruction_sections: z.array(InstructionSection_zod).optional(),
     measurement_settings: MeasurementSessionSettings_zod.optional(),
-    workout_items: z.array(SessionItemConfig_zod).optional(),
-    meal_items: z.array(SessionItemConfig_zod).optional(),
+    measurement_sections: z.array(MeasurementSection_zod).optional(),
+    workout_definition: WorkoutDefinition_zod.optional(),
+    meal_definition: MealDefinition_zod.optional(),
+    instruction_definition: InstructionDefinition_zod.optional(),
+    measurement_definition: MeasurementDefinition_zod.optional(),
 });
 
 export const SessionListResponse_zod = z.object({
@@ -136,11 +291,15 @@ export const CreateSession_zod = z.object({
     description: z.string().max(2000).optional(),
     session_type: SessionType,
     duration_minutes: z.number().min(1).max(480).optional(),
-    items: z.array(SessionItemConfig_zod).optional(),
+    definition: z.unknown().optional(),
     workout_settings: WorkoutSessionSettings_zod.optional(),
     meal_settings: MealSessionSettings_zod.optional(),
     instruction_settings: InstructionSessionSettings_zod.optional(),
     measurement_settings: MeasurementSessionSettings_zod.optional(),
+    workout_definition: WorkoutDefinition_zod.optional(),
+    meal_definition: MealDefinition_zod.optional(),
+    instruction_definition: InstructionDefinition_zod.optional(),
+    measurement_definition: MeasurementDefinition_zod.optional(),
 });
 
 export const UpdateSession_zod = z.object({
@@ -148,27 +307,15 @@ export const UpdateSession_zod = z.object({
     description: z.string().max(2000).optional(),
     session_type: SessionType.optional(),
     duration_minutes: z.number().min(1).max(480).optional(),
-    items: z.array(SessionItemConfig_zod).optional(),
+    definition: z.unknown().optional(),
     workout_settings: WorkoutSessionSettings_zod.optional(),
     meal_settings: MealSessionSettings_zod.optional(),
     instruction_settings: InstructionSessionSettings_zod.optional(),
     measurement_settings: MeasurementSessionSettings_zod.optional(),
-});
-
-// New simplified types for item management
-export const GetSessionItemsResponse_zod = z.object({
-    contents: z.array(ContentDetail_zod).optional(),
-    items: z.array(SessionItemConfig_zod),
-    session_id: z.string().uuid(),
-});
-
-export const UpdateSessionItemsInput_zod = z.object({
-    items: z.array(SessionItemConfig_zod),
-});
-
-export const UpdateSessionItemsResponse_zod = z.object({
-    message: z.string(),
-    session: Session_zod,
+    workout_definition: WorkoutDefinition_zod.optional(),
+    meal_definition: MealDefinition_zod.optional(),
+    instruction_definition: InstructionDefinition_zod.optional(),
+    measurement_definition: MeasurementDefinition_zod.optional(),
 });
 
 export const ListSessions_zod = z.object({
@@ -181,19 +328,33 @@ export const ListSessions_zod = z.object({
 
 export type ContentDetail = z.infer<typeof ContentDetail_zod>;
 export type CreateSession = z.infer<typeof CreateSession_zod>;
-export type GetSessionItemsResponse = z.infer<typeof GetSessionItemsResponse_zod>;
 export type ListSessions = z.infer<typeof ListSessions_zod>;
 export type Session = z.infer<typeof Session_zod>;
 export type SessionItemConfig = z.infer<typeof SessionItemConfig_zod>;
 export type SessionListResponse = z.infer<typeof SessionListResponse_zod>;
 export type SessionType = z.infer<typeof SessionType>;
 export type UpdateSession = z.infer<typeof UpdateSession_zod>;
-export type UpdateSessionItemsInput = z.infer<typeof UpdateSessionItemsInput_zod>;
-export type UpdateSessionItemsResponse = z.infer<typeof UpdateSessionItemsResponse_zod>;
 export type WorkoutSessionSettings = z.infer<typeof WorkoutSessionSettings_zod>;
 export type MealSessionSettings = z.infer<typeof MealSessionSettings_zod>;
 export type InstructionSessionSettings = z.infer<typeof InstructionSessionSettings_zod>;
 export type MeasurementSessionSettings = z.infer<typeof MeasurementSessionSettings_zod>;
+export type WorkoutSection = z.infer<typeof WorkoutSection_zod>;
+export type WorkoutSet = z.infer<typeof WorkoutSet_zod>;
+export type WorkoutDefinition = z.infer<typeof WorkoutDefinition_zod>;
+export type MealSection = z.infer<typeof MealSection_zod>;
+export type MealBlock = z.infer<typeof MealBlock_zod>;
+export type MealItem = z.infer<typeof MealItem_zod>;
+export type MealItemMacros = z.infer<typeof MealItemMacros_zod>;
+export type MealDefinition = z.infer<typeof MealDefinition_zod>;
+export type InstructionSection = z.infer<typeof InstructionSection_zod>;
+export type InstructionBlock = z.infer<typeof InstructionBlock_zod>;
+export type InstructionStep = z.infer<typeof InstructionStep_zod>;
+export type InstructionResource = z.infer<typeof InstructionResource_zod>;
+export type InstructionDefinition = z.infer<typeof InstructionDefinition_zod>;
+export type MeasurementSection = z.infer<typeof MeasurementSection_zod>;
+export type MeasurementBlock = z.infer<typeof MeasurementBlock_zod>;
+export type MeasurementMetric = z.infer<typeof MeasurementMetric_zod>;
+export type MeasurementDefinition = z.infer<typeof MeasurementDefinition_zod>;
 
 // =============================
 // API Client
@@ -226,18 +387,6 @@ export const SessionsAPI = {
         }
     },
 
-    getSessionItems: async (
-        sessionId: string,
-        params?: {include_contents?: boolean},
-    ): Promise<Result<GetSessionItemsResponse>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/sessions/${sessionId}/items`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
     listSessions: async (params?: ListSessions): Promise<Result<SessionListResponse>> => {
         try {
             const response = await authedClient.get('/v1/coach/sessions', {params});
@@ -250,18 +399,6 @@ export const SessionsAPI = {
     updateSession: async (id: string, input: UpdateSession): Promise<Result<Session>> => {
         try {
             const response = await authedClient.patch(`/v1/coach/sessions/${id}`, input);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    updateSessionItems: async (
-        sessionId: string,
-        input: UpdateSessionItemsInput,
-    ): Promise<Result<UpdateSessionItemsResponse>> => {
-        try {
-            const response = await authedClient.put(`/v1/coach/sessions/${sessionId}/items`, input);
             return Result.success(response.data);
         } catch (error: unknown) {
             return Result.failure(error);

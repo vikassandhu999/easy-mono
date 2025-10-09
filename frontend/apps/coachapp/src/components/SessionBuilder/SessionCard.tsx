@@ -1,15 +1,17 @@
 import {ActionIcon, Badge, Box, Divider, Group, Stack, Text} from '@mantine/core';
 import {ClockIcon, PencilIcon} from '@phosphor-icons/react';
+import {useMemo} from 'react';
 
-import {Session, SessionItemConfig} from '@/api/sessions';
+import {Session} from '@/api/sessions';
 
 import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 import SessionItemsManager from './SessionItemsManager';
+import {workoutDefinitionToItems} from './utils';
 
 interface SessionCardProps {
     isManagementMode?: boolean;
     onEdit?: () => void;
-    onItemsUpdate?: (items: SessionItemConfig[]) => void;
+    onItemsUpdate?: () => void;
     session: Session;
     showEditButton?: boolean;
 }
@@ -22,11 +24,19 @@ export default function SessionCard({
     showEditButton = false,
 }: SessionCardProps) {
     const typeConfig = getSessionTypeConfig(session.session_type);
+    const items = useMemo(() => {
+        if (session.session_type === 'workout') {
+            return workoutDefinitionToItems(session);
+        }
+        return [];
+    }, [session]);
     const IconComponent = typeConfig.icon;
+    const durationLabel =
+        typeof session.duration_minutes === 'number' && session.duration_minutes > 0
+            ? `${session.duration_minutes} min`
+            : 'Flexible duration';
 
     // Get items sorted by display order
-    const sortedItems = session.items ? [...session.items].sort((a, b) => a.display_order - b.display_order) : [];
-
     return (
         <Stack gap={'md'}>
             {/* Header */}
@@ -112,7 +122,7 @@ export default function SessionCard({
                                 lineHeight: 'var(--callout-line-height)',
                             }}
                         >
-                            {session.duration_minutes} min
+                            {durationLabel}
                         </Text>
                     </Group>
 
@@ -129,16 +139,18 @@ export default function SessionCard({
             </Group>
 
             {/* Items Section */}
-            <>
-                <Divider />
-                <SessionItemsManager
-                    isEditable={isManagementMode}
-                    itemContents={session.item_contents || []}
-                    items={sortedItems}
-                    onItemsUpdate={onItemsUpdate}
-                    sessionId={session.id}
-                />
-            </>
+            {session.session_type === 'workout' && (
+                <>
+                    <Divider />
+                    <SessionItemsManager
+                        isEditable={isManagementMode}
+                        items={items}
+                        onItemsUpdate={onItemsUpdate}
+                        session={session}
+                        sessionType={session.session_type}
+                    />
+                </>
+            )}
         </Stack>
     );
 }

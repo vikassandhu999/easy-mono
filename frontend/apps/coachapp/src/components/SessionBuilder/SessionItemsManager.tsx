@@ -13,7 +13,7 @@ import {ActionIcon, Alert, Button, Drawer, Group, Stack, Text} from '@mantine/co
 import {PlusIcon} from '@phosphor-icons/react';
 import {useState} from 'react';
 
-import {ContentDetail, SessionItemConfig} from '@/api/sessions';
+import {Session, SessionItemConfig, SessionType} from '@/api/sessions';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import {useDrawerStack} from '@/providers/StackProvider';
 
@@ -24,17 +24,20 @@ import SessionItem from './SessionItem';
 
 interface SessionItemsManagerProps {
     isEditable?: boolean;
-    itemContents: ContentDetail[];
     items: SessionItemConfig[];
-    onItemsUpdate?: (items: SessionItemConfig[]) => void;
-    sessionId: string;
+    onItemsChange?: (items: SessionItemConfig[]) => void;
+    onItemsUpdate?: () => void;
+    session?: null | Session;
+    sessionType: SessionType;
 }
 
 export default function SessionItemsManager({
     isEditable = true,
     items: initialItems,
+    onItemsChange,
     onItemsUpdate,
-    sessionId,
+    session,
+    sessionType,
 }: SessionItemsManagerProps) {
     const [editingItemId, setEditingItemId] = useState<null | string>(null);
     const drawerStack = useDrawerStack();
@@ -42,8 +45,10 @@ export default function SessionItemsManager({
     // Use custom hooks for business logic
     const {addItems, deleteItem, isLoading, items, reorderItems, updateItem} = useSessionItems({
         initialItems,
+        onItemsChange,
         onItemsUpdate,
-        sessionId,
+        session: session ?? undefined,
+        sessionType,
     });
 
     const {activeItem, dragContextProps} = useDragAndDrop({

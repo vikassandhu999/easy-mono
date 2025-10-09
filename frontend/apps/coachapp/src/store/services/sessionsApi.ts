@@ -1,12 +1,9 @@
 import {
     type CreateSession,
-    type GetSessionItemsResponse,
     type ListSessions,
     type Session,
     type SessionListResponse,
     type UpdateSession,
-    type UpdateSessionItemsInput,
-    type UpdateSessionItemsResponse,
 } from '@/api/sessions';
 
 import {apiSlice} from './apiSlice';
@@ -31,18 +28,10 @@ export const sessionsApi = apiSlice.injectEndpoints({
             providesTags: (_result, _error, {id}) => [{type: 'Sessions', id}],
         }),
 
-        getSessionItems: build.query<GetSessionItemsResponse, {id: string; options?: {include_contents?: boolean}}>({
-            query: ({id, options}) => ({
-                params: options,
-                url: `/v1/coach/sessions/${id}/items`,
-            }),
-            providesTags: (_result, _error, {id}) => [{type: 'Sessions', id: `${id}_ITEMS`}],
-        }),
-
         // Create session definition
         createSession: build.mutation<Session, CreateSession>({
             query: (data) => ({
-                body: data,
+                data,
                 method: 'POST',
                 url: '/v1/coach/sessions',
             }),
@@ -52,25 +41,12 @@ export const sessionsApi = apiSlice.injectEndpoints({
         // Update session definition
         updateSession: build.mutation<Session, {data: UpdateSession; id: string}>({
             query: ({id, data}) => ({
-                body: data,
+                data,
                 method: 'PATCH',
                 url: `/v1/coach/sessions/${id}`,
             }),
             invalidatesTags: (_result, _error, {id}) => [
                 {type: 'Sessions', id},
-                {type: 'Sessions', id: 'LIST'},
-            ],
-        }),
-
-        updateSessionItems: build.mutation<UpdateSessionItemsResponse, {data: UpdateSessionItemsInput; id: string}>({
-            query: ({id, data}) => ({
-                body: data,
-                method: 'PUT',
-                url: `/v1/coach/sessions/${id}/items`,
-            }),
-            invalidatesTags: (_result, _error, {id}) => [
-                {type: 'Sessions', id},
-                {type: 'Sessions', id: `${id}_ITEMS`},
                 {type: 'Sessions', id: 'LIST'},
             ],
         }),
@@ -93,9 +69,7 @@ export const sessionsApi = apiSlice.injectEndpoints({
 export const {
     useListSessionsQuery,
     useGetSessionQuery,
-    useGetSessionItemsQuery,
     useCreateSessionMutation,
     useUpdateSessionMutation,
-    useUpdateSessionItemsMutation,
     useDeleteSessionMutation,
 } = sessionsApi;

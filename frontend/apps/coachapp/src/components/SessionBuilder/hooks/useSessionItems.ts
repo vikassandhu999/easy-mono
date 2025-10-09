@@ -1,32 +1,70 @@
 import {notifications} from '@mantine/notifications';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
-import {SessionItemConfig} from '@/api/sessions';
-import {useUpdateSessionItemsMutation} from '@/store/services/sessionsApi';
+import {Session, SessionItemConfig, SessionType} from '@/api/sessions';
+import {useUpdateSessionMutation} from '@/store/services/sessionsApi';
+
+import {itemsToWorkoutDefinition} from '../utils';
 
 interface UseSessionItemsProps {
     initialItems: SessionItemConfig[];
-    onItemsUpdate?: (items: SessionItemConfig[]) => void;
-    sessionId: string;
+    onItemsChange?: (items: SessionItemConfig[]) => void;
+    onItemsUpdate?: () => void;
+    session?: Session;
+    sessionType: SessionType;
 }
 
-export function useSessionItems({initialItems, onItemsUpdate, sessionId}: UseSessionItemsProps) {
+const generateItemId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return Math.random().toString(36).slice(2, 11);
+};
+
+export function useSessionItems({
+    initialItems,
+    onItemsChange,
+    onItemsUpdate,
+    session,
+    sessionType,
+}: UseSessionItemsProps) {
     const [items, setItems] = useState<SessionItemConfig[]>(initialItems);
-    const [updateSessionItems, {isLoading: isUpdating}] = useUpdateSessionItemsMutation();
+    const [updateSession, {isLoading: isUpdating}] = useUpdateSessionMutation();
+    const hasPersistedSession = Boolean(session?.id);
+
+    useEffect(() => {
+        setItems(initialItems);
+    }, [initialItems]);
 
     const updateItems = useCallback(
-        async (newItems: SessionItemConfig[]) => {
+        async (nextItems: SessionItemConfig[]) => {
             const previousItems = items;
-            setItems(newItems);
+            setItems(nextItems);
+
+            if (sessionType !== 'workout') {
+                onItemsChange?.(nextItems);
+                return;
+            }
+
+            if (!hasPersistedSession) {
+                onItemsChange?.(nextItems);
+                return;
+            }
 
             try {
-                const sanitizedItems = newItems.map((item) => {
-                    const rest = {...item};
-                    delete rest.content;
-                    return rest;
-                });
-                await updateSessionItems({id: sessionId, data: {items: sanitizedItems}}).unwrap();
-                onItemsUpdate?.(newItems);
+                const definition = itemsToWorkoutDefinition(sessionType, nextItems, session?.workout_definition);
+                if (!definition) {
+                    throw new Error('Workout definition must include at least one exercise');
+                }
+
+                const payload = {
+                    definition,
+                    workout_definition: definition,
+                };
+
+                await updateSession({id: session!.id, data: payload}).unwrap();
+                onItemsChange?.(nextItems);
+                onItemsUpdate?.();
             } catch (error) {
                 setItems(previousItems);
                 notifications.show({
@@ -37,7 +75,7 @@ export function useSessionItems({initialItems, onItemsUpdate, sessionId}: UseSes
                 console.error('Failed to update session items:', error);
             }
         },
-        [items, onItemsUpdate, sessionId, updateSessionItems],
+        [hasPersistedSession, items, onItemsChange, onItemsUpdate, session, sessionType, updateSession],
     );
 
     const reorderItems = useCallback(
@@ -81,8 +119,9 @@ export function useSessionItems({initialItems, onItemsUpdate, sessionId}: UseSes
                 content_id: contentId,
                 custom_instructions: '',
                 display_order: items.length + index + 1,
-                rest_seconds: 0,
-                sets: 1,
+                metadata: {
+                    workout_exercise_id: generateItemId(),
+                },
             }));
 
             const allItems = [...items, ...newItems];

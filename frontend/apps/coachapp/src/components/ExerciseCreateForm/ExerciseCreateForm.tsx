@@ -1,9 +1,13 @@
-import {Box, Grid, GridCol, MultiSelect, SegmentedControl, Textarea, TextInput, useMantineTheme} from '@mantine/core';
-import {FC} from 'react';
+import {Box, Grid, GridCol, MultiSelect, SegmentedControl, Text, Textarea, TextInput} from '@mantine/core';
+import {FC, useState} from 'react';
 
 import {Content} from '@/api/contents';
 
 import {ChipSelect} from '../ChipSelect';
+import {EXERCISER_LEVELS, FORM_SECTIONS, MUSCLE_OPTIONS} from './constants';
+import AdvancedSection from './form_sections/AdvancedSection';
+import InstructionSection from './form_sections/InstructionSection';
+import MediaSection from './form_sections/MediaSection';
 
 type ExerciseCreateFormProps = {
     autoResetOnSuccess?: boolean;
@@ -12,56 +16,8 @@ type ExerciseCreateFormProps = {
     submitLabel?: string;
 };
 
-// Common muscle group options
-const MUSCLE_OPTIONS: string[] = [
-    'Chest',
-    'Back',
-    'Lats',
-    'Quadriceps',
-    'Hamstrings',
-    'Glutes',
-    'Calves',
-    'Shoulders',
-    'Deltoids',
-    'Triceps',
-    'Biceps',
-    'Core',
-    'Abs',
-    'Forearms',
-    'Neck',
-    'Traps',
-    'Adductors',
-    'Abductors',
-];
-
-const FormSections = [
-    {
-        id: 'ce-media-section',
-        name: 'Media',
-    },
-    {
-        id: 'ce-instruction-section',
-        name: 'Instructions',
-    },
-    {
-        id: 'ce-metrices-section',
-        name: 'Metrices',
-    },
-    {
-        id: 'ce-advance-section',
-        name: 'Advance',
-    },
-];
-
-const FormDataForSegementation = () => {
-    return FormSections.map((section) => ({
-        label: section.name,
-        value: section.id,
-    }));
-};
-
 const ExerciseCreateForm: FC<ExerciseCreateFormProps> = () => {
-    const theme = useMantineTheme();
+    const [formSection, setFormSection] = useState<string>(() => FORM_SECTIONS[0].value);
 
     return (
         <form style={{position: 'relative'}}>
@@ -69,75 +25,81 @@ const ExerciseCreateForm: FC<ExerciseCreateFormProps> = () => {
                 description="Enter a clear, specific exercise name (e.g., 'Two-arm kettlebell row')."
                 label="Exercise Name"
                 placeholder="Two arm kettlebell row"
+                size="sm"
+                withAsterisk
             />
-            <Textarea label="Description" />
+            <Textarea
+                label="Description"
+                size="sm"
+            />
             <Grid>
                 <GridCol span={{sm: 12, md: 6, lg: 4}}>
                     <TextInput
                         label="Duration"
                         radius="lg"
                         rightSection="Min"
+                        size="sm"
                         type="number"
+                        withAsterisk
                     />
                 </GridCol>
                 <GridCol span={{sm: 12, md: 6, lg: 8}}>
                     <ChipSelect
-                        data={['Easy', 'Intermediate', 'Expert']}
-                        label="Level"
+                        data={EXERCISER_LEVELS}
+                        label={
+                            <Text
+                                fw="bold"
+                                size="sm"
+                            >
+                                Level
+                            </Text>
+                        }
                         radius="lg"
                     />
                 </GridCol>
             </Grid>
             <Grid>
                 <GridCol span={{sm: 12, md: 6, lg: 6}}>
-                    <Box
-                        p="sm"
-                        style={{
-                            border: `1px dotted ${theme.colors.gray[5]}`,
-                            borderRadius: theme.radius.lg,
-                        }}
-                    >
-                        <MultiSelect
-                            clearable
-                            data={MUSCLE_OPTIONS}
-                            description="Select one or more primary muscles targeted by this exercise."
-                            label="Primary Muscles"
-                            placeholder="Select primary muscles"
-                            radius="lg"
-                            searchable
-                            withAsterisk
-                        />
-                    </Box>
+                    <MultiSelect
+                        clearable
+                        data={MUSCLE_OPTIONS}
+                        description="Select one or more primary muscles targeted by this exercise."
+                        label="Primary Muscles"
+                        placeholder="Select primary muscles"
+                        radius="lg"
+                        searchable
+                        size="sm"
+                        withAsterisk
+                    />
                 </GridCol>
                 <GridCol span={{sm: 12, md: 6, lg: 6}}>
-                    <Box
-                        p="sm"
-                        style={{
-                            border: `1px dotted ${theme.colors.gray[5]}`,
-                            borderRadius: theme.radius.lg,
-                        }}
-                    >
-                        <MultiSelect
-                            clearable
-                            data={MUSCLE_OPTIONS}
-                            description="Optionally select supporting/assisting muscles."
-                            label="Secondary Muscles"
-                            placeholder="Select secondary muscles"
-                            radius="lg"
-                            searchable
-                        />
-                    </Box>
+                    <MultiSelect
+                        clearable
+                        data={MUSCLE_OPTIONS}
+                        description="Optionally select supporting/assisting muscles."
+                        label="Secondary Muscles"
+                        placeholder="Select secondary muscles"
+                        radius="lg"
+                        searchable
+                        size="sm"
+                    />
                 </GridCol>
             </Grid>
             <Box my="lg">
                 <SegmentedControl
                     color="blue"
-                    data={FormDataForSegementation()}
-                    defaultValue={FormDataForSegementation()[0].value}
+                    data={FORM_SECTIONS}
+                    defaultValue={formSection}
                     fullWidth
+                    onChange={(value) => setFormSection(value)}
                     radius="lg"
+                    size="sm"
                 />
             </Box>
+
+            <Box my="lg">{formSection === 'media' && <MediaSection />}</Box>
+            <Box my="lg">{formSection === 'instructions' && <InstructionSection />}</Box>
+            <Box my="lg">{formSection === 'advance' && <AdvancedSection />}</Box>
         </form>
     );
 };

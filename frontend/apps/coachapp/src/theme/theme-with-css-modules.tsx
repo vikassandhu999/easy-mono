@@ -6,6 +6,7 @@ import '@mantine/core/styles.css';
 import './default-css-variables.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/dates/styles.css';
+import '@mantine/dropzone/styles.css';
 import {
     Badge,
     Checkbox,

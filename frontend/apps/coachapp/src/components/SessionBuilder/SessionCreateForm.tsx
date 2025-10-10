@@ -1,22 +1,11 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Badge, Divider, NumberInput, Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {Button, Stack, Textarea, TextInput} from '@mantine/core';
 import {useEffect, useMemo} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
 import {Session, SessionType} from '@/api/sessions';
-import PaddingContainer from '@/components/containers/PaddingContainer';
 
-import {FixedBottom} from '../containers/FixedBottom';
-import {createDefaultFormValues, SessionFormSchema, SessionFormValues, sessionToFormValues} from './sessionForm';
-import InstructionSettingsFields from './sessionTypes/InstructionSettingsFields';
-import MealSettingsFields from './sessionTypes/MealSettingsFields';
-import MeasurementSettingsFields from './sessionTypes/MeasurementSettingsFields';
-
-const formatSessionTypeLabel = (value: SessionType): string =>
-    value
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
+import {SessionFormSchema, SessionFormValues, sessionToFormValues} from './sessionForm';
 
 interface SessionCreateFormProps {
     defaultSessionType: SessionType;
@@ -28,158 +17,123 @@ interface SessionCreateFormProps {
 
 export default function SessionCreateForm({defaultSessionType, initialSession, onSubmit}: SessionCreateFormProps) {
     const defaultValues = useMemo<SessionFormValues>(() => {
-        if (initialSession) {
-            return sessionToFormValues(initialSession);
-        }
-        return createDefaultFormValues(defaultSessionType);
+        return sessionToFormValues(initialSession, defaultSessionType);
     }, [defaultSessionType, initialSession]);
 
-    const {control, handleSubmit, reset, watch} = useForm<SessionFormValues>({
+    const {control, handleSubmit, reset} = useForm<SessionFormValues>({
         defaultValues,
         resolver: zodResolver(SessionFormSchema),
     });
-
-    const sessionType = watch('session_type');
-    const sessionTypeLabel = useMemo(() => formatSessionTypeLabel(sessionType), [sessionType]);
 
     useEffect(() => {
         reset(defaultValues);
     }, [defaultValues, reset]);
 
     return (
-        <PaddingContainer
-            paddingX="sm"
-            paddingY="lg"
+        <form
+            onSubmit={handleSubmit(onSubmit, (e) => {
+                console.log(e);
+            })}
         >
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <Stack gap="xs">
-                    <Controller
-                        control={control}
-                        name="session_type"
-                        render={({field}) => (
-                            <Stack
-                                gap={4}
-                                mb={'md'}
-                            >
-                                <input
-                                    {...field}
-                                    type="hidden"
-                                    value={field.value}
-                                />
-                                <Text
-                                    c="dimmed"
-                                    fw={600}
-                                    size="sm"
-                                >
-                                    Session type
-                                </Text>
-                                <Badge
-                                    color="blue"
-                                    variant="light"
-                                    w="fit-content"
-                                >
-                                    {sessionTypeLabel}
-                                </Badge>
-                            </Stack>
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="name"
-                        render={({field, fieldState}) => (
-                            <TextInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Session Name"
-                                placeholder="Enter session name"
-                                required
-                                size="md"
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="description"
-                        render={({field, fieldState}) => (
-                            <Textarea
-                                {...field}
-                                autosize
-                                error={fieldState.error?.message}
-                                label="Description"
-                                maxRows={4}
-                                minRows={2}
-                                placeholder="Enter session description"
-                                value={field.value ?? ''}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="duration_minutes"
-                        render={({field, fieldState}) => (
-                            <NumberInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Duration (minutes)"
-                                max={480}
-                                min={1}
-                                onChange={(value) => field.onChange(typeof value === 'number' ? value : undefined)}
-                                placeholder="30"
-                                size="md"
-                                value={field.value ?? undefined}
-                            />
-                        )}
-                    />
-
-                    {/* {sessionType === 'workout' && (
-                        <>
-                            <Divider
-                                label="Workout Settings"
-                                labelPosition="left"
-                            />
-                            <WorkoutSettingsFields control={control} />
-                        </>
-                    )} */}
-
-                    {sessionType === 'meal' && (
-                        <>
-                            <Divider
-                                label="Meal Settings"
-                                labelPosition="left"
-                            />
-                            <MealSettingsFields control={control} />
-                        </>
+            <Stack
+                gap={0}
+                w={'100%'}
+            >
+                <Controller
+                    control={control}
+                    name="session_type"
+                    render={({field}) => (
+                        <input
+                            {...field}
+                            type="hidden"
+                            value={field.value}
+                        />
                     )}
-
-                    {sessionType === 'instruction' && (
-                        <>
-                            <Divider
-                                label="Instruction Settings"
-                                labelPosition="left"
-                            />
-                            <InstructionSettingsFields control={control} />
-                        </>
-                    )}
-
-                    {sessionType === 'measurement' && (
-                        <>
-                            <Divider
-                                label="Measurement Settings"
-                                labelPosition="left"
-                            />
-                            <MeasurementSettingsFields control={control} />
-                        </>
-                    )}
-                </Stack>
-                <FixedBottom
-                    isSubmitting={control._formState.isSubmitting}
-                    label={'Save'}
-                    onSubmit={handleSubmit(onSubmit)}
                 />
-            </form>
-        </PaddingContainer>
+
+                <Controller
+                    control={control}
+                    name="name"
+                    render={({field, fieldState}) => (
+                        <TextInput
+                            {...field}
+                            error={fieldState.error?.message}
+                            label="Name"
+                            placeholder="Enter name"
+                            required
+                            size="sm"
+                        />
+                    )}
+                />
+
+                <Controller
+                    control={control}
+                    name="description"
+                    render={({field, fieldState}) => (
+                        <Textarea
+                            {...field}
+                            autosize
+                            error={fieldState.error?.message}
+                            label="Description"
+                            maxRows={4}
+                            minRows={2}
+                            placeholder="Enter session description"
+                            size="sm"
+                            value={field.value ?? ''}
+                        />
+                    )}
+                />
+
+                {/* <Controller
+                    control={control}
+                    name="duration_minutes"
+                    render={({field, fieldState}) => (
+                        <NumberInput
+                            {...field}
+                            error={fieldState.error?.message}
+                            label="Duration (minutes)"
+                            max={480}
+                            min={1}
+                            onChange={(value) => field.onChange(typeof value === 'number' ? value : undefined)}
+                            placeholder="30"
+                            size="sm"
+                            value={field.value ?? undefined}
+                        />
+                    )}
+                /> */}
+
+                {/* <Stack gap="md">
+                    <div style={{position: 'relative'}}>
+                        <LoadingOverlay visible={isSessionPending && Boolean(currentSessionId)} />
+
+                        {isWorkoutSession && (
+                            <>
+                                {currentSessionId && sessionError && !session && (
+                                    <Alert
+                                        color="red"
+                                        title="Unable to load session"
+                                    >
+                                        We couldn't load the latest session information. Please try again.
+                                    </Alert>
+                                )}
+
+                                <SessionItemsManager
+                                    isEditable
+                                    items={draftItems}
+                                    onItemsChange={handleItemsChange}
+                                    onItemsUpdate={() => {
+                                        sessionQuery.refetch();
+                                    }}
+                                    session={session ?? null}
+                                    sessionType={fallbackSessionType}
+                                />
+                            </>
+                        )}
+                    </div>
+                </Stack> */}
+
+                <Button type={'submit'}>{'Create session'}</Button>
+            </Stack>
+        </form>
     );
 }

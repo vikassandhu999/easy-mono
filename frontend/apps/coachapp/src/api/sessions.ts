@@ -4,10 +4,8 @@ import {Result} from '@/utils/error.ts';
 
 import {authedClient} from './auth';
 
-// Session related types
-export const SessionType = z.enum(['workout', 'meal', 'instruction', 'measurement']);
+export const SessionType = z.enum(['workout', 'meal']);
 
-// New JSONB-based item configuration (replaces old normalized session item)
 export const SessionItemConfig_zod = z.object({
     content: z.lazy(() => ContentDetail_zod).optional(),
     content_id: z.string().uuid(),
@@ -25,7 +23,6 @@ export const SessionItemConfig_zod = z.object({
     unit: z.string().optional(),
 });
 
-// Content details that can be optionally included with items
 export const ContentDetail_zod = z.object({
     archived_at: z.string().optional(),
     created_at: z.string(),

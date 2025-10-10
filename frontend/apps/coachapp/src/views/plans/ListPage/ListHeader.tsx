@@ -2,6 +2,7 @@ import {Button, Stack, TextInput} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
 import {PlusIcon} from '@phosphor-icons/react';
 import React from 'react';
+import {useNavigate} from 'react-router';
 
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import Header from '@/components/layouts/Header';
@@ -15,6 +16,7 @@ type PlansPageProps = {
 
 export default function PlansListHeader({onCreateClick, onSearchChange, ref}: PlansPageProps) {
     const onSearchChangeDebounced = useDebouncedCallback(onSearchChange, 300);
+    const navigate = useNavigate();
 
     return (
         <HeadingContainer
@@ -27,14 +29,24 @@ export default function PlansListHeader({onCreateClick, onSearchChange, ref}: Pl
             <Stack gap="md">
                 <Header
                     actions={
-                        <Button
-                            leftSection={<PlusIcon size={18} />}
-                            onClick={onCreateClick}
-                            radius={9999}
-                            size={'sm'}
-                        >
-                            Create
-                        </Button>
+                        <>
+                            <Button
+                                leftSection={<PlusIcon size={18} />}
+                                onClick={onCreateClick}
+                                radius={9999}
+                                size={'sm'}
+                            >
+                                Create
+                            </Button>
+                            <Button
+                                leftSection={<PlusIcon size={18} />}
+                                onClick={() => navigate('/sessions/new')}
+                                radius={9999}
+                                size={'sm'}
+                            >
+                                Create session
+                            </Button>
+                        </>
                     }
                     title={'Plans'}
                 />

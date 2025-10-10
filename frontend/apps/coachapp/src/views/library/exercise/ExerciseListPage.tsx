@@ -2,7 +2,7 @@ import {Button, Chip, Group, Space, TextInput, useDrawersStack} from '@mantine/c
 import {IconPlus, IconPointFilled} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 
-import {Content, LIST_CONTENTS_FILTER, ListContentFilter} from '@/api/contents';
+import {ACCESS_LEVEL_FILTERS, AccessLevelFilter, Content} from '@/api/contents';
 import ExerciseCard from '@/components/ExerciseCard';
 import ExerciseCreateDrawer from '@/components/ExerciseCreateDrawer';
 import {ExerciseDetailDrawer} from '@/components/ExerciseDetailDrawer';
@@ -10,26 +10,24 @@ import {useListContentsInfiniteQuery} from '@/store/services/contentsApi';
 
 const ExerciseListPage = () => {
     const stack = useDrawersStack(['create-exercise', 'exercise-detail']);
-    const [filter, setFilter] = useState<ListContentFilter>('all');
+    const [accessLevelFilter, setAccessLevelFilter] = useState<AccessLevelFilter>('all');
     const [search, setSearch] = useState('');
     const [selectedExercise, setSelectedExercise] = useState<Content | null>(null);
 
     const {data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, refetch} = useListContentsInfiniteQuery(
         {
-            queryArg: {
-                search: search || undefined,
-                content_type: 'exercise',
-                include_metadata: true,
-                filter,
-                page_size: 20,
-            },
+            search: search || undefined,
+            content_type: 'exercise',
+            access_level: accessLevelFilter,
+            active_only: false,
+            page_size: 20,
         },
         {refetchOnMountOrArgChange: true},
     );
 
     useEffect(() => {
         refetch();
-    }, [filter, refetch]);
+    }, [accessLevelFilter, refetch]);
 
     const exercises = data?.pages.flatMap((p) => p.records) ?? [];
 
@@ -71,18 +69,18 @@ const ExerciseListPage = () => {
             </Group>
 
             <Chip.Group
-                onChange={(v) => setFilter(v as ListContentFilter)}
-                value={filter}
+                onChange={(v) => setAccessLevelFilter(v as AccessLevelFilter)}
+                value={accessLevelFilter}
             >
                 <Group
                     justify="left"
                     my="sm"
                 >
-                    {LIST_CONTENTS_FILTER.map((v, idx) => {
+                    {ACCESS_LEVEL_FILTERS.map((v, idx) => {
                         return (
                             <Chip
                                 icon={<IconPointFilled />}
-                                key={`filter-${idx}`}
+                                key={`access-level-${idx}`}
                                 size="xs"
                                 tt="capitalize"
                                 value={v}

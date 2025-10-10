@@ -9,8 +9,6 @@ import ChatsListPage from './views/chats/ChatsListPage';
 import ChatViewPage from './views/chats/ChatView/ChatViewPage';
 import ClientDetailPage from './views/clients/DetailPage/DetailPage';
 import ClientsListPage from './views/clients/ListPage/ListPage';
-import ContentDetailPage from './views/contents/DetailPage/DetailPage';
-import ContentListPage from './views/contents/ListPage/ListPage';
 import HomePage from './views/dashboard/HomePage';
 import LibraryPage from './views/library/LibraryPage';
 import BusinessInfoStepPage from './views/onboarding/BusinessInfoStepPage';
@@ -87,14 +85,7 @@ const router = createBrowserRouter([
                         element: <></>,
                         path: '/schedules/:scheduleId/entries/:entryId/edit',
                     },
-                    {
-                        element: <ContentListPage />,
-                        path: '/contents/:id',
-                    },
-                    {
-                        element: <ContentDetailPage />,
-                        path: '/content/:id',
-                    },
+
                     {
                         element: <ChatViewPage />,
                         path: '/chats/:chatId',
@@ -113,18 +104,12 @@ const router = createBrowserRouter([
                         element: <ClientDetailPage />,
                         path: '/clients/:id',
                     },
-                    {
-                        element: <ContentListPage />,
-                        path: '/contents',
-                    },
+
                     {
                         element: <LibraryPage />,
                         path: '/library',
                     },
-                    {
-                        element: <ContentListPage />,
-                        path: '/content',
-                    },
+
                     {
                         element: <ChatsListPage />,
                         path: '/chats',

@@ -1,15 +1,19 @@
 import {useDrawersStack} from '@mantine/core';
-import {notifications} from '@mantine/notifications';
-import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {useQueryClient} from '@tanstack/react-query';
 
-import {Content, ContentsAPI, CreateContentProps} from '@/api/contents.ts';
+import {Content} from '@/api/contents.ts';
 import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
-import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper.tsx';
-import ContentForm from '@/components/ContentForm';
+import {ContentBuilder} from '@/components/ContentBuilder';
 import CEDrawer from '@/components/EasyDrawer/EasyDrawer';
 import Header from '@/components/layouts/Header';
 
+/**
+ * ContentCreateDrawer - Drawer for creating new content
+ *
+ * Refactored to use ContentBuilder component following SessionBuilder pattern.
+ * Maintains same API and behavior as before.
+ */
 export default function ContentCreateDrawer({
     contentType,
     onCreated,
@@ -21,27 +25,11 @@ export default function ContentCreateDrawer({
 }) {
     const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async (data: CreateContentProps) => {
-            const result = await ContentsAPI.create(data);
-            if (result.isError) {
-                throw result.getError();
-            }
-            return result.getValue();
-        },
-        onError: () => {
-            notifications.show({
-                autoClose: 1000,
-                color: 'red',
-                message: 'Failed to create content',
-                title: 'Error',
-            });
-        },
-        onSuccess: async (data) => {
-            await queryClient.invalidateQueries({queryKey: ['contents']});
-            onCreated(data.result);
-        },
-    });
+    const handleComplete = async (content: Content) => {
+        await queryClient.invalidateQueries({queryKey: ['contents']});
+        onCreated(content);
+        stack.close('content-create');
+    };
 
     const onClose = () => {
         stack.close('content-create');
@@ -66,14 +54,10 @@ export default function ContentCreateDrawer({
             withCloseButton={false}
         >
             <PagePaper>
-                <PaddingContainer>
-                    <ContentForm
-                        initialData={{type: contentType}}
-                        isSubmitting={mutation.isPending}
-                        mode="create"
-                        onSubmit={(data) => mutation.mutate(data)}
-                    />
-                </PaddingContainer>
+                <ContentBuilder
+                    contentType={contentType}
+                    onComplete={handleComplete}
+                />
             </PagePaper>
         </CEDrawer>
     );

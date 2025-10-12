@@ -87,6 +87,9 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
             shadow="xxs"
             style={{
                 borderRadius: 'var(--body-offset)',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '120px',
                 paddingBottom: 'var(--ce-size-md)',
                 paddingInline: 'var(--ce-size-md)',
                 paddingTop: 'var(--body-offset)',
@@ -97,6 +100,7 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                 align="start"
                 gap="xs"
                 justify="space-between"
+                style={{marginBottom: 'auto'}}
                 wrap="nowrap"
             >
                 <Box

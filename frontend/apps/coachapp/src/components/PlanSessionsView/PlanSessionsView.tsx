@@ -1,4 +1,4 @@
-import {Box, Button, Group, Stack, Text} from '@mantine/core';
+import {Box, Button, Group, SimpleGrid, Stack, Text} from '@mantine/core';
 import {CalendarBlank, CalendarDots, Clock, Plus} from '@phosphor-icons/react';
 import {useMemo} from 'react';
 
@@ -138,7 +138,10 @@ const GroupBlock = ({
                 </Text>
             )}
 
-            <Stack gap="sm">
+            <SimpleGrid
+                cols={{base: 1, sm: 2, md: 2, lg: 3}}
+                spacing="sm"
+            >
                 {group.sessions.map((planSession) => (
                     <PlanSessionCard
                         key={planSession.id}
@@ -166,7 +169,7 @@ const GroupBlock = ({
                             backgroundColor: 'transparent',
                             border: '2px dashed var(--mantine-color-gray-3)',
                             color: 'var(--mantine-color-gray-6)',
-                            minHeight: '44px',
+                            minHeight: '120px',
                             transition: 'all 0.15s ease',
                             '&:hover': {
                                 backgroundColor: 'var(--mantine-color-blue-0)',
@@ -183,7 +186,7 @@ const GroupBlock = ({
                 >
                     {addLabel}
                 </Button>
-            </Stack>
+            </SimpleGrid>
         </Box>
     );
 };

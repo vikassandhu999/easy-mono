@@ -10,7 +10,7 @@ import {DisplayError} from '@/components/containers/DisplayError';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {useGetPlanQuery} from '@/store/services/plans';
+import {useGetPlan} from '@/store/services/plans';
 import {
     useCreatePlanSessionMutation,
     useDeletePlanSessionMutation,
@@ -166,7 +166,7 @@ export default function PlanBuilder() {
         error: planError,
         isFetching: isFetchingPlan,
         isLoading: isLoadingPlan,
-    } = useGetPlanQuery(planId ?? '', {skip: !planId});
+    } = useGetPlan(planId ?? '', {skip: !planId});
 
     const {
         data: planSessions,

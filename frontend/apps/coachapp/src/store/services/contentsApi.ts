@@ -1,7 +1,5 @@
 import {
     type Content,
-    type ContentType,
-    type ContentUIStructure,
     CreateContent_zod,
     type CreateContentProps,
     type ListContentsProps,
@@ -66,7 +64,9 @@ export const contentsApi = apiSlice.injectEndpoints({
                 method: 'get',
                 params: buildContentListParams(queryArg, pageParam),
             }),
-            serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
+            serializeQueryArgs: ({queryArgs, endpointName}) => {
+                return `${endpointName}-${JSON.stringify(queryArgs ?? {})}`;
+            },
             providesTags: (result) => {
                 const baseTag = [{type: 'Contents' as const, id: 'LIST'}];
 
@@ -87,23 +87,12 @@ export const contentsApi = apiSlice.injectEndpoints({
                 getNextPageParam: (lastPage, _allPages, lastPageParam) => getNextContentPage(lastPage, lastPageParam),
             },
         }),
-        getContent: build.query<Content, {id: string; includeMetadata?: boolean; includeUIStructure?: boolean}>({
-            query: ({id, includeMetadata = true, includeUIStructure = true}) => ({
+        getContent: build.query<Content, string>({
+            query: (id) => ({
                 url: `/v1/coach/contents/${id}`,
                 method: 'get',
-                params: {
-                    include_metadata: includeMetadata,
-                    include_ui_structure: includeUIStructure,
-                },
             }),
-            providesTags: (_result, _error, {id}) => [{type: 'Contents', id}],
-        }),
-        getContentUIStructure: build.query<ContentUIStructure, ContentType>({
-            query: (contentType) => ({
-                url: `/v1/coach/contents/ui-structure/${contentType}`,
-                method: 'get',
-            }),
-            providesTags: (_result, _error, contentType) => [{type: 'Contents', id: `ui-structure-${contentType}`}],
+            providesTags: (_result, _error, id) => [{type: 'Contents', id}],
         }),
         createContent: build.mutation<Content, CreateContentProps>({
             query: (body) => {
@@ -132,17 +121,7 @@ export const contentsApi = apiSlice.injectEndpoints({
                 {type: 'Contents', id: 'LIST'},
             ],
         }),
-        deleteContent: build.mutation<{message: string}, string>({
-            query: (id) => ({
-                url: `/v1/coach/contents/${id}`,
-                method: 'delete',
-            }),
-            invalidatesTags: (_result, _error, id) => [
-                {type: 'Contents', id},
-                {type: 'Contents', id: 'LIST'},
-            ],
-        }),
-        archiveContent: build.mutation<{message: string}, string>({
+        archiveContent: build.mutation<void, string>({
             query: (id) => ({
                 url: `/v1/coach/contents/${id}/archive`,
                 method: 'post',
@@ -152,7 +131,7 @@ export const contentsApi = apiSlice.injectEndpoints({
                 {type: 'Contents', id: 'LIST'},
             ],
         }),
-        unarchiveContent: build.mutation<{message: string}, string>({
+        unarchiveContent: build.mutation<void, string>({
             query: (id) => ({
                 url: `/v1/coach/contents/${id}/unarchive`,
                 method: 'post',
@@ -162,10 +141,11 @@ export const contentsApi = apiSlice.injectEndpoints({
                 {type: 'Contents', id: 'LIST'},
             ],
         }),
-        duplicateContent: build.mutation<Content, string>({
-            query: (id) => ({
+        duplicateContent: build.mutation<Content, {id: string; name: string}>({
+            query: ({id, name}) => ({
                 url: `/v1/coach/contents/${id}/duplicate`,
                 method: 'post',
+                data: {name},
             }),
             invalidatesTags: [{type: 'Contents', id: 'LIST'}],
         }),
@@ -176,10 +156,8 @@ export const contentsApi = apiSlice.injectEndpoints({
 export const {
     useListContentsInfiniteQuery,
     useGetContentQuery,
-    useGetContentUIStructureQuery,
     useCreateContentMutation,
     useUpdateContentMutation,
-    useDeleteContentMutation,
     useArchiveContentMutation,
     useUnarchiveContentMutation,
     useDuplicateContentMutation,

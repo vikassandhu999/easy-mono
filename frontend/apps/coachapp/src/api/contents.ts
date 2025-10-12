@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-export const ContentTypeEnum = z.enum(['exercise', 'ingredient', 'recipe']);
+export const ContentTypeEnum = z.enum(['exercise', 'recipe']);
 
 export type ContentType = z.infer<typeof ContentTypeEnum>;
 
@@ -171,10 +171,8 @@ export const MediaType_zod = z.enum(['video', 'image', 'pdf', 'document', 'audio
 export type MediaType = z.infer<typeof MediaType_zod>;
 
 export const ContentMedia_zod = z.object({
-    external_id: z.string().optional(),
-    mime_type: z.string().optional(),
-    source: z.enum(['url', 'youtube', 'vimeo']),
-    type: MediaType_zod,
+    name: z.string().optional(),
+    type: z.string().optional(),
     url: z.string().url(),
 });
 
@@ -190,30 +188,22 @@ export const CreateContent_zod = z.object({
         .min(20, 'Description must be greater than 20 letters')
         .max(500, 'Description must be less than 500 letters')
         .optional(),
-    duration: z.number().min(0).optional(),
-    exercise_metadata: z.any().optional(),
-    ingredient_metadata: z.any().optional(),
-    instructions: z.string().optional(),
-    instruction_steps: z.array(z.string()).optional(),
-    instruction_url: z.string().url('Please enter a valid url').optional(),
+    exercise_definition: z.any().optional(),
+    ingredient_definition: z.any().optional(),
     media: ContentMedia_zod.optional(),
     name: z.string().min(3, 'Name should be greater than 3 letters').max(255, 'Name cannot be longer than 255 letters'),
-    recipe_metadata: z.any().optional(),
+    recipe_definition: z.any().optional(),
     thumbnail_url: z.string().url().optional(),
     type: ContentTypeEnum,
 });
 
 export const UpdateContent_zod = z.object({
     description: z.string().optional(),
-    duration: z.number().min(0).optional(),
-    exercise_metadata: z.any().optional(),
-    ingredient_metadata: z.any().optional(),
-    instructions: z.string().optional(),
-    instruction_steps: z.array(z.string()).optional(),
-    instruction_url: z.string().url().optional(),
+    exercise_definition: z.any().optional(),
+    ingredient_definition: z.any().optional(),
     media: ContentMedia_zod.optional(),
     name: z.string().min(3).max(255).optional(),
-    recipe_metadata: z.any().optional(),
+    recipe_definition: z.any().optional(),
     thumbnail_url: z.string().url().optional(),
     type: ContentTypeEnum.optional(),
 });
@@ -229,7 +219,7 @@ export const ArchiveStatusFilter_zod = z.enum(ARCHIVE_STATUS_FILTERS).optional()
 export type ArchiveStatusFilter = z.infer<typeof ArchiveStatusFilter_zod>;
 
 export const ListContents_zod = z.object({
-    content_type: z.enum(['exercise', 'ingredient', 'recipe']).optional(),
+    content_type: z.enum(['exercise', 'recipe']).optional(),
     access_level: AccessLevelFilter_zod,
     active_only: z.boolean().optional(),
     archived_only: z.boolean().optional(),
@@ -263,20 +253,17 @@ export interface Content {
     created_at: string;
     created_by?: {id: string; name: string};
     created_by_id?: string;
+    definition?: any;
     description?: string;
-    duration?: null | number;
-    exercise_metadata?: ExerciseMetadata;
+    exercise_definition?: ExerciseMetadata;
     id: string;
-    ingredient_metadata?: IngredientMetadata;
-    instruction_steps?: string[];
-    instruction_url?: string;
-    instructions?: string;
+    ingredient_definition?: IngredientMetadata;
     is_archived: boolean;
     last_edited_by?: {id: string; name: string};
     last_edited_by_id?: string;
     media?: ContentMedia | null;
     name: string;
-    recipe_metadata?: RecipeMetadata;
+    recipe_definition?: RecipeMetadata;
     thumbnail_url?: string;
     type: ContentType;
     updated_at: string;

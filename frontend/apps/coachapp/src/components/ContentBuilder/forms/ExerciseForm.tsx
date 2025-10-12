@@ -65,7 +65,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                     <TextInput
                         {...field}
                         error={fieldState.error?.message}
-                        label="Exercise Name"
+                        label="Name"
                         placeholder="e.g., Barbell Back Squat"
                         required
                         size="md"
@@ -73,19 +73,19 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 )}
             />
 
-            {/* Instructions */}
+            {/* Description */}
             <Controller
                 control={control}
-                name="instructions"
+                name="description"
                 render={({field, fieldState}) => (
                     <Textarea
                         {...field}
                         autosize
                         error={fieldState.error?.message}
-                        label="Instructions"
+                        label="Description"
                         maxRows={6}
                         minRows={3}
-                        placeholder="Clear steps & cues:&#10;1. Set stance...&#10;2. Perform movement...&#10;3. Return to start..."
+                        placeholder="Brief description of this exercise..."
                         size="md"
                         value={field.value ?? ''}
                     />
@@ -93,7 +93,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             />
 
             <Divider
-                label="Exercise Details (Optional)"
+                label="Details (Optional)"
                 labelPosition="left"
                 mb="sm"
                 mt="md"
@@ -102,15 +102,15 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             {/* Muscle Groups */}
             <Controller
                 control={control}
-                name="exercise_metadata.muscle_groups"
+                name="exercise_definition.muscle_groups"
                 render={({field}) => (
                     <MultiSelect
                         {...field}
                         clearable
                         data={MUSCLE_OPTIONS}
-                        description="Select primary muscle groups targeted"
+                        description="Primary muscles targeted"
                         label="Muscle Groups"
-                        placeholder="Select muscle groups"
+                        placeholder="Select muscles"
                         searchable
                         size="md"
                         value={field.value ?? []}
@@ -121,13 +121,13 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             {/* Equipment */}
             <Controller
                 control={control}
-                name="exercise_metadata.equipment"
+                name="exercise_definition.equipment"
                 render={({field}) => (
                     <MultiSelect
                         {...field}
                         clearable
                         data={EQUIPMENT_OPTIONS}
-                        description="Select required equipment"
+                        description="Required equipment"
                         label="Equipment"
                         placeholder="Select equipment"
                         searchable
@@ -140,13 +140,13 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             {/* Difficulty Level */}
             <Controller
                 control={control}
-                name="exercise_metadata.difficulty_level"
+                name="exercise_definition.difficulty_level"
                 render={({field}) => (
                     <TextInput
                         {...field}
-                        description="e.g., beginner, intermediate, advanced"
-                        label="Difficulty Level"
-                        placeholder="Enter difficulty level"
+                        description="Beginner, Intermediate, or Advanced"
+                        label="Difficulty"
+                        placeholder="e.g., Intermediate"
                         size="md"
                         value={field.value ?? ''}
                     />

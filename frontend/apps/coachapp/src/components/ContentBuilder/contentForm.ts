@@ -15,24 +15,20 @@ export const ContentMediaSchema = z
 // Base content schema
 export const BaseContentSchema = z.object({
     name: z.string().min(3, 'Name must be at least 3 characters').max(255),
-    instructions: z.string().max(5000).optional(),
+    description: z.string().max(5000).optional(),
     media: ContentMediaSchema,
     thumbnail_url: z.string().url().optional(),
 });
 
-// Discriminated union for content types (simplified metadata as any for now)
+// Discriminated union for content types (simplified definition as any for now)
 export const ContentFormSchema = z.discriminatedUnion('type', [
     BaseContentSchema.extend({
         type: z.literal('exercise'),
-        exercise_metadata: z.any().optional(),
-    }),
-    BaseContentSchema.extend({
-        type: z.literal('ingredient'),
-        ingredient_metadata: z.any().optional(),
+        exercise_definition: z.any().optional(),
     }),
     BaseContentSchema.extend({
         type: z.literal('recipe'),
-        recipe_metadata: z.any().optional(),
+        recipe_definition: z.any().optional(),
     }),
 ]);
 
@@ -57,9 +53,9 @@ export const sanitizeStringArray = (values?: null | string[]): string[] | undefi
 };
 
 /**
- * Default metadata for each content type (simplified for forms)
+ * Default definition for each content type (simplified for forms)
  */
-function defaultMetadata(contentType: ContentType): any {
+function defaultDefinition(contentType: ContentType): any {
     switch (contentType) {
         case 'exercise':
             return {
@@ -67,21 +63,6 @@ function defaultMetadata(contentType: ContentType): any {
                 muscle_groups: [],
                 difficulty_level: undefined,
                 exercise_type: [],
-            };
-        case 'ingredient':
-            return {
-                serving_size: {
-                    amount: undefined,
-                    unit: undefined,
-                },
-                nutrition_profile: {
-                    macros: {
-                        calories: undefined,
-                        protein_g: undefined,
-                        carbs_g: undefined,
-                        fat_g: undefined,
-                    },
-                },
             };
         case 'recipe':
             return {
@@ -103,7 +84,7 @@ export function contentToFormValues(content?: Content | null, contentType?: Cont
 
     const baseValues = {
         name: content?.name ?? '',
-        instructions: content?.instructions ?? undefined,
+        description: content?.description ?? undefined,
         media: content?.media ?? undefined,
         thumbnail_url: content?.thumbnail_url ?? undefined,
         type,
@@ -114,19 +95,13 @@ export function contentToFormValues(content?: Content | null, contentType?: Cont
             return {
                 ...baseValues,
                 type: 'exercise',
-                exercise_metadata: (content as any)?.exercise_metadata ?? defaultMetadata('exercise'),
-            } as ContentFormValues;
-        case 'ingredient':
-            return {
-                ...baseValues,
-                type: 'ingredient',
-                ingredient_metadata: (content as any)?.ingredient_metadata ?? defaultMetadata('ingredient'),
+                exercise_definition: (content as any)?.exercise_definition ?? defaultDefinition('exercise'),
             } as ContentFormValues;
         case 'recipe':
             return {
                 ...baseValues,
                 type: 'recipe',
-                recipe_metadata: (content as any)?.recipe_metadata ?? defaultMetadata('recipe'),
+                recipe_definition: (content as any)?.recipe_definition ?? defaultDefinition('recipe'),
             } as ContentFormValues;
         default:
             throw new ContentBuildError(`Unsupported content type: ${type}`);
@@ -139,7 +114,7 @@ export function contentToFormValues(content?: Content | null, contentType?: Cont
 export function buildContentPayload(values: ContentFormValues): any {
     const basePayload = {
         name: sanitizeString(values.name),
-        instructions: sanitizeString(values.instructions),
+        description: sanitizeString(values.description),
         media: values.media ?? undefined,
         thumbnail_url: sanitizeString(values.thumbnail_url),
         type: values.type,
@@ -149,17 +124,12 @@ export function buildContentPayload(values: ContentFormValues): any {
         case 'exercise':
             return {
                 ...basePayload,
-                exercise_metadata: values.exercise_metadata,
-            };
-        case 'ingredient':
-            return {
-                ...basePayload,
-                ingredient_metadata: values.ingredient_metadata,
+                exercise_definition: values.exercise_definition,
             };
         case 'recipe':
             return {
                 ...basePayload,
-                recipe_metadata: values.recipe_metadata,
+                recipe_definition: values.recipe_definition,
             };
     }
 }

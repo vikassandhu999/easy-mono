@@ -1,37 +1,22 @@
 import {useContentHeight} from '@easy/hooks';
 import {
+    ActionIcon,
     Alert,
     Avatar,
     Badge,
     Box,
     Button,
     Card,
-    Divider,
     Group,
     LoadingOverlay,
     Menu,
-    ScrollArea,
     Stack,
     Tabs,
     Text,
-    ThemeIcon,
-    useMantineTheme,
 } from '@mantine/core';
-import {useInViewport, useMediaQuery} from '@mantine/hooks';
-import {
-    IconAlertCircle,
-    IconCalendar,
-    IconCalendarTime,
-    IconChevronDown,
-    IconClock,
-    IconMail,
-    IconNotes,
-    IconPackage,
-    IconPhone,
-    IconTrendingUp,
-    IconUser,
-    IconUserCheck,
-} from '@tabler/icons-react';
+import {useInViewport} from '@mantine/hooks';
+import {ChatCircleDots, DotsThree, Envelope, Phone, UserCircle} from '@phosphor-icons/react';
+import {format, parseISO} from 'date-fns';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
@@ -48,46 +33,46 @@ import PlanListItem from '@/components/PlanListItem/PlanListItem';
 import {useGetClientQuery} from '@/store/services/clientsApi';
 import {useListPlans} from '@/store/services/plans';
 
+// Utility functions
+const getClientInitials = (name: string): string => {
+    return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+};
+
+const getMembershipStatusColor = (status: string): string => {
+    switch (status) {
+        case 'active':
+            return 'green';
+        case 'inactive':
+            return 'gray';
+        case 'paused':
+            return 'yellow';
+        case 'expired':
+            return 'red';
+        default:
+            return 'gray';
+    }
+};
+
+const getMembershipStatusLabel = (status: string): string => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
 const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<string>('info');
+    const [activeTab, setActiveTab] = useState<null | string>('overview');
 
     const [isPlanDrawerOpen, setPlanDrawerOpen] = useState(false);
     const [planDrawerData, setPlanDrawerData] = useState<null | PlanCreationDrawerData>(null);
 
-    const isMobile = useMediaQuery('(max-width: 768px)');
     const {data: client, error, isError, isLoading} = useGetClientQuery(clientId, {skip: !clientId});
-    const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLHeadingElement>();
-    const {topHeight, useElementRef} = useContentHeight();
+    const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLDivElement>();
+    const {useElementRef} = useContentHeight();
     const headerRef = useElementRef('top');
-    const theme = useMantineTheme();
-
-    const {
-        data: plansData,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading: isPlansLoading,
-        refetch: refetchPlans,
-    } = useListPlans({client_id: clientId});
-
-    const plans = plansData?.pages?.flatMap((page) => page.records) ?? [];
-
-    const navigateRef = useRef(navigate);
-    const refetchPlansRef = useRef(refetchPlans);
-
-    useEffect(() => {
-        navigateRef.current = navigate;
-    }, [navigate]);
-
-    useEffect(() => {
-        refetchPlansRef.current = refetchPlans;
-    }, [refetchPlans]);
-
-    const handlePlanCreated = useCallback(async (newId: string) => {
-        await refetchPlansRef.current();
-        navigateRef.current(`/plans/${newId}/edit`);
-    }, []);
 
     const handleClosePlanDrawer = useCallback(() => {
         setPlanDrawerOpen(false);
@@ -107,7 +92,6 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
             <PaddingContainer>
                 <Alert
                     color="red"
-                    icon={<IconAlertCircle size={16} />}
                     title="Error"
                 >
                     {error?.message || 'Failed to load client'}
@@ -121,7 +105,11 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
         setPlanDrawerOpen(true);
     };
 
-    const pageContent = (
+    const handleChat = () => {
+        navigate(`/clients/${clientId}/chat`);
+    };
+
+    return (
         <PagePaper>
             <HeadingContainer
                 ref={headerRef}
@@ -138,326 +126,161 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
             </HeadingContainer>
 
             <PaddingContainer style={{padding: 'var(--ce-size-lg)'}}>
-                <div ref={titleRef}>
-                    {/* Enhanced Client Header */}
+                <Stack gap="md">
+                    {/* Profile Card */}
                     <Card
-                        padding="xl"
-                        radius="lg"
-                        style={{
-                            background:
-                                'linear-gradient(135deg, var(--mantine-color-blue-6) 0%, var(--mantine-color-blue-7) 100%)',
-                            color: 'white',
-                            marginBottom: 'var(--ce-size-lg)',
-                        }}
-                        withBorder={false}
+                        padding="md"
+                        radius="md"
+                        ref={titleRef}
+                        withBorder
                     >
                         <Group
                             align="center"
-                            gap="lg"
+                            justify="space-between"
                             wrap="nowrap"
                         >
-                            <Avatar
-                                color="blue"
-                                radius="xl"
-                                size={80}
-                                style={{
-                                    border: '4px solid rgba(255, 255, 255, 0.3)',
-                                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)',
-                                }}
+                            <Group
+                                align="center"
+                                gap="md"
+                                wrap="nowrap"
                             >
-                                <Text
-                                    fw={700}
-                                    size="xl"
-                                    style={{color: 'white'}}
+                                <Avatar
+                                    color="blue"
+                                    radius="md"
+                                    size="lg"
                                 >
-                                    {client.name
-                                        .split(' ')
-                                        .map((n) => n[0])
-                                        .join('')
-                                        .toUpperCase()}
-                                </Text>
-                            </Avatar>
+                                    {getClientInitials(client.name)}
+                                </Avatar>
 
-                            <Box style={{flex: 1}}>
-                                <Text
-                                    fw={700}
-                                    size="xl"
-                                    style={{
-                                        fontSize: 'var(--title1-font-size)',
-                                        fontWeight: 'var(--title1-font-weight)',
-                                        lineHeight: 'var(--title1-line-height)',
-                                        marginBottom: 'var(--ce-size-xs)',
-                                    }}
-                                >
-                                    {client.name}
-                                </Text>
-
-                                <Group
-                                    gap="xs"
-                                    mb="sm"
-                                >
-                                    <Badge
-                                        color={
-                                            client.membership_status === 'active'
-                                                ? 'green'
-                                                : client.membership_status === 'inactive'
-                                                  ? 'gray'
-                                                  : client.membership_status === 'paused'
-                                                    ? 'yellow'
-                                                    : 'red'
-                                        }
-                                        leftSection={
-                                            <ThemeIcon
-                                                color={
-                                                    client.membership_status === 'active'
-                                                        ? 'green'
-                                                        : client.membership_status === 'inactive'
-                                                          ? 'gray'
-                                                          : client.membership_status === 'paused'
-                                                            ? 'yellow'
-                                                            : 'red'
-                                                }
-                                                radius="xl"
-                                                size={16}
-                                                variant="filled"
-                                            >
-                                                <IconUserCheck size={10} />
-                                            </ThemeIcon>
-                                        }
-                                        radius="xl"
-                                        size="md"
-                                        style={{
-                                            textTransform: 'capitalize',
-                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                            color: 'white',
-                                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                                        }}
-                                        variant="light"
+                                <Box>
+                                    <Group
+                                        gap="xs"
+                                        mb={4}
                                     >
-                                        {client.membership_status}
-                                    </Badge>
-
-                                    {client.assigned_coach && (
+                                        <Text
+                                            fw={600}
+                                            size="lg"
+                                        >
+                                            {client.name}
+                                        </Text>
                                         <Badge
-                                            color="blue"
-                                            leftSection={
-                                                <ThemeIcon
-                                                    color="blue"
-                                                    radius="xl"
-                                                    size={16}
-                                                    variant="filled"
-                                                >
-                                                    <IconUser size={10} />
-                                                </ThemeIcon>
-                                            }
-                                            radius="xl"
-                                            size="md"
-                                            style={{
-                                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                color: 'white',
-                                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                            }}
+                                            color={getMembershipStatusColor(client.membership_status)}
+                                            size="sm"
                                             variant="light"
                                         >
-                                            Coach: {client.assigned_coach.name}
+                                            {getMembershipStatusLabel(client.membership_status)}
                                         </Badge>
-                                    )}
-                                </Group>
+                                    </Group>
 
-                                <Group gap="lg">
-                                    {client.invitation_email && (
-                                        <Group gap="xs">
-                                            <IconMail
-                                                size={16}
-                                                style={{opacity: 0.8}}
-                                            />
-                                            <Text
-                                                size="sm"
-                                                style={{opacity: 0.9}}
-                                            >
-                                                {client.invitation_email}
-                                            </Text>
-                                        </Group>
-                                    )}
-
-                                    {client.invitation_phone && (
-                                        <Group gap="xs">
-                                            <IconPhone
-                                                size={16}
-                                                style={{opacity: 0.8}}
-                                            />
-                                            <Text
-                                                size="sm"
-                                                style={{opacity: 0.9}}
-                                            >
-                                                {client.invitation_phone}
-                                            </Text>
-                                        </Group>
-                                    )}
-                                </Group>
-                            </Box>
-                        </Group>
-                    </Card>
-                </div>
-            </PaddingContainer>
-
-            <Tabs
-                onChange={(value) => setActiveTab(value || 'info')}
-                styles={{
-                    list: {
-                        backgroundColor: 'var(--mantine-color-white)',
-                        msOverflowStyle: 'none',
-                        position: 'sticky',
-                        scrollbarWidth: 'none',
-                        top: topHeight,
-                        zIndex: 10,
-                    },
-                    panel: {
-                        padding: 0,
-                    },
-                    tab: {
-                        '&:hover': {
-                            backgroundColor: 'var(--mantine-color-gray-0)',
-                        },
-                        '&[data-active]': {
-                            borderColor: 'var(--mantine-color-blue-6)',
-                            color: 'var(--mantine-color-blue-6)',
-                        },
-                        fontSize: 'var(--body-font-size)',
-                        fontWeight: 400,
-                        lineHeight: 'var(--label-line-height)',
-                        minWidth: 'auto',
-                        padding: 'var(--ce-size-md)',
-                        whiteSpace: 'nowrap',
-                    },
-                }}
-                value={activeTab}
-                variant="default"
-            >
-                <PaddingContainer style={{paddingBlock: 0, paddingInline: isMobile ? 0 : 'var(--ce-size-lg)'}}>
-                    <ScrollArea
-                        flex={1}
-                        scrollbars={'x'}
-                        style={{width: '100%'}}
-                        type={'never'}
-                    >
-                        <Tabs.List flex={1}>
-                            <Group wrap={'nowrap'}>
-                                <Tabs.Tab
-                                    leftSection={<IconUser size={16} />}
-                                    value="info"
-                                >
-                                    Client Info
-                                </Tabs.Tab>
-                                <Tabs.Tab
-                                    leftSection={<IconCalendar size={16} />}
-                                    value="plans"
-                                >
-                                    Plans
-                                </Tabs.Tab>
+                                    <Stack gap={4}>
+                                        {client.invitation_email && (
+                                            <Group gap={6}>
+                                                <Envelope
+                                                    size={14}
+                                                    weight="regular"
+                                                />
+                                                <Text
+                                                    c="dimmed"
+                                                    size="sm"
+                                                >
+                                                    {client.invitation_email}
+                                                </Text>
+                                            </Group>
+                                        )}
+                                        {client.invitation_phone && (
+                                            <Group gap={6}>
+                                                <Phone
+                                                    size={14}
+                                                    weight="regular"
+                                                />
+                                                <Text
+                                                    c="dimmed"
+                                                    size="sm"
+                                                >
+                                                    {client.invitation_phone}
+                                                </Text>
+                                            </Group>
+                                        )}
+                                    </Stack>
+                                </Box>
                             </Group>
-                        </Tabs.List>
-                    </ScrollArea>
-                </PaddingContainer>
 
-                <PaddingContainer style={{padding: 'var(--ce-size-lg)', paddingBlock: 'var(--title2-offset)'}}>
-                    <Tabs.Panel value="info">
-                        <ClientInfoTab client={client} />
-                    </Tabs.Panel>
-                    <Tabs.Panel value="plans">
-                        <Group justify="flex-end">
                             <Menu
                                 position="bottom-end"
-                                radius="lg"
-                                transitionProps={{transition: 'pop-top-right'}}
-                                width={220}
-                                withinPortal
+                                shadow="md"
+                                width={180}
                             >
                                 <Menu.Target>
-                                    <Button
-                                        radius="xl"
-                                        rightSection={
-                                            <IconChevronDown
-                                                size={18}
-                                                stroke={1.5}
-                                            />
-                                        }
+                                    <ActionIcon
+                                        color="gray"
+                                        size="lg"
+                                        variant="subtle"
                                     >
-                                        Add Plan
-                                    </Button>
+                                        <DotsThree
+                                            size={20}
+                                            weight="bold"
+                                        />
+                                    </ActionIcon>
                                 </Menu.Target>
                                 <Menu.Dropdown>
                                     <Menu.Item
                                         leftSection={
-                                            <IconPackage
-                                                color={theme.colors.blue[6]}
+                                            <ChatCircleDots
                                                 size={16}
-                                                stroke={1.5}
+                                                weight="regular"
                                             />
                                         }
-                                        onClick={() => navigate('/plans')}
+                                        onClick={handleChat}
                                     >
-                                        Assign from existing
+                                        Open Chat
                                     </Menu.Item>
-
                                     <Menu.Item
                                         leftSection={
-                                            <IconCalendar
-                                                color={theme.colors.violet[6]}
+                                            <UserCircle
                                                 size={16}
-                                                stroke={1.5}
+                                                weight="regular"
                                             />
                                         }
-                                        onClick={handleCreatePlan}
+                                        onClick={() => navigate(`/clients/${clientId}/edit`)}
                                     >
-                                        Create new plan
+                                        Edit Profile
                                     </Menu.Item>
                                 </Menu.Dropdown>
                             </Menu>
                         </Group>
+                    </Card>
 
-                        <RecordsList<Plan>
-                            emptyState={
-                                <EmptyState
-                                    description={`No plans found for ${client.name}. Create the first plan to kickstart progress.`}
-                                    icon={<IconTrendingUp size={32} />}
-                                    iconColor="gray.5"
-                                    iconSize="xl"
-                                    title="No Plans Yet"
-                                />
-                            }
-                            fetchNextPage={fetchNextPage}
-                            gap="md"
-                            hasNextPage={hasNextPage}
-                            isFetchingNextPage={isFetchingNextPage}
-                            isLoading={isPlansLoading}
-                            itemKey={(item) => item.id}
-                            loadMoreText="Load More Plans"
-                            records={plans}
-                            renderItem={(plan) => (
-                                <PlanListItem
-                                    key={plan.id}
-                                    onEdit={(planId) => navigate(`/plans/${planId}/edit`)}
-                                    onView={(planId) => navigate(`/plans/${planId}`)}
-                                    plan={plan}
-                                />
-                            )}
-                        />
+                    {/* Tabs Section */}
+                    <Tabs
+                        onChange={setActiveTab}
+                        value={activeTab}
+                        variant="default"
+                    >
+                        <Tabs.List>
+                            <Tabs.Tab value="overview">Overview</Tabs.Tab>
+                            <Tabs.Tab value="plans">Plans</Tabs.Tab>
+                        </Tabs.List>
 
-                        <PlanCreationDrawer
-                            initialDiscipline={planDrawerData?.initialDiscipline}
-                            initialPlan={planDrawerData?.initialPlan}
-                            onClose={handleClosePlanDrawer}
-                            onPlanCreated={handlePlanCreated}
-                            opened={isPlanDrawerOpen}
-                        />
-                    </Tabs.Panel>
-                </PaddingContainer>
-            </Tabs>
+                        <Box mt="md">
+                            <Tabs.Panel value="overview">
+                                <ClientOverviewTab client={client} />
+                            </Tabs.Panel>
+
+                            <Tabs.Panel value="plans">
+                                <ClientPlansTab
+                                    client={client}
+                                    isPlanDrawerOpen={isPlanDrawerOpen}
+                                    onClosePlanDrawer={handleClosePlanDrawer}
+                                    onCreatePlan={handleCreatePlan}
+                                    planDrawerData={planDrawerData}
+                                />
+                            </Tabs.Panel>
+                        </Box>
+                    </Tabs>
+                </Stack>
+            </PaddingContainer>
         </PagePaper>
     );
-
-    return pageContent;
 };
 
 const ClientDetailPage = () => {
@@ -470,381 +293,203 @@ const ClientDetailPage = () => {
     return <ClientDetailPageContent clientId={id} />;
 };
 
-// Client Info Tab Component
-const ClientInfoTab = ({client}: {client: Client}) => {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'active':
-                return 'green';
-            case 'cancelled':
-                return 'red';
-            case 'paused':
-                return 'yellow';
-            default:
-                return 'gray';
-        }
-    };
-
+// Client Overview Tab Component
+const ClientOverviewTab = ({client}: {client: Client}) => {
     return (
-        <Stack gap="xl">
-            {/* Contact Information Card */}
+        <Stack gap="md">
+            {/* Membership Card */}
             <Card
-                padding="lg"
-                radius="lg"
-                shadow="sm"
-                style={{
-                    background:
-                        'linear-gradient(135deg, var(--mantine-color-gray-0) 0%, var(--mantine-color-white) 100%)',
-                    border: '1px solid var(--mantine-color-gray-2)',
-                }}
+                padding="md"
+                radius="md"
                 withBorder
             >
-                <Group
-                    align="center"
-                    gap="md"
-                    mb="lg"
+                <Text
+                    fw={600}
+                    mb="sm"
+                    size="sm"
                 >
-                    <ThemeIcon
-                        color="blue"
-                        radius="xl"
-                        size={48}
-                        variant="light"
-                    >
-                        <IconMail size={24} />
-                    </ThemeIcon>
-                    <div>
-                        <Text
-                            fw={600}
-                            size="lg"
-                            style={{color: 'var(--mantine-color-gray-9)'}}
-                        >
-                            Contact Information
-                        </Text>
+                    Membership
+                </Text>
+                <Stack gap="xs">
+                    <Group justify="space-between">
                         <Text
                             c="dimmed"
                             size="sm"
                         >
-                            Client's contact details and communication info
+                            Status
                         </Text>
-                    </div>
-                </Group>
-
-                <Stack gap="md">
-                    <Group
-                        align="center"
-                        gap="md"
-                    >
-                        <ThemeIcon
-                            color="blue"
-                            radius="xl"
-                            size={36}
-                            variant="light"
-                        >
-                            <IconMail size={18} />
-                        </ThemeIcon>
-                        <Box style={{flex: 1}}>
-                            <Text
-                                fw={500}
-                                size="sm"
-                                style={{color: 'var(--mantine-color-gray-6)'}}
-                            >
-                                Email Address
-                            </Text>
-                            <Text
-                                fw={500}
-                                size="md"
-                                style={{color: 'var(--mantine-color-gray-9)'}}
-                            >
-                                {client.invitation_email || 'Not provided'}
-                            </Text>
-                        </Box>
-                    </Group>
-
-                    <Divider />
-
-                    <Group
-                        align="center"
-                        gap="md"
-                    >
-                        <ThemeIcon
-                            color="green"
-                            radius="xl"
-                            size={36}
-                            variant="light"
-                        >
-                            <IconPhone size={18} />
-                        </ThemeIcon>
-                        <Box style={{flex: 1}}>
-                            <Text
-                                fw={500}
-                                size="sm"
-                                style={{color: 'var(--mantine-color-gray-6)'}}
-                            >
-                                Phone Number
-                            </Text>
-                            <Text
-                                fw={500}
-                                size="md"
-                                style={{color: 'var(--mantine-color-gray-9)'}}
-                            >
-                                {client.invitation_phone || 'Not provided'}
-                            </Text>
-                        </Box>
-                    </Group>
-                </Stack>
-            </Card>
-
-            {/* Membership Details Card */}
-            <Card
-                padding="lg"
-                radius="lg"
-                shadow="sm"
-                style={{
-                    background:
-                        'linear-gradient(135deg, var(--mantine-color-blue-0) 0%, var(--mantine-color-white) 100%)',
-                    border: '1px solid var(--mantine-color-blue-2)',
-                }}
-                withBorder
-            >
-                <Group
-                    align="center"
-                    gap="md"
-                    mb="lg"
-                >
-                    <ThemeIcon
-                        color="blue"
-                        radius="xl"
-                        size={48}
-                        variant="light"
-                    >
-                        <IconUserCheck size={24} />
-                    </ThemeIcon>
-                    <div>
-                        <Text
-                            fw={600}
-                            size="lg"
-                            style={{color: 'var(--mantine-color-gray-9)'}}
-                        >
-                            Membership Details
-                        </Text>
-                        <Text
-                            c="dimmed"
+                        <Badge
+                            color={getMembershipStatusColor(client.membership_status)}
                             size="sm"
-                        >
-                            Current membership status and subscription info
-                        </Text>
-                    </div>
-                </Group>
-
-                <Stack gap="md">
-                    <Group
-                        align="center"
-                        gap="md"
-                    >
-                        <ThemeIcon
-                            color={getStatusColor(client.membership_status)}
-                            radius="xl"
-                            size={36}
                             variant="light"
                         >
-                            <IconUserCheck size={18} />
-                        </ThemeIcon>
-                        <Box style={{flex: 1}}>
-                            <Text
-                                fw={500}
-                                size="sm"
-                                style={{color: 'var(--mantine-color-gray-6)'}}
-                            >
-                                Membership Status
-                            </Text>
-                            <Badge
-                                color={getStatusColor(client.membership_status)}
-                                leftSection={
-                                    <ThemeIcon
-                                        color={getStatusColor(client.membership_status)}
-                                        radius="xl"
-                                        size={16}
-                                        variant="filled"
-                                    >
-                                        <IconUserCheck size={10} />
-                                    </ThemeIcon>
-                                }
-                                radius="xl"
-                                size="md"
-                                style={{textTransform: 'capitalize'}}
-                                variant="light"
-                            >
-                                {client.membership_status}
-                            </Badge>
-                        </Box>
+                            {getMembershipStatusLabel(client.membership_status)}
+                        </Badge>
                     </Group>
-
-                    <Divider />
-
-                    <Group
-                        align="center"
-                        gap="md"
-                    >
-                        <ThemeIcon
-                            color="blue"
-                            radius="xl"
-                            size={36}
-                            variant="light"
-                        >
-                            <IconCalendarTime size={18} />
-                        </ThemeIcon>
-                        <Box style={{flex: 1}}>
-                            <Text
-                                fw={500}
-                                size="sm"
-                                style={{color: 'var(--mantine-color-gray-6)'}}
-                            >
-                                Start Date
-                            </Text>
-                            <Text
-                                fw={500}
-                                size="md"
-                                style={{color: 'var(--mantine-color-gray-9)'}}
-                            >
-                                {new Date(client.membership_start_date).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric',
-                                })}
-                            </Text>
-                        </Box>
-                    </Group>
-
-                    {client.membership_end_date && (
-                        <>
-                            <Divider />
-                            <Group
-                                align="center"
-                                gap="md"
-                            >
-                                <ThemeIcon
-                                    color="orange"
-                                    radius="xl"
-                                    size={36}
-                                    variant="light"
-                                >
-                                    <IconClock size={18} />
-                                </ThemeIcon>
-                                <Box style={{flex: 1}}>
-                                    <Text
-                                        fw={500}
-                                        size="sm"
-                                        style={{color: 'var(--mantine-color-gray-6)'}}
-                                    >
-                                        End Date
-                                    </Text>
-                                    <Text
-                                        fw={500}
-                                        size="md"
-                                        style={{color: 'var(--mantine-color-gray-9)'}}
-                                    >
-                                        {new Date(client.membership_end_date).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </Text>
-                                </Box>
-                            </Group>
-                        </>
-                    )}
-
-                    {client.assigned_coach && (
-                        <>
-                            <Divider />
-                            <Group
-                                align="center"
-                                gap="md"
-                            >
-                                <ThemeIcon
-                                    color="purple"
-                                    radius="xl"
-                                    size={36}
-                                    variant="light"
-                                >
-                                    <IconUser size={18} />
-                                </ThemeIcon>
-                                <Box style={{flex: 1}}>
-                                    <Text
-                                        fw={500}
-                                        size="sm"
-                                        style={{color: 'var(--mantine-color-gray-6)'}}
-                                    >
-                                        Assigned Coach
-                                    </Text>
-                                    <Text
-                                        fw={500}
-                                        size="md"
-                                        style={{color: 'var(--mantine-color-gray-9)'}}
-                                    >
-                                        {client.assigned_coach.name}
-                                    </Text>
-                                </Box>
-                            </Group>
-                        </>
-                    )}
-                </Stack>
-            </Card>
-
-            {/* Notes Card */}
-            {client.notes && (
-                <Card
-                    padding="lg"
-                    radius="lg"
-                    shadow="sm"
-                    style={{
-                        background:
-                            'linear-gradient(135deg, var(--mantine-color-yellow-0) 0%, var(--mantine-color-white) 100%)',
-                        border: '1px solid var(--mantine-color-yellow-2)',
-                    }}
-                    withBorder
-                >
-                    <Group
-                        align="center"
-                        gap="md"
-                        mb="lg"
-                    >
-                        <ThemeIcon
-                            color="orange"
-                            radius="xl"
-                            size={48}
-                            variant="light"
-                        >
-                            <IconNotes size={24} />
-                        </ThemeIcon>
-                        <div>
-                            <Text
-                                fw={600}
-                                size="lg"
-                                style={{color: 'var(--mantine-color-gray-9)'}}
-                            >
-                                Notes
-                            </Text>
+                    {client.membership_start_date && (
+                        <Group justify="space-between">
                             <Text
                                 c="dimmed"
                                 size="sm"
                             >
-                                Additional information about the client
+                                Start Date
                             </Text>
-                        </div>
-                    </Group>
+                            <Text size="sm">{format(parseISO(client.membership_start_date), 'MMM dd, yyyy')}</Text>
+                        </Group>
+                    )}
+                    {client.membership_end_date && (
+                        <Group justify="space-between">
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                End Date
+                            </Text>
+                            <Text size="sm">{format(parseISO(client.membership_end_date), 'MMM dd, yyyy')}</Text>
+                        </Group>
+                    )}
+                </Stack>
+            </Card>
 
+            {/* Coach Card */}
+            {client.assigned_coach && (
+                <Card
+                    padding="md"
+                    radius="md"
+                    withBorder
+                >
                     <Text
-                        style={{
-                            color: 'var(--mantine-color-gray-8)',
-                            lineHeight: 1.6,
-                            fontSize: 'var(--mantine-fontSizes-md)',
-                        }}
+                        fw={600}
+                        mb="sm"
+                        size="sm"
+                    >
+                        Coach
+                    </Text>
+                    <Group justify="space-between">
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                        >
+                            Assigned Coach
+                        </Text>
+                        <Text size="sm">{client.assigned_coach.name}</Text>
+                    </Group>
+                </Card>
+            )}
+
+            {/* Notes Card */}
+            {client.notes && (
+                <Card
+                    padding="md"
+                    radius="md"
+                    withBorder
+                >
+                    <Text
+                        fw={600}
+                        mb="sm"
+                        size="sm"
+                    >
+                        Notes
+                    </Text>
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                        style={{whiteSpace: 'pre-wrap'}}
                     >
                         {client.notes}
                     </Text>
                 </Card>
             )}
+        </Stack>
+    );
+};
+
+// Client Plans Tab Component
+const ClientPlansTab = ({
+    client,
+    isPlanDrawerOpen,
+    onClosePlanDrawer,
+    onCreatePlan,
+    planDrawerData,
+}: {
+    client: Client;
+    isPlanDrawerOpen: boolean;
+    onClosePlanDrawer: () => void;
+    onCreatePlan: () => void;
+    planDrawerData: null | PlanCreationDrawerData;
+}) => {
+    const navigate = useNavigate();
+
+    const {
+        data: plansData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isPlansLoading,
+        refetch: refetchPlans,
+    } = useListPlans({client_id: client.id});
+
+    const plans = plansData?.pages?.flatMap((page) => page.records) ?? [];
+
+    const navigateRef = useRef(navigate);
+    const refetchPlansRef = useRef(refetchPlans);
+
+    useEffect(() => {
+        navigateRef.current = navigate;
+    }, [navigate]);
+
+    useEffect(() => {
+        refetchPlansRef.current = refetchPlans;
+    }, [refetchPlans]);
+
+    const handlePlanCreated = useCallback(async (newId: string) => {
+        await refetchPlansRef.current();
+        navigateRef.current(`/plans/${newId}/edit`);
+    }, []);
+
+    return (
+        <Stack gap="md">
+            <Group justify="flex-end">
+                <Button
+                    onClick={onCreatePlan}
+                    size="sm"
+                >
+                    Create Plan
+                </Button>
+            </Group>
+
+            <RecordsList<Plan>
+                emptyState={
+                    <EmptyState
+                        description={`No plans found for ${client.name}. Create the first plan to kickstart progress.`}
+                        title="No Plans Yet"
+                    />
+                }
+                fetchNextPage={fetchNextPage}
+                gap="md"
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                isLoading={isPlansLoading}
+                itemKey={(item) => item.id}
+                loadMoreText="Load More Plans"
+                records={plans}
+                renderItem={(plan) => (
+                    <PlanListItem
+                        key={plan.id}
+                        onEdit={(planId) => navigate(`/plans/${planId}/edit`)}
+                        onView={(planId) => navigate(`/plans/${planId}`)}
+                        plan={plan}
+                    />
+                )}
+            />
+
+            <PlanCreationDrawer
+                initialDiscipline={planDrawerData?.initialDiscipline}
+                initialPlan={planDrawerData?.initialPlan}
+                onClose={onClosePlanDrawer}
+                onPlanCreated={handlePlanCreated}
+                opened={isPlanDrawerOpen}
+            />
         </Stack>
     );
 };

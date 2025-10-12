@@ -67,7 +67,9 @@ export const clientsApi = apiSlice.injectEndpoints({
                 method: 'get',
                 params: buildClientListParams(queryArg, pageParam),
             }),
-            serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
+            serializeQueryArgs: ({queryArgs, endpointName}) => {
+                return `${endpointName}-${JSON.stringify(queryArgs ?? {})}`;
+            },
             providesTags: (result) => {
                 const baseTag = [{type: 'Clients' as const, id: 'LIST'}];
 

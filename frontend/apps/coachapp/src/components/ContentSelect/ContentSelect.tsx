@@ -322,7 +322,7 @@ const SearchAndFilter = ({isLoading, onSearchChange, resultsCount, searchTerm}: 
 };
 
 interface ContentSelectProps {
-    contentType?: 'exercise' | 'ingredient' | 'recipe';
+    contentType?: 'exercise' | 'recipe';
     multiple?: boolean; // Default: false (single selection)
     onCancel?: () => void;
     onComplete?: (selectedIds: string[], selectedContents?: Content[]) => void;

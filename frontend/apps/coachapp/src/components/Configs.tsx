@@ -1,4 +1,4 @@
-import {Icon, IconBowl, IconChefHat, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
+import {Icon, IconBowl, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
 
 import {Content} from '@/api/contents.ts';
 
@@ -112,15 +112,6 @@ export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {v
         iconColor: 'var(--mantine-color-red-7)',
         label: 'Exercise',
         value: 'exercise',
-    },
-    ingredient: {
-        badgeColor: 'green',
-        color: 'var(--mantine-color-green-1)',
-        description: 'Individual ingredients and nutritional items',
-        icon: IconChefHat,
-        iconColor: 'var(--mantine-color-green-7)',
-        label: 'Ingredient',
-        value: 'ingredient',
     },
     recipe: {
         badgeColor: 'blue',

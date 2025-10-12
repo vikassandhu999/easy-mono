@@ -7,7 +7,6 @@ import {Content, ContentType} from '@/api/contents';
 
 import {ContentFormSchema, ContentFormValues, contentToFormValues} from './contentForm';
 import ExerciseForm from './forms/ExerciseForm';
-import FoodForm from './forms/FoodForm';
 import RecipeForm from './forms/RecipeForm';
 
 interface ContentCreateFormProps {
@@ -24,7 +23,6 @@ interface ContentCreateFormProps {
  *
  * Renders the appropriate form based on content type:
  * - ExerciseForm for exercise content
- * - FoodForm for ingredient content
  * - RecipeForm for recipe content
  *
  * Manages form state and form submission with dual CTA support.
@@ -36,7 +34,7 @@ export default function ContentCreateForm({
     isSubmitting,
     onSubmit,
     showSaveOptions = false,
-    submitLabel = 'Create Content',
+    submitLabel = 'Create',
 }: ContentCreateFormProps) {
     const defaultValues = useMemo<ContentFormValues>(() => {
         return contentToFormValues(initialContent, defaultContentType);
@@ -71,7 +69,8 @@ export default function ContentCreateForm({
             style={{
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%',
+                maxHeight: '70vh',
+                minHeight: '400px',
             }}
         >
             {/* Scrollable content */}
@@ -87,19 +86,21 @@ export default function ContentCreateForm({
                 {/* Render appropriate form based on content type */}
                 {effectiveContentType === 'exercise' && <ExerciseForm form={form} />}
 
-                {effectiveContentType === 'ingredient' && <FoodForm form={form} />}
-
                 {effectiveContentType === 'recipe' && <RecipeForm form={form} />}
             </Stack>
 
-            {/* Sticky Submit Button(s) */}
+            {/* Fixed Submit Button(s) */}
             <Group
                 justify="flex-end"
                 style={{
+                    backgroundColor: 'white',
                     borderTop: '1px solid var(--mantine-color-gray-2)',
                     flexShrink: 0,
                     paddingBlock: 'var(--ce-size-md)',
                     paddingInline: 'var(--ce-size-md)',
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 1,
                 }}
             >
                 {showSaveOptions ? (
@@ -120,7 +121,7 @@ export default function ContentCreateForm({
                             size="md"
                             type="submit"
                         >
-                            Save & Close
+                            Save & Exit
                         </Button>
                     </>
                 ) : (

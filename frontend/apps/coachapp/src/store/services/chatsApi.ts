@@ -44,7 +44,9 @@ export const chatsApi = apiSlice.injectEndpoints({
                 method: 'get',
                 params: buildChatListParams(queryArg, pageParam),
             }),
-            serializeQueryArgs: ({queryArgs}) => JSON.stringify(queryArgs ?? {}),
+            serializeQueryArgs: ({queryArgs, endpointName}) => {
+                return `${endpointName}-${JSON.stringify(queryArgs ?? {})}`;
+            },
             providesTags: (result) => {
                 const baseTag = [{type: 'Chats' as const, id: 'LIST'}];
 

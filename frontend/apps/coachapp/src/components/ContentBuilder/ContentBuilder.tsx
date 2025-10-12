@@ -63,8 +63,8 @@ export default function ContentBuilder({
                     notifications.show({
                         autoClose: 2000,
                         color: 'green',
-                        message: `${values.type.charAt(0).toUpperCase() + values.type.slice(1)} created successfully`,
-                        title: 'Success',
+                        message: `${values.name} is ready to use`,
+                        title: `${values.type.charAt(0).toUpperCase() + values.type.slice(1)} created`,
                     });
                     return;
                 }
@@ -80,8 +80,7 @@ export default function ContentBuilder({
                 notifications.show({
                     autoClose: 2000,
                     color: 'green',
-                    message: `${values.type.charAt(0).toUpperCase() + values.type.slice(1)} updated successfully`,
-                    title: 'Success',
+                    message: 'Changes saved',
                 });
             } catch (error) {
                 const message =
@@ -89,11 +88,11 @@ export default function ContentBuilder({
                         ? error.message
                         : error instanceof Error
                           ? error.message
-                          : 'Failed to save content';
+                          : 'Please check your input and try again';
                 notifications.show({
                     color: 'red',
                     message,
-                    title: 'Unable to save',
+                    title: 'Could not save',
                 });
             }
         },
@@ -109,9 +108,9 @@ export default function ContentBuilder({
                 >
                     <Alert
                         color="red"
-                        title="Content type required"
+                        title="Missing information"
                     >
-                        Provide a content type before creating new content.
+                        Please select a content type to continue.
                     </Alert>
                 </PaddingContainer>
             </PagePaper>

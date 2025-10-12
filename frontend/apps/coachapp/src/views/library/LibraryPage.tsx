@@ -16,65 +16,88 @@ export default function LibraryPage() {
         setSelectedTab(value);
     };
 
+    // Filter to only show exercise and recipe
+    const visibleContentTypes = ['exercise', 'recipe'];
+
     return (
         <PagePaper>
+            {/* Header - consistent with other pages */}
             <HeadingContainer
                 style={{
-                    paddingBlock: 'var(--ce-size-sm)',
+                    paddingBlock: 'var(--ce-size-md)',
                     paddingInline: 'var(--ce-size-lg)',
                 }}
                 withBorder={false}
             >
-                <Stack
-                    gap="xs"
-                    style={{
-                        flex: 1,
-                    }}
-                >
+                <Stack gap="md">
                     <Title order={5}>Library</Title>
                     <Text
-                        c={'dark.6'}
+                        c="dimmed"
+                        size="sm"
                         style={{
                             fontSize: 'var(--callout-font-size)',
-                            fontWeight: 400,
                             lineHeight: 'var(--callout-line-height)',
                         }}
                     >
-                        Manage and curate all exercises, ingredients, techniques, activities, guides, and lessons.
+                        Manage and curate all exercises and recipes for your coaching programs.
                     </Text>
-                </Stack>
-            </HeadingContainer>
-            <PaddingContainer
-                paddingX={'lg'}
-                paddingY={'md'}
-                style={{marginTop: 'var(--ce-size-md)'}}
-            >
-                <Stack mb="md">
+
+                    {/* Compact tab navigation */}
                     <ScrollArea
                         scrollbars="x"
                         type="never"
                         w="100%"
                     >
                         <SegmentedControl
-                            data={Object.entries(CONTENT_TYPE_CONFIG).map(([, config]) => ({
-                                value: config.value,
-                                label: (
-                                    <Center style={{gap: 10}}>
-                                        <config.icon size={16} />
-                                        <span>{config.label}s</span>
-                                    </Center>
-                                ),
-                            }))}
+                            data={Object.entries(CONTENT_TYPE_CONFIG)
+                                .filter(([key]) => visibleContentTypes.includes(key))
+                                .map(([, config]) => ({
+                                    value: config.value,
+                                    label: (
+                                        <Center style={{gap: 6}}>
+                                            <config.icon
+                                                size={16}
+                                                stroke={1.5}
+                                            />
+                                            <span>{config.label}s</span>
+                                        </Center>
+                                    ),
+                                }))}
                             fullWidth
                             onChange={onSelect}
-                            radius={'lg'}
+                            radius="md"
                             size="sm"
-                            style={{minWidth: 'max-content'}}
+                            style={{
+                                minWidth: 'max-content',
+                            }}
+                            styles={{
+                                root: {
+                                    // backgroundColor: 'var(--mantine-color-gray-0)',
+                                },
+                                label: {
+                                    padding: '8px 16px',
+                                    fontSize: 'var(--footnote-font-size)',
+                                    fontWeight: 500,
+                                },
+                                indicator: {
+                                    boxShadow: 'var(--mantine-shadow-xs)',
+                                },
+                            }}
                             value={selectedTab}
                         />
                     </ScrollArea>
                 </Stack>
+            </HeadingContainer>
 
+            {/* Content area */}
+            <PaddingContainer
+                paddingX={'lg'}
+                paddingY={0}
+                style={{
+                    paddingTop: 'var(--ce-size-md)',
+                    paddingBottom: 'var(--ce-size-xl)',
+                }}
+            >
                 {selectedTab === 'exercise' && <ExerciseListPage />}
                 {selectedTab === 'recipe' && <RecipeListPage />}
             </PaddingContainer>

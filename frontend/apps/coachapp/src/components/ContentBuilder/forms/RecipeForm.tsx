@@ -42,7 +42,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                     <TextInput
                         {...field}
                         error={fieldState.error?.message}
-                        label="Recipe Name"
+                        label="Name"
                         placeholder="e.g., High-Protein Chicken Salad"
                         required
                         size="md"
@@ -50,19 +50,19 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
-            {/* Instructions */}
+            {/* Description */}
             <Controller
                 control={control}
-                name="instructions"
+                name="description"
                 render={({field, fieldState}) => (
                     <Textarea
                         {...field}
                         autosize
                         error={fieldState.error?.message}
-                        label="Cooking Instructions"
+                        label="Description"
                         maxRows={8}
                         minRows={4}
-                        placeholder="Step-by-step instructions:&#10;1. Preheat oven to 375°F...&#10;2. Season chicken with...&#10;3. Bake for 25 minutes..."
+                        placeholder="Brief description of this recipe..."
                         size="md"
                         value={field.value ?? ''}
                     />
@@ -70,7 +70,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
             />
 
             <Divider
-                label="Recipe Details (Optional)"
+                label="Details (Optional)"
                 labelPosition="left"
                 mb="sm"
                 mt="md"
@@ -81,13 +81,13 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 <Grid.Col span={4}>
                     <Controller
                         control={control}
-                        name="recipe_metadata.prep_time_minutes"
+                        name="recipe_definition.prep_time_minutes"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={0}
-                                description="Preparation time"
-                                label="Prep Time"
+                                description="Prep time"
+                                label="Prep"
                                 min={0}
                                 placeholder="15"
                                 size="md"
@@ -100,13 +100,13 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 <Grid.Col span={4}>
                     <Controller
                         control={control}
-                        name="recipe_metadata.cook_time_minutes"
+                        name="recipe_definition.cook_time_minutes"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={0}
-                                description="Cooking time"
-                                label="Cook Time"
+                                description="Cook time"
+                                label="Cook"
                                 min={0}
                                 placeholder="25"
                                 size="md"
@@ -119,13 +119,13 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 <Grid.Col span={4}>
                     <Controller
                         control={control}
-                        name="recipe_metadata.servings"
+                        name="recipe_definition.servings"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={0}
-                                description="Number of servings"
-                                label="Servings"
+                                description="Servings"
+                                label="Yields"
                                 min={1}
                                 placeholder="4"
                                 size="md"
@@ -150,12 +150,11 @@ export default function RecipeForm({form}: RecipeFormProps) {
                     color="blue"
                     icon={<InfoIcon size={20} />}
                     radius="md"
-                    title="Ingredients Management"
+                    title="Coming Soon: Ingredients"
                     variant="light"
                 >
                     <Text size="sm">
-                        Ingredient selection and management will be implemented in the next phase. For now, you can list
-                        ingredients in the cooking instructions field.
+                        You can add ingredients in the next update. For now, include them in the instructions above.
                     </Text>
                 </Alert>
             </Paper>

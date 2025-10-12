@@ -53,23 +53,45 @@ export const sanitizeStringArray = (values?: null | string[]): string[] | undefi
 };
 
 /**
- * Default definition for each content type (simplified for forms)
+ * Default definition for each content type aligned with backend
  */
 function defaultDefinition(contentType: ContentType): any {
     switch (contentType) {
         case 'exercise':
             return {
+                primary_muscle: [],
+                secondary_muscle: [],
+                instructions: [],
+                images: [],
+                category: '',
                 equipment: [],
-                muscle_groups: [],
-                difficulty_level: undefined,
-                exercise_type: [],
+                level: '',
+                force: '',
+                mechanics: '',
+                movement_pattern: '',
             };
         case 'recipe':
             return {
+                servings: undefined,
                 prep_time_minutes: undefined,
                 cook_time_minutes: undefined,
-                servings: undefined,
-                ingredients: [],
+                total_time_minutes: undefined,
+                nutrition_per_serving: {
+                    calories: undefined,
+                    macros: {
+                        protein_g: undefined,
+                        carbs_g: undefined,
+                        fats_g: undefined,
+                        fiber_g: undefined,
+                        sugar_g: undefined,
+                    },
+                    serving_size: '',
+                },
+                meal_types: [],
+                cooking_methods: [],
+                diet_types: [],
+                difficulty: '',
+                dish_type: '',
             };
         default:
             throw new ContentBuildError(`Unsupported content type: ${contentType}`);

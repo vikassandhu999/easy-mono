@@ -3,7 +3,7 @@ import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
 import {useEffect, useRef, useState} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
-import {Plan} from '@/api/plans';
+import {Plan, PlanDiscipline} from '@/api/plans';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {EmptyState} from '@/components/layouts/EmptyState';
@@ -16,11 +16,13 @@ import Header from './ListHeader';
 function PlansListPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [search, setSearch] = useState('');
+    const [discipline, setDiscipline] = useState<PlanDiscipline>('workout');
     const navigate = useNavigate();
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans(
         {
             search: search?.trim() || undefined,
+            discipline,
         },
         {skip: searchParams.get('selected_drawer') === 'create_plan'},
     );
@@ -67,11 +69,40 @@ function PlansListPage() {
     const handleView = (id: string) => navigate(`/plans/${id}/builder`);
     const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
+    // Get discipline-specific empty state config
+    const getDisciplineLabel = () => {
+        if (discipline === 'workout') return 'Workout';
+        if (discipline === 'nutrition') return 'Nutrition';
+        return 'Workout';
+    };
+
+    const getEmptyStateDescription = () => {
+        if (search) {
+            return `No ${getDisciplineLabel().toLowerCase()} plans match your search. Try different keywords or create a new plan.`;
+        }
+        if (discipline === 'workout') {
+            return 'Create workout plans to help your clients build strength, endurance, and achieve their fitness goals.';
+        }
+        if (discipline === 'nutrition') {
+            return 'Create nutrition plans to guide your clients toward healthy eating habits and optimal nutrition.';
+        }
+        return 'Create workout plans to help your clients build strength, endurance, and achieve their fitness goals.';
+    };
+
+    const getEmptyStateTitle = () => {
+        if (search) {
+            return `No ${getDisciplineLabel()} Plans Found`;
+        }
+        return `Create Your First ${getDisciplineLabel()} Plan`;
+    };
+
     return (
         <>
             <Header
+                discipline={discipline}
                 isLoading={isLoading}
                 onCreateClick={handleCreate}
+                onDisciplineChange={setDiscipline}
                 onSearchChange={(value) => setSearch(value)}
             />
             <PagePaper topGutter={false}>
@@ -91,22 +122,18 @@ function PlansListPage() {
                                         size="md"
                                         variant="filled"
                                     >
-                                        Create Plan
+                                        Create {getDisciplineLabel()} Plan
                                     </Button>
                                 }
-                                description={
-                                    search
-                                        ? 'Try adjusting your search terms or create a new plan'
-                                        : `Every great training plan starts here. Create your first plan to begin transforming your clients' fitness journeys.`
-                                }
-                                icon={<IconTrendingUp size={32} />}
-                                iconColor="gray.5"
+                                description={getEmptyStateDescription()}
+                                icon={<IconTrendingUp size={48} />}
+                                iconColor="blue.6"
                                 iconSize="xl"
-                                title={search ? 'Couldn’t find any plans' : 'Ready to Build a Plan?'}
+                                title={getEmptyStateTitle()}
                             />
                         }
                         fetchNextPage={fetchNextPage}
-                        gap="md"
+                        gap="sm"
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}

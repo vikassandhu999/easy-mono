@@ -9,37 +9,19 @@ import {FormSection} from '@/components/containers/FormSection';
 import EasyController from '@/components/EasyController';
 
 import {MediaDetails} from './MediaDetails';
-import {ExerciseMetadataForm, FoodMetadataForm, RecipeMetadataForm} from './taxonomy';
+import {ExerciseMetadataForm, RecipeMetadataForm} from './taxonomy';
 import {FormValues} from './types.ts';
 
-const getPlaceholder = (type: string, field: 'instructions' | 'name') => {
+const getPlaceholder = (type: string) => {
     const placeholders = {
-        activity: {
-            instructions: 'Describe routine & context...',
-            name: 'Morning Walk 20min',
-        },
-        exercise: {
-            instructions: 'Clear steps & cues:\n1. Set stance...\n2. Perform 10 slow reps...',
-            name: 'Basic Jab Drill',
-        },
-        food: {
-            instructions: 'Portion & prep notes:\n150g grilled chicken breast, medium heat...',
-            name: 'Grilled Chicken (150g)',
-        },
-        guide: {
-            instructions: 'Outline key sections...',
-            name: 'Recovery Day Guide',
-        },
-        lesson: {
-            instructions: 'Learning objectives & outcomes...',
-            name: 'Lesson 1: Foundations',
-        },
-        technique: {
-            instructions: 'Break down phases & key corrections...',
-            name: 'Hip Hinge Technique',
-        },
+        activity: 'Morning Walk 20min',
+        exercise: 'Basic Jab Drill',
+        food: 'Grilled Chicken (150g)',
+        guide: 'Recovery Day Guide',
+        lesson: 'Lesson 1: Foundations',
+        technique: 'Hip Hinge Technique',
     };
-    return placeholders[type as keyof typeof placeholders]?.[field] || 'Enter text';
+    return placeholders[type as keyof typeof placeholders] || 'Enter name';
 };
 
 export interface ContentFormProps {
@@ -49,16 +31,16 @@ export interface ContentFormProps {
     onSubmit: (data: CreateContentProps | UpdateContentProps) => void;
 }
 
+// DEPRECATED: This component is not actively used. Use ContentBuilder instead.
 const ContentForm: React.FC<ContentFormProps> = ({initialData, isSubmitting = false, mode, onSubmit}) => {
     const form = useForm<FormValues>({
         defaultValues: {
-            exercise_metadata: (initialData as any)?.exercise_metadata || {},
-            food_metadata: (initialData as any)?.food_metadata || {},
-            instructions: initialData?.instructions || '',
-            instructions_type: (initialData as any)?.instructions_type || 'video',
+            description: initialData?.description || '',
+            exercise_definition: (initialData as any)?.exercise_definition || {},
+            ingredient_definition: (initialData as any)?.ingredient_definition || {},
             media: initialData?.media || undefined,
             name: initialData?.name || '',
-            recipe_metadata: (initialData as any)?.recipe_metadata || {},
+            recipe_definition: (initialData as any)?.recipe_definition || {},
             thumbnail_url: initialData?.thumbnail_url || '',
             type: initialData?.type || 'exercise',
         },
@@ -89,12 +71,12 @@ const ContentForm: React.FC<ContentFormProps> = ({initialData, isSubmitting = fa
         }
 
         const submitData: CreateContentProps | UpdateContentProps = {
-            exercise_metadata: values.type === 'exercise' ? values.exercise_metadata : undefined,
-            food_metadata: values.type === 'food' ? values.food_metadata : undefined,
-            instructions: values.instructions?.trim() || '',
+            description: values.description?.trim() || '',
+            exercise_definition: values.type === 'exercise' ? values.exercise_definition : undefined,
+            ingredient_definition: values.ingredient_definition,
             media: form.formState.dirtyFields.media && isMediaEmpty(values.media) ? undefined : (values.media ?? null),
             name: values.name.trim(),
-            recipe_metadata: values.type === 'recipe' ? values.recipe_metadata : undefined,
+            recipe_definition: values.type === 'recipe' ? values.recipe_definition : undefined,
             thumbnail_url: values.thumbnail_url || undefined,
             type: values.type,
         };
@@ -111,7 +93,7 @@ const ContentForm: React.FC<ContentFormProps> = ({initialData, isSubmitting = fa
                     render={({field}) => (
                         <TextInput
                             label="Name"
-                            placeholder={getPlaceholder(contentType, 'name')}
+                            placeholder={getPlaceholder(contentType)}
                             size={'md'}
                             withAsterisk
                             {...field}
@@ -121,7 +103,23 @@ const ContentForm: React.FC<ContentFormProps> = ({initialData, isSubmitting = fa
             </FormSection>
 
             {/* Essential Information - Progressive disclosure */}
-            <FormSection label="Instructions & Media">
+            <FormSection label="Description & Media">
+                <EasyController
+                    control={form.control}
+                    name="description"
+                    render={({field}) => (
+                        <Textarea
+                            autosize
+                            label="Description"
+                            maxRows={8}
+                            minRows={4}
+                            placeholder="Enter description..."
+                            size={'md'}
+                            {...field}
+                        />
+                    )}
+                />
+
                 <EasyController
                     control={form.control}
                     name="media"
@@ -135,28 +133,13 @@ const ContentForm: React.FC<ContentFormProps> = ({initialData, isSubmitting = fa
                         />
                     )}
                 />
-
-                <EasyController
-                    control={form.control}
-                    name={'instructions'}
-                    render={({field}) => (
-                        <Textarea
-                            autosize
-                            label="Instructions"
-                            maxRows={8}
-                            minRows={4}
-                            placeholder={getPlaceholder(contentType, 'instructions')}
-                            size={'md'}
-                            {...field}
-                        />
-                    )}
-                />
             </FormSection>
 
             {/* Enhanced taxonomy Section */}
             <FormSection label="Additional Details (Optional)">
                 {contentType === 'exercise' && <ExerciseMetadataForm form={form} />}
-                {contentType === 'food' && <FoodMetadataForm form={form} />}
+                {/* Note: 'food' type not currently in ContentType enum - kept for reference */}
+                {/* {contentType === 'food' && <FoodMetadataForm form={form} />} */}
                 {contentType === 'recipe' && <RecipeMetadataForm form={form} />}
             </FormSection>
 

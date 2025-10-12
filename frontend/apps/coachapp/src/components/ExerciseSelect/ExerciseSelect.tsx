@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
 import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Content} from '@/api/contents.ts';
 import {CONTENT_TYPE_CONFIG} from '@/components/Configs.tsx';
@@ -45,11 +45,11 @@ interface ExerciseCardProps {
 const ExerciseCard = ({exercise, isSelected, multiple, onToggleSelect}: ExerciseCardProps) => {
     const typeConfig = CONTENT_TYPE_CONFIG.exercise;
     const IconComponent = typeConfig.icon;
-    const metadata = exercise.exercise_metadata;
+    const definition = exercise.exercise_definition;
 
     return (
         <Card
-            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${exercise.name}: ${exercise.instructions || ''}`}
+            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${exercise.name}: ${exercise.description || ''}`}
             onClick={() => onToggleSelect(exercise.id)}
             p="sm"
             role="button"
@@ -142,38 +142,38 @@ const ExerciseCard = ({exercise, isSelected, multiple, onToggleSelect}: Exercise
                         {exercise.name}
                     </Text>
 
-                    {/* Metadata */}
-                    {metadata && (
+                    {/* Definition Metadata */}
+                    {definition && (
                         <Group gap="xs">
-                            {metadata.primary_muscle && metadata.primary_muscle.length > 0 && (
+                            {definition.primary_muscle && definition.primary_muscle.length > 0 && (
                                 <Badge
                                     color="gray"
                                     size="xs"
                                     variant="light"
                                 >
-                                    {metadata.primary_muscle.join(', ')}
+                                    {definition.primary_muscle.join(', ')}
                                 </Badge>
                             )}
-                            {metadata.equipment && metadata.equipment.length > 0 && (
+                            {definition.equipment && definition.equipment.length > 0 && (
                                 <Text
                                     c="dimmed"
                                     lineClamp={1}
                                     size="xs"
                                 >
-                                    Equipment: {metadata.equipment.join(', ')}
+                                    Equipment: {definition.equipment.join(', ')}
                                 </Text>
                             )}
                         </Group>
                     )}
 
                     {/* Instructions/Description */}
-                    {exercise.instructions && (
+                    {exercise.description && (
                         <Text
                             c="dimmed"
                             lineClamp={2}
                             size="xs"
                         >
-                            {exercise.instructions}
+                            {exercise.description}
                         </Text>
                     )}
                 </Stack>
@@ -224,7 +224,7 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
     const onSearchChangeDebounced = useDebouncedCallback(setSearch, 300);
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListContentsInfiniteQuery({
-        access_level: 'all',
+        scope: 'all',
         content_type: 'exercise',
         page_size: 20,
         search: search || undefined,
@@ -236,13 +236,13 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
     }, [data?.pages]);
 
     // Update contents map when exercises change
-    useMemo(() => {
+    useEffect(() => {
         const newMap = {...contentsMap};
         exercises.forEach((exercise) => {
             newMap[exercise.id] = exercise;
         });
         setContentsMap(newMap);
-    }, [exercises]);
+    }, [exercises, contentsMap]);
 
     const handleToggleSelect = (id: string) => {
         // For single-select mode, immediately call onComplete and return

@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 
-import {ACCESS_LEVEL_FILTERS, AccessLevelFilter, Content, ContentType} from '@/api/contents';
+import {Content, CONTENT_SCOPE_FILTERS, ContentScopeFilter, ContentType} from '@/api/contents';
 import {useListContentsInfiniteQuery} from '@/store/services/contentsApi';
 
 interface UseContentListOptions {
@@ -13,12 +13,12 @@ interface UseContentListOptions {
  * Hook for fetching and managing content lists with search, filters, and pagination
  */
 export function useContentList({contentType, pageSize = 20, activeOnly = false}: UseContentListOptions) {
-    const [accessLevelFilter, setAccessLevelFilter] = useState<AccessLevelFilter>('all');
+    const [scopeFilter, setScopeFilter] = useState<ContentScopeFilter>('all');
     const [search, setSearch] = useState('');
 
     const {data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, refetch} = useListContentsInfiniteQuery(
         {
-            access_level: accessLevelFilter,
+            scope: scopeFilter,
             active_only: activeOnly,
             content_type: contentType,
             page_size: pageSize,
@@ -29,7 +29,7 @@ export function useContentList({contentType, pageSize = 20, activeOnly = false}:
 
     useEffect(() => {
         refetch();
-    }, [accessLevelFilter, refetch]);
+    }, [scopeFilter, refetch]);
 
     const contents = data?.pages.flatMap((p) => p.records) ?? [];
 
@@ -41,10 +41,10 @@ export function useContentList({contentType, pageSize = 20, activeOnly = false}:
         isFetchingNextPage,
 
         // Filters
-        accessLevelFilter,
-        accessLevelFilters: ACCESS_LEVEL_FILTERS,
+        scopeFilter,
+        scopeFilters: CONTENT_SCOPE_FILTERS,
         search,
-        setAccessLevelFilter,
+        setScopeFilter,
         setSearch,
 
         // Actions

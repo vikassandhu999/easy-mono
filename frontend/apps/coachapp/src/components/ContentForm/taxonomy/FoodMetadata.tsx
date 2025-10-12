@@ -55,25 +55,25 @@ const DIETARY_FLAGS = [
 
 export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
     const {setValue, watch} = form;
-    const servingSizes = watch('food_metadata.common_serving_sizes') || [];
+    const servingSizes = watch('ingredient_definition.common_serving_sizes') || [];
 
     const addServingSize = () => {
         const currentSizes = servingSizes || [];
         const newSizes = [...currentSizes, {gram_weight: 0, is_default: false, name: ''}];
-        setValue('food_metadata.common_serving_sizes', newSizes);
+        setValue('ingredient_definition.common_serving_sizes', newSizes);
     };
 
     const removeServingSize = (index: number) => {
         const currentSizes = servingSizes || [];
         const newSizes = currentSizes.filter((_: any, i: number) => i !== index);
-        setValue('food_metadata.common_serving_sizes', newSizes);
+        setValue('ingredient_definition.common_serving_sizes', newSizes);
     };
 
     const updateServingSize = (index: number, field: string, value: any) => {
         const currentSizes = servingSizes || [];
         const newSizes = [...currentSizes];
         newSizes[index] = {...newSizes[index], [field]: value};
-        setValue('food_metadata.common_serving_sizes', newSizes);
+        setValue('ingredient_definition.common_serving_sizes', newSizes);
     };
 
     return (
@@ -99,7 +99,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.calories_per_100g"
+                        name="ingredient_definition.calories_per_100g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -112,7 +112,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.macros_per_100g.protein_g"
+                        name="ingredient_definition.macros_per_100g.protein_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -127,7 +127,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.macros_per_100g.carbs_g"
+                        name="ingredient_definition.macros_per_100g.carbs_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -145,7 +145,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.macros_per_100g.fats_g"
+                        name="ingredient_definition.macros_per_100g.fats_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -160,7 +160,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.macros_per_100g.fiber_g"
+                        name="ingredient_definition.macros_per_100g.fiber_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -175,7 +175,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.macros_per_100g.sugar_g"
+                        name="ingredient_definition.macros_per_100g.sugar_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -202,7 +202,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.micros_per_100g.sodium_mg"
+                        name="ingredient_definition.micros_per_100g.sodium_mg"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -216,7 +216,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.micros_per_100g.calcium_mg"
+                        name="ingredient_definition.micros_per_100g.calcium_mg"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -230,7 +230,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.micros_per_100g.iron_mg"
+                        name="ingredient_definition.micros_per_100g.iron_mg"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -248,7 +248,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.micros_per_100g.vitamin_c_mg"
+                        name="ingredient_definition.micros_per_100g.vitamin_c_mg"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -263,7 +263,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.micros_per_100g.vitamin_d_iu"
+                        name="ingredient_definition.micros_per_100g.vitamin_d_iu"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -289,7 +289,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.food_groups"
+                        name="ingredient_definition.food_groups"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -303,7 +303,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="food_metadata.allergens"
+                        name="ingredient_definition.allergens"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -319,7 +319,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
 
                 <Controller
                     control={form.control}
-                    name="food_metadata.dietary_flags"
+                    name="ingredient_definition.dietary_flags"
                     render={(props) => (
                         <MultiSelect
                             clearable
@@ -395,7 +395,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="food_metadata.shelf_life"
+                        name="ingredient_definition.shelf_life"
                         render={(props) => (
                             <TextInput
                                 label="Shelf Life"
@@ -408,7 +408,7 @@ export function FoodMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
 
                 <Controller
                     control={form.control}
-                    name="food_metadata.preparation_notes"
+                    name="ingredient_definition.preparation_notes"
                     render={(props) => (
                         <Textarea
                             autosize

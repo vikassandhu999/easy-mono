@@ -30,9 +30,9 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
         isFetchingNextPage,
         search,
         setSearch,
-        accessLevelFilter,
-        accessLevelFilters,
-        setAccessLevelFilter,
+        scopeFilter,
+        scopeFilters,
+        setScopeFilter,
         fetchNextPage,
         refetch,
     } = useContentList({contentType});
@@ -124,27 +124,30 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
                 </Button>
             </Group>
 
-            {/* Access Level Filters */}
+            {/* Scope Filters */}
             <Chip.Group
-                onChange={(v) => setAccessLevelFilter(v as any)}
-                value={accessLevelFilter}
+                onChange={(value) => setScopeFilter(value as any)}
+                value={scopeFilter}
             >
                 <Group
                     justify="left"
                     my="sm"
                 >
-                    {accessLevelFilters.map((filter, idx) => (
-                        <Chip
-                            icon={<IconPointFilled />}
-                            key={`access-level-${idx}`}
-                            size="xs"
-                            style={{textTransform: 'capitalize'}}
-                            value={filter}
-                            variant="outline"
-                        >
-                            {filter}
-                        </Chip>
-                    ))}
+                    {scopeFilters.map((filter, idx) => {
+                        const displayLabel = filter === 'business' ? 'Custom' : filter;
+                        return (
+                            <Chip
+                                icon={<IconPointFilled />}
+                                key={`scope-filter-${idx}`}
+                                size="xs"
+                                style={{textTransform: 'capitalize'}}
+                                value={filter}
+                                variant="outline"
+                            >
+                                {displayLabel}
+                            </Chip>
+                        );
+                    })}
                 </Group>
             </Chip.Group>
 

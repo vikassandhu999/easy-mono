@@ -72,25 +72,25 @@ const EQUIPMENT_OPTIONS = [
 
 export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
     const {setValue, watch} = form;
-    const ingredients = watch('recipe_metadata.ingredients') || [];
+    const ingredients = watch('recipe_definition.ingredients') || [];
 
     const addIngredient = () => {
         const currentIngredients = ingredients || [];
         const newIngredients = [...currentIngredients, {name: '', notes: '', quantity: 0, unit: ''}];
-        setValue('recipe_metadata.ingredients', newIngredients);
+        setValue('recipe_definition.ingredients', newIngredients);
     };
 
     const removeIngredient = (index: number) => {
         const currentIngredients = ingredients || [];
         const newIngredients = currentIngredients.filter((_: any, i: number) => i !== index);
-        setValue('recipe_metadata.ingredients', newIngredients);
+        setValue('recipe_definition.ingredients', newIngredients);
     };
 
     const updateIngredient = (index: number, field: string, value: any) => {
         const currentIngredients = ingredients || [];
         const newIngredients = [...currentIngredients];
         newIngredients[index] = {...newIngredients[index], [field]: value};
-        setValue('recipe_metadata.ingredients', newIngredients);
+        setValue('recipe_definition.ingredients', newIngredients);
     };
 
     return (
@@ -110,7 +110,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.servings_yield"
+                        name="recipe_definition.servings_yield"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -124,7 +124,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.prep_time_minutes"
+                        name="recipe_definition.prep_time_minutes"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -137,7 +137,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.cook_time_minutes"
+                        name="recipe_definition.cook_time_minutes"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -152,7 +152,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
 
                 <Controller
                     control={form.control}
-                    name="recipe_metadata.difficulty"
+                    name="recipe_definition.difficulty"
                     render={(props) => (
                         <Select
                             data={DIFFICULTY_LEVELS}
@@ -175,7 +175,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.calories"
+                        name="recipe_definition.nutrition_per_serving.calories"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 error={fieldState.error?.message}
@@ -188,7 +188,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.macros.protein_g"
+                        name="recipe_definition.nutrition_per_serving.macros.protein_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -203,7 +203,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.macros.carbs_g"
+                        name="recipe_definition.nutrition_per_serving.macros.carbs_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -221,7 +221,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.macros.fats_g"
+                        name="recipe_definition.nutrition_per_serving.macros.fats_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -236,7 +236,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.macros.fiber_g"
+                        name="recipe_definition.nutrition_per_serving.macros.fiber_g"
                         render={({field, fieldState}) => (
                             <NumberInput
                                 decimalScale={1}
@@ -251,7 +251,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.nutrition_per_serving.serving_size"
+                        name="recipe_definition.nutrition_per_serving.serving_size"
                         render={(props) => (
                             <TextInput
                                 label="Serving Size"
@@ -274,7 +274,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.meal_types"
+                        name="recipe_definition.meal_types"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -288,7 +288,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.cooking_methods"
+                        name="recipe_definition.cooking_methods"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -305,7 +305,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 <Group grow>
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.dietary_flags"
+                        name="recipe_definition.dietary_flags"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -319,7 +319,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                     />
                     <Controller
                         control={form.control}
-                        name="recipe_metadata.equipment_needed"
+                        name="recipe_definition.equipment_needed"
                         render={(props) => (
                             <MultiSelect
                                 clearable
@@ -335,7 +335,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
 
                 <Controller
                     control={form.control}
-                    name="recipe_metadata.meal_prep_friendly"
+                    name="recipe_definition.meal_prep_friendly"
                     render={({field, fieldState}) => (
                         <Checkbox
                             checked={field.value}
@@ -422,7 +422,7 @@ export function RecipeMetadataForm({form}: {form: UseFormReturn<FormValues>}) {
                 </Text>
                 <Controller
                     control={form.control}
-                    name="recipe_metadata.storage_instructions"
+                    name="recipe_definition.storage_instructions"
                     render={(props) => (
                         <Textarea
                             autosize

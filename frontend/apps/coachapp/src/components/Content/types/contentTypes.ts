@@ -49,31 +49,31 @@ export function getContentTypeConfig(type: ContentType) {
 export function getContentDisplayInfo(content: Content) {
     switch (content.type) {
         case 'exercise': {
-            const metadata = content.exercise_metadata;
+            const definition = content.exercise_definition;
             return {
                 badges: [],
                 description: content.description || undefined,
-                primaryMuscle: metadata?.primary_muscle?.join(', '),
+                primaryMuscle: definition?.primary_muscle?.join(', '),
                 secondaryInfo: [
-                    metadata?.primary_muscle?.length && `${metadata.primary_muscle.join(', ')}`,
-                    metadata?.equipment?.length && `Equipment: ${metadata.equipment.join(', ')}`,
+                    definition?.primary_muscle?.length && `${definition.primary_muscle.join(', ')}`,
+                    definition?.equipment?.length && `Equipment: ${definition.equipment.join(', ')}`,
                 ].filter(Boolean) as string[],
-                subtitle: metadata?.category || undefined,
+                subtitle: definition?.category || undefined,
             };
         }
         case 'recipe': {
-            const metadata = content.recipe_metadata;
-            const calories = metadata?.nutrition_per_serving?.calories || 0;
+            const definition = content.recipe_definition;
+            const calories = definition?.nutrition_per_serving?.calories || 0;
             return {
-                badges: metadata?.diet_types?.map((diet) => ({color: 'green', label: diet})) || [],
+                badges: definition?.diet_types?.map((diet) => ({color: 'green', label: diet})) || [],
                 description: content.description || undefined,
                 secondaryInfo: [
                     `${calories} cal`,
-                    metadata?.prep_time_minutes && `Prep: ${metadata.prep_time_minutes}min`,
-                    metadata?.cook_time_minutes && `Cook: ${metadata.cook_time_minutes}min`,
-                    metadata?.servings && `${metadata.servings} servings`,
+                    definition?.prep_time_minutes && `Prep: ${definition.prep_time_minutes}min`,
+                    definition?.cook_time_minutes && `Cook: ${definition.cook_time_minutes}min`,
+                    definition?.servings && `${definition.servings} servings`,
                 ].filter(Boolean) as string[],
-                subtitle: metadata?.difficulty || undefined,
+                subtitle: definition?.difficulty || undefined,
             };
         }
         default:

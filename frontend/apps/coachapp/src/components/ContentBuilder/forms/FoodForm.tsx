@@ -12,6 +12,12 @@ const UNIT_OPTIONS = ['g', 'oz', 'cup', 'tbsp', 'tsp', 'ml', 'serving'];
 /**
  * FoodForm - Ingredient/Food content form
  *
+ * ⚠️ DEPRECATED / NOT USED - Kept for future reference
+ *
+ * The backend ContentType enum only supports 'exercise' and 'recipe'.
+ * There is no 'ingredient' or 'food' content type currently.
+ * This component would need the backend to add support for ingredient type.
+ *
  * Follows WorkoutForm/MealForm pattern:
  * - Uses Controller from react-hook-form
  * - Clean, minimal layout with Stack
@@ -43,7 +49,7 @@ export default function FoodForm({form}: FoodFormProps) {
                     <TextInput
                         {...field}
                         error={fieldState.error?.message}
-                        label="Ingredient Name"
+                        label="Name"
                         placeholder="e.g., Grilled Chicken Breast"
                         required
                         size="md"
@@ -51,10 +57,10 @@ export default function FoodForm({form}: FoodFormProps) {
                 )}
             />
 
-            {/* Instructions */}
+            {/* Description */}
             <Controller
                 control={control}
-                name="instructions"
+                name="description"
                 render={({field, fieldState}) => (
                     <Textarea
                         {...field}
@@ -82,12 +88,11 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.serving_size.amount"
+                        name="ingredient_definition.serving_size.amount"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={2}
-                                description="Standard serving amount"
                                 label="Serving Amount"
                                 min={0}
                                 placeholder="100"
@@ -100,11 +105,10 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.serving_size.unit"
+                        name="ingredient_definition.serving_size.unit"
                         render={({field}) => (
                             <TextInput
                                 {...field}
-                                description="Unit of measurement"
                                 label="Unit"
                                 list="unit-options"
                                 placeholder="g, oz, cup..."
@@ -129,7 +133,7 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.nutrition_profile.macros.calories"
+                        name="ingredient_definition.nutrition_profile.macros.calories"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
@@ -147,12 +151,11 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.nutrition_profile.macros.protein_g"
+                        name="ingredient_definition.nutrition_profile.macros.protein_g"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={1}
-                                description="Grams per serving"
                                 label="Protein"
                                 min={0}
                                 placeholder="25"
@@ -169,12 +172,11 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.nutrition_profile.macros.carbs_g"
+                        name="ingredient_definition.nutrition_profile.macros.carbs_g"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={1}
-                                description="Grams per serving"
                                 label="Carbs"
                                 min={0}
                                 placeholder="0"
@@ -188,12 +190,11 @@ export default function FoodForm({form}: FoodFormProps) {
                 <Grid.Col span={6}>
                     <Controller
                         control={control}
-                        name="ingredient_metadata.nutrition_profile.macros.fat_g"
+                        name="ingredient_definition.nutrition_profile.macros.fat_g"
                         render={({field}) => (
                             <NumberInput
                                 {...field}
                                 decimalScale={1}
-                                description="Grams per serving"
                                 label="Fat"
                                 min={0}
                                 placeholder="3"

@@ -1,8 +1,8 @@
-import {CreateContentProps, InstructionsType} from '@/api/contents.ts';
+import {CreateContentProps} from '@/api/contents.ts';
 
+// DEPRECATED: This component is not actively used. Use ContentBuilder instead.
 export interface FormValues extends CreateContentProps {
-    exercise_metadata?: any;
-    food_metadata?: any;
-    instructions_type?: InstructionsType;
-    recipe_metadata?: any;
+    exercise_definition?: any;
+    ingredient_definition?: any;
+    recipe_definition?: any;
 }

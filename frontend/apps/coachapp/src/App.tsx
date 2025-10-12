@@ -5,7 +5,6 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 import {AppProvider} from '@/providers/AppProvider';
 import AuthProvider from '@/providers/AuthProvider';
-import {DrawerStackProvider} from '@/providers/StackProvider';
 
 import AppRouterProvider from './Router.tsx';
 import {theme} from './theme/index';
@@ -19,11 +18,9 @@ function App() {
             <ModalsProvider>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
-                        <DrawerStackProvider>
-                            <AppProvider>
-                                <AppRouterProvider />
-                            </AppProvider>
-                        </DrawerStackProvider>
+                        <AppProvider>
+                            <AppRouterProvider />
+                        </AppProvider>
                     </AuthProvider>
                 </QueryClientProvider>
             </ModalsProvider>

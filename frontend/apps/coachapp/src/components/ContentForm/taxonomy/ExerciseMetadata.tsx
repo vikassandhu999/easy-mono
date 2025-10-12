@@ -107,7 +107,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
             {/* Movement Classification */}
             <EasyController
                 control={form.control}
-                name="exercise_metadata.muscle_groups"
+                name="exercise_definition.muscle_groups"
                 render={({field}) => (
                     <MultiSelect
                         clearable
@@ -121,7 +121,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
             />
             <EasyController
                 control={form.control}
-                name="exercise_metadata.equipment"
+                name="exercise_definition.equipment"
                 render={({field}) => (
                     <MultiSelect
                         clearable
@@ -136,7 +136,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.difficulty"
+                name="exercise_definition.difficulty"
                 render={({field}) => (
                     <Select
                         clearable
@@ -151,7 +151,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.movement_pattern"
+                name="exercise_definition.movement_pattern"
                 render={({field}) => (
                     <Select
                         clearable
@@ -165,7 +165,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.mechanics"
+                name="exercise_definition.mechanics"
                 render={({field}) => (
                     <Select
                         clearable
@@ -179,7 +179,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.default_sets"
+                name="exercise_definition.default_sets"
                 render={({field, fieldState}) => (
                     <NumberInput
                         error={fieldState.error?.message}
@@ -192,7 +192,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.calories_burned_per_minute"
+                name="exercise_definition.calories_burned_per_minute"
                 render={({field, fieldState}) => (
                     <NumberInput
                         decimalScale={1}
@@ -208,7 +208,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.range_of_motion"
+                name="exercise_definition.range_of_motion"
                 render={({field}) => (
                     <Select
                         clearable
@@ -222,7 +222,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.rest_recommendation"
+                name="exercise_definition.rest_recommendation"
                 render={({field}) => (
                     <Textarea
                         autosize
@@ -237,7 +237,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.tempo"
+                name="exercise_definition.tempo"
                 render={({field}) => (
                     <Textarea
                         autosize
@@ -253,7 +253,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
             {/* Rep Ranges */}
             <EasyController
                 control={form.control}
-                name="exercise_metadata.common_rep_ranges"
+                name="exercise_definition.common_rep_ranges"
                 render={({field, fieldState}) => (
                     <InputWrapper
                         error={fieldState.error?.message}
@@ -288,7 +288,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.form_cues"
+                name="exercise_definition.form_cues"
                 render={({field}) => (
                     <Textarea
                         autosize
@@ -307,7 +307,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.common_mistakes"
+                name="exercise_definition.common_mistakes"
                 render={({field}) => (
                     <Textarea
                         autosize
@@ -326,7 +326,7 @@ export function ExerciseMetadataForm({form}: {form: UseFormReturn<FormValues>}) 
 
             <EasyController
                 control={form.control}
-                name="exercise_metadata.contraindications"
+                name="exercise_definition.contraindications"
                 render={({field}) => (
                     <Textarea
                         autosize

@@ -49,7 +49,7 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
 
     return (
         <Card
-            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${content.name}: ${content.instructions || typeConfig.description}`}
+            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${content.name}: ${content.description || typeConfig.description}`}
             onClick={() => onToggleSelect(content.id)}
             p="sm"
             role="button"
@@ -154,7 +154,7 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
                         )}
                     </Group>
 
-                    {content.instructions && (
+                    {content.description && (
                         <Text
                             c="dimmed"
                             lineClamp={2}
@@ -162,7 +162,7 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
                             size="xs"
                             style={{lineHeight: 1.4}}
                         >
-                            {content.instructions}
+                            {content.description}
                         </Text>
                     )}
 
@@ -179,16 +179,6 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
                         >
                             {typeConfig.label}
                         </Badge>
-                        {content.duration && (
-                            <Badge
-                                color="gray"
-                                radius="sm"
-                                size="xs"
-                                variant="outline"
-                            >
-                                {content.duration} min
-                            </Badge>
-                        )}
                     </Group>
                 </Box>
             </Group>
@@ -356,7 +346,7 @@ export default function ContentSelect(props: ContentSelectProps) {
         page_size: 20,
         search: searchTerm,
         content_type: props.contentType || 'exercise',
-        access_level: 'all',
+        scope: 'all',
         active_only: false,
     });
 

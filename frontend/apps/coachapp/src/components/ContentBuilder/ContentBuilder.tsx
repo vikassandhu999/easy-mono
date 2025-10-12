@@ -39,7 +39,7 @@ export default function ContentBuilder({
 }: ContentBuilderProps) {
     const [currentContentId, setCurrentContentId] = useState<null | string>(initialContentId ?? null);
 
-    const contentQuery = useGetContentQuery(currentContentId ? {id: currentContentId} : skipToken);
+    const contentQuery = useGetContentQuery(currentContentId ?? skipToken);
 
     const {data: content} = contentQuery;
 

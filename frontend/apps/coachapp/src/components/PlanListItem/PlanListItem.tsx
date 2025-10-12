@@ -1,4 +1,4 @@
-import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
+import {ActionIcon, Badge, Card, Group, Menu, Stack, Text} from '@mantine/core';
 import {DotsThreeVerticalIcon, PencilSimpleIcon} from '@phosphor-icons/react';
 import {IconCalendar, IconClock, IconCopy} from '@tabler/icons-react';
 import React from 'react';
@@ -27,12 +27,12 @@ const KIND_LABEL: Record<Plan['kind'], string> = {
 function getDurationText(plan: Plan): string {
     switch (plan.recurrence) {
         case 'weekly':
-            return plan.duration_weeks ? `${plan.duration_weeks} weeks` : 'Weekly cadence';
+            return plan.duration_weeks ? `${plan.duration_weeks} weeks` : 'Weekly';
         case 'daily':
-            return plan.duration_days ? `${plan.duration_days} days` : 'Daily cadence';
+            return plan.duration_days ? `${plan.duration_days} days` : 'Daily';
         case 'calendar':
         default:
-            return 'Calendar-based';
+            return 'Calendar';
     }
 }
 
@@ -53,148 +53,161 @@ const PlanListItem: React.FC<PlanListItemProps> = ({plan, onEdit, onView, onCopy
     return (
         <Card
             onClick={() => onView(plan.id)}
-            shadow="xxs"
+            padding="md"
+            shadow="xs"
             style={{
                 borderRadius: 'var(--body-offset)',
                 cursor: 'pointer',
-                paddingBottom: 'var(--ce-size-md)',
-                paddingInline: 'var(--ce-size-md)',
-                paddingTop: 'var(--body-offset)',
+                transition: 'all 0.15s ease',
+            }}
+            styles={{
+                root: {
+                    '&:hover': {
+                        boxShadow: 'var(--mantine-shadow-md)',
+                        transform: 'translateY(-1px)',
+                    },
+                },
             }}
             withBorder
         >
             <Group
-                align="start"
-                gap="xs"
+                align="flex-start"
+                gap="md"
+                wrap="nowrap"
             >
-                <Box flex={1}>
+                {/* Main content area */}
+                <Stack
+                    flex={1}
+                    gap="xs"
+                >
+                    {/* Title + Primary Badges Row */}
                     <Group
                         gap="xs"
-                        style={{marginBottom: 'var(--ce-size-2xs)'}}
+                        wrap="wrap"
                     >
                         <Text
-                            c="dark.6"
-                            component="span"
+                            c="dark.9"
+                            fw={600}
+                            size="md"
                             style={{
-                                fontSize: 'var(--body-font-size)',
-                                fontWeight: 600,
-                                lineHeight: 'var(--body-line-height)',
-                                wordBreak: 'break-word',
+                                flex: '1 1 auto',
+                                lineHeight: 1.4,
+                                minWidth: 0,
                             }}
                         >
                             {plan.name}
                         </Text>
-                        {statusConfig ? (
+                        {statusConfig && (
                             <Badge
                                 color={statusConfig.color}
-                                size="md"
+                                radius="sm"
+                                size="sm"
                                 tt="capitalize"
                                 variant="light"
                             >
                                 {statusConfig.label}
                             </Badge>
-                        ) : null}
+                        )}
+                    </Group>
+
+                    {/* Discipline + Type Row */}
+                    <Group
+                        gap="xs"
+                        wrap="wrap"
+                    >
+                        {disciplineConfig && (
+                            <Badge
+                                color={disciplineConfig.color}
+                                radius="sm"
+                                size="md"
+                                tt="capitalize"
+                                variant="dot"
+                            >
+                                {disciplineConfig.label}
+                            </Badge>
+                        )}
                         <Badge
                             color="gray"
+                            radius="sm"
                             size="md"
-                            variant="light"
+                            variant="outline"
                         >
                             {KIND_LABEL[plan.kind]}
                         </Badge>
                     </Group>
 
-                    {disciplineConfig ? (
-                        <Badge
-                            color={disciplineConfig.color}
-                            size="lg"
-                            style={{marginBottom: 'var(--ce-size-xs)'}}
-                            tt="capitalize"
-                            variant="light"
-                        >
-                            {disciplineConfig.label}
-                        </Badge>
-                    ) : null}
-
+                    {/* Metadata Row */}
                     <Group
-                        align="center"
-                        gap="md"
-                        wrap="nowrap"
+                        c="dimmed"
+                        gap="lg"
+                        mt={4}
                     >
                         <Group
-                            align="center"
-                            gap="xs"
+                            gap={6}
                             wrap="nowrap"
                         >
-                            <IconClock
-                                color="var(--mantine-color-gray-6)"
-                                size={16}
-                            />
+                            <IconClock size={14} />
                             <Text
-                                c="gray.6"
-                                style={{
-                                    fontSize: 'var(--body-font-size)',
-                                    fontWeight: 400,
-                                    lineHeight: 'var(--body-line-height)',
-                                }}
+                                c="dimmed"
+                                size="sm"
                             >
                                 {getDurationText(plan)}
                             </Text>
                         </Group>
 
                         <Group
-                            align="center"
-                            gap="xs"
+                            gap={6}
                             wrap="nowrap"
                         >
-                            <IconCalendar
-                                color="var(--mantine-color-gray-6)"
-                                size={16}
-                            />
+                            <IconCalendar size={14} />
                             <Text
-                                c="gray.6"
-                                style={{
-                                    fontSize: 'var(--body-font-size)',
-                                    fontWeight: 400,
-                                    lineHeight: 'var(--body-line-height)',
-                                }}
+                                c="dimmed"
+                                size="sm"
                             >
                                 {RECURRENCE_LABEL[plan.recurrence]}
                             </Text>
                         </Group>
                     </Group>
-                </Box>
+                </Stack>
 
+                {/* Action menu */}
                 <Menu
                     position="bottom-end"
-                    shadow="lg"
+                    shadow="md"
+                    withinPortal
                 >
                     <Menu.Target>
                         <ActionIcon
                             aria-label="Plan actions"
-                            color="dark"
+                            color="gray"
                             onClick={(event) => event.stopPropagation()}
-                            radius={9999}
-                            size="xl"
+                            radius="xl"
+                            size="lg"
                             variant="subtle"
                         >
-                            <DotsThreeVerticalIcon size={18} />
+                            <DotsThreeVerticalIcon
+                                size={20}
+                                weight="bold"
+                            />
                         </ActionIcon>
                     </Menu.Target>
                     <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-                        {plan.kind === 'template' && onCopyToClient ? (
+                        {onEdit && (
                             <Menu.Item
-                                leftSection={<IconCopy size={18} />}
+                                leftSection={<PencilSimpleIcon size={16} />}
+                                onClick={handleEditClick}
+                            >
+                                Edit plan
+                            </Menu.Item>
+                        )}
+                        {plan.kind === 'template' && onCopyToClient && (
+                            <Menu.Item
+                                leftSection={<IconCopy size={16} />}
                                 onClick={handleCopyClick}
                             >
                                 Copy to client
                             </Menu.Item>
-                        ) : null}
-                        <Menu.Item
-                            leftSection={<PencilSimpleIcon size={18} />}
-                            onClick={handleEditClick}
-                        >
-                            Edit plan
-                        </Menu.Item>
+                        )}
                     </Menu.Dropdown>
                 </Menu>
             </Group>

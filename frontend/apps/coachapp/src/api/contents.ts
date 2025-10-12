@@ -176,13 +176,11 @@ export const ContentMedia_zod = z.object({
     url: z.string().url(),
 });
 
-// Access Level enum - must be defined before CreateContent_zod
-export const AccessLevelEnum = z.enum(['draft', 'public', 'business', 'private']);
-export type AccessLevel = z.infer<typeof AccessLevelEnum>;
+export const ContentScopeEnum = z.enum(['system', 'business']);
+export type ContentScope = z.infer<typeof ContentScopeEnum>;
 
 // Create / Update schemas
 export const CreateContent_zod = z.object({
-    access_level: AccessLevelEnum.optional(),
     description: z
         .string()
         .min(20, 'Description must be greater than 20 letters')
@@ -208,10 +206,10 @@ export const UpdateContent_zod = z.object({
     type: ContentTypeEnum.optional(),
 });
 
-// Access level filter options for content visibility
-export const ACCESS_LEVEL_FILTERS = ['all', 'public', 'business', 'private'] as const;
-export const AccessLevelFilter_zod = z.enum(ACCESS_LEVEL_FILTERS).optional().default('all');
-export type AccessLevelFilter = z.infer<typeof AccessLevelFilter_zod>;
+// Scope filter options for content visibility
+export const CONTENT_SCOPE_FILTERS = ['all', 'system', 'business'] as const;
+export const ContentScopeFilter_zod = z.enum(CONTENT_SCOPE_FILTERS).optional().default('all');
+export type ContentScopeFilter = z.infer<typeof ContentScopeFilter_zod>;
 
 // Archive status filter options
 export const ARCHIVE_STATUS_FILTERS = ['active', 'archived', 'all'] as const;
@@ -220,7 +218,7 @@ export type ArchiveStatusFilter = z.infer<typeof ArchiveStatusFilter_zod>;
 
 export const ListContents_zod = z.object({
     content_type: z.enum(['exercise', 'recipe']).optional(),
-    access_level: AccessLevelFilter_zod,
+    scope: ContentScopeFilter_zod,
     active_only: z.boolean().optional(),
     archived_only: z.boolean().optional(),
     page: z.number().min(1).optional().default(1),
@@ -247,7 +245,6 @@ export const isMediaEmpty = (media: ContentMedia | null | undefined) => {
 
 // Updated interface to match backend response format
 export interface Content {
-    access_level: AccessLevel;
     archived_at?: string;
     business_id?: string;
     created_at: string;
@@ -259,11 +256,13 @@ export interface Content {
     id: string;
     ingredient_definition?: IngredientMetadata;
     is_archived: boolean;
+    is_system: boolean;
     last_edited_by?: {id: string; name: string};
     last_edited_by_id?: string;
     media?: ContentMedia | null;
     name: string;
     recipe_definition?: RecipeMetadata;
+    scope: ContentScope;
     thumbnail_url?: string;
     type: ContentType;
     updated_at: string;

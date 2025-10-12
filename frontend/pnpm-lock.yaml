@@ -387,9 +387,6 @@ importers:
       embla-carousel:
         specifier: ^8.0.0
         version: 8.6.0
-      embla-carousel-react:
-        specifier: ^8.0.0
-        version: 8.6.0(react@19.1.1)
       eslint:
         specifier: ^8.57.1
         version: 8.57.1

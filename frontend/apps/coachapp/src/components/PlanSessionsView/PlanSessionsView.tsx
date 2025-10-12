@@ -1,6 +1,5 @@
-import {Button, Group, Stack, Text} from '@mantine/core';
-import {CalendarBlank, CalendarDots, Clock} from '@phosphor-icons/react';
-import {IconPlus} from '@tabler/icons-react';
+import {Box, Button, Group, Stack, Text} from '@mantine/core';
+import {CalendarBlank, CalendarDots, Clock, Plus} from '@phosphor-icons/react';
 import {useMemo} from 'react';
 
 import {PlanSession} from '@/api/plan_sessions';
@@ -8,7 +7,7 @@ import {Plan, PlanDiscipline} from '@/api/plans';
 
 import {DAY_NAMES, DEFAULT_ADD_LABEL, DISCIPLINE_ADD_LABEL} from './constants';
 import PlanSessionCard from './PlanSessionCard';
-import {AddSessionContext, buildPlanSessionGroups, defaultContextForPlan, PlanSessionGroup} from './utils';
+import {AddSessionContext, buildPlanSessionGroups, PlanSessionGroup} from './utils';
 
 export type {AddSessionContext} from './utils';
 export {defaultContextForPlan} from './utils';
@@ -30,67 +29,67 @@ const getHeaderCopy = (plan: Plan, totalSessions: number, groups: PlanSessionGro
 
     if (plan.recurrence === 'weekly') {
         return {
-            description: `${plan.name} • ${activeGroups} days with sessions`,
+            description: `${activeGroups} of 7 days with sessions`,
             icon: CalendarDots,
             iconColor: 'var(--mantine-color-blue-6)',
-            title: 'Weekly Schedule',
+            title: plan.name,
         };
     }
 
     if (plan.recurrence === 'daily') {
         return {
-            description: `${plan.name} • ${totalSessions} sessions planned`,
+            description: `${totalSessions} sessions across ${groups.length} days`,
             icon: Clock,
             iconColor: 'var(--mantine-color-orange-6)',
-            title: 'Daily Schedule',
+            title: plan.name,
         };
     }
 
     return {
-        description: `${plan.name} • ${totalSessions} sessions scheduled`,
+        description: `${totalSessions} sessions scheduled`,
         icon: CalendarBlank,
         iconColor: 'var(--mantine-color-blue-6)',
-        title: 'Calendar Schedule',
+        title: plan.name,
     };
 };
 
 const GroupHeader = ({description, icon: IconComponent, iconColor, title}: ReturnType<typeof getHeaderCopy>) => (
-    <Group
-        align="flex-start"
-        justify="space-between"
-        py="md"
+    <Box
+        style={{
+            paddingBottom: 'var(--ce-size-md)',
+        }}
     >
-        <Stack gap={0}>
-            <Group
-                align="center"
-                gap="sm"
-                mb="var(--ce-size-sm)"
-            >
-                <IconComponent
-                    color={iconColor}
-                    size={28}
-                />
-                <Text
-                    fw={700}
-                    size="lg"
-                >
-                    {title}
-                </Text>
-            </Group>
+        <Group
+            align="center"
+            gap="sm"
+            mb="xs"
+        >
+            <IconComponent
+                color={iconColor}
+                size={24}
+                weight="duotone"
+            />
             <Text
-                c="dimmed"
-                size="sm"
                 style={{
-                    fontSize: 'var(--callout-font-size)',
-                    lineHeight: 'var(--callout-line-height)',
-                    marginBottom: 'var(--callout-offset)',
-                    wordBreak: 'break-word',
+                    fontSize: 'var(--h3-font-size)',
+                    fontWeight: 700,
+                    lineHeight: 'var(--h3-line-height)',
                 }}
             >
-                {description}
+                {title}
             </Text>
-        </Stack>
-    </Group>
+        </Group>
+        <Text
+            c="gray.6"
+            style={{
+                fontSize: 'var(--label-font-size)',
+                fontWeight: 400,
+                lineHeight: 'var(--label-line-height)',
+            }}
+        >
+            {description}
+        </Text>
+    </Box>
 );
 
 const GroupBlock = ({
@@ -109,65 +108,85 @@ const GroupBlock = ({
     onDeleteSession: (planSessionId: string) => void;
     onEditSession?: (planSessionId: string) => void;
     showHeading: boolean;
-}) => (
-    <Stack gap="md">
-        {showHeading && (
-            <Stack
-                gap="xs"
-                style={{marginBottom: 'var(--ce-size-lg)'}}
-            >
+}) => {
+    return (
+        <Box>
+            {showHeading && (
                 <Text
                     c="dark.6"
+                    mb="sm"
                     style={{
-                        fontSize: 'var(--heading-font-size)',
+                        fontSize: 'var(--body-font-size)',
                         fontWeight: 600,
-                        lineHeight: 'var(--heading-line-height)',
+                        lineHeight: 'var(--body-line-height)',
                     }}
                 >
                     {group.label}
+                    {group.description && (
+                        <Text
+                            c="gray.6"
+                            component="span"
+                            ml="xs"
+                            style={{
+                                fontSize: 'var(--label-font-size)',
+                                fontWeight: 400,
+                            }}
+                        >
+                            · {group.description}
+                        </Text>
+                    )}
                 </Text>
-                {group.description && (
-                    <Text
-                        c="dimmed"
-                        size="xs"
-                    >
-                        {group.description}
-                    </Text>
-                )}
+            )}
+
+            <Stack gap="sm">
+                {group.sessions.map((planSession) => (
+                    <PlanSessionCard
+                        key={planSession.id}
+                        onAssign={onAssignSession}
+                        onDelete={onDeleteSession}
+                        onEdit={onEditSession}
+                        planSession={planSession}
+                    />
+                ))}
+
+                <Button
+                    color="blue"
+                    fullWidth
+                    leftSection={
+                        <Plus
+                            size={16}
+                            weight="bold"
+                        />
+                    }
+                    onClick={() => onAddSession(group.context)}
+                    radius="md"
+                    size="md"
+                    styles={{
+                        root: {
+                            backgroundColor: 'transparent',
+                            border: '2px dashed var(--mantine-color-gray-3)',
+                            color: 'var(--mantine-color-gray-6)',
+                            minHeight: '44px',
+                            transition: 'all 0.15s ease',
+                            '&:hover': {
+                                backgroundColor: 'var(--mantine-color-blue-0)',
+                                borderColor: 'var(--mantine-color-blue-4)',
+                                color: 'var(--mantine-color-blue-6)',
+                            },
+                        },
+                        label: {
+                            fontSize: 'var(--label-font-size)',
+                            fontWeight: 500,
+                        },
+                    }}
+                    variant="default"
+                >
+                    {addLabel}
+                </Button>
             </Stack>
-        )}
-
-        <Stack gap="md">
-            {group.sessions.map((planSession) => (
-                <PlanSessionCard
-                    key={planSession.id}
-                    onAssign={onAssignSession}
-                    onDelete={onDeleteSession}
-                    onEdit={onEditSession}
-                    planSession={planSession}
-                />
-            ))}
-
-            <Button
-                color="blue"
-                fullWidth
-                leftSection={<IconPlus size={16} />}
-                onClick={() => onAddSession(group.context)}
-                size="sm"
-                style={{
-                    backgroundColor: 'transparent',
-                    borderColor: 'var(--mantine-color-blue-3)',
-                    borderRadius: 'var(--body-offset)',
-                    borderStyle: 'dashed',
-                    borderWidth: '2px',
-                }}
-                variant="light"
-            >
-                {addLabel}
-            </Button>
-        </Stack>
-    </Stack>
-);
+        </Box>
+    );
+};
 
 export function PlanSessionsView({
     onAddSession,
@@ -182,71 +201,86 @@ export function PlanSessionsView({
     const addLabel = getAddLabel(plan.discipline);
     const headerCopy = useMemo(() => getHeaderCopy(plan, totalSessions, groups), [plan, totalSessions, groups]);
 
+    // Daily recurrence: single continuous list
     if (plan.recurrence === 'daily') {
-        const primaryGroup = groups[0] ?? {
-            context: defaultContextForPlan(plan),
-            id: 'day-0',
-            label: `Day 1`,
-            sessions: [],
-        };
-
         return (
-            <Stack gap="lg">
+            <Stack gap="xl">
                 <GroupHeader {...headerCopy} />
-                <GroupBlock
-                    addLabel={addLabel}
-                    group={primaryGroup}
-                    onAddSession={onAddSession}
-                    onAssignSession={onAssignSession}
-                    onDeleteSession={onDeleteSession}
-                    onEditSession={onEditSession}
-                    showHeading={false}
-                />
+                <Stack gap="xl">
+                    {groups.map((group) => (
+                        <GroupBlock
+                            addLabel={addLabel}
+                            group={group}
+                            key={group.id}
+                            onAddSession={onAddSession}
+                            onAssignSession={onAssignSession}
+                            onDeleteSession={onDeleteSession}
+                            onEditSession={onEditSession}
+                            showHeading
+                        />
+                    ))}
+                </Stack>
             </Stack>
         );
     }
 
+    // Weekly recurrence: all 7 days always visible
+    if (plan.recurrence === 'weekly') {
+        return (
+            <Stack gap="xl">
+                <GroupHeader {...headerCopy} />
+                <Stack gap="xl">
+                    {DAY_NAMES.map((dayName, index) => {
+                        const weeklyGroup = groups.find(
+                            (item) => item.context.kind === 'weekly' && item.context.dayOfWeek === index,
+                        );
+
+                        const group = weeklyGroup ?? {
+                            context: {
+                                kind: 'weekly',
+                                dayOfWeek: index,
+                            } as AddSessionContext,
+                            id: `week-${index}`,
+                            label: dayName,
+                            sessions: [],
+                        };
+
+                        return (
+                            <GroupBlock
+                                addLabel={addLabel}
+                                group={group}
+                                key={group.id}
+                                onAddSession={onAddSession}
+                                onAssignSession={onAssignSession}
+                                onDeleteSession={onDeleteSession}
+                                onEditSession={onEditSession}
+                                showHeading
+                            />
+                        );
+                    })}
+                </Stack>
+            </Stack>
+        );
+    }
+
+    // Calendar recurrence: date-based grouping
     return (
-        <Stack gap="lg">
+        <Stack gap="xl">
             <GroupHeader {...headerCopy} />
-            {plan.recurrence === 'weekly'
-                ? DAY_NAMES.map((dayName, index) => {
-                      const weeklyGroup = groups.find(
-                          (item) => item.context.kind === 'weekly' && item.context.dayOfWeek === index,
-                      );
-
-                      const group = weeklyGroup ?? {
-                          context: {kind: 'weekly', dayOfWeek: index} as AddSessionContext,
-                          id: `week-${index}`,
-                          label: dayName,
-                          sessions: [],
-                      };
-
-                      return (
-                          <GroupBlock
-                              addLabel={addLabel}
-                              group={group}
-                              key={group.id}
-                              onAddSession={onAddSession}
-                              onAssignSession={onAssignSession}
-                              onDeleteSession={onDeleteSession}
-                              onEditSession={onEditSession}
-                              showHeading
-                          />
-                      );
-                  })
-                : groups.map((group) => (
-                      <GroupBlock
-                          addLabel={addLabel}
-                          group={group}
-                          key={group.id}
-                          onAddSession={onAddSession}
-                          onAssignSession={onAssignSession}
-                          onDeleteSession={onDeleteSession}
-                          onEditSession={onEditSession}
-                          showHeading
-                      />
-                  ))}
+            <Stack gap="xl">
+                {groups.map((group) => (
+                    <GroupBlock
+                        addLabel={addLabel}
+                        group={group}
+                        key={group.id}
+                        onAddSession={onAddSession}
+                        onAssignSession={onAssignSession}
+                        onDeleteSession={onDeleteSession}
+                        onEditSession={onEditSession}
+                        showHeading
+                    />
+                ))}
+            </Stack>
         </Stack>
     );
 }

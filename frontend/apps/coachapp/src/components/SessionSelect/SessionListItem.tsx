@@ -29,22 +29,19 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                     handleClick();
                 }
             }}
+            p="sm"
+            radius="md"
             role="button"
             styles={{
                 root: {
                     '&:hover': {
                         borderColor: isSelected ? 'var(--mantine-color-blue-7)' : 'var(--mantine-color-gray-4)',
-                        boxShadow: isSelected ? '0 4px 12px rgba(34, 139, 230, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                         transform: 'translateY(-1px)',
                     },
                     backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-white)',
                     borderColor: isSelected ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-3)',
-                    borderRadius: 'var(--body-offset)',
-                    borderWidth: '1px',
                     cursor: 'pointer',
-                    paddingBottom: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
-                    paddingTop: 'var(--body-offset)',
                     transform: 'translateY(0)',
                     transition: 'all 0.1s ease',
                 },
@@ -54,60 +51,49 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
         >
             <Group
                 align="center"
-                gap="md"
+                gap="sm"
                 wrap="nowrap"
             >
                 <Center
-                    h={40}
+                    h={36}
                     style={{
                         backgroundColor: typeConfig.color,
-                        borderRadius: 8,
+                        borderRadius: 6,
                         flexShrink: 0,
-                        transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-                        transition: 'all 0.2s ease',
                     }}
-                    w={40}
+                    w={36}
                 >
                     <IconComponent
                         color={typeConfig.iconColor}
-                        size={20}
+                        size={18}
                     />
                 </Center>
                 <Box style={{flex: 1, minWidth: 0}}>
                     <Text
-                        c="dark"
+                        fw={isSelected ? 700 : 600}
+                        lineClamp={1}
+                        size="sm"
                         style={{
                             color: isSelected ? 'var(--mantine-color-blue-8)' : 'var(--mantine-color-gray-9)',
-                            fontSize: 'var(--body-font-size)',
-                            fontWeight: isSelected ? 700 : 600,
-                            lineHeight: 'var(--body-line-height)',
-                            marginBottom: 'var(--ce-size-xs)',
-                            transition: 'all 0.2s ease',
                         }}
                     >
                         {session.name}
                     </Text>
                     {(session.description || typeConfig.description) && (
                         <Text
-                            size="sm"
-                            style={{
-                                color: isSelected ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-6)',
-                                lineHeight: 1.3,
-                                transition: 'all 0.2s ease',
-                            }}
+                            c={isSelected ? 'blue.6' : 'dimmed'}
+                            lineClamp={1}
+                            size="xs"
                         >
                             {session.description || typeConfig.description}
                         </Text>
                     )}
                 </Box>
-                <Center h="100%">
+                <Center>
                     <ActionIcon
                         color={isSelected ? 'blue' : 'gray'}
-                        radius={'var(--body-offset)'}
+                        radius="md"
                         size="md"
-                        style={{
-                            transition: 'all 0.2s ease',
-                        }}
                         variant={isSelected ? 'filled' : 'light'}
                     >
                         {isSelected ? <IconCheck size={16} /> : <IconPlus size={16} />}

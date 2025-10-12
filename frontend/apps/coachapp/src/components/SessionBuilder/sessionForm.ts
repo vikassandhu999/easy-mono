@@ -13,7 +13,7 @@ export const WorkoutSectionSchema = z.object({
     exercises: z.array(
         z.object({
             id: z.string(),
-            ContentID: z.string(),
+            content_id: z.string(),
             each_side: z.boolean(),
             tempo: z.string(),
             sets: z.array(

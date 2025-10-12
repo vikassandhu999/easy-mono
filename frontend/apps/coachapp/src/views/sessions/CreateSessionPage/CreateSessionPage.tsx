@@ -1,5 +1,3 @@
-import {Button, Stack, TextInput} from '@mantine/core';
-import {PlusIcon} from '@phosphor-icons/react';
 import {useNavigate} from 'react-router';
 
 import HeadingContainer from '@/components/containers/HeaderContainer';

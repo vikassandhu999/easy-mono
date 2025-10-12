@@ -47,15 +47,19 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
     const currentSelectedIds = selectedIds?.length ? selectedIds : internalSelectedIds;
 
     const handleSelect = (id: string) => {
+        // For single-select mode, immediately call onSelect and return
+        if (!multiple) {
+            onSelect(id);
+            return;
+        }
+
+        // For multi-select mode, toggle the selection in internal state
         if (currentSelectedIds.includes(id)) {
             const newSelectedIds = currentSelectedIds.filter((selectedId) => selectedId !== id);
             setInternalSelectedIds(newSelectedIds);
         } else {
             const newSelectedIds = [...currentSelectedIds, id];
             setInternalSelectedIds(newSelectedIds);
-        }
-        if (!multiple) {
-            save.mutate();
         }
     };
 
@@ -71,61 +75,65 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                             onCreateNew();
                         }
                     }}
+                    p="sm"
+                    radius="md"
                     role="button"
+                    style={{
+                        backgroundColor: 'var(--mantine-color-brand-0)',
+                        border: '2px dashed var(--mantine-color-brand-3)',
+                        cursor: 'pointer',
+                        transition: 'all 200ms ease',
+                    }}
                     styles={{
                         root: {
-                            backgroundColor: 'var(--mantine-color-brand-0)',
-                            border: '2px dashed var(--mantine-color-brand-3)',
-                            borderRadius: 'var(--body-offset)',
-                            cursor: 'pointer',
-                            paddingBottom: 'var(--ce-size-md)',
-                            paddingInline: 'var(--ce-size-md)',
-                            paddingTop: 'var(--body-offset)',
+                            '&:hover': {
+                                backgroundColor: 'var(--mantine-color-brand-1)',
+                                borderColor: 'var(--mantine-color-brand-4)',
+                                transform: 'scale(1.01)',
+                            },
+                            '&:active': {
+                                transform: 'scale(0.99)',
+                            },
                         },
                     }}
                     tabIndex={0}
                 >
                     <Group
                         align="center"
-                        gap="md"
+                        gap="sm"
                         wrap="nowrap"
                     >
                         <Center
-                            h={40}
+                            h={36}
                             style={{
                                 backgroundColor: 'var(--mantine-color-brand-2)',
-                                borderRadius: 8,
+                                borderRadius: 6,
                                 flexShrink: 0,
                             }}
-                            w={40}
+                            w={36}
                         >
                             <IconPlus
                                 color={'var(--mantine-color-brand-6)'}
-                                size={20}
+                                size={18}
                             />
                         </Center>
                         <Box style={{flex: 1, minWidth: 0}}>
                             <Text
-                                c="dark"
+                                fw={600}
+                                lineClamp={1}
+                                size="sm"
                                 style={{
                                     color: 'var(--mantine-color-gray-9)',
-                                    fontSize: 'var(--body-font-size)',
-                                    fontWeight: 600,
-                                    lineHeight: 'var(--body-line-height)',
                                 }}
                             >
-                                Create new {sessionType}
+                                Create {sessionType}
                             </Text>
                             <Text
-                                c="dark"
-                                style={{
-                                    color: 'var(--mantine-color-gray-9)',
-                                    fontSize: 'var(--callout-font-size)',
-                                    fontWeight: 400,
-                                    lineHeight: 'var(--callout-line-height)',
-                                }}
+                                c="dimmed"
+                                lineClamp={1}
+                                size="xs"
                             >
-                                Define a custom {sessionType} with your own content
+                                Custom {sessionType} with your content
                             </Text>
                         </Box>
                     </Group>
@@ -136,61 +144,45 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                 <Group
                     align="center"
                     justify="space-between"
-                    mb="md"
+                    mb="sm"
                 >
                     <Text
+                        c="dimmed"
                         fw={600}
-                        size="sm"
-                        style={{color: 'var(--mantine-color-gray-7)'}}
+                        size="xs"
                     >
-                        Or choose from existing library
+                        {onCreateNew ? 'Or choose existing' : 'Choose session'}
                     </Text>
                     {multiple && currentSelectedIds.length > 0 && (
                         <Text
-                            size="sm"
-                            style={{
-                                color: 'var(--mantine-color-blue-6)',
-                                fontWeight: 600,
-                            }}
+                            c="blue"
+                            fw={600}
+                            size="xs"
                         >
                             {currentSelectedIds.length} selected
                         </Text>
                     )}
                 </Group>
 
-                <Stack gap="md">
+                <Stack gap="sm">
                     <TextInput
-                        leftSection={
-                            <MagnifyingGlassIcon
-                                color="var(--mantine-color-gray-5)"
-                                size={18}
-                            />
-                        }
+                        leftSection={<MagnifyingGlassIcon size={16} />}
                         onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                         placeholder="Search sessions..."
-                        size="md"
-                        styles={{
-                            input: {
-                                '&:focus': {
-                                    borderColor: 'var(--mantine-color-brand-5)',
-                                    boxShadow: '0 0 0 1px var(--mantine-color-brand-5)',
-                                },
-                                borderColor: 'var(--mantine-color-gray-3)',
-                            },
-                        }}
+                        size="sm"
                     />
 
                     <RecordsList
                         emptyState={
-                            <Center py="xl">
+                            <Center py="lg">
                                 <Stack
                                     align="center"
-                                    gap="md"
-                                    maw={320}
+                                    gap="sm"
+                                    maw={300}
                                     ta="center"
                                 >
                                     <Box
-                                        h={48}
+                                        h={36}
                                         style={{
                                             alignItems: 'center',
                                             backgroundColor: 'var(--mantine-color-gray-1)',
@@ -198,28 +190,25 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                                             display: 'flex',
                                             justifyContent: 'center',
                                         }}
-                                        w={48}
+                                        w={36}
                                     >
                                         <BookOpenIcon
-                                            color="var(--mantine-color-gray-5)"
-                                            size={24}
+                                            size={20}
+                                            style={{opacity: 0.25}}
+                                            weight="duotone"
                                         />
                                     </Box>
                                     <Text
                                         fw={600}
-                                        size="md"
-                                        style={{color: 'var(--mantine-color-gray-8)'}}
+                                        size="sm"
                                     >
-                                        No sessions found
+                                        No sessions
                                     </Text>
                                     <Text
                                         c="dimmed"
-                                        size="sm"
-                                        style={{lineHeight: 1.4}}
+                                        size="xs"
                                     >
-                                        {searchTerm
-                                            ? `No sessions match "${searchTerm}"`
-                                            : 'Create your first session to get started'}
+                                        {searchTerm ? `No results for "${searchTerm}"` : 'Create your first session'}
                                     </Text>
                                 </Stack>
                             </Center>

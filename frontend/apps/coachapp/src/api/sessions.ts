@@ -261,19 +261,7 @@ export const Session_zod = z.object({
     updated_at: z.string(),
     created_by: z.string().uuid().optional(),
     definition: z.unknown().optional(),
-    content_details: z.array(ContentDetail_zod).optional(),
-    workout_settings: WorkoutSessionSettings_zod.optional(),
-    workout_sections: z.array(WorkoutSection_zod).optional(),
-    meal_settings: MealSessionSettings_zod.optional(),
-    meal_sections: z.array(MealSection_zod).optional(),
-    instruction_settings: InstructionSessionSettings_zod.optional(),
-    instruction_sections: z.array(InstructionSection_zod).optional(),
-    measurement_settings: MeasurementSessionSettings_zod.optional(),
-    measurement_sections: z.array(MeasurementSection_zod).optional(),
-    workout_definition: WorkoutDefinition_zod.optional(),
-    meal_definition: MealDefinition_zod.optional(),
-    instruction_definition: InstructionDefinition_zod.optional(),
-    measurement_definition: MeasurementDefinition_zod.optional(),
+    contents: z.array(ContentDetail_zod).optional(),
 });
 
 export const SessionListResponse_zod = z.object({

@@ -1,4 +1,4 @@
-import {ActionIcon, Badge, Card, Group, Menu, Stack, Text} from '@mantine/core';
+import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {DotsThreeIcon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
 import {IconClock, IconTimeDuration0} from '@tabler/icons-react';
@@ -27,18 +27,19 @@ const CaptionBadge = ({icon: IconComponent, text}: CaptionBadgeProps) => (
     <Group
         align="center"
         gap="xs"
+        wrap="nowrap"
     >
         <IconComponent
             color="var(--mantine-color-gray-6)"
-            size={18}
+            size={16}
         />
         <Text
             c="gray.6"
             style={{
-                fontSize: 'var(--callout-font-size)',
+                fontSize: 'var(--label-font-size)',
                 fontWeight: 400,
-                lineHeight: 'var(--callout-line-height)',
-                wordBreak: 'break-word',
+                lineHeight: 'var(--label-line-height)',
+                whiteSpace: 'nowrap',
             }}
         >
             {text}
@@ -55,51 +56,34 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
     const sessionType = planSession.session?.session_type ?? 'workout';
     const duration = getSessionDuration(planSession);
     const scheduleWindow = getScheduleWindow(planSession);
+    const description = planSession.override_notes || planSession.session?.description;
 
     const handleDelete = () => {
         if (!onDelete) return;
 
         modals.openConfirmModal({
-            cancelProps: {radius: 'lg', style: {flex: 1}, variant: 'light'},
+            cancelProps: {radius: 'md', style: {flex: 1}, variant: 'light'},
             centered: true,
             children: (
-                <Text
-                    style={{
-                        fontSize: 'var(--body-font-size)',
-                        lineHeight: 'var(--body-line-height)',
-                        marginBottom: 'var(--ce-size-sm)',
-                    }}
-                >
-                    Are you sure you want to delete <b>{sessionName}</b> session?
+                <Text size="sm">
+                    Remove <strong>{sessionName}</strong> from this plan?
                 </Text>
             ),
-            confirmProps: {color: 'red', radius: 'lg', style: {flex: 1}},
+            confirmProps: {color: 'red', radius: 'md', style: {flex: 1}},
+            id: 'delete-plan-session-modal',
             labels: {
                 cancel: 'Cancel',
-                confirm: 'Delete',
+                confirm: 'Remove',
             },
             onCancel: () => modals.close('delete-plan-session-modal'),
             onConfirm: () => onDelete(planSession.id),
-            title: (
-                <Text
-                    style={{
-                        fontSize: 'var(--body-font-size)',
-                        fontWeight: 600,
-                        lineHeight: 'var(--body-line-height)',
-                    }}
-                >
-                    Delete Session
-                </Text>
-            ),
-            id: 'delete-plan-session-modal',
+            title: <Text fw={600}>Remove Session</Text>,
             zIndex: 99999,
         });
     };
 
     return (
         <Card
-            aria-label={`${sessionName} session`}
-            role="group"
             shadow="xxs"
             style={{
                 borderRadius: 'var(--body-offset)',
@@ -111,32 +95,34 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
         >
             <Group
                 align="start"
-                gap="md"
+                gap="xs"
                 justify="space-between"
+                wrap="nowrap"
             >
-                <Stack
+                <Box
                     flex={1}
-                    gap="xs"
+                    style={{minWidth: 0}}
                 >
                     <Group
-                        align="center"
                         gap="xs"
-                        wrap="nowrap"
+                        style={{marginBottom: 'var(--ce-size-2xs)'}}
+                        wrap="wrap"
                     >
                         <Text
                             c="dark.6"
+                            component="span"
                             style={{
                                 fontSize: 'var(--body-font-size)',
                                 fontWeight: 600,
                                 lineHeight: 'var(--body-line-height)',
+                                wordBreak: 'break-word',
                             }}
                         >
                             {sessionName}
                         </Text>
                         <Badge
                             color={getSessionTypeColor(sessionType)}
-                            fw={600}
-                            size="md"
+                            size="sm"
                             tt="capitalize"
                             variant="dot"
                         >
@@ -153,89 +139,103 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                         )}
                     </Group>
 
-                    {planSession.override_notes && (
+                    {description && (
                         <Text
                             c="gray.6"
+                            lineClamp={2}
                             style={{
-                                fontSize: 'var(--callout-font-size)',
-                                lineHeight: 'var(--callout-line-height)',
+                                fontSize: 'var(--label-font-size)',
+                                fontWeight: 400,
+                                lineHeight: 'var(--label-line-height)',
+                                marginBottom: 'var(--ce-size-xs)',
                             }}
                         >
-                            {planSession.override_notes}
-                        </Text>
-                    )}
-
-                    {planSession.session?.description && (
-                        <Text
-                            c="gray.6"
-                            style={{
-                                fontSize: 'var(--callout-font-size)',
-                                lineHeight: 'var(--callout-line-height)',
-                            }}
-                        >
-                            {planSession.session.description}
+                            {description}
                         </Text>
                     )}
 
                     <Group
                         align="center"
-                        gap="lg"
+                        gap="md"
                         wrap="wrap"
                     >
+                        {duration && (
+                            <CaptionBadge
+                                icon={IconTimeDuration0}
+                                text={`${duration} min`}
+                            />
+                        )}
                         {scheduleWindow && (
                             <CaptionBadge
                                 icon={IconClock}
                                 text={scheduleWindow}
                             />
                         )}
-                        {duration ? (
-                            <CaptionBadge
-                                icon={IconTimeDuration0}
-                                text={`${duration} min`}
-                            />
-                        ) : null}
                     </Group>
-                </Stack>
+                </Box>
 
-                <Menu
-                    position="bottom-end"
-                    shadow="lg"
-                >
-                    <Menu.Target>
-                        <ActionIcon
-                            aria-label="Session options"
-                            color="dark"
-                            onClick={(event) => event.stopPropagation()}
-                            radius={9999}
-                            size="xl"
-                            variant="subtle"
-                        >
-                            <DotsThreeIcon size={18} />
-                        </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-                        <Menu.Item
-                            leftSection={<UserPlusIcon size={20} />}
-                            onClick={() => onAssign?.(planSession.id)}
-                        >
-                            Assign to Clients
-                        </Menu.Item>
-                        <Menu.Item
-                            leftSection={<PencilSimpleIcon size={20} />}
-                            onClick={() => onEdit?.(planSession.id)}
-                        >
-                            Edit Session
-                        </Menu.Item>
-                        <Menu.Divider />
-                        <Menu.Item
-                            color="red"
-                            leftSection={<TrashIcon size={20} />}
-                            onClick={handleDelete}
-                        >
-                            Delete Session
-                        </Menu.Item>
-                    </Menu.Dropdown>
-                </Menu>
+                {/* Actions menu */}
+                <Box style={{flexShrink: 0}}>
+                    <Menu
+                        position="bottom-end"
+                        shadow="md"
+                        width={180}
+                        withinPortal
+                    >
+                        <Menu.Target>
+                            <ActionIcon
+                                aria-label="Session options"
+                                color="dark"
+                                onClick={(event) => event.stopPropagation()}
+                                radius={9999}
+                                size="xl"
+                                variant="subtle"
+                            >
+                                <DotsThreeIcon size={18} />
+                            </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                            {onAssign && (
+                                <Menu.Item
+                                    leftSection={<UserPlusIcon size={16} />}
+                                    onClick={() => onAssign(planSession.id)}
+                                    styles={{
+                                        itemLabel: {fontSize: '14px'},
+                                        itemSection: {marginRight: '10px'},
+                                    }}
+                                >
+                                    Assign
+                                </Menu.Item>
+                            )}
+                            {onEdit && (
+                                <Menu.Item
+                                    leftSection={<PencilSimpleIcon size={16} />}
+                                    onClick={() => onEdit(planSession.id)}
+                                    styles={{
+                                        itemLabel: {fontSize: '14px'},
+                                        itemSection: {marginRight: '10px'},
+                                    }}
+                                >
+                                    Edit
+                                </Menu.Item>
+                            )}
+                            {(onAssign || onEdit) && onDelete && <Menu.Divider />}
+                            {onDelete && (
+                                <Menu.Item
+                                    color="red"
+                                    leftSection={<TrashIcon size={16} />}
+                                    onClick={handleDelete}
+                                    styles={{
+                                        itemLabel: {fontSize: '14px'},
+                                        itemSection: {marginRight: '10px'},
+                                    }}
+                                >
+                                    Remove
+                                </Menu.Item>
+                            )}
+                        </Menu.Dropdown>
+                    </Menu>
+                </Box>
             </Group>
         </Card>
     );

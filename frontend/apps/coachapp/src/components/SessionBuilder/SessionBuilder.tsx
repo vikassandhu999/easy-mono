@@ -12,12 +12,18 @@ import SessionCreateForm from './SessionCreateForm';
 import {DefinitionBuildError, SessionFormValues} from './sessionForm';
 
 interface SessionBuilderProps {
-    onComplete?: (session: Session) => void;
+    onComplete?: (session: Session, action?: 'close' | 'continue') => void;
     sessionId?: string;
     sessionType?: SessionType;
+    showSaveOptions?: boolean; // Whether to show "Save & Close" and "Save" buttons
 }
 
-export default function SessionBuilder({onComplete, sessionId: initialSessionId, sessionType}: SessionBuilderProps) {
+export default function SessionBuilder({
+    onComplete,
+    sessionId: initialSessionId,
+    sessionType,
+    showSaveOptions = false,
+}: SessionBuilderProps) {
     const [currentSessionId, setCurrentSessionId] = useState<null | string>(initialSessionId ?? null);
 
     const sessionQuery = useGetSessionQuery(
@@ -33,19 +39,22 @@ export default function SessionBuilder({onComplete, sessionId: initialSessionId,
     const fallbackSessionType: SessionType = effectiveSessionType ?? 'workout';
 
     const handleDetailsSubmit = useCallback(
-        async (values: SessionFormValues) => {
+        async (values: SessionFormValues, action: 'close' | 'continue' = 'close') => {
             try {
+                console.log('Submitting values:', values);
                 if (!currentSessionId) {
-                    const payload = values;
-                    const created = await createSession(payload).unwrap();
+                    const created = await createSession(values).unwrap();
                     setCurrentSessionId(created.id);
-                    onComplete?.(created);
+                    onComplete?.(created, action);
                     return;
                 }
 
                 const payload = values;
-                const updated = await updateSession({id: currentSessionId, data: payload}).unwrap();
-                onComplete?.(updated);
+                const updated = await updateSession({
+                    id: currentSessionId,
+                    data: payload,
+                }).unwrap();
+                onComplete?.(updated, action);
                 sessionQuery.refetch();
             } catch (error) {
                 const message =
@@ -88,7 +97,8 @@ export default function SessionBuilder({onComplete, sessionId: initialSessionId,
             initialSession={session}
             isSubmitting={isCreatingSession || isUpdatingSession}
             onSubmit={handleDetailsSubmit}
-            submitLabel={currentSessionId ? 'Save session details' : undefined}
+            showSaveOptions={showSaveOptions && !!currentSessionId} // Only show options when editing
+            submitLabel={currentSessionId ? 'Update Session' : 'Create Session'}
         />
     );
 }

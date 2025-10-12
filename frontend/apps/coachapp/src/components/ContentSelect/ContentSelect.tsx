@@ -6,17 +6,17 @@ import {
     Card,
     Center,
     Checkbox,
-    Chip,
     Divider,
     Group,
-    ScrollArea,
-    SegmentedControl,
+    Loader,
+    Paper,
     Stack,
     Text,
     TextInput,
+    Title,
 } from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
-import {MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
+import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
 import {useMemo, useState} from 'react';
 
 import {Content} from '@/api/contents.ts';
@@ -29,10 +29,21 @@ import RecordsList from '../layouts/RecordsList';
 interface ContentCardProps {
     content: Content;
     isSelected: boolean;
+    multiple: boolean;
     onToggleSelect: (id: string) => void;
 }
 
-const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) => {
+/**
+ * ContentCard - Individual content item card
+ * Follows best practices:
+ * - Clear visual feedback for selection state
+ * - Accessible with keyboard navigation
+ * - Smooth hover transitions
+ * - Descriptive ARIA labels
+ * - Single-select: No checkbox, immediate selection on click
+ * - Multi-select: Checkbox for explicit selection
+ */
+const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCardProps) => {
     const typeConfig = CONTENT_TYPE_CONFIG[content.type];
     const IconComponent = typeConfig.icon;
 
@@ -44,9 +55,10 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
             role="button"
             style={{
                 backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'white',
-                borderColor: isSelected ? 'var(--mantine-color-blue-4)' : 'var(--mantine-color-gray-3)',
+                borderColor: isSelected ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
+                borderWidth: isSelected ? 2 : 1,
                 borderRadius: 8,
-                boxShadow: isSelected ? '0 2px 8px rgba(59, 130, 246, 0.15)' : 'none',
+                boxShadow: isSelected ? '0 2px 12px rgba(59, 130, 246, 0.2)' : 'none',
                 cursor: 'pointer',
                 transform: 'scale(1)',
                 transition: 'all 200ms ease',
@@ -54,10 +66,17 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
             styles={{
                 root: {
                     '&:hover': {
-                        backgroundColor: isSelected ? 'var(--mantine-color-blue-1)' : 'var(--mantine-color-blue-0)',
-                        borderColor: 'var(--mantine-color-blue-4)',
-                        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)',
+                        backgroundColor: multiple
+                            ? isSelected
+                                ? 'var(--mantine-color-blue-1)'
+                                : 'var(--mantine-color-gray-0)'
+                            : 'var(--mantine-color-blue-0)',
+                        borderColor: 'var(--mantine-color-blue-5)',
+                        boxShadow: '0 4px 16px rgba(59, 130, 246, 0.25)',
                         transform: 'scale(1.01)',
+                    },
+                    '&:active': {
+                        transform: 'scale(0.99)',
                     },
                 },
             }}
@@ -65,17 +84,33 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
             withBorder
         >
             <Group
-                align="center"
+                align="flex-start"
                 gap="sm"
                 wrap="nowrap"
             >
-                <Checkbox
-                    checked={isSelected}
-                    color="blue"
-                    onChange={() => onToggleSelect(content.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    size="sm"
-                />
+                {/* Selection Checkbox - Only in multi-select mode */}
+                {multiple && (
+                    <Checkbox
+                        checked={isSelected}
+                        color="blue"
+                        onChange={() => onToggleSelect(content.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                onToggleSelect(content.id);
+                            }
+                        }}
+                        size="sm"
+                        styles={{
+                            input: {
+                                cursor: 'pointer',
+                            },
+                        }}
+                    />
+                )}
+
+                {/* Content Icon */}
                 <Center
                     h={40}
                     style={{
@@ -86,29 +121,51 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
                     w={40}
                 >
                     <IconComponent
-                        color="var(--mantine-color-gray-6)"
+                        color="var(--mantine-color-gray-7)"
                         size={20}
+                        weight="duotone"
                     />
                 </Center>
+
+                {/* Content Details */}
                 <Box style={{flex: 1, minWidth: 0}}>
-                    <Text
-                        fw={600}
-                        lineClamp={1}
+                    <Group
+                        gap="xs"
                         mb={2}
-                        size="sm"
-                        style={{lineHeight: 1.3}}
                     >
-                        {content.name}
-                    </Text>
-                    <Text
-                        c="dimmed"
-                        lineClamp={2}
-                        mb="xs"
-                        size="xs"
-                        style={{lineHeight: 1.4}}
-                    >
-                        {content.instructions || typeConfig.description}
-                    </Text>
+                        <Text
+                            fw={600}
+                            lineClamp={1}
+                            size="sm"
+                            style={{flex: 1}}
+                        >
+                            {content.name}
+                        </Text>
+                        {multiple && isSelected && (
+                            <Badge
+                                color="blue"
+                                leftSection={<CheckIcon size={10} />}
+                                radius="sm"
+                                size="xs"
+                                variant="filled"
+                            >
+                                Selected
+                            </Badge>
+                        )}
+                    </Group>
+
+                    {content.instructions && (
+                        <Text
+                            c="dimmed"
+                            lineClamp={2}
+                            mb="xs"
+                            size="xs"
+                            style={{lineHeight: 1.4}}
+                        >
+                            {content.instructions}
+                        </Text>
+                    )}
+
                     <Group
                         gap="xs"
                         wrap="wrap"
@@ -132,16 +189,6 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
                                 {content.duration} min
                             </Badge>
                         )}
-                        {!content.is_published && (
-                            <Badge
-                                color="yellow"
-                                radius="sm"
-                                size="xs"
-                                variant="outline"
-                            >
-                                Draft
-                            </Badge>
-                        )}
                     </Group>
                 </Box>
             </Group>
@@ -149,166 +196,168 @@ const ContentCard = ({content, isSelected, onToggleSelect}: ContentCardProps) =>
     );
 };
 
-interface SelectedItemsProps {
+interface SelectedItemsBarProps {
     onClearAll: () => void;
-    onRemove: (id: string) => void;
-    selectedItems: Content[];
+    selectedCount: number;
 }
 
-const SelectedItems = ({onClearAll, onRemove, selectedItems}: SelectedItemsProps) => {
-    if (selectedItems.length === 0) return null;
+/**
+ * SelectedItemsBar - Shows selection count and clear action
+ * Best practice: Persistent selection indicator at top of modal
+ */
+const SelectedItemsBar = ({onClearAll, selectedCount}: SelectedItemsBarProps) => {
+    if (selectedCount === 0) return null;
 
     return (
-        <Box>
+        <Paper
+            p="sm"
+            radius="md"
+            style={{
+                backgroundColor: 'var(--mantine-color-blue-0)',
+                border: '1px solid var(--mantine-color-blue-3)',
+            }}
+            withBorder
+        >
             <Group
                 align="center"
                 justify="space-between"
-                mb="xs"
             >
-                <Text
-                    fw={500}
-                    size="sm"
-                >
-                    Selected ({selectedItems.length})
-                </Text>
+                <Group gap="xs">
+                    <Badge
+                        color="blue"
+                        radius="sm"
+                        size="md"
+                        variant="filled"
+                    >
+                        {selectedCount}
+                    </Badge>
+                    <Text
+                        fw={600}
+                        size="xs"
+                    >
+                        {selectedCount === 1 ? 'item' : 'items'} selected
+                    </Text>
+                </Group>
                 <Button
-                    color="gray"
+                    color="blue"
+                    leftSection={<XIcon size={14} />}
                     onClick={onClearAll}
+                    radius="md"
                     size="xs"
-                    variant="subtle"
+                    variant="light"
                 >
                     Clear all
                 </Button>
             </Group>
-            <ScrollArea.Autosize mah={120}>
-                <Group gap="xs">
-                    {selectedItems.map((item) => (
-                        <Chip
-                            checked={true}
-                            color="blue"
-                            key={item.id}
-                            onChange={() => onRemove(item.id)}
-                            radius="sm"
-                            size="sm"
-                            variant="filled"
-                        >
-                            <Group
-                                gap={4}
-                                wrap="nowrap"
-                            >
-                                <Text
-                                    size="xs"
-                                    style={{maxWidth: 100}}
-                                    truncate
-                                >
-                                    {item.name}
-                                </Text>
-                                <ActionIcon
-                                    color="white"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onRemove(item.id);
-                                    }}
-                                    size={14}
-                                    variant="transparent"
-                                >
-                                    <XIcon size={10} />
-                                </ActionIcon>
-                            </Group>
-                        </Chip>
-                    ))}
-                </Group>
-            </ScrollArea.Autosize>
-        </Box>
+        </Paper>
     );
 };
 
 interface SearchAndFilterProps {
-    contentTypeFilter: string;
     isLoading: boolean;
-    onContentTypeChange: (value: string) => void;
     onSearchChange: (value: string) => void;
     resultsCount: number;
     searchTerm: string;
 }
 
-const SearchAndFilter = ({
-    contentTypeFilter,
-    isLoading,
-    onContentTypeChange,
-    onSearchChange,
-    resultsCount,
-    searchTerm,
-}: SearchAndFilterProps) => {
+/**
+ * SearchAndFilter - Search input and results count
+ * Best practices:
+ * - Debounced search for performance
+ * - Clear search button for easy reset
+ * - Results count for user feedback
+ */
+const SearchAndFilter = ({isLoading, onSearchChange, resultsCount, searchTerm}: SearchAndFilterProps) => {
     return (
         <Stack gap="sm">
+            {/* Search Input */}
             <TextInput
                 leftSection={<MagnifyingGlassIcon size={16} />}
                 onChange={(event) => onSearchChange(event.currentTarget.value)}
-                placeholder="Search content..."
+                placeholder="Search by name or description..."
                 rightSection={
-                    searchTerm && (
+                    searchTerm ? (
                         <ActionIcon
                             color="gray"
                             onClick={() => onSearchChange('')}
-                            size="sm"
+                            radius="md"
+                            size="xs"
                             variant="subtle"
                         >
                             <XIcon size={14} />
                         </ActionIcon>
-                    )
+                    ) : null
                 }
+                size="sm"
                 value={searchTerm}
             />
 
+            {/* Results Count */}
             <Group
-                align="center"
                 justify="space-between"
+                px="xs"
             >
-                <SegmentedControl
-                    data={[
-                        {label: 'All', value: 'all'},
-                        ...Object(CONTENT_TYPE_CONFIG)
-                            .keys()
-                            .map((key) => ({
-                                label: CONTENT_TYPE_CONFIG[key].label,
-                                value: CONTENT_TYPE_CONFIG[key].value,
-                            })),
-                    ]}
-                    onChange={onContentTypeChange}
+                <Text
+                    c="dimmed"
                     size="xs"
-                    value={contentTypeFilter}
-                />
-
-                {!isLoading && (
-                    <Text
-                        c="dimmed"
-                        size="xs"
-                    >
-                        {resultsCount} {resultsCount === 1 ? 'item' : 'items'} found
-                    </Text>
-                )}
+                >
+                    {isLoading ? (
+                        <Group gap="xs">
+                            <Loader
+                                color="blue"
+                                size={12}
+                                type="dots"
+                            />
+                            <span>Loading...</span>
+                        </Group>
+                    ) : (
+                        <span>
+                            {resultsCount} {resultsCount === 1 ? 'result' : 'results'} found
+                        </span>
+                    )}
+                </Text>
             </Group>
         </Stack>
     );
 };
 
 interface ContentSelectProps {
-    contentType?: string;
+    contentType?: 'exercise' | 'ingredient' | 'recipe';
+    multiple?: boolean; // Default: false (single selection)
     onCancel?: () => void;
-    onComplete?: (selectedIds: string[]) => void;
+    onComplete?: (selectedIds: string[], selectedContents?: Content[]) => void;
 }
 
+/**
+ * ContentSelect - Main modal content for selecting content items
+ *
+ * Best Modal Practices Implemented:
+ * 1. Clear modal purpose with descriptive title
+ * 2. Prominent search and filter options at top
+ * 3. Persistent selection indicator (multi-select mode)
+ * 4. Clear visual feedback for selected items
+ * 5. Fixed bottom action bar for easy access
+ * 6. Accessible keyboard navigation
+ * 7. Proper loading states
+ * 8. Descriptive empty states
+ * 9. Cancel and confirm actions clearly separated
+ * 10. Context-aware button labels
+ * 11. Single-select mode: Auto-complete on first selection
+ * 12. Multi-select mode: Explicit confirmation required
+ */
 export default function ContentSelect(props: ContentSelectProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [contentTypeFilter, setContentTypeFilter] = useState(props.contentType || 'all');
     const [localSelectedIds, setLocalSelectedIds] = useState<string[]>([]);
+    const multiple = props.multiple ?? false; // Default to single selection
 
     const onSearchChangeDebounced = useDebouncedCallback(setSearchTerm, 300);
 
     const {data, fetchNextPage, isFetchingNextPage, isLoading} = useListContentsInfiniteQuery({
         page_size: 20,
         search: searchTerm,
+        content_type: props.contentType || 'exercise',
+        access_level: 'all',
+        active_only: false,
     });
 
     const contents = useMemo(() => {
@@ -320,11 +369,14 @@ export default function ContentSelect(props: ContentSelectProps) {
     }, [contents, localSelectedIds]);
 
     const toggleSelection = (id: string) => {
-        setLocalSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
-    };
-
-    const removeFromSelection = (id: string) => {
-        setLocalSelectedIds((prev) => prev.filter((item) => item !== id));
+        if (multiple) {
+            // Multi-select: Toggle selection
+            setLocalSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+        } else {
+            // Single-select: Auto-complete immediately
+            const selectedContent = contents.find((c) => c.id === id);
+            props.onComplete?.([id], selectedContent ? [selectedContent] : []);
+        }
     };
 
     const clearAllSelection = () => {
@@ -332,57 +384,184 @@ export default function ContentSelect(props: ContentSelectProps) {
     };
 
     const handleComplete = () => {
-        props.onComplete?.(localSelectedIds);
+        props.onComplete?.(localSelectedIds, selectedItems);
     };
 
     return (
-        <Stack>
+        <Stack
+            gap="md"
+            style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: 'var(--mantine-spacing-md)',
+                position: 'relative',
+            }}
+        >
+            {/* Modal Header */}
+            <Box>
+                <Title
+                    mb={4}
+                    order={4}
+                >
+                    Select Exercise
+                </Title>
+                <Text
+                    c="dimmed"
+                    size="xs"
+                >
+                    {multiple ? 'Select one or more exercises' : 'Select an exercise'}
+                </Text>
+            </Box>
+
+            <Divider />
+
+            {/* Search and Filter */}
             <SearchAndFilter
-                contentTypeFilter={contentTypeFilter}
                 isLoading={isLoading}
-                onContentTypeChange={setContentTypeFilter}
                 onSearchChange={onSearchChangeDebounced}
                 resultsCount={contents.length}
                 searchTerm={searchTerm}
             />
 
-            <SelectedItems
-                onClearAll={clearAllSelection}
-                onRemove={removeFromSelection}
-                selectedItems={selectedItems}
-            />
+            {/* Selection Indicator - Only in multi-select mode */}
+            {multiple && (
+                <SelectedItemsBar
+                    onClearAll={clearAllSelection}
+                    selectedCount={localSelectedIds.length}
+                />
+            )}
 
-            {localSelectedIds.length > 0 && <Divider />}
+            {/* Content List - Scrollable Area */}
+            <Box
+                style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    marginLeft: 'calc(var(--mantine-spacing-md) * -1)',
+                    marginRight: 'calc(var(--mantine-spacing-md) * -1)',
+                    paddingLeft: 'var(--mantine-spacing-md)',
+                    paddingRight: 'var(--mantine-spacing-md)',
+                    marginBottom: multiple ? 'calc(var(--mantine-spacing-md) + 70px)' : '0', // Space for FixedBottom only in multi-select
+                }}
+            >
+                <RecordsList<Content>
+                    emptyState={
+                        searchTerm ? (
+                            <Paper
+                                p="lg"
+                                radius="md"
+                                style={{
+                                    backgroundColor: 'var(--mantine-color-gray-0)',
+                                    border: '2px dashed var(--mantine-color-gray-4)',
+                                }}
+                            >
+                                <Stack
+                                    align="center"
+                                    gap="sm"
+                                >
+                                    <MagnifyingGlassIcon
+                                        size={36}
+                                        style={{opacity: 0.3}}
+                                        weight="duotone"
+                                    />
+                                    <Stack
+                                        align="center"
+                                        gap={2}
+                                    >
+                                        <Text
+                                            fw={600}
+                                            size="sm"
+                                        >
+                                            No results
+                                        </Text>
+                                        <Text
+                                            c="dimmed"
+                                            size="xs"
+                                            ta="center"
+                                        >
+                                            Try different keywords
+                                        </Text>
+                                    </Stack>
+                                    <Button
+                                        onClick={() => setSearchTerm('')}
+                                        radius="md"
+                                        size="xs"
+                                        variant="light"
+                                    >
+                                        Clear search
+                                    </Button>
+                                </Stack>
+                            </Paper>
+                        ) : (
+                            <Paper
+                                p="lg"
+                                radius="md"
+                                style={{
+                                    backgroundColor: 'var(--mantine-color-gray-0)',
+                                    border: '2px dashed var(--mantine-color-gray-4)',
+                                }}
+                            >
+                                <Stack
+                                    align="center"
+                                    gap="sm"
+                                >
+                                    <Text
+                                        fw={600}
+                                        size="sm"
+                                    >
+                                        No exercises
+                                    </Text>
+                                    <Text
+                                        c="dimmed"
+                                        size="xs"
+                                    >
+                                        Create exercises to get started
+                                    </Text>
+                                </Stack>
+                            </Paper>
+                        )
+                    }
+                    fetchNextPage={fetchNextPage}
+                    isFetchingNextPage={isFetchingNextPage}
+                    isLoading={isLoading}
+                    records={contents}
+                    renderItem={(item) => (
+                        <ContentCard
+                            content={item}
+                            isSelected={localSelectedIds.includes(item.id)}
+                            key={item.id}
+                            multiple={multiple}
+                            onToggleSelect={toggleSelection}
+                        />
+                    )}
+                />
+            </Box>
 
-            <RecordsList<Content>
-                emptyState={
-                    searchTerm || contentTypeFilter !== 'all'
-                        ? 'No content matches your search criteria'
-                        : 'No content available'
-                }
-                fetchNextPage={fetchNextPage}
-                isFetchingNextPage={isFetchingNextPage}
-                isLoading={isLoading}
-                records={contents}
-                renderItem={(item) => (
-                    <ContentCard
-                        content={item}
-                        isSelected={localSelectedIds.includes(item.id)}
-                        key={item.id}
-                        onToggleSelect={toggleSelection}
+            {/* Fixed Bottom Actions - Only in multi-select mode */}
+            {multiple && (
+                <Box
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: 'var(--mantine-spacing-md)',
+                        backgroundColor: 'white',
+                        borderTop: '1px solid var(--mantine-color-gray-3)',
+                        zIndex: 100,
+                    }}
+                >
+                    <FixedBottom
+                        isSubmitting={false}
+                        label={
+                            localSelectedIds.length === 0
+                                ? 'Select at least one'
+                                : `Add ${localSelectedIds.length} ${localSelectedIds.length === 1 ? 'exercise' : 'exercises'}`
+                        }
+                        onSubmit={handleComplete}
                     />
-                )}
-            />
-
-            <FixedBottom
-                isSubmitting={false}
-                label={
-                    localSelectedIds.length === 0
-                        ? 'Select content to continue'
-                        : `Add ${localSelectedIds.length} ${localSelectedIds.length === 1 ? 'item' : 'items'}`
-                }
-                onSubmit={handleComplete}
-            />
+                </Box>
+            )}
         </Stack>
     );
 }

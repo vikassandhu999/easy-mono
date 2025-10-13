@@ -1,13 +1,15 @@
-import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
+
+import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
+
 import {useApp} from './AppProvider';
 
 type AuthContextValue = {
     isAuthenticated: boolean;
     error?: string;
     isAuthenticating: boolean;
-    isClient : boolean;
+    isClient: boolean;
     verifyAuth: (silent: boolean) => Promise<void>;
     logout: () => Promise<void>;
     saveAuthToken: (token: AccessToken) => Promise<unknown>;
@@ -18,21 +20,21 @@ AuthContext.displayName = 'AuthContext';
 
 type AuthState = {
     isAuthenticated: boolean;
-    isClient : boolean;
+    isClient: boolean;
     isAuthenticating: boolean;
     error?: string;
 };
 
 const initialAuthState = {
     isAuthenticated: false,
-    isClient : false,
+    isClient: false,
     isAuthenticating: true,
     error: undefined,
 };
 
 type UpdateStateFn = (state: AuthState) => Partial<AuthState>;
 
-function authReducer(state: AuthState, updateState: UpdateStateFn | Partial<AuthState>): AuthState {
+function authReducer(state: AuthState, updateState: Partial<AuthState> | UpdateStateFn): AuthState {
     return {
         ...state,
         ...(typeof updateState === 'function' ? updateState(state) : updateState),
@@ -102,7 +104,7 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
                 });
             }
 
-            if(tokenResponse.getValue().client) {
+            if (tokenResponse.getValue().client) {
                 setState({isClient: true});
             } else {
                 setState({isClient: false});

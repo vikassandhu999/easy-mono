@@ -1,8 +1,9 @@
+import {notifications} from '@mantine/notifications';
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
 
 import {AccessToken, setTokenForAuthedClient} from '@/api/auth';
-import {useRefreshTokenMutation} from '@/store/services/authApi';
+import {useLogoutMutation, useRefreshTokenMutation} from '@/store/services/authApi';
 
 import {useApp} from './AppProvider';
 
@@ -55,6 +56,7 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     const [state, setState] = React.useReducer(authReducer, initialAuthState);
     const {initSocket} = useApp();
     const [refreshTokenTrigger] = useRefreshTokenMutation();
+    const [clearToken] = useLogoutMutation();
 
     const onceRef = React.useRef(false);
     const refreshRef = React.useRef<NodeJS.Timeout>(null);
@@ -111,12 +113,26 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     );
 
     const logout = useCallback(async () => {
-        await verifyAuth(true);
-        setState({
-            isAuthenticated: false,
-            isAuthenticating: false,
-        });
-    }, [verifyAuth]);
+        try {
+            await clearToken().unwrap();
+            await verifyAuth(true);
+            setState({
+                isAuthenticated: false,
+                isAuthenticating: false,
+            });
+            notifications.show({
+                title: 'Success',
+                message: 'Logged out successfully',
+                color: 'green',
+            });
+        } catch (error) {
+            notifications.show({
+                title: 'Error',
+                message: 'Error while logging out',
+                color: 'red',
+            });
+        }
+    }, [clearToken, verifyAuth]);
 
     useEffect(() => {
         if (!onceRef.current) {

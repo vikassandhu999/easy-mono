@@ -2,7 +2,11 @@ import {ActionIcon, Avatar, Box, Group, Menu, rem, Text} from '@mantine/core';
 import {CaretUpDownIcon} from '@phosphor-icons/react/dist/ssr';
 import {IconLogout2, IconPaint, IconUser} from '@tabler/icons-react';
 
+import {useAuth} from '@/providers/AuthProvider';
+
 export function UserInfo() {
+    const {logout} = useAuth();
+
     return (
         <Box p="md">
             <Menu position="top-end">
@@ -81,6 +85,7 @@ export function UserInfo() {
                     <Menu.Item
                         color="red"
                         leftSection={<IconLogout2 style={{height: rem(16), width: rem(16)}} />}
+                        onClick={() => logout()}
                     >
                         Logout
                     </Menu.Item>

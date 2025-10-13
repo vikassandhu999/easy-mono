@@ -17,7 +17,7 @@ interface MainLayoutProps {
 
 export function MainLayout({children, disableTopMargin, showNavigation}: MainLayoutProps) {
     const [opened, {close}] = useDisclosure();
-    const isMobile = useMediaQuery(`(max-width: 768px)`);
+    const isMobile = useMediaQuery(`(max-width: 998px)`);
     const isKeyboardVisible = useKeyboardVisible();
 
     const {handleLogout, handleNavigation} = useNavigationState(isMobile ? close : undefined);

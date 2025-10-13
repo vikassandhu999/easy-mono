@@ -10,10 +10,17 @@ interface Props {
     isSubmitting?: boolean;
     label: string;
     onSubmit?: () => void;
+    submitDisabled?: boolean;
     withArrow?: boolean;
 }
 
-export const FixedBottom: React.FC<Props> = ({isSubmitting = false, label, onSubmit, withArrow = false}) => {
+export const FixedBottom: React.FC<Props> = ({
+    isSubmitting = false,
+    label,
+    onSubmit,
+    submitDisabled = false,
+    withArrow = false,
+}) => {
     const theme = useMantineTheme();
     const isKeyboardVisible = useKeyboardVisible();
 
@@ -52,6 +59,7 @@ export const FixedBottom: React.FC<Props> = ({isSubmitting = false, label, onSub
         >
             <PaddingContainer>
                 <Button
+                    disabled={submitDisabled}
                     fullWidth
                     loading={isSubmitting}
                     onClick={onSubmit}

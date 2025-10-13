@@ -640,8 +640,6 @@ export default function PlanBuilder() {
                                 >
                                     {editingPlanSession?.session?.name || 'this session'}
                                 </Text>
-                                . Updates will be reflected across all plans using this{' '}
-                                {editingPlanSession?.session?.session_type || 'session'}.
                             </Text>
                         </Box>
 

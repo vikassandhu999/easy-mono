@@ -1,42 +1,27 @@
-import {ActionIcon, Avatar, Badge, Card, Group, Menu, Stack, Text} from '@mantine/core';
-import {ChatIcon, DotsThreeVerticalIcon, EyeIcon, PencilIcon} from '@phosphor-icons/react';
-import {IconCalendarTime, IconMail, IconPhone} from '@tabler/icons-react';
-import {format, parseISO} from 'date-fns';
+import {
+    ActionIcon,
+    Avatar,
+    Badge,
+    Button,
+    Card,
+    Group,
+    Indicator,
+    Stack,
+    Text,
+    Tooltip,
+    useMantineTheme,
+} from '@mantine/core';
+import {IconArrowRight, IconCalendar, IconMail, IconMessageCircle2} from '@tabler/icons-react';
 import React from 'react';
 
 import {Client, MembershipStatus} from '@/api/clients.ts';
 
 interface Props {
     client: Client;
+    onAddPlan?: (id: string) => void;
     onChat?: (id: string) => void;
     onEdit: (id: string) => void;
     onView: (id: string) => void;
-}
-
-function CaptionBadge({icon, text}: {icon: React.ComponentType<any>; text: string}) {
-    const IconComponent = icon;
-    return (
-        <Group
-            align={'center'}
-            style={{gap: 'var(--ce-size-xs)'}}
-        >
-            <IconComponent
-                color={'var(--mantine-color-gray-6)'}
-                size={16}
-            />
-            <Text
-                c="gray.6"
-                style={{
-                    fontSize: 'var(--label-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--label-line-height)',
-                    wordBreak: 'break-word',
-                }}
-            >
-                {text}
-            </Text>
-        </Group>
-    );
 }
 
 function getClientInitials(name: string): string {
@@ -74,157 +59,175 @@ function getMembershipStatusLabel(status: string): string {
         case MembershipStatus.PAUSED:
             return 'Paused';
         default:
-            return status?.charAt(0).toUpperCase() + status?.slice(1);
+            return 'Unknown';
     }
 }
 
-const ListItem: React.FC<Props> = ({client, onChat, onEdit, onView}) => {
-    const membershipStartDate = client.membership_start_date
-        ? format(parseISO(client.membership_start_date), 'MMM d, yyyy')
-        : 'Not set';
+const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
+    const theme = useMantineTheme();
+
+    // Show online indicator if client is active
+    const isActive = client.membership_status === MembershipStatus.ACTIVE;
 
     return (
         <Card
             onClick={() => onView(client.id)}
+            padding="md"
+            shadow="xs"
             style={{
-                borderRadius: 'var(--body-offset)',
                 cursor: 'pointer',
-                paddingBottom: 'var(--ce-size-md)',
-                paddingInline: 'var(--ce-size-md)',
-                paddingTop: 'var(--body-offset)',
+                transition: 'all 0.15s ease',
+                borderBottom: `1px dashed ${theme.colors.gray[4]}`,
             }}
-            withBorder
+            styles={{
+                root: {
+                    '&:hover': {
+                        boxShadow: theme.shadows.md,
+                        transform: 'translateY(-2px)',
+                    },
+                },
+            }}
         >
-            <Group
-                align={'start'}
-                gap={'xs'}
-                justify={'space-between'}
-                wrap={'nowrap'}
-            >
+            <Stack gap="md">
+                {/* Header Section */}
                 <Group
-                    align={'start'}
-                    gap={'md'}
-                    style={{flex: 1}}
+                    justify="space-between"
+                    wrap="nowrap"
                 >
-                    <Avatar
-                        color="blue"
-                        radius="sm"
-                        size="md"
-                        style={{flexShrink: 0}}
+                    <Group
+                        gap="md"
+                        style={{flex: 1, minWidth: 0}}
                     >
-                        {getClientInitials(client.name)}
-                    </Avatar>
-
-                    <Stack
-                        gap={'xs'}
-                        style={{flex: 1}}
-                    >
-                        <Group
-                            align="flex-start"
-                            gap="sm"
-                            justify="space-between"
-                            wrap="nowrap"
+                        {/* Avatar with status indicator */}
+                        <Indicator
+                            color={isActive ? 'green' : 'gray'}
+                            disabled={!isActive}
+                            position="bottom-end"
+                            size={10}
+                            withBorder
                         >
-                            <Stack
-                                gap={'xs'}
-                                style={{flex: 1, marginBottom: 'var(--ce-size-xs)'}}
+                            <Avatar
+                                color={isActive ? 'blue' : 'gray'}
+                                radius="xl"
+                                size="md"
+                            >
+                                {getClientInitials(client.name)}
+                            </Avatar>
+                        </Indicator>
+
+                        {/* Client Info */}
+                        <Stack
+                            gap={4}
+                            style={{flex: 1, minWidth: 0}}
+                        >
+                            <Group
+                                gap="xs"
+                                wrap="nowrap"
                             >
                                 <Text
-                                    c={'dark.6'}
+                                    fw={600}
+                                    size="md"
                                     style={{
-                                        fontSize: 'var(--body-font-size)',
-                                        fontWeight: 600,
-                                        lineHeight: 'var(--body-line-height)',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
                                     }}
                                 >
                                     {client.name}
                                 </Text>
+
+                                {/* Membership Status Badge */}
                                 <Badge
                                     color={getMembershipStatusColor(client.membership_status)}
-                                    size={'md'}
-                                    tt={'capitalize'}
+                                    radius="sm"
+                                    size="xs"
                                     variant="light"
                                 >
                                     {getMembershipStatusLabel(client.membership_status)}
                                 </Badge>
-                            </Stack>
-                        </Group>
+                            </Group>
 
-                        <Stack gap="sm">
+                            {/* Email with icon */}
                             {client.invitation_email && (
-                                <CaptionBadge
-                                    icon={IconMail}
-                                    text={client.invitation_email}
-                                />
-                            )}
-                            {client.invitation_phone && (
-                                <CaptionBadge
-                                    icon={IconPhone}
-                                    text={client.invitation_phone}
-                                />
-                            )}
-                            <CaptionBadge
-                                icon={IconCalendarTime}
-                                text={`Joined ${membershipStartDate}`}
-                            />
-                            {client.assigned_coach && (
-                                <CaptionBadge
-                                    icon={IconCalendarTime}
-                                    text={`Assigned to ${client.assigned_coach.name}`}
-                                />
+                                <Group gap={6}>
+                                    <IconMail
+                                        color={theme.colors.gray[6]}
+                                        size={14}
+                                    />
+                                    <Text
+                                        c="dimmed"
+                                        size="sm"
+                                        style={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {client.invitation_email}
+                                    </Text>
+                                </Group>
                             )}
                         </Stack>
-                    </Stack>
+                    </Group>
                 </Group>
 
-                <Menu
-                    position={'bottom-end'}
-                    shadow={'lg'}
+                {/* Action Buttons */}
+                <Group
+                    justify="space-between"
+                    mt="xs"
                 >
-                    <Menu.Target>
-                        <ActionIcon
-                            aria-label="More actions"
-                            color={'dark'}
-                            onClick={(e) => e.stopPropagation()}
-                            radius={9999}
-                            size={'xl'}
-                            title="More actions"
-                            variant={'subtle'}
+                    <Group gap="xs">
+                        <Button
+                            leftSection={<IconCalendar size={16} />}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAddPlan(client.id);
+                            }}
+                            radius="lg"
+                            size="xs"
+                            variant="light"
                         >
-                            <DotsThreeVerticalIcon size={18} />
-                        </ActionIcon>
-                    </Menu.Target>
+                            Add Plan
+                        </Button>
 
-                    <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-                        <Menu.Item
-                            leftSection={<EyeIcon size={20} />}
-                            onClick={() => {
+                        <Tooltip
+                            label="Message client"
+                            withArrow
+                        >
+                            <ActionIcon
+                                color="gray"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onChat?.(client.id);
+                                }}
+                                radius="lg"
+                                size="md"
+                                variant="light"
+                            >
+                                <IconMessageCircle2 size={18} />
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
+
+                    <Tooltip
+                        label="View details"
+                        withArrow
+                    >
+                        <ActionIcon
+                            color="blue"
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 onView(client.id);
                             }}
+                            radius="md"
+                            size="md"
+                            variant="subtle"
                         >
-                            View Profile
-                        </Menu.Item>
-                        {onChat && (
-                            <Menu.Item
-                                leftSection={<ChatIcon size={20} />}
-                                onClick={() => {
-                                    onChat(client.id);
-                                }}
-                            >
-                                Open Chat
-                            </Menu.Item>
-                        )}
-                        <Menu.Item
-                            leftSection={<PencilIcon size={20} />}
-                            onClick={() => {
-                                onEdit(client.id);
-                            }}
-                        >
-                            Edit Client
-                        </Menu.Item>
-                    </Menu.Dropdown>
-                </Menu>
-            </Group>
+                            <IconArrowRight size={18} />
+                        </ActionIcon>
+                    </Tooltip>
+                </Group>
+            </Stack>
         </Card>
     );
 };

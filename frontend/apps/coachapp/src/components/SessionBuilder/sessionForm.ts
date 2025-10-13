@@ -2,41 +2,73 @@ import {z} from 'zod';
 
 import {MealSessionSettings_zod, Session, SessionType} from '@/api/sessions';
 
-export const WorkoutSectionSchema = z.object({
-    id: z.string(),
-    type: z.string(),
-    title: z.string(),
-    format: z.string(),
-    note: z.string(),
-    target_rounds: z.number(),
-    target_duration_seconds: z.number(),
-    exercises: z.array(
-        z.object({
-            id: z.string(),
-            content_id: z.string(),
-            each_side: z.boolean(),
-            tempo: z.string(),
-            sets: z.array(
+export const WorkoutSectionSchema = z.discriminatedUnion('type', [
+    z.object({
+        id: z.string(),
+        type: z.literal('superset'),
+        title: z.string(),
+        format: z.string(),
+        note: z.string(),
+        target_rounds: z.number(),
+        target_duration_seconds: z.number(),
+        exercises: z.array(
+            z.object({
+                id: z.string(),
+                content_id: z.string(),
+                each_side: z.boolean(),
+                tempo: z.string(),
+                sets: z.array(
+                    z.object({
+                        reps: z.object({value: z.number()}),
+                        weight: z.object({value: z.number(), unit: z.string()}),
+                        duration: z.object({value: z.number()}),
+                        rest_seconds: z.object({value: z.number()}),
+                    }),
+                ),
+            }),
+        ),
+    }),
+
+    z.object({
+        id: z.string(),
+        type: z.literal('hidden'),
+        title: z.string().optional(),
+        format: z.string().optional(),
+        note: z.string().optional(),
+        target_rounds: z.number().optional(),
+        target_duration_seconds: z.number().optional(),
+        exercises: z
+            .array(
                 z.object({
-                    reps: z.object({value: z.number()}),
-                    weight: z.object({value: z.number(), unit: z.string()}),
-                    duration: z.object({value: z.number()}),
-                    rest_seconds: z.object({value: z.number()}),
+                    id: z.string(),
+                    content_id: z.string(),
+                    each_side: z.boolean(),
+                    tempo: z.string(),
+                    sets: z.array(
+                        z.object({
+                            reps: z.object({value: z.number()}),
+                            weight: z.object({value: z.number(), unit: z.string()}),
+                            duration: z.object({value: z.number()}),
+                            rest_seconds: z.object({value: z.number()}),
+                        }),
+                    ),
                 }),
-            ),
-        }),
-    ),
-});
+            )
+            .optional(),
+    }),
+]);
 
 export const WorkoutSettingsSchema = z.object({
     estimated_duration_minutes: z.number().min(1).max(480).optional(),
     notes: z.string().max(2000).optional(),
 });
 
-export const WorkoutDefinitionSchema = z.object({
-    sections: z.array(WorkoutSectionSchema),
-    settings: WorkoutSettingsSchema.optional(),
-});
+export const WorkoutDefinitionSchema = z
+    .object({
+        sections: z.array(WorkoutSectionSchema).optional(),
+        settings: WorkoutSettingsSchema.optional(),
+    })
+    .optional();
 
 export const MealSettingsSchema = MealSessionSettings_zod;
 export const MealDefinitionSchema = z.object({

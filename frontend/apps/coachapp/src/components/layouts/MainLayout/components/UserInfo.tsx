@@ -3,9 +3,11 @@ import {CaretUpDownIcon} from '@phosphor-icons/react/dist/ssr';
 import {IconLogout2, IconPaint, IconUser} from '@tabler/icons-react';
 
 import {useAuth} from '@/providers/AuthProvider';
+import {useGetCoachQuery} from '@/store/services/coachApi';
 
 export function UserInfo() {
     const {logout} = useAuth();
+    const {data} = useGetCoachQuery();
 
     return (
         <Box p="md">
@@ -46,7 +48,7 @@ export function UserInfo() {
                                 radius="xl"
                                 size="sm"
                             >
-                                C
+                                {data?.name[0] ?? 'C'}
                             </Avatar>
                             <Box style={{flex: 1, overflow: 'hidden'}}>
                                 <Text
@@ -54,14 +56,14 @@ export function UserInfo() {
                                     size="sm"
                                     truncate
                                 >
-                                    Coach
+                                    {data?.name ?? 'NA'}
                                 </Text>
                                 <Text
                                     c="dimmed"
                                     size="xs"
                                     truncate
                                 >
-                                    coach@example.com
+                                    {data?.email ?? 'NA'}
                                 </Text>
                             </Box>
                             <ActionIcon

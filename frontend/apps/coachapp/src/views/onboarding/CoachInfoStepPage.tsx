@@ -3,18 +3,19 @@ import {Alert, Button, Stack, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {ArrowRightIcon} from '@phosphor-icons/react';
 import {IconBriefcase, IconInfoCircle, IconUser} from '@tabler/icons-react';
-import React, {useState} from 'react';
+import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {CoachesAPI, UpdateCoach_zod, UpdateCoachProps} from '@/api/coaches.ts';
+import {UpdateCoach_zod, UpdateCoachProps} from '@/api/coaches.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
+import {useUpdateCoachMutation} from '@/store/services/coachApi';
 
 const updateCoachResolver = zodResolver(UpdateCoach_zod);
 
 const CoachInfoStepPage: React.FC = () => {
     const navigate = useNavigate();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [updateCoach, {isLoading}] = useUpdateCoachMutation();
 
     const {
         control,
@@ -27,19 +28,8 @@ const CoachInfoStepPage: React.FC = () => {
     });
 
     const onSubmit = async (data: UpdateCoachProps) => {
-        setIsSubmitting(true);
-
         try {
-            const res = await CoachesAPI.updateCoach(data);
-            if (res.isError) {
-                const errorMessage = res.getError().message;
-                notifications.show({
-                    color: 'red',
-                    message: errorMessage,
-                    title: 'Error',
-                });
-                return;
-            }
+            await updateCoach(data).unwrap();
 
             notifications.show({
                 color: 'green',
@@ -47,14 +37,12 @@ const CoachInfoStepPage: React.FC = () => {
                 title: 'Welcome!',
             });
             navigate('/');
-        } catch (err) {
+        } catch (err: any) {
             notifications.show({
                 color: 'red',
-                message: 'Failed to save your information. Please try again.',
+                message: err?.data?.message || 'Failed to save your information. Please try again.',
                 title: 'Error',
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -130,7 +118,7 @@ const CoachInfoStepPage: React.FC = () => {
                     loaderProps={{
                         type: 'bars',
                     }}
-                    loading={isSubmitting}
+                    loading={isLoading}
                     radius="sm"
                     rightSection={<ArrowRightIcon />}
                     size="md"
@@ -141,7 +129,7 @@ const CoachInfoStepPage: React.FC = () => {
                     }}
                     type="submit"
                 >
-                    {isSubmitting ? 'Setting up your profile...' : 'Complete Setup'}
+                    {isLoading ? 'Setting up your profile...' : 'Complete Setup'}
                 </Button>
             </Stack>
         </AuthLayout>

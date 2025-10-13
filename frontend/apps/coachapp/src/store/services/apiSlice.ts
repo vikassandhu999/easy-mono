@@ -91,6 +91,8 @@ export const apiSlice = createApi({
         'Sessions',
         'Plans',
         'PlanSessions',
+        'Coach', // Coach profile management
+        'Business', // Business preferences management
     ],
     endpoints: () => ({}),
 });

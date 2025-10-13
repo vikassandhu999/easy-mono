@@ -1,14 +1,17 @@
 import {Button, useDrawersStack} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
 import {IconPlus, IconUsers} from '@tabler/icons-react';
 import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {Client} from '@/api/clients.ts';
+import {Plan} from '@/api/plans.ts';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {InviteClientDrawer} from '@/components/InviteClientDrawer';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
+import PlanSelectModal from '@/components/PlanSelectDrawer';
 import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
 
 import Header from './Header';
@@ -17,10 +20,13 @@ import ListItem from './ListItem';
 const ClientsListPage: React.FC = () => {
     const navigate = useNavigate();
     const [search, setSearch] = useState('');
+    const [selectedClientId, setSelectedClientId] = useState('');
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListClientsInfiniteQuery(
         search?.trim() ? {search: search.trim()} : undefined,
     );
+
+    const [opened, {close, open}] = useDisclosure();
 
     const clients = useMemo(() => {
         if (!data) return [];
@@ -32,6 +38,16 @@ const ClientsListPage: React.FC = () => {
     const handleEdit = (id: string) => navigate(`/clients/${id}/edit`);
     const handleView = (id: string) => navigate(`/clients/${id}`);
     const handleChat = (id: string) => navigate(`/clients/${id}/chat`);
+    const handleAddPlan = (id: string) => {
+        setSelectedClientId(id);
+        open();
+    };
+
+    const handlePlanSelected = (selectedPlanId: string, selectedPlan?: Plan) => {
+        console.log('Plan selected:', selectedPlanId, selectedPlan);
+        // TODO: Implement API call to assign plan to client
+        // This will need a backend endpoint like POST /v1/coach/plans/:planId/copy-to-client
+    };
 
     return (
         <>
@@ -39,6 +55,14 @@ const ClientsListPage: React.FC = () => {
                 isLoading={isLoading}
                 onInviteClick={() => stack.open('invite-client')}
                 onSearchChange={(value) => setSearch(value)}
+            />
+
+            <PlanSelectModal
+                clientID={selectedClientId}
+                close={close}
+                onComplete={handlePlanSelected}
+                open={open}
+                opened={opened}
             />
             <PagePaper>
                 <PaddingContainer
@@ -82,6 +106,7 @@ const ClientsListPage: React.FC = () => {
                             <ListItem
                                 client={client}
                                 key={client.id}
+                                onAddPlan={handleAddPlan}
                                 onChat={handleChat}
                                 onEdit={handleEdit}
                                 onView={handleView}

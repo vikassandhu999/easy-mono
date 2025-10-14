@@ -59,17 +59,24 @@ export const ChipSelect: React.FC<ChipSelectProps> = ({
     required,
     withAsterisk,
 }) => {
-    const [_value, setValue] = useUncontrolled({
-        value,
-        defaultValue: defaultValue || (multiple ? [] : ''),
-        finalValue: multiple ? [] : '',
-        onChange,
-    });
-
     // Normalize data to ChipSelectOption format
     const normalizedData: ChipSelectOption[] = data.map((item) =>
         typeof item === 'string' ? {value: item, label: item} : item,
     );
+
+    // Set default value to first item if not provided
+    const getDefaultValue = () => {
+        if (defaultValue !== undefined) return defaultValue;
+        if (multiple) return [];
+        return normalizedData.length > 0 ? normalizedData[0].value : '';
+    };
+
+    const [_value, setValue] = useUncontrolled({
+        value,
+        defaultValue: getDefaultValue(),
+        finalValue: multiple ? [] : '',
+        onChange,
+    });
 
     const handleChipClick = (optionValue: string) => {
         if (disabled || readOnly) return;

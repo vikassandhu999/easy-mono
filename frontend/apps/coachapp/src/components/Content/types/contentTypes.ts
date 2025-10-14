@@ -25,7 +25,7 @@ export function getContentTypeConfig(type: ContentType) {
             iconColor: 'var(--mantine-color-red-7)',
             label: 'Exercise',
             pluralLabel: 'Exercises',
-            searchPlaceholder: 'Search exercises...',
+            searchPlaceholder: 'Search exercise by name',
         },
         recipe: {
             badgeColor: 'blue',
@@ -36,7 +36,7 @@ export function getContentTypeConfig(type: ContentType) {
             iconColor: 'var(--mantine-color-blue-7)',
             label: 'Recipe',
             pluralLabel: 'Recipes',
-            searchPlaceholder: 'Search recipes...',
+            searchPlaceholder: 'Search recipes by name',
         },
     } as const;
 

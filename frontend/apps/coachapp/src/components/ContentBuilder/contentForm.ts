@@ -69,6 +69,7 @@ function defaultDefinition(contentType: ContentType): any {
                 force: '',
                 mechanics: '',
                 movement_pattern: '',
+                calories_per_minute: undefined,
             };
         case 'recipe':
             return {
@@ -92,6 +93,10 @@ function defaultDefinition(contentType: ContentType): any {
                 diet_types: [],
                 difficulty: '',
                 dish_type: '',
+                instructions: {
+                    media_url: null,
+                    instructions: [],
+                },
             };
         default:
             throw new ContentBuildError(`Unsupported content type: ${contentType}`);

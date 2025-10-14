@@ -9,10 +9,12 @@ const RecipeListPage = () => {
         modals.open({
             modalId: `edit-recipe-${recipe.id}`,
             title: 'Edit Recipe',
+            size: 'xl',
             centered: true,
             styles: {
                 body: {padding: 0},
             },
+            fullScreen: true,
             children: (
                 <ContentBuilder
                     contentId={recipe.id}
@@ -26,12 +28,7 @@ const RecipeListPage = () => {
         });
     };
 
-    return (
-        <ContentListView
-            contentType="recipe"
-            onContentClick={handleRecipeClick}
-        />
-    );
+    return <ContentListView onContentClick={handleRecipeClick} />;
 };
 
 export default RecipeListPage;

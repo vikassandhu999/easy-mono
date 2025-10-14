@@ -1,17 +1,31 @@
-import {Button, Chip, Group, Space, TextInput} from '@mantine/core';
+import {
+    Button,
+    Center,
+    Chip,
+    Group,
+    ScrollArea,
+    SegmentedControl,
+    Space,
+    Stack,
+    Text,
+    TextInput,
+    Title,
+} from '@mantine/core';
 import {modals} from '@mantine/modals';
-import {IconPlus, IconPointFilled} from '@tabler/icons-react';
-import {FC} from 'react';
+import {IconPlus} from '@tabler/icons-react';
+import {FC, useState} from 'react';
 
 import {Content, ContentType} from '@/api/contents';
 import {ContentBuilder} from '@/components/ContentBuilder';
 
-import {ContentCard} from './cards';
+import {CONTENT_TYPE_CONFIG} from '../Configs';
+import HeadingContainer from '../containers/HeaderContainer';
+import {ExerciseCard} from './ExerciseCard';
 import {useContentList, useContentSelection} from './hooks/useContentList';
+import {RecipeCard} from './RecipeCard';
 import {getContentTypeConfig} from './types/contentTypes';
 
 interface ContentListViewProps {
-    contentType: ContentType;
     onContentClick?: (content: Content) => void;
 }
 
@@ -19,8 +33,13 @@ interface ContentListViewProps {
  * Unified content list view component
  * Handles create/edit modals, search, filters, and list rendering for any content type
  */
-export const ContentListView: FC<ContentListViewProps> = ({contentType, onContentClick}) => {
-    const config = getContentTypeConfig(contentType);
+
+const VISIBILE_CONTENT_TYPE: ContentType[] = ['exercise', 'recipe'];
+
+export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
+    const [selectedTab, setSelectedTab] = useState<ContentType>(VISIBILE_CONTENT_TYPE[0]);
+
+    const config = getContentTypeConfig(selectedTab as ContentType);
     const {clearSelection} = useContentSelection<Content>();
 
     const {
@@ -35,9 +54,9 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
         setScopeFilter,
         fetchNextPage,
         refetch,
-    } = useContentList({contentType});
+    } = useContentList({contentType: selectedTab});
 
-    const handleCreateClick = () => {
+    const handleCreateClick = (contentType: ContentType) => {
         modals.open({
             modalId: `create-${contentType}`,
             title: config.createTitle,
@@ -70,9 +89,10 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
             onContentClick(content);
         } else {
             modals.open({
-                modalId: `edit-${contentType}-${content.id}`,
+                modalId: `edit-${selectedTab}-${content.id}`,
                 title: content.name,
-                size: 'xl',
+                fullScreen: true,
+
                 centered: true,
                 styles: {
                     body: {
@@ -87,7 +107,7 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
                     <ContentBuilder
                         contentId={content.id}
                         onComplete={() => {
-                            modals.close(`edit-${contentType}-${content.id}`);
+                            modals.close(`edit-${selectedTab}-${content.id}`);
                             refetch();
                             clearSelection();
                         }}
@@ -100,78 +120,170 @@ export const ContentListView: FC<ContentListViewProps> = ({contentType, onConten
 
     return (
         <>
-            {/* Search and Create Button */}
-            <Group
-                align="start"
-                justify="space-between"
-                wrap="nowrap"
-            >
-                <TextInput
-                    flex={1}
-                    onChange={(event) => setSearch(event.currentTarget.value)}
-                    placeholder={config.searchPlaceholder}
-                    radius="md"
-                    size="sm"
-                    value={search}
-                />
-                <Button
-                    onClick={handleCreateClick}
-                    radius="md"
-                    rightSection={<IconPlus size={16} />}
-                    size="sm"
-                >
-                    {config.createTitle}
-                </Button>
-            </Group>
+            <HeadingContainer withBorder={false}>
+                <Stack gap="md">
+                    <Title order={5}>Library</Title>
+                    <Text
+                        c="dimmed"
+                        fs="italic"
+                        size="xs"
+                        style={{
+                            lineHeight: 'var(--callout-line-height)',
+                        }}
+                    >
+                        Manage and curate all exercises and recipes for your coaching programs.
+                    </Text>
 
-            {/* Scope Filters */}
-            <Chip.Group
-                onChange={(value) => setScopeFilter(value as any)}
-                value={scopeFilter}
-            >
-                <Group
-                    justify="left"
-                    my="sm"
-                >
-                    {scopeFilters.map((filter, idx) => {
-                        const displayLabel = filter === 'business' ? 'Custom' : filter;
-                        return (
-                            <Chip
-                                icon={<IconPointFilled />}
-                                key={`scope-filter-${idx}`}
-                                size="xs"
-                                style={{textTransform: 'capitalize'}}
-                                value={filter}
-                                variant="outline"
-                            >
-                                {displayLabel}
-                            </Chip>
-                        );
-                    })}
-                </Group>
-            </Chip.Group>
+                    <ScrollArea
+                        scrollbars="x"
+                        type="never"
+                        w="100%"
+                    >
+                        <SegmentedControl
+                            data={Object.entries(CONTENT_TYPE_CONFIG)
+                                .filter(([key]) => VISIBILE_CONTENT_TYPE.includes(key as ContentType))
+                                .map(([, config]) => ({
+                                    value: config.value,
+                                    label: (
+                                        <Center style={{gap: 6}}>
+                                            <config.icon
+                                                size={16}
+                                                stroke={1.5}
+                                            />
+                                            <span>{config.label}s</span>
+                                        </Center>
+                                    ),
+                                }))}
+                            fullWidth
+                            onChange={(value) => setSelectedTab(value as ContentType)}
+                            radius="lg"
+                            size="sm"
+                            style={{
+                                minWidth: 'max-content',
+                            }}
+                            styles={{
+                                root: {
+                                    // backgroundColor: 'var(--mantine-color-gray-0)',
+                                },
+                                label: {
+                                    padding: '8px 16px',
+                                    fontSize: 'var(--footnote-font-size)',
+                                    fontWeight: 500,
+                                },
+                                indicator: {
+                                    boxShadow: 'var(--mantine-shadow-xs)',
+                                },
+                            }}
+                            value={selectedTab}
+                        />
+                    </ScrollArea>
 
-            {/* Loading State */}
+                    <Group
+                        align="start"
+                        justify="space-between"
+                        wrap="nowrap"
+                    >
+                        <TextInput
+                            flex={1}
+                            onChange={(event) => setSearch(event.currentTarget.value)}
+                            placeholder={config.searchPlaceholder}
+                            radius="lg"
+                            size="sm"
+                            value={search}
+                            variant="filled"
+                        />
+                        <Button
+                            onClick={() => {
+                                handleCreateClick(selectedTab as ContentType);
+                            }}
+                            radius="lg"
+                            rightSection={<IconPlus size={16} />}
+                            size="sm"
+                        >
+                            {config.createTitle}
+                        </Button>
+                    </Group>
+
+                    <Chip.Group
+                        onChange={(value) => setScopeFilter(value as any)}
+                        value={scopeFilter}
+                    >
+                        <Group
+                            justify="left"
+                            my="sm"
+                        >
+                            {scopeFilters.map((filter, idx) => {
+                                const displayLabel = filter === 'business' ? 'Custom' : filter;
+                                return (
+                                    <Chip
+                                        key={`scope-filter-${idx}`}
+                                        radius="lg"
+                                        size="sm"
+                                        style={{textTransform: 'capitalize'}}
+                                        value={filter}
+                                        variant="outline"
+                                    >
+                                        {displayLabel}
+                                    </Chip>
+                                );
+                            })}
+                        </Group>
+                    </Chip.Group>
+                </Stack>
+            </HeadingContainer>
+
             {isLoading && <div>Loading {config.pluralLabel.toLowerCase()}...</div>}
 
-            {/* Content List */}
-            {contents.map((content) => (
-                <div key={content.id}>
-                    <ContentCard
-                        content={content}
-                        onClick={() => handleContentClick(content)}
-                    />
-                    <Space h="md" />
-                </div>
-            ))}
+            {!isLoading && contents.length === 0 && (
+                <Stack
+                    align="center"
+                    gap="md"
+                    py="xl"
+                >
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                        ta="center"
+                    >
+                        No {config.pluralLabel.toLowerCase()} found. Click on the{' '}
+                        <Text
+                            component="span"
+                            fw={600}
+                        >
+                            {config.createTitle}
+                        </Text>{' '}
+                        button to create one.
+                    </Text>
+                </Stack>
+            )}
 
-            {/* Load More Button */}
+            {selectedTab === 'exercise' &&
+                contents.map((content) => (
+                    <div key={content.id}>
+                        <ExerciseCard
+                            content={content}
+                            onClick={() => handleContentClick(content)}
+                        />
+                        <Space h="md" />
+                    </div>
+                ))}
+            {selectedTab === 'recipe' &&
+                contents.map((content) => (
+                    <div key={content.id}>
+                        <RecipeCard
+                            content={content}
+                            onClick={() => handleContentClick(content)}
+                        />
+                        <Space h="md" />
+                    </div>
+                ))}
+
             {hasNextPage && (
                 <Button
                     disabled={isFetchingNextPage}
                     mt="sm"
                     onClick={() => fetchNextPage()}
-                    radius="md"
+                    radius="lg"
                     size="xs"
                     variant="subtle"
                 >

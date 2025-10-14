@@ -13,6 +13,7 @@ const ExerciseListPage = () => {
             modalId: 'exercise-detail',
             title: exercise.name,
             centered: true,
+            size: 'xl',
             styles: {
                 body: {
                     padding: 0,
@@ -37,7 +38,6 @@ const ExerciseListPage = () => {
 
     return (
         <ContentListView
-            contentType="exercise"
             key={refreshKey}
             onContentClick={handleExerciseClick}
         />

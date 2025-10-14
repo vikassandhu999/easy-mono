@@ -3,7 +3,7 @@ import {useEffect, useState} from 'react';
 import {Content, CONTENT_SCOPE_FILTERS, ContentScopeFilter, ContentType} from '@/api/contents';
 import {useListContentsInfiniteQuery} from '@/store/services/contentsApi';
 
-interface UseContentListOptions {
+export interface UseContentListOptions {
     activeOnly?: boolean;
     contentType: ContentType;
     pageSize?: number;

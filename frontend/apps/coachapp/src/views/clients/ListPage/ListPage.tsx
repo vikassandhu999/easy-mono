@@ -13,6 +13,7 @@ import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import PlanSelectModal from '@/components/PlanSelectDrawer';
 import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
+import {useCopyPlanToClient} from '@/store/services/plans';
 
 import Header from './Header';
 import ListItem from './ListItem';
@@ -43,10 +44,24 @@ const ClientsListPage: React.FC = () => {
         open();
     };
 
-    const handlePlanSelected = (selectedPlanId: string, selectedPlan?: Plan) => {
-        console.log('Plan selected:', selectedPlanId, selectedPlan);
-        // TODO: Implement API call to assign plan to client
-        // This will need a backend endpoint like POST /v1/coach/plans/:planId/copy-to-client
+    const [copyPlanToClient] = useCopyPlanToClient();
+
+    const handlePlanSelected = async (selectedPlanId: string, selectedPlan?: Plan) => {
+        if (!selectedClientId) return;
+
+        try {
+            await copyPlanToClient({
+                planId: selectedPlanId,
+                client_id: selectedClientId,
+                name: selectedPlan ? `${selectedPlan.name} - Copy` : undefined,
+            }).unwrap();
+
+            // Optionally show success notification
+            console.log('Plan successfully assigned to client');
+        } catch (error) {
+            console.error('Failed to assign plan to client:', error);
+            // Optionally show error notification
+        }
     };
 
     return (

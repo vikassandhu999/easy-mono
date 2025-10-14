@@ -2,6 +2,14 @@ import {CreatePlanProps, Plan, PlansList, PlansListOpts, UpdatePlanProps} from '
 
 import {apiSlice} from './apiSlice';
 
+export interface CopyPlanToClientProps {
+    allow_client_edits?: boolean;
+    client_id: string;
+    name?: string;
+    planId: string;
+    start_date?: string;
+}
+
 const DEFAULT_PAGE_SIZE = 20;
 
 const buildListParams = (opts: PlansListOpts, pageParam: number) => {
@@ -111,6 +119,19 @@ export const plansApi = apiSlice.injectEndpoints({
                 getNextPageParam: (lastPage, _allPages, lastPageParam) => getNextPlanPage(lastPage, lastPageParam),
             },
         }),
+
+        copyPlanToClient: build.mutation<Plan, CopyPlanToClientProps>({
+            query: ({planId, ...body}) => ({
+                url: `/v1/coach/plans/${planId}/copy-to-client`,
+                method: 'post',
+                data: body,
+            }),
+            invalidatesTags: (_result, _error, {client_id}) => [
+                {type: 'Plans', id: 'LIST'},
+                {type: 'Clients', id: client_id},
+                {type: 'Clients', id: 'LIST'},
+            ],
+        }),
     }),
     overrideExisting: false,
 });
@@ -120,4 +141,5 @@ export const {
     useUpdatePlanMutation: useUpdatePlan,
     useGetPlanQuery: useGetPlan,
     useListPlansInfiniteQuery: useListPlans,
+    useCopyPlanToClientMutation: useCopyPlanToClient,
 } = plansApi;

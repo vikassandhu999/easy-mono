@@ -1,6 +1,7 @@
-import {Alert} from '@mantine/core';
+import {Alert, Button, LoadingOverlay, Stack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {skipToken} from '@reduxjs/toolkit/query';
+import {IconRefresh} from '@tabler/icons-react';
 import {useCallback, useState} from 'react';
 
 import {Content, ContentType} from '@/api/contents';
@@ -41,7 +42,7 @@ export default function ContentBuilder({
 
     const contentQuery = useGetContentQuery(currentContentId ?? skipToken);
 
-    const {data: content} = contentQuery;
+    const {data: content, isLoading: isLoadingContent, isError: isContentError} = contentQuery;
 
     const [createContent, {isLoading: isCreatingContent}] = useCreateContentMutation();
     const [updateContent, {isLoading: isUpdatingContent}] = useUpdateContentMutation();
@@ -111,6 +112,106 @@ export default function ContentBuilder({
                         title="Missing information"
                     >
                         Please select a content type to continue.
+                    </Alert>
+                </PaddingContainer>
+            </PagePaper>
+        );
+    }
+
+    // Show loading state when fetching content
+    if (currentContentId && isLoadingContent) {
+        return (
+            <PagePaper>
+                <PaddingContainer
+                    paddingX="sm"
+                    paddingY="lg"
+                >
+                    <LoadingOverlay
+                        loaderProps={{
+                            type: 'bars',
+                        }}
+                        visible
+                    />
+                </PaddingContainer>
+            </PagePaper>
+        );
+    }
+
+    // Show error state when fetching content fails
+    if (currentContentId && isContentError) {
+        return (
+            <PagePaper>
+                <PaddingContainer
+                    paddingX="sm"
+                    paddingY="lg"
+                >
+                    <Alert
+                        color="red"
+                        title="Error loading content"
+                    >
+                        <Stack gap="sm">
+                            We couldn't load this content. Please try again.
+                            <Button
+                                color="red"
+                                leftSection={<IconRefresh size={16} />}
+                                onClick={() => contentQuery.refetch()}
+                                radius="lg"
+                                size="sm"
+                                variant="light"
+                            >
+                                Retry
+                            </Button>
+                        </Stack>
+                    </Alert>
+                </PaddingContainer>
+            </PagePaper>
+        );
+    }
+
+    // Show loading state when fetching content
+    if (currentContentId && isLoadingContent) {
+        return (
+            <PagePaper>
+                <PaddingContainer
+                    paddingX="sm"
+                    paddingY="lg"
+                >
+                    <LoadingOverlay
+                        loaderProps={{
+                            type: 'bars',
+                        }}
+                        visible
+                    />
+                </PaddingContainer>
+            </PagePaper>
+        );
+    }
+
+    // Show error state when fetching content fails
+    if (currentContentId && isContentError) {
+        return (
+            <PagePaper>
+                <PaddingContainer
+                    paddingX="sm"
+                    paddingY="lg"
+                >
+                    <Alert
+                        color="red"
+                        title="Error loading content"
+                    >
+                        <Stack gap="sm">
+                            We couldn't load this content. Please try again.
+                            <Button
+                                color="red"
+                                leftSection={<IconRefresh size={16} />}
+                                onClick={() => contentQuery.refetch()}
+                                radius="lg"
+                                size="sm"
+                                variant="light"
+                            >
+                                Retry
+                            </Button>
+                        </Stack>
                     </Alert>
                 </PaddingContainer>
             </PagePaper>

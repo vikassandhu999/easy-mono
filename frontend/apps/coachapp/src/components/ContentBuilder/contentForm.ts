@@ -14,7 +14,7 @@ export const ContentMediaSchema = z
 
 // Base content schema
 export const BaseContentSchema = z.object({
-    name: z.string().min(3, 'Name must be at least 3 characters').max(255),
+    name: z.string().min(3, 'Name must be greater than 3 characters.').max(255),
     description: z.string().max(5000).optional(),
     media: ContentMediaSchema,
     thumbnail_url: z.string().url().optional(),

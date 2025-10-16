@@ -1,5 +1,6 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Group, Stack} from '@mantine/core';
+import {notifications} from '@mantine/notifications';
 import {useEffect, useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 
@@ -64,6 +65,12 @@ export default function ContentCreateForm({
                 (values) => handleFormSubmit(values, 'close'),
                 (errors) => {
                     console.error('Form validation errors:', errors);
+                    notifications.show({
+                        title: 'Validation Error',
+                        message: 'Please check the form and fix any errors before submitting.',
+                        color: 'orange',
+                        autoClose: 5000,
+                    });
                 },
             )}
             style={{

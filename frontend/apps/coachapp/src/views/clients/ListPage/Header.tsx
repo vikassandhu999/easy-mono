@@ -1,6 +1,6 @@
 import {Button, Group, Stack, TextInput, Title} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
-import {IconMailShare} from '@tabler/icons-react';
+import {IconUserPlus} from '@tabler/icons-react';
 import React from 'react';
 
 import HeadingContainer from '@/components/containers/HeaderContainer';
@@ -38,25 +38,24 @@ export default function Header({onInviteClick, onSearchChange, ref}: PlansPagePr
                     </Stack>
 
                     <Button
-                        leftSection={<IconMailShare size={18} />}
+                        leftSection={<IconUserPlus size={18} />}
                         onClick={onInviteClick}
-                        radius={9999}
+                        radius="md"
                         size={'sm'}
                     >
-                        Invite
+                        Add a client
                     </Button>
                 </Group>
 
                 <TextInput
                     onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                     placeholder="Search clients..."
+                    radius="md"
                     size={'md'}
                     styles={{
-                        input: {
-                            borderRadius: 'var(--body-offset)',
-                        },
                         root: {flex: 1},
                     }}
+                    variant="filled"
                 />
             </Stack>
         </HeadingContainer>

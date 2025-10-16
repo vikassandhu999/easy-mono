@@ -1,11 +1,14 @@
-import {Textarea, TextInput} from '@mantine/core';
-import {useForm} from '@mantine/form';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {Button, Stack, Text, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
+import {IconSend} from '@tabler/icons-react';
 import React from 'react';
+import {Controller, useForm} from 'react-hook-form';
 
-import {CreateClientProps} from '@/api/clients.ts';
-import {FixedBottom} from '@/components/containers/FixedBottom';
+import {CreateClient_zod, CreateClientProps} from '@/api/clients.ts';
 import {FormSection} from '@/components/containers/FormSection';
+
+import {FixedBottomBar} from '../containers/FixedBottomBar';
 
 interface InviteClientFormProps {
     onSubmit: (data: CreateClientProps) => Promise<void>;
@@ -13,108 +16,141 @@ interface InviteClientFormProps {
 }
 
 export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, submitText}) => {
-    const form = useForm<CreateClientProps>({
-        initialValues: {
+    const {
+        control,
+        handleSubmit,
+        formState: {isSubmitting},
+    } = useForm<CreateClientProps>({
+        defaultValues: {
             invitation_email: '',
-            invitation_phone: '',
+            invitation_phone: undefined,
             name: '',
-            notes: '',
+            notes: undefined,
         },
-        validate: {
-            invitation_email: (value) => {
-                if (!value || value.trim().length === 0) {
-                    return 'Email is required';
-                }
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                    return 'Invalid email format';
-                }
-                return null;
-            },
-            invitation_phone: (value) => {
-                if (value && (value.length < 10 || value.length > 15)) {
-                    return 'Phone number must be between 10-15 characters';
-                }
-                return null;
-            },
-            name: (value) => {
-                if (!value || value.trim().length === 0) {
-                    return 'Name is required';
-                }
-                if (value.length > 200) {
-                    return 'Name must be less than 200 characters';
-                }
-                return null;
-            },
-            notes: (value) => {
-                if (value && value.length > 1000) {
-                    return 'Notes must be less than 1000 characters';
-                }
-                return null;
-            },
-        },
+        resolver: zodResolver(CreateClient_zod),
     });
 
     const handleFormSubmit = async (values: CreateClientProps) => {
-        if (form.validate().hasErrors) {
+        try {
+            await onSubmit(values);
+        } catch (error) {
             notifications.show({
                 autoClose: 3000,
                 color: 'red',
-                message: 'Please fix the errors in the form',
-                position: 'top-center',
-                title: 'Validation Error',
+                message: 'Failed to send invitation. Please try again.',
+                title: 'Error',
             });
-            return;
         }
-
-        await onSubmit(values);
     };
 
     return (
-        <form onSubmit={form.onSubmit(handleFormSubmit)}>
+        <form onSubmit={handleSubmit(handleFormSubmit)}>
             <FormSection>
-                <TextInput
-                    description="The full name of the client"
-                    label="Name"
-                    placeholder="Enter client's full name"
-                    required
-                    size="md"
-                    withAsterisk
-                    {...form.getInputProps('name')}
-                />
+                <Text
+                    c="dimmed"
+                    fs="italic"
+                    size="xs"
+                >
+                    Your client will receive an email invitation to join your coaching program
+                </Text>
 
-                <TextInput
-                    description="The email address for sending the invitation"
-                    label="Email"
-                    placeholder="Enter email address"
-                    required
-                    size="md"
-                    type="email"
-                    withAsterisk
-                    {...form.getInputProps('invitation_email')}
-                />
-                <TextInput
-                    description="The client's phone number"
-                    label="Phone Number"
-                    placeholder="Enter phone number (optional)"
-                    size="md"
-                    type="tel"
-                    {...form.getInputProps('invitation_phone')}
-                />
-                <Textarea
-                    description="Any additional information about the client"
-                    label="Notes"
-                    placeholder="Add any notes about this client (optional)"
-                    rows={3}
-                    size="md"
-                    {...form.getInputProps('notes')}
-                />
+                <Stack gap="md">
+                    <Controller
+                        control={control}
+                        name="name"
+                        render={({field, fieldState}) => (
+                            <TextInput
+                                {...field}
+                                error={fieldState.error?.message}
+                                label="Full Name"
+                                placeholder="e.g. John Smith"
+                                radius="md"
+                                required
+                                size="md"
+                                variant="filled"
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        control={control}
+                        name="invitation_email"
+                        render={({field, fieldState}) => (
+                            <TextInput
+                                {...field}
+                                error={fieldState.error?.message}
+                                label="Email Address"
+                                placeholder="e.g. john@example.com"
+                                radius="md"
+                                required
+                                size="md"
+                                type="email"
+                                variant="filled"
+                                withAsterisk
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        control={control}
+                        name="invitation_phone"
+                        render={({field, fieldState}) => (
+                            <TextInput
+                                {...field}
+                                error={fieldState.error?.message}
+                                label="Phone Number (Optional)"
+                                onChange={(e) => field.onChange(e.target.value || undefined)}
+                                placeholder="e.g. +1 (555) 123-4567"
+                                radius="md"
+                                size="md"
+                                type="tel"
+                                value={field.value || ''}
+                                variant="filled"
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        control={control}
+                        name="notes"
+                        render={({field, fieldState}) => (
+                            <Textarea
+                                {...field}
+                                description={
+                                    <Text
+                                        c="dimmed"
+                                        fs="italic"
+                                        size="xs"
+                                    >
+                                        Add any relevant details about goals, preferences, or special requirements
+                                    </Text>
+                                }
+                                error={fieldState.error?.message}
+                                label="Notes (Optional)"
+                                onChange={(e) => field.onChange(e.target.value || undefined)}
+                                placeholder="e.g. Goals, medical history, dietary restrictions..."
+                                radius="md"
+                                rows={3}
+                                size="md"
+                                value={field.value || ''}
+                                variant="filled"
+                            />
+                        )}
+                    />
+                </Stack>
             </FormSection>
-
-            <FixedBottom
-                isSubmitting={form.submitting}
-                label={submitText}
-                onSubmit={() => handleFormSubmit(form.values)}
-            />
+            <FixedBottomBar>
+                <Button
+                    fullWidth
+                    loading={isSubmitting}
+                    radius="md"
+                    rightSection={<IconSend />}
+                    size="lg"
+                    type="submit"
+                >
+                    {submitText}
+                </Button>
+            </FixedBottomBar>
         </form>
     );
 };

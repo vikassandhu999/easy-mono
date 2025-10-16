@@ -11,7 +11,8 @@ import {
     Tooltip,
     useMantineTheme,
 } from '@mantine/core';
-import {IconArrowRight, IconCalendar, IconMail, IconMessageCircle2} from '@tabler/icons-react';
+import {notifications} from '@mantine/notifications';
+import {IconArrowRight, IconCalendarPlus, IconMail, IconMessageCircle2} from '@tabler/icons-react';
 import React from 'react';
 
 import {Client, MembershipStatus} from '@/api/clients.ts';
@@ -19,7 +20,6 @@ import {Client, MembershipStatus} from '@/api/clients.ts';
 interface Props {
     client: Client;
     onAddPlan?: (id: string) => void;
-    onChat?: (id: string) => void;
     onEdit: (id: string) => void;
     onView: (id: string) => void;
 }
@@ -63,7 +63,7 @@ function getMembershipStatusLabel(status: string): string {
     }
 }
 
-const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
+const ListItem: React.FC<Props> = ({client, onAddPlan, onView}) => {
     const theme = useMantineTheme();
 
     // Show online indicator if client is active
@@ -73,19 +73,10 @@ const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
         <Card
             onClick={() => onView(client.id)}
             padding="md"
-            shadow="xs"
+            radius="md"
+            shadow="sm"
             style={{
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                borderBottom: `1px dashed ${theme.colors.gray[4]}`,
-            }}
-            styles={{
-                root: {
-                    '&:hover': {
-                        boxShadow: theme.shadows.md,
-                        transform: 'translateY(-2px)',
-                    },
-                },
             }}
         >
             <Stack gap="md">
@@ -107,8 +98,8 @@ const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
                             withBorder
                         >
                             <Avatar
-                                color={isActive ? 'blue' : 'gray'}
-                                radius="xl"
+                                color={'gray'}
+                                radius="md"
                                 size="md"
                             >
                                 {getClientInitials(client.name)}
@@ -139,7 +130,7 @@ const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
                                 {/* Membership Status Badge */}
                                 <Badge
                                     color={getMembershipStatusColor(client.membership_status)}
-                                    radius="sm"
+                                    radius="md"
                                     size="xs"
                                     variant="light"
                                 >
@@ -178,12 +169,12 @@ const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
                 >
                     <Group gap="xs">
                         <Button
-                            leftSection={<IconCalendar size={16} />}
+                            leftSection={<IconCalendarPlus size={16} />}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onAddPlan(client.id);
                             }}
-                            radius="lg"
+                            radius="md"
                             size="xs"
                             variant="light"
                         >
@@ -198,9 +189,14 @@ const ListItem: React.FC<Props> = ({client, onChat, onAddPlan, onView}) => {
                                 color="gray"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onChat?.(client.id);
+                                    notifications.show({
+                                        title: 'Coming Soon',
+                                        message: 'Chat functionality will be available in the next version!',
+                                        color: 'blue',
+                                        autoClose: 4000,
+                                    });
                                 }}
-                                radius="lg"
+                                radius="md"
                                 size="md"
                                 variant="light"
                             >

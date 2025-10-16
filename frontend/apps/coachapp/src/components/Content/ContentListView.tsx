@@ -1,8 +1,10 @@
 import {
+    Alert,
     Button,
     Center,
     Chip,
     Group,
+    LoadingOverlay,
     ScrollArea,
     SegmentedControl,
     Space,
@@ -12,8 +14,9 @@ import {
     Title,
 } from '@mantine/core';
 import {modals} from '@mantine/modals';
-import {IconPlus} from '@tabler/icons-react';
-import {FC, useState} from 'react';
+import {notifications} from '@mantine/notifications';
+import {IconAlertCircle, IconPlus, IconRefresh} from '@tabler/icons-react';
+import {FC, useEffect, useState} from 'react';
 
 import {Content, ContentType} from '@/api/contents';
 import {ContentBuilder} from '@/components/ContentBuilder';
@@ -45,6 +48,8 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
     const {
         contents,
         isLoading,
+        isError,
+        error,
         hasNextPage,
         isFetchingNextPage,
         search,
@@ -55,6 +60,18 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
         fetchNextPage,
         refetch,
     } = useContentList({contentType: selectedTab});
+
+    // Show error notification when query fails
+    useEffect(() => {
+        if (isError && error) {
+            notifications.show({
+                title: 'Failed to load content',
+                message: 'There was an error loading the content list. Please try again.',
+                color: 'red',
+                autoClose: 5000,
+            });
+        }
+    }, [isError, error]);
 
     const handleCreateClick = (contentType: ContentType) => {
         modals.open({
@@ -232,9 +249,41 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                 </Stack>
             </HeadingContainer>
 
-            {isLoading && <div>Loading {config.pluralLabel.toLowerCase()}...</div>}
+            {isLoading && (
+                <LoadingOverlay
+                    loaderProps={{
+                        type: 'bars',
+                    }}
+                    visible={isLoading}
+                />
+            )}
 
-            {!isLoading && contents.length === 0 && (
+            {isError && !isLoading && (
+                <Alert
+                    color="red"
+                    icon={<IconAlertCircle size={16} />}
+                    title="Error loading content"
+                    variant="light"
+                >
+                    <Stack gap="sm">
+                        <Text size="sm">
+                            We couldn't load your {config.pluralLabel.toLowerCase()}. This might be a temporary issue.
+                        </Text>
+                        <Button
+                            color="red"
+                            leftSection={<IconRefresh size={16} />}
+                            onClick={() => refetch()}
+                            radius="lg"
+                            size="sm"
+                            variant="light"
+                        >
+                            Try Again
+                        </Button>
+                    </Stack>
+                </Alert>
+            )}
+
+            {!isLoading && !isError && contents.length === 0 && (
                 <Stack
                     align="center"
                     gap="md"

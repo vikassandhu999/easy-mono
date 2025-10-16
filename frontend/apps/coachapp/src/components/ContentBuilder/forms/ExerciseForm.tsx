@@ -5,11 +5,13 @@ import {
     Indicator,
     MultiSelect,
     NumberInput,
+    Radio,
     SegmentedControl,
     Stack,
     Text,
     TextInput,
 } from '@mantine/core';
+import {notifications} from '@mantine/notifications';
 import {
     IconArrowBigDownLines,
     IconArrowBigUpLines,
@@ -79,9 +81,9 @@ const CATEGORY_OPTIONS = [
 ];
 
 const LEVEL_OPTIONS = [
-    {label: 'Beginner', value: 'beginner'},
-    {label: 'Intermediate', value: 'intermediate'},
-    {label: 'Expert', value: 'expert'},
+    {label: 'Beginner', value: 'beginner', icon: IconTarget},
+    {label: 'Intermediate', value: 'intermediate', icon: IconTrophy},
+    {label: 'Expert', value: 'expert', icon: IconOlympics},
 ];
 
 const FORCE_OPTIONS = [
@@ -117,13 +119,14 @@ const FORM_SECTIONS = [
 ];
 
 export default function ExerciseForm({form}: ExerciseFormProps) {
-    const {control} = form;
+    const {control, watch} = form;
     const [selectedTab, setSelectedTab] = useState(() => FORM_SECTIONS[0].value);
+
+    // Watch primary muscles to filter them out from secondary
+    const primaryMuscles = watch('exercise_definition.primary_muscle') ?? [];
 
     return (
         <Stack gap="sm">
-            {/* Hidden content type field */}
-
             <Controller
                 control={control}
                 name="type"
@@ -145,7 +148,6 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         error={fieldState.error?.message}
                         placeholder="Name of exercise. e.g. Barbell Back Squat"
                         radius="lg"
-                        required
                         size="xl"
                         variant="filled"
                     />
@@ -156,9 +158,8 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 control={control}
                 name="exercise_definition.level"
                 render={({field}) => (
-                    <ChipSelect
+                    <Radio.Group
                         {...field}
-                        data={LEVEL_OPTIONS}
                         label={
                             <Text
                                 fw={600}
@@ -167,11 +168,25 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 Level
                             </Text>
                         }
-                        radius="lg"
-                        size="sm"
-                        value={field.value ?? LEVEL_OPTIONS[0]}
-                        variant="outline"
-                    />
+                        value={field.value ?? LEVEL_OPTIONS[0].value}
+                    >
+                        <Group mt="xs">
+                            {LEVEL_OPTIONS.map((option) => (
+                                <Radio.Card
+                                    key={option.value}
+                                    p="xs"
+                                    radius="md"
+                                    value={option.value}
+                                    w="fit-content"
+                                >
+                                    <Group wrap="nowrap">
+                                        <Radio.Indicator size="xs" />
+                                        <Text size="sm">{option.label}</Text>
+                                    </Group>
+                                </Radio.Card>
+                            ))}
+                        </Group>
+                    </Radio.Group>
                 )}
             />
 
@@ -179,9 +194,8 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 control={control}
                 name="exercise_definition.category"
                 render={({field}) => (
-                    <ChipSelect
+                    <Radio.Group
                         {...field}
-                        data={CATEGORY_OPTIONS}
                         label={
                             <Text
                                 fw={600}
@@ -190,11 +204,28 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 Category
                             </Text>
                         }
-                        radius="lg"
-                        size="sm"
                         value={field.value ?? ''}
-                        variant="outline"
-                    />
+                    >
+                        <Group
+                            gap="xs"
+                            mt="xs"
+                        >
+                            {CATEGORY_OPTIONS.map((option) => (
+                                <Radio.Card
+                                    key={option.value}
+                                    p="xs"
+                                    radius="md"
+                                    value={option.value}
+                                    w="fit-content"
+                                >
+                                    <Group wrap="nowrap">
+                                        <Radio.Indicator size="xs" />
+                                        <Text size="sm">{option.label}</Text>
+                                    </Group>
+                                </Radio.Card>
+                            ))}
+                        </Group>
+                    </Radio.Group>
                 )}
             />
 
@@ -207,12 +238,22 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         clearable
                         data={PRIMARY_MUSCLE_OPTIONS}
                         label="Primary Muscles"
-                        maxValues={3}
+                        onChange={(value) => {
+                            if (value.length > 3) {
+                                notifications.show({
+                                    title: 'Maximum limit reached',
+                                    message: 'You can select up to 3 primary muscles only',
+                                    color: 'orange',
+                                });
+                                return;
+                            }
+                            field.onChange(value);
+                        }}
                         placeholder="Select primary muscles"
                         radius="lg"
-                        searchable
                         size="sm"
                         value={field.value ?? []}
+                        variant="filled"
                     />
                 )}
             />
@@ -220,28 +261,46 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             <Controller
                 control={control}
                 name="exercise_definition.secondary_muscle"
-                render={({field}) => (
-                    <MultiSelect
-                        {...field}
-                        clearable
-                        data={PRIMARY_MUSCLE_OPTIONS}
-                        label="Secondary Muscles"
-                        placeholder="Select secondary muscles"
-                        radius="lg"
-                        searchable
-                        size="sm"
-                        value={field.value ?? []}
-                    />
-                )}
+                render={({field}) => {
+                    // Filter out muscles already selected as primary
+                    const availableSecondaryMuscles = PRIMARY_MUSCLE_OPTIONS.filter(
+                        (option) => !primaryMuscles.includes(option.value),
+                    );
+
+                    return (
+                        <MultiSelect
+                            {...field}
+                            clearable
+                            data={availableSecondaryMuscles}
+                            label="Secondary Muscles"
+                            maxValues={3}
+                            onChange={(value) => {
+                                if (value.length > 3) {
+                                    notifications.show({
+                                        title: 'Maximum limit reached',
+                                        message: 'You can select up to 3 secondary muscles only',
+                                        color: 'orange',
+                                    });
+                                    return;
+                                }
+                                field.onChange(value);
+                            }}
+                            placeholder="Select secondary muscles"
+                            radius="lg"
+                            size="sm"
+                            value={field.value ?? []}
+                            variant="filled"
+                        />
+                    );
+                }}
             />
 
             <Controller
                 control={control}
                 name="exercise_definition.force"
                 render={({field}) => (
-                    <ChipSelect
+                    <Radio.Group
                         {...field}
-                        data={FORCE_OPTIONS}
                         label={
                             <Text
                                 fw={600}
@@ -250,11 +309,25 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 Force
                             </Text>
                         }
-                        radius="lg"
-                        size="sm"
                         value={field.value ?? ''}
-                        variant="outline"
-                    />
+                    >
+                        <Group mt="xs">
+                            {FORCE_OPTIONS.map((option) => (
+                                <Radio.Card
+                                    key={option.value}
+                                    p="xs"
+                                    radius="md"
+                                    value={option.value}
+                                    w="fit-content"
+                                >
+                                    <Group wrap="nowrap">
+                                        <Radio.Indicator size="xs" />
+                                        <Text size="sm">{option.label}</Text>
+                                    </Group>
+                                </Radio.Card>
+                            ))}
+                        </Group>
+                    </Radio.Group>
                 )}
             />
 
@@ -275,6 +348,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
+                        variant="filled"
                     />
                 )}
             />
@@ -338,6 +412,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                                 radius="lg"
                                                 size="md"
                                                 value={instruction}
+                                                variant="filled"
                                             />
                                         </Indicator>
 
@@ -386,6 +461,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 size="sm"
                                 step={0.1}
                                 value={field.value ?? undefined}
+                                variant="filled"
                             />
                         )}
                     />
@@ -418,22 +494,28 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         control={control}
                         name="exercise_definition.mechanics"
                         render={({field}) => (
-                            <ChipSelect
+                            <Radio.Group
                                 {...field}
-                                data={MECHANICS_OPTIONS}
-                                label={
-                                    <Text
-                                        fw={600}
-                                        size="sm"
-                                    >
-                                        Mechanics
-                                    </Text>
-                                }
-                                radius="lg"
-                                size="sm"
+                                label="Mechanics"
                                 value={field.value ?? ''}
-                                variant="outline"
-                            />
+                            >
+                                <Group mt="xs">
+                                    {MECHANICS_OPTIONS.map((option) => (
+                                        <Radio.Card
+                                            key={option.value}
+                                            p="xs"
+                                            radius="md"
+                                            value={option.value}
+                                            w="fit-content"
+                                        >
+                                            <Group wrap="nowrap">
+                                                <Radio.Indicator size="xs" />
+                                                <Text size="sm">{option.label}</Text>
+                                            </Group>
+                                        </Radio.Card>
+                                    ))}
+                                </Group>
+                            </Radio.Group>
                         )}
                     />
 
@@ -441,22 +523,31 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         control={control}
                         name="exercise_definition.movement_pattern"
                         render={({field}) => (
-                            <ChipSelect
+                            <Radio.Group
                                 {...field}
-                                data={MOVEMENT_PATTERN_OPTIONS}
-                                label={
-                                    <Text
-                                        fw={600}
-                                        size="sm"
-                                    >
-                                        Movement Pattern
-                                    </Text>
-                                }
-                                radius="lg"
-                                size="sm"
+                                label="Movement Pattern"
                                 value={field.value ?? ''}
-                                variant="outline"
-                            />
+                            >
+                                <Group
+                                    gap="xs"
+                                    mt="xs"
+                                >
+                                    {MOVEMENT_PATTERN_OPTIONS.map((option) => (
+                                        <Radio.Card
+                                            key={option.value}
+                                            p="xs"
+                                            radius="md"
+                                            value={option.value}
+                                            w="fit-content"
+                                        >
+                                            <Group wrap="nowrap">
+                                                <Radio.Indicator size="xs" />
+                                                <Text size="sm">{option.label}</Text>
+                                            </Group>
+                                        </Radio.Card>
+                                    ))}
+                                </Group>
+                            </Radio.Group>
                         )}
                     />
                 </>

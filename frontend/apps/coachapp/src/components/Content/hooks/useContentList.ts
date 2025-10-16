@@ -16,16 +16,17 @@ export function useContentList({contentType, pageSize = 20, activeOnly = false}:
     const [scopeFilter, setScopeFilter] = useState<ContentScopeFilter>('all');
     const [search, setSearch] = useState('');
 
-    const {data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, refetch} = useListContentsInfiniteQuery(
-        {
-            scope: scopeFilter,
-            active_only: activeOnly,
-            content_type: contentType,
-            page_size: pageSize,
-            search: search || undefined,
-        },
-        {refetchOnMountOrArgChange: true},
-    );
+    const {data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, refetch, isError, error} =
+        useListContentsInfiniteQuery(
+            {
+                scope: scopeFilter,
+                active_only: activeOnly,
+                content_type: contentType,
+                page_size: pageSize,
+                search: search || undefined,
+            },
+            {refetchOnMountOrArgChange: true},
+        );
 
     useEffect(() => {
         refetch();
@@ -39,6 +40,8 @@ export function useContentList({contentType, pageSize = 20, activeOnly = false}:
         hasNextPage,
         isLoading,
         isFetchingNextPage,
+        isError,
+        error,
 
         // Filters
         scopeFilter,

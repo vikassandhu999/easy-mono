@@ -5,6 +5,7 @@ import {
     Indicator,
     MultiSelect,
     NumberInput,
+    Radio,
     SegmentedControl,
     Stack,
     Text,
@@ -117,22 +118,35 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 control={control}
                 name="recipe_definition.difficulty"
                 render={({field}) => (
-                    <ChipSelect
+                    <Radio.Group
                         {...field}
-                        data={DIFFICULTY_OPTIONS}
                         label={
                             <Text
-                                fw={600}
+                                fw="bold"
                                 size="sm"
                             >
                                 Difficulty
                             </Text>
                         }
-                        radius="lg"
-                        size="sm"
                         value={field.value ?? ''}
-                        variant="outline"
-                    />
+                    >
+                        <Group mt="xs">
+                            {DIFFICULTY_OPTIONS.map((option) => (
+                                <Radio.Card
+                                    key={option.value}
+                                    p="xs"
+                                    radius="md"
+                                    value={option.value}
+                                    w="fit-content"
+                                >
+                                    <Group wrap="nowrap">
+                                        <Radio.Indicator size="xs" />
+                                        <Text size="sm">{option.label}</Text>
+                                    </Group>
+                                </Radio.Card>
+                            ))}
+                        </Group>
+                    </Radio.Group>
                 )}
             />
 
@@ -164,9 +178,8 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 control={control}
                 name="recipe_definition.dish_type"
                 render={({field}) => (
-                    <ChipSelect
+                    <Radio.Group
                         {...field}
-                        data={DISH_TYPE_OPTIONS}
                         label={
                             <Text
                                 fw={600}
@@ -175,11 +188,32 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 Dish Type
                             </Text>
                         }
-                        radius="lg"
-                        size="sm"
                         value={field.value ?? ''}
-                        variant="outline"
-                    />
+                    >
+                        <Group
+                            gap="xs"
+                            mt="xs"
+                        >
+                            {DISH_TYPE_OPTIONS.map((option) => {
+                                const Icon = option.icon;
+                                return (
+                                    <Radio.Card
+                                        key={option.value}
+                                        p="xs"
+                                        radius="md"
+                                        value={option.value}
+                                        w="fit-content"
+                                    >
+                                        <Group wrap="nowrap">
+                                            <Radio.Indicator size="xs" />
+                                            <Icon size={16} />
+                                            <Text size="sm">{option.label}</Text>
+                                        </Group>
+                                    </Radio.Card>
+                                );
+                            })}
+                        </Group>
+                    </Radio.Group>
                 )}
             />
 
@@ -201,6 +235,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
+                            variant="filled"
                         />
                     )}
                 />
@@ -218,6 +253,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
+                            variant="filled"
                         />
                     )}
                 />
@@ -234,6 +270,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             radius="lg"
                             size="sm"
                             value={field.value ?? undefined}
+                            variant="filled"
                         />
                     )}
                 />
@@ -251,9 +288,9 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         label="Diet Types"
                         placeholder="Select diet types"
                         radius="lg"
-                        searchable
                         size="sm"
                         value={field.value ?? []}
+                        variant="filled"
                     />
                 )}
             />
@@ -275,6 +312,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
+                        variant="filled"
                     />
                 )}
             />
@@ -351,6 +389,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                                 radius="lg"
                                                 size="md"
                                                 value={instructionStep?.instruction || ''}
+                                                variant="filled"
                                             />
                                         </Indicator>
 
@@ -399,6 +438,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 searchable
                                 size="sm"
                                 value={field.value ?? []}
+                                variant="filled"
                             />
                         )}
                     />
@@ -428,6 +468,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     radius="lg"
                                     size="sm"
                                     value={field.value ?? undefined}
+                                    variant="filled"
                                 />
                             )}
                         />
@@ -445,6 +486,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
+                                    variant="filled"
                                 />
                             )}
                         />
@@ -468,6 +510,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
+                                    variant="filled"
                                 />
                             )}
                         />
@@ -485,6 +528,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
+                                    variant="filled"
                                 />
                             )}
                         />
@@ -502,6 +546,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
+                                    variant="filled"
                                 />
                             )}
                         />

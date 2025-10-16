@@ -1,21 +1,18 @@
 import {useContentHeight} from '@easy/hooks';
 import {
-    ActionIcon,
     Alert,
-    Avatar,
     Badge,
     Box,
     Button,
     Card,
+    Center,
     Group,
     LoadingOverlay,
-    Menu,
+    SegmentedControl,
     Stack,
-    Tabs,
     Text,
 } from '@mantine/core';
-import {useInViewport} from '@mantine/hooks';
-import {ChatCircleDots, DotsThree, Envelope, Phone, UserCircle} from '@phosphor-icons/react';
+import {IconCalendar, IconMessageCircle, IconSwitchHorizontal, IconUser} from '@tabler/icons-react';
 import {format, parseISO} from 'date-fns';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
@@ -33,16 +30,9 @@ import PlanListItem from '@/components/PlanListItem/PlanListItem';
 import {useGetClientQuery} from '@/store/services/clientsApi';
 import {useListPlans} from '@/store/services/plans';
 
-// Utility functions
-const getClientInitials = (name: string): string => {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-};
+import ProfileCard from './ProfileCard';
 
+// Utility functions for Overview tab
 const getMembershipStatusColor = (status: string): string => {
     switch (status) {
         case 'active':
@@ -70,7 +60,6 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
     const [planDrawerData, setPlanDrawerData] = useState<null | PlanCreationDrawerData>(null);
 
     const {data: client, error, isError, isLoading} = useGetClientQuery(clientId, {skip: !clientId});
-    const {inViewport: titleInViewport, ref: titleRef} = useInViewport<HTMLDivElement>();
     const {useElementRef} = useContentHeight();
     const headerRef = useElementRef('top');
 
@@ -105,10 +94,6 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
         setPlanDrawerOpen(true);
     };
 
-    const handleChat = () => {
-        navigate(`/clients/${clientId}/chat`);
-    };
-
     return (
         <PagePaper>
             <HeadingContainer
@@ -120,163 +105,111 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                 withBorder={false}
             >
                 <Header
+                    actions={
+                        <Button
+                            leftSection={<IconSwitchHorizontal size={14} />}
+                            radius="md"
+                            size="compact-xs"
+                            variant="light"
+                        >
+                            Change client{' '}
+                        </Button>
+                    }
                     onBack={() => window.history.back()}
-                    title={titleInViewport ? '' : client.name}
+                    title={client.name}
                 />
             </HeadingContainer>
 
             <PaddingContainer style={{padding: 'var(--ce-size-lg)'}}>
                 <Stack gap="md">
                     {/* Profile Card */}
-                    <Card
-                        padding="md"
-                        radius="md"
-                        ref={titleRef}
-                        withBorder
-                    >
-                        <Group
-                            align="center"
-                            justify="space-between"
-                            wrap="nowrap"
-                        >
-                            <Group
-                                align="center"
-                                gap="md"
-                                wrap="nowrap"
-                            >
-                                <Avatar
-                                    color="blue"
-                                    radius="md"
-                                    size="lg"
-                                >
-                                    {getClientInitials(client.name)}
-                                </Avatar>
+                    <ProfileCard client={client} />
 
-                                <Box>
-                                    <Group
-                                        gap="xs"
-                                        mb={4}
-                                    >
-                                        <Text
-                                            fw={600}
-                                            size="lg"
-                                        >
-                                            {client.name}
-                                        </Text>
-                                        <Badge
-                                            color={getMembershipStatusColor(client.membership_status)}
-                                            size="sm"
-                                            variant="light"
-                                        >
-                                            {getMembershipStatusLabel(client.membership_status)}
-                                        </Badge>
-                                    </Group>
-
-                                    <Stack gap={4}>
-                                        {client.invitation_email && (
-                                            <Group gap={6}>
-                                                <Envelope
-                                                    size={14}
-                                                    weight="regular"
-                                                />
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                >
-                                                    {client.invitation_email}
-                                                </Text>
-                                            </Group>
-                                        )}
-                                        {client.invitation_phone && (
-                                            <Group gap={6}>
-                                                <Phone
-                                                    size={14}
-                                                    weight="regular"
-                                                />
-                                                <Text
-                                                    c="dimmed"
-                                                    size="sm"
-                                                >
-                                                    {client.invitation_phone}
-                                                </Text>
-                                            </Group>
-                                        )}
-                                    </Stack>
-                                </Box>
-                            </Group>
-
-                            <Menu
-                                position="bottom-end"
-                                shadow="md"
-                                width={180}
-                            >
-                                <Menu.Target>
-                                    <ActionIcon
-                                        color="gray"
-                                        size="lg"
-                                        variant="subtle"
-                                    >
-                                        <DotsThree
-                                            size={20}
-                                            weight="bold"
-                                        />
-                                    </ActionIcon>
-                                </Menu.Target>
-                                <Menu.Dropdown>
-                                    <Menu.Item
-                                        leftSection={
-                                            <ChatCircleDots
-                                                size={16}
-                                                weight="regular"
-                                            />
-                                        }
-                                        onClick={handleChat}
-                                    >
-                                        Open Chat
-                                    </Menu.Item>
-                                    <Menu.Item
-                                        leftSection={
-                                            <UserCircle
-                                                size={16}
-                                                weight="regular"
-                                            />
-                                        }
-                                        onClick={() => navigate(`/clients/${clientId}/edit`)}
-                                    >
-                                        Edit Profile
-                                    </Menu.Item>
-                                </Menu.Dropdown>
-                            </Menu>
-                        </Group>
-                    </Card>
-
-                    {/* Tabs Section */}
-                    <Tabs
+                    {/* Segmented Control */}
+                    <SegmentedControl
+                        data={[
+                            {
+                                label: (
+                                    <Center style={{gap: 8}}>
+                                        <IconUser size={16} />
+                                        <span>Overview</span>
+                                    </Center>
+                                ),
+                                value: 'overview',
+                            },
+                            {
+                                label: (
+                                    <Center style={{gap: 8}}>
+                                        <IconCalendar size={16} />
+                                        <span>Plans</span>
+                                    </Center>
+                                ),
+                                value: 'plans',
+                            },
+                            {
+                                label: (
+                                    <Center style={{gap: 8}}>
+                                        <IconMessageCircle size={16} />
+                                        <span>Chat</span>
+                                    </Center>
+                                ),
+                                value: 'chat',
+                            },
+                        ]}
+                        fullWidth
                         onChange={setActiveTab}
+                        radius="md"
+                        size="md"
                         value={activeTab}
-                        variant="default"
-                    >
-                        <Tabs.List>
-                            <Tabs.Tab value="overview">Overview</Tabs.Tab>
-                            <Tabs.Tab value="plans">Plans</Tabs.Tab>
-                        </Tabs.List>
+                    />
 
-                        <Box mt="md">
-                            <Tabs.Panel value="overview">
-                                <ClientOverviewTab client={client} />
-                            </Tabs.Panel>
+                    {/* Content Sections */}
+                    <Box mt="md">
+                        {activeTab === 'overview' && <ClientOverviewTab client={client} />}
 
-                            <Tabs.Panel value="plans">
-                                <ClientPlansTab
-                                    client={client}
-                                    isPlanDrawerOpen={isPlanDrawerOpen}
-                                    onClosePlanDrawer={handleClosePlanDrawer}
-                                    onCreatePlan={handleCreatePlan}
-                                    planDrawerData={planDrawerData}
-                                />
-                            </Tabs.Panel>
-                        </Box>
-                    </Tabs>
+                        {activeTab === 'plans' && (
+                            <ClientPlansTab
+                                client={client}
+                                isPlanDrawerOpen={isPlanDrawerOpen}
+                                onClosePlanDrawer={handleClosePlanDrawer}
+                                onCreatePlan={handleCreatePlan}
+                                planDrawerData={planDrawerData}
+                            />
+                        )}
+
+                        {activeTab === 'chat' && (
+                            <Card
+                                padding="xl"
+                                radius="md"
+                                withBorder
+                            >
+                                <Stack
+                                    align="center"
+                                    gap="md"
+                                >
+                                    <IconMessageCircle
+                                        color="var(--mantine-color-blue-6)"
+                                        size={48}
+                                    />
+                                    <Text
+                                        fw={600}
+                                        size="lg"
+                                        ta="center"
+                                    >
+                                        Chat Coming Soon
+                                    </Text>
+                                    <Text
+                                        c="dimmed"
+                                        size="sm"
+                                        ta="center"
+                                    >
+                                        Chat functionality will be available in the next version. You'll be able to
+                                        message your clients directly from here.
+                                    </Text>
+                                </Stack>
+                            </Card>
+                        )}
+                    </Box>
                 </Stack>
             </PaddingContainer>
         </PagePaper>

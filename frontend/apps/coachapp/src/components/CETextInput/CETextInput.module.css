@@ -1,0 +1,24 @@
+.root {
+  position: relative;
+}
+
+.input {
+  height: 58px !important;
+
+  padding-top: var(--mantine-spacing-md) !important;
+}
+
+.input::placeholder {
+  font-size: var(--mantine-font-size-sm) !important;
+  color: var(--mantine-color-gray-5);
+}
+
+.label {
+  position: absolute;
+  pointer-events: none;
+  font-size: var(--mantine-font-size-xs) !important;
+  padding-left: var(--mantine-spacing-md) !important;
+  padding-top: calc(var(--mantine-spacing-sm) / 2) !important;
+  z-index: 1;
+  color: var(--mantine-color-gray-6);
+}

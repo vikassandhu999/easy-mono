@@ -1,6 +1,6 @@
-import {Box, Group, LoadingOverlay, Modal, Text, TextInput} from '@mantine/core';
+import {Box, Button, Group, LoadingOverlay, Modal, Text, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {IconCalendar} from '@tabler/icons-react';
+import {IconCalendar, IconPencil} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router';
@@ -18,10 +18,12 @@ import {
 } from '@/store/services/planSessionsApi';
 
 import Header from '../layouts/Header';
+import MealSelect from '../MealSelect/MealSelect';
 import {AddSessionContext, PlanSessionsView} from '../PlanSessionsView';
 import {DAY_NAMES} from '../PlanSessionsView/constants';
 import SessionBuilder from '../SessionBuilder/SessionBuilder';
 import SessionSelect from '../SessionSelect/SessionSelect';
+import {NutritionWeekPlanner} from './NutritionWeekPlanner';
 import {SESSION_TYPE_CONFIG} from './sessionTypes';
 
 type DrawerView = 'create-session' | 'edit-session' | 'select-session';
@@ -38,6 +40,25 @@ const PLAN_BUILDER_DAY_PARAM = 'plan_builder_day';
 const PLAN_BUILDER_DAY_ORDER_PARAM = 'plan_builder_day_order';
 const PLAN_BUILDER_DATE_PARAM = 'plan_builder_date';
 const PLAN_BUILDER_PLAN_SESSION_PARAM = 'plan_builder_plan_session';
+const PLAN_BUILDER_LABEL_PARAM = 'plan_builder_label';
+
+const MEAL_DAYTIME_LABELS: Record<string, string> = {
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    preworkout: 'Pre-Workout',
+    postworkout: 'Post-Workout',
+};
+
+const formatMealDaytimeLabel = (value?: null | string): null | string => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    const normalized = trimmed.toLowerCase();
+    if (MEAL_DAYTIME_LABELS[normalized]) {
+        return MEAL_DAYTIME_LABELS[normalized];
+    }
+    return trimmed.replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 export default function PlanBuilder() {
     const navigate = useNavigate();
@@ -50,6 +71,7 @@ export default function PlanBuilder() {
     const planBuilderDay = searchParams.get(PLAN_BUILDER_DAY_PARAM);
     const planBuilderDayOrder = searchParams.get(PLAN_BUILDER_DAY_ORDER_PARAM);
     const planBuilderDate = searchParams.get(PLAN_BUILDER_DATE_PARAM);
+    const planBuilderLabel = searchParams.get(PLAN_BUILDER_LABEL_PARAM);
     const planBuilderPlanSessionId = searchParams.get(PLAN_BUILDER_PLAN_SESSION_PARAM);
     const drawerViewParam = searchParams.get(PLAN_BUILDER_VIEW_PARAM) as DrawerView | null;
     const drawerView: DrawerView = drawerViewParam ?? 'select-session';
@@ -80,6 +102,7 @@ export default function PlanBuilder() {
         params.delete(PLAN_BUILDER_DAY_PARAM);
         params.delete(PLAN_BUILDER_DAY_ORDER_PARAM);
         params.delete(PLAN_BUILDER_DATE_PARAM);
+        params.delete(PLAN_BUILDER_LABEL_PARAM);
     }, []);
 
     const selectedContext = useMemo<AddSessionContext | null>(() => {
@@ -88,7 +111,8 @@ export default function PlanBuilder() {
         if (planBuilderKind === 'weekly') {
             const day = Number(planBuilderDay ?? -1);
             if (!Number.isInteger(day) || day < 0 || day > 6) return null;
-            return {kind: 'weekly', dayOfWeek: day};
+            const normalizedLabel = planBuilderLabel?.trim().toLowerCase();
+            return {kind: 'weekly', dayOfWeek: day, label: normalizedLabel || undefined};
         }
 
         if (planBuilderKind === 'daily') {
@@ -102,7 +126,7 @@ export default function PlanBuilder() {
         }
 
         return null;
-    }, [planBuilderKind, planBuilderDay, planBuilderDayOrder, planBuilderDate]);
+    }, [planBuilderKind, planBuilderDay, planBuilderDayOrder, planBuilderDate, planBuilderLabel]);
 
     useEffect(() => {
         if (!isNestedDrawerOpen) {
@@ -147,6 +171,11 @@ export default function PlanBuilder() {
 
             if (context.kind === 'weekly') {
                 params.set(PLAN_BUILDER_DAY_PARAM, String(context.dayOfWeek));
+                if (context.label) {
+                    params.set(PLAN_BUILDER_LABEL_PARAM, context.label);
+                } else {
+                    params.delete(PLAN_BUILDER_LABEL_PARAM);
+                }
                 return;
             }
 
@@ -253,8 +282,8 @@ export default function PlanBuilder() {
             if (!selectedContext) {
                 notifications.show({
                     color: 'red',
-                    message: 'Unable to determine where to add the session.',
-                    title: 'Context missing',
+                    message: 'Please select a day or date first.',
+                    title: 'Missing context',
                 });
                 return;
             }
@@ -266,6 +295,9 @@ export default function PlanBuilder() {
 
             if (selectedContext.kind === 'weekly') {
                 payload.day_of_week = selectedContext.dayOfWeek;
+                if (selectedContext.label) {
+                    payload.label = selectedContext.label;
+                }
             } else if (selectedContext.kind === 'daily') {
                 payload.day_order = selectedContext.dayOrder;
             } else if (selectedContext.kind === 'calendar') {
@@ -285,15 +317,15 @@ export default function PlanBuilder() {
                 await createPlanSession({planId, data: payload}).unwrap();
                 notifications.show({
                     color: 'green',
-                    message: `${getSessionTypeLabel(sessionTypeFilter)} created and added to your plan`,
+                    message: `${getSessionTypeLabel(sessionTypeFilter)} added successfully`,
                     title: 'Success',
                 });
                 handleCloseNestedDrawer();
             } catch (mutationError) {
                 notifications.show({
                     color: 'red',
-                    message: mutationError instanceof Error ? mutationError.message : 'Failed to add session to plan',
-                    title: 'Unable to add session',
+                    message: mutationError instanceof Error ? mutationError.message : 'Failed to add session',
+                    title: 'Error',
                 });
             }
         },
@@ -315,7 +347,7 @@ export default function PlanBuilder() {
             const sessionType = editingPlanSession?.session?.session_type as 'meal' | 'workout' | undefined;
             notifications.show({
                 color: 'green',
-                message: 'Your changes have been saved successfully',
+                message: 'Changes saved',
                 title: `${getSessionTypeLabel(sessionType)} updated`,
             });
 
@@ -334,8 +366,8 @@ export default function PlanBuilder() {
             if (!sessionIds.length || !selectedContext) {
                 notifications.show({
                     color: 'red',
-                    message: 'Select a session to add to this plan.',
-                    title: 'No session selected',
+                    message: 'Please select a session first.',
+                    title: 'No selection',
                 });
                 return;
             }
@@ -347,6 +379,9 @@ export default function PlanBuilder() {
 
             if (selectedContext.kind === 'weekly') {
                 payload.day_of_week = selectedContext.dayOfWeek;
+                if (selectedContext.label) {
+                    payload.label = selectedContext.label;
+                }
             } else if (selectedContext.kind === 'daily') {
                 payload.day_order = selectedContext.dayOrder;
             } else if (selectedContext.kind === 'calendar') {
@@ -366,7 +401,7 @@ export default function PlanBuilder() {
                 await createPlanSession({planId, data: payload}).unwrap();
                 notifications.show({
                     color: 'green',
-                    message: `${getSessionTypeLabel(sessionTypeFilter)} added to your plan`,
+                    message: 'Session added successfully',
                     title: 'Success',
                 });
                 handleCloseNestedDrawer();
@@ -378,15 +413,7 @@ export default function PlanBuilder() {
                 });
             }
         },
-        [
-            calendarDateInput,
-            createPlanSession,
-            handleCloseNestedDrawer,
-            planBuilderDate,
-            planId,
-            selectedContext,
-            sessionTypeFilter,
-        ],
+        [calendarDateInput, createPlanSession, handleCloseNestedDrawer, planBuilderDate, planId, selectedContext],
     );
 
     const handleEditSession = useCallback(
@@ -395,8 +422,8 @@ export default function PlanBuilder() {
             if (!targetPlanSession || !targetPlanSession.session?.id) {
                 notifications.show({
                     color: 'red',
-                    message: 'We could not load that session for editing.',
-                    title: 'Session unavailable',
+                    message: 'Session not found.',
+                    title: 'Error',
                 });
                 return;
             }
@@ -416,14 +443,14 @@ export default function PlanBuilder() {
                 await deletePlanSession({planId, planSessionId}).unwrap();
                 notifications.show({
                     color: 'green',
-                    message: 'Session removed from plan',
-                    title: 'Plan updated',
+                    message: 'Session removed',
+                    title: 'Success',
                 });
             } catch (mutationError) {
                 notifications.show({
                     color: 'red',
                     message: mutationError instanceof Error ? mutationError.message : 'Failed to remove session',
-                    title: 'Unable to delete',
+                    title: 'Error',
                 });
             }
         },
@@ -433,6 +460,14 @@ export default function PlanBuilder() {
     const planLoadError: Error | null =
         (planError as Error | undefined) ?? (planSessionsError as Error | undefined) ?? null;
     const isLoadingAny = isLoadingPlan || isFetchingPlan || isLoadingSessions || isFetchingSessions;
+
+    let weeklyContextLabel: null | string = null;
+    if (selectedContext?.kind === 'weekly') {
+        const weeklyLabel = formatMealDaytimeLabel(selectedContext.label);
+        weeklyContextLabel = weeklyLabel
+            ? `${DAY_NAMES[selectedContext.dayOfWeek]} · ${weeklyLabel}`
+            : DAY_NAMES[selectedContext.dayOfWeek];
+    }
 
     if (!planId) {
         return null;
@@ -448,6 +483,16 @@ export default function PlanBuilder() {
                 withBorder={false}
             >
                 <Header
+                    actions={
+                        <Button
+                            leftSection={<IconPencil size={12} />}
+                            radius="xl"
+                            size="compact-xs"
+                            variant="light"
+                        >
+                            Edit
+                        </Button>
+                    }
                     onBack={handleCloseDrawer}
                     title={plan?.name ?? 'Plan Builder'}
                 />
@@ -464,14 +509,24 @@ export default function PlanBuilder() {
 
                         {isLoadingAny && <LoadingOverlay visible />}
 
-                        {plan && (
-                            <PlanSessionsView
+                        {plan && plan.recurrence === 'weekly' ? (
+                            <NutritionWeekPlanner
                                 onAddSession={handleAddSession}
                                 onDeleteSession={handleDeleteSession}
                                 onEditSession={handleEditSession}
                                 plan={plan}
                                 sessions={sessions}
                             />
+                        ) : (
+                            plan && (
+                                <PlanSessionsView
+                                    onAddSession={handleAddSession}
+                                    onDeleteSession={handleDeleteSession}
+                                    onEditSession={handleEditSession}
+                                    plan={plan}
+                                    sessions={sessions}
+                                />
+                            )
                         )}
                     </PaddingContainer>
                 </div>
@@ -512,16 +567,6 @@ export default function PlanBuilder() {
                                 onBack={handleCloseNestedDrawer}
                                 title={`Add ${getSessionTypeLabel(sessionTypeFilter)}`}
                             />
-                            <Text
-                                c="gray.6"
-                                mt="xs"
-                                style={{
-                                    fontSize: 'var(--label-font-size)',
-                                    lineHeight: 'var(--label-line-height)',
-                                }}
-                            >
-                                Choose an existing {sessionTypeFilter || 'session'} or create a new one
-                            </Text>
                         </Box>
 
                         <Box
@@ -535,7 +580,7 @@ export default function PlanBuilder() {
                             {selectedContext?.kind === 'weekly' && (
                                 <ContextSummary
                                     icon={<IconCalendar size={18} />}
-                                    label={DAY_NAMES[selectedContext.dayOfWeek]}
+                                    label={weeklyContextLabel ?? DAY_NAMES[selectedContext.dayOfWeek]}
                                 />
                             )}
                             {selectedContext?.kind === 'daily' && (
@@ -547,8 +592,7 @@ export default function PlanBuilder() {
                             {selectedContext?.kind === 'calendar' && (
                                 <Box mb="lg">
                                     <TextInput
-                                        description="Choose the date for this session"
-                                        label="Session Date"
+                                        label="Date"
                                         onChange={(event) => handleCalendarDateChange(event.currentTarget.value)}
                                         size="sm"
                                         type="date"
@@ -557,12 +601,20 @@ export default function PlanBuilder() {
                                 </Box>
                             )}
 
-                            <SessionSelect
-                                multiple={false}
-                                onCreateNew={handleCreateSession}
-                                onSelect={handleSelectSession}
-                                sessionType={sessionTypeFilter}
-                            />
+                            {sessionTypeFilter === 'meal' ? (
+                                <MealSelect
+                                    multiple={false}
+                                    onCreateNew={handleCreateSession}
+                                    onSelect={handleSelectSession}
+                                />
+                            ) : (
+                                <SessionSelect
+                                    multiple={false}
+                                    onCreateNew={handleCreateSession}
+                                    onSelect={handleSelectSession}
+                                    sessionType={sessionTypeFilter}
+                                />
+                            )}
                         </Box>
                     </>
                 )}
@@ -583,16 +635,6 @@ export default function PlanBuilder() {
                                 }}
                                 title={`Create ${getSessionTypeLabel(sessionTypeFilter)}`}
                             />
-                            <Text
-                                c="gray.6"
-                                mt="xs"
-                                style={{
-                                    fontSize: 'var(--label-font-size)',
-                                    lineHeight: 'var(--label-line-height)',
-                                }}
-                            >
-                                Build a new {sessionTypeFilter || 'session'} from scratch and add it to your plan
-                            </Text>
                         </Box>
 
                         <Box
@@ -623,24 +665,11 @@ export default function PlanBuilder() {
                                 onBack={() => {
                                     setDrawerView('select-session');
                                 }}
-                                title={`Edit ${getSessionTypeLabel(editingPlanSession?.session?.session_type as 'meal' | 'workout' | undefined)}`}
+                                title={
+                                    editingPlanSession?.session?.name ||
+                                    `Edit ${getSessionTypeLabel(editingPlanSession?.session?.session_type as 'meal' | 'workout' | undefined)}`
+                                }
                             />
-                            <Text
-                                c="gray.6"
-                                mt="xs"
-                                style={{
-                                    fontSize: 'var(--label-font-size)',
-                                    lineHeight: 'var(--label-line-height)',
-                                }}
-                            >
-                                Make changes to{' '}
-                                <Text
-                                    component="span"
-                                    fw={600}
-                                >
-                                    {editingPlanSession?.session?.name || 'this session'}
-                                </Text>
-                            </Text>
                         </Box>
 
                         <Box
@@ -668,7 +697,7 @@ export default function PlanBuilder() {
                                             fontSize: 'var(--body-font-size)',
                                         }}
                                     >
-                                        Session unavailable. Please close and try again.
+                                        Session not found.
                                     </Text>
                                 </Box>
                             )}
@@ -717,3 +746,4 @@ function ContextSummary({icon, label}: {icon: ReactNode; label: string}) {
         </Box>
     );
 }
+ 

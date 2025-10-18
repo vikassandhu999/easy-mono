@@ -5,7 +5,7 @@ import {IconAlertCircle, IconArrowLeft} from '@tabler/icons-react';
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import {SignInCodeRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
@@ -73,7 +73,7 @@ const SignInCodePage: React.FC = () => {
                 <Alert
                     color="red"
                     icon={<IconAlertCircle size={16} />}
-                    radius="md"
+                    radius="xl"
                     title="Verification failed"
                 >
                     {error}
@@ -97,7 +97,7 @@ const SignInCodePage: React.FC = () => {
                         <PinInput
                             length={6}
                             placeholder="○"
-                            radius="md"
+                            radius="xl"
                             type="number"
                             {...form.getInputProps('passcode')}
                             size={'lg'}
@@ -118,7 +118,7 @@ const SignInCodePage: React.FC = () => {
                     <Button
                         fullWidth
                         loading={isLoading}
-                        radius="md"
+                        radius="xl"
                         rightSection={<ArrowRightIcon size={16} />}
                         size="md"
                         type="submit"

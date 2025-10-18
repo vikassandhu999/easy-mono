@@ -1,7 +1,8 @@
-import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
+import {ActionIcon, Avatar, Badge, Box, Card, Group, Menu, Text, useMantineTheme} from '@mantine/core';
 import {modals} from '@mantine/modals';
-import {DotsThreeIcon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
-import {IconClock, IconTimeDuration0} from '@tabler/icons-react';
+import {Barbell, Coffee, ForkKnife, Moon, PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
+import {IconClock, IconDotsVertical, IconTimeDuration0} from '@tabler/icons-react';
+import React from 'react';
 
 import {PlanSession} from '@/api/plan_sessions';
 import {
@@ -10,6 +11,48 @@ import {
 } from '@/components/PlanBuilder/sessionTypes';
 
 import {getScheduleWindow, getSessionDuration} from './utils';
+
+// Generate consistent color based on session ID
+const getSessionColor = (sessionId: string): string => {
+    const colors = [
+        'red',
+        'pink',
+        'grape',
+        'violet',
+        'indigo',
+        'blue',
+        'cyan',
+        'teal',
+        'green',
+        'lime',
+        'yellow',
+        'orange',
+    ];
+
+    // Simple hash function to get consistent color for same ID
+    let hash = 0;
+    for (let i = 0; i < sessionId.length; i++) {
+        hash = sessionId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return colors[Math.abs(hash) % colors.length];
+};
+
+// Get icon based on label type
+const getLabelIcon = (label: null | string | undefined): React.ComponentType<any> => {
+    if (!label) return ForkKnife;
+
+    const normalizedLabel = label.toLowerCase();
+
+    if (normalizedLabel.includes('breakfast')) return Coffee;
+    if (normalizedLabel.includes('lunch')) return ForkKnife;
+    if (normalizedLabel.includes('dinner')) return Moon;
+    if (normalizedLabel.includes('snack')) return Coffee;
+    if (normalizedLabel.includes('preworkout') || normalizedLabel.includes('pre-workout')) return Barbell;
+    if (normalizedLabel.includes('postworkout') || normalizedLabel.includes('post-workout')) return Barbell;
+
+    return ForkKnife; // default
+};
 
 interface CaptionBadgeProps {
     icon: React.ComponentType<any>;
@@ -26,19 +69,18 @@ interface PlanSessionCardProps {
 const CaptionBadge = ({icon: IconComponent, text}: CaptionBadgeProps) => (
     <Group
         align="center"
-        gap="xs"
+        gap="6px"
         wrap="nowrap"
     >
         <IconComponent
-            color="var(--mantine-color-gray-6)"
-            size={16}
+            color="var(--mantine-color-gray-5)"
+            size={14}
         />
         <Text
             c="gray.6"
+            size="xs"
             style={{
-                fontSize: 'var(--label-font-size)',
                 fontWeight: 400,
-                lineHeight: 'var(--label-line-height)',
                 whiteSpace: 'nowrap',
             }}
         >
@@ -53,10 +95,11 @@ export const getSessionTypeLabel = (type: string): string => getSessionTypeLabel
 
 export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession}: PlanSessionCardProps) {
     const sessionName = planSession.override_name || planSession.session?.name || 'Untitled session';
-    const sessionType = planSession.session?.session_type ?? 'workout';
     const duration = getSessionDuration(planSession);
     const scheduleWindow = getScheduleWindow(planSession);
-    const description = planSession.override_notes || planSession.session?.description;
+    const sessionColor = getSessionColor(planSession.id);
+
+    const theme = useMantineTheme();
 
     const handleDelete = () => {
         if (!onDelete) return;
@@ -84,23 +127,20 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
 
     return (
         <Card
+            bg="gray.1"
+            padding="sm"
             shadow="xxs"
             style={{
-                borderRadius: 'var(--body-offset)',
+                borderRadius: theme.radius.xl,
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: '120px',
-                paddingBottom: 'var(--ce-size-md)',
-                paddingInline: 'var(--ce-size-md)',
-                paddingTop: 'var(--body-offset)',
+                border: `1px dotted ${theme.colors.gray[2]}`,
             }}
-            withBorder
         >
             <Group
-                align="start"
+                align="center"
                 gap="xs"
                 justify="space-between"
-                style={{marginBottom: 'auto'}}
                 wrap="nowrap"
             >
                 <Box
@@ -109,33 +149,32 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                 >
                     <Group
                         gap="xs"
-                        style={{marginBottom: 'var(--ce-size-2xs)'}}
+                        mb="6px"
                         wrap="wrap"
                     >
+                        <Avatar
+                            color={sessionColor}
+                            radius="xl"
+                            size={28}
+                            variant="light"
+                        >
+                            {React.createElement(getLabelIcon(planSession.label), {size: 16, weight: 'duotone'})}
+                        </Avatar>
                         <Text
-                            c="dark.6"
-                            component="span"
+                            fw={500}
+                            size="sm"
                             style={{
-                                fontSize: 'var(--body-font-size)',
-                                fontWeight: 600,
-                                lineHeight: 'var(--body-line-height)',
+                                lineHeight: 1.4,
                                 wordBreak: 'break-word',
                             }}
                         >
-                            {sessionName}
+                            {sessionName[0].toUpperCase() + sessionName.slice(1)}
                         </Text>
-                        <Badge
-                            color={getSessionTypeColor(sessionType)}
-                            size="sm"
-                            tt="capitalize"
-                            variant="dot"
-                        >
-                            {getSessionTypeLabel(sessionType)}
-                        </Badge>
+
                         {!planSession.is_required && (
                             <Badge
                                 color="yellow"
-                                size="sm"
+                                size="xs"
                                 variant="outline"
                             >
                                 Optional
@@ -143,24 +182,9 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                         )}
                     </Group>
 
-                    {description && (
-                        <Text
-                            c="gray.6"
-                            lineClamp={2}
-                            style={{
-                                fontSize: 'var(--label-font-size)',
-                                fontWeight: 400,
-                                lineHeight: 'var(--label-line-height)',
-                                marginBottom: 'var(--ce-size-xs)',
-                            }}
-                        >
-                            {description}
-                        </Text>
-                    )}
-
                     <Group
                         align="center"
-                        gap="md"
+                        gap="sm"
                         wrap="wrap"
                     >
                         {duration && (
@@ -183,19 +207,19 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                     <Menu
                         position="bottom-end"
                         shadow="md"
-                        width={180}
+                        width={160}
                         withinPortal
                     >
                         <Menu.Target>
                             <ActionIcon
                                 aria-label="Session options"
-                                color="dark"
+                                color="gray"
                                 onClick={(event) => event.stopPropagation()}
-                                radius={9999}
-                                size="xl"
+                                radius="xl"
+                                size="sm"
                                 variant="subtle"
                             >
-                                <DotsThreeIcon size={18} />
+                                <IconDotsVertical size={16} />
                             </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>

@@ -21,6 +21,7 @@ export default function Header({onInviteClick, onSearchChange, ref}: PlansPagePr
             style={{
                 paddingBlock: 'var(--ce-size-md)',
                 paddingInline: 'var(--ce-size-lg)',
+                paddingBottom: 0,
             }}
         >
             <Stack gap="md">
@@ -40,7 +41,7 @@ export default function Header({onInviteClick, onSearchChange, ref}: PlansPagePr
                     <Button
                         leftSection={<IconUserPlus size={18} />}
                         onClick={onInviteClick}
-                        radius="md"
+                        radius="xl"
                         size={'sm'}
                     >
                         Add a client
@@ -50,7 +51,7 @@ export default function Header({onInviteClick, onSearchChange, ref}: PlansPagePr
                 <TextInput
                     onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                     placeholder="Search clients..."
-                    radius="md"
+                    radius="xl"
                     size={'md'}
                     styles={{
                         root: {flex: 1},

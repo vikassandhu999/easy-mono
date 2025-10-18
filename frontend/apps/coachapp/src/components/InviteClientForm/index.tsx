@@ -1,5 +1,5 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {Button, Stack, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {IconSend} from '@tabler/icons-react';
 import React from 'react';
@@ -8,6 +8,8 @@ import {Controller, useForm} from 'react-hook-form';
 import {CreateClient_zod, CreateClientProps} from '@/api/clients.ts';
 import {FormSection} from '@/components/containers/FormSection';
 
+import CETextArea from '../CETextArea';
+import CETextInput from '../CETextInput';
 import {FixedBottomBar} from '../containers/FixedBottomBar';
 
 interface InviteClientFormProps {
@@ -59,13 +61,12 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
                         control={control}
                         name="name"
                         render={({field, fieldState}) => (
-                            <TextInput
+                            <CETextInput
                                 {...field}
                                 error={fieldState.error?.message}
-                                label="Full Name"
+                                label="Client's Full Name"
                                 placeholder="e.g. John Smith"
-                                radius="md"
-                                required
+                                radius="xl"
                                 size="md"
                                 variant="filled"
                             />
@@ -76,17 +77,15 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
                         control={control}
                         name="invitation_email"
                         render={({field, fieldState}) => (
-                            <TextInput
+                            <CETextInput
                                 {...field}
                                 error={fieldState.error?.message}
                                 label="Email Address"
                                 placeholder="e.g. john@example.com"
-                                radius="md"
-                                required
+                                radius="xl"
                                 size="md"
                                 type="email"
                                 variant="filled"
-                                withAsterisk
                             />
                         )}
                     />
@@ -95,13 +94,13 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
                         control={control}
                         name="invitation_phone"
                         render={({field, fieldState}) => (
-                            <TextInput
+                            <CETextInput
                                 {...field}
                                 error={fieldState.error?.message}
                                 label="Phone Number (Optional)"
                                 onChange={(e) => field.onChange(e.target.value || undefined)}
                                 placeholder="e.g. +1 (555) 123-4567"
-                                radius="md"
+                                radius="xl"
                                 size="md"
                                 type="tel"
                                 value={field.value || ''}
@@ -114,22 +113,13 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
                         control={control}
                         name="notes"
                         render={({field, fieldState}) => (
-                            <Textarea
+                            <CETextArea
                                 {...field}
-                                description={
-                                    <Text
-                                        c="dimmed"
-                                        fs="italic"
-                                        size="xs"
-                                    >
-                                        Add any relevant details about goals, preferences, or special requirements
-                                    </Text>
-                                }
                                 error={fieldState.error?.message}
                                 label="Notes (Optional)"
                                 onChange={(e) => field.onChange(e.target.value || undefined)}
                                 placeholder="e.g. Goals, medical history, dietary restrictions..."
-                                radius="md"
+                                radius="xl"
                                 rows={3}
                                 size="md"
                                 value={field.value || ''}
@@ -143,7 +133,7 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
                 <Button
                     fullWidth
                     loading={isSubmitting}
-                    radius="md"
+                    radius="xl"
                     rightSection={<IconSend />}
                     size="lg"
                     type="submit"

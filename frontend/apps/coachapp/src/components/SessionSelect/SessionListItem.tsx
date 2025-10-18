@@ -30,7 +30,7 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                 }
             }}
             p="sm"
-            radius="md"
+            radius="xl"
             role="button"
             styles={{
                 root: {
@@ -92,7 +92,7 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                 <Center>
                     <ActionIcon
                         color={isSelected ? 'blue' : 'gray'}
-                        radius="md"
+                        radius="xl"
                         size="md"
                         variant={isSelected ? 'filled' : 'light'}
                     >

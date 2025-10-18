@@ -76,7 +76,7 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                         }
                     }}
                     p="sm"
-                    radius="md"
+                    radius="xl"
                     role="button"
                     style={{
                         backgroundColor: 'var(--mantine-color-brand-0)',

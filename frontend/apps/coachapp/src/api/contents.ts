@@ -1,20 +1,11 @@
 import {z} from 'zod';
 
-// ============================================================================
-// Content Types - matches backend ContentType enum
-// ============================================================================
 export const ContentTypeEnum = z.enum(['exercise', 'recipe']);
 export type ContentType = z.infer<typeof ContentTypeEnum>;
 
-// ============================================================================
-// Content Scope - matches backend ContentScope enum
-// ============================================================================
 export const ContentScopeEnum = z.enum(['system', 'business']);
 export type ContentScope = z.infer<typeof ContentScopeEnum>;
 
-// ============================================================================
-// Content Media - matches backend ContentMedia struct
-// ============================================================================
 export const MediaType_zod = z.enum(['video', 'image', 'pdf', 'document', 'audio', 'url']);
 export type MediaType = z.infer<typeof MediaType_zod>;
 
@@ -38,11 +29,7 @@ export const isMediaEmpty = (media: ContentMedia | null | undefined) => {
     }
 };
 
-// ============================================================================
-// Exercise Definition - matches backend ExerciseDefinition struct
-// ============================================================================
 export interface ExerciseDefinition {
-    // Essential exercise classification (alphabetical)
     calories_per_minute: number;
     category: string;
     equipment: string[];
@@ -60,9 +47,6 @@ export interface ExerciseDefinition {
     tracking_fields: string[];
 }
 
-// ============================================================================
-// Recipe Definition - matches backend RecipeDefinition struct
-// ============================================================================
 export interface MacroProfile {
     carbs_g: number;
     fats_g: number;

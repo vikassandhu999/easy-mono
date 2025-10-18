@@ -67,7 +67,6 @@ function PlansListPage() {
     }, [navigate, searchParams, setSearchParams]);
 
     const handleView = (id: string) => navigate(`/plans/${id}/builder`);
-    const handleEdit = (id: string) => navigate(`/plans/${id}/edit`);
 
     // Get discipline-specific empty state config
     const getDisciplineLabel = () => {
@@ -142,7 +141,6 @@ function PlansListPage() {
                         renderItem={(plan) => (
                             <PlanListItem
                                 key={plan.id}
-                                onEdit={handleEdit}
                                 onView={handleView}
                                 plan={plan}
                             />

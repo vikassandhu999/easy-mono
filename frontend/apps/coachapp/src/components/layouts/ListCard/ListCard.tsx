@@ -102,7 +102,7 @@ export function ListCard({
             onClick={hasClickHandler ? handleCardClick : undefined}
             onKeyDown={hasClickHandler ? handleKeyPress : undefined}
             padding={compact ? 'sm' : 'md'}
-            radius="md"
+            radius="xl"
             role={hasClickHandler ? 'button' : undefined}
             style={{
                 backgroundColor: theme.white,
@@ -200,7 +200,7 @@ export function ListCard({
                                 <Box style={{flexShrink: 0}}>
                                     <Badge
                                         color={badge.color || 'blue'}
-                                        radius="md"
+                                        radius="xl"
                                         size={badge.size || (compact ? 'xs' : 'sm')}
                                         style={{
                                             fontWeight: 500,
@@ -287,7 +287,7 @@ export function ListCard({
                             <Badge
                                 color={badgeItem.color || 'gray'}
                                 key={index}
-                                radius="md"
+                                radius="xl"
                                 size={badgeItem.size || 'xs'}
                                 style={{
                                     borderWidth: '1px',

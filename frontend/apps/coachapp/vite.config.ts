@@ -10,7 +10,11 @@ export default defineConfig({
         include: ['@tabler/icons-react'],
     },
     plugins: [
-        react(),
+        react({
+            babel: {
+                plugins: ['babel-plugin-react-compiler'],
+            },
+        }),
         tsconfigPaths(),
         VitePWA({
             base: '/',

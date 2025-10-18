@@ -1,11 +1,12 @@
 import {Box, Group} from '@mantine/core';
+
 import {NavItem} from '../types';
 import {MobileNavItem} from './MobileNavItem';
 
 interface MobileBottomNavProps {
+    isVisible: boolean;
     navItems: NavItem[];
     onNavigate: (href: string) => void;
-    isVisible: boolean;
 }
 
 export function MobileBottomNav({navItems, onNavigate, isVisible}: MobileBottomNavProps) {
@@ -26,14 +27,14 @@ export function MobileBottomNav({navItems, onNavigate, isVisible}: MobileBottomN
             }}
         >
             <Group
-                justify="space-around"
                 align="center"
                 gap={0}
+                justify="space-around"
             >
                 {navItems.map((item) => (
                     <MobileNavItem
-                        key={item.href}
                         item={item}
+                        key={item.href}
                         onNavigate={onNavigate}
                     />
                 ))}

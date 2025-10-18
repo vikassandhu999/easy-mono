@@ -1,5 +1,5 @@
 import {Avatar, Badge, Box, Card, Group, Stack, Text} from '@mantine/core';
-import {Envelope, Phone} from '@phosphor-icons/react';
+import {IconMail, IconPhone} from '@tabler/icons-react';
 
 import {Client} from '@/api/clients.ts';
 
@@ -15,20 +15,11 @@ const getClientInitials = (name: string): string => {
         .toUpperCase()
         .slice(0, 2);
 };
-
-const getMembershipStatusColor = (status: string): string => {
-    switch (status) {
-        case 'active':
-            return 'green';
-        case 'inactive':
-            return 'gray';
-        case 'paused':
-            return 'yellow';
-        case 'expired':
-            return 'red';
-        default:
-            return 'gray';
-    }
+const MEMBERSHIP_STATUS_COLOR = {
+    active: 'green',
+    inactive: 'gray',
+    paused: 'yellow',
+    expired: 'red',
 };
 
 const getMembershipStatusLabel = (status: string): string => {
@@ -39,7 +30,7 @@ const ProfileCard = ({client}: ProfileCardProps) => {
     return (
         <Card
             px="xs"
-            radius="md"
+            radius="xl"
         >
             <Group
                 align="center"
@@ -53,7 +44,7 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                 >
                     <Avatar
                         color="blue"
-                        radius="md"
+                        radius="xl"
                         size="lg"
                     >
                         {getClientInitials(client.name)}
@@ -71,8 +62,8 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                                 {client.name}
                             </Text>
                             <Badge
-                                color={getMembershipStatusColor(client.membership_status)}
-                                radius="md"
+                                color={MEMBERSHIP_STATUS_COLOR[client.membership_status]}
+                                radius="xl"
                                 size="sm"
                                 variant="light"
                             >
@@ -83,10 +74,7 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                         <Stack gap={4}>
                             {client.invitation_email && (
                                 <Group gap={6}>
-                                    <Envelope
-                                        size={14}
-                                        weight="regular"
-                                    />
+                                    <IconMail size={14} />
                                     <Text
                                         c="dimmed"
                                         size="sm"
@@ -97,10 +85,7 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                             )}
                             {client.invitation_phone && (
                                 <Group gap={6}>
-                                    <Phone
-                                        size={14}
-                                        weight="regular"
-                                    />
+                                    <IconPhone size={14} />
                                     <Text
                                         c="dimmed"
                                         size="sm"

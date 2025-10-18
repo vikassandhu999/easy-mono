@@ -1,3 +1,5 @@
+import {z} from 'zod';
+
 export type PlanDiscipline = 'nutrition' | 'workout';
 export type PlanKind = 'client_copy' | 'template';
 export type PlanRecurrence = 'calendar' | 'daily' | 'weekly';
@@ -63,3 +65,52 @@ export type CreatePlanProps = {
 };
 
 export type UpdatePlanProps = Partial<CreatePlanProps> & {id: string};
+
+export const CreatePlan_zod = z
+    .object({
+        name: z
+            .string()
+            .min(2, 'Plan name must be at least 2 characters')
+            .max(255, 'Plan name must be less than 255 characters')
+            .transform((val) => val.trim()),
+        description: z
+            .string()
+            .optional()
+            .transform((val) => val?.trim() || undefined),
+        discipline: z.enum(['nutrition', 'workout']),
+        kind: z.enum(['client_copy', 'template']),
+        recurrence: z.enum(['calendar', 'daily', 'weekly']),
+        duration_weeks: z.number().int().min(1).max(104).optional(),
+        duration_days: z.number().int().min(1).max(730).optional(),
+        timezone: z.string().optional(),
+        status: z.enum(['active', 'archived', 'draft']).optional(),
+        start_date: z.string().min(1, 'Start date is required'),
+        end_date: z.string().optional(),
+        allow_client_edits: z.boolean().optional(),
+        template_id: z.string().optional(),
+        client_id: z.string().optional(),
+    })
+    .refine(
+        (data) => {
+            if (data.recurrence === 'weekly') {
+                return data.duration_weeks !== undefined && data.duration_weeks >= 1 && data.duration_weeks <= 104;
+            }
+            return true;
+        },
+        {
+            message: 'Weekly plans must be between 1 and 104 weeks',
+            path: ['duration_weeks'],
+        },
+    )
+    .refine(
+        (data) => {
+            if (data.recurrence === 'daily') {
+                return data.duration_days !== undefined && data.duration_days >= 1 && data.duration_days <= 730;
+            }
+            return true;
+        },
+        {
+            message: 'Daily plans must be between 1 and 730 days',
+            path: ['duration_days'],
+        },
+    );

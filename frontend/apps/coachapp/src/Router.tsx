@@ -17,7 +17,6 @@ import SignUpCodeStepPage from './views/onboarding/SignUpCodeStepPage';
 import SignUpStepPage from './views/onboarding/SignUpStepPage';
 import PlansListPage from './views/plans/ListPage/ListPage';
 import {PlansListPageDrawers} from './views/plans/ListPage/ListPageDrawers';
-import CreateSessionPage from './views/sessions/CreateSessionPage/CreateSessionPage';
 
 const router = createBrowserRouter([
     {
@@ -127,10 +126,6 @@ const router = createBrowserRouter([
                     {
                         element: <PlanBuilder />,
                         path: '/plans/:planId/builder',
-                    },
-                    {
-                        element: <CreateSessionPage />,
-                        path: '/sessions/new',
                     },
                 ],
                 element: <ProtectedRouteLayout />,

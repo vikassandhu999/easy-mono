@@ -145,7 +145,7 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
                             <Badge
                                 color="blue"
                                 leftSection={<CheckIcon size={10} />}
-                                radius="sm"
+                                radius="xl"
                                 size="xs"
                                 variant="filled"
                             >
@@ -172,7 +172,7 @@ const ContentCard = ({content, isSelected, multiple, onToggleSelect}: ContentCar
                     >
                         <Badge
                             color="blue"
-                            radius="sm"
+                            radius="xl"
                             size="xs"
                             style={{textTransform: 'capitalize'}}
                             variant="light"
@@ -201,7 +201,7 @@ const SelectedItemsBar = ({onClearAll, selectedCount}: SelectedItemsBarProps) =>
     return (
         <Paper
             p="sm"
-            radius="md"
+            radius="xl"
             style={{
                 backgroundColor: 'var(--mantine-color-blue-0)',
                 border: '1px solid var(--mantine-color-blue-3)',
@@ -215,7 +215,7 @@ const SelectedItemsBar = ({onClearAll, selectedCount}: SelectedItemsBarProps) =>
                 <Group gap="xs">
                     <Badge
                         color="blue"
-                        radius="sm"
+                        radius="xl"
                         size="md"
                         variant="filled"
                     >
@@ -232,7 +232,7 @@ const SelectedItemsBar = ({onClearAll, selectedCount}: SelectedItemsBarProps) =>
                     color="blue"
                     leftSection={<XIcon size={14} />}
                     onClick={onClearAll}
-                    radius="md"
+                    radius="xl"
                     size="xs"
                     variant="light"
                 >
@@ -270,7 +270,7 @@ const SearchAndFilter = ({isLoading, onSearchChange, resultsCount, searchTerm}: 
                         <ActionIcon
                             color="gray"
                             onClick={() => onSearchChange('')}
-                            radius="md"
+                            radius="xl"
                             size="xs"
                             variant="subtle"
                         >
@@ -439,7 +439,7 @@ export default function ContentSelect(props: ContentSelectProps) {
                         searchTerm ? (
                             <Paper
                                 p="lg"
-                                radius="md"
+                                radius="xl"
                                 style={{
                                     backgroundColor: 'var(--mantine-color-gray-0)',
                                     border: '2px dashed var(--mantine-color-gray-4)',
@@ -474,7 +474,7 @@ export default function ContentSelect(props: ContentSelectProps) {
                                     </Stack>
                                     <Button
                                         onClick={() => setSearchTerm('')}
-                                        radius="md"
+                                        radius="xl"
                                         size="xs"
                                         variant="light"
                                     >
@@ -485,7 +485,7 @@ export default function ContentSelect(props: ContentSelectProps) {
                         ) : (
                             <Paper
                                 p="lg"
-                                radius="md"
+                                radius="xl"
                                 style={{
                                     backgroundColor: 'var(--mantine-color-gray-0)',
                                     border: '2px dashed var(--mantine-color-gray-4)',

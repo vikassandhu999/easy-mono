@@ -220,7 +220,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                 {sections.length === 0 && (
                     <Paper
                         p="xl"
-                        radius="md"
+                        radius="xl"
                         style={{
                             backgroundColor: 'var(--mantine-color-gray-0)',
                             border: '2px dashed var(--mantine-color-gray-3)',
@@ -271,7 +271,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                     <Button
                         leftSection={<PlusIcon size={14} />}
                         onClick={addTopLevelExercise}
-                        radius="md"
+                        radius="xl"
                         size={sections.length === 0 ? 'sm' : 'xs'}
                         variant={sections.length === 0 ? 'light' : 'light'}
                     >
@@ -296,7 +296,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                             // Expand the newly added section
                             setExpandedSectionIndex(sections.length);
                         }}
-                        radius="md"
+                        radius="xl"
                         size={sections.length === 0 ? 'sm' : 'xs'}
                         variant={sections.length === 0 ? 'filled' : 'light'}
                     >

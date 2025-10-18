@@ -12,7 +12,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,7 +23,9 @@
 }
 
 .userName {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
@@ -32,7 +34,9 @@
 }
 
 .userEmail {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.43;
@@ -56,7 +60,9 @@
 
 /* Section Titles */
 .sectionTitle {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.43;
@@ -76,7 +82,9 @@
 }
 
 .menuItem {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   background-color: transparent;
   border: none;
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -84,7 +92,7 @@
   width: 100%;
   cursor: pointer;
   transition: all 0.1s ease-in-out;
-  
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -175,21 +183,21 @@
   .container {
     padding: var(--ce-size-md);
   }
-  
+
   .avatar {
     width: 60px;
     height: 60px;
     font-size: 24px;
   }
-  
+
   .userName {
     font-size: 18px;
   }
-  
+
   .menuItem {
     padding: 14px;
   }
-  
+
   .menuItemText {
     font-size: 15px;
   }

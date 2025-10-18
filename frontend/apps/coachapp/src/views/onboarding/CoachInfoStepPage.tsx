@@ -66,7 +66,7 @@ const CoachInfoStepPage: React.FC = () => {
                             label="Your Full Name"
                             leftSection={<IconUser size="1.2rem" />}
                             placeholder="e.g. John Smith"
-                            radius="sm"
+                            radius="xl"
                             required
                             size="md"
                             styles={{
@@ -89,7 +89,7 @@ const CoachInfoStepPage: React.FC = () => {
                             label="Professional Title"
                             leftSection={<IconBriefcase size="1.2rem" />}
                             placeholder="e.g. Certified Fitness Coach"
-                            radius="sm"
+                            radius="xl"
                             required
                             size="md"
                             styles={{
@@ -105,7 +105,7 @@ const CoachInfoStepPage: React.FC = () => {
                     <Alert
                         color="red"
                         icon={<IconInfoCircle size="1rem" />}
-                        radius="sm"
+                        radius="xl"
                         variant="light"
                     >
                         Please fix the errors above to continue
@@ -119,7 +119,7 @@ const CoachInfoStepPage: React.FC = () => {
                         type: 'bars',
                     }}
                     loading={isLoading}
-                    radius="sm"
+                    radius="xl"
                     rightSection={<ArrowRightIcon />}
                     size="md"
                     styles={{

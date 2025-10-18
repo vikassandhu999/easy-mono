@@ -50,7 +50,7 @@ export default function WorkoutExercise({
     return (
         <Paper
             p={0}
-            radius="md"
+            radius="xl"
             shadow="xs"
             style={{
                 backgroundColor: 'var(--mantine-color-white)',
@@ -86,7 +86,7 @@ export default function WorkoutExercise({
                     {/* Expand/Collapse Icon */}
                     <ActionIcon
                         color={isExpanded ? 'blue' : 'gray'}
-                        radius="md"
+                        radius="xl"
                         size="sm"
                         variant="subtle"
                     >
@@ -162,7 +162,7 @@ export default function WorkoutExercise({
                                     title: 'Select Exercise',
                                 });
                             }}
-                            radius="md"
+                            radius="xl"
                             size="sm"
                             variant="light"
                         >
@@ -173,7 +173,7 @@ export default function WorkoutExercise({
                         <ActionIcon
                             color="red"
                             onClick={onRemove}
-                            radius="md"
+                            radius="xl"
                             size="sm"
                             variant="light"
                         >

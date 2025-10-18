@@ -1,6 +1,6 @@
 import {CreatePlanProps, Plan, PlansList, PlansListOpts, UpdatePlanProps} from '@/api/plans';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 export interface CopyPlanToClientProps {
     allow_client_edits?: boolean;

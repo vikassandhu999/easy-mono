@@ -116,7 +116,7 @@ export default function ContentCreateForm({
                             color="gray"
                             loading={isSubmitting}
                             onClick={handleSubmit((values) => handleFormSubmit(values, 'continue'))}
-                            radius="md"
+                            radius="xl"
                             size="md"
                             variant="light"
                         >
@@ -124,7 +124,7 @@ export default function ContentCreateForm({
                         </Button>
                         <Button
                             loading={isSubmitting}
-                            radius="md"
+                            radius="xl"
                             size="md"
                             type="submit"
                         >
@@ -134,7 +134,7 @@ export default function ContentCreateForm({
                 ) : (
                     <Button
                         loading={isSubmitting}
-                        radius="md"
+                        radius="xl"
                         size="md"
                         type="submit"
                     >

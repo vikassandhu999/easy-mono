@@ -8,7 +8,7 @@ import {
     type UpdateContentProps,
 } from '@/api/contents.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 type ListContentsQueryParams = Omit<ListContentsProps, 'page'> | undefined;
 

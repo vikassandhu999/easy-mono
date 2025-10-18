@@ -1,3 +1,4 @@
+import {useMediaQuery} from '@mantine/hooks';
 import {modals} from '@mantine/modals';
 import {useState} from 'react';
 
@@ -7,13 +8,15 @@ import {ContentBuilder} from '@/components/ContentBuilder';
 
 const ExerciseListPage = () => {
     const [refreshKey, setRefreshKey] = useState(0);
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     const handleExerciseClick = (exercise: Content) => {
         modals.open({
             modalId: 'exercise-detail',
             title: exercise.name,
-            centered: true,
-            size: 'xl',
+            centered: !isMobile,
+            fullScreen: isMobile,
+            size: isMobile ? undefined : 'xl',
             styles: {
                 body: {
                     padding: 0,

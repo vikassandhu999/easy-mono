@@ -1,6 +1,7 @@
 import {Textarea, TextInput} from '@mantine/core';
+import {useCallbackRef} from '@mantine/hooks';
 import {notifications} from '@mantine/notifications';
-import React from 'react';
+import React, {useCallback} from 'react';
 import {useForm} from 'react-hook-form';
 
 import {Content, CreateContentProps, isMediaEmpty, UpdateContentProps} from '@/api/contents.ts';

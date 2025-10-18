@@ -6,7 +6,7 @@ import {
     type UpdatePlanSessionInput,
 } from '@/api/plan_sessions';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 type ListPlanSessionsArg = {
     params?: PlanSessionQueryParams;

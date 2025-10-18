@@ -81,7 +81,7 @@ const BusinessInfoStepPage: React.FC = () => {
                             label="Business Name"
                             leftSection={<IconBuilding size="1.2rem" />}
                             placeholder="e.g. Acme Fitness Centre"
-                            radius="sm"
+                            radius="xl"
                             required
                             size="md"
                             styles={{
@@ -103,7 +103,7 @@ const BusinessInfoStepPage: React.FC = () => {
                             error={errors?.handle?.message}
                             label="Username"
                             placeholder="Choose a unique username"
-                            radius="sm"
+                            radius="xl"
                             required
                             size="md"
                             styles={{
@@ -127,7 +127,7 @@ const BusinessInfoStepPage: React.FC = () => {
                             maxRows={6}
                             minRows={4}
                             placeholder="Tell us about your business, services, and what makes you unique..."
-                            radius="sm"
+                            radius="xl"
                             size="md"
                             styles={{
                                 input: {
@@ -142,7 +142,7 @@ const BusinessInfoStepPage: React.FC = () => {
                     <Alert
                         color="red"
                         icon={<IconInfoCircle size="1rem" />}
-                        radius="sm"
+                        radius="xl"
                         variant="light"
                     >
                         Please fix the errors above to continue
@@ -156,7 +156,7 @@ const BusinessInfoStepPage: React.FC = () => {
                         type: 'bars',
                     }}
                     loading={isSubmitting}
-                    radius="sm"
+                    radius="xl"
                     rightSection={<ArrowRightIcon />}
                     size="md"
                     styles={{

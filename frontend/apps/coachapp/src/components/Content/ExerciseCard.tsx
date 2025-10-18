@@ -1,9 +1,8 @@
-import {Badge, Card, Group, MantineColor, Stack, Text, ThemeIcon, useMantineTheme} from '@mantine/core';
+import {Badge, Card, Group, MantineColor, Stack, Text, ThemeIcon} from '@mantine/core';
 import {
     IconBarbell,
     IconFlame,
     IconJumpRope,
-    IconMedal,
     IconOlympics,
     IconRun,
     IconStretching,
@@ -46,87 +45,96 @@ interface ExerciseCardProps {
 }
 
 export const ExerciseCard: FC<ExerciseCardProps> = ({content, onClick}) => {
-    const theme = useMantineTheme();
+    const CategoryIcon = content.exercise_definition?.category
+        ? getCategoryIcon(content.exercise_definition.category)
+        : IconBarbell;
 
     return (
         <Card
-            // bg="gray.1"
+            bg="gray.0"
             onClick={onClick}
-            px="xs"
-            py="sm"
-            radius="lg"
+            padding={0}
+            radius="xl"
             role={onClick ? 'button' : undefined}
-            shadow="lg"
+            shadow="xs"
             style={{
                 cursor: 'pointer',
-                border: `1px dashed ${theme.colors.gray[4]} `,
+                overflow: 'hidden',
             }}
             tabIndex={onClick ? 0 : undefined}
+            withBorder
         >
-            <Group align="flex-start">
-                <ThemeIcon
-                    radius="lg"
-                    size="xl"
-                    variant="light"
+            <Group
+                align="stretch"
+                gap={0}
+                wrap="nowrap"
+            >
+                {/* Left icon section */}
+                <Stack
+                    align="center"
+                    gap={0}
+                    justify="center"
+                    style={{
+                        width: 56,
+                        minHeight: '100%',
+                    }}
                 >
-                    <IconBarbell />
-                </ThemeIcon>
+                    <ThemeIcon
+                        color={
+                            content.exercise_definition?.category
+                                ? getCategoryColor(content.exercise_definition.category)
+                                : 'blue'
+                        }
+                        radius="xl"
+                        size={40}
+                        variant="light"
+                    >
+                        <CategoryIcon
+                            size={22}
+                            stroke={2}
+                        />
+                    </ThemeIcon>
+                </Stack>
 
+                {/* Main content */}
                 <Stack
                     flex={1}
                     gap="xs"
+                    p="md"
                 >
-                    <Text
-                        fw="semi-bold"
-                        size="lg"
+                    {/* Title row */}
+                    <Group
+                        align="center"
+                        gap="xs"
+                        wrap="nowrap"
                     >
-                        {content.name}
-                    </Text>
-                    {content.exercise_definition?.category && (
-                        <Group>
-                            <Badge
-                                color={getCategoryColor(content.exercise_definition.category)}
-                                leftSection={(() => {
-                                    const Icon = getCategoryIcon(content.exercise_definition.category);
-                                    return <Icon size={12} />;
-                                })()}
-                                radius="lg"
-                                size="xs"
-                                variant="light"
-                            >
-                                {content.exercise_definition.category}
-                            </Badge>
-                        </Group>
-                    )}
-                    <Group>
+                        <Text
+                            c="dark.9"
+                            fw={600}
+                            lineClamp={1}
+                            size="md"
+                            style={{flex: 1}}
+                        >
+                            {content.name}
+                        </Text>
+                    </Group>
+
+                    {/* Metadata row */}
+                    <Group gap="xs">
                         {content.exercise_definition?.primary_muscle &&
-                            content.exercise_definition.primary_muscle.map((v, idx) => {
-                                return (
-                                    <Badge
-                                        color="gray"
-                                        key={idx}
-                                        radius="lg"
-                                        size="xs"
-                                        variant="dot"
-                                    >
-                                        {v}
-                                    </Badge>
-                                );
-                            })}
+                            content.exercise_definition.primary_muscle.slice(0, 2).map((muscle, idx) => (
+                                <Badge
+                                    color="gray"
+                                    key={idx}
+                                    radius="xl"
+                                    size="sm"
+                                    variant="dot"
+                                >
+                                    {muscle}
+                                </Badge>
+                            ))}
                     </Group>
                 </Stack>
-
-                {content.exercise_definition?.level && (
-                    <Badge
-                        color={levelColors[content.exercise_definition.level]}
-                        leftSection={<IconMedal size={14} />}
-                        radius="lg"
-                        size="xs"
-                        variant="light"
-                    >
-                        {content.exercise_definition.level}
-                    </Badge>
-                )}
             </Group>
         </Card>
     );

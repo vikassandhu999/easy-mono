@@ -115,7 +115,7 @@ const ExerciseCard = ({exercise, isSelected, multiple, onToggleSelect}: Exercise
                 {/* Exercise Icon */}
                 <Avatar
                     color={typeConfig.badgeColor}
-                    radius="md"
+                    radius="xl"
                     size="lg"
                     styles={{
                         root: {

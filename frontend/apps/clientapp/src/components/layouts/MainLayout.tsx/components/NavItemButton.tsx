@@ -1,5 +1,6 @@
 import {Badge, Box, Group, useMantineTheme} from '@mantine/core';
 import {useLocation} from 'react-router';
+
 import {NavItem} from '../types';
 
 interface NavItemButtonProps {
@@ -18,6 +19,12 @@ export function NavItemButton({item, onNavigate}: NavItemButtonProps) {
         <Box
             component="button"
             onClick={() => onNavigate(item.href)}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : theme.colors.gray[0];
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : 'transparent';
+            }}
             p="sm"
             style={{
                 border: 'none',
@@ -34,29 +41,23 @@ export function NavItemButton({item, onNavigate}: NavItemButtonProps) {
                 borderRadius: 'var(--callout-offset)',
                 minHeight: '50px',
             }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : theme.colors.gray[0];
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : 'transparent';
-            }}
         >
             <Group
-                justify="space-between"
                 align="center"
                 gap="xs"
+                justify="space-between"
             >
                 <Group
-                    gap="sm"
                     align="center"
+                    gap="sm"
                 >
                     <Icon size={20} />
                     <span>{item.label}</span>
                 </Group>
                 {item.badge && (
                     <Badge
-                        size="xs"
                         color={isActive ? 'green' : 'gray'}
+                        size="xs"
                         variant="filled"
                     >
                         {item.badge}

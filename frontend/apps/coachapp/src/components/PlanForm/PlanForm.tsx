@@ -1,13 +1,18 @@
-import {Radio, Stack, TextInput} from '@mantine/core';
-import {useForm} from '@mantine/form';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {Button, Stack, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
+import {IconArrowRight, IconCalendar} from '@tabler/icons-react';
 import React from 'react';
+import {Controller, useForm} from 'react-hook-form';
 
-import {CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/api/plans';
-import {FixedBottom} from '@/components/containers/FixedBottom';
+import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/api/plans';
 import {FormSection} from '@/components/containers/FormSection';
 
+import CEDatePickerInput from '../CEDatePickerInput';
+import CETextArea from '../CETextArea';
+import CETextInput from '../CETextInput';
 import {PLAN_DISCIPLINES} from '../Configs';
+import {FixedBottomBar} from '../containers/FixedBottomBar';
 
 interface PlanFormProps {
     discipline: PlanDiscipline;
@@ -16,16 +21,16 @@ interface PlanFormProps {
     submitText: string;
 }
 
-const recurrenceOptions = [
-    {description: 'Design 1 day; repeats every day', label: 'Daily', value: 'daily'},
-    {description: 'Design 1 week; repeats every week', label: 'Weekly', value: 'weekly'},
-];
-
 const resolveTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, submitText}) => {
-    const form = useForm<CreatePlanProps>({
-        initialValues: {
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        formState: {isSubmitting},
+    } = useForm<CreatePlanProps>({
+        defaultValues: {
             name: plan?.name ?? '',
             description: plan?.description ?? undefined,
             discipline,
@@ -38,130 +43,153 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
             allow_client_edits: plan?.allow_client_edits ?? false,
             template_id: plan?.template_id ?? undefined,
             client_id: plan?.client_id ?? undefined,
-            start_date: plan?.start_date ?? undefined,
+            start_date:
+                plan?.start_date ??
+                (() => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return today.toISOString();
+                })(),
             end_date: plan?.end_date ?? undefined,
         },
-        validate: {
-            name: (value) => {
-                const trimmed = value?.trim() ?? '';
-                if (trimmed.length < 2) {
-                    return 'Plan name must be at least 2 characters';
-                }
-                if (trimmed.length > 255) {
-                    return 'Plan name must be less than 255 characters';
-                }
-                return null;
-            },
-            recurrence: (value) => {
-                if (!value) {
-                    return 'Please select a recurrence';
-                }
-                return null;
-            },
-            duration_weeks: (value, values) => {
-                if (values.recurrence !== 'weekly') {
-                    return null;
-                }
-                if (!value || value < 1 || value > 104) {
-                    return 'Weekly plans must be between 1 and 104 weeks';
-                }
-                return null;
-            },
-            duration_days: (value, values) => {
-                if (values.recurrence !== 'daily') {
-                    return null;
-                }
-                if (!value || value < 1 || value > 730) {
-                    return 'Daily plans must be between 1 and 730 days';
-                }
-                return null;
-            },
-        },
+        resolver: zodResolver(CreatePlan_zod),
     });
 
     React.useEffect(() => {
-        form.setFieldValue('discipline', discipline);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [discipline]);
+        setValue('discipline', discipline);
+    }, [discipline, setValue]);
 
     const typeConfig = PLAN_DISCIPLINES[discipline]!;
 
     const handleFormSubmit = async (values: CreatePlanProps) => {
-        if (form.validate().hasErrors) {
+        try {
+            const payload: CreatePlanProps = {
+                ...values,
+                discipline,
+                kind: values.kind ?? 'template',
+                status: values.status ?? 'draft',
+                timezone: values.timezone ?? resolveTimezone(),
+                description: values.description?.trim() ? values.description.trim() : undefined,
+            };
+
+            if (payload.recurrence === 'weekly') {
+                payload.duration_weeks = payload.duration_weeks ?? 12;
+                payload.duration_days = undefined;
+            } else if (payload.recurrence === 'daily') {
+                payload.duration_days = payload.duration_days ?? 30;
+                payload.duration_weeks = undefined;
+            } else {
+                payload.duration_days = undefined;
+                payload.duration_weeks = undefined;
+            }
+
+            await onSubmit(payload);
+        } catch (error) {
             notifications.show({
-                autoClose: 1000,
+                autoClose: 3000,
                 color: 'red',
-                message: 'Please fix the errors in the form',
-                position: 'top-center',
-                title: 'Validation Error',
+                message: 'Failed to create plan. Please try again.',
+                title: 'Error',
             });
-            return;
         }
-
-        const payload: CreatePlanProps = {
-            ...values,
-            discipline,
-            kind: values.kind ?? 'template',
-            status: values.status ?? 'draft',
-            timezone: values.timezone ?? resolveTimezone(),
-            description: values.description?.trim() ? values.description.trim() : undefined,
-        };
-
-        if (payload.recurrence === 'weekly') {
-            payload.duration_weeks = payload.duration_weeks ?? 12;
-            payload.duration_days = undefined;
-        } else if (payload.recurrence === 'daily') {
-            payload.duration_days = payload.duration_days ?? 30;
-            payload.duration_weeks = undefined;
-        } else {
-            payload.duration_days = undefined;
-            payload.duration_weeks = undefined;
-        }
-
-        await onSubmit(payload);
     };
 
     return (
-        <form onSubmit={form.onSubmit(handleFormSubmit)}>
+        <form onSubmit={handleSubmit(handleFormSubmit)}>
             <FormSection>
-                <TextInput
-                    description={typeConfig.form.nameDescription}
-                    label="Name"
-                    placeholder={typeConfig.form.namePlaceholder}
-                    required
-                    size={'md'}
-                    withAsterisk
-                    {...form.getInputProps('name')}
-                />
-
-                <Radio.Group
-                    label="Recurrence"
-                    required
-                    size={'md'}
-                    withAsterisk
-                    {...form.getInputProps('recurrence')}
+                <Text
+                    c="dimmed"
+                    fs="italic"
+                    size="sm"
                 >
-                    <Stack
-                        gap={'xs'}
-                        mt="sm"
-                    >
-                        {recurrenceOptions.map((option) => (
-                            <Radio
-                                description={option.description}
-                                key={option.value}
-                                label={option.label}
-                                size={'md'}
-                                value={option.value}
+                    {typeConfig.description}
+                </Text>
+
+                <Stack gap="sm">
+                    <Controller
+                        control={control}
+                        name="name"
+                        render={({field, fieldState}) => (
+                            <CETextInput
+                                {...field}
+                                error={fieldState.error?.message}
+                                label="Plan Name"
+                                placeholder={
+                                    typeConfig.form.namePlaceholder || 'e.g. 12-Week Strength Building Program'
+                                }
+                                radius="xl"
+                                variant="filled"
                             />
-                        ))}
-                    </Stack>
-                </Radio.Group>
+                        )}
+                    />
+
+                    <Controller
+                        control={control}
+                        name="description"
+                        render={({field, fieldState}) => (
+                            <CETextArea
+                                {...field}
+                                error={fieldState.error?.message}
+                                label="Description (Optional)"
+                                onChange={(e) => field.onChange(e.target.value || undefined)}
+                                placeholder="Add details about this plan, goals, or any important notes..."
+                                radius="xl"
+                                rows={4}
+                                size="md"
+                                value={field.value || ''}
+                                variant="filled"
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        control={control}
+                        name="start_date"
+                        render={({field, fieldState}) => (
+                            <CEDatePickerInput
+                                error={fieldState.error?.message}
+                                label="Start Date"
+                                leftSection={<IconCalendar size={18} />}
+                                minDate={new Date()}
+                                onChange={(date) => {
+                                    if (date) {
+                                        // Convert to RFC3339 format with timezone
+                                        const dateObj = new Date(date);
+                                        dateObj.setHours(0, 0, 0, 0);
+                                        field.onChange(dateObj.toISOString());
+                                    }
+                                }}
+                                placeholder="When does this plan begin?"
+                                radius="xl"
+                                size="md"
+                                value={field.value ? new Date(field.value) : null}
+                                valueFormat="MMM DD, YYYY"
+                                variant="filled"
+                                withAsterisk
+                            />
+                        )}
+                    />
+
+                    <Text
+                        c="dimmed"
+                        size="xs"
+                    >
+                        💡 Tip: You can add sessions and customize this plan after creation
+                    </Text>
+                </Stack>
             </FormSection>
-            <FixedBottom
-                isSubmitting={form.submitting}
-                label={submitText}
-                onSubmit={() => handleFormSubmit(form.values)}
-            />
+            <FixedBottomBar>
+                <Button
+                    fullWidth
+                    loading={isSubmitting}
+                    radius="xl"
+                    rightSection={<IconArrowRight size={18} />}
+                    size="lg"
+                    type="submit"
+                >
+                    {submitText}
+                </Button>
+            </FixedBottomBar>
         </form>
     );
 };

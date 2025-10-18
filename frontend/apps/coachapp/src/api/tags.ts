@@ -1,9 +1,5 @@
 import {z} from 'zod';
 
-import {Result} from '@/utils/error.ts';
-
-import {authedClient} from './auth';
-
 export const ContentTypeEnum = z.enum(['exercise', 'food', 'technique', 'activity', 'guide', 'lesson']);
 
 export const ListTagGroups_zod = z.object({
@@ -48,25 +44,3 @@ export interface TagGroup {
     sort_order: number;
     tags: Tag[];
 }
-
-export const TagsAPI = {
-    listTagGroups: async (params: ListTagGroupsProps): Promise<Result<ListTagGroupsResult>> => {
-        try {
-            const response = await authedClient.get('/v1/coach/tag-groups', {
-                params,
-            });
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    listTags: async (tagGroupId: string, params: ListTagsProps): Promise<Result<ListTagsResult>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/tag-groups/${tagGroupId}/tags`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-};

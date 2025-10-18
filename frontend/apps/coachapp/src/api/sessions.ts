@@ -1,9 +1,5 @@
 import {z} from 'zod';
 
-import {Result} from '@/utils/error.ts';
-
-import {authedClient} from './auth';
-
 export const SessionType = z.enum(['workout', 'meal']);
 
 export const SessionItemConfig_zod = z.object({
@@ -340,53 +336,3 @@ export type MeasurementSection = z.infer<typeof MeasurementSection_zod>;
 export type MeasurementBlock = z.infer<typeof MeasurementBlock_zod>;
 export type MeasurementMetric = z.infer<typeof MeasurementMetric_zod>;
 export type MeasurementDefinition = z.infer<typeof MeasurementDefinition_zod>;
-
-// =============================
-// API Client
-// =============================
-export const SessionsAPI = {
-    createSession: async (input: CreateSession): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.post('/v1/coach/sessions', input);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    deleteSession: async (id: string): Promise<Result<void>> => {
-        try {
-            await authedClient.delete(`/v1/coach/sessions/${id}`);
-            return Result.success(undefined);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    getSession: async (id: string, params?: {include_contents?: boolean}): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.get(`/v1/coach/sessions/${id}`, {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    listSessions: async (params?: ListSessions): Promise<Result<SessionListResponse>> => {
-        try {
-            const response = await authedClient.get('/v1/coach/sessions', {params});
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    updateSession: async (id: string, input: UpdateSession): Promise<Result<Session>> => {
-        try {
-            const response = await authedClient.patch(`/v1/coach/sessions/${id}`, input);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-};

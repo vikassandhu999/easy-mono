@@ -1,18 +1,16 @@
 import {Drawer} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo} from 'react';
 
 import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
+import {PLAN_DISCIPLINES} from '@/components/Configs';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
 import {useCreatePlan} from '@/store/services/plans';
 
-import PlanDisciplineSelect from './PlanDisciplineSelect';
 import {PlanForm} from './PlanForm';
-
-export type PlanCreationDrawerView = 'create-plan' | 'select-discipline';
 
 export type PlanCreationDrawerData = {
     initialDiscipline?: PlanDiscipline;
@@ -28,39 +26,21 @@ export interface PlanCreationDrawerProps {
 }
 
 export function PlanCreationDrawer({
-    initialDiscipline,
     initialPlan,
+    initialDiscipline,
     onClose,
     onPlanCreated,
     opened,
 }: PlanCreationDrawerProps) {
-    const [view, setView] = useState<PlanCreationDrawerView>(() =>
-        initialDiscipline ? 'create-plan' : 'select-discipline',
-    );
-    const [selectedDiscipline, setSelectedDiscipline] = useState<PlanDiscipline | undefined>(initialDiscipline);
     const [createPlan, {isLoading: isCreatingPlan}] = useCreatePlan();
 
-    useEffect(() => {
-        if (!opened) {
-            return;
-        }
-
-        setView(initialDiscipline ? 'create-plan' : 'select-discipline');
-        setSelectedDiscipline(initialDiscipline);
-    }, [opened, initialDiscipline]);
-
     const planDefaults = useMemo(
-        () => ({...(initialPlan ?? {}), discipline: selectedDiscipline}) as Partial<Plan>,
-        [initialPlan, selectedDiscipline],
+        () => ({...(initialPlan ?? {}), discipline: initialDiscipline}) as Partial<Plan>,
+        [initialPlan, initialDiscipline],
     );
 
     const handleClose = () => {
         onClose();
-    };
-
-    const handleSelectDiscipline = (selected: PlanDiscipline) => {
-        setSelectedDiscipline(selected);
-        setView('create-plan');
     };
 
     const handleSubmit = async (values: CreatePlanProps) => {
@@ -85,58 +65,40 @@ export function PlanCreationDrawer({
         }
     };
 
+    const drawerTitle = useMemo(() => {
+        const disciplineLabel = initialDiscipline ? PLAN_DISCIPLINES[initialDiscipline]?.label : '';
+        return `Create ${disciplineLabel} Plan`;
+    }, [initialDiscipline]);
+
     return (
         <Drawer
             onClose={handleClose}
             opened={opened}
             position="right"
-            size={view === 'create-plan' ? 'md' : 'sm'}
             withCloseButton={false}
         >
-            {view === 'select-discipline' ? (
-                <PagePaper>
-                    <HeadingContainer
-                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
-                        withBorder={false}
-                    >
-                        <Header
-                            onBack={handleClose}
-                            title="Create plan"
-                        />
-                    </HeadingContainer>
+            <PagePaper>
+                <HeadingContainer
+                    style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
+                    withBorder={false}
+                >
+                    <Header
+                        onBack={() => {
+                            onClose();
+                        }}
+                        title={drawerTitle}
+                    />
+                </HeadingContainer>
 
-                    <div style={{flex: 1, overflow: 'auto'}}>
-                        <PaddingContainer>
-                            <PlanDisciplineSelect onSelect={handleSelectDiscipline} />
-                        </PaddingContainer>
-                    </div>
-                </PagePaper>
-            ) : null}
-
-            {view === 'create-plan' && selectedDiscipline ? (
-                <PagePaper>
-                    <HeadingContainer
-                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
-                        withBorder={false}
-                    >
-                        <Header
-                            onBack={() => {
-                                setView('select-discipline');
-                            }}
-                            title="Create plan"
-                        />
-                    </HeadingContainer>
-
-                    <PaddingContainer>
-                        <PlanForm
-                            discipline={selectedDiscipline}
-                            onSubmit={handleSubmit}
-                            plan={planDefaults}
-                            submitText={isCreatingPlan ? 'Creating…' : 'Create plan'}
-                        />
-                    </PaddingContainer>
-                </PagePaper>
-            ) : null}
+                <PaddingContainer>
+                    <PlanForm
+                        discipline={initialDiscipline}
+                        onSubmit={handleSubmit}
+                        plan={planDefaults}
+                        submitText={isCreatingPlan ? 'Creating…' : 'Create plan'}
+                    />
+                </PaddingContainer>
+            </PagePaper>
         </Drawer>
     );
 }

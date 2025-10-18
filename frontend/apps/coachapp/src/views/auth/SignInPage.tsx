@@ -5,7 +5,7 @@ import {IconAlertCircle, IconMail} from '@tabler/icons-react';
 import React, {useCallback, useState} from 'react';
 import {createSearchParams, useNavigate} from 'react-router';
 
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import {SignInRequest} from '@/api/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
@@ -71,7 +71,7 @@ const SignInPage: React.FC = () => {
                 <Alert
                     color="red"
                     icon={<IconAlertCircle size={16} />}
-                    radius="md"
+                    radius="xl"
                     title="Sign in failed"
                 >
                     {error}
@@ -97,7 +97,7 @@ const SignInPage: React.FC = () => {
                     <Button
                         fullWidth
                         loading={isLoading}
-                        radius="md"
+                        radius="xl"
                         rightSection={<ArrowRightIcon />}
                         size="md"
                         type="submit"

@@ -54,41 +54,37 @@ const getHeaderCopy = (plan: Plan, totalSessions: number, groups: PlanSessionGro
 };
 
 const GroupHeader = ({description, icon: IconComponent, iconColor, title}: ReturnType<typeof getHeaderCopy>) => (
-    <Box
-        style={{
-            paddingBottom: 'var(--ce-size-md)',
-        }}
-    >
+    <Box mb="md">
+        <Text
+            c="dark.9"
+            fw={700}
+            mb="4px"
+            size="xl"
+            style={{
+                lineHeight: 1.2,
+            }}
+        >
+            {title}
+        </Text>
         <Group
             align="center"
-            gap="sm"
-            mb="xs"
+            gap="6px"
         >
             <IconComponent
                 color={iconColor}
-                size={24}
+                size={16}
                 weight="duotone"
             />
             <Text
+                c="gray.6"
+                size="xs"
                 style={{
-                    fontSize: 'var(--h3-font-size)',
-                    fontWeight: 700,
-                    lineHeight: 'var(--h3-line-height)',
+                    lineHeight: 1.4,
                 }}
             >
-                {title}
+                {description}
             </Text>
         </Group>
-        <Text
-            c="gray.6"
-            style={{
-                fontSize: 'var(--label-font-size)',
-                fontWeight: 400,
-                lineHeight: 'var(--label-line-height)',
-            }}
-        >
-            {description}
-        </Text>
     </Box>
 );
 
@@ -113,24 +109,19 @@ const GroupBlock = ({
         <Box>
             {showHeading && (
                 <Text
-                    c="dark.6"
-                    mb="sm"
-                    style={{
-                        fontSize: 'var(--body-font-size)',
-                        fontWeight: 600,
-                        lineHeight: 'var(--body-line-height)',
-                    }}
+                    c="dark.8"
+                    fw={600}
+                    mb="xs"
+                    size="sm"
                 >
                     {group.label}
                     {group.description && (
                         <Text
-                            c="gray.6"
+                            c="gray.5"
                             component="span"
+                            fw={400}
                             ml="xs"
-                            style={{
-                                fontSize: 'var(--label-font-size)',
-                                fontWeight: 400,
-                            }}
+                            size="xs"
                         >
                             · {group.description}
                         </Text>
@@ -157,19 +148,19 @@ const GroupBlock = ({
                     fullWidth
                     leftSection={
                         <Plus
-                            size={16}
+                            size={14}
                             weight="bold"
                         />
                     }
                     onClick={() => onAddSession(group.context)}
-                    radius="md"
-                    size="md"
+                    radius="xl"
+                    size="sm"
                     styles={{
                         root: {
                             backgroundColor: 'transparent',
-                            border: '2px dashed var(--mantine-color-gray-3)',
+                            border: '1.5px dashed var(--mantine-color-gray-3)',
                             color: 'var(--mantine-color-gray-6)',
-                            minHeight: '120px',
+                            minHeight: '88px',
                             transition: 'all 0.15s ease',
                             '&:hover': {
                                 backgroundColor: 'var(--mantine-color-blue-0)',
@@ -178,7 +169,7 @@ const GroupBlock = ({
                             },
                         },
                         label: {
-                            fontSize: 'var(--label-font-size)',
+                            fontSize: '13px',
                             fontWeight: 500,
                         },
                     }}
@@ -207,9 +198,9 @@ export function PlanSessionsView({
     // Daily recurrence: single continuous list
     if (plan.recurrence === 'daily') {
         return (
-            <Stack gap="xl">
+            <Stack gap="lg">
                 <GroupHeader {...headerCopy} />
-                <Stack gap="xl">
+                <Stack gap="lg">
                     {groups.map((group) => (
                         <GroupBlock
                             addLabel={addLabel}
@@ -230,9 +221,9 @@ export function PlanSessionsView({
     // Weekly recurrence: all 7 days always visible
     if (plan.recurrence === 'weekly') {
         return (
-            <Stack gap="xl">
+            <Stack gap="lg">
                 <GroupHeader {...headerCopy} />
-                <Stack gap="xl">
+                <Stack gap="lg">
                     {DAY_NAMES.map((dayName, index) => {
                         const weeklyGroup = groups.find(
                             (item) => item.context.kind === 'weekly' && item.context.dayOfWeek === index,
@@ -268,9 +259,9 @@ export function PlanSessionsView({
 
     // Calendar recurrence: date-based grouping
     return (
-        <Stack gap="xl">
+        <Stack gap="lg">
             <GroupHeader {...headerCopy} />
-            <Stack gap="xl">
+            <Stack gap="lg">
                 {groups.map((group) => (
                     <GroupBlock
                         addLabel={addLabel}

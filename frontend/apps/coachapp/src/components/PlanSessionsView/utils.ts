@@ -8,7 +8,7 @@ import {DAY_NAMES} from './constants';
 export type AddSessionContext =
     | {kind: 'calendar'; calendarDate: null | string}
     | {kind: 'daily'; dayOrder: number}
-    | {kind: 'weekly'; dayOfWeek: number};
+    | {kind: 'weekly'; dayOfWeek: number; label?: string};
 
 export type PlanSessionGroup = {
     context: AddSessionContext;

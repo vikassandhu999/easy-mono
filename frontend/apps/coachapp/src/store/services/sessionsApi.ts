@@ -6,7 +6,7 @@ import {
     type UpdateSession,
 } from '@/api/sessions';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 export const sessionsApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({

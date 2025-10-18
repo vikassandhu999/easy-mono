@@ -7,7 +7,7 @@ import {
     type UpdateClientProps,
 } from '@/api/clients.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 type BulkOperationResponse = {
     updated_count: number;

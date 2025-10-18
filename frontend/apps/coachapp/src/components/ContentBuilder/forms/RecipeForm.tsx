@@ -106,7 +106,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         {...field}
                         error={fieldState.error?.message}
                         placeholder="Name of recipe. e.g. High-Protein Chicken Salad"
-                        radius="lg"
+                        radius="xl"
                         required
                         size="xl"
                         variant="filled"
@@ -135,7 +135,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 <Radio.Card
                                     key={option.value}
                                     p="xs"
-                                    radius="md"
+                                    radius="xl"
                                     value={option.value}
                                     w="fit-content"
                                 >
@@ -166,7 +166,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             </Text>
                         }
                         multiple
-                        radius="lg"
+                        radius="xl"
                         size="sm"
                         value={field.value ?? []}
                         variant="outline"
@@ -200,7 +200,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     <Radio.Card
                                         key={option.value}
                                         p="xs"
-                                        radius="md"
+                                        radius="xl"
                                         value={option.value}
                                         w="fit-content"
                                     >
@@ -231,7 +231,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             label="Prep Time"
                             min={0}
                             placeholder="15"
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
@@ -249,7 +249,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             label="Cook Time"
                             min={0}
                             placeholder="25"
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
@@ -267,7 +267,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             label="Servings"
                             min={1}
                             placeholder="4"
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             value={field.value ?? undefined}
                             variant="filled"
@@ -287,7 +287,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         description="Dietary restrictions met"
                         label="Diet Types"
                         placeholder="Select diet types"
-                        radius="lg"
+                        radius="xl"
                         size="sm"
                         value={field.value ?? []}
                         variant="filled"
@@ -308,7 +308,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             field.onChange(url ? {url, type: 'image'} : undefined);
                         }}
                         placeholder="https://example.com/recipe.jpg"
-                        radius="lg"
+                        radius="xl"
                         size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
@@ -320,7 +320,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
             <SegmentedControl
                 data={FORM_SECTIONS}
                 onChange={setSelectedTab}
-                radius="lg"
+                radius="xl"
                 size="lg"
                 value={selectedTab}
             ></SegmentedControl>
@@ -386,7 +386,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                                 flex={1}
                                                 onChange={(e) => handleUpdateInstruction(index, e.currentTarget.value)}
                                                 placeholder={`Describe what to do`}
-                                                radius="lg"
+                                                radius="xl"
                                                 size="md"
                                                 value={instructionStep?.instruction || ''}
                                                 variant="filled"
@@ -396,7 +396,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                         <ActionIcon
                                             color="red"
                                             onClick={() => handleRemoveInstruction(index)}
-                                            radius="lg"
+                                            radius="xl"
                                             size="md"
                                             variant="light"
                                         >
@@ -408,7 +408,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 <Button
                                     leftSection={<IconPlus size={16} />}
                                     onClick={handleAddInstruction}
-                                    radius="lg"
+                                    radius="xl"
                                     size="compact-sm"
                                     variant="light"
                                     w="max-content"
@@ -434,7 +434,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 description="Methods used"
                                 label="Cooking Methods"
                                 placeholder="Select cooking methods"
-                                radius="lg"
+                                radius="xl"
                                 searchable
                                 size="sm"
                                 value={field.value ?? []}
@@ -465,7 +465,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     label="Calories"
                                     min={0}
                                     placeholder="350"
-                                    radius="lg"
+                                    radius="xl"
                                     size="sm"
                                     value={field.value ?? undefined}
                                     variant="filled"
@@ -482,7 +482,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     label="Protein"
                                     min={0}
                                     placeholder="30"
-                                    radius="lg"
+                                    radius="xl"
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
@@ -506,7 +506,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     label="Carbs"
                                     min={0}
                                     placeholder="25"
-                                    radius="lg"
+                                    radius="xl"
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
@@ -524,7 +524,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     label="Fats"
                                     min={0}
                                     placeholder="15"
-                                    radius="lg"
+                                    radius="xl"
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}
@@ -542,7 +542,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     label="Fiber"
                                     min={0}
                                     placeholder="5"
-                                    radius="lg"
+                                    radius="xl"
                                     size="sm"
                                     suffix=" g"
                                     value={field.value ?? undefined}

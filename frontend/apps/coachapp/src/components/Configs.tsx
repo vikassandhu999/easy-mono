@@ -1,4 +1,4 @@
-import {Icon, IconBowl, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
+import {Icon, IconBowlChopsticks, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
 
 import {Content} from '@/api/contents.ts';
 
@@ -30,7 +30,7 @@ export const PLAN_DISCIPLINES: Record<
             nameDescription: 'A clear, descriptive name of the nutrition plan.',
             namePlaceholder: 'e.g., Weight Loss Nutrition Plan',
         },
-        icon: IconBowl,
+        icon: IconBowlChopsticks,
         iconColor: 'var(--mantine-color-lime-0)',
         label: 'Nutrition',
     },

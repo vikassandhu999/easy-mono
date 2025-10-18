@@ -93,7 +93,10 @@ export const theme = createTheme({
         red: systemRed,
     },
     components: {
-        Badge: Badge.extend({defaultProps: {size: 'md'}, styles: {root: {fontWeight: 600}}}),
+        Badge: Badge.extend({
+            defaultProps: {size: 'md'},
+            styles: {root: {fontWeight: 600, textTransform: 'capitalize'}},
+        }),
         Checkbox: Checkbox.extend({
             defaultProps: {size: 'md'},
             styles: {

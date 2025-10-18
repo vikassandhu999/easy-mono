@@ -90,7 +90,7 @@ const PlanCard = ({plan, isSelected, onToggleSelect}: PlanCardProps) => {
                 {/* Plan Icon */}
                 <Avatar
                     color={disciplineConfig.color}
-                    radius="md"
+                    radius="xl"
                     size="lg"
                     styles={{
                         root: {
@@ -355,7 +355,7 @@ export default function PlanSelect(props: PlanSelectProps) {
                         disabled={!selectedId}
                         fullWidth
                         onClick={handleAssign}
-                        radius="md"
+                        radius="xl"
                         size="lg"
                     >
                         {selectedId ? 'Assign Plan' : 'Select a plan'}

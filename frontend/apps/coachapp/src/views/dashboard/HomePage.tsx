@@ -107,7 +107,7 @@ export default function HomePage() {
                     <Card
                         key={index}
                         p="lg"
-                        radius="lg"
+                        radius="xl"
                         style={{
                             background: 'rgb(255, 255, 255)',
                             minHeight: rem(100),
@@ -120,7 +120,7 @@ export default function HomePage() {
                         >
                             <ThemeIcon
                                 color={stat.color}
-                                radius="md"
+                                radius="xl"
                                 size="lg"
                                 variant="light"
                             >
@@ -147,7 +147,7 @@ export default function HomePage() {
             {/* Menu Items */}
             <Card
                 p="md"
-                radius="lg"
+                radius="xl"
                 style={{
                     background: 'rgb(255, 255, 255)',
                 }}
@@ -188,7 +188,7 @@ export default function HomePage() {
                             <Group gap="md">
                                 <ThemeIcon
                                     color="gray"
-                                    radius="md"
+                                    radius="xl"
                                     size="sm"
                                     variant="light"
                                 >
@@ -213,7 +213,7 @@ export default function HomePage() {
             {/* Recent clients Section */}
             <Card
                 p="md"
-                radius="lg"
+                radius="xl"
                 style={{
                     background: 'rgb(255, 255, 255)',
                 }}

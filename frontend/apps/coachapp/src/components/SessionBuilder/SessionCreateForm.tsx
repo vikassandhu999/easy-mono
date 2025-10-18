@@ -128,7 +128,7 @@ export default function SessionCreateForm({
                             color="gray"
                             loading={isSubmitting}
                             onClick={handleSubmit((values) => handleFormSubmit(values, 'continue'))}
-                            radius="md"
+                            radius="xl"
                             size="md"
                             variant="light"
                         >
@@ -136,7 +136,7 @@ export default function SessionCreateForm({
                         </Button>
                         <Button
                             loading={isSubmitting}
-                            radius="md"
+                            radius="xl"
                             size="md"
                             type="submit"
                         >
@@ -146,7 +146,7 @@ export default function SessionCreateForm({
                 ) : (
                     <Button
                         loading={isSubmitting}
-                        radius="md"
+                        radius="xl"
                         size="md"
                         type="submit"
                     >

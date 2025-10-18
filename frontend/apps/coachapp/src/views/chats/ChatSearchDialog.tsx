@@ -116,7 +116,7 @@ export default function ChatSearchDialog({onClose, opened}: ChatSearchDialogProp
                         leftSection={<IconSearch size={16} />}
                         onChange={(e) => setSearchText(e.currentTarget.value)}
                         placeholder="Search by client name..."
-                        radius="md"
+                        radius="xl"
                         rightSection={
                             searchText && (
                                 <ActionIcon

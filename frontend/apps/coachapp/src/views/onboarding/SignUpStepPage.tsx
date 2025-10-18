@@ -7,7 +7,7 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {createSearchParams, useNavigate} from 'react-router';
 
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import {SignUp_zod, SignUpProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
@@ -89,7 +89,7 @@ const SignUpStepPage: React.FC = () => {
                             label="Email Address"
                             leftSection={<IconMail size={16} />}
                             placeholder="Enter your email"
-                            radius="sm"
+                            radius="xl"
                             size="md"
                         />
                     )}
@@ -99,7 +99,7 @@ const SignUpStepPage: React.FC = () => {
                     fullWidth
                     h={48}
                     loading={isSubmitting || isLoading}
-                    radius="sm"
+                    radius="xl"
                     rightSection={<ArrowRightIcon size={20} />}
                     size="md"
                     type="submit"

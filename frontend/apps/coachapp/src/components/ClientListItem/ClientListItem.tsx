@@ -1,27 +1,40 @@
-import {
-    ActionIcon,
-    Avatar,
-    Badge,
-    Button,
-    Card,
-    Group,
-    Indicator,
-    Stack,
-    Text,
-    Tooltip,
-    useMantineTheme,
-} from '@mantine/core';
-import {notifications} from '@mantine/notifications';
-import {IconArrowRight, IconCalendarPlus, IconMail, IconMessageCircle2} from '@tabler/icons-react';
+import {ActionIcon, Avatar, Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
+import {IconChevronRight, IconMail} from '@tabler/icons-react';
 import React from 'react';
 
 import {Client, MembershipStatus} from '@/api/clients.ts';
 
 interface Props {
     client: Client;
-    onAddPlan?: (id: string) => void;
-    onEdit: (id: string) => void;
-    onView: (id: string) => void;
+    onSelect: (id: string) => void;
+    withArrow?: boolean;
+}
+
+function getAvatarColor(clientId: string): string {
+    const colors = [
+        'blue',
+        'cyan',
+        'grape',
+        'green',
+        'indigo',
+        'lime',
+        'orange',
+        'pink',
+        'red',
+        'teal',
+        'violet',
+        'yellow',
+    ];
+
+    // Create a simple hash from the client ID
+    let hash = 0;
+    for (let i = 0; i < clientId.length; i++) {
+        hash = clientId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // Use the hash to select a color
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
 }
 
 function getClientInitials(name: string): string {
@@ -63,24 +76,33 @@ function getMembershipStatusLabel(status: string): string {
     }
 }
 
-const ListItem: React.FC<Props> = ({client, onAddPlan, onView}) => {
+export const ClientListItem: React.FC<Props> = ({client, onSelect: onView, withArrow = true}) => {
     const theme = useMantineTheme();
-
-    // Show online indicator if client is active
-    const isActive = client.membership_status === MembershipStatus.ACTIVE;
 
     return (
         <Card
             onClick={() => onView(client.id)}
-            padding="md"
-            radius="md"
-            shadow="sm"
+            padding="sm"
             style={{
                 cursor: 'pointer',
+                borderBottom: `1px solid ${theme.colors.gray[4]}`,
+                transition: 'all 0.15s ease',
+            }}
+            styles={{
+                root: {
+                    '&:hover': {
+                        backgroundColor: theme.colors.gray[1],
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    },
+                    '&:active': {
+                        transform: 'translateY(0) scale(0.99)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                    },
+                },
             }}
         >
             <Stack gap="md">
-                {/* Header Section */}
                 <Group
                     justify="space-between"
                     wrap="nowrap"
@@ -89,24 +111,15 @@ const ListItem: React.FC<Props> = ({client, onAddPlan, onView}) => {
                         gap="md"
                         style={{flex: 1, minWidth: 0}}
                     >
-                        {/* Avatar with status indicator */}
-                        <Indicator
-                            color={isActive ? 'green' : 'gray'}
-                            disabled={!isActive}
-                            position="bottom-end"
-                            size={10}
-                            withBorder
+                        <Avatar
+                            color={getAvatarColor(client.id)}
+                            radius="xl"
+                            size="md"
+                            variant="light"
                         >
-                            <Avatar
-                                color={'gray'}
-                                radius="md"
-                                size="md"
-                            >
-                                {getClientInitials(client.name)}
-                            </Avatar>
-                        </Indicator>
+                            {getClientInitials(client.name)}
+                        </Avatar>
 
-                        {/* Client Info */}
                         <Stack
                             gap={4}
                             style={{flex: 1, minWidth: 0}}
@@ -130,7 +143,7 @@ const ListItem: React.FC<Props> = ({client, onAddPlan, onView}) => {
                                 {/* Membership Status Badge */}
                                 <Badge
                                     color={getMembershipStatusColor(client.membership_status)}
-                                    radius="md"
+                                    radius="xl"
                                     size="xs"
                                     variant="light"
                                 >
@@ -160,72 +173,16 @@ const ListItem: React.FC<Props> = ({client, onAddPlan, onView}) => {
                             )}
                         </Stack>
                     </Group>
-                </Group>
-
-                {/* Action Buttons */}
-                <Group
-                    justify="space-between"
-                    mt="xs"
-                >
-                    <Group gap="xs">
-                        <Button
-                            leftSection={<IconCalendarPlus size={16} />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onAddPlan(client.id);
-                            }}
-                            radius="md"
-                            size="xs"
-                            variant="light"
-                        >
-                            Add Plan
-                        </Button>
-
-                        <Tooltip
-                            label="Message client"
-                            withArrow
-                        >
-                            <ActionIcon
-                                color="gray"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    notifications.show({
-                                        title: 'Coming Soon',
-                                        message: 'Chat functionality will be available in the next version!',
-                                        color: 'blue',
-                                        autoClose: 4000,
-                                    });
-                                }}
-                                radius="md"
-                                size="md"
-                                variant="light"
-                            >
-                                <IconMessageCircle2 size={18} />
-                            </ActionIcon>
-                        </Tooltip>
-                    </Group>
-
-                    <Tooltip
-                        label="View details"
-                        withArrow
-                    >
+                    {withArrow && (
                         <ActionIcon
-                            color="blue"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onView(client.id);
-                            }}
-                            radius="md"
-                            size="md"
+                            color="dark.2"
                             variant="subtle"
                         >
-                            <IconArrowRight size={18} />
+                            <IconChevronRight size={18} />
                         </ActionIcon>
-                    </Tooltip>
+                    )}
                 </Group>
             </Stack>
         </Card>
     );
 };
-
-export default ListItem;

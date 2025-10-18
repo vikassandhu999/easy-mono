@@ -1,86 +1,79 @@
-// ~/.config/zed/settings.json or .zed/settings.json
 {
-  // Agent/Copilot Chat
-  "agent": {
-    "default_profile": "write",
-    "default_model": {
-      "provider": "copilot_chat",
-      "model": "claude-sonnet-4.5"
-    }
-  },
-
-  // UI and fonts
-  "ui_font_size": 18,
-  "buffer_font_size": 15,
-  "theme": {
-    "mode": "system",
-    "light": "One Light",
-    "dark": "VSCode Dark Modern"
+  "project_panel": {
+    "dock": "left",
+    "scrollbar": "never"
   },
   "icon_theme": "Material Icon Theme",
-
-  // Disable inline edit predictions
-  "show_edit_predictions": false,
-
-  // SSH shortcuts
-  "ssh_connections": [{ "host": "github-work", "projects": [] }],
-
-  // Formatting
-  // Use Zed’s native setting; the VS Code-style keys are removed below.
+  "agent": {
+    "always_allow_tool_actions": true,
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "claude-haiku-4.5"
+    },
+    "model_parameters": []
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "vim_mode": false,
+  "theme": "Gruvbox Dark Hard",
+  "ui_font_size": 18,
+  "buffer_font_size": 15,
+  "formatter": null,
   "format_on_save": "on",
-
-  // Search and project scanning
-  // Zed respects .gitignore by default; these narrow behavior like VS Code search.exclude.
-  "file_scan_exclusions": [
-    // include defaults so we don’t wipe them when overriding
-    "**/.git",
-    "**/.svn",
-    "**/.hg",
-    "**/.jj",
-    "**/CVS",
-    "**/.DS_Store",
-    "**/Thumbs.db",
-    "**/.classpath",
-    "**/.settings",
-    // project-specific exclusions
-    "**/pnpm-lock.yaml"
-  ],
-  // If pnpm-lock.yaml should still appear in the tree but be excluded from search,
-  // remove it from file_scan_exclusions and put it here instead:
-  // "project.search.exclude": ["pnpm-lock.yaml"],
-
-  // Explorer nesting approximation
-  // Zed does not have 1:1 VS Code file-nesting config; this simulates grouping intent via hidden scan.
-  // If nesting visualization is desired in the future, adjust when Zed adds native support.
-  // (Kept as a comment to avoid adding unsupported keys)
-  // "project.file_nesting": {
-  //   "enabled": true,
-  //   "expand": false,
-  //   "patterns": {
-  //     "package.json": ["pnpm-workspace.yaml", "pnpm-lock.yaml"]
-  //   }
-  // },
-
   "languages": {
     "JavaScript": {
-      "formatter": { "code_actions": { "source.fixAll.eslint": true } }
+      "prettier": {
+        "allowed": false
+      },
+      "formatter": [
+        {
+          "code_action": "source.fixAll.eslint"
+        },
+        "prettier"
+      ],
+      "language_servers": ["typescript-language-server", "eslint", "!vtsls"]
     },
     "TypeScript": {
-      "formatter": { "code_actions": { "source.fixAll.eslint": true } }
+      "prettier": {
+        "allowed": false
+      },
+      "formatter": [
+        {
+          "code_action": "source.fixAll.eslint"
+        },
+        "prettier"
+      ],
+      "language_servers": ["typescript-language-server", "eslint", "!vtsls"]
     },
     "TSX": {
-      "formatter": { "code_actions": { "source.fixAll.eslint": true } }
+      "prettier": {
+        "allowed": false
+      },
+      "formatter": [
+        {
+          "code_action": "source.fixAll.eslint"
+        },
+        "prettier"
+      ],
+      "language_servers": ["typescript-language-server", "eslint", "!vtsls"]
     }
+  },
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "format": {
+          "enable": true
+        },
+        "workingDirectory": {
+          "mode": "auto"
+        }
+      }
+    },
+    "typescript-language-server": {}
   }
-
-  // Optional: if an ESLint rule subset is desired on save
-  // "lsp": {
-  //   "eslint": {
-  //     "settings": {
-  //       "codeActionOnSave": {
-  //         "rules": ["import/order"]
-  //       }
-  //     }
-  //   }
-  // }
 }

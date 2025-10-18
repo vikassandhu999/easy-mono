@@ -147,7 +147,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         {...field}
                         error={fieldState.error?.message}
                         placeholder="Name of exercise. e.g. Barbell Back Squat"
-                        radius="lg"
+                        radius="xl"
                         size="xl"
                         variant="filled"
                     />
@@ -175,7 +175,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 <Radio.Card
                                     key={option.value}
                                     p="xs"
-                                    radius="md"
+                                    radius="xl"
                                     value={option.value}
                                     w="fit-content"
                                 >
@@ -214,7 +214,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 <Radio.Card
                                     key={option.value}
                                     p="xs"
-                                    radius="md"
+                                    radius="xl"
                                     value={option.value}
                                     w="fit-content"
                                 >
@@ -250,7 +250,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                             field.onChange(value);
                         }}
                         placeholder="Select primary muscles"
-                        radius="lg"
+                        radius="xl"
                         size="sm"
                         value={field.value ?? []}
                         variant="filled"
@@ -286,7 +286,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 field.onChange(value);
                             }}
                             placeholder="Select secondary muscles"
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             value={field.value ?? []}
                             variant="filled"
@@ -316,7 +316,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 <Radio.Card
                                     key={option.value}
                                     p="xs"
-                                    radius="md"
+                                    radius="xl"
                                     value={option.value}
                                     w="fit-content"
                                 >
@@ -344,7 +344,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                             field.onChange(url ? {url, type: 'image'} : undefined);
                         }}
                         placeholder="https://example.com/exercise.jpg"
-                        radius="lg"
+                        radius="xl"
                         size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
@@ -356,7 +356,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
             <SegmentedControl
                 data={FORM_SECTIONS}
                 onChange={setSelectedTab}
-                radius="lg"
+                radius="xl"
                 size="lg"
                 value={selectedTab}
             ></SegmentedControl>
@@ -409,7 +409,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                                 flex={1}
                                                 onChange={(e) => handleUpdateInstruction(index, e.currentTarget.value)}
                                                 placeholder={`Describe what to do`}
-                                                radius="lg"
+                                                radius="xl"
                                                 size="md"
                                                 value={instruction}
                                                 variant="filled"
@@ -419,7 +419,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                         <ActionIcon
                                             color="red"
                                             onClick={() => handleRemoveInstruction(index)}
-                                            radius="lg"
+                                            radius="xl"
                                             size="md"
                                             variant="light"
                                         >
@@ -431,7 +431,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 <Button
                                     leftSection={<IconPlus size={16} />}
                                     onClick={handleAddInstruction}
-                                    radius="lg"
+                                    radius="xl"
                                     size="compact-sm"
                                     variant="light"
                                     w="max-content"
@@ -457,7 +457,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 label="Calories Per Minute"
                                 min={0}
                                 placeholder="e.g., 5.5"
-                                radius="lg"
+                                radius="xl"
                                 size="sm"
                                 step={0.1}
                                 value={field.value ?? undefined}
@@ -482,7 +482,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                     </Text>
                                 }
                                 multiple
-                                radius="lg"
+                                radius="xl"
                                 size="sm"
                                 value={field.value ?? []}
                                 variant="outline"
@@ -504,7 +504,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                         <Radio.Card
                                             key={option.value}
                                             p="xs"
-                                            radius="md"
+                                            radius="xl"
                                             value={option.value}
                                             w="fit-content"
                                         >
@@ -536,7 +536,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                         <Radio.Card
                                             key={option.value}
                                             p="xs"
-                                            radius="md"
+                                            radius="xl"
                                             value={option.value}
                                             w="fit-content"
                                         >

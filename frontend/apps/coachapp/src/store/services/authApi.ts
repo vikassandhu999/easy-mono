@@ -13,7 +13,7 @@ import {
     type VerifyPhoneLoginOTPRequest,
 } from '@/api/auth.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 export const authApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({

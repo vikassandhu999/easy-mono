@@ -1,4 +1,4 @@
-import {Modal} from '@mantine/core';
+import {Drawer} from '@mantine/core';
 import {FC} from 'react';
 
 import {Plan} from '@/api/plans';
@@ -20,11 +20,10 @@ export const PlanSelectModal: FC<PlanSelectModalProps> = ({opened, close, client
     };
 
     return (
-        <Modal
+        <Drawer
             onClose={close}
             opened={opened}
             padding={0}
-            size="lg"
             styles={{
                 body: {
                     height: '80vh',
@@ -45,6 +44,6 @@ export const PlanSelectModal: FC<PlanSelectModalProps> = ({opened, close, client
                 onClose={close}
                 onComplete={handleComplete}
             />
-        </Modal>
+        </Drawer>
     );
 };

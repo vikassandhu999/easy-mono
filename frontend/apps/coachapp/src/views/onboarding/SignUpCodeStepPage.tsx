@@ -6,7 +6,7 @@ import React, {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import type {AxiosBaseQueryError} from '@/store/services/apiSlice';
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import {Verify_zod, VerifyProps} from '@/api/users.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
@@ -107,7 +107,7 @@ const SignUpCodeStepPage: React.FC = () => {
                         length={6}
                         onChange={handleCodeChange}
                         placeholder="●"
-                        radius="sm"
+                        radius="xl"
                         size="lg"
                         styles={{
                             input: {
@@ -134,7 +134,7 @@ const SignUpCodeStepPage: React.FC = () => {
                     <Alert
                         color="red"
                         icon={<IconInfoCircle size="1rem" />}
-                        radius="md"
+                        radius="xl"
                         variant="light"
                     >
                         {error}
@@ -146,7 +146,7 @@ const SignUpCodeStepPage: React.FC = () => {
                     fullWidth
                     h={48}
                     loading={isSubmitting || isLoading}
-                    radius="sm"
+                    radius="xl"
                     rightSection={<IconArrowRight size={16} />}
                     size="md"
                     type="submit"

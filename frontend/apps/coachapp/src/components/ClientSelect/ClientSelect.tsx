@@ -1,10 +1,7 @@
 import {
     ActionIcon,
-    Avatar,
-    Badge,
     Box,
     Button,
-    Card,
     Checkbox,
     Chip,
     Divider,
@@ -20,6 +17,7 @@ import {useMutation} from '@tanstack/react-query';
 import {useEffect, useMemo, useState} from 'react';
 
 import {Client} from '@/api/clients.ts';
+import {ClientListItem} from '@/components/ClientListItem/ClientListItem';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
 
@@ -34,39 +32,24 @@ interface ClientCardProps {
 
 const ClientCard = ({client, isSelected, multiple = true, onToggleSelect}: ClientCardProps) => {
     return (
-        <Card
-            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${client.name}`}
-            onClick={() => onToggleSelect(client.id)}
-            p="sm"
-            role="button"
+        <Box
             style={{
-                backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'white',
-                borderColor: isSelected ? 'var(--mantine-color-blue-4)' : 'var(--mantine-color-gray-3)',
+                position: 'relative',
+                backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'transparent',
                 borderRadius: 8,
-                boxShadow: isSelected ? '0 2px 8px rgba(59, 130, 246, 0.15)' : 'none',
-                cursor: 'pointer',
-                transform: 'scale(1)',
-                transition: 'all 200ms ease',
+                transition: 'background-color 200ms ease',
             }}
-            styles={{
-                root: {
-                    '&:hover': {
-                        backgroundColor: isSelected ? 'var(--mantine-color-blue-1)' : 'var(--mantine-color-blue-0)',
-                        borderColor: 'var(--mantine-color-blue-4)',
-                        boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)',
-                        transform: 'scale(1.01)',
-                    },
-                },
-            }}
-            tabIndex={0}
-            withBorder
         >
-            <Group
-                align="center"
-                gap="sm"
-                wrap="nowrap"
-            >
-                {multiple && (
+            {multiple && (
+                <Box
+                    style={{
+                        position: 'absolute',
+                        left: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 10,
+                    }}
+                >
                     <Checkbox
                         checked={isSelected}
                         color="blue"
@@ -74,66 +57,16 @@ const ClientCard = ({client, isSelected, multiple = true, onToggleSelect}: Clien
                         onClick={(e) => e.stopPropagation()}
                         size="sm"
                     />
-                )}
-
-                <Avatar
-                    color="blue"
-                    variant="light"
-                />
-                <Box style={{flex: 1, minWidth: 0}}>
-                    <Text
-                        fw={600}
-                        lineClamp={1}
-                        mb={2}
-                        size="sm"
-                        style={{lineHeight: 1.3}}
-                    >
-                        {client.name}
-                    </Text>
-                    <Text
-                        c="dimmed"
-                        lineClamp={2}
-                        mb="xs"
-                        size="xs"
-                        style={{lineHeight: 1.4}}
-                    >
-                        {client.invitation_email || client.invitation_phone || 'No contact info'}
-                    </Text>
-                    <Group
-                        gap="xs"
-                        wrap="wrap"
-                    >
-                        <Badge
-                            color={
-                                client.membership_status === 'active'
-                                    ? 'green'
-                                    : client.membership_status === 'inactive'
-                                      ? 'gray'
-                                      : client.membership_status === 'paused'
-                                        ? 'yellow'
-                                        : 'red'
-                            }
-                            radius="sm"
-                            size="xs"
-                            style={{textTransform: 'capitalize'}}
-                            variant="light"
-                        >
-                            {client.membership_status}
-                        </Badge>
-                        {client.assigned_coach && (
-                            <Badge
-                                color="blue"
-                                radius="sm"
-                                size="xs"
-                                variant="outline"
-                            >
-                                Coach: {client.assigned_coach.name}
-                            </Badge>
-                        )}
-                    </Group>
                 </Box>
-            </Group>
-        </Card>
+            )}
+            <Box style={{paddingLeft: multiple ? 40 : 0}}>
+                <ClientListItem
+                    client={client}
+                    onSelect={onToggleSelect}
+                    withArrow={!multiple}
+                />
+            </Box>
+        </Box>
     );
 };
 
@@ -177,7 +110,7 @@ const SelectedItems = ({multiple = true, onClearAll, onRemove, selectedItems}: S
                             color="blue"
                             key={item.id}
                             onChange={() => onRemove(item.id)}
-                            radius="sm"
+                            radius="xl"
                             size="sm"
                             variant="filled"
                         >
@@ -237,13 +170,6 @@ const SearchAndFilter = ({
                 align="center"
                 justify="space-between"
             >
-                <Text
-                    fw={600}
-                    size="sm"
-                    style={{color: 'var(--mantine-color-gray-7)'}}
-                >
-                    Select client {multiple ? 's' : ''}
-                </Text>
                 {multiple && selectedCount && selectedCount > 0 && (
                     <Text
                         size="sm"
@@ -258,6 +184,7 @@ const SearchAndFilter = ({
             </Group>
 
             <TextInput
+                data-autofocus={false}
                 leftSection={<MagnifyingGlassIcon size={16} />}
                 onChange={(event) => {
                     setSearchTermState(event.currentTarget.value);
@@ -341,9 +268,12 @@ export default function ClientSelect({multiple = true, onComplete, selectedIds}:
             // Add to selection
             const newSelectedIds = multiple ? [...currentSelectedIds, id] : [id];
             setInternalSelectedIds(newSelectedIds);
-        }
-        if (!multiple) {
-            save.mutate();
+
+            // If single select, trigger complete immediately
+            if (!multiple) {
+                const selectedClients = clients.filter((c) => c.id === id);
+                onComplete?.(selectedClients);
+            }
         }
     };
 

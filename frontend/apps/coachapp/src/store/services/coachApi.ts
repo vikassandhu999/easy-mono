@@ -7,7 +7,7 @@ import {
     type UpdateCoachProps,
 } from '@/api/coaches.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 export const coachApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({

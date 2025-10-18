@@ -155,7 +155,7 @@ export default function ContentBuilder({
                                 color="red"
                                 leftSection={<IconRefresh size={16} />}
                                 onClick={() => contentQuery.refetch()}
-                                radius="lg"
+                                radius="xl"
                                 size="sm"
                                 variant="light"
                             >
@@ -205,7 +205,7 @@ export default function ContentBuilder({
                                 color="red"
                                 leftSection={<IconRefresh size={16} />}
                                 onClick={() => contentQuery.refetch()}
-                                radius="lg"
+                                radius="xl"
                                 size="sm"
                                 variant="light"
                             >

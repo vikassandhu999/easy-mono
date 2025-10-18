@@ -17,6 +17,7 @@ export const PlanSession_zod = z.object({
     plan_id: z.string().uuid(),
     business_id: z.string().uuid(),
     session_id: z.string().uuid(),
+    label: z.string().optional().nullable(),
     is_required: z.boolean(),
     notes: z.string().nullable().optional(),
     day_of_week: z.number().int().min(0).max(6).nullable().optional(),
@@ -61,6 +62,7 @@ export type PlanSessionList = z.infer<typeof PlanSessionList_zod>;
 
 export const CreatePlanSessionInput_zod = z.object({
     session_id: z.string().uuid(),
+    label: z.string().nullable().optional(),
     is_required: z.boolean().optional(),
     day_of_week: z.number().int().min(0).max(6).optional(),
     calendar_date: z.string().datetime().optional(),

@@ -8,7 +8,7 @@ import {
     type SendChatMessageProps,
 } from '@/api/chats.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 type ListChatsQueryParams = Omit<ListChatsProps, 'page'> | undefined;
 

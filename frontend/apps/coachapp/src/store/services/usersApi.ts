@@ -10,7 +10,7 @@ import {
     type VerifyProps,
 } from '@/api/users.ts';
 
-import {apiSlice} from './apiSlice';
+import {apiSlice} from './baseAPISlice';
 
 export const usersApi = apiSlice.injectEndpoints({
     endpoints: (build) => ({

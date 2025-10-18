@@ -174,7 +174,7 @@ export default function ChatsListPage() {
                         leftSection={<IconSearch size={16} />}
                         onChange={(e) => setQuickSearch(e.currentTarget.value)}
                         placeholder="Quick search by name..."
-                        radius="md"
+                        radius="xl"
                         value={quickSearch}
                         variant="filled"
                     />

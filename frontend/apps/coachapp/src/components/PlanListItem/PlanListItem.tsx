@@ -1,213 +1,152 @@
-import {ActionIcon, Badge, Card, Group, Menu, Stack, Text} from '@mantine/core';
-import {DotsThreeVerticalIcon, PencilSimpleIcon} from '@phosphor-icons/react';
-import {IconCalendar, IconClock, IconCopy} from '@tabler/icons-react';
+import {
+    ActionIcon,
+    Avatar,
+    Badge,
+    Box,
+    Card,
+    Group,
+    Menu,
+    MenuTarget,
+    Stack,
+    Text,
+    useMantineTheme,
+} from '@mantine/core';
+import {IconBarbell, IconCheese, IconCopy, IconDotsVertical, IconPencil} from '@tabler/icons-react';
 import React from 'react';
 
 import {Plan} from '@/api/plans';
-import {PLAN_DISCIPLINES, PLAN_STATUS} from '@/components/Configs';
+import {PLAN_STATUS} from '@/components/Configs';
 
 export type PlanListItemProps = {
-    onCopyToClient?: (planId: string) => void;
-    onEdit?: (planId: string) => void;
     onView: (planId: string) => void;
     plan: Plan;
 };
 
-const RECURRENCE_LABEL: Record<Plan['recurrence'], string> = {
-    calendar: 'Calendar',
-    daily: 'Daily',
-    weekly: 'Weekly',
-};
-
-const KIND_LABEL: Record<Plan['kind'], string> = {
-    client_copy: 'Client Copy',
-    template: 'Template',
-};
-
-function getDurationText(plan: Plan): string {
-    switch (plan.recurrence) {
-        case 'weekly':
-            return plan.duration_weeks ? `${plan.duration_weeks} weeks` : 'Weekly';
-        case 'daily':
-            return plan.duration_days ? `${plan.duration_days} days` : 'Daily';
-        case 'calendar':
-        default:
-            return 'Calendar';
-    }
-}
-
-const PlanListItem: React.FC<PlanListItemProps> = ({plan, onEdit, onView, onCopyToClient}) => {
-    const disciplineConfig = PLAN_DISCIPLINES[plan.discipline];
+const PlanListItem: React.FC<PlanListItemProps> = ({plan, onView}) => {
+    const theme = useMantineTheme();
     const statusConfig = PLAN_STATUS[plan.status];
 
-    const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        onEdit?.(plan.id);
-    };
+    const PlanIcon = plan.discipline === 'workout' ? IconBarbell : IconCheese;
 
-    const handleCopyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        onCopyToClient?.(plan.id);
+    const getActionIconColor = () => {
+        if (plan.discipline === 'workout') {
+            return 'orange';
+        } else if (plan.discipline === 'nutrition') {
+            return 'lime';
+        }
+        return 'gray';
     };
 
     return (
         <Card
+            bg="gray.0"
+            flex={1}
             onClick={() => onView(plan.id)}
             padding="md"
-            shadow="xs"
+            shadow="lg"
             style={{
-                borderRadius: 'var(--body-offset)',
+                borderRadius: theme.radius.lg,
+                overflow: 'hidden',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
-            }}
-            styles={{
-                root: {
-                    '&:hover': {
-                        boxShadow: 'var(--mantine-shadow-md)',
-                        transform: 'translateY(-1px)',
-                    },
-                },
+                transition: 'all 0.2s ease',
             }}
             withBorder
         >
             <Group
-                align="flex-start"
+                align={'center'}
                 gap="md"
-                wrap="nowrap"
             >
-                {/* Main content area */}
+                <Box
+                    style={{
+                        width: 56,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        flexShrink: 0,
+                    }}
+                >
+                    <Avatar
+                        color={getActionIconColor()}
+                        radius="xl"
+                        size={48}
+                        variant="light"
+                    >
+                        <PlanIcon
+                            size={24}
+                            stroke={2}
+                        />
+                    </Avatar>
+                </Box>
                 <Stack
                     flex={1}
                     gap="xs"
+                    w="100%"
                 >
-                    {/* Title + Primary Badges Row */}
                     <Group
                         gap="xs"
-                        wrap="wrap"
+                        justify="space-between"
                     >
                         <Text
-                            c="dark.9"
+                            c="dark.6"
                             fw={600}
                             size="md"
-                            style={{
-                                flex: '1 1 auto',
-                                lineHeight: 1.4,
-                                minWidth: 0,
-                            }}
                         >
                             {plan.name}
                         </Text>
+                    </Group>
+
+                    <Group gap="xs">
                         {statusConfig && (
                             <Badge
                                 color={statusConfig.color}
-                                radius="sm"
+                                radius="xl"
                                 size="sm"
-                                tt="capitalize"
                                 variant="light"
                             >
                                 {statusConfig.label}
                             </Badge>
                         )}
                     </Group>
-
-                    {/* Discipline + Type Row */}
-                    <Group
-                        gap="xs"
-                        wrap="wrap"
-                    >
-                        {disciplineConfig && (
-                            <Badge
-                                color={disciplineConfig.color}
-                                radius="sm"
-                                size="md"
-                                tt="capitalize"
-                                variant="dot"
-                            >
-                                {disciplineConfig.label}
-                            </Badge>
-                        )}
-                        <Badge
-                            color="gray"
-                            radius="sm"
-                            size="md"
-                            variant="outline"
-                        >
-                            {KIND_LABEL[plan.kind]}
-                        </Badge>
-                    </Group>
-
-                    {/* Metadata Row */}
-                    <Group
-                        c="dimmed"
-                        gap="lg"
-                        mt={4}
-                    >
-                        <Group
-                            gap={6}
-                            wrap="nowrap"
-                        >
-                            <IconClock size={14} />
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                {getDurationText(plan)}
-                            </Text>
-                        </Group>
-
-                        <Group
-                            gap={6}
-                            wrap="nowrap"
-                        >
-                            <IconCalendar size={14} />
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                {RECURRENCE_LABEL[plan.recurrence]}
-                            </Text>
-                        </Group>
-                    </Group>
                 </Stack>
-
-                {/* Action menu */}
                 <Menu
                     position="bottom-end"
                     shadow="md"
-                    withinPortal
+                    width={200}
                 >
-                    <Menu.Target>
+                    <MenuTarget>
                         <ActionIcon
-                            aria-label="Plan actions"
                             color="gray"
-                            onClick={(event) => event.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                             radius="xl"
                             size="lg"
-                            variant="subtle"
+                            variant="light"
                         >
-                            <DotsThreeVerticalIcon
-                                size={20}
-                                weight="bold"
-                            />
+                            <IconDotsVertical size={18} />
                         </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-                        {onEdit && (
-                            <Menu.Item
-                                leftSection={<PencilSimpleIcon size={16} />}
-                                onClick={handleEditClick}
-                            >
-                                Edit plan
-                            </Menu.Item>
-                        )}
-                        {plan.kind === 'template' && onCopyToClient && (
-                            <Menu.Item
-                                leftSection={<IconCopy size={16} />}
-                                onClick={handleCopyClick}
-                            >
-                                Copy to client
-                            </Menu.Item>
-                        )}
+                    </MenuTarget>
+
+                    <Menu.Dropdown>
+                        <Menu.Item
+                            leftSection={
+                                <IconCopy
+                                    color={theme.colors.cyan[6]}
+                                    size={14}
+                                />
+                            }
+                        >
+                            <Text size="md">Copy to Client</Text>
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={
+                                <IconPencil
+                                    color={theme.colors.indigo[6]}
+                                    size={14}
+                                />
+                            }
+                        >
+                            <Text size="md">Edit Plan</Text>
+                        </Menu.Item>
                     </Menu.Dropdown>
                 </Menu>
             </Group>

@@ -173,24 +173,8 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                                 }))}
                             fullWidth
                             onChange={(value) => setSelectedTab(value as ContentType)}
-                            radius="lg"
-                            size="sm"
-                            style={{
-                                minWidth: 'max-content',
-                            }}
-                            styles={{
-                                root: {
-                                    // backgroundColor: 'var(--mantine-color-gray-0)',
-                                },
-                                label: {
-                                    padding: '8px 16px',
-                                    fontSize: 'var(--footnote-font-size)',
-                                    fontWeight: 500,
-                                },
-                                indicator: {
-                                    boxShadow: 'var(--mantine-shadow-xs)',
-                                },
-                            }}
+                            radius="xl"
+                            size="lg"
                             value={selectedTab}
                         />
                     </ScrollArea>
@@ -204,7 +188,7 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                             flex={1}
                             onChange={(event) => setSearch(event.currentTarget.value)}
                             placeholder={config.searchPlaceholder}
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             value={search}
                             variant="filled"
@@ -213,7 +197,7 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                             onClick={() => {
                                 handleCreateClick(selectedTab as ContentType);
                             }}
-                            radius="lg"
+                            radius="xl"
                             rightSection={<IconPlus size={16} />}
                             size="sm"
                         >
@@ -234,7 +218,7 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                                 return (
                                     <Chip
                                         key={`scope-filter-${idx}`}
-                                        radius="lg"
+                                        radius="xl"
                                         size="sm"
                                         style={{textTransform: 'capitalize'}}
                                         value={filter}
@@ -273,7 +257,7 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                             color="red"
                             leftSection={<IconRefresh size={16} />}
                             onClick={() => refetch()}
-                            radius="lg"
+                            radius="xl"
                             size="sm"
                             variant="light"
                         >
@@ -332,7 +316,7 @@ export const ContentListView: FC<ContentListViewProps> = ({onContentClick}) => {
                     disabled={isFetchingNextPage}
                     mt="sm"
                     onClick={() => fetchNextPage()}
-                    radius="lg"
+                    radius="xl"
                     size="xs"
                     variant="subtle"
                 >

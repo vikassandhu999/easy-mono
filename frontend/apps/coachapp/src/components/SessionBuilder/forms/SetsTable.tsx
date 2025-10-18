@@ -84,7 +84,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                     <Table.Td style={{textAlign: 'center', verticalAlign: 'middle'}}>
                                         <Badge
                                             color="blue"
-                                            radius="sm"
+                                            radius="xl"
                                             size="md"
                                             variant="light"
                                         >
@@ -172,7 +172,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                         <ActionIcon
                                             color="red"
                                             onClick={() => removeSet(setIndex)}
-                                            radius="md"
+                                            radius="xl"
                                             size="sm"
                                             variant="subtle"
                                         >
@@ -187,7 +187,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
             ) : (
                 <Paper
                     p="md"
-                    radius="md"
+                    radius="xl"
                     style={{
                         backgroundColor: 'var(--mantine-color-gray-0)',
                         border: '2px dashed var(--mantine-color-gray-3)',
@@ -216,7 +216,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                         rest_seconds: {value: 60},
                     })
                 }
-                radius="md"
+                radius="xl"
                 size="xs"
                 variant={sets.length === 0 ? 'filled' : 'light'}
             >

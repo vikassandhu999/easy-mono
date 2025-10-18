@@ -31,7 +31,7 @@ export function DesktopHeader({onToggle, opened}: DesktopHeaderProps) {
                 <ActionIcon
                     aria-label="Search"
                     color="gray"
-                    radius="md"
+                    radius="xl"
                     size="lg"
                     style={{
                         minHeight: rem(44),
@@ -44,7 +44,7 @@ export function DesktopHeader({onToggle, opened}: DesktopHeaderProps) {
                 <ActionIcon
                     aria-label="Notifications"
                     color="gray"
-                    radius="md"
+                    radius="xl"
                     size="lg"
                     style={{
                         minHeight: rem(44),

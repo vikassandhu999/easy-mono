@@ -1,8 +1,8 @@
 import {Button, Center, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
-import {MagnifyingGlassIcon, PlusIcon} from '@phosphor-icons/react';
+import {MagnifyingGlassIcon} from '@phosphor-icons/react';
+import {IconTablePlus} from '@tabler/icons-react';
 import React from 'react';
-import {useNavigate} from 'react-router';
 
 import {PlanDiscipline} from '@/api/plans';
 import {PLAN_DISCIPLINES} from '@/components/Configs';
@@ -26,7 +26,6 @@ export default function PlansListHeader({
     ref,
 }: PlansPageProps) {
     const onSearchChangeDebounced = useDebouncedCallback(onSearchChange, 300);
-    const navigate = useNavigate();
 
     const disciplineOptions = Object.entries(PLAN_DISCIPLINES).map(([key, config]) => ({
         value: key,
@@ -54,21 +53,12 @@ export default function PlansListHeader({
                     actions={
                         <Group gap="xs">
                             <Button
-                                leftSection={<PlusIcon size={18} />}
-                                onClick={() => navigate('/sessions/new')}
-                                radius={9999}
-                                size="sm"
-                                variant="default"
-                            >
-                                Session
-                            </Button>
-                            <Button
-                                leftSection={<PlusIcon size={18} />}
+                                leftSection={<IconTablePlus size={18} />}
                                 onClick={onCreateClick}
-                                radius={9999}
+                                radius="xl"
                                 size="sm"
                             >
-                                Plan
+                                Create Plan
                             </Button>
                         </Group>
                     }
@@ -85,21 +75,8 @@ export default function PlansListHeader({
                         data={disciplineOptions}
                         fullWidth
                         onChange={(value) => onDisciplineChange?.(value as PlanDiscipline)}
-                        radius="md"
-                        size="sm"
-                        style={{
-                            minWidth: 'max-content',
-                        }}
-                        styles={{
-                            label: {
-                                padding: '8px 16px',
-                                fontSize: 'var(--footnote-font-size)',
-                                fontWeight: 500,
-                            },
-                            indicator: {
-                                boxShadow: 'var(--mantine-shadow-xs)',
-                            },
-                        }}
+                        radius="xl"
+                        size="lg"
                         value={discipline}
                     />
                 </ScrollArea>
@@ -109,6 +86,7 @@ export default function PlansListHeader({
                     m={0}
                     onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                     placeholder="Search plans..."
+                    radius="xl"
                     size="md"
                     styles={{
                         input: {
@@ -116,6 +94,7 @@ export default function PlansListHeader({
                         },
                         root: {flex: 1},
                     }}
+                    variant="filled"
                 />
             </Stack>
         </HeadingContainer>

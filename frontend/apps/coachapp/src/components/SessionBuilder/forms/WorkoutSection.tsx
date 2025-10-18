@@ -116,7 +116,7 @@ export default function WorkoutSection({
     return (
         <Paper
             p={0}
-            radius="md"
+            radius="xl"
             shadow="xs"
             style={{
                 border: '1px solid var(--mantine-color-gray-3)',
@@ -151,7 +151,7 @@ export default function WorkoutSection({
                     {/* Expand/Collapse Icon */}
                     <ActionIcon
                         color={isExpanded ? 'blue' : 'gray'}
-                        radius="md"
+                        radius="xl"
                         size="sm"
                         variant="subtle"
                     >
@@ -200,7 +200,7 @@ export default function WorkoutSection({
                         <ActionIcon
                             color="red"
                             onClick={onRemove}
-                            radius="md"
+                            radius="xl"
                             size="sm"
                             variant="light"
                         >
@@ -276,7 +276,7 @@ export default function WorkoutSection({
                         {exercises.length === 0 && (
                             <Paper
                                 p="lg"
-                                radius="md"
+                                radius="xl"
                                 style={{
                                     backgroundColor: 'var(--mantine-color-gray-0)',
                                     border: '2px dashed var(--mantine-color-gray-3)',
@@ -358,7 +358,7 @@ export default function WorkoutSection({
                                     title: 'Select Exercise',
                                 });
                             }}
-                            radius="md"
+                            radius="xl"
                             size="xs"
                             variant={exercises.length === 0 ? 'filled' : 'light'}
                         >

@@ -1,9 +1,5 @@
 import {z} from 'zod';
 
-import {Result} from '@/utils/error.ts';
-
-import {authedClient} from './auth';
-
 export const UpdateCoach_zod = z.object({
     available_days: z
         .array(z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']))
@@ -61,36 +57,3 @@ export interface Coach {
 export type UpdateBusinessPreferencesProps = z.infer<typeof UpdateBusinessPreferences_zod>;
 
 export type UpdateCoachProps = z.infer<typeof UpdateCoach_zod>;
-
-// Coach API Functions matching backend routes
-export const CoachesAPI = {
-    // GET /v1/coach/profile
-    getCoach: async (): Promise<Result<Coach>> => {
-        try {
-            const response = await authedClient.get('/v1/coach/profile');
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // PUT /v1/coach/business/preferences
-    updateBusinessPreferences: async (data: UpdateBusinessPreferencesProps): Promise<Result<BusinessPreferences>> => {
-        try {
-            const response = await authedClient.put('/v1/coach/business/preferences', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-
-    // PATCH /v1/coach/profile
-    updateCoach: async (data: UpdateCoachProps): Promise<Result<Coach>> => {
-        try {
-            const response = await authedClient.patch('/v1/coach/profile', data);
-            return Result.success(response.data);
-        } catch (error: unknown) {
-            return Result.failure(error);
-        }
-    },
-};

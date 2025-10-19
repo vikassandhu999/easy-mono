@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router';
 
-import {CreatePlanSessionInput, PlanSession} from '@/api/plan_sessions';
+import {CreatePlanSessionInput, PlanSession} from '@/store/services/plan_sessions';
 import {DisplayError} from '@/components/containers/DisplayError';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
@@ -15,7 +15,7 @@ import {
     useCreatePlanSessionMutation,
     useDeletePlanSessionMutation,
     useListPlanSessionsQuery,
-} from '@/store/services/planSessionsApi';
+} from '@/store/services/plan_sessions';
 
 import Header from '../layouts/Header';
 import MealSelect from '../MealSelect/MealSelect';

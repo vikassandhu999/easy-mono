@@ -1,16 +1,14 @@
-import {Drawer} from '@mantine/core';
+import {Box, Drawer, Stack, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import React, {useCallback, useMemo} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
-import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
 import PlanDisciplineSelect from '@/components/PlanForm/PlanDisciplineSelect';
 import {PlanForm} from '@/components/PlanForm/PlanForm';
-import {useCreatePlan} from '@/store/services/plans';
+import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/store/services/plans';
 
 export type PlanCreateDrawerView = 'create-plan' | 'select-discipline';
 
@@ -64,58 +62,104 @@ export const PlanCreateDrawer = React.memo(function CreateDrawer() {
             onClose={goBack}
             opened={true}
             position="right"
+            size="100%"
+            styles={{
+                body: {
+                    padding: 0,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+                content: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+            }}
             withCloseButton={false}
         >
-            {!selectedDiscipline ? (
-                <PagePaper>
-                    <HeadingContainer
-                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
-                        withBorder={false}
-                    >
-                        <Header
-                            onBack={goBack}
-                            title="Create plan"
-                        />
-                    </HeadingContainer>
+            <Box
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    backgroundColor: 'white',
+                }}
+            >
+                {/* Header */}
+                <HeadingContainer
+                    style={{
+                        paddingBlock: 'var(--ce-size-md)',
+                        paddingInline: 'var(--ce-size-lg)',
+                        flexShrink: 0,
+                    }}
+                >
+                    <Header
+                        onBack={goBack}
+                        title={!selectedDiscipline ? 'Create Plan' : 'Plan Details'}
+                    />
+                </HeadingContainer>
 
-                    <div style={{flex: 1, overflow: 'auto'}}>
-                        <PaddingContainer>
-                            <PlanDisciplineSelect
-                                onSelect={(discipline) =>
-                                    setSearchParams(
-                                        (prev) => {
-                                            prev.set('discipline', discipline);
-                                            return prev;
-                                        },
-                                        {replace: true},
-                                    )
-                                }
-                            />
+                {/* Content Area - Scrollable */}
+                <Box
+                    style={{
+                        flex: 1,
+                        overflow: 'auto',
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                    }}
+                >
+                    {!selectedDiscipline ? (
+                        <PaddingContainer
+                            paddingX="lg"
+                            paddingY="lg"
+                        >
+                            <Stack gap="lg">
+                                {/* Introduction Section */}
+                                <Stack gap="xs">
+                                    <Text
+                                        fw={600}
+                                        size="lg"
+                                    >
+                                        Choose Plan Type
+                                    </Text>
+                                    <Text
+                                        c="dimmed"
+                                        size="sm"
+                                    >
+                                        Select the type of plan you want to create for your clients.
+                                    </Text>
+                                </Stack>
+
+                                {/* Discipline Selection */}
+                                <PlanDisciplineSelect
+                                    onSelect={(discipline) =>
+                                        setSearchParams(
+                                            (prev) => {
+                                                prev.set('discipline', discipline);
+                                                return prev;
+                                            },
+                                            {replace: true},
+                                        )
+                                    }
+                                />
+                            </Stack>
                         </PaddingContainer>
-                    </div>
-                </PagePaper>
-            ) : (
-                <PagePaper>
-                    <HeadingContainer
-                        style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
-                        withBorder={false}
-                    >
-                        <Header
-                            onBack={goBack}
-                            title="Create plan"
-                        />
-                    </HeadingContainer>
-
-                    <PaddingContainer>
-                        <PlanForm
-                            discipline={selectedDiscipline}
-                            onSubmit={handleSubmit}
-                            plan={{}}
-                            submitText={isCreatingPlan ? 'Creating…' : 'Create plan'}
-                        />
-                    </PaddingContainer>
-                </PagePaper>
-            )}
+                    ) : (
+                        <Box style={{backgroundColor: 'white'}}>
+                            <PaddingContainer
+                                paddingX="lg"
+                                paddingY="lg"
+                            >
+                                <PlanForm
+                                    discipline={selectedDiscipline}
+                                    onSubmit={handleSubmit}
+                                    plan={{}}
+                                    submitText={isCreatingPlan ? 'Creating…' : 'Create Plan'}
+                                />
+                            </PaddingContainer>
+                        </Box>
+                    )}
+                </Box>
+            </Box>
         </Drawer>
     );
 });

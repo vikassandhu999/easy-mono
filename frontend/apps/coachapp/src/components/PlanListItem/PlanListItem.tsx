@@ -1,9 +1,9 @@
 import {
     ActionIcon,
-    Avatar,
     Badge,
     Box,
     Card,
+    Divider,
     Group,
     Menu,
     MenuTarget,
@@ -11,11 +11,19 @@ import {
     Text,
     useMantineTheme,
 } from '@mantine/core';
-import {IconBarbell, IconCheese, IconCopy, IconDotsVertical, IconPencil} from '@tabler/icons-react';
+import {
+    IconCalendar,
+    IconCopy,
+    IconDotsVertical,
+    IconEdit,
+    IconTrash,
+    IconUserPlus,
+    IconUsers,
+} from '@tabler/icons-react';
 import React from 'react';
 
-import {Plan} from '@/api/plans';
 import {PLAN_STATUS} from '@/components/Configs';
+import {Plan} from '@/store/services/plans';
 
 export type PlanListItemProps = {
     onView: (planId: string) => void;
@@ -26,126 +34,237 @@ const PlanListItem: React.FC<PlanListItemProps> = ({plan, onView}) => {
     const theme = useMantineTheme();
     const statusConfig = PLAN_STATUS[plan.status];
 
-    const PlanIcon = plan.discipline === 'workout' ? IconBarbell : IconCheese;
-
-    const getActionIconColor = () => {
-        if (plan.discipline === 'workout') {
-            return 'orange';
-        } else if (plan.discipline === 'nutrition') {
-            return 'lime';
+    // Format duration display
+    const getDurationText = () => {
+        if (plan.duration_weeks) {
+            return `${plan.duration_weeks} ${plan.duration_weeks === 1 ? 'week' : 'weeks'}`;
         }
-        return 'gray';
+        if (plan.duration_days) {
+            return `${plan.duration_days} ${plan.duration_days === 1 ? 'day' : 'days'}`;
+        }
+        return 'Ongoing';
     };
 
     return (
         <Card
-            bg="gray.0"
-            flex={1}
             onClick={() => onView(plan.id)}
             padding="md"
-            shadow="lg"
             style={{
-                borderRadius: theme.radius.lg,
-                overflow: 'hidden',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                borderBottom: `1px solid ${theme.colors.gray[4]}`,
+                transition: 'all 0.15s ease',
             }}
-            withBorder
+            styles={{
+                root: {
+                    '&:hover': {
+                        backgroundColor: theme.colors.gray[1],
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    },
+                    '&:active': {
+                        transform: 'translateY(0) scale(0.99)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                    },
+                },
+            }}
         >
             <Group
-                align={'center'}
-                gap="md"
+                justify={'space-between'}
+                style={{flex: 1, minWidth: 0}}
+                w="100%"
+                wrap={'nowrap'}
             >
-                <Box
-                    style={{
-                        width: 56,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        flexShrink: 0,
-                    }}
-                >
-                    <Avatar
-                        color={getActionIconColor()}
-                        radius="xl"
-                        size={48}
-                        variant="light"
-                    >
-                        <PlanIcon
-                            size={24}
-                            stroke={2}
-                        />
-                    </Avatar>
-                </Box>
                 <Stack
-                    flex={1}
-                    gap="xs"
-                    w="100%"
+                    gap="sm"
+                    style={{flex: 1, minWidth: 0}}
                 >
-                    <Group
+                    {/* Header Row - Name, Status */}
+                    <Stack
                         gap="xs"
-                        justify="space-between"
+                        style={{flex: 1, minWidth: 0}}
                     >
-                        <Text
-                            c="dark.6"
-                            fw={600}
-                            size="md"
+                        <Group
+                            gap="xs"
+                            wrap="nowrap"
                         >
-                            {plan.name}
-                        </Text>
-                    </Group>
-
-                    <Group gap="xs">
-                        {statusConfig && (
-                            <Badge
-                                color={statusConfig.color}
-                                radius="xl"
-                                size="sm"
-                                variant="light"
+                            <Text
+                                fw={600}
+                                size="md"
+                                style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
                             >
-                                {statusConfig.label}
-                            </Badge>
+                                {plan.name}
+                            </Text>
+
+                            {/* Status Badge */}
+                            {statusConfig && (
+                                <Badge
+                                    color={statusConfig.color}
+                                    radius="xl"
+                                    size="xs"
+                                    variant="light"
+                                >
+                                    {statusConfig.label}
+                                </Badge>
+                            )}
+                        </Group>
+                        <Box maw="60%">
+                            <Text
+                                c="dimmed"
+                                lineClamp={1}
+                                size="sm"
+                                style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                                truncate="end"
+                            >
+                                {plan.description}
+                            </Text>
+                        </Box>
+                    </Stack>
+
+                    {/* Meta Information Row */}
+                    <Group
+                        gap="md"
+                        wrap="wrap"
+                    >
+                        {/* Client Count (for templates) */}
+                        {plan.kind === 'template' && (
+                            <Group gap={8}>
+                                <IconUsers
+                                    color={theme.colors.gray[6]}
+                                    size={14}
+                                />
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                >
+                                    20 clients
+                                </Text>
+                            </Group>
+                        )}
+
+                        {/* Duration */}
+                        <Group gap={8}>
+                            <IconCalendar
+                                color={theme.colors.gray[6]}
+                                size={14}
+                            />
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                {getDurationText()}
+                            </Text>
+                        </Group>
+
+                        {/* Date Range (if calendar-based) */}
+                        {plan.recurrence === 'calendar' && plan.start_date && (
+                            <>
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                >
+                                    •
+                                </Text>
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                >
+                                    {new Date(plan.start_date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                    })}
+                                    {plan.end_date &&
+                                        ` - ${new Date(plan.end_date).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+
+                                            year: 'numeric',
+                                        })}`}
+                                </Text>
+                            </>
                         )}
                     </Group>
                 </Stack>
+
                 <Menu
                     position="bottom-end"
                     shadow="md"
-                    width={200}
+                    width={180}
                 >
                     <MenuTarget>
                         <ActionIcon
-                            color="gray"
                             onClick={(e) => e.stopPropagation()}
-                            radius="xl"
-                            size="lg"
-                            variant="light"
+                            radius={9999}
+                            size="xl"
+                            style={{
+                                color: theme.colors.gray[6],
+                                flexShrink: 0,
+                            }}
+                            variant="subtle"
                         >
-                            <IconDotsVertical size={18} />
+                            <IconDotsVertical
+                                size={18}
+                                stroke={1.5}
+                            />
                         </ActionIcon>
                     </MenuTarget>
 
                     <Menu.Dropdown>
                         <Menu.Item
                             leftSection={
-                                <IconCopy
-                                    color={theme.colors.cyan[6]}
-                                    size={14}
+                                <IconUserPlus
+                                    color={theme.colors.gray[6]}
+                                    size={16}
+                                    stroke={1.5}
                                 />
                             }
                         >
-                            <Text size="md">Copy to Client</Text>
+                            Assign to Client
                         </Menu.Item>
                         <Menu.Item
                             leftSection={
-                                <IconPencil
-                                    color={theme.colors.indigo[6]}
-                                    size={14}
+                                <IconCopy
+                                    color={theme.colors.gray[6]}
+                                    size={16}
+                                    stroke={1.5}
                                 />
                             }
                         >
-                            <Text size="md">Edit Plan</Text>
+                            Duplicate Plan
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={
+                                <IconEdit
+                                    color={theme.colors.gray[6]}
+                                    size={16}
+                                    stroke={1.5}
+                                />
+                            }
+                        >
+                            Edit Details
+                        </Menu.Item>
+
+                        <Divider my="xs" />
+
+                        <Menu.Item
+                            color="red"
+                            leftSection={
+                                <IconTrash
+                                    color={theme.colors.red[6]}
+                                    size={16}
+                                    stroke={1.5}
+                                />
+                            }
+                        >
+                            Delete Plan
                         </Menu.Item>
                     </Menu.Dropdown>
                 </Menu>

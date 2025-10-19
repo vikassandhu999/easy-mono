@@ -1,14 +1,13 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type CreateSession,
     type ListSessions,
     type Session,
     type SessionListResponse,
     type UpdateSession,
-} from '@/api/sessions';
+} from './session_definition';
 
-import {apiSlice} from './baseAPISlice';
-
-export const sessionsApi = apiSlice.injectEndpoints({
+export const sessionsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         // List session definitions
         listSessions: build.query<SessionListResponse, ListSessions | undefined>({

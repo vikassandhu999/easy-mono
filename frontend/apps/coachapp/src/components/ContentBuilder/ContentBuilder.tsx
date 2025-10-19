@@ -4,10 +4,15 @@ import {skipToken} from '@reduxjs/toolkit/query';
 import {IconRefresh} from '@tabler/icons-react';
 import {useCallback, useState} from 'react';
 
-import {Content, ContentType} from '@/api/contents';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {useCreateContentMutation, useGetContentQuery, useUpdateContentMutation} from '@/store/services/contentsApi';
+import {
+    Content,
+    ContentType,
+    useCreateContentMutation,
+    useGetContentQuery,
+    useUpdateContentMutation,
+} from '@/store/services/contents';
 
 import ContentCreateForm from './ContentCreateForm';
 import {buildContentPayload, ContentBuildError, ContentFormValues} from './contentForm';

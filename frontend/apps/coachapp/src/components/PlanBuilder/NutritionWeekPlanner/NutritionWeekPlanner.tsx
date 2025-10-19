@@ -2,8 +2,8 @@ import {SegmentedControl, Stack, useMantineTheme} from '@mantine/core';
 import {useMediaQuery} from '@mantine/hooks';
 import {useMemo, useState} from 'react';
 
-import {PlanSession} from '@/api/plan_sessions';
-import {Plan} from '@/api/plans';
+import {PlanSession} from '@/store/services/plan_sessions';
+import {Plan} from '@/store/services/plans';
 
 import type {AddSessionContext} from '../../PlanSessionsView';
 

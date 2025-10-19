@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 
-import {PlanSession} from '@/api/plan_sessions';
-import {Plan} from '@/api/plans';
+import {PlanSession} from '@/store/services/plan_sessions';
+import {Plan} from '@/store/services/plans';
 
 import {DAY_NAMES} from './constants';
 

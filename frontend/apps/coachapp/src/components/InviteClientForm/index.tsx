@@ -5,7 +5,7 @@ import {IconSend} from '@tabler/icons-react';
 import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
-import {CreateClient_zod, CreateClientProps} from '@/api/clients.ts';
+import {CreateClient_zod, CreateClientProps} from '@/store/services/clients';
 import {FormSection} from '@/components/containers/FormSection';
 
 import CETextArea from '../CETextArea';

@@ -7,9 +7,9 @@ import React, {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {BusinessAPI, CreateBusiness_zod, CreateBusinessProps} from '@/api/business.ts';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
+import {BusinessAPI, CreateBusiness_zod, CreateBusinessProps} from '@/store/services/business';
 
 const createBusinessResolver = zodResolver(CreateBusiness_zod);
 

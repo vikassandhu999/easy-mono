@@ -10,7 +10,7 @@ import {
 } from '@tabler/icons-react';
 import {FC} from 'react';
 
-import {Content} from '@/api/contents';
+import {Content} from '@/store/services/contents';
 
 const CATEGORY_COLORS: MantineColor[] = ['blue', 'green', 'orange', 'grape'];
 

@@ -4,11 +4,12 @@ import {Barbell, Coffee, ForkKnife, Moon, PencilSimpleIcon, TrashIcon, UserPlusI
 import {IconClock, IconDotsVertical, IconTimeDuration0} from '@tabler/icons-react';
 import React from 'react';
 
-import {PlanSession} from '@/api/plan_sessions';
+import {MenuItem} from '@/components/Menu';
 import {
     getSessionTypeBadgeColor,
     getSessionTypeLabel as getSessionTypeLabelFromConfig,
 } from '@/components/PlanBuilder/sessionTypes';
+import {PlanSession} from '@/store/services/plan_sessions';
 
 import {getScheduleWindow, getSessionDuration} from './utils';
 
@@ -224,42 +225,27 @@ export default function PlanSessionCard({onAssign, onDelete, onEdit, planSession
                         </Menu.Target>
                         <Menu.Dropdown>
                             {onAssign && (
-                                <Menu.Item
-                                    leftSection={<UserPlusIcon size={16} />}
+                                <MenuItem
+                                    icon={<UserPlusIcon size={16} />}
+                                    label="Assign"
                                     onClick={() => onAssign(planSession.id)}
-                                    styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
-                                    }}
-                                >
-                                    Assign
-                                </Menu.Item>
+                                />
                             )}
                             {onEdit && (
-                                <Menu.Item
-                                    leftSection={<PencilSimpleIcon size={16} />}
+                                <MenuItem
+                                    icon={<PencilSimpleIcon size={16} />}
+                                    label="Edit"
                                     onClick={() => onEdit(planSession.id)}
-                                    styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
-                                    }}
-                                >
-                                    Edit
-                                </Menu.Item>
+                                />
                             )}
                             {(onAssign || onEdit) && onDelete && <Menu.Divider />}
                             {onDelete && (
-                                <Menu.Item
-                                    color="red"
-                                    leftSection={<TrashIcon size={16} />}
+                                <MenuItem
+                                    destructive
+                                    icon={<TrashIcon size={16} />}
+                                    label="Remove"
                                     onClick={handleDelete}
-                                    styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
-                                    }}
-                                >
-                                    Remove
-                                </Menu.Item>
+                                />
                             )}
                         </Menu.Dropdown>
                     </Menu>

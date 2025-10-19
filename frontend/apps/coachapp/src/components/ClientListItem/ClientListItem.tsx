@@ -2,7 +2,7 @@ import {ActionIcon, Avatar, Badge, Card, Group, Stack, Text, useMantineTheme} fr
 import {IconChevronRight, IconMail} from '@tabler/icons-react';
 import React from 'react';
 
-import {Client, MembershipStatus} from '@/api/clients.ts';
+import {Client, MembershipStatus} from '@/store/services/clients';
 
 interface Props {
     client: Client;

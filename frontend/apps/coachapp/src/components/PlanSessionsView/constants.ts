@@ -1,4 +1,4 @@
-import {PlanDiscipline} from '@/api/plans';
+import {PlanDiscipline} from '@/store/services/plans';
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 

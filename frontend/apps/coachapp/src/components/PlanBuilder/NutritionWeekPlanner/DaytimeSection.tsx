@@ -1,6 +1,6 @@
 import {Box, Grid, GridCol, Stack, Text, useMantineTheme} from '@mantine/core';
 
-import {PlanSession} from '@/api/plan_sessions';
+import {PlanSession} from '@/store/services/plan_sessions';
 
 import {AddSlotButton} from './AddSlotButton';
 import SessionSlotCard from './SessionSlotCard';

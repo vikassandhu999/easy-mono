@@ -1,4 +1,4 @@
-import {Content, ContentType} from '@/api/contents';
+import {Content, ContentType} from '@/store/services/contents';
 
 /**
  * Type guards for content types

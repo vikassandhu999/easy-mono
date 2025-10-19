@@ -1,7 +1,7 @@
 import {BarbellIcon, CoffeeIcon, ForkKnifeIcon, MoonIcon} from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 
-import {PlanSession} from '@/api/plan_sessions';
+import {PlanSession} from '@/store/services/plan_sessions';
 
 export const MEAL_DAYTIMES = [
     {

@@ -1,7 +1,7 @@
 import {Box, Stack, Text} from '@mantine/core';
 import {useMemo} from 'react';
 
-import {PlanSession} from '@/api/plan_sessions';
+import {PlanSession} from '@/store/services/plan_sessions';
 
 import type {AddSessionContext} from '../../PlanSessionsView';
 

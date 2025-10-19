@@ -1,3 +1,7 @@
+import {Result} from '@/utils/error.ts';
+
+import {authedClient} from '../auth';
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type Chat,
     type ChatMessage,
@@ -6,10 +10,7 @@ import {
     type ListChatsProps,
     type ListChatsResult,
     type SendChatMessageProps,
-} from '@/api/chats.ts';
-
-import {apiSlice} from './baseAPISlice';
-
+} from './chat_definition';
 type ListChatsQueryParams = Omit<ListChatsProps, 'page'> | undefined;
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -36,7 +37,7 @@ const getNextChatPage = (lastPage: ListChatsResult) => {
     return lastChat?.last_message_at ? new Date(lastChat.last_message_at).getTime() : undefined;
 };
 
-export const chatsApi = apiSlice.injectEndpoints({
+export const chatsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         listChats: build.infiniteQuery<ListChatsResult, ListChatsQueryParams, number | undefined>({
             query: ({queryArg, pageParam}) => ({
@@ -157,3 +158,26 @@ export const {
     useDeleteMessageMutation,
     useMarkChatAsReadMutation,
 } = chatsApi;
+
+// Direct API functions for non-RTK Query usage (e.g., ChatViewPage)
+export const ChatsDirectAPI = {
+    getChat: async (chatId: string): Promise<Result<Chat>> => {
+        try {
+            const response = await authedClient.get(`/v1/coach/chats/${chatId}`);
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+    listChatMessages: async (
+        chatId: string,
+        params?: ListChatMessagesProps,
+    ): Promise<Result<ListChatMessagesResult>> => {
+        try {
+            const response = await authedClient.get(`/v1/coach/chats/${chatId}/messages`, {params});
+            return Result.success(response.data);
+        } catch (error: unknown) {
+            return Result.failure(error);
+        }
+    },
+};

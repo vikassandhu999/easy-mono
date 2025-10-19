@@ -4,7 +4,7 @@ import {PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
 import {IconClock, IconDotsVertical, IconTimeDuration0} from '@tabler/icons-react';
 import React from 'react';
 
-import {PlanSession} from '@/api/plan_sessions';
+import {PlanSession} from '@/store/services/plan_sessions';
 import {
     getSessionTypeBadgeColor,
     getSessionTypeLabel as getSessionTypeLabelFromConfig,

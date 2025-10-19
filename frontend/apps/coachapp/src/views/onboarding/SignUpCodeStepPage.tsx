@@ -8,10 +8,10 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {Verify_zod, VerifyProps} from '@/api/users.ts';
+import {Verify_zod, VerifyProps} from '@/store/services/users';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
-import {useVerifySignupMutation} from '@/store/services/usersApi';
+import {useVerifySignupMutation} from '@/store/services/users';
 
 const verifyResolver = zodResolver(Verify_zod);
 

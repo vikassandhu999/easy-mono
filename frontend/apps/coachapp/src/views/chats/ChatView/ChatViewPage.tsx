@@ -3,8 +3,8 @@ import {WebSocketMessage} from '@easy/websocket';
 import {useMemo} from 'react';
 import {useParams} from 'react-router';
 
-import {ChatsAPI} from '@/api/chats.ts';
 import {useApp} from '@/providers/AppProvider';
+import {ChatsDirectAPI} from '@/store/services/chats';
 
 function ChatViewPage() {
     const {chatId} = useParams();
@@ -13,7 +13,7 @@ function ChatViewPage() {
     const chatApi = useMemo<IChatAPI>(() => {
         const api: IChatAPI & {unsubs: (() => void)[]} = {
             getChat: async function (): Promise<Chat> {
-                const res = await ChatsAPI.getChat(chatId);
+                const res = await ChatsDirectAPI.getChat(chatId!);
                 if (res.isError) {
                     throw res.getError();
                 }
@@ -32,7 +32,7 @@ function ChatViewPage() {
                     limit: number;
                 },
             ): Promise<{messages: Message[]}> {
-                const res = await ChatsAPI.listChatMessages(chatId, {
+                const res = await ChatsDirectAPI.listChatMessages(chatId, {
                     last_message_id: params.lastMessageID,
                     page_size: params.limit,
                 });

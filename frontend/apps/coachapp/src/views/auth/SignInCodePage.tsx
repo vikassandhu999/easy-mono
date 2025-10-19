@@ -7,10 +7,10 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {SignInCodeRequest} from '@/api/auth';
+import {SignInCodeRequest} from '@/store/services/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
-import {useSignInCodeMutation} from '@/store/services/authApi';
+import {useSignInCodeMutation} from '@/store/services/auth';
 
 const SignInCodePage: React.FC = () => {
     const {saveAuthToken} = useAuth();

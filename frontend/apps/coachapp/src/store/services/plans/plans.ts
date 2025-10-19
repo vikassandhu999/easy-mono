@@ -1,6 +1,5 @@
-import {CreatePlanProps, Plan, PlansList, PlansListOpts, UpdatePlanProps} from '@/api/plans';
-
-import {apiSlice} from './baseAPISlice';
+import {baseAPISlice} from '../baseAPISlice';
+import {CreatePlanProps, Plan, PlansList, PlansListOpts, UpdatePlanProps} from './plans_definition';
 
 export interface CopyPlanToClientProps {
     allow_client_edits?: boolean;
@@ -54,7 +53,7 @@ const getNextPlanPage = (lastPage: PlansList, lastPageParam: number) => {
     return currentPage + 1;
 };
 
-export const plansApi = apiSlice.injectEndpoints({
+export const plansApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createPlan: build.mutation<Plan, CreatePlanProps>({
             query: (body) => ({

@@ -1,4 +1,4 @@
-import {CreateContentProps} from '@/api/contents.ts';
+import {CreateContentProps} from '@/store/services/contents';
 
 // DEPRECATED: This component is not actively used. Use ContentBuilder instead.
 export interface FormValues extends CreateContentProps {

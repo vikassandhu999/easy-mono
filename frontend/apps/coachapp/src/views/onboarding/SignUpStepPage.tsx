@@ -9,9 +9,9 @@ import {createSearchParams, useNavigate} from 'react-router';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {SignUp_zod, SignUpProps} from '@/api/users.ts';
+import {SignUp_zod, SignUpProps} from '@/store/services/users';
 import AuthLayout from '@/components/layouts/AuthLayout';
-import {useSignUpMutation} from '@/store/services/usersApi';
+import {useSignUpMutation} from '@/store/services/users';
 
 const signUpResolver = zodResolver(SignUp_zod);
 

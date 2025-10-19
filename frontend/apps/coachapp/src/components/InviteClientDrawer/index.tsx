@@ -1,12 +1,12 @@
 import {Drawer, useDrawersStack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 
-import {type Client} from '@/api/clients.ts';
+import {type Client} from '@/store/services/clients';
 import HeadingContainer from '@/components/containers/HeaderContainer.tsx';
 import PaddingContainer from '@/components/containers/PaddingContainer.tsx';
 import PagePaper from '@/components/containers/PagePaper.tsx';
 import {InviteClientForm} from '@/components/InviteClientForm';
-import {useCreateClientMutation} from '@/store/services/clientsApi';
+import {useCreateClientMutation} from '@/store/services/clients';
 
 import Header from '../layouts/Header.tsx';
 

@@ -2,7 +2,7 @@ import {Badge, Card, Group, Image, MantineColor, Stack, Text} from '@mantine/cor
 import {IconClock} from '@tabler/icons-react';
 import {FC} from 'react';
 
-import {Content} from '@/api/contents';
+import {Content} from '@/store/services/contents';
 
 import RecipeSampleImage from '../../../public/recipe_placeholder.png';
 

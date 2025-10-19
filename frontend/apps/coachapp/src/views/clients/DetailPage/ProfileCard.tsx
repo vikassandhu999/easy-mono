@@ -1,7 +1,7 @@
 import {Avatar, Badge, Box, Card, Group, Stack, Text} from '@mantine/core';
 import {IconMail, IconPhone} from '@tabler/icons-react';
 
-import {Client} from '@/api/clients.ts';
+import {Client} from '@/store/services/clients';
 
 interface ProfileCardProps {
     client: Client;

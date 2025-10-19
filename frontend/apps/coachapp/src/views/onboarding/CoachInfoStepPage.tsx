@@ -7,9 +7,9 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {UpdateCoach_zod, UpdateCoachProps} from '@/api/coaches.ts';
+import {UpdateCoach_zod, UpdateCoachProps} from '@/store/services/coach';
 import AuthLayout from '@/components/layouts/AuthLayout';
-import {useUpdateCoachMutation} from '@/store/services/coachApi';
+import {useUpdateCoachMutation} from '@/store/services/coach';
 
 const updateCoachResolver = zodResolver(UpdateCoach_zod);
 

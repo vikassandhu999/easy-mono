@@ -1,14 +1,12 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Stack, Text} from '@mantine/core';
+import {Button, Group, Stack, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {IconArrowRight, IconCalendar} from '@tabler/icons-react';
+import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
-import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/api/plans';
-import {FormSection} from '@/components/containers/FormSection';
+import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/store/services/plans';
 
-import CEDatePickerInput from '../CEDatePickerInput';
 import CETextArea from '../CETextArea';
 import CETextInput from '../CETextInput';
 import {PLAN_DISCIPLINES} from '../Configs';
@@ -61,6 +59,24 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
 
     const typeConfig = PLAN_DISCIPLINES[discipline]!;
 
+    // Get discipline-specific copy
+    const getCopy = () => {
+        if (discipline === 'workout') {
+            return {
+                descriptionPlaceholder:
+                    'Describe the training goals, target muscle groups, progression approach, or any special considerations...',
+                infoMessage: 'You can add workout sessions and customize exercises after creation',
+            };
+        }
+        return {
+            descriptionPlaceholder:
+                'Describe the nutrition goals, meal approach, dietary preferences, or any special considerations...',
+            infoMessage: 'You can add meal sessions and customize recipes after creation',
+        };
+    };
+
+    const copy = getCopy();
+
     const handleFormSubmit = async (values: CreatePlanProps) => {
         try {
             const payload: CreatePlanProps = {
@@ -96,16 +112,56 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
 
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <FormSection>
-                <Text
-                    c="dimmed"
-                    fs="italic"
-                    size="sm"
+            <Stack
+                content="flex-start"
+                gap="lg"
+            >
+                {/* Plan Type Badge */}
+                <Group
+                    align="center"
+                    gap="md"
+                    p="md"
+                    style={{
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                        borderRadius: 'var(--mantine-radius-md)',
+                    }}
                 >
-                    {typeConfig.description}
-                </Text>
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 12,
+                            backgroundColor: typeConfig.color,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <typeConfig.icon
+                            color={typeConfig.iconColor}
+                            size={24}
+                            stroke={1.5}
+                        />
+                    </div>
+                    <Stack gap={4}>
+                        <Text
+                            fw={600}
+                            size="sm"
+                        >
+                            {typeConfig.label} Plan
+                        </Text>
+                        <Text
+                            c="dimmed"
+                            size="xs"
+                        >
+                            {typeConfig.description}
+                        </Text>
+                    </Stack>
+                </Group>
 
-                <Stack gap="sm">
+                {/* Basic Information Section */}
+                <Stack gap="md">
                     <Controller
                         control={control}
                         name="name"
@@ -113,12 +169,12 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                             <CETextInput
                                 {...field}
                                 error={fieldState.error?.message}
-                                label="Plan Name"
-                                placeholder={
-                                    typeConfig.form.namePlaceholder || 'e.g. 12-Week Strength Building Program'
-                                }
-                                radius="xl"
+                                label="Name"
+                                placeholder={typeConfig.form.namePlaceholder || 'e.g., Weight Loss Nutrition Plan'}
+                                radius="md"
+                                size="md"
                                 variant="filled"
+                                withAsterisk
                             />
                         )}
                     />
@@ -132,8 +188,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                                 error={fieldState.error?.message}
                                 label="Description (Optional)"
                                 onChange={(e) => field.onChange(e.target.value || undefined)}
-                                placeholder="Add details about this plan, goals, or any important notes..."
-                                radius="xl"
+                                placeholder={copy.descriptionPlaceholder}
+                                radius="md"
                                 rows={4}
                                 size="md"
                                 value={field.value || ''}
@@ -141,8 +197,11 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                             />
                         )}
                     />
+                </Stack>
 
-                    <Controller
+                {/* Schedule Section */}
+                <Stack gap="md">
+                    {/* <Controller
                         control={control}
                         name="start_date"
                         render={({field, fieldState}) => (
@@ -159,8 +218,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                                         field.onChange(dateObj.toISOString());
                                     }
                                 }}
-                                placeholder="When does this plan begin?"
-                                radius="xl"
+                                placeholder="Select start date"
+                                radius="md"
                                 size="md"
                                 value={field.value ? new Date(field.value) : null}
                                 valueFormat="MMM DD, YYYY"
@@ -168,16 +227,10 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                                 withAsterisk
                             />
                         )}
-                    />
-
-                    <Text
-                        c="dimmed"
-                        size="xs"
-                    >
-                        💡 Tip: You can add sessions and customize this plan after creation
-                    </Text>
+                    /> */}
                 </Stack>
-            </FormSection>
+            </Stack>
+
             <FixedBottomBar>
                 <Button
                     fullWidth

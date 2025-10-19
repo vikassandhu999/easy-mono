@@ -1,7 +1,7 @@
 import {ActionIcon, Box, Card, Center, Group, Text} from '@mantine/core';
 import {IconCheck, IconPlus} from '@tabler/icons-react';
 
-import {Session} from '@/api/sessions';
+import {Session} from '@/store/services/session';
 
 import {getSessionTypeConfig} from '../PlanBuilder/sessionTypes';
 

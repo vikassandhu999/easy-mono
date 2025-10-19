@@ -3,14 +3,13 @@ import {IconPlus, IconUsers} from '@tabler/icons-react';
 import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
-import {Client} from '@/api/clients.ts';
 import ClientList from '@/components/ClientListItem';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {InviteClientDrawer} from '@/components/InviteClientDrawer';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
-import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
+import {Client, useListClientsInfiniteQuery} from '@/store/services/clients';
 
 import Header from './Header';
 

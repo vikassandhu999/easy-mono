@@ -16,15 +16,15 @@ import {IconCalendar, IconMessageCircle, IconSwitchHorizontal, IconUser} from '@
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
-import {Client} from '@/api/clients';
-import {PlanDiscipline} from '@/api/plans';
+import {Client} from '@/store/services/clients';
+import {PlanDiscipline} from '@/store/services/plans';
 import ClientSelect from '@/components/ClientSelect/ClientSelect';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
 import {PlanCreationDrawerData} from '@/components/PlanForm/PlanCreateDrawer';
-import {useGetClientQuery} from '@/store/services/clientsApi';
+import {useGetClientQuery} from '@/store/services/clients';
 
 import ProfileCard from './ProfileCard';
 import {ClientOverviewTab} from './tabs/OverviewTab';

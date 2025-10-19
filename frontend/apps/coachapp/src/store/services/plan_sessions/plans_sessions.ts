@@ -1,12 +1,11 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type CreatePlanSessionInput,
     type PlanSession,
     type PlanSessionList,
     type PlanSessionQueryParams,
     type UpdatePlanSessionInput,
-} from '@/api/plan_sessions';
-
-import {apiSlice} from './baseAPISlice';
+} from './plans_sessions_definition';
 
 type ListPlanSessionsArg = {
     params?: PlanSessionQueryParams;
@@ -35,7 +34,7 @@ type DeletePlanSessionArg = {
     planSessionId: string;
 };
 
-export const planSessionsApi = apiSlice.injectEndpoints({
+export const planSessionsApi = baseAPISlice.injectEndpoints({
     endpoints: (builder) => ({
         listPlanSessions: builder.query<PlanSessionList, ListPlanSessionsArg>({
             query: ({planId, params}) => ({

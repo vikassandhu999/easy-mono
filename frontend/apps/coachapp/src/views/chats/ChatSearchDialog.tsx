@@ -17,7 +17,7 @@ import {IconClock, IconMessageCircle, IconSearch, IconX} from '@tabler/icons-rea
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {useDebouncedValue} from '@/hooks/useDebouncedValue';
-import {useListChatsInfiniteQuery} from '@/store/services/chatsApi';
+import {useListChatsInfiniteQuery} from '@/store/services/chats';
 
 import ChatListRow from './ChatListRow';
 

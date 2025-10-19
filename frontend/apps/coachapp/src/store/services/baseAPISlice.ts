@@ -77,7 +77,7 @@ const axiosBaseQuery = (): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQue
     };
 };
 
-export const apiSlice = createApi({
+export const baseAPISlice = createApi({
     reducerPath: 'api',
     baseQuery: axiosBaseQuery(),
     tagTypes: [
@@ -97,5 +97,5 @@ export const apiSlice = createApi({
     endpoints: () => ({}),
 });
 
-export type ApiBaseQueryApi = BaseQueryApi;
+export type BaseAPIQueryAPI = BaseQueryApi;
 export {axiosInstance};

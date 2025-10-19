@@ -19,7 +19,7 @@ import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
 import {IconApple, IconBarbell, IconCalendar, IconX} from '@tabler/icons-react';
 import {useMemo, useState} from 'react';
 
-import {Plan, PlanDiscipline} from '@/api/plans';
+import {Plan, PlanDiscipline} from '@/store/services/plans';
 import RecordsList from '@/components/layouts/RecordsList';
 import {useListPlans} from '@/store/services/plans';
 

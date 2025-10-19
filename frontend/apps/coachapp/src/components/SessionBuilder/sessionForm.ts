@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-import {MealSessionSettings_zod, Session, SessionType} from '@/api/sessions';
+import {MealSessionSettings_zod, Session, SessionType} from '@/store/services/session';
 
 export const WorkoutSectionSchema = z.discriminatedUnion('type', [
     z.object({

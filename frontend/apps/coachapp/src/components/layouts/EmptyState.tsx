@@ -21,7 +21,7 @@ export const EmptyState = ({action, description, title}: EmptyStateProps) => {
         >
             <Title
                 c={'dark'}
-                order={isMobile ? 5 : 3}
+                order={isMobile ? 6 : 4}
             >
                 {title}
             </Title>

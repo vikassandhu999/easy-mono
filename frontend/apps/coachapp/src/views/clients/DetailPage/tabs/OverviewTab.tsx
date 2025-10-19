@@ -1,7 +1,7 @@
 import {Badge, Card, Group, Stack, Text} from '@mantine/core';
 import {format, parseISO} from 'date-fns';
 
-import {Client} from '@/api/clients.ts';
+import {Client} from '@/store/services/clients';
 
 const MEMBERSHIP_STATUS_COLOR = {
     active: 'green',

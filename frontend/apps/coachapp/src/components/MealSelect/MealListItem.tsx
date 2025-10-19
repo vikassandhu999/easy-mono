@@ -2,7 +2,7 @@ import {ActionIcon, Avatar, Box, Card, Center, Group, Text} from '@mantine/core'
 import {IconCheck, IconPlus} from '@tabler/icons-react';
 import React from 'react';
 
-import {Session} from '@/api/sessions';
+import {Session} from '@/store/services/session';
 
 import {getMealIcon, getSessionColor} from './constants';
 

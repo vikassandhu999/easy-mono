@@ -3,13 +3,12 @@ import {IconBowlChopsticks, IconCalendarPlus, IconTreadmill} from '@tabler/icons
 import {useCallback, useEffect, useRef} from 'react';
 import {useNavigate} from 'react-router';
 
-import {Client} from '@/api/clients.ts';
-import {Plan, PlanDiscipline} from '@/api/plans';
 import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import {PlanCreationDrawer, PlanCreationDrawerData} from '@/components/PlanForm/PlanCreateDrawer';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
-import {useListPlans} from '@/store/services/plans';
+import {Client} from '@/store/services/clients';
+import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
 
 export const ClientPlansTab = ({
     client,
@@ -64,6 +63,7 @@ export const ClientPlansTab = ({
                 >
                     <Menu.Target>
                         <Button
+                            radius="xl"
                             rightSection={<IconCalendarPlus size={18} />}
                             size="sm"
                         >

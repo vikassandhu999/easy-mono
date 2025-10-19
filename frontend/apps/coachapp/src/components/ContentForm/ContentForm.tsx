@@ -4,7 +4,7 @@ import {notifications} from '@mantine/notifications';
 import React, {useCallback} from 'react';
 import {useForm} from 'react-hook-form';
 
-import {Content, CreateContentProps, isMediaEmpty, UpdateContentProps} from '@/api/contents.ts';
+import {Content, CreateContentProps, isMediaEmpty, UpdateContentProps} from '@/store/services/contents';
 import {FixedBottom} from '@/components/containers/FixedBottom';
 import {FormSection} from '@/components/containers/FormSection';
 import EasyController from '@/components/EasyController';

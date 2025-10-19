@@ -2,7 +2,7 @@ import {ActionIcon, Image, Stack, TextInput} from '@mantine/core';
 import {IconLink, IconMusic, IconPdf, IconPhoto, IconTrash, IconVideo, IconWorldWww} from '@tabler/icons-react';
 import React from 'react';
 
-import {Content} from '@/api/contents.ts';
+import {Content} from '@/store/services/contents';
 import EasyOptionSelector from '@/components/EasyOptionSelector';
 import {OptionItem} from '@/components/EasyOptionSelector/EasyOptionSelector.tsx';
 

@@ -2,13 +2,12 @@ import {Drawer} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {useMemo} from 'react';
 
-import {CreatePlanProps, Plan, PlanDiscipline} from '@/api/plans';
 import {PLAN_DISCIPLINES} from '@/components/Configs';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
-import {useCreatePlan} from '@/store/services/plans';
+import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/store/services/plans';
 
 import {PlanForm} from './PlanForm';
 
@@ -78,10 +77,7 @@ export function PlanCreationDrawer({
             withCloseButton={false}
         >
             <PagePaper>
-                <HeadingContainer
-                    style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}
-                    withBorder={false}
-                >
+                <HeadingContainer style={{paddingBlock: 'var(--ce-size-md)', paddingInline: 'var(--ce-size-xs)'}}>
                     <Header
                         onBack={() => {
                             onClose();

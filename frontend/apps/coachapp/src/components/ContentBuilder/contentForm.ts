@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-import {Content, ContentType} from '@/api/contents';
+import {Content, ContentType} from '@/store/services/contents';
 
 // Simplified schemas for form usage (we'll use any for complex metadata)
 export const ContentMediaSchema = z

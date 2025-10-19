@@ -2,7 +2,7 @@ import {useMediaQuery} from '@mantine/hooks';
 import {modals} from '@mantine/modals';
 import {useState} from 'react';
 
-import {Content} from '@/api/contents';
+import {Content} from '@/store/services/contents';
 import {ContentListView} from '@/components/Content';
 import {ContentBuilder} from '@/components/ContentBuilder';
 

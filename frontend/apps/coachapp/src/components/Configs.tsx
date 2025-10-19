@@ -1,6 +1,6 @@
 import {Icon, IconBowlChopsticks, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
 
-import {Content} from '@/api/contents.ts';
+import {Content} from '@/store/services/contents';
 
 import {
     SESSION_TYPE_CONFIG as PLAN_SESSION_TYPE_CONFIG,

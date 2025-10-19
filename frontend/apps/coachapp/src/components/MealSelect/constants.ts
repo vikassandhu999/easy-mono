@@ -1,7 +1,7 @@
 import {IconBarbell, IconCoffee, IconGrillFork, IconMoon, IconTreadmill} from '@tabler/icons-react';
 import React from 'react';
 
-import {Session} from '@/api/sessions';
+import {Session} from '@/store/services/session';
 
 export const getMealIcon = (session: Session): React.ComponentType<any> => {
     const text = `${session.name} ${session.description || ''}`.toLowerCase();

@@ -18,7 +18,7 @@ import {notifications} from '@mantine/notifications';
 import {IconAlertCircle, IconPlus, IconRefresh} from '@tabler/icons-react';
 import {FC, useEffect, useState} from 'react';
 
-import {Content, ContentType} from '@/api/contents';
+import {Content, ContentType} from '@/store/services/contents';
 import {ContentBuilder} from '@/components/ContentBuilder';
 
 import {CONTENT_TYPE_CONFIG} from '../Configs';

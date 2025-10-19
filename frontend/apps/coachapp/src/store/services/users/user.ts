@@ -1,4 +1,6 @@
-import {type AccessToken} from '@/api/auth.ts';
+import {type AccessToken} from '@/store/services/auth';
+
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type LoginProps,
     type PasswordResetConfirmProps,
@@ -8,11 +10,9 @@ import {
     type SignUpProps,
     type TokenID,
     type VerifyProps,
-} from '@/api/users.ts';
+} from './users_definition';
 
-import {apiSlice} from './baseAPISlice';
-
-export const usersApi = apiSlice.injectEndpoints({
+export const usersApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         login: build.mutation<AccessToken, LoginProps>({
             query: (body) => ({

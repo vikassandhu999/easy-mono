@@ -1,3 +1,4 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type Content,
     CreateContent_zod,
@@ -6,9 +7,7 @@ import {
     type ListContentsResult,
     UpdateContent_zod,
     type UpdateContentProps,
-} from '@/api/contents.ts';
-
-import {apiSlice} from './baseAPISlice';
+} from './contents_definition';
 
 type ListContentsQueryParams = Omit<ListContentsProps, 'page'> | undefined;
 
@@ -56,7 +55,7 @@ const getNextContentPage = (lastPage: ListContentsResult, lastPageParam: number)
     return currentPage + 1;
 };
 
-export const contentsApi = apiSlice.injectEndpoints({
+export const contentsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         listContents: build.infiniteQuery<ListContentsResult, ListContentsQueryParams, number>({
             query: ({queryArg, pageParam = 1}) => ({

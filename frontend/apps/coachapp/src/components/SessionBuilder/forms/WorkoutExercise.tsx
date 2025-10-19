@@ -3,7 +3,7 @@ import {modals} from '@mantine/modals';
 import {CaretDownIcon, CaretRightIcon, PencilSimpleIcon, TrashIcon} from '@phosphor-icons/react';
 import {UseFormReturn} from 'react-hook-form';
 
-import {Content} from '@/api/contents';
+import {Content} from '@/store/services/contents';
 
 import ContentSelect from '../../ContentSelect';
 import {SessionFormValues} from '../sessionForm';

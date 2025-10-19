@@ -1,13 +1,14 @@
-import {ActionIcon, Avatar, Box, Group, Menu, rem, Text} from '@mantine/core';
+import {ActionIcon, Avatar, Box, Group, Menu, rem, Text, useMantineTheme} from '@mantine/core';
 import {CaretUpDownIcon} from '@phosphor-icons/react/dist/ssr';
 import {IconLogout2, IconPaint, IconUser} from '@tabler/icons-react';
 
 import {useAuth} from '@/providers/AuthProvider';
-import {useGetCoachQuery} from '@/store/services/coachApi';
+import {useGetCoachQuery} from '@/store/services/coach';
 
 export function UserInfo() {
     const {logout} = useAuth();
     const {data} = useGetCoachQuery();
+    const theme = useMantineTheme();
 
     return (
         <Box p="md">
@@ -21,17 +22,12 @@ export function UserInfo() {
                                 event.currentTarget.click();
                             }
                         }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                        p="xs"
+                        px="sm"
+                        py="xs"
                         role="button"
                         style={{
-                            background: 'transparent',
-                            borderRadius: '8px',
+                            backgroundColor: theme.colors.gray[1],
+                            borderRadius: theme.radius.xl,
                             cursor: 'pointer',
                             textAlign: 'left',
                             transition: 'background-color 0.2s ease',

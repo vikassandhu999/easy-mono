@@ -2,8 +2,8 @@ import {Box, Button, Group, SimpleGrid, Stack, Text} from '@mantine/core';
 import {CalendarBlank, CalendarDots, Clock, Plus} from '@phosphor-icons/react';
 import {useMemo} from 'react';
 
-import {PlanSession} from '@/api/plan_sessions';
-import {Plan, PlanDiscipline} from '@/api/plans';
+import {PlanSession} from '@/store/services/plan_sessions';
+import {Plan, PlanDiscipline} from '@/store/services/plans';
 
 import {DAY_NAMES, DEFAULT_ADD_LABEL, DISCIPLINE_ADD_LABEL} from './constants';
 import PlanSessionCard from './PlanSessionCard';

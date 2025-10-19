@@ -4,10 +4,10 @@ import {MagnifyingGlassIcon} from '@phosphor-icons/react';
 import {IconTablePlus} from '@tabler/icons-react';
 import React from 'react';
 
-import {PlanDiscipline} from '@/api/plans';
 import {PLAN_DISCIPLINES} from '@/components/Configs';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import Header from '@/components/layouts/Header';
+import {PlanDiscipline} from '@/store/services/plans';
 
 type PlansPageProps = {
     discipline: PlanDiscipline;
@@ -48,12 +48,12 @@ export default function PlansListHeader({
                 paddingInline: 'var(--ce-size-lg)',
             }}
         >
-            <Stack gap="md">
+            <Stack gap="sm">
                 <Header
                     actions={
                         <Group gap="xs">
                             <Button
-                                leftSection={<IconTablePlus size={18} />}
+                                leftSection={<IconTablePlus size={16} />}
                                 onClick={onCreateClick}
                                 radius="xl"
                                 size="sm"
@@ -76,7 +76,7 @@ export default function PlansListHeader({
                         fullWidth
                         onChange={(value) => onDisciplineChange?.(value as PlanDiscipline)}
                         radius="xl"
-                        size="lg"
+                        size="md"
                         value={discipline}
                     />
                 </ScrollArea>

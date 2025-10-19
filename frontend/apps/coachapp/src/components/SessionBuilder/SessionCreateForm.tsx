@@ -3,8 +3,8 @@ import {Button, Group, Stack} from '@mantine/core';
 import {useEffect, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 
-import {Content} from '@/api/contents';
-import {Session, SessionType} from '@/api/sessions';
+import {Content} from '@/store/services/contents';
+import {Session, SessionType} from '@/store/services/session';
 
 import MealForm from './forms/MealForm';
 import WorkoutForm from './forms/WorkoutForm';

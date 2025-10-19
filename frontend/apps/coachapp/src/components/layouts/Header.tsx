@@ -26,14 +26,21 @@ export default function Header({actions, onBack, showTitle = true, title}: Props
                     <ActionIcon
                         c={'dark'}
                         onClick={onBack}
-                        size={'xl'}
+                        size={'lg'}
                         style={{borderRadius: 9999}}
                         variant={'subtle'}
                     >
-                        <ArrowLeftIcon size={24} />
+                        <ArrowLeftIcon size={20} />
                     </ActionIcon>
                 )}
-                {showTitle && <Title order={6}>{title}</Title>}
+                {showTitle && (
+                    <Title
+                        order={6}
+                        style={{fontSize: '1rem', fontWeight: 600}}
+                    >
+                        {title}
+                    </Title>
+                )}
             </Group>
             {actions && (
                 <Group

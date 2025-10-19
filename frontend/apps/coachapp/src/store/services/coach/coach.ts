@@ -1,3 +1,4 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type BusinessPreferences,
     type Coach,
@@ -5,13 +6,10 @@ import {
     type UpdateBusinessPreferencesProps,
     UpdateCoach_zod,
     type UpdateCoachProps,
-} from '@/api/coaches.ts';
+} from './coach_definition';
 
-import {apiSlice} from './baseAPISlice';
-
-export const coachApi = apiSlice.injectEndpoints({
+export const coachApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-        // GET /v1/coach/profile
         getCoach: build.query<Coach, void>({
             query: () => ({
                 url: '/v1/coach/profile',
@@ -20,10 +18,8 @@ export const coachApi = apiSlice.injectEndpoints({
             providesTags: [{type: 'Coach', id: 'PROFILE'}],
         }),
 
-        // PATCH /v1/coach/profile
         updateCoach: build.mutation<Coach, UpdateCoachProps>({
             query: (data) => {
-                // Validate input using Zod schema
                 const validatedData = UpdateCoach_zod.parse(data);
                 return {
                     url: '/v1/coach/profile',
@@ -34,10 +30,8 @@ export const coachApi = apiSlice.injectEndpoints({
             invalidatesTags: [{type: 'Coach', id: 'PROFILE'}],
         }),
 
-        // PUT /v1/coach/business/preferences
         updateBusinessPreferences: build.mutation<BusinessPreferences, UpdateBusinessPreferencesProps>({
             query: (data) => {
-                // Validate input using Zod schema
                 const validatedData = UpdateBusinessPreferences_zod.parse(data);
                 return {
                     url: '/v1/coach/business/preferences',

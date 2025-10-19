@@ -16,10 +16,10 @@ import {MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
 import {useMutation} from '@tanstack/react-query';
 import {useEffect, useMemo, useState} from 'react';
 
-import {Client} from '@/api/clients.ts';
+import {Client} from '@/store/services/clients';
 import {ClientListItem} from '@/components/ClientListItem/ClientListItem';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useListClientsInfiniteQuery} from '@/store/services/clientsApi';
+import {useListClientsInfiniteQuery} from '@/store/services/clients';
 
 import RecordsList from '../layouts/RecordsList';
 

@@ -1,16 +1,14 @@
-import {Button} from '@mantine/core';
-import {IconPlus, IconTrendingUp} from '@tabler/icons-react';
+import {Box, Flex, Image, Text, Title} from '@mantine/core';
 import {useEffect, useRef, useState} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
-import {Plan, PlanDiscipline} from '@/api/plans';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import PlanListItem from '@/components/PlanListItem/PlanListItem';
-import {useListPlans} from '@/store/services/plans';
+import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
 
+import EmptyPlanImage from '../../../../public/empty_plan.png';
 import Header from './ListHeader';
 
 function PlansListPage() {
@@ -77,7 +75,7 @@ function PlansListPage() {
 
     const getEmptyStateDescription = () => {
         if (search) {
-            return `No ${getDisciplineLabel().toLowerCase()} plans match your search. Try different keywords or create a new plan.`;
+            return `Try adjusting search with different keywords or create a new plan.`;
         }
         if (discipline === 'workout') {
             return 'Create workout plans to help your clients build strength, endurance, and achieve their fitness goals.';
@@ -90,7 +88,7 @@ function PlansListPage() {
 
     const getEmptyStateTitle = () => {
         if (search) {
-            return `No ${getDisciplineLabel()} Plans Found`;
+            return `No result for "${search}"`;
         }
         return `Create Your First ${getDisciplineLabel()} Plan`;
     };
@@ -104,35 +102,39 @@ function PlansListPage() {
                 onDisciplineChange={setDiscipline}
                 onSearchChange={(value) => setSearch(value)}
             />
-            <PagePaper topGutter={false}>
+            <PagePaper>
                 <PaddingContainer
                     paddingX={'lg'}
-                    paddingY={'md'}
+                    paddingY={'lg'}
                 >
                     <RecordsList<Plan>
                         emptyState={
-                            <EmptyState
-                                action={
-                                    <Button
-                                        leftSection={<IconPlus size={16} />}
-                                        my="lg"
-                                        onClick={handleCreate}
-                                        radius={9999}
-                                        size="md"
-                                        variant="filled"
-                                    >
-                                        Create {getDisciplineLabel()} Plan
-                                    </Button>
-                                }
-                                description={getEmptyStateDescription()}
-                                icon={<IconTrendingUp size={48} />}
-                                iconColor="blue.6"
-                                iconSize="xl"
-                                title={getEmptyStateTitle()}
-                            />
+                            <Flex
+                                align="center"
+                                direction="column"
+                                gap="sm"
+                                justify="center"
+                            >
+                                <Image
+                                    src={EmptyPlanImage}
+                                    w={240}
+                                />
+                                <Title
+                                    order={6}
+                                    ta="center"
+                                >
+                                    {getEmptyStateTitle()}
+                                </Title>
+                                <Text
+                                    size="sm"
+                                    ta="center"
+                                >
+                                    {getEmptyStateDescription()}
+                                </Text>
+                            </Flex>
                         }
                         fetchNextPage={fetchNextPage}
-                        gap="sm"
+                        gap={0}
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}

@@ -5,9 +5,9 @@ import {IconPlus} from '@tabler/icons-react';
 import {useMutation} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {Session} from '@/api/sessions';
+import {Session} from '@/store/services/session';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useListSessionsQuery} from '@/store/services/sessionsApi';
+import {useListSessionsQuery} from '@/store/services/session';
 
 import RecordsList from '../layouts/RecordsList';
 import SessionListItem from './SessionListItem';

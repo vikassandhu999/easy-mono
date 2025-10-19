@@ -4,7 +4,7 @@ import {notifications} from '@mantine/notifications';
 import {useEffect, useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 
-import {Content, ContentType} from '@/api/contents';
+import {Content, ContentType} from '@/store/services/contents';
 
 import {ContentFormSchema, ContentFormValues, contentToFormValues} from './contentForm';
 import ExerciseForm from './forms/ExerciseForm';

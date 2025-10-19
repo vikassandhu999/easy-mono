@@ -206,22 +206,40 @@ export const theme = createTheme({
         }),
         Menu: Menu.extend({
             styles: {
+                divider: {
+                    margin: 0,
+                    marginBlock: 'var(--ce-size-xs)',
+                },
                 dropdown: {
-                    borderRadius: 'var(--callout-offset)',
-                    gap: 'var(--ce-size-3xs)',
-                    padding: 'calc(var(--ce-size-xl) * var(--ce-halfstep-dec))',
+                    borderRadius: 'var(--mantine-radius-md)',
+                    border: '1px solid var(--mantine-color-gray-3)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    padding: 'var(--ce-size-xs)',
                 },
                 item: {
-                    borderRadius: 'var(--callout-offset)',
-                    fontSize: 'var(--callout-font-size)',
-                    minHeight: 'var(--ce-size-xl)',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                    fontSize: 'var(--body-font-size)',
+                    fontWeight: 400,
+                    padding: 'var(--ce-size-sm)',
+                    '&[data-hovered]': {
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                    },
+                    '&[data-hovered][data-menu-item][data-color="red"]': {
+                        backgroundColor: 'var(--mantine-color-red-0)',
+                    },
                 },
-                itemLabel: {fontWeight: 400},
-                itemSection: {fontSize: 'var(--callout-font-size)', paddingInlineEnd: 'var(--ce-size-sm)'},
+                itemLabel: {
+                    fontSize: 'var(--body-font-size)',
+                    fontWeight: 400,
+                },
+                itemSection: {
+                    marginRight: 'var(--ce-size-xs)',
+                },
                 label: {
                     fontSize: 'var(--label-font-size)',
-                    fontWeight: 500,
-                    marginBottom: 'var(--ce-size-sm)',
+                    fontWeight: 600,
+                    marginBottom: 'var(--ce-size-xs)',
+                    color: 'var(--mantine-color-gray-6)',
                 },
             },
         }),

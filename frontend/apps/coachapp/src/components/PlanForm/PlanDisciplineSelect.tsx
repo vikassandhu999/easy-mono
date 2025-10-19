@@ -1,7 +1,7 @@
-import {ActionIcon, Box, Card, Center, Group, Stack, Text} from '@mantine/core';
-import {CaretRightIcon} from '@phosphor-icons/react';
+import {ActionIcon, Avatar, Box, Group, Stack, Text, UnstyledButton, useMantineTheme} from '@mantine/core';
+import {IconChevronRight} from '@tabler/icons-react';
 
-import {PlanDiscipline} from '@/api/plans';
+import {PlanDiscipline} from '@/store/services/plans';
 
 import {PLAN_DISCIPLINES} from '../Configs';
 
@@ -10,97 +10,94 @@ interface PlanDisciplineSelectProps {
 }
 
 const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
+    const theme = useMantineTheme();
     const entries = Object.entries(PLAN_DISCIPLINES) as Array<
         [PlanDiscipline, (typeof PLAN_DISCIPLINES)[PlanDiscipline]]
     >;
 
     return (
-        <Stack gap={'sm'}>
+        <Stack gap="sm">
             {entries.map(([discipline, config]) => {
                 const IconComponent = config.icon;
 
                 return (
-                    <Card
-                        aria-label={`Select ${config.label}: ${config.description}`}
+                    <UnstyledButton
                         key={discipline}
                         onClick={() => onSelect(discipline)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                onSelect(discipline);
-                            }
-                        }}
-                        role="button"
-                        style={{
-                            borderRadius: 'var(--body-offset)',
-                            cursor: 'pointer',
-                            paddingBottom: 'var(--ce-size-md)',
-                            paddingInline: 'var(--ce-size-md)',
-                            paddingTop: 'var(--body-offset)',
-                        }}
-                        tabIndex={0}
-                        withBorder
+                        style={{width: '100%'}}
                     >
-                        <Group
-                            align="center"
-                            justify="space-between"
-                            wrap={'nowrap'}
+                        <Box
+                            p="md"
+                            style={{
+                                backgroundColor: 'white',
+                                borderRadius: theme.radius.lg,
+                                border: `1px dotted ${theme.colors.gray[3]}`,
+                                transition: 'all 0.15s ease',
+                                cursor: 'pointer',
+                            }}
                         >
                             <Group
-                                gap={'md'}
-                                style={{flex: 1, minWidth: 0}}
-                                wrap={'nowrap'}
+                                align="flex-start"
+                                gap="sm"
+                                justify="space-between"
+                                wrap="nowrap"
                             >
-                                <Center
-                                    h={48}
-                                    style={{
-                                        backgroundColor: config.color || 'var(--mantine-color-brand-1)',
-                                        borderRadius: 12,
-                                        flexShrink: 0,
-                                    }}
-                                    w={48}
+                                <Avatar
+                                    color={config.color}
+                                    radius="xl"
+                                    size="md"
+                                    variant="light"
                                 >
-                                    <IconComponent
-                                        color={config.iconColor || 'var(--mantine-color-brand-6)'}
-                                        size={24}
-                                    />
-                                </Center>
-                                <Box style={{flex: 1, gap: 0, minWidth: 0}}>
-                                    <Text
-                                        c={'dark'}
-                                        style={{
-                                            color: 'var(--mantine-color-gray-9)',
-                                            fontSize: 'var(--body-font-size)',
-                                            fontWeight: 600,
-                                            lineHeight: 'var(--body-line-height)',
-                                        }}
-                                    >
-                                        {config.label}
-                                    </Text>
-                                    <Text
-                                        c={'dark'}
-                                        style={{
-                                            color: 'var(--mantine-color-gray-9)',
-                                            fontSize: 'var(--callout-font-size)',
-                                            fontWeight: 400,
-                                            lineHeight: 'var(--callout-line-height)',
-                                        }}
-                                    >
-                                        {config.description}
-                                    </Text>
-                                </Box>
-                            </Group>
+                                    <IconComponent size={20} />
+                                </Avatar>
 
-                            <ActionIcon
-                                color={'gray'}
-                                size={'lg'}
-                                style={{flexShrink: 0}}
-                                variant={'subtle'}
-                            >
-                                <CaretRightIcon size={20} />
-                            </ActionIcon>
-                        </Group>
-                    </Card>
+                                <Group
+                                    gap="sm"
+                                    style={{flex: 1, minWidth: 0}}
+                                    wrap="nowrap"
+                                >
+                                    <Stack
+                                        gap={2}
+                                        style={{flex: 1, minWidth: 0}}
+                                    >
+                                        <Group
+                                            gap="xs"
+                                            wrap="nowrap"
+                                        >
+                                            <Text
+                                                fw={600}
+                                                size="md"
+                                            >
+                                                {config.label}
+                                            </Text>
+                                        </Group>
+                                        <Text
+                                            c="dimmed"
+                                            size="xs"
+                                            style={{
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
+                                            {config.description}
+                                        </Text>
+                                    </Stack>
+
+                                    {/* Arrow CTA Indicator */}
+                                    <ActionIcon
+                                        color="gray"
+                                        radius="xl"
+                                        size="xl"
+                                        variant="light"
+                                    >
+                                        <IconChevronRight
+                                            size={18}
+                                            stroke={2.5}
+                                        />
+                                    </ActionIcon>
+                                </Group>
+                            </Group>
+                        </Box>
+                    </UnstyledButton>
                 );
             })}
         </Stack>

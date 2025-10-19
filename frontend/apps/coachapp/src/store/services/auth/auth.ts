@@ -11,11 +11,11 @@ import {
     type SignInRequest,
     type TokenValidation,
     type VerifyPhoneLoginOTPRequest,
-} from '@/api/auth.ts';
+} from '@/store/services/auth';
 
-import {apiSlice} from './apiSlice';
+import {baseAPISlice} from '../baseAPISlice';
 
-export const authApi = apiSlice.injectEndpoints({
+export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         login: build.mutation<AccessToken, LoginProps>({
             query: (body) => ({

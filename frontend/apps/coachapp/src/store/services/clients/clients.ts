@@ -1,3 +1,4 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     type Client,
     type CreateClientProps,
@@ -5,9 +6,7 @@ import {
     type ListClientsResult,
     type MembershipStatusType,
     type UpdateClientProps,
-} from '@/api/clients.ts';
-
-import {apiSlice} from './baseAPISlice';
+} from './client_definition';
 
 type BulkOperationResponse = {
     updated_count: number;
@@ -59,7 +58,7 @@ const getNextClientPage = (lastPage: ListClientsResult, lastPageParam: number, q
     return currentPage + 1;
 };
 
-export const clientsApi = apiSlice.injectEndpoints({
+export const clientsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         listClients: build.infiniteQuery<ListClientsResult, ListClientsQueryParams, number>({
             query: ({queryArg, pageParam = 1}) => ({

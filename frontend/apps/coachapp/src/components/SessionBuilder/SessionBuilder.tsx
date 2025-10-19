@@ -3,10 +3,10 @@ import {notifications} from '@mantine/notifications';
 import {skipToken} from '@reduxjs/toolkit/query';
 import {useCallback, useState} from 'react';
 
-import {Session, SessionType} from '@/api/sessions';
+import {Session, SessionType} from '@/store/services/session';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {useCreateSessionMutation, useGetSessionQuery, useUpdateSessionMutation} from '@/store/services/sessionsApi';
+import {useCreateSessionMutation, useGetSessionQuery, useUpdateSessionMutation} from '@/store/services/session';
 
 import SessionCreateForm from './SessionCreateForm';
 import {DefinitionBuildError, SessionFormValues} from './sessionForm';

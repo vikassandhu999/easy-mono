@@ -2,7 +2,7 @@ import type {ComponentType} from 'react';
 
 import {BarbellIcon, ChartBarIcon, ChatCircleDotsIcon, ForkKnifeIcon} from '@phosphor-icons/react';
 
-import {SessionType} from '@/api/sessions';
+import {SessionType} from '@/store/services/session';
 
 export type ExtendedSessionType = 'check_in' | 'measurement' | 'other' | SessionType;
 

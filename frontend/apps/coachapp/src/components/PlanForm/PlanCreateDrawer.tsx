@@ -65,8 +65,11 @@ export function PlanCreationDrawer({
     };
 
     const drawerTitle = useMemo(() => {
-        const disciplineLabel = initialDiscipline ? PLAN_DISCIPLINES[initialDiscipline]?.label : '';
-        return `Create ${disciplineLabel} Plan`;
+        const label = initialDiscipline ? PLAN_DISCIPLINES[initialDiscipline]?.label : undefined;
+        if (!label) {
+            return 'Create plan';
+        }
+        return `Create ${label.toLowerCase()} plan`;
     }, [initialDiscipline]);
 
     return (

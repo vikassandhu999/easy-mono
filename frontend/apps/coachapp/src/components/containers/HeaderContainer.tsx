@@ -5,8 +5,6 @@ import PaddingContainer from './PaddingContainer';
 
 type Props = PropsWithChildren & {
     bg?: MantineColor;
-    paddingX?: MantineSpacing;
-    paddingY?: MantineSpacing;
     ref?: React.Ref<HTMLDivElement>;
     style?: React.CSSProperties;
     withBorder?: boolean;
@@ -26,7 +24,7 @@ export default function HeadingContainer({bg = 'white', children, ref, style, wi
                 zIndex: 100,
             }}
         >
-            <PaddingContainer style={{paddingBlock: 'var(--ce-size-sm)', paddingInline: 'var(--ce-size-xs)', ...style}}>
+            <PaddingContainer style={{paddingBlock: 'var(--ce-size-sm)', paddingInline: 'var(--ce-size-md)', ...style}}>
                 {children}
             </PaddingContainer>
         </Box>

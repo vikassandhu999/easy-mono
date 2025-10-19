@@ -5,7 +5,11 @@ import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
 
 import PaddingContainer from './PaddingContainer';
 
-export const FixedBottomBar: React.FC<PropsWithChildren> = ({children}) => {
+interface FixedBottomBarProps extends PropsWithChildren {
+    maxWidth?: number | string;
+}
+
+export const FixedBottomBar: React.FC<FixedBottomBarProps> = ({children, maxWidth}) => {
     const theme = useMantineTheme();
     const isKeyboardVisible = useKeyboardVisible();
 
@@ -32,7 +36,8 @@ export const FixedBottomBar: React.FC<PropsWithChildren> = ({children}) => {
                 borderTop: `1px solid ${theme.colors.gray[3]}`,
                 bottom: 0,
                 boxShadow: theme.shadows.xs,
-                display: isKeyboardVisible ? 'none' : 'block',
+                display: isKeyboardVisible ? 'none' : 'flex',
+                justifyContent: 'center',
                 left: 0,
                 padding: theme.spacing.sm,
                 paddingBottom: ` calc(var(--ce-size-md) + env(safe-area-inset-bottom))`,
@@ -42,7 +47,14 @@ export const FixedBottomBar: React.FC<PropsWithChildren> = ({children}) => {
                 zIndex: 999,
             }}
         >
-            <PaddingContainer>{children}</PaddingContainer>
+            <Box
+                style={{
+                    width: '100%',
+                    maxWidth: maxWidth || '100%',
+                }}
+            >
+                <PaddingContainer>{children}</PaddingContainer>
+            </Box>
         </Box>
     );
 };

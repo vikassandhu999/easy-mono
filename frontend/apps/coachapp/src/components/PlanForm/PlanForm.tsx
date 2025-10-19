@@ -1,5 +1,5 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Group, Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {Box, Button, Group, Stack, Text, Textarea, TextInput, useMantineTheme} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
@@ -20,6 +20,8 @@ interface PlanFormProps {
 const resolveTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, submitText}) => {
+    const theme = useMantineTheme();
+
     const {
         control,
         handleSubmit,
@@ -61,19 +63,21 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
     const getCopy = () => {
         if (discipline === 'workout') {
             return {
-                descriptionPlaceholder:
-                    'Describe the training goals, target muscle groups, progression approach, or any special considerations...',
-                infoMessage: 'You can add workout sessions and customize exercises after creation',
+                infoMessage: 'Add and customize workout sessions after creating the plan.',
             };
         }
         return {
-            descriptionPlaceholder:
-                'Describe the nutrition goals, meal approach, dietary preferences, or any special considerations...',
-            infoMessage: 'You can add meal sessions and customize recipes after creation',
+            infoMessage: 'Add and customize meal sessions after creating the plan.',
         };
     };
 
     const copy = getCopy();
+
+    const baseNameDescription = typeConfig.form.nameDescription ?? 'Give the plan a clear, outcome-focused name.';
+    const exampleNameDescription = typeConfig.form.namePlaceholder
+        ? ` Example: ${typeConfig.form.namePlaceholder.replace('e.g., ', '')}.`
+        : '';
+    const planNameDescription = `${baseNameDescription}${exampleNameDescription}`;
 
     const handleFormSubmit = async (values: CreatePlanProps) => {
         try {
@@ -102,139 +106,108 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
             notifications.show({
                 autoClose: 3000,
                 color: 'red',
-                message: 'Failed to create plan. Please try again.',
-                title: 'Error',
+                message: 'Unable to create plan. Please check your connection and try again.',
+                title: 'Plan creation failed',
             });
         }
     };
 
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <Stack
-                content="flex-start"
-                gap="lg"
+            <Box
+                maw={560}
+                mx="auto"
             >
-                {/* Plan Type Badge */}
-                <Group
-                    align="center"
-                    gap="md"
-                    p="md"
-                    style={{
-                        backgroundColor: 'var(--mantine-color-gray-0)',
-                        borderRadius: 'var(--mantine-radius-md)',
-                    }}
-                >
-                    <div
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 12,
-                            backgroundColor: typeConfig.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}
+                <Stack gap="lg">
+                    {/* Plan Type Badge */}
+                    <Group
+                        align="center"
+                        bg="gray.0"
+                        gap="md"
+                        p="lg"
                     >
-                        <typeConfig.icon
-                            color={typeConfig.iconColor}
-                            size={24}
-                            stroke={1.5}
-                        />
-                    </div>
-                    <Stack gap={4}>
-                        <Text
-                            fw={600}
-                            size="sm"
+                        <Box
+                            style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: theme.radius.md,
+                                backgroundColor: typeConfig.color,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                            }}
                         >
-                            {typeConfig.label} Plan
-                        </Text>
+                            <typeConfig.icon
+                                color={typeConfig.iconColor}
+                                size={24}
+                                stroke={1.5}
+                            />
+                        </Box>
+                        <Stack gap="xs">
+                            <Text
+                                fw={600}
+                                size="md"
+                            >
+                                {typeConfig.label} plan
+                            </Text>
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                {typeConfig.description}
+                            </Text>
+                        </Stack>
+                    </Group>
+
+                    {/* Basic Information Section */}
+                    <Stack gap="md">
                         <Text
                             c="dimmed"
-                            size="xs"
+                            size="sm"
                         >
-                            {typeConfig.description}
+                            {copy.infoMessage}
                         </Text>
+
+                        <Controller
+                            control={control}
+                            name="name"
+                            render={({field, fieldState}) => (
+                                <TextInput
+                                    {...field}
+                                    description={planNameDescription}
+                                    error={fieldState.error?.message}
+                                    label="Plan name"
+                                    withAsterisk
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            control={control}
+                            name="description"
+                            render={({field, fieldState}) => (
+                                <Textarea
+                                    {...field}
+                                    description="Provide context on goals, progression, or special considerations for the plan."
+                                    error={fieldState.error?.message}
+                                    label="Plan description (optional)"
+                                    onChange={(e) => field.onChange(e.target.value || undefined)}
+                                    rows={4}
+                                    value={field.value || ''}
+                                />
+                            )}
+                        />
                     </Stack>
-                </Group>
-
-                {/* Basic Information Section */}
-                <Stack gap="md">
-                    <Controller
-                        control={control}
-                        name="name"
-                        render={({field, fieldState}) => (
-                            <TextInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Name"
-                                placeholder={typeConfig.form.namePlaceholder || 'e.g., Weight Loss Nutrition Plan'}
-                                radius="md"
-                                size="md"
-                                variant="filled"
-                                withAsterisk
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="description"
-                        render={({field, fieldState}) => (
-                            <Textarea
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Description (Optional)"
-                                onChange={(e) => field.onChange(e.target.value || undefined)}
-                                placeholder={copy.descriptionPlaceholder}
-                                radius="md"
-                                rows={4}
-                                size="md"
-                                value={field.value || ''}
-                                variant="filled"
-                            />
-                        )}
-                    />
                 </Stack>
+            </Box>
 
-                {/* Schedule Section */}
-                <Stack gap="md">
-                    {/* <Controller
-                        control={control}
-                        name="start_date"
-                        render={({field, fieldState}) => (
-                            <CEDatePickerInput
-                                error={fieldState.error?.message}
-                                label="Start Date"
-                                leftSection={<IconCalendar size={18} />}
-                                minDate={new Date()}
-                                onChange={(date) => {
-                                    if (date) {
-                                        // Convert to RFC3339 format with timezone
-                                        const dateObj = new Date(date);
-                                        dateObj.setHours(0, 0, 0, 0);
-                                        field.onChange(dateObj.toISOString());
-                                    }
-                                }}
-                                placeholder="Select start date"
-                                radius="md"
-                                size="md"
-                                value={field.value ? new Date(field.value) : null}
-                                valueFormat="MMM DD, YYYY"
-                                variant="filled"
-                                withAsterisk
-                            />
-                        )}
-                    /> */}
-                </Stack>
-            </Stack>
-
-            <FixedBottomBar>
+            <FixedBottomBar maxWidth={560}>
                 <Button
                     fullWidth
                     loading={isSubmitting}
                     radius="xl"
-                    rightSection={<IconArrowRight size={18} />}
+                    rightSection={<IconArrowRight size={20} />}
                     size="lg"
                     type="submit"
                 >

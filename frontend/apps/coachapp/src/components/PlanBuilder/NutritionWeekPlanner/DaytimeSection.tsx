@@ -6,7 +6,6 @@ import {AddSlotButton} from './AddSlotButton';
 import SessionSlotCard from './SessionSlotCard';
 
 type DaytimeSectionProps = {
-    emptyMessage?: string;
     heading: string;
     onAdd: () => void;
     onAssignSession?: (planSessionId: string) => void;
@@ -16,7 +15,6 @@ type DaytimeSectionProps = {
 };
 
 export function DaytimeSection({
-    emptyMessage,
     heading,
     onAdd,
     onAssignSession,
@@ -29,20 +27,22 @@ export function DaytimeSection({
 
     return (
         <Box
-            pb="sm"
+            pb="md"
             style={{
-                borderBottom: `1px solid ${theme.colors.gray[2]}`,
+                borderBottom: `1px solid ${theme.colors.gray[3]}`,
             }}
         >
             <Grid>
                 <GridCol span={{base: 12, md: 4, lg: 2}}>
                     <Text
-                        c="dark.8"
+                        c="dark.7"
                         fw={600}
                         mb={{base: 'xs', md: 0}}
                         size="sm"
                         style={{
-                            lineHeight: 1.4,
+                            lineHeight: 1.5,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
                         }}
                     >
                         {heading}
@@ -50,7 +50,7 @@ export function DaytimeSection({
                 </GridCol>
                 <GridCol span={{base: 12, md: 8, lg: 10}}>
                     <Stack gap="sm">
-                        {hasSessions ? (
+                        {hasSessions && (
                             <Stack gap="sm">
                                 {planSessions.map((planSession) => (
                                     <SessionSlotCard
@@ -62,16 +62,6 @@ export function DaytimeSection({
                                     />
                                 ))}
                             </Stack>
-                        ) : (
-                            <Text
-                                c="gray.5"
-                                size="xs"
-                                style={{
-                                    fontStyle: 'italic',
-                                }}
-                            >
-                                {emptyMessage ?? 'No sessions.'}
-                            </Text>
                         )}
 
                         <AddSlotButton onClick={onAdd} />

@@ -1,4 +1,4 @@
-import {Box, Flex, Image, Text, Title} from '@mantine/core';
+import {Flex, Image, Stack, Text, Title} from '@mantine/core';
 import {useEffect, useRef, useState} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
@@ -75,22 +75,22 @@ function PlansListPage() {
 
     const getEmptyStateDescription = () => {
         if (search) {
-            return `Try adjusting search with different keywords or create a new plan.`;
+            return `Try different keywords or create a new plan.`;
         }
         if (discipline === 'workout') {
-            return 'Create workout plans to help your clients build strength, endurance, and achieve their fitness goals.';
+            return 'Build strength and endurance plans to help your clients achieve their fitness goals.';
         }
         if (discipline === 'nutrition') {
-            return 'Create nutrition plans to guide your clients toward healthy eating habits and optimal nutrition.';
+            return 'Guide your clients toward healthy eating habits with structured nutrition plans.';
         }
-        return 'Create workout plans to help your clients build strength, endurance, and achieve their fitness goals.';
+        return 'Build strength and endurance plans to help your clients achieve their fitness goals.';
     };
 
     const getEmptyStateTitle = () => {
         if (search) {
-            return `No result for "${search}"`;
+            return `No results for "${search}"`;
         }
-        return `Create Your First ${getDisciplineLabel()} Plan`;
+        return `Create your first ${getDisciplineLabel().toLowerCase()} plan`;
     };
 
     return (
@@ -104,7 +104,7 @@ function PlansListPage() {
             />
             <PagePaper>
                 <PaddingContainer
-                    paddingX={'lg'}
+                    paddingX={'xs'}
                     paddingY={'lg'}
                 >
                     <RecordsList<Plan>
@@ -112,25 +112,34 @@ function PlansListPage() {
                             <Flex
                                 align="center"
                                 direction="column"
-                                gap="sm"
+                                gap="md"
                                 justify="center"
+                                px="md"
                             >
                                 <Image
+                                    alt={search ? 'No results illustration' : 'Empty plans illustration'}
                                     src={EmptyPlanImage}
                                     w={240}
                                 />
-                                <Title
-                                    order={6}
-                                    ta="center"
+                                <Stack
+                                    align="center"
+                                    gap="xs"
                                 >
-                                    {getEmptyStateTitle()}
-                                </Title>
-                                <Text
-                                    size="sm"
-                                    ta="center"
-                                >
-                                    {getEmptyStateDescription()}
-                                </Text>
+                                    <Title
+                                        order={3}
+                                        ta="center"
+                                    >
+                                        {getEmptyStateTitle()}
+                                    </Title>
+                                    <Text
+                                        c="dimmed"
+                                        maw={400}
+                                        size="md"
+                                        ta="center"
+                                    >
+                                        {getEmptyStateDescription()}
+                                    </Text>
+                                </Stack>
                             </Flex>
                         }
                         fetchNextPage={fetchNextPage}
@@ -138,7 +147,7 @@ function PlansListPage() {
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}
-                        loadMoreText="Load More Plans"
+                        loadMoreText="Load more plans"
                         records={plans}
                         renderItem={(plan) => (
                             <PlanListItem

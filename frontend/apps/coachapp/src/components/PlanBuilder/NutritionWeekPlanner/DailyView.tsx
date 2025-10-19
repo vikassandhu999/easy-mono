@@ -1,10 +1,11 @@
-import {Box, Stack, Text} from '@mantine/core';
+import {Stack, Text} from '@mantine/core';
 import {useMemo} from 'react';
 
 import {PlanSession} from '@/store/services/plan_sessions';
 
 import type {AddSessionContext} from '../../PlanSessionsView';
 
+import {AddLabelSection} from './AddLabelSection';
 import {
     buildPayloadLabel,
     formatDisplayLabel,
@@ -15,13 +16,15 @@ import {
     UNASSIGNED_KEY,
     WEEKDAYS,
 } from './constants';
-import {DaytimeSection} from './DaytimeSection';
+import {EditableLabelSection} from './EditableLabelSection';
 
 type DailyViewProps = {
     onAddSession: (context: AddSessionContext) => void;
     onAssignSession?: (planSessionId: string) => void;
+    onDeleteLabel?: (label: string, dayOfWeek: number) => Promise<void>;
     onDeleteSession: (planSessionId: string) => void;
     onEditSession?: (planSessionId: string) => void;
+    onUpdateLabel?: (oldLabel: string, newLabel: string, dayOfWeek: number) => Promise<void>;
     sessions: PlanSession[];
     weekday: number;
 };
@@ -29,8 +32,10 @@ type DailyViewProps = {
 export function DailyView({
     onAddSession,
     onAssignSession,
+    onDeleteLabel,
     onDeleteSession,
     onEditSession,
+    onUpdateLabel,
     sessions,
     weekday,
 }: DailyViewProps) {
@@ -76,52 +81,79 @@ export function DailyView({
     );
 
     const unassignedGroup = labelGroups.get(UNASSIGNED_KEY);
-    const hasAnySessions = daySessions.length > 0;
+
+    // Get all label groups (presets + customs) excluding unassigned
+    const allLabelGroups = useMemo(() => {
+        const groups: Array<{key: string; group: LabelGroup; isPreset: boolean}> = [];
+
+        // Add preset meal labels (whether they have sessions or not)
+        MEAL_DAYTIMES.forEach((daytime) => {
+            const group = labelGroups.get(daytime.id);
+            groups.push({
+                key: daytime.id,
+                group: group || {
+                    displayLabel: daytime.label,
+                    payloadLabel: daytime.id,
+                    sessions: [],
+                },
+                isPreset: true,
+            });
+        });
+
+        // Add custom labels
+        extras.forEach(({key, group}) => {
+            groups.push({
+                key,
+                group,
+                isPreset: false,
+            });
+        });
+
+        return groups;
+    }, [labelGroups, extras]);
+
+    // Handler for adding a new custom label
+    const handleAddCustomLabel = (label: string) => {
+        onAddSession({
+            kind: 'weekly',
+            dayOfWeek: weekday,
+            label: label.toLowerCase(),
+        });
+    };
+
+    // Handler for editing any label (preset or custom)
+    const handleEditLabel = (oldLabel: string, newLabel: string) => {
+        if (onUpdateLabel) {
+            onUpdateLabel(oldLabel, newLabel, weekday);
+        }
+    };
+
+    // Handler for deleting any label
+    const handleDeleteLabel = (label: string) => {
+        if (onDeleteLabel) {
+            onDeleteLabel(label, weekday);
+        }
+    };
 
     return (
-        <Stack gap="lg">
-            <Box>
-                <Text
-                    c="dark.9"
-                    fw={700}
-                    mb="2px"
-                    size="xl"
-                    style={{
-                        lineHeight: 1.2,
-                    }}
-                >
-                    {dayLabel}
-                </Text>
-                {!hasAnySessions && (
-                    <Text
-                        c="gray.6"
-                        size="xs"
-                    >
-                        No sessions scheduled.
-                    </Text>
-                )}
-            </Box>
+        <Stack gap="sm">
+            <Text
+                c="dark.9"
+                fw={700}
+                mb="md"
+                size="xl"
+                style={{
+                    lineHeight: 1.3,
+                }}
+            >
+                {dayLabel}
+            </Text>
 
-            {MEAL_DAYTIMES.map((daytime) => (
-                <DaytimeSection
-                    heading={daytime.label}
-                    key={daytime.id}
-                    onAdd={() =>
-                        onAddSession({
-                            kind: 'weekly',
-                            dayOfWeek: weekday,
-                            label: daytime.id,
-                        })
-                    }
-                    onAssignSession={onAssignSession}
-                    onDeleteSession={onDeleteSession}
-                    onEditSession={onEditSession}
-                    planSessions={labelGroups.get(daytime.id)?.sessions ?? []}
-                />
-            ))}
-
-            {extras.map(({key, group}) => (
-                <DaytimeSection
+            {/* All labels are now editable and deletable */}
+            {allLabelGroups.map(({key, group}) => (
+                <EditableLabelSection
+                    canDelete
+                    canEdit
                     heading={group.displayLabel}
                     key={key}
                     onAdd={() =>
@@ -132,15 +164,20 @@ export function DailyView({
                         })
                     }
                     onAssignSession={onAssignSession}
+                    onDelete={() => handleDeleteLabel(key)}
                     onDeleteSession={onDeleteSession}
+                    onEdit={(newLabel) => handleEditLabel(key, newLabel)}
                     onEditSession={onEditSession}
                     planSessions={group.sessions}
                 />
             ))}
 
+            {/* Add new label section */}
+            <AddLabelSection onAdd={handleAddCustomLabel} />
+
             {unassignedGroup && unassignedGroup.sessions.length > 0 && (
-                <DaytimeSection
-                    emptyMessage="No label assigned."
+                <EditableLabelSection
+                    canEdit
                     heading="Unassigned"
                     onAdd={() =>
                         onAddSession({
@@ -150,6 +187,7 @@ export function DailyView({
                     }
                     onAssignSession={onAssignSession}
                     onDeleteSession={onDeleteSession}
+                    onEdit={(newLabel) => handleEditLabel(UNASSIGNED_KEY, newLabel)}
                     onEditSession={onEditSession}
                     planSessions={unassignedGroup.sessions}
                 />

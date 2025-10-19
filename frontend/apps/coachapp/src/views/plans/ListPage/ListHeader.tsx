@@ -1,6 +1,5 @@
-import {Button, Center, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
+import {Button, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
-import {MagnifyingGlassIcon} from '@phosphor-icons/react';
 import {IconTablePlus} from '@tabler/icons-react';
 import React from 'react';
 
@@ -30,35 +29,32 @@ export default function PlansListHeader({
     const disciplineOptions = Object.entries(PLAN_DISCIPLINES).map(([key, config]) => ({
         value: key,
         label: (
-            <Center style={{gap: 6}}>
+            <Group
+                gap="xs"
+                wrap="nowrap"
+            >
                 <config.icon
                     size={16}
                     stroke={1.5}
                 />
                 <span>{config.label}</span>
-            </Center>
+            </Group>
         ),
     }));
 
     return (
-        <HeadingContainer
-            ref={ref}
-            style={{
-                paddingBlock: 'var(--ce-size-md)',
-                paddingInline: 'var(--ce-size-lg)',
-            }}
-        >
+        <HeadingContainer ref={ref}>
             <Stack gap="sm">
                 <Header
                     actions={
                         <Group gap="xs">
                             <Button
-                                leftSection={<IconTablePlus size={16} />}
+                                leftSection={<IconTablePlus size={18} />}
                                 onClick={onCreateClick}
                                 radius="xl"
-                                size="sm"
+                                size="md"
                             >
-                                Create Plan
+                                Create plan
                             </Button>
                         </Group>
                     }
@@ -72,6 +68,7 @@ export default function PlansListHeader({
                     w="100%"
                 >
                     <SegmentedControl
+                        aria-label="Filter plans by discipline"
                         data={disciplineOptions}
                         fullWidth
                         onChange={(value) => onDisciplineChange?.(value as PlanDiscipline)}
@@ -82,18 +79,11 @@ export default function PlansListHeader({
                 </ScrollArea>
 
                 <TextInput
-                    leftSection={<MagnifyingGlassIcon size={16} />}
-                    m={0}
+                    aria-label="Search plans"
                     onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                     placeholder="Search plans..."
                     radius="xl"
                     size="md"
-                    styles={{
-                        input: {
-                            borderRadius: 'var(--body-offset)',
-                        },
-                        root: {flex: 1},
-                    }}
                     variant="filled"
                 />
             </Stack>

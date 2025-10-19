@@ -58,17 +58,15 @@ const GroupHeader = ({description, icon: IconComponent, iconColor, title}: Retur
         <Text
             c="dark.9"
             fw={700}
-            mb="4px"
+            lh={1.2}
+            mb="xs"
             size="xl"
-            style={{
-                lineHeight: 1.2,
-            }}
         >
             {title}
         </Text>
         <Group
             align="center"
-            gap="6px"
+            gap="xs"
         >
             <IconComponent
                 color={iconColor}
@@ -76,11 +74,9 @@ const GroupHeader = ({description, icon: IconComponent, iconColor, title}: Retur
                 weight="duotone"
             />
             <Text
-                c="gray.6"
+                c="dimmed"
+                lh={1.4}
                 size="xs"
-                style={{
-                    lineHeight: 1.4,
-                }}
             >
                 {description}
             </Text>
@@ -144,33 +140,27 @@ const GroupBlock = ({
                 ))}
 
                 <Button
-                    color="blue"
+                    color="gray"
                     fullWidth
                     leftSection={
                         <Plus
-                            size={14}
+                            size={16}
                             weight="bold"
                         />
                     }
                     onClick={() => onAddSession(group.context)}
                     radius="xl"
-                    size="sm"
+                    size="md"
                     styles={{
                         root: {
                             backgroundColor: 'transparent',
                             border: '1.5px dashed var(--mantine-color-gray-3)',
-                            color: 'var(--mantine-color-gray-6)',
                             minHeight: '88px',
-                            transition: 'all 0.15s ease',
                             '&:hover': {
                                 backgroundColor: 'var(--mantine-color-blue-0)',
                                 borderColor: 'var(--mantine-color-blue-4)',
                                 color: 'var(--mantine-color-blue-6)',
                             },
-                        },
-                        label: {
-                            fontSize: '13px',
-                            fontWeight: 500,
                         },
                     }}
                     variant="default"

@@ -13,30 +13,35 @@ export default function Header({actions, onBack, showTitle = true, title}: Props
         <Group
             align="center"
             gap="sm"
-            justify={'space-between'}
-            style={{width: '100%'}}
+            justify="space-between"
+            w="100%"
             wrap="nowrap"
         >
             <Group
-                gap={'sm'}
+                gap="sm"
                 style={{flex: 1, minWidth: 0}}
-                wrap={'nowrap'}
+                wrap="nowrap"
             >
                 {onBack && (
                     <ActionIcon
-                        c={'dark'}
+                        c="dark"
                         onClick={onBack}
-                        size={'lg'}
-                        style={{borderRadius: 9999}}
-                        variant={'subtle'}
+                        radius="xl"
+                        size="xl"
+                        variant="subtle"
                     >
-                        <ArrowLeftIcon size={20} />
+                        <ArrowLeftIcon size={22} />
                     </ActionIcon>
                 )}
                 {showTitle && (
                     <Title
                         order={6}
-                        style={{fontSize: '1rem', fontWeight: 600}}
+                        style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                        title={title}
                     >
                         {title}
                     </Title>
@@ -44,7 +49,7 @@ export default function Header({actions, onBack, showTitle = true, title}: Props
             </Group>
             {actions && (
                 <Group
-                    gap={'xs'}
+                    gap="xs"
                     style={{flexShrink: 0}}
                 >
                     {actions}

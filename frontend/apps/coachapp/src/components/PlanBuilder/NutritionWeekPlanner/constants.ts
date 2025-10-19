@@ -3,6 +3,10 @@ import dayjs from 'dayjs';
 
 import {PlanSession} from '@/store/services/plan_sessions';
 
+/**
+ * Default meal time labels - these are convenient presets, not system constants.
+ * Users can edit, delete, or add custom labels as needed.
+ */
 export const MEAL_DAYTIMES = [
     {
         id: 'breakfast',
@@ -18,11 +22,11 @@ export const MEAL_DAYTIMES = [
     },
     {
         id: 'preworkout',
-        label: 'Pre-Workout',
+        label: 'Pre-workout',
     },
     {
         id: 'postworkout',
-        label: 'Post-Workout',
+        label: 'Post-workout',
     },
 ] as const;
 

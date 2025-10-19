@@ -6,31 +6,27 @@ export function AddSlotButton({onClick}: {onClick: () => void}) {
         <Button
             color="blue"
             fullWidth
-            leftSection={<IconPlus size={14} />}
+            leftSection={<IconPlus size={16} />}
             onClick={onClick}
-            radius="xl"
-            size="xs"
+            radius="md"
+            size="md"
             styles={{
                 root: {
                     backgroundColor: 'transparent',
-                    border: '1.5px dashed var(--mantine-color-gray-3)',
-                    color: 'var(--mantine-color-gray-6)',
-                    minHeight: '32px',
+                    border: '1.5px dashed rgba(0, 0, 0, 0.20)',
+                    color: 'rgba(0, 0, 0, 0.60)',
+                    minHeight: '44px',
                     transition: 'all 0.15s ease',
                     '&:hover': {
-                        backgroundColor: 'var(--mantine-color-blue-0)',
-                        borderColor: 'var(--mantine-color-blue-4)',
-                        color: 'var(--mantine-color-blue-6)',
+                        backgroundColor: 'rgba(47, 158, 255, 0.08)',
+                        borderColor: 'var(--mantine-color-brand-5)',
+                        color: 'var(--mantine-color-brand-7)',
                     },
-                },
-                label: {
-                    fontSize: '12px',
-                    fontWeight: 500,
                 },
             }}
             variant="default"
         >
-            Add
+            Add session
         </Button>
     );
 }

@@ -1,16 +1,16 @@
-import {ActionIcon, Avatar, Badge, Box, Card, Group, Menu, Text, useMantineTheme} from '@mantine/core';
+import {ActionIcon, Badge, Box, Card, Group, Menu, Text, useMantineTheme} from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
 import {IconClock, IconDotsVertical, IconTimeDuration0} from '@tabler/icons-react';
 import React from 'react';
 
-import {PlanSession} from '@/store/services/plan_sessions';
 import {
     getSessionTypeBadgeColor,
     getSessionTypeLabel as getSessionTypeLabelFromConfig,
 } from '@/components/PlanBuilder/sessionTypes';
+import {PlanSession} from '@/store/services/plan_sessions';
 
-import {getLabelIcon, getScheduleWindow, getSessionColor, getSessionDuration} from './constants';
+import {getScheduleWindow, getSessionDuration} from './constants';
 
 interface CaptionBadgeProps {
     icon: React.ComponentType<any>;
@@ -27,17 +27,19 @@ interface PlanSessionCardProps {
 const CaptionBadge = ({icon: IconComponent, text}: CaptionBadgeProps) => (
     <Group
         align="center"
-        gap="6px"
+        gap="xs"
         wrap="nowrap"
     >
         <IconComponent
-            color="var(--mantine-color-gray-5)"
-            size={14}
+            size={16}
+            style={{
+                color: 'rgba(0, 0, 0, 0.60)', // 60% opacity for text weak (constitutional color system)
+            }}
         />
         <Text
-            c="gray.6"
-            size="xs"
+            size="sm"
             style={{
+                color: 'rgba(0, 0, 0, 0.60)', // 60% opacity for text weak
                 fontWeight: 400,
                 whiteSpace: 'nowrap',
             }}
@@ -55,7 +57,6 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
     const sessionName = planSession.override_name || planSession.session?.name || 'Untitled session';
     const duration = getSessionDuration(planSession);
     const scheduleWindow = getScheduleWindow(planSession);
-    const sessionColor = getSessionColor(planSession.id);
 
     const theme = useMantineTheme();
 
@@ -63,41 +64,48 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
         if (!onDelete) return;
 
         modals.openConfirmModal({
-            cancelProps: {radius: 'md', style: {flex: 1}, variant: 'light'},
+            cancelProps: {
+                fullWidth: true,
+                radius: 'md',
+                size: 'lg',
+                variant: 'light',
+            },
             centered: true,
             children: (
-                <Text size="sm">
-                    Remove <strong>{sessionName}</strong> from this plan?
-                </Text>
+                <Text size="md">This will remove "{sessionName}" from the plan. This action cannot be undone.</Text>
             ),
-            confirmProps: {color: 'red', radius: 'md', style: {flex: 1}},
+            confirmProps: {
+                color: 'red',
+                fullWidth: true,
+                radius: 'md',
+                size: 'lg',
+            },
             id: 'delete-plan-session-modal',
             labels: {
                 cancel: 'Cancel',
-                confirm: 'Remove',
+                confirm: 'Remove session',
             },
             onCancel: () => modals.close('delete-plan-session-modal'),
             onConfirm: () => onDelete(planSession.id),
-            title: <Text fw={600}>Remove Session</Text>,
-            zIndex: 99999,
+            title: <Text fw={700}>Remove session</Text>,
         });
     };
 
     return (
         <Card
-            bg="gray.1"
+            bg="gray.0"
             padding="sm"
-            shadow="xxs"
+            radius="md"
+            shadow="xs"
             style={{
-                borderRadius: theme.radius.xl,
                 display: 'flex',
                 flexDirection: 'column',
-                border: `1px dotted ${theme.colors.gray[2]}`,
+                border: `1px solid ${theme.colors.gray[3]}`,
             }}
         >
             <Group
                 align="center"
-                gap="xs"
+                gap="sm"
                 justify="space-between"
                 wrap="nowrap"
             >
@@ -107,32 +115,26 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
                 >
                     <Group
                         gap="xs"
-                        mb="6px"
+                        mb="xs"
                         wrap="wrap"
                     >
-                        <Avatar
-                            color={sessionColor}
-                            radius="xl"
-                            size={28}
-                            variant="light"
-                        >
-                            {React.createElement(getLabelIcon(planSession.label), {size: 16, weight: 'duotone'})}
-                        </Avatar>
                         <Text
-                            fw={500}
-                            size="sm"
+                            fw={700}
+                            size="md"
                             style={{
-                                lineHeight: 1.4,
+                                color: 'rgba(0, 0, 0, 0.90)', // 90% opacity for text strong
+                                lineHeight: 1.5,
                                 wordBreak: 'break-word',
                             }}
                         >
-                            {sessionName[0].toUpperCase() + sessionName.slice(1)}
+                            {sessionName}
                         </Text>
 
                         {!planSession.is_required && (
                             <Badge
                                 color="yellow"
-                                size="xs"
+                                leftSection={<Text size="xs">!</Text>}
+                                size="sm"
                                 variant="outline"
                             >
                                 Optional
@@ -142,7 +144,7 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
 
                     <Group
                         align="center"
-                        gap="sm"
+                        gap="xs"
                         wrap="wrap"
                     >
                         {duration && (
@@ -164,60 +166,60 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
                 <Box style={{flexShrink: 0}}>
                     <Menu
                         position="bottom-end"
-                        radius="xl"
                         shadow="md"
-                        width={160}
-                        withinPortal
+                        width={200}
                     >
                         <Menu.Target>
                             <ActionIcon
-                                aria-label="Session options"
-                                color="gray"
+                                aria-label="Session actions"
                                 onClick={(event) => event.stopPropagation()}
-                                radius="xl"
-                                size="sm"
+                                radius="sm"
+                                size={48}
                                 variant="subtle"
                             >
-                                <IconDotsVertical size={16} />
+                                <IconDotsVertical
+                                    size={20}
+                                    stroke={1.5}
+                                />
                             </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
                             {onAssign && (
                                 <Menu.Item
-                                    leftSection={<UserPlusIcon size={16} />}
+                                    leftSection={<UserPlusIcon size={18} />}
                                     onClick={() => onAssign(planSession.id)}
                                     styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
+                                        itemLabel: {fontSize: '16px'},
+                                        itemSection: {marginRight: '12px'},
                                     }}
                                 >
-                                    Assign
+                                    Assign to client
                                 </Menu.Item>
                             )}
                             {onEdit && (
                                 <Menu.Item
-                                    leftSection={<PencilSimpleIcon size={16} />}
+                                    leftSection={<PencilSimpleIcon size={18} />}
                                     onClick={() => onEdit(planSession.id)}
                                     styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
+                                        itemLabel: {fontSize: '16px'},
+                                        itemSection: {marginRight: '12px'},
                                     }}
                                 >
-                                    Edit
+                                    Edit session
                                 </Menu.Item>
                             )}
                             {(onAssign || onEdit) && onDelete && <Menu.Divider />}
                             {onDelete && (
                                 <Menu.Item
                                     color="red"
-                                    leftSection={<TrashIcon size={16} />}
+                                    leftSection={<TrashIcon size={18} />}
                                     onClick={handleDelete}
                                     styles={{
-                                        itemLabel: {fontSize: '14px'},
-                                        itemSection: {marginRight: '10px'},
+                                        itemLabel: {fontSize: '16px'},
+                                        itemSection: {marginRight: '12px'},
                                     }}
                                 >
-                                    Remove
+                                    Remove session
                                 </Menu.Item>
                             )}
                         </Menu.Dropdown>

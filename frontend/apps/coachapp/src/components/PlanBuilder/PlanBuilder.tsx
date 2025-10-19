@@ -1,21 +1,24 @@
-import {Box, Button, Group, LoadingOverlay, Modal, Text, TextInput} from '@mantine/core';
+import {ActionIcon, Box, Button, Group, LoadingOverlay, Modal, Text, TextInput} from '@mantine/core';
+import {useMediaQuery} from '@mantine/hooks';
 import {notifications} from '@mantine/notifications';
 import {IconCalendar, IconPencil} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import {type ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router';
 
-import {CreatePlanSessionInput, PlanSession} from '@/store/services/plan_sessions';
 import {DisplayError} from '@/components/containers/DisplayError';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
-import {useGetPlan} from '@/store/services/plans';
 import {
+    CreatePlanSessionInput,
+    PlanSession,
     useCreatePlanSessionMutation,
     useDeletePlanSessionMutation,
     useListPlanSessionsQuery,
+    useUpdatePlanSessionMutation,
 } from '@/store/services/plan_sessions';
+import {useGetPlan} from '@/store/services/plans';
 
 import Header from '../layouts/Header';
 import MealSelect from '../MealSelect/MealSelect';
@@ -46,8 +49,8 @@ const MEAL_DAYTIME_LABELS: Record<string, string> = {
     breakfast: 'Breakfast',
     lunch: 'Lunch',
     dinner: 'Dinner',
-    preworkout: 'Pre-Workout',
-    postworkout: 'Post-Workout',
+    preworkout: 'Pre-workout',
+    postworkout: 'Post-workout',
 };
 
 const formatMealDaytimeLabel = (value?: null | string): null | string => {
@@ -66,6 +69,7 @@ export default function PlanBuilder() {
     const planId = planIdParam ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const [calendarDateInput, setCalendarDateInput] = useState('');
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     const planBuilderKind = searchParams.get(PLAN_BUILDER_KIND_PARAM);
     const planBuilderDay = searchParams.get(PLAN_BUILDER_DAY_PARAM);
@@ -217,6 +221,7 @@ export default function PlanBuilder() {
     );
 
     const [createPlanSession, {isLoading: isCreatingSession}] = useCreatePlanSessionMutation();
+    const [updatePlanSession] = useUpdatePlanSessionMutation();
     const [deletePlanSession] = useDeletePlanSessionMutation();
 
     const sessions = useMemo(() => planSessions?.records ?? [], [planSessions]);
@@ -457,6 +462,83 @@ export default function PlanBuilder() {
         [deletePlanSession, planId],
     );
 
+    // Handler for bulk updating all sessions with a specific label
+    const handleUpdateLabel = useCallback(
+        async (oldLabel: string, newLabel: string, dayOfWeek: number) => {
+            const sessionsToUpdate = sessions.filter(
+                (s) => s.day_of_week === dayOfWeek && s.label?.toLowerCase() === oldLabel.toLowerCase(),
+            );
+
+            if (sessionsToUpdate.length === 0) {
+                return;
+            }
+
+            try {
+                // Update all sessions with the old label
+                await Promise.all(
+                    sessionsToUpdate.map((session) =>
+                        updatePlanSession({
+                            planId,
+                            planSessionId: session.id,
+                            data: {label: newLabel.toLowerCase()},
+                        }).unwrap(),
+                    ),
+                );
+
+                notifications.show({
+                    color: 'green',
+                    message: `Updated ${sessionsToUpdate.length} session(s)`,
+                    title: 'Label updated',
+                });
+            } catch (mutationError) {
+                notifications.show({
+                    color: 'red',
+                    message: mutationError instanceof Error ? mutationError.message : 'Failed to update label',
+                    title: 'Error',
+                });
+            }
+        },
+        [planId, sessions, updatePlanSession],
+    );
+
+    // Handler for bulk deleting all sessions with a specific label
+    const handleDeleteLabel = useCallback(
+        async (label: string, dayOfWeek: number) => {
+            const sessionsToDelete = sessions.filter(
+                (s) => s.day_of_week === dayOfWeek && s.label?.toLowerCase() === label.toLowerCase(),
+            );
+
+            if (sessionsToDelete.length === 0) {
+                return;
+            }
+
+            try {
+                // Delete all sessions with this label
+                await Promise.all(
+                    sessionsToDelete.map((session) =>
+                        deletePlanSession({
+                            planId,
+                            planSessionId: session.id,
+                        }).unwrap(),
+                    ),
+                );
+
+                notifications.show({
+                    color: 'green',
+                    message: `Removed ${sessionsToDelete.length} session(s)`,
+                    title: 'Label deleted',
+                });
+            } catch (mutationError) {
+                notifications.show({
+                    color: 'red',
+                    message: mutationError instanceof Error ? mutationError.message : 'Failed to delete label',
+                    title: 'Error',
+                });
+            }
+        },
+        [deletePlanSession, planId, sessions],
+    );
+
     const planLoadError: Error | null =
         (planError as Error | undefined) ?? (planSessionsError as Error | undefined) ?? null;
     const isLoadingAny = isLoadingPlan || isFetchingPlan || isLoadingSessions || isFetchingSessions;
@@ -475,61 +557,67 @@ export default function PlanBuilder() {
 
     return (
         <>
-            <HeadingContainer
-                style={{
-                    paddingBlock: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
-                }}
-                withBorder={false}
-            >
+            <HeadingContainer withBorder={false}>
                 <Header
                     actions={
-                        <Button
-                            leftSection={<IconPencil size={12} />}
-                            radius="xl"
-                            size="compact-xs"
-                            variant="light"
-                        >
-                            Edit
-                        </Button>
+                        isMobile ? (
+                            <ActionIcon
+                                aria-label="Plan details"
+                                color="brand"
+                                radius="xl"
+                                size="lg"
+                                variant="light"
+                            >
+                                <IconPencil size={18} />
+                            </ActionIcon>
+                        ) : (
+                            <Button
+                                leftSection={<IconPencil size={16} />}
+                                radius="xl"
+                                size="md"
+                                variant="light"
+                            >
+                                Details
+                            </Button>
+                        )
                     }
                     onBack={handleCloseDrawer}
-                    title={plan?.name ?? 'Plan Builder'}
+                    title={plan?.name ?? 'Plan builder'}
                 />
             </HeadingContainer>
             <PagePaper bottomGutter>
-                <div style={{flex: 1, overflow: 'auto'}}>
-                    <PaddingContainer>
-                        {(planError || planSessionsError) && (
-                            <DisplayError
-                                codesMap={new Map()}
-                                error={planLoadError ?? new Error('Failed to load plan details')}
-                            />
-                        )}
+                <PaddingContainer>
+                    {(planError || planSessionsError) && (
+                        <DisplayError
+                            codesMap={new Map()}
+                            error={planLoadError ?? new Error('Failed to load plan details')}
+                        />
+                    )}
 
-                        {isLoadingAny && <LoadingOverlay visible />}
+                    {isLoadingAny && <LoadingOverlay visible />}
 
-                        {plan && plan.recurrence === 'weekly' ? (
-                            <NutritionWeekPlanner
+                    {plan && plan.recurrence === 'weekly' ? (
+                        <NutritionWeekPlanner
+                            onAddSession={handleAddSession}
+                            onDeleteLabel={handleDeleteLabel}
+                            onDeleteSession={handleDeleteSession}
+                            onEditSession={handleEditSession}
+                            onUpdateLabel={handleUpdateLabel}
+                            plan={plan}
+                            sessions={sessions}
+                        />
+                    ) : (
+                        plan && (
+                            <PlanSessionsView
                                 onAddSession={handleAddSession}
                                 onDeleteSession={handleDeleteSession}
                                 onEditSession={handleEditSession}
                                 plan={plan}
                                 sessions={sessions}
                             />
-                        ) : (
-                            plan && (
-                                <PlanSessionsView
-                                    onAddSession={handleAddSession}
-                                    onDeleteSession={handleDeleteSession}
-                                    onEditSession={handleEditSession}
-                                    plan={plan}
-                                    sessions={sessions}
-                                />
-                            )
-                        )}
-                    </PaddingContainer>
-                </div>
+                        )
+                    )}
+                </PaddingContainer>
             </PagePaper>
 
             <Modal
@@ -538,7 +626,6 @@ export default function PlanBuilder() {
                 size="xl"
                 styles={{
                     body: {
-                        '&::-webkit-scrollbar': {display: 'none'},
                         display: 'flex',
                         flexDirection: 'column',
                         height: '80vh',
@@ -546,9 +633,7 @@ export default function PlanBuilder() {
                         padding: 0,
                     },
                     content: {
-                        '&::-webkit-scrollbar': {display: 'none'},
                         padding: 0,
-                        scrollbarWidth: 'none',
                     },
                 }}
                 withCloseButton={false}
@@ -556,45 +641,43 @@ export default function PlanBuilder() {
                 {drawerView === 'select-session' && (
                     <>
                         <Box
+                            p="md"
                             style={{
                                 borderBottom: '1px solid var(--mantine-color-gray-2)',
                                 flexShrink: 0,
-                                paddingBlock: 'var(--ce-size-md)',
-                                paddingInline: 'var(--ce-size-md)',
                             }}
                         >
                             <Header
                                 onBack={handleCloseNestedDrawer}
-                                title={`Add ${getSessionTypeLabel(sessionTypeFilter)}`}
+                                title={`Add ${getSessionTypeLabel(sessionTypeFilter).toLowerCase()}`}
                             />
                         </Box>
 
                         <Box
+                            p="md"
                             style={{
                                 flex: 1,
                                 overflow: 'auto',
-                                paddingBlock: 'var(--ce-size-md)',
-                                paddingInline: 'var(--ce-size-md)',
                             }}
                         >
                             {selectedContext?.kind === 'weekly' && (
                                 <ContextSummary
-                                    icon={<IconCalendar size={18} />}
+                                    icon={<IconCalendar size={20} />}
                                     label={weeklyContextLabel ?? DAY_NAMES[selectedContext.dayOfWeek]}
                                 />
                             )}
                             {selectedContext?.kind === 'daily' && (
                                 <ContextSummary
-                                    icon={<IconCalendar size={18} />}
+                                    icon={<IconCalendar size={20} />}
                                     label={`Day ${selectedContext.dayOrder + 1}`}
                                 />
                             )}
                             {selectedContext?.kind === 'calendar' && (
                                 <Box mb="lg">
                                     <TextInput
-                                        label="Date"
+                                        label="Session date"
                                         onChange={(event) => handleCalendarDateChange(event.currentTarget.value)}
-                                        size="sm"
+                                        size="md"
                                         type="date"
                                         value={calendarDateInput}
                                     />
@@ -622,18 +705,17 @@ export default function PlanBuilder() {
                 {drawerView === 'create-session' && (
                     <>
                         <Box
+                            p="md"
                             style={{
                                 borderBottom: '1px solid var(--mantine-color-gray-2)',
                                 flexShrink: 0,
-                                paddingBlock: 'var(--ce-size-md)',
-                                paddingInline: 'var(--ce-size-md)',
                             }}
                         >
                             <Header
                                 onBack={() => {
                                     setDrawerView('select-session');
                                 }}
-                                title={`Create ${getSessionTypeLabel(sessionTypeFilter)}`}
+                                title={`Create ${getSessionTypeLabel(sessionTypeFilter).toLowerCase()}`}
                             />
                         </Box>
 
@@ -654,11 +736,10 @@ export default function PlanBuilder() {
                 {drawerView === 'edit-session' && (
                     <>
                         <Box
+                            p="md"
                             style={{
                                 borderBottom: '1px solid var(--mantine-color-gray-2)',
                                 flexShrink: 0,
-                                paddingBlock: 'var(--ce-size-md)',
-                                paddingInline: 'var(--ce-size-md)',
                             }}
                         >
                             <Header
@@ -686,19 +767,8 @@ export default function PlanBuilder() {
                                     showSaveOptions={true}
                                 />
                             ) : (
-                                <Box
-                                    style={{
-                                        padding: 'var(--ce-size-md)',
-                                    }}
-                                >
-                                    <Text
-                                        c="gray.6"
-                                        style={{
-                                            fontSize: 'var(--body-font-size)',
-                                        }}
-                                    >
-                                        Session not found.
-                                    </Text>
+                                <Box p="md">
+                                    <Text c="dimmed">Session not found.</Text>
                                 </Box>
                             )}
                         </Box>
@@ -714,31 +784,34 @@ export default function PlanBuilder() {
 function ContextSummary({icon, label}: {icon: ReactNode; label: string}) {
     return (
         <Box
-            mb="lg"
+            bg="blue.0"
+            mb="md"
+            p="md"
             style={{
-                backgroundColor: 'var(--mantine-color-blue-0)',
                 border: '1px solid var(--mantine-color-blue-2)',
                 borderRadius: 'var(--mantine-radius-md)',
-                padding: 'var(--ce-size-sm)',
             }}
         >
             <Group
                 align="center"
-                gap="xs"
+                gap="sm"
                 wrap="nowrap"
             >
                 <Box
+                    c="blue.6"
                     style={{
-                        color: 'var(--mantine-color-blue-6)',
                         display: 'flex',
                     }}
                 >
                     {icon}
                 </Box>
                 <Text
-                    c="blue.8"
+                    c="blue.9"
                     fw={600}
-                    size="sm"
+                    size="md"
+                    style={{
+                        lineHeight: 1.5,
+                    }}
                 >
                     {label}
                 </Text>
@@ -746,4 +819,3 @@ function ContextSummary({icon, label}: {icon: ReactNode; label: string}) {
         </Box>
     );
 }
- 

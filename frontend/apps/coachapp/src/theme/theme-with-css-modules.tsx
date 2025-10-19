@@ -91,7 +91,7 @@ const formDescriptionStyles = {
     fontSize: 'var(--mantine-font-size-sm)',
     lineHeight: 1.5,
     color: 'var(--mantine-color-gray-7)',
-    marginBottom: 'var(--ce-size-xs)',
+    marginBottom: 0,
 } as const;
 
 const formErrorStyles = {
@@ -100,7 +100,7 @@ const formErrorStyles = {
     fontSize: 'var(--mantine-font-size-sm)',
     lineHeight: 1.5,
     color: 'var(--mantine-color-red-7)',
-    marginTop: 'var(--ce-size-xs)',
+    marginTop: 0,
 } as const;
 
 const formLabelStyles = {
@@ -125,8 +125,8 @@ const formFieldWrapperStyles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-    gap: 'var(--ce-size-xs)',
-    marginBottom: 'var(--ce-size-md)',
+    gap: 'var(--ce-size-2xs)',
+    marginBottom: 0,
     width: '100%',
 } as const;
 

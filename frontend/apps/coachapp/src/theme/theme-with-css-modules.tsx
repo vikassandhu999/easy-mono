@@ -85,6 +85,83 @@ const neutralGray: MantineColorsTuple = [
     '#1a1a1a',
 ];
 
+const formDescriptionStyles = {
+    order: 1,
+    fontWeight: 400,
+    fontSize: 'var(--mantine-font-size-sm)',
+    lineHeight: 1.5,
+    color: 'var(--mantine-color-gray-7)',
+    marginBottom: 'var(--ce-size-xs)',
+} as const;
+
+const formErrorStyles = {
+    order: 3,
+    fontWeight: 500,
+    fontSize: 'var(--mantine-font-size-sm)',
+    lineHeight: 1.5,
+    color: 'var(--mantine-color-red-7)',
+    marginTop: 'var(--ce-size-xs)',
+} as const;
+
+const formLabelStyles = {
+    order: 0,
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 'var(--ce-size-2xs)',
+    fontWeight: 600,
+    fontSize: 'var(--label-font-size)',
+    lineHeight: 1.2,
+    color: 'var(--mantine-color-gray-8)',
+    marginBottom: 0,
+    '&[data-required]::after': {
+        content: '"*"',
+        marginLeft: 'calc(var(--ce-size-xs) / 2)',
+        color: 'var(--mantine-color-gray-7)',
+        fontWeight: 500,
+    },
+} as const;
+
+const formFieldWrapperStyles = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 'var(--ce-size-xs)',
+    marginBottom: 'var(--ce-size-md)',
+    width: '100%',
+} as const;
+
+const baseInteractiveFieldStyles = {
+    order: 2,
+    borderRadius: 'var(--ce-size-sm)',
+    border: '1.5px solid var(--mantine-color-gray-4)',
+    backgroundColor: 'var(--mantine-color-white)',
+    fontSize: 'var(--body-font-size)',
+    fontWeight: 400,
+    lineHeight: 1.5,
+    padding: 'calc(var(--ce-size-sm) + 2px) var(--ce-size-md)',
+    transition: 'border-color 150ms ease, box-shadow 150ms ease',
+    '&:focus, &:focus-visible': {
+        outline: 'none',
+        borderColor: 'var(--mantine-color-brand-6)',
+        borderWidth: '2px',
+        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.12)',
+    },
+    '&[data-invalid]': {
+        borderColor: 'var(--mantine-color-red-6)',
+        boxShadow: '0 0 0 2px rgba(250, 82, 82, 0.12)',
+    },
+    '&::placeholder': {
+        color: 'var(--mantine-color-gray-6)',
+        opacity: 1,
+    },
+    '&:disabled': {
+        backgroundColor: 'var(--mantine-color-gray-1)',
+        borderColor: 'var(--mantine-color-gray-3)',
+        color: 'var(--mantine-color-gray-6)',
+        cursor: 'not-allowed',
+    },
+} as const;
+
 export const theme = createTheme({
     colors: {
         brand: brandBlue,
@@ -99,47 +176,57 @@ export const theme = createTheme({
         }),
         Checkbox: Checkbox.extend({
             defaultProps: {size: 'md'},
-            styles: {
+            styles: () => ({
+                body: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 'var(--ce-size-2xs)',
+                },
                 description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
+                    ...formDescriptionStyles,
+                    marginBottom: 0,
                 },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: 'var(--ce-size-2xs)',
+                    border: '1.5px solid var(--mantine-color-gray-5)',
+                    transition: 'border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease',
+                    '&:checked': {
+                        backgroundColor: 'var(--mantine-color-brand-6)',
+                        borderColor: 'var(--mantine-color-brand-6)',
+                    },
+                    '&:focus-visible': {
+                        outline: 'none',
+                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                    },
+                    '&:disabled': {
+                        backgroundColor: 'var(--mantine-color-gray-1)',
+                        borderColor: 'var(--mantine-color-gray-3)',
+                    },
                 },
                 label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+                    color: 'var(--mantine-color-gray-8)',
+                    fontWeight: 500,
+                    lineHeight: 1.5,
+                    marginBottom: 0,
                 },
-            },
+            }),
         }),
         ColorInput: ColorInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    paddingLeft: 'calc(var(--ce-size-md) + 2.5rem)',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                label: {...formLabelStyles},
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         Drawer: Drawer.extend({
             defaultProps: {
@@ -152,57 +239,31 @@ export const theme = createTheme({
         }),
         Input: Input.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
-                },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+            styles: () => ({
+                input: {...baseInteractiveFieldStyles},
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         InputDescription: InputDescription.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-            },
+            styles: () => ({description: {...formDescriptionStyles}}),
         }),
         InputError: InputError.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-            },
+            styles: () => ({error: {...formErrorStyles}}),
         }),
         InputLabel: InputLabel.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-            },
+            styles: () => ({label: {...formLabelStyles}}),
         }),
         InputWrapper: InputWrapper.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {fontWeight: 400, marginBottom: 'var(--ce-size-sm)'},
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                root: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
+                label: {...formLabelStyles},
+                root: {...formFieldWrapperStyles},
+            }),
         }),
         Menu: Menu.extend({
             styles: {
@@ -245,211 +306,186 @@ export const theme = createTheme({
         }),
         MultiSelect: MultiSelect.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    minHeight: '54px',
+                    paddingTop: 'calc(var(--ce-size-sm) + 2px)',
+                    paddingBottom: 'calc(var(--ce-size-sm) + 2px)',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+                label: {...formLabelStyles},
+                values: {
+                    gap: 'var(--ce-size-2xs)',
                 },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         NumberInput: NumberInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    paddingRight: '3.5rem',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+                label: {...formLabelStyles},
+                control: {
+                    width: '44px',
+                    borderLeft: '1px solid var(--mantine-color-gray-3)',
+                    '&:hover': {
+                        backgroundColor: 'var(--mantine-color-gray-1)',
+                    },
+                    '&:focus-visible': {
+                        outline: 'none',
+                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                    },
                 },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                controls: {
+                    height: '100%',
+                },
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         PasswordInput: PasswordInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
+                input: {...baseInteractiveFieldStyles},
+                innerInput: {
+                    ...baseInteractiveFieldStyles,
                 },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
+                label: {...formLabelStyles},
+                visibilityToggle: {
+                    color: 'var(--mantine-color-gray-7)',
+                    '&:focus-visible': {
+                        outline: 'none',
+                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                    },
                 },
-                input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
-                },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         PillsInput: PillsInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    minHeight: '54px',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+                label: {...formLabelStyles},
+                pillsList: {
+                    gap: 'var(--ce-size-2xs)',
                 },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
         PinInput: PinInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
+            styles: () => ({
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    textAlign: 'center',
+                    width: '3rem',
+                    height: '3rem',
+                    padding: 0,
                 },
-            },
+                root: {
+                    display: 'flex',
+                    gap: 'var(--ce-size-sm)',
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                },
+            }),
         }),
         Radio: Radio.extend({
             defaultProps: {size: 'md'},
-            styles: {
+            styles: () => ({
                 description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
+                    ...formDescriptionStyles,
+                    marginBottom: 0,
                 },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
+                error: {...formErrorStyles},
+                inner: {
+                    alignItems: 'flex-start',
+                    gap: 'var(--ce-size-2xs)',
                 },
                 label: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
+                    color: 'var(--mantine-color-gray-8)',
+                    fontWeight: 500,
+                    lineHeight: 1.5,
+                    marginBottom: 0,
                 },
-            },
+            }),
         }),
         RadioGroup: RadioGroup.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
+                label: {...formLabelStyles},
+                root: {
+                    ...formFieldWrapperStyles,
+                    gap: 'var(--ce-size-sm)',
                 },
-            },
+            }),
         }),
 
         Select: Select.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    cursor: 'pointer',
+                    paddingRight: 'calc(var(--ce-size-md) + 2.5rem)',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
+                label: {...formLabelStyles},
+                dropdown: {
+                    borderRadius: 'var(--mantine-radius-md)',
+                    border: '1px solid var(--mantine-color-gray-3)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
                 },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
 
         Textarea: Textarea.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    minHeight: '160px',
+                    resize: 'vertical',
+                    padding: 'var(--ce-size-md)',
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                label: {...formLabelStyles},
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
 
         TextInput: TextInput.extend({
             defaultProps: {size: 'md'},
-            styles: {
-                description: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-sm)',
-                },
-                error: {
-                    fontWeight: 400,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
+            styles: () => ({
+                description: {...formDescriptionStyles},
+                error: {...formErrorStyles},
                 input: {
-                    borderRadius: 'var(--ce-size-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    lineHeight: 'var(--body-line-height)',
+                    ...baseInteractiveFieldStyles,
+                    '&[data-with-icon]': {
+                        paddingLeft: 'calc(var(--ce-size-md) + 2.5rem)',
+                    },
                 },
-                label: {
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-2xs)',
-                },
-                wrapper: {height: 'unset', marginBottom: 'var(--ce-size-sm)'},
-            },
+                label: {...formLabelStyles},
+                wrapper: {...formFieldWrapperStyles},
+            }),
         }),
     },
     primaryColor: 'brand',

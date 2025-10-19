@@ -1,5 +1,5 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Group, Stack, Text} from '@mantine/core';
+import {Button, Group, Stack, Text, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
@@ -7,8 +7,6 @@ import {Controller, useForm} from 'react-hook-form';
 
 import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/store/services/plans';
 
-import CETextArea from '../CETextArea';
-import CETextInput from '../CETextInput';
 import {PLAN_DISCIPLINES} from '../Configs';
 import {FixedBottomBar} from '../containers/FixedBottomBar';
 
@@ -166,7 +164,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                         control={control}
                         name="name"
                         render={({field, fieldState}) => (
-                            <CETextInput
+                            <TextInput
                                 {...field}
                                 error={fieldState.error?.message}
                                 label="Name"
@@ -183,7 +181,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
                         control={control}
                         name="description"
                         render={({field, fieldState}) => (
-                            <CETextArea
+                            <Textarea
                                 {...field}
                                 error={fieldState.error?.message}
                                 label="Description (Optional)"

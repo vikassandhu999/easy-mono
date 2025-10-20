@@ -2,32 +2,21 @@ import {Container, Drawer, Stack} from '@mantine/core';
 import React, {useCallback} from 'react';
 
 import Header from '@/components/layouts/Header';
-import {Content, ContentType} from '@/store/services/contents';
+import {Content} from '@/store/services/contents';
 
 import ContentBuilder from './ContentBuilder';
-
-interface ContentBuilderDrawerProps {
-    contentId?: string;
-    contentType?: ContentType;
-    onClose: () => void;
-    onComplete?: (content: Content) => void;
-    opened: boolean;
-    showSaveOptions?: boolean;
-    title: string;
-}
+import {ContentBuilderDrawerProps} from './lib/types';
 
 /**
  * ContentBuilderDrawer - Drawer wrapper for ContentBuilder
  *
- * Follows the constitutional pattern of InviteClientDrawer and PlanCreateDrawer:
+ * Architecture:
  * - Full-screen drawer with consistent structure
- * - Header with back navigation (constrained width)
+ * - Header with back navigation (constrained width 560px)
  * - Scrollable content area with gray background (constrained width)
- * - Proper Container sizing (560px max-width)
+ * - Proper Container sizing for mobile-first design
  *
- * Usage:
- * - Create: <ContentBuilderDrawer contentType="exercise" title="Create exercise" ... />
- * - Edit: <ContentBuilderDrawer contentId="123" title="Edit exercise" ... />
+ * Pattern: Follows constitutional drawer pattern (InviteClientDrawer, PlanCreateDrawer)
  */
 export const ContentBuilderDrawer = React.memo(function ContentBuilderDrawer({
     contentId,
@@ -40,12 +29,12 @@ export const ContentBuilderDrawer = React.memo(function ContentBuilderDrawer({
 }: ContentBuilderDrawerProps) {
     const handleComplete = useCallback(
         (content: Content, action?: 'close' | 'continue') => {
-            // Always close on 'close' action or when no showSaveOptions (create mode)
+            // Always close on 'close' action or when in create mode
             if (action === 'close' || !contentId) {
                 onComplete?.(content);
                 onClose();
             } else if (action === 'continue') {
-                // Just call onComplete but keep drawer open for editing
+                // Just call onComplete but keep drawer open for continued editing
                 onComplete?.(content);
             }
         },
@@ -60,10 +49,10 @@ export const ContentBuilderDrawer = React.memo(function ContentBuilderDrawer({
             size="100%"
             styles={{
                 body: {
-                    padding: 0,
-                    height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
+                    height: '100%',
+                    padding: 0,
                 },
                 content: {
                     display: 'flex',

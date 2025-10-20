@@ -11,77 +11,40 @@ import {
     Text,
     TextInput,
 } from '@mantine/core';
-import {IconChefHat, IconFlame, IconLeaf, IconPlus, IconSalad, IconTrash, IconTrophy} from '@tabler/icons-react';
+import {IconPlus, IconTrash} from '@tabler/icons-react';
 import {useState} from 'react';
-import {Controller, UseFormReturn} from 'react-hook-form';
+import {Controller} from 'react-hook-form';
 
 import {ChipSelect} from '@/components/ChipSelect';
 
-import {ContentFormValues} from '../contentForm';
+import {NutritionInputs} from '../../components';
+import {
+    COOKING_METHOD_OPTIONS,
+    DIET_TYPE_OPTIONS,
+    DIFFICULTY_OPTIONS,
+    DISH_TYPE_OPTIONS,
+    FORM_SECTIONS,
+    MEAL_TYPE_OPTIONS,
+    RecipeDefinition,
+    RecipeFormProps,
+} from '../../lib';
 
-interface RecipeFormProps {
-    form: UseFormReturn<ContentFormValues>;
-}
+type RecipeInstructionsValue = NonNullable<RecipeDefinition['instructions']>;
+type RecipeInstructionStep = RecipeInstructionsValue['instructions'][number];
+type SectionValue = (typeof FORM_SECTIONS)[number]['value'];
 
-const DIFFICULTY_OPTIONS = [
-    {label: 'Easy', value: 'easy', icon: IconTrophy},
-    {label: 'Medium', value: 'medium', icon: IconTrophy},
-    {label: 'Hard', value: 'hard', icon: IconTrophy},
-];
-
-const MEAL_TYPE_OPTIONS = [
-    {label: 'Breakfast', value: 'breakfast', icon: IconChefHat},
-    {label: 'Lunch', value: 'lunch', icon: IconSalad},
-    {label: 'Dinner', value: 'dinner', icon: IconFlame},
-    {label: 'Snack', value: 'snack', icon: IconLeaf},
-    {label: 'Dessert', value: 'dessert', icon: IconChefHat},
-    {label: 'Beverage', value: 'beverage', icon: IconLeaf},
-];
-
-const DISH_TYPE_OPTIONS = [
-    {label: 'Main Course', value: 'main', icon: IconFlame},
-    {label: 'Side Dish', value: 'side', icon: IconSalad},
-    {label: 'Appetizer', value: 'appetizer', icon: IconLeaf},
-    {label: 'Salad', value: 'salad', icon: IconSalad},
-    {label: 'Soup', value: 'soup', icon: IconFlame},
-    {label: 'Smoothie', value: 'smoothie', icon: IconLeaf},
-];
-
-const DIET_TYPE_OPTIONS = [
-    {label: 'Vegan', value: 'vegan'},
-    {label: 'Vegetarian', value: 'vegetarian'},
-    {label: 'Gluten-Free', value: 'gluten_free'},
-    {label: 'Dairy-Free', value: 'dairy_free'},
-    {label: 'Keto', value: 'keto'},
-    {label: 'Paleo', value: 'paleo'},
-    {label: 'Low-Carb', value: 'low_carb'},
-    {label: 'High-Protein', value: 'high_protein'},
-];
-
-const COOKING_METHOD_OPTIONS = [
-    {label: 'Baking', value: 'baking'},
-    {label: 'Stovetop', value: 'stovetop'},
-    {label: 'Grilling', value: 'grilling'},
-    {label: 'No Cook', value: 'no_cook'},
-    {label: 'Slow Cooker', value: 'slow_cooker'},
-    {label: 'Instant Pot', value: 'instant_pot'},
-    {label: 'Air Fryer', value: 'air_fryer'},
-];
-
-const FORM_SECTIONS = [
-    {
-        label: 'Instructions',
-        value: 'instructions',
-    },
-    {
-        label: 'Advanced',
-        value: 'advanced',
-    },
-];
+const DEFAULT_RECIPE_INSTRUCTIONS: RecipeInstructionsValue = {
+    instructions: [],
+    media_url: null,
+};
 
 export default function RecipeForm({form}: RecipeFormProps) {
     const {control} = form;
-    const [selectedTab, setSelectedTab] = useState(() => FORM_SECTIONS[0].value);
+    const [selectedTab, setSelectedTab] = useState<SectionValue>(FORM_SECTIONS[0].value);
+
+    const handleTabChange = (value: string) => {
+        setSelectedTab(value as SectionValue);
+    };
 
     return (
         <Stack gap="lg">
@@ -98,6 +61,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
+            {/* Recipe name */}
             <Controller
                 control={control}
                 name="name"
@@ -114,6 +78,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
+            {/* Difficulty */}
             <Controller
                 control={control}
                 name="recipe_definition.difficulty"
@@ -131,25 +96,30 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         value={field.value ?? ''}
                     >
                         <Group mt="xs">
-                            {DIFFICULTY_OPTIONS.map((option) => (
-                                <Radio.Card
-                                    key={option.value}
-                                    p="xs"
-                                    radius="xl"
-                                    value={option.value}
-                                    w="fit-content"
-                                >
-                                    <Group wrap="nowrap">
-                                        <Radio.Indicator size="xs" />
-                                        <Text size="sm">{option.label}</Text>
-                                    </Group>
-                                </Radio.Card>
-                            ))}
+                            {DIFFICULTY_OPTIONS.map((option) => {
+                                const Icon = option.icon;
+                                return (
+                                    <Radio.Card
+                                        key={option.value}
+                                        p="xs"
+                                        radius="xl"
+                                        value={option.value}
+                                        w="fit-content"
+                                    >
+                                        <Group wrap="nowrap">
+                                            <Radio.Indicator size="xs" />
+                                            <Icon size={16} />
+                                            <Text size="sm">{option.label}</Text>
+                                        </Group>
+                                    </Radio.Card>
+                                );
+                            })}
                         </Group>
                     </Radio.Group>
                 )}
             />
 
+            {/* Meal types */}
             <Controller
                 control={control}
                 name="recipe_definition.meal_types"
@@ -174,6 +144,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
+            {/* Dish type */}
             <Controller
                 control={control}
                 name="recipe_definition.dish_type"
@@ -217,6 +188,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
+            {/* Time + servings */}
             <Group
                 grow
                 wrap="nowrap"
@@ -276,6 +248,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 />
             </Group>
 
+            {/* Diet types */}
             <Controller
                 control={control}
                 name="recipe_definition.diet_types"
@@ -295,6 +268,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 )}
             />
 
+            {/* Media */}
             <Controller
                 control={control}
                 name="media"
@@ -318,20 +292,20 @@ export default function RecipeForm({form}: RecipeFormProps) {
             />
 
             <SegmentedControl
-                data={FORM_SECTIONS}
-                onChange={setSelectedTab}
+                data={[...FORM_SECTIONS]}
+                onChange={handleTabChange}
                 radius="xl"
                 size="lg"
                 value={selectedTab}
-            ></SegmentedControl>
+            />
 
             {selectedTab === 'instructions' && (
                 <Controller
                     control={control}
                     name="recipe_definition.instructions"
                     render={({field}) => {
-                        const instructionsObj = field.value || {instructions: []};
-                        const instructions = instructionsObj.instructions || [];
+                        const instructionsObj = (field.value ?? DEFAULT_RECIPE_INSTRUCTIONS) as RecipeInstructionsValue;
+                        const instructions = (instructionsObj.instructions ?? []) as RecipeInstructionStep[];
 
                         const handleAddInstruction = () => {
                             field.onChange({
@@ -341,22 +315,24 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         };
 
                         const handleRemoveInstruction = (index: number) => {
-                            const newInstructions = instructions.filter((_: any, i: number) => i !== index);
+                            const updated = instructions.filter((_, i) => i !== index);
                             field.onChange({
                                 ...instructionsObj,
-                                instructions: newInstructions.length > 0 ? newInstructions : [],
+                                instructions: updated,
                             });
                         };
 
                         const handleUpdateInstruction = (index: number, value: string) => {
-                            const newInstructions = [...instructions];
-                            newInstructions[index] = {
-                                ...newInstructions[index],
+                            const updated = [...instructions];
+                            const current = updated[index];
+                            updated[index] = {
+                                ...current,
                                 instruction: value,
                             };
+
                             field.onChange({
                                 ...instructionsObj,
-                                instructions: newInstructions,
+                                instructions: updated,
                             });
                         };
 
@@ -369,7 +345,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     Describe step-by-step instructions to prepare the recipe
                                 </Text>
 
-                                {instructions.map((instructionStep: any, index: number) => (
+                                {instructions.map((instructionStep, index) => (
                                     <Group
                                         align="center"
                                         gap="xs"
@@ -385,10 +361,10 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                             <TextInput
                                                 flex={1}
                                                 onChange={(e) => handleUpdateInstruction(index, e.currentTarget.value)}
-                                                placeholder={`Describe what to do`}
+                                                placeholder="Describe what to do"
                                                 radius="xl"
                                                 size="md"
-                                                value={instructionStep?.instruction || ''}
+                                                value={instructionStep?.instruction ?? ''}
                                                 variant="filled"
                                             />
                                         </Indicator>
@@ -443,114 +419,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         )}
                     />
 
-                    <Text
-                        fw={600}
-                        mt="md"
-                        size="sm"
-                    >
-                        Nutrition (Per Serving)
-                    </Text>
-
-                    <Group
-                        grow
-                        wrap="nowrap"
-                    >
-                        <Controller
-                            control={control}
-                            name="recipe_definition.nutrition_per_serving.calories"
-                            render={({field}) => (
-                                <NumberInput
-                                    {...field}
-                                    decimalScale={0}
-                                    label="Calories"
-                                    min={0}
-                                    placeholder="350"
-                                    radius="xl"
-                                    size="sm"
-                                    value={field.value ?? undefined}
-                                    variant="filled"
-                                />
-                            )}
-                        />
-                        <Controller
-                            control={control}
-                            name="recipe_definition.nutrition_per_serving.macros.protein_g"
-                            render={({field}) => (
-                                <NumberInput
-                                    {...field}
-                                    decimalScale={1}
-                                    label="Protein"
-                                    min={0}
-                                    placeholder="30"
-                                    radius="xl"
-                                    size="sm"
-                                    suffix=" g"
-                                    value={field.value ?? undefined}
-                                    variant="filled"
-                                />
-                            )}
-                        />
-                    </Group>
-
-                    <Group
-                        grow
-                        wrap="nowrap"
-                    >
-                        <Controller
-                            control={control}
-                            name="recipe_definition.nutrition_per_serving.macros.carbs_g"
-                            render={({field}) => (
-                                <NumberInput
-                                    {...field}
-                                    decimalScale={1}
-                                    label="Carbs"
-                                    min={0}
-                                    placeholder="25"
-                                    radius="xl"
-                                    size="sm"
-                                    suffix=" g"
-                                    value={field.value ?? undefined}
-                                    variant="filled"
-                                />
-                            )}
-                        />
-                        <Controller
-                            control={control}
-                            name="recipe_definition.nutrition_per_serving.macros.fats_g"
-                            render={({field}) => (
-                                <NumberInput
-                                    {...field}
-                                    decimalScale={1}
-                                    label="Fats"
-                                    min={0}
-                                    placeholder="15"
-                                    radius="xl"
-                                    size="sm"
-                                    suffix=" g"
-                                    value={field.value ?? undefined}
-                                    variant="filled"
-                                />
-                            )}
-                        />
-                        <Controller
-                            control={control}
-                            name="recipe_definition.nutrition_per_serving.macros.fiber_g"
-                            render={({field}) => (
-                                <NumberInput
-                                    {...field}
-                                    decimalScale={1}
-                                    label="Fiber"
-                                    min={0}
-                                    placeholder="5"
-                                    radius="xl"
-                                    size="sm"
-                                    suffix=" g"
-                                    value={field.value ?? undefined}
-                                    variant="filled"
-                                />
-                            )}
-                        />
-                    </Group>
+                    <NutritionInputs form={form} />
                 </>
             )}
         </Stack>

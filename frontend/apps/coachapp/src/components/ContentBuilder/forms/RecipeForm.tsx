@@ -84,7 +84,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
     const [selectedTab, setSelectedTab] = useState(() => FORM_SECTIONS[0].value);
 
     return (
-        <Stack gap="sm">
+        <Stack gap="lg">
             {/* Hidden content type field */}
             <Controller
                 control={control}
@@ -363,10 +363,10 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         return (
                             <Stack gap="md">
                                 <Text
-                                    fs="italic"
-                                    size="xs"
+                                    c="dimmed"
+                                    size="md"
                                 >
-                                    You can describe step-by-step instructions to prepare
+                                    Describe step-by-step instructions to prepare the recipe
                                 </Text>
 
                                 {instructions.map((instructionStep: any, index: number) => (
@@ -409,11 +409,11 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                     leftSection={<IconPlus size={16} />}
                                     onClick={handleAddInstruction}
                                     radius="xl"
-                                    size="compact-sm"
+                                    size="md"
                                     variant="light"
                                     w="max-content"
                                 >
-                                    Add Step
+                                    Add step
                                 </Button>
                             </Stack>
                         );

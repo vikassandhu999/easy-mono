@@ -13,6 +13,7 @@ import {
 } from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {
+    IconAlertCircle,
     IconArrowBigDownLines,
     IconArrowBigUpLines,
     IconBarbell,
@@ -126,7 +127,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
     const primaryMuscles = watch('exercise_definition.primary_muscle') ?? [];
 
     return (
-        <Stack gap="sm">
+        <Stack gap="lg">
             <Controller
                 control={control}
                 name="type"
@@ -145,11 +146,11 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 render={({field, fieldState}) => (
                     <TextInput
                         {...field}
+                        description="Name should be specific and descriptive"
                         error={fieldState.error?.message}
-                        placeholder="Name of exercise. e.g. Barbell Back Squat"
-                        radius="xl"
-                        size="xl"
-                        variant="filled"
+                        label="Exercise name"
+                        placeholder="e.g., Barbell Back Squat"
+                        withAsterisk
                     />
                 )}
             />
@@ -160,27 +161,19 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 render={({field}) => (
                     <Radio.Group
                         {...field}
-                        label={
-                            <Text
-                                fw={600}
-                                size="sm"
-                            >
-                                Level
-                            </Text>
-                        }
+                        label="Level"
                         value={field.value ?? LEVEL_OPTIONS[0].value}
                     >
                         <Group mt="xs">
                             {LEVEL_OPTIONS.map((option) => (
                                 <Radio.Card
                                     key={option.value}
-                                    p="xs"
-                                    radius="xl"
+                                    p="sm"
+                                    radius="md"
                                     value={option.value}
-                                    w="fit-content"
                                 >
                                     <Group wrap="nowrap">
-                                        <Radio.Indicator size="xs" />
+                                        <Radio.Indicator />
                                         <Text size="sm">{option.label}</Text>
                                     </Group>
                                 </Radio.Card>
@@ -196,14 +189,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 render={({field}) => (
                     <Radio.Group
                         {...field}
-                        label={
-                            <Text
-                                fw={600}
-                                size="sm"
-                            >
-                                Category
-                            </Text>
-                        }
+                        label="Category"
                         value={field.value ?? ''}
                     >
                         <Group
@@ -213,13 +199,12 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                             {CATEGORY_OPTIONS.map((option) => (
                                 <Radio.Card
                                     key={option.value}
-                                    p="xs"
-                                    radius="xl"
+                                    p="sm"
+                                    radius="md"
                                     value={option.value}
-                                    w="fit-content"
                                 >
                                     <Group wrap="nowrap">
-                                        <Radio.Indicator size="xs" />
+                                        <Radio.Indicator />
                                         <Text size="sm">{option.label}</Text>
                                     </Group>
                                 </Radio.Card>
@@ -237,23 +222,23 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         {...field}
                         clearable
                         data={PRIMARY_MUSCLE_OPTIONS}
-                        label="Primary Muscles"
+                        description="Select up to 3 primary muscles targeted by this exercise"
+                        label="Primary muscles"
                         onChange={(value) => {
                             if (value.length > 3) {
                                 notifications.show({
-                                    title: 'Maximum limit reached',
-                                    message: 'You can select up to 3 primary muscles only',
+                                    autoClose: 3000,
                                     color: 'orange',
+                                    icon: <IconAlertCircle size={20} />,
+                                    message: 'Select up to 3 primary muscles only',
+                                    title: 'Maximum limit reached',
                                 });
                                 return;
                             }
                             field.onChange(value);
                         }}
                         placeholder="Select primary muscles"
-                        radius="xl"
-                        size="sm"
                         value={field.value ?? []}
-                        variant="filled"
                     />
                 )}
             />
@@ -272,24 +257,24 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                             {...field}
                             clearable
                             data={availableSecondaryMuscles}
-                            label="Secondary Muscles"
+                            description="Select up to 3 secondary muscles (cannot overlap with primary)"
+                            label="Secondary muscles"
                             maxValues={3}
                             onChange={(value) => {
                                 if (value.length > 3) {
                                     notifications.show({
-                                        title: 'Maximum limit reached',
-                                        message: 'You can select up to 3 secondary muscles only',
+                                        autoClose: 3000,
                                         color: 'orange',
+                                        icon: <IconAlertCircle size={20} />,
+                                        message: 'Select up to 3 secondary muscles only',
+                                        title: 'Maximum limit reached',
                                     });
                                     return;
                                 }
                                 field.onChange(value);
                             }}
                             placeholder="Select secondary muscles"
-                            radius="xl"
-                            size="sm"
                             value={field.value ?? []}
-                            variant="filled"
                         />
                     );
                 }}
@@ -301,27 +286,19 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 render={({field}) => (
                     <Radio.Group
                         {...field}
-                        label={
-                            <Text
-                                fw={600}
-                                size="sm"
-                            >
-                                Force
-                            </Text>
-                        }
+                        label="Force"
                         value={field.value ?? ''}
                     >
                         <Group mt="xs">
                             {FORCE_OPTIONS.map((option) => (
                                 <Radio.Card
                                     key={option.value}
-                                    p="xs"
-                                    radius="xl"
+                                    p="sm"
+                                    radius="md"
                                     value={option.value}
-                                    w="fit-content"
                                 >
                                     <Group wrap="nowrap">
-                                        <Radio.Indicator size="xs" />
+                                        <Radio.Indicator />
                                         <Text size="sm">{option.label}</Text>
                                     </Group>
                                 </Radio.Card>
@@ -338,28 +315,26 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                     <TextInput
                         {...field}
                         description="Image or video URL for this exercise"
-                        label="Media URL"
+                        label="Media URL (optional)"
                         onChange={(e) => {
                             const url = e.currentTarget.value;
                             field.onChange(url ? {url, type: 'image'} : undefined);
                         }}
                         placeholder="https://example.com/exercise.jpg"
-                        radius="xl"
-                        size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
-                        variant="filled"
                     />
                 )}
             />
 
             <SegmentedControl
                 data={FORM_SECTIONS}
+                fullWidth
                 onChange={setSelectedTab}
-                radius="xl"
-                size="lg"
+                radius="md"
+                size="md"
                 value={selectedTab}
-            ></SegmentedControl>
+            />
 
             {selectedTab === 'instructions' && (
                 <Controller
@@ -386,57 +361,57 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         return (
                             <Stack gap="md">
                                 <Text
-                                    fs="italic"
-                                    size="xs"
+                                    c="dimmed"
+                                    size="sm"
                                 >
-                                    You can describe step to perform
+                                    Describe each step to perform the exercise correctly
                                 </Text>
 
-                                {instructions.map((instruction, index) => (
-                                    <Group
-                                        align="center"
-                                        gap="xs"
-                                        key={index}
-                                        wrap="nowrap"
-                                    >
-                                        <Indicator
-                                            label={index + 1}
-                                            position="top-start"
-                                            size={18}
-                                            w="100%"
+                                <Stack gap="sm">
+                                    {instructions.map((instruction, index) => (
+                                        <Group
+                                            align="flex-start"
+                                            gap="xs"
+                                            key={index}
+                                            wrap="nowrap"
                                         >
-                                            <TextInput
-                                                flex={1}
-                                                onChange={(e) => handleUpdateInstruction(index, e.currentTarget.value)}
-                                                placeholder={`Describe what to do`}
-                                                radius="xl"
-                                                size="md"
-                                                value={instruction}
-                                                variant="filled"
-                                            />
-                                        </Indicator>
+                                            <Indicator
+                                                label={index + 1}
+                                                position="top-start"
+                                                size={20}
+                                                style={{flex: 1}}
+                                            >
+                                                <TextInput
+                                                    aria-label={`Step ${index + 1}`}
+                                                    onChange={(e) =>
+                                                        handleUpdateInstruction(index, e.currentTarget.value)
+                                                    }
+                                                    placeholder="Describe what to do"
+                                                    value={instruction}
+                                                    w="100%"
+                                                />
+                                            </Indicator>
 
-                                        <ActionIcon
-                                            color="red"
-                                            onClick={() => handleRemoveInstruction(index)}
-                                            radius="xl"
-                                            size="md"
-                                            variant="light"
-                                        >
-                                            <IconTrash size={18} />
-                                        </ActionIcon>
-                                    </Group>
-                                ))}
+                                            <ActionIcon
+                                                aria-label={`Remove step ${index + 1}`}
+                                                color="red"
+                                                onClick={() => handleRemoveInstruction(index)}
+                                                size="lg"
+                                                variant="light"
+                                            >
+                                                <IconTrash size={18} />
+                                            </ActionIcon>
+                                        </Group>
+                                    ))}
+                                </Stack>
 
                                 <Button
                                     leftSection={<IconPlus size={16} />}
                                     onClick={handleAddInstruction}
-                                    radius="xl"
-                                    size="compact-sm"
+                                    size="md"
                                     variant="light"
-                                    w="max-content"
                                 >
-                                    Add Step
+                                    Add step
                                 </Button>
                             </Stack>
                         );
@@ -454,14 +429,11 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 {...field}
                                 decimalScale={2}
                                 description="Estimated calories burned per minute"
-                                label="Calories Per Minute"
+                                label="Calories per minute (optional)"
                                 min={0}
                                 placeholder="e.g., 5.5"
-                                radius="xl"
-                                size="sm"
                                 step={0.1}
                                 value={field.value ?? undefined}
-                                variant="filled"
                             />
                         )}
                     />
@@ -473,17 +445,8 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                             <ChipSelect
                                 {...field}
                                 data={EQUIPMENT_OPTIONS}
-                                label={
-                                    <Text
-                                        fw={600}
-                                        size="sm"
-                                    >
-                                        Equipment
-                                    </Text>
-                                }
+                                label="Equipment"
                                 multiple
-                                radius="xl"
-                                size="sm"
                                 value={field.value ?? []}
                                 variant="outline"
                             />
@@ -503,13 +466,12 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                     {MECHANICS_OPTIONS.map((option) => (
                                         <Radio.Card
                                             key={option.value}
-                                            p="xs"
-                                            radius="xl"
+                                            p="sm"
+                                            radius="md"
                                             value={option.value}
-                                            w="fit-content"
                                         >
                                             <Group wrap="nowrap">
-                                                <Radio.Indicator size="xs" />
+                                                <Radio.Indicator />
                                                 <Text size="sm">{option.label}</Text>
                                             </Group>
                                         </Radio.Card>
@@ -525,7 +487,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         render={({field}) => (
                             <Radio.Group
                                 {...field}
-                                label="Movement Pattern"
+                                label="Movement pattern"
                                 value={field.value ?? ''}
                             >
                                 <Group
@@ -535,13 +497,12 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                     {MOVEMENT_PATTERN_OPTIONS.map((option) => (
                                         <Radio.Card
                                             key={option.value}
-                                            p="xs"
-                                            radius="xl"
+                                            p="sm"
+                                            radius="md"
                                             value={option.value}
-                                            w="fit-content"
                                         >
                                             <Group wrap="nowrap">
-                                                <Radio.Indicator size="xs" />
+                                                <Radio.Indicator />
                                                 <Text size="sm">{option.label}</Text>
                                             </Group>
                                         </Radio.Card>

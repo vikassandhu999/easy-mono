@@ -1,11 +1,9 @@
 import {Alert, Button, LoadingOverlay, Stack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {skipToken} from '@reduxjs/toolkit/query';
-import {IconRefresh} from '@tabler/icons-react';
+import {IconAlertCircle, IconRefresh} from '@tabler/icons-react';
 import {useCallback, useState} from 'react';
 
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import PagePaper from '@/components/containers/PagePaper';
 import {
     Content,
     ContentType,
@@ -86,7 +84,7 @@ export default function ContentBuilder({
                 notifications.show({
                     autoClose: 2000,
                     color: 'green',
-                    message: 'Changes saved',
+                    message: 'Changes saved successfully',
                 });
             } catch (error) {
                 const message =
@@ -94,11 +92,11 @@ export default function ContentBuilder({
                         ? error.message
                         : error instanceof Error
                           ? error.message
-                          : 'Please check your input and try again';
+                          : 'Check your input and try again';
                 notifications.show({
                     color: 'red',
                     message,
-                    title: 'Could not save',
+                    title: 'Unable to save content',
                 });
             }
         },
@@ -107,52 +105,32 @@ export default function ContentBuilder({
 
     if (!currentContentId && !effectiveContentType) {
         return (
-            <PagePaper>
-                <PaddingContainer
-                    paddingX="sm"
-                    paddingY="lg"
-                >
-                    <Alert
-                        color="red"
-                        title="Missing information"
-                    >
-                        Please select a content type to continue.
-                    </Alert>
-                </PaddingContainer>
-            </PagePaper>
+            <Alert
+                color="red"
+                icon={<IconAlertCircle size={20} />}
+                title="Missing information"
+            >
+                Please select a content type to continue.
+            </Alert>
         );
     }
 
-    // Show loading state when fetching content
-    if (currentContentId && isLoadingContent) {
+    // Show loading or error state when fetching content
+    if (currentContentId && (isLoadingContent || isContentError)) {
         return (
-            <PagePaper>
-                <PaddingContainer
-                    paddingX="sm"
-                    paddingY="lg"
-                >
+            <Stack gap="md">
+                {isLoadingContent ? (
                     <LoadingOverlay
                         loaderProps={{
                             type: 'bars',
                         }}
                         visible
                     />
-                </PaddingContainer>
-            </PagePaper>
-        );
-    }
-
-    // Show error state when fetching content fails
-    if (currentContentId && isContentError) {
-        return (
-            <PagePaper>
-                <PaddingContainer
-                    paddingX="sm"
-                    paddingY="lg"
-                >
+                ) : (
                     <Alert
                         color="red"
-                        title="Error loading content"
+                        icon={<IconAlertCircle size={20} />}
+                        title="Unable to load content"
                     >
                         <Stack gap="sm">
                             We couldn't load this content. Please try again.
@@ -160,66 +138,15 @@ export default function ContentBuilder({
                                 color="red"
                                 leftSection={<IconRefresh size={16} />}
                                 onClick={() => contentQuery.refetch()}
-                                radius="xl"
-                                size="sm"
+                                size="md"
                                 variant="light"
                             >
                                 Retry
                             </Button>
                         </Stack>
                     </Alert>
-                </PaddingContainer>
-            </PagePaper>
-        );
-    }
-
-    // Show loading state when fetching content
-    if (currentContentId && isLoadingContent) {
-        return (
-            <PagePaper>
-                <PaddingContainer
-                    paddingX="sm"
-                    paddingY="lg"
-                >
-                    <LoadingOverlay
-                        loaderProps={{
-                            type: 'bars',
-                        }}
-                        visible
-                    />
-                </PaddingContainer>
-            </PagePaper>
-        );
-    }
-
-    // Show error state when fetching content fails
-    if (currentContentId && isContentError) {
-        return (
-            <PagePaper>
-                <PaddingContainer
-                    paddingX="sm"
-                    paddingY="lg"
-                >
-                    <Alert
-                        color="red"
-                        title="Error loading content"
-                    >
-                        <Stack gap="sm">
-                            We couldn't load this content. Please try again.
-                            <Button
-                                color="red"
-                                leftSection={<IconRefresh size={16} />}
-                                onClick={() => contentQuery.refetch()}
-                                radius="xl"
-                                size="sm"
-                                variant="light"
-                            >
-                                Retry
-                            </Button>
-                        </Stack>
-                    </Alert>
-                </PaddingContainer>
-            </PagePaper>
+                )}
+            </Stack>
         );
     }
 

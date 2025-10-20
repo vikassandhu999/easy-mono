@@ -1,6 +1,6 @@
-import {Badge, Card, Group, Image, MantineColor, Stack, Text} from '@mantine/core';
+import {Badge, Card, Group, Image, Stack, Text, useMantineTheme} from '@mantine/core';
 import {IconClock} from '@tabler/icons-react';
-import {FC} from 'react';
+import React, {FC} from 'react';
 
 import {Content} from '@/store/services/contents';
 
@@ -12,60 +12,85 @@ interface RecipeCardProps {
 }
 
 export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
+    const theme = useMantineTheme();
+
+    // Handle keyboard interactions
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <Card
-            bg="gray.0"
             onClick={onClick}
-            padding={0}
-            radius="xl"
+            onKeyDown={handleKeyDown}
+            radius={0}
             role={onClick ? 'button' : undefined}
-            shadow="xs"
             style={{
-                cursor: 'pointer',
-                overflow: 'hidden',
+                cursor: onClick ? 'pointer' : 'default',
+                borderBottom: `1px solid ${theme.colors.gray[3]}`,
+                transition: 'all 0.15s ease',
+            }}
+            styles={{
+                root: {
+                    paddingBlock: 'var(--mantine-spacing-lg)',
+                    paddingInline: 'var(--mantine-spacing-lg)',
+                    ...(onClick && {
+                        '&:hover': {
+                            backgroundColor: theme.colors.gray[0],
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        },
+                        '&:active': {
+                            transform: 'translateY(0)',
+                            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                        },
+                        '&:focus-visible': {
+                            outline: '2px solid var(--mantine-color-brand-6)',
+                            outlineOffset: '2px',
+                        },
+                    }),
+                },
             }}
             tabIndex={onClick ? 0 : undefined}
-            withBorder
         >
             <Group
-                align="stretch"
-                gap={0}
+                gap="md"
                 wrap="nowrap"
             >
-                {/* Left image section */}
-
+                {/* Recipe Image */}
                 <Image
                     alt={content.name}
-                    radius={0}
+                    h={56}
+                    radius="md"
                     src={RecipeSampleImage}
-                    style={{borderRadius: 0, objectFit: 'cover'}}
-                    w="60px"
+                    style={{objectFit: 'cover'}}
+                    w={56}
                 />
 
                 {/* Main content */}
                 <Stack
                     flex={1}
-                    gap="xs"
-                    p="md"
+                    gap="sm"
+                    style={{minWidth: 0}}
                 >
-                    {/* Title row */}
-                    <Group
-                        align="center"
-                        gap="xs"
-                        wrap="nowrap"
+                    {/* Title */}
+                    <Text
+                        fw={600}
+                        lineClamp={1}
+                        size="lg"
+                        style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                        }}
                     >
-                        <Text
-                            c="dark.9"
-                            fw={600}
-                            lineClamp={1}
-                            size="md"
-                            style={{flex: 1}}
-                        >
-                            {content.name}
-                        </Text>
-                    </Group>
+                        {content.name}
+                    </Text>
 
-                    {/* Metadata row */}
+                    {/* Metadata - Meal type, time, servings, calories */}
                     <Group gap="xs">
                         {content.recipe_definition?.meal_types && content.recipe_definition.meal_types.length > 0 && (
                             <Badge
@@ -78,7 +103,7 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
                                         fontWeight: 500,
                                     },
                                 }}
-                                variant="light"
+                                variant="dot"
                             >
                                 {content.recipe_definition.meal_types[0]}
                             </Badge>
@@ -103,7 +128,7 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
                                 size="sm"
                                 variant="dot"
                             >
-                                {content.recipe_definition.servings}s
+                                {content.recipe_definition.servings} servings
                             </Badge>
                         )}
 
@@ -114,7 +139,7 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
                                 size="sm"
                                 variant="dot"
                             >
-                                {Math.round(content.recipe_definition.nutrition_per_serving.calories)}kcal
+                                {Math.round(content.recipe_definition.nutrition_per_serving.calories)} cal
                             </Badge>
                         )}
                     </Group>

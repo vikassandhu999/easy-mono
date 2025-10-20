@@ -1,6 +1,7 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Group, Stack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
+import {IconAlertCircle} from '@tabler/icons-react';
 import {useEffect, useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 
@@ -66,28 +67,29 @@ export default function ContentCreateForm({
                 (errors) => {
                     console.error('Form validation errors:', errors);
                     notifications.show({
-                        title: 'Validation Error',
-                        message: 'Please check the form and fix any errors before submitting.',
-                        color: 'orange',
                         autoClose: 5000,
+                        color: 'orange',
+                        icon: <IconAlertCircle size={20} />,
+                        message: 'Check the form and fix any errors before submitting',
+                        title: 'Validation error',
                     });
                 },
             )}
             style={{
                 display: 'flex',
                 flexDirection: 'column',
-                maxHeight: '70vh',
-                minHeight: '400px',
+                height: '100%',
+                flex: 1,
             }}
         >
             {/* Scrollable content */}
             <Stack
-                gap="md"
+                gap="lg"
                 style={{
                     flex: 1,
                     overflow: 'auto',
-                    paddingBlock: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
+                    paddingBlock: 'var(--mantine-spacing-lg)',
+                    paddingInline: 'var(--mantine-spacing-lg)',
                 }}
             >
                 {/* Render appropriate form based on content type */}
@@ -98,44 +100,41 @@ export default function ContentCreateForm({
 
             {/* Fixed Submit Button(s) */}
             <Group
-                justify="flex-end"
+                justify="flex-start"
                 style={{
                     backgroundColor: 'white',
-                    borderTop: '1px solid var(--mantine-color-gray-2)',
+                    borderTop: '1px solid var(--mantine-color-gray-3)',
                     flexShrink: 0,
-                    paddingBlock: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
-                    position: 'sticky',
-                    bottom: 0,
-                    zIndex: 1,
+                    paddingBlock: 'var(--mantine-spacing-lg)',
+                    paddingInline: 'var(--mantine-spacing-lg)',
                 }}
             >
                 {showSaveOptions ? (
                     <>
                         <Button
+                            loading={isSubmitting}
+                            radius="xl"
+                            size="lg"
+                            type="submit"
+                        >
+                            Save and close
+                        </Button>
+                        <Button
                             color="gray"
                             loading={isSubmitting}
                             onClick={handleSubmit((values) => handleFormSubmit(values, 'continue'))}
                             radius="xl"
-                            size="md"
+                            size="lg"
                             variant="light"
                         >
                             Save
-                        </Button>
-                        <Button
-                            loading={isSubmitting}
-                            radius="xl"
-                            size="md"
-                            type="submit"
-                        >
-                            Save & Exit
                         </Button>
                     </>
                 ) : (
                     <Button
                         loading={isSubmitting}
                         radius="xl"
-                        size="md"
+                        size="lg"
                         type="submit"
                     >
                         {submitLabel}

@@ -1,4 +1,4 @@
-import {Badge, Card, Group, MantineColor, Stack, Text, ThemeIcon} from '@mantine/core';
+import {Badge, Card, Group, MantineColor, Stack, Text, useMantineTheme} from '@mantine/core';
 import {
     IconBarbell,
     IconFlame,
@@ -8,7 +8,7 @@ import {
     IconStretching,
     IconTrophy,
 } from '@tabler/icons-react';
-import {FC} from 'react';
+import React, {FC} from 'react';
 
 import {Content} from '@/store/services/contents';
 
@@ -33,107 +33,111 @@ const getCategoryIcon = (category: string) => {
     return CATEGORY_ICONS[category] || IconBarbell;
 };
 
-const levelColors = {
-    beginner: 'green',
-    intermediate: 'yellow',
-    expert: 'red',
-};
-
 interface ExerciseCardProps {
     content: Content;
     onClick?: () => void;
 }
 
 export const ExerciseCard: FC<ExerciseCardProps> = ({content, onClick}) => {
+    const theme = useMantineTheme();
     const CategoryIcon = content.exercise_definition?.category
         ? getCategoryIcon(content.exercise_definition.category)
         : IconBarbell;
 
+    const categoryColor = content.exercise_definition?.category
+        ? getCategoryColor(content.exercise_definition.category)
+        : 'blue';
+
+    // Handle keyboard interactions
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <Card
-            bg="gray.0"
             onClick={onClick}
-            padding={0}
-            radius="xl"
+            onKeyDown={handleKeyDown}
+            radius={0}
             role={onClick ? 'button' : undefined}
-            shadow="xs"
             style={{
-                cursor: 'pointer',
-                overflow: 'hidden',
+                cursor: onClick ? 'pointer' : 'default',
+                borderBottom: `1px solid ${theme.colors.gray[3]}`,
+                transition: 'all 0.15s ease',
+            }}
+            styles={{
+                root: {
+                    paddingBlock: 'var(--mantine-spacing-lg)',
+                    paddingInline: 'var(--mantine-spacing-lg)',
+                    ...(onClick && {
+                        '&:hover': {
+                            backgroundColor: theme.colors.gray[0],
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        },
+                        '&:active': {
+                            transform: 'translateY(0)',
+                            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                        },
+                        '&:focus-visible': {
+                            outline: '2px solid var(--mantine-color-brand-6)',
+                            outlineOffset: '2px',
+                        },
+                    }),
+                },
             }}
             tabIndex={onClick ? 0 : undefined}
-            withBorder
         >
             <Group
-                align="stretch"
-                gap={0}
+                gap="md"
                 wrap="nowrap"
             >
-                {/* Left icon section */}
-                <Stack
-                    align="center"
-                    gap={0}
-                    justify="center"
-                    style={{
-                        width: 56,
-                        minHeight: '100%',
-                    }}
-                >
-                    <ThemeIcon
-                        color={
-                            content.exercise_definition?.category
-                                ? getCategoryColor(content.exercise_definition.category)
-                                : 'blue'
-                        }
-                        radius="xl"
-                        size={40}
-                        variant="light"
-                    >
-                        <CategoryIcon
-                            size={22}
-                            stroke={2}
-                        />
-                    </ThemeIcon>
-                </Stack>
+                {/* Category Icon */}
+                <CategoryIcon
+                    color={theme.colors[categoryColor][6]}
+                    size={24}
+                    stroke={2}
+                />
 
                 {/* Main content */}
                 <Stack
                     flex={1}
-                    gap="xs"
-                    p="md"
+                    gap="sm"
+                    style={{minWidth: 0}}
                 >
-                    {/* Title row */}
-                    <Group
-                        align="center"
-                        gap="xs"
-                        wrap="nowrap"
+                    {/* Title */}
+                    <Text
+                        fw={600}
+                        lineClamp={1}
+                        size="lg"
+                        style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                        }}
                     >
-                        <Text
-                            c="dark.9"
-                            fw={600}
-                            lineClamp={1}
-                            size="md"
-                            style={{flex: 1}}
-                        >
-                            {content.name}
-                        </Text>
-                    </Group>
+                        {content.name}
+                    </Text>
 
-                    {/* Metadata row */}
-                    <Group gap="xs">
-                        {content.exercise_definition?.primary_muscle &&
-                            content.exercise_definition.primary_muscle.slice(0, 2).map((muscle, idx) => (
-                                <Badge
-                                    color="gray"
-                                    key={idx}
-                                    radius="xl"
-                                    size="sm"
-                                    variant="dot"
-                                >
-                                    {muscle}
-                                </Badge>
-                            ))}
-                    </Group>
+                    {/* Metadata - Primary muscles */}
+                    {content.exercise_definition?.primary_muscle &&
+                        content.exercise_definition.primary_muscle.length > 0 && (
+                            <Group gap="xs">
+                                {content.exercise_definition.primary_muscle.slice(0, 2).map((muscle, idx) => (
+                                    <Badge
+                                        color="gray"
+                                        key={idx}
+                                        radius="xl"
+                                        size="sm"
+                                        variant="dot"
+                                    >
+                                        {muscle}
+                                    </Badge>
+                                ))}
+                            </Group>
+                        )}
                 </Stack>
             </Group>
         </Card>

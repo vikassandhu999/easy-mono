@@ -1,16 +1,12 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Stack, Text} from '@mantine/core';
+import {Box, Button, Stack, Text, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {IconSend} from '@tabler/icons-react';
+import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
+import {FixedBottomBar} from '@/components/containers/FixedBottomBar';
 import {CreateClient_zod, CreateClientProps} from '@/store/services/clients';
-import {FormSection} from '@/components/containers/FormSection';
-
-import CETextArea from '../CETextArea';
-import CETextInput from '../CETextInput';
-import {FixedBottomBar} from '../containers/FixedBottomBar';
 
 interface InviteClientFormProps {
     onSubmit: (data: CreateClientProps) => Promise<void>;
@@ -47,94 +43,94 @@ export const InviteClientForm: React.FC<InviteClientFormProps> = ({onSubmit, sub
 
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <FormSection>
-                <Text
-                    c="dimmed"
-                    fs="italic"
-                    size="xs"
-                >
-                    Your client will receive an email invitation to join your coaching program
-                </Text>
+            <Box
+                maw={560}
+                mx="auto"
+            >
+                <Stack gap="lg">
+                    {/* Info Message */}
+                    <Stack gap="md">
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                        >
+                            Your client will receive an email invitation to join your coaching program.
+                        </Text>
 
-                <Stack gap="md">
-                    <Controller
-                        control={control}
-                        name="name"
-                        render={({field, fieldState}) => (
-                            <CETextInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Client's Full Name"
-                                placeholder="e.g. John Smith"
-                                radius="xl"
-                                size="md"
-                                variant="filled"
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="name"
+                            render={({field, fieldState}) => (
+                                <TextInput
+                                    {...field}
+                                    description="Enter the client's full name as it should appear in your roster."
+                                    error={fieldState.error?.message}
+                                    label="Client's full name"
+                                    placeholder="e.g., John Smith"
+                                    withAsterisk
+                                />
+                            )}
+                        />
 
-                    <Controller
-                        control={control}
-                        name="invitation_email"
-                        render={({field, fieldState}) => (
-                            <CETextInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Email Address"
-                                placeholder="e.g. john@example.com"
-                                radius="xl"
-                                size="md"
-                                type="email"
-                                variant="filled"
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="invitation_email"
+                            render={({field, fieldState}) => (
+                                <TextInput
+                                    {...field}
+                                    description="The email address where the invitation will be sent."
+                                    error={fieldState.error?.message}
+                                    label="Email address"
+                                    placeholder="e.g., john@example.com"
+                                    type="email"
+                                    withAsterisk
+                                />
+                            )}
+                        />
 
-                    <Controller
-                        control={control}
-                        name="invitation_phone"
-                        render={({field, fieldState}) => (
-                            <CETextInput
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Phone Number (Optional)"
-                                onChange={(e) => field.onChange(e.target.value || undefined)}
-                                placeholder="e.g. +1 (555) 123-4567"
-                                radius="xl"
-                                size="md"
-                                type="tel"
-                                value={field.value || ''}
-                                variant="filled"
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="invitation_phone"
+                            render={({field, fieldState}) => (
+                                <TextInput
+                                    {...field}
+                                    description="Optional contact number for the client."
+                                    error={fieldState.error?.message}
+                                    label="Phone number (optional)"
+                                    onChange={(e) => field.onChange(e.target.value || undefined)}
+                                    placeholder="e.g., +1 (555) 123-4567"
+                                    type="tel"
+                                    value={field.value || ''}
+                                />
+                            )}
+                        />
 
-                    <Controller
-                        control={control}
-                        name="notes"
-                        render={({field, fieldState}) => (
-                            <CETextArea
-                                {...field}
-                                error={fieldState.error?.message}
-                                label="Notes (Optional)"
-                                onChange={(e) => field.onChange(e.target.value || undefined)}
-                                placeholder="e.g. Goals, medical history, dietary restrictions..."
-                                radius="xl"
-                                rows={3}
-                                size="md"
-                                value={field.value || ''}
-                                variant="filled"
-                            />
-                        )}
-                    />
+                        <Controller
+                            control={control}
+                            name="notes"
+                            render={({field, fieldState}) => (
+                                <Textarea
+                                    {...field}
+                                    description="Add any relevant information about goals, medical history, or dietary restrictions."
+                                    error={fieldState.error?.message}
+                                    label="Notes (optional)"
+                                    onChange={(e) => field.onChange(e.target.value || undefined)}
+                                    placeholder="e.g., Training for a marathon, vegetarian diet..."
+                                    rows={4}
+                                    value={field.value || ''}
+                                />
+                            )}
+                        />
+                    </Stack>
                 </Stack>
-            </FormSection>
-            <FixedBottomBar>
+            </Box>
+
+            <FixedBottomBar maxWidth={560}>
                 <Button
                     fullWidth
                     loading={isSubmitting}
                     radius="xl"
-                    rightSection={<IconSend />}
+                    rightSection={<IconArrowRight size={20} />}
                     size="lg"
                     type="submit"
                 >

@@ -1,5 +1,4 @@
-import {Button, useDrawersStack} from '@mantine/core';
-import {IconPlus, IconUsers} from '@tabler/icons-react';
+import {Flex, Image, Stack, Text, Title, useDrawersStack} from '@mantine/core';
 import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
@@ -7,10 +6,10 @@ import ClientList from '@/components/ClientListItem';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import {InviteClientDrawer} from '@/components/InviteClientDrawer';
-import {EmptyState} from '@/components/layouts/EmptyState';
 import RecordsList from '@/components/layouts/RecordsList';
 import {Client, useListClientsInfiniteQuery} from '@/store/services/clients';
 
+import EmptyClientsImage from '../../../../public/empty_plan.png';
 import Header from './Header';
 
 const ClientsListPage: React.FC = () => {
@@ -30,6 +29,21 @@ const ClientsListPage: React.FC = () => {
 
     const handleView = (id: string) => navigate(`/clients/${id}`);
 
+    // Get search-specific empty state config
+    const getEmptyStateDescription = () => {
+        if (search) {
+            return 'Try different keywords or invite a new client.';
+        }
+        return 'Start building your client base by inviting your first client to join your coaching program.';
+    };
+
+    const getEmptyStateTitle = () => {
+        if (search) {
+            return `No results for "${search}"`;
+        }
+        return 'Invite your first client';
+    };
+
     return (
         <>
             <Header
@@ -40,41 +54,50 @@ const ClientsListPage: React.FC = () => {
 
             <PagePaper>
                 <PaddingContainer
-                    paddingX={'lg'}
-                    paddingY={'md'}
+                    paddingX={'xs'}
+                    paddingY={'lg'}
                 >
                     <RecordsList<Client>
                         emptyState={
-                            <EmptyState
-                                action={
-                                    <Button
-                                        leftSection={<IconPlus size={16} />}
-                                        my="lg"
-                                        onClick={() => stack.open('invite-client')}
-                                        radius={9999}
-                                        size="md"
-                                        variant="filled"
+                            <Flex
+                                align="center"
+                                direction="column"
+                                gap="md"
+                                justify="center"
+                                px="md"
+                            >
+                                <Image
+                                    alt={search ? 'No results illustration' : 'Empty clients illustration'}
+                                    src={EmptyClientsImage}
+                                    w={240}
+                                />
+                                <Stack
+                                    align="center"
+                                    gap="xs"
+                                >
+                                    <Title
+                                        order={3}
+                                        ta="center"
                                     >
-                                        Invite Client
-                                    </Button>
-                                }
-                                description={
-                                    search
-                                        ? 'Try adjusting your search terms or invite a new client'
-                                        : `Your client base starts here. Invite clients to begin their fitness journey with you.`
-                                }
-                                icon={<IconUsers size={32} />}
-                                iconColor="gray.5"
-                                iconSize="xl"
-                                title={search ? 'No clients found' : 'Ready to Welcome Your First Client?'}
-                            />
+                                        {getEmptyStateTitle()}
+                                    </Title>
+                                    <Text
+                                        c="dimmed"
+                                        maw={400}
+                                        size="md"
+                                        ta="center"
+                                    >
+                                        {getEmptyStateDescription()}
+                                    </Text>
+                                </Stack>
+                            </Flex>
                         }
                         fetchNextPage={fetchNextPage}
-                        gap="sm"
+                        gap={0}
                         hasNextPage={hasNextPage}
                         isFetchingNextPage={isFetchingNextPage}
                         itemKey={(item) => item.id}
-                        loadMoreText="Load More Clients"
+                        loadMoreText="Load more clients"
                         records={clients}
                         renderItem={(client) => (
                             <ClientList

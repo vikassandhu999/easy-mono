@@ -1,31 +1,13 @@
-import {modals} from '@mantine/modals';
+import {useSearchParams} from 'react-router';
 
-import {Content} from '@/store/services/contents';
 import {ContentListView} from '@/components/Content';
-import {ContentBuilder} from '@/components/ContentBuilder';
+import {Content} from '@/store/services/contents';
 
 const RecipeListPage = () => {
+    const [, setSearchParams] = useSearchParams();
+
     const handleRecipeClick = (recipe: Content) => {
-        modals.open({
-            modalId: `edit-recipe-${recipe.id}`,
-            title: 'Edit Recipe',
-            size: 'xl',
-            centered: true,
-            styles: {
-                body: {padding: 0},
-            },
-            fullScreen: true,
-            children: (
-                <ContentBuilder
-                    contentId={recipe.id}
-                    contentType="recipe"
-                    onComplete={() => {
-                        modals.close(`edit-recipe-${recipe.id}`);
-                    }}
-                    showSaveOptions
-                />
-            ),
-        });
+        setSearchParams({selected_drawer: 'edit_recipe', recipe_id: recipe.id});
     };
 
     return <ContentListView onContentClick={handleRecipeClick} />;

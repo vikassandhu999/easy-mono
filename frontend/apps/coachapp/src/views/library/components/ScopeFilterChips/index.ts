@@ -1,0 +1,1 @@
+export {ScopeFilterChips} from './ScopeFilterChips';

@@ -82,9 +82,8 @@ export function InstructionsList({
             </Stack>
 
             <Button
-                leftSection={<IconPlus size={16} />}
+                leftSection={<IconPlus size={18} />}
                 onClick={handleAdd}
-                size="md"
                 variant="light"
             >
                 Add step

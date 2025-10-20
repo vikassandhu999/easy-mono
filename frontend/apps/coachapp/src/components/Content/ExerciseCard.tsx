@@ -1,4 +1,17 @@
-import {Badge, Card, Group, MantineColor, Stack, Text, useMantineTheme} from '@mantine/core';
+/**
+ * Exercise Card Component
+ *
+ * Displays exercise content in a list format optimized for coaches.
+ * Shows key information needed for quick scanning and selection.
+ *
+ * UX Focus:
+ * - Exercise name (primary)
+ * - Category and level (for quick filtering/context)
+ * - Primary muscles (what it targets)
+ * - Equipment needed (important for program building)
+ */
+
+import {Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
 import {
     IconBarbell,
     IconFlame,
@@ -12,13 +25,6 @@ import React, {FC} from 'react';
 
 import {Content} from '@/store/services/contents';
 
-const CATEGORY_COLORS: MantineColor[] = ['blue', 'green', 'orange', 'grape'];
-
-const getCategoryColor = (category: string): MantineColor => {
-    const hash = category.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return CATEGORY_COLORS[hash % CATEGORY_COLORS.length];
-};
-
 const CATEGORY_ICONS: Record<string, any> = {
     strength: IconBarbell,
     cardio: IconRun,
@@ -30,7 +36,7 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 const getCategoryIcon = (category: string) => {
-    return CATEGORY_ICONS[category] || IconBarbell;
+    return CATEGORY_ICONS[category.toLowerCase()] || IconBarbell;
 };
 
 interface ExerciseCardProps {
@@ -44,10 +50,6 @@ export const ExerciseCard: FC<ExerciseCardProps> = ({content, onClick}) => {
         ? getCategoryIcon(content.exercise_definition.category)
         : IconBarbell;
 
-    const categoryColor = content.exercise_definition?.category
-        ? getCategoryColor(content.exercise_definition.category)
-        : 'blue';
-
     // Handle keyboard interactions
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!onClick) return;
@@ -56,6 +58,11 @@ export const ExerciseCard: FC<ExerciseCardProps> = ({content, onClick}) => {
             onClick();
         }
     };
+
+    const category = content.exercise_definition?.category;
+    const level = content.exercise_definition?.level;
+    const primaryMuscles = content.exercise_definition?.primary_muscle || [];
+    const equipment = content.exercise_definition?.equipment || [];
 
     return (
         <Card
@@ -92,53 +99,139 @@ export const ExerciseCard: FC<ExerciseCardProps> = ({content, onClick}) => {
             tabIndex={onClick ? 0 : undefined}
         >
             <Group
-                gap="md"
+                justify="space-between"
                 wrap="nowrap"
             >
-                {/* Category Icon */}
-                <CategoryIcon
-                    color={theme.colors[categoryColor][6]}
-                    size={24}
-                    stroke={2}
-                />
-
-                {/* Main content */}
-                <Stack
-                    flex={1}
-                    gap="sm"
-                    style={{minWidth: 0}}
+                <Group
+                    gap="md"
+                    style={{flex: 1, minWidth: 0}}
+                    wrap="nowrap"
                 >
-                    {/* Title */}
-                    <Text
-                        fw={600}
-                        lineClamp={1}
-                        size="lg"
-                        style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                        }}
-                    >
-                        {content.name}
-                    </Text>
+                    {/* Category Icon */}
+                    <CategoryIcon
+                        color={theme.colors.blue[6]}
+                        size={24}
+                        stroke={2}
+                        style={{flexShrink: 0}}
+                    />
 
-                    {/* Metadata - Primary muscles */}
-                    {content.exercise_definition?.primary_muscle &&
-                        content.exercise_definition.primary_muscle.length > 0 && (
+                    {/* Main content */}
+                    <Stack
+                        flex={1}
+                        gap="xs"
+                        style={{minWidth: 0}}
+                    >
+                        {/* Exercise name */}
+                        <Text
+                            fw={600}
+                            lineClamp={1}
+                            size="lg"
+                            style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            {content.name}
+                        </Text>
+
+                        {/* Metadata Row 1: Category & Level (most important for context) */}
+                        <Group gap="xs">
+                            {category && (
+                                <Badge
+                                    color="blue"
+                                    radius="xl"
+                                    size="sm"
+                                    styles={{
+                                        label: {
+                                            textTransform: 'capitalize',
+                                            fontWeight: 500,
+                                        },
+                                    }}
+                                    variant="light"
+                                >
+                                    {category}
+                                </Badge>
+                            )}
+
+                            {level && (
+                                <Badge
+                                    color="gray"
+                                    radius="xl"
+                                    size="sm"
+                                    styles={{
+                                        label: {
+                                            textTransform: 'capitalize',
+                                            fontWeight: 500,
+                                        },
+                                    }}
+                                    variant="dot"
+                                >
+                                    {level}
+                                </Badge>
+                            )}
+                        </Group>
+
+                        {/* Metadata Row 2: Muscles & Equipment */}
+                        {(primaryMuscles.length > 0 || equipment.length > 0) && (
                             <Group gap="xs">
-                                {content.exercise_definition.primary_muscle.slice(0, 2).map((muscle, idx) => (
+                                {/* Primary muscles - show up to 2 */}
+                                {primaryMuscles.slice(0, 2).map((muscle, idx) => (
                                     <Badge
                                         color="gray"
-                                        key={idx}
+                                        key={`muscle-${idx}`}
                                         radius="xl"
                                         size="sm"
-                                        variant="dot"
+                                        styles={{
+                                            label: {
+                                                textTransform: 'capitalize',
+                                                fontWeight: 400,
+                                            },
+                                        }}
+                                        variant="outline"
                                     >
                                         {muscle}
                                     </Badge>
                                 ))}
+
+                                {/* Equipment - show first one if exists */}
+                                {equipment.length > 0 && (
+                                    <Badge
+                                        color="gray"
+                                        radius="xl"
+                                        size="sm"
+                                        styles={{
+                                            label: {
+                                                fontWeight: 400,
+                                            },
+                                        }}
+                                        variant="outline"
+                                    >
+                                        {equipment[0]}
+                                        {equipment.length > 1 && ` +${equipment.length - 1}`}
+                                    </Badge>
+                                )}
                             </Group>
                         )}
-                </Stack>
+                    </Stack>
+                </Group>
+
+                {/* Scope indicator - subtle visual on the right */}
+                {content.scope === 'system' && (
+                    <Badge
+                        color="gray"
+                        radius="xl"
+                        size="sm"
+                        style={{flexShrink: 0}}
+                        styles={{
+                            label: {
+                                fontWeight: 400,
+                            },
+                        }}
+                        variant="dot"
+                    >
+                        System
+                    </Badge>
+                )}
             </Group>
         </Card>
     );

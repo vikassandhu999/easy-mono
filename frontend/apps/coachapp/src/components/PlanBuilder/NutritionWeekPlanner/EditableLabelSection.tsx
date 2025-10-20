@@ -154,9 +154,9 @@ export function EditableLabelSection({
 
     return (
         <Box
-            pb="sm"
+            pb="lg"
             style={{
-                borderBottom: `1px solid ${theme.colors.gray[3]}`,
+                borderBottom: `1px solid light-dark(${theme.colors.gray[3]}, ${theme.colors.dark[4]})`,
             }}
         >
             <Grid>

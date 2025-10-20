@@ -7,9 +7,8 @@ import {createSearchParams, useNavigate} from 'react-router';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {SignInRequest} from '@/store/services/auth';
 import AuthLayout from '@/components/layouts/AuthLayout';
-import {useSignInMutation} from '@/store/services/auth';
+import {SignInRequest, useSignInMutation} from '@/store/services/auth';
 
 const SignInPage: React.FC = () => {
     const [error, setError] = useState<null | string>(null);

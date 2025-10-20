@@ -18,18 +18,18 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
     return (
         <Stack gap="md">
             <Card
-                padding="md"
+                padding="lg"
                 radius="xl"
                 withBorder
             >
                 <Text
                     fw={600}
-                    mb="sm"
-                    size="sm"
+                    mb="md"
+                    size="md"
                 >
                     Membership
                 </Text>
-                <Stack gap="xs">
+                <Stack gap="sm">
                     <Group justify="space-between">
                         <Text
                             c="dimmed"
@@ -39,7 +39,8 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
                         </Text>
                         <Badge
                             color={MEMBERSHIP_STATUS_COLOR[client.membership_status] ?? 'gray'}
-                            size="sm"
+                            radius="xl"
+                            size="xs"
                             variant="light"
                         >
                             {getMembershipStatusLabel(client.membership_status)}
@@ -51,7 +52,7 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
                                 c="dimmed"
                                 size="sm"
                             >
-                                Start Date
+                                Start date
                             </Text>
                             <Text size="sm">{format(parseISO(client.membership_start_date), 'MMM dd, yyyy')}</Text>
                         </Group>
@@ -62,7 +63,7 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
                                 c="dimmed"
                                 size="sm"
                             >
-                                End Date
+                                End date
                             </Text>
                             <Text size="sm">{format(parseISO(client.membership_end_date), 'MMM dd, yyyy')}</Text>
                         </Group>
@@ -72,14 +73,14 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
 
             {client.assigned_coach && (
                 <Card
-                    padding="md"
+                    padding="lg"
                     radius="xl"
                     withBorder
                 >
                     <Text
                         fw={600}
-                        mb="sm"
-                        size="sm"
+                        mb="md"
+                        size="md"
                     >
                         Coach
                     </Text>
@@ -88,7 +89,7 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
                             c="dimmed"
                             size="sm"
                         >
-                            Assigned Coach
+                            Assigned coach
                         </Text>
                         <Text size="sm">{client.assigned_coach.name}</Text>
                     </Group>
@@ -97,14 +98,14 @@ export const ClientOverviewTab = ({client}: {client: Client}) => {
 
             {client.notes && (
                 <Card
-                    padding="md"
+                    padding="lg"
                     radius="xl"
                     withBorder
                 >
                     <Text
                         fw={600}
-                        mb="sm"
-                        size="sm"
+                        mb="md"
+                        size="md"
                     >
                         Notes
                     </Text>

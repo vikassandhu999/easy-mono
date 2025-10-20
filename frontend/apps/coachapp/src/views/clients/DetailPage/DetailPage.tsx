@@ -16,15 +16,14 @@ import {IconCalendar, IconMessageCircle, IconSwitchHorizontal, IconUser} from '@
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
-import {Client} from '@/store/services/clients';
-import {PlanDiscipline} from '@/store/services/plans';
 import ClientSelect from '@/components/ClientSelect/ClientSelect';
 import HeadingContainer from '@/components/containers/HeaderContainer';
 import PaddingContainer from '@/components/containers/PaddingContainer';
 import PagePaper from '@/components/containers/PagePaper';
 import Header from '@/components/layouts/Header';
 import {PlanCreationDrawerData} from '@/components/PlanForm/PlanCreateDrawer';
-import {useGetClientQuery} from '@/store/services/clients';
+import {Client, useGetClientQuery} from '@/store/services/clients';
+import {PlanDiscipline} from '@/store/services/plans';
 
 import ProfileCard from './ProfileCard';
 import {ClientOverviewTab} from './tabs/OverviewTab';
@@ -103,13 +102,13 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                 <Header
                     actions={
                         <Button
-                            leftSection={<IconSwitchHorizontal size={14} />}
+                            leftSection={<IconSwitchHorizontal size={16} />}
                             onClick={() => setClientSelectOpen(true)}
                             radius="xl"
-                            size="compact-xs"
+                            size="compact-sm"
                             variant="light"
                         >
-                            Change client{' '}
+                            Switch
                         </Button>
                     }
                     onBack={() => window.history.back()}
@@ -118,7 +117,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
             </HeadingContainer>
 
             <PaddingContainer style={{padding: 'var(--ce-size-lg)'}}>
-                <Stack gap="md">
+                <Stack gap="lg">
                     <ProfileCard client={client} />
 
                     <SegmentedControl
@@ -126,7 +125,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                             {
                                 label: (
                                     <Center style={{gap: 8}}>
-                                        <IconUser size={16} />
+                                        <IconUser size={18} />
                                         <span>Overview</span>
                                     </Center>
                                 ),
@@ -135,7 +134,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                             {
                                 label: (
                                     <Center style={{gap: 8}}>
-                                        <IconCalendar size={16} />
+                                        <IconCalendar size={18} />
                                         <span>Plans</span>
                                     </Center>
                                 ),
@@ -144,7 +143,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                             {
                                 label: (
                                     <Center style={{gap: 8}}>
-                                        <IconMessageCircle size={16} />
+                                        <IconMessageCircle size={18} />
                                         <span>Chat</span>
                                     </Center>
                                 ),
@@ -159,7 +158,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                     />
 
                     {/* Content Sections */}
-                    <Box mt="md">
+                    <Box>
                         {activeTab === 'overview' && <ClientOverviewTab client={client} />}
 
                         {activeTab === 'plans' && (
@@ -183,7 +182,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                                     gap="md"
                                 >
                                     <IconMessageCircle
-                                        color="var(--mantine-color-blue-6)"
+                                        color="var(--mantine-color-gray-6)"
                                         size={48}
                                     />
                                     <Text
@@ -191,7 +190,7 @@ const ClientDetailPageContent = ({clientId}: {clientId: string}) => {
                                         size="lg"
                                         ta="center"
                                     >
-                                        Chat Coming Soon
+                                        Chat coming soon
                                     </Text>
                                     <Text
                                         c="dimmed"

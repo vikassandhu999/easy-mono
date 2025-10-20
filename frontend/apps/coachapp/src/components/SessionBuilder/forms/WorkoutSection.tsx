@@ -88,7 +88,7 @@ export default function WorkoutSection({
         }
 
         return (
-            <Stack gap="xs">
+            <Stack gap="md">
                 {exercises.map((exercise, exerciseIndex) => (
                     <WorkoutExercise
                         contentsMap={contentsMap}
@@ -116,18 +116,16 @@ export default function WorkoutSection({
     return (
         <Paper
             p={0}
-            radius="xl"
-            shadow="xs"
+            radius="lg"
             style={{
-                border: '1px solid var(--mantine-color-gray-3)',
-                transition: 'all 0.2s ease',
+                border: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
                 overflow: 'hidden',
             }}
         >
             {/* Section Header - Always Visible */}
             <Group
                 align="center"
-                gap="sm"
+                gap="md"
                 justify="space-between"
                 onClick={(e) => {
                     // Prevent collapse if clicking on menu or its children
@@ -135,27 +133,30 @@ export default function WorkoutSection({
                         onExpand();
                     }
                 }}
-                p="xs"
+                p="md"
                 style={{
                     cursor: 'pointer',
-                    backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-gray-0)',
-                    borderBottom: isExpanded ? '1px solid var(--mantine-color-gray-3)' : 'none',
-                    transition: 'background-color 0.2s ease',
+                    backgroundColor: isExpanded
+                        ? 'light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6))'
+                        : 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))',
+                    borderBottom: isExpanded
+                        ? '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
+                        : 'none',
                 }}
                 wrap="nowrap"
             >
                 <Group
-                    gap="sm"
+                    gap="md"
                     style={{flex: 1, minWidth: 0}}
                 >
                     {/* Expand/Collapse Icon */}
                     <ActionIcon
                         color={isExpanded ? 'blue' : 'gray'}
-                        radius="xl"
-                        size="sm"
+                        radius="lg"
+                        size="lg"
                         variant="subtle"
                     >
-                        {isExpanded ? <CaretDownIcon size={16} /> : <CaretRightIcon size={16} />}
+                        {isExpanded ? <CaretDownIcon size={18} /> : <CaretRightIcon size={18} />}
                     </ActionIcon>
 
                     {/* Section Info */}
@@ -163,7 +164,7 @@ export default function WorkoutSection({
                         <Text
                             fw={600}
                             lineClamp={1}
-                            size="sm"
+                            size="md"
                         >
                             {sectionTitle || `Untitled ${sectionTypeLabel}`}
                         </Text>
@@ -220,13 +221,13 @@ export default function WorkoutSection({
                     {/* Section Configuration */}
                     <SimpleGrid
                         cols={{base: 1, sm: 2}}
-                        spacing="xs"
+                        spacing="md"
                     >
                         <TextInput
                             {...control.register(`definition.sections.${sectionIndex}.title`)}
                             label="Title"
                             placeholder="e.g., Warm Up, Upper Body"
-                            size="xs"
+                            size="md"
                         />
                         <Controller
                             control={control}
@@ -239,7 +240,7 @@ export default function WorkoutSection({
                                     onChange={(value) => field.onChange(typeof value === 'number' ? value : undefined)}
                                     placeholder="0 = no limit"
                                     ref={field.ref}
-                                    size="xs"
+                                    size="md"
                                     value={field.value ?? undefined}
                                 />
                             )}
@@ -275,26 +276,27 @@ export default function WorkoutSection({
 
                         {exercises.length === 0 && (
                             <Paper
-                                p="lg"
-                                radius="xl"
+                                p="xl"
+                                radius="lg"
                                 style={{
-                                    backgroundColor: 'var(--mantine-color-gray-0)',
-                                    border: '2px dashed var(--mantine-color-gray-3)',
+                                    backgroundColor:
+                                        'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+                                    border: '2px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
                                 }}
                             >
                                 <Stack
                                     align="center"
-                                    gap="xs"
+                                    gap="md"
                                 >
                                     <BarbellIcon
-                                        size={32}
+                                        size={40}
                                         style={{opacity: 0.25}}
                                         weight="duotone"
                                     />
                                     <Text
                                         c="dimmed"
                                         fw={500}
-                                        size="xs"
+                                        size="sm"
                                         ta="center"
                                     >
                                         Add exercises
@@ -306,8 +308,8 @@ export default function WorkoutSection({
                         {/* Add Exercise Button */}
                         <Button
                             fullWidth
-                            leftSection={<PlusIcon size={14} />}
-                            mt="sm"
+                            leftSection={<PlusIcon size={18} />}
+                            mt="md"
                             onClick={() => {
                                 modals.open({
                                     children: (
@@ -358,8 +360,8 @@ export default function WorkoutSection({
                                     title: 'Select Exercise',
                                 });
                             }}
-                            radius="xl"
-                            size="xs"
+                            radius="lg"
+                            size="lg"
                             variant={exercises.length === 0 ? 'filled' : 'light'}
                         >
                             {exercises.length === 0 ? 'Add First Exercise' : 'Add Exercise'}

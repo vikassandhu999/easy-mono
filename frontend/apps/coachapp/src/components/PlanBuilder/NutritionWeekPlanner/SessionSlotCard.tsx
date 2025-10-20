@@ -1,4 +1,4 @@
-import {ActionIcon, Badge, Box, Card, Group, Menu, Text, useMantineTheme} from '@mantine/core';
+import {ActionIcon, Badge, Box, Card, Group, Menu, Text} from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {PencilSimpleIcon, TrashIcon, UserPlusIcon} from '@phosphor-icons/react';
 import {IconClock, IconDotsVertical, IconTimeDuration0} from '@tabler/icons-react';
@@ -58,8 +58,6 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
     const duration = getSessionDuration(planSession);
     const scheduleWindow = getScheduleWindow(planSession);
 
-    const theme = useMantineTheme();
-
     const handleDelete = () => {
         if (!onDelete) return;
 
@@ -93,14 +91,21 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
 
     return (
         <Card
-            bg="gray.0"
-            padding="sm"
-            radius="md"
-            shadow="xs"
+            padding="md"
+            radius={'lg'}
             style={{
                 display: 'flex',
                 flexDirection: 'column',
-                border: `1px solid ${theme.colors.gray[3]}`,
+                border: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
+                transition: 'transform 0.1s ease',
+            }}
+            styles={{
+                root: {
+                    backgroundColor: 'transparent',
+                    '&:hover': {
+                        transform: 'translateY(-1px)',
+                    },
+                },
             }}
         >
             <Group
@@ -174,7 +179,7 @@ export default function SessionSlotCard({onAssign, onDelete, onEdit, planSession
                                 aria-label="Session actions"
                                 onClick={(event) => event.stopPropagation()}
                                 radius="sm"
-                                size={48}
+                                size="lg"
                                 variant="subtle"
                             >
                                 <IconDotsVertical

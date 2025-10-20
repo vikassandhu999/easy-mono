@@ -150,7 +150,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                         label="Name"
                         placeholder="Workout name"
                         required
-                        size="sm"
+                        size="md"
                     />
                 )}
             />
@@ -168,7 +168,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                         maxRows={3}
                         minRows={2}
                         placeholder="Optional description"
-                        size="sm"
+                        size="md"
                         value={field.value ?? ''}
                     />
                 )}
@@ -178,12 +178,12 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                 label={
                     <Group gap="xs">
                         <ListBulletsIcon
-                            size={16}
+                            size={18}
                             weight="duotone"
                         />
                         <Text
                             fw={600}
-                            size="xs"
+                            size="sm"
                             tt="uppercase"
                         >
                             Exercises & Sections
@@ -191,7 +191,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                     </Group>
                 }
                 labelPosition="left"
-                mt="lg"
+                mt="xl"
             />
 
             {/* Unified List: Sections and Exercises */}
@@ -219,12 +219,12 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                 {/* Empty State */}
                 {sections.length === 0 && (
                     <Paper
+                        my="xl"
                         p="xl"
-                        radius="xl"
+                        radius="lg"
                         style={{
-                            backgroundColor: 'var(--mantine-color-gray-0)',
-                            border: '2px dashed var(--mantine-color-gray-3)',
-                            marginBlock: 'var(--ce-size-lg)',
+                            backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+                            border: '2px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
                         }}
                     >
                         <Stack
@@ -263,17 +263,17 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
 
                 {/* Action Buttons Row */}
                 <Group
-                    gap="xs"
+                    gap="sm"
                     grow
-                    mt={sections.length === 0 ? 'md' : 'sm'}
+                    mt={sections.length === 0 ? 'lg' : 'md'}
                 >
                     {/* Add Exercise Button - Creates hidden section */}
                     <Button
-                        leftSection={<PlusIcon size={14} />}
+                        leftSection={<PlusIcon size={18} />}
                         onClick={addTopLevelExercise}
-                        radius="xl"
-                        size={sections.length === 0 ? 'sm' : 'xs'}
-                        variant={sections.length === 0 ? 'light' : 'light'}
+                        radius="lg"
+                        size="lg"
+                        variant="light"
                     >
                         Add Exercise
                     </Button>
@@ -281,7 +281,7 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                     {/* Add Section Button */}
                     <Button
                         color="blue"
-                        leftSection={<PlusIcon size={14} />}
+                        leftSection={<PlusIcon size={18} />}
                         onClick={() => {
                             addSection({
                                 format: 'straight',
@@ -296,8 +296,8 @@ export default function WorkoutForm({form, contentsMap, setContentsMap}: Workout
                             // Expand the newly added section
                             setExpandedSectionIndex(sections.length);
                         }}
-                        radius="xl"
-                        size={sections.length === 0 ? 'sm' : 'xs'}
+                        radius="lg"
+                        size="lg"
                         variant={sections.length === 0 ? 'filled' : 'light'}
                     >
                         Add Superset

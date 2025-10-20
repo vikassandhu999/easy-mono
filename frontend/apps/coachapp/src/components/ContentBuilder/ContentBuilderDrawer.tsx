@@ -4,6 +4,7 @@ import React, {useCallback} from 'react';
 import Header from '@/components/layouts/Header';
 import {Content} from '@/store/services/contents';
 
+import HeadingContainer from '../containers/HeaderContainer';
 import ContentBuilder from './ContentBuilder';
 import {ContentBuilderDrawerProps} from './lib/types';
 
@@ -67,25 +68,23 @@ export const ContentBuilderDrawer = React.memo(function ContentBuilderDrawer({
                 h="100%"
             >
                 {/* Header - Constrained Width */}
-                <Container
-                    p="md"
-                    size={560}
-                    w="100%"
-                >
+                <HeadingContainer style={{maxWidth: '560px', width: '100%'}}>
                     <Header
                         onBack={onClose}
                         title={title}
                     />
-                </Container>
+                </HeadingContainer>
 
-                {/* Content Area - Scrollable, Constrained Width */}
+                {/* Content Area - Constrained Width, Full Height for Fixed Bottom Bar */}
                 <Container
                     bg="gray.0"
-                    p="lg"
                     size={560}
                     style={{
+                        display: 'flex',
                         flex: 1,
-                        overflow: 'auto',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        padding: 0,
                     }}
                     w="100%"
                 >

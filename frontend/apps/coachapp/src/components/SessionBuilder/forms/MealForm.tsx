@@ -84,8 +84,8 @@ export default function MealForm({form}: MealFormProps) {
             {/* Placeholder Content */}
             <Paper
                 p="xl"
-                radius="xl"
-                style={{backgroundColor: 'var(--mantine-color-gray-0)'}}
+                radius="lg"
+                style={{backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))'}}
                 withBorder
             >
                 <Stack

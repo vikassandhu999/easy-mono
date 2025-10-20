@@ -1,4 +1,5 @@
 import {Button, Group} from '@mantine/core';
+import {IconArrowRight} from '@tabler/icons-react';
 
 /**
  * FormButtons - Reusable form submission buttons
@@ -25,26 +26,28 @@ export function FormButtons({
 }: FormButtonsProps) {
     if (showSaveOptions) {
         return (
-            <Group justify="flex-start">
+            <Group
+                gap="sm"
+                grow
+            >
+                <Button
+                    loading={isSubmitting}
+                    onClick={onSave}
+                    radius="xl"
+                    size="lg"
+                    type="button"
+                >
+                    Save
+                </Button>
                 <Button
                     loading={isSubmitting}
                     onClick={onSaveAndClose}
                     radius="xl"
                     size="lg"
                     type="button"
+                    variant="outline"
                 >
-                    Save and close
-                </Button>
-                <Button
-                    color="gray"
-                    loading={isSubmitting}
-                    onClick={onSave}
-                    radius="xl"
-                    size="lg"
-                    type="button"
-                    variant="light"
-                >
-                    Save
+                    Save & close
                 </Button>
             </Group>
         );
@@ -52,8 +55,10 @@ export function FormButtons({
 
     return (
         <Button
+            fullWidth
             loading={isSubmitting}
             radius="xl"
+            rightSection={<IconArrowRight size={20} />}
             size="lg"
             type="submit"
         >

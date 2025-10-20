@@ -29,8 +29,9 @@ const getMembershipStatusLabel = (status: string): string => {
 const ProfileCard = ({client}: ProfileCardProps) => {
     return (
         <Card
-            px="xs"
+            padding="lg"
             radius="xl"
+            withBorder
         >
             <Group
                 align="center"
@@ -53,28 +54,28 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                     <Box>
                         <Group
                             gap="xs"
-                            mb={4}
+                            mb="xs"
                         >
                             <Text
                                 fw={600}
-                                size="lg"
+                                size="md"
                             >
                                 {client.name}
                             </Text>
                             <Badge
                                 color={MEMBERSHIP_STATUS_COLOR[client.membership_status]}
                                 radius="xl"
-                                size="sm"
+                                size="xs"
                                 variant="light"
                             >
                                 {getMembershipStatusLabel(client.membership_status)}
                             </Badge>
                         </Group>
 
-                        <Stack gap={4}>
+                        <Stack gap="xs">
                             {client.invitation_email && (
-                                <Group gap={6}>
-                                    <IconMail size={14} />
+                                <Group gap="xs">
+                                    <IconMail size={16} />
                                     <Text
                                         c="dimmed"
                                         size="sm"
@@ -84,8 +85,8 @@ const ProfileCard = ({client}: ProfileCardProps) => {
                                 </Group>
                             )}
                             {client.invitation_phone && (
-                                <Group gap={6}>
-                                    <IconPhone size={14} />
+                                <Group gap="xs">
+                                    <IconPhone size={16} />
                                     <Text
                                         c="dimmed"
                                         size="sm"

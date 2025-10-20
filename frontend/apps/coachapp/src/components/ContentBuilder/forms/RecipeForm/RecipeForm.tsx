@@ -5,7 +5,6 @@ import {
     Indicator,
     MultiSelect,
     NumberInput,
-    Radio,
     SegmentedControl,
     Stack,
     Text,
@@ -15,9 +14,7 @@ import {IconPlus, IconTrash} from '@tabler/icons-react';
 import {useState} from 'react';
 import {Controller} from 'react-hook-form';
 
-import {ChipSelect} from '@/components/ChipSelect';
-
-import {NutritionInputs} from '../../components';
+import {CheckboxButtonGroup, NutritionInputs, RadioCardGroup} from '../../components';
 import {
     COOKING_METHOD_OPTIONS,
     DIET_TYPE_OPTIONS,
@@ -68,12 +65,11 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 render={({field, fieldState}) => (
                     <TextInput
                         {...field}
+                        description="Name should be specific and descriptive"
                         error={fieldState.error?.message}
-                        placeholder="Name of recipe. e.g. High-Protein Chicken Salad"
-                        radius="xl"
-                        required
-                        size="xl"
-                        variant="filled"
+                        label="Recipe name"
+                        placeholder="e.g., High-Protein Chicken Salad"
+                        withAsterisk
                     />
                 )}
             />
@@ -83,39 +79,12 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 control={control}
                 name="recipe_definition.difficulty"
                 render={({field}) => (
-                    <Radio.Group
-                        {...field}
-                        label={
-                            <Text
-                                fw="bold"
-                                size="sm"
-                            >
-                                Difficulty
-                            </Text>
-                        }
-                        value={field.value ?? ''}
-                    >
-                        <Group mt="xs">
-                            {DIFFICULTY_OPTIONS.map((option) => {
-                                const Icon = option.icon;
-                                return (
-                                    <Radio.Card
-                                        key={option.value}
-                                        p="xs"
-                                        radius="xl"
-                                        value={option.value}
-                                        w="fit-content"
-                                    >
-                                        <Group wrap="nowrap">
-                                            <Radio.Indicator size="xs" />
-                                            <Icon size={16} />
-                                            <Text size="sm">{option.label}</Text>
-                                        </Group>
-                                    </Radio.Card>
-                                );
-                            })}
-                        </Group>
-                    </Radio.Group>
+                    <RadioCardGroup
+                        label="Difficulty"
+                        onChange={field.onChange}
+                        options={DIFFICULTY_OPTIONS}
+                        value={field.value}
+                    />
                 )}
             />
 
@@ -124,22 +93,11 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 control={control}
                 name="recipe_definition.meal_types"
                 render={({field}) => (
-                    <ChipSelect
-                        {...field}
-                        data={MEAL_TYPE_OPTIONS}
-                        label={
-                            <Text
-                                fw={600}
-                                size="sm"
-                            >
-                                Meal Types
-                            </Text>
-                        }
-                        multiple
-                        radius="xl"
-                        size="sm"
+                    <CheckboxButtonGroup
+                        label="Meal types"
+                        onChange={field.onChange}
+                        options={MEAL_TYPE_OPTIONS}
                         value={field.value ?? []}
-                        variant="outline"
                     />
                 )}
             />
@@ -149,42 +107,12 @@ export default function RecipeForm({form}: RecipeFormProps) {
                 control={control}
                 name="recipe_definition.dish_type"
                 render={({field}) => (
-                    <Radio.Group
-                        {...field}
-                        label={
-                            <Text
-                                fw={600}
-                                size="sm"
-                            >
-                                Dish Type
-                            </Text>
-                        }
-                        value={field.value ?? ''}
-                    >
-                        <Group
-                            gap="xs"
-                            mt="xs"
-                        >
-                            {DISH_TYPE_OPTIONS.map((option) => {
-                                const Icon = option.icon;
-                                return (
-                                    <Radio.Card
-                                        key={option.value}
-                                        p="xs"
-                                        radius="xl"
-                                        value={option.value}
-                                        w="fit-content"
-                                    >
-                                        <Group wrap="nowrap">
-                                            <Radio.Indicator size="xs" />
-                                            <Icon size={16} />
-                                            <Text size="sm">{option.label}</Text>
-                                        </Group>
-                                    </Radio.Card>
-                                );
-                            })}
-                        </Group>
-                    </Radio.Group>
+                    <RadioCardGroup
+                        label="Dish type"
+                        onChange={field.onChange}
+                        options={DISH_TYPE_OPTIONS}
+                        value={field.value}
+                    />
                 )}
             />
 
@@ -200,14 +128,12 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         <NumberInput
                             {...field}
                             decimalScale={0}
-                            label="Prep Time"
+                            hideControls
+                            label="Prep time"
                             min={0}
                             placeholder="15"
-                            radius="xl"
-                            size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -218,14 +144,12 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         <NumberInput
                             {...field}
                             decimalScale={0}
-                            label="Cook Time"
+                            hideControls
+                            label="Cook time"
                             min={0}
                             placeholder="25"
-                            radius="xl"
-                            size="sm"
                             suffix=" min"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -236,13 +160,11 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         <NumberInput
                             {...field}
                             decimalScale={0}
+                            hideControls
                             label="Servings"
                             min={1}
                             placeholder="4"
-                            radius="xl"
-                            size="sm"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -258,12 +180,9 @@ export default function RecipeForm({form}: RecipeFormProps) {
                         clearable
                         data={DIET_TYPE_OPTIONS}
                         description="Dietary restrictions met"
-                        label="Diet Types"
+                        label="Diet types"
                         placeholder="Select diet types"
-                        radius="xl"
-                        size="sm"
                         value={field.value ?? []}
-                        variant="filled"
                     />
                 )}
             />
@@ -276,26 +195,23 @@ export default function RecipeForm({form}: RecipeFormProps) {
                     <TextInput
                         {...field}
                         description="Image or video URL for this recipe"
-                        label="Media URL"
+                        label="Media URL (optional)"
                         onChange={(e) => {
                             const url = e.currentTarget.value;
                             field.onChange(url ? {url, type: 'image'} : undefined);
                         }}
                         placeholder="https://example.com/recipe.jpg"
-                        radius="xl"
-                        size="sm"
                         type="url"
                         value={field.value?.url ?? ''}
-                        variant="filled"
                     />
                 )}
             />
 
             <SegmentedControl
                 data={[...FORM_SECTIONS]}
+                fullWidth
                 onChange={handleTabChange}
-                radius="xl"
-                size="lg"
+                size="md"
                 value={selectedTab}
             />
 
@@ -340,7 +256,7 @@ export default function RecipeForm({form}: RecipeFormProps) {
                             <Stack gap="md">
                                 <Text
                                     c="dimmed"
-                                    size="md"
+                                    size="sm"
                                 >
                                     Describe step-by-step instructions to prepare the recipe
                                 </Text>
@@ -355,25 +271,22 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                         <Indicator
                                             label={index + 1}
                                             position="top-start"
-                                            size={18}
+                                            size={20}
                                             w="100%"
                                         >
                                             <TextInput
                                                 flex={1}
                                                 onChange={(e) => handleUpdateInstruction(index, e.currentTarget.value)}
                                                 placeholder="Describe what to do"
-                                                radius="xl"
-                                                size="md"
                                                 value={instructionStep?.instruction ?? ''}
-                                                variant="filled"
                                             />
                                         </Indicator>
 
                                         <ActionIcon
+                                            aria-label={`Remove step ${index + 1}`}
                                             color="red"
                                             onClick={() => handleRemoveInstruction(index)}
-                                            radius="xl"
-                                            size="md"
+                                            size="lg"
                                             variant="light"
                                         >
                                             <IconTrash size={18} />
@@ -382,12 +295,9 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 ))}
 
                                 <Button
-                                    leftSection={<IconPlus size={16} />}
+                                    leftSection={<IconPlus size={18} />}
                                     onClick={handleAddInstruction}
-                                    radius="xl"
-                                    size="md"
                                     variant="light"
-                                    w="max-content"
                                 >
                                     Add step
                                 </Button>
@@ -408,13 +318,10 @@ export default function RecipeForm({form}: RecipeFormProps) {
                                 clearable
                                 data={COOKING_METHOD_OPTIONS}
                                 description="Methods used"
-                                label="Cooking Methods"
+                                label="Cooking methods"
                                 placeholder="Select cooking methods"
-                                radius="xl"
                                 searchable
-                                size="sm"
                                 value={field.value ?? []}
-                                variant="filled"
                             />
                         )}
                     />

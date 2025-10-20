@@ -50,19 +50,16 @@ export default function WorkoutExercise({
     return (
         <Paper
             p={0}
-            radius="xl"
-            shadow="xs"
+            radius="lg"
             style={{
-                backgroundColor: 'var(--mantine-color-white)',
-                border: '1px solid var(--mantine-color-gray-3)',
-                transition: 'all 0.2s ease',
+                border: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
                 overflow: 'hidden',
             }}
         >
             {/* Exercise Header - Always Visible */}
             <Group
                 align="center"
-                gap="sm"
+                gap="md"
                 justify="space-between"
                 onClick={(e) => {
                     // Prevent collapse if clicking on change/remove buttons
@@ -70,27 +67,30 @@ export default function WorkoutExercise({
                         onExpand();
                     }
                 }}
-                p="xs"
+                p="md"
                 style={{
                     cursor: 'pointer',
-                    backgroundColor: isExpanded ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-gray-0)',
-                    borderBottom: isExpanded ? '1px solid var(--mantine-color-blue-2)' : 'none',
-                    transition: 'background-color 0.2s ease',
+                    backgroundColor: isExpanded
+                        ? 'light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6))'
+                        : 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))',
+                    borderBottom: isExpanded
+                        ? '1px solid light-dark(var(--mantine-color-blue-2), var(--mantine-color-dark-4))'
+                        : 'none',
                 }}
                 wrap="nowrap"
             >
                 <Group
-                    gap="sm"
+                    gap="md"
                     style={{flex: 1, minWidth: 0}}
                 >
                     {/* Expand/Collapse Icon */}
                     <ActionIcon
                         color={isExpanded ? 'blue' : 'gray'}
-                        radius="xl"
-                        size="sm"
+                        radius="lg"
+                        size="lg"
                         variant="subtle"
                     >
-                        {isExpanded ? <CaretDownIcon size={16} /> : <CaretRightIcon size={16} />}
+                        {isExpanded ? <CaretDownIcon size={18} /> : <CaretRightIcon size={18} />}
                     </ActionIcon>
 
                     {/* Exercise Info */}
@@ -98,17 +98,17 @@ export default function WorkoutExercise({
                         <Text
                             fw={600}
                             lineClamp={1}
-                            size="sm"
+                            size="md"
                         >
                             {contentDetail?.name || `Exercise ${exerciseIndex + 1}`}
                         </Text>
                         <Group
                             gap="xs"
-                            mt={2}
+                            mt={4}
                         >
                             <Badge
                                 color="gray"
-                                size="xs"
+                                size="sm"
                                 variant="dot"
                             >
                                 {sets.length} {sets.length === 1 ? 'set' : 'sets'}
@@ -116,7 +116,7 @@ export default function WorkoutExercise({
                             {eachSide && (
                                 <Badge
                                     color="blue"
-                                    size="xs"
+                                    size="sm"
                                     variant="dot"
                                 >
                                     Each Side
@@ -128,7 +128,7 @@ export default function WorkoutExercise({
 
                 {/* Action Buttons */}
                 <Group
-                    gap="xs"
+                    gap="sm"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <Tooltip label="Change">
@@ -162,22 +162,22 @@ export default function WorkoutExercise({
                                     title: 'Select Exercise',
                                 });
                             }}
-                            radius="xl"
-                            size="sm"
+                            radius="lg"
+                            size="lg"
                             variant="light"
                         >
-                            <PencilSimpleIcon size={16} />
+                            <PencilSimpleIcon size={18} />
                         </ActionIcon>
                     </Tooltip>
                     <Tooltip label="Remove">
                         <ActionIcon
                             color="red"
                             onClick={onRemove}
-                            radius="xl"
-                            size="sm"
+                            radius="lg"
+                            size="lg"
                             variant="light"
                         >
-                            <TrashIcon size={16} />
+                            <TrashIcon size={18} />
                         </ActionIcon>
                     </Tooltip>
                 </Group>

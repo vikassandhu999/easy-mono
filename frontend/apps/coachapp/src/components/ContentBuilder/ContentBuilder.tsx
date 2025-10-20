@@ -49,7 +49,7 @@ export default function ContentBuilder({
         return (
             <Alert
                 color="red"
-                icon={<IconAlertCircle size={20} />}
+                icon={<IconAlertCircle size={16} />}
                 title="Missing information"
             >
                 Please select a content type to continue.
@@ -74,7 +74,7 @@ export default function ContentBuilder({
         return (
             <Alert
                 color="red"
-                icon={<IconAlertCircle size={20} />}
+                icon={<IconAlertCircle size={16} />}
                 title="Unable to load content"
             >
                 <Stack gap="sm">
@@ -83,7 +83,6 @@ export default function ContentBuilder({
                         color="red"
                         leftSection={<IconRefresh size={16} />}
                         onClick={() => refetch()}
-                        size="md"
                         variant="light"
                     >
                         Retry

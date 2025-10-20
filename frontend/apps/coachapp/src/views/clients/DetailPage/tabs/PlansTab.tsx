@@ -65,9 +65,8 @@ export const ClientPlansTab = ({
                         <Button
                             radius="xl"
                             rightSection={<IconCalendarPlus size={18} />}
-                            size="sm"
                         >
-                            Create Plan
+                            Create plan
                         </Button>
                     </Menu.Target>
 
@@ -76,16 +75,15 @@ export const ClientPlansTab = ({
                             leftSection={
                                 <IconBowlChopsticks
                                     color={theme.colors.orange[8]}
-                                    size={14}
+                                    size={16}
                                 />
                             }
                             onClick={() => onOpenPlanDrawer('nutrition')}
                         >
-                            <Stack gap="xs">
-                                <Text lh={1.2}>Nutrition Plan</Text>
+                            <Stack gap={4}>
+                                <Text>Nutrition plan</Text>
                                 <Text
-                                    c={theme.colors.gray[6]}
-                                    lh={1.2}
+                                    c="dimmed"
                                     size="xs"
                                 >
                                     Create a meal plan with recipes
@@ -96,16 +94,15 @@ export const ClientPlansTab = ({
                             leftSection={
                                 <IconTreadmill
                                     color={theme.colors.cyan[8]}
-                                    size={14}
+                                    size={16}
                                 />
                             }
                             onClick={() => onOpenPlanDrawer('workout')}
                         >
-                            <Stack gap="xs">
-                                <Text lh={1.2}>Workout Plan</Text>
+                            <Stack gap={4}>
+                                <Text>Workout plan</Text>
                                 <Text
-                                    c={theme.colors.gray[6]}
-                                    lh={1.2}
+                                    c="dimmed"
                                     size="xs"
                                 >
                                     Create a training plan with exercises
@@ -119,8 +116,8 @@ export const ClientPlansTab = ({
             <RecordsList<Plan>
                 emptyState={
                     <EmptyState
-                        description={`No plans found for ${client.name}. Create the first plan to kickstart progress.`}
-                        title="No Plans Yet"
+                        description={`No plans found for ${client.name}. Create the first plan to get started.`}
+                        title="No plans yet"
                     />
                 }
                 fetchNextPage={fetchNextPage}
@@ -129,7 +126,7 @@ export const ClientPlansTab = ({
                 isFetchingNextPage={isFetchingNextPage}
                 isLoading={isPlansLoading}
                 itemKey={(item) => item.id}
-                loadMoreText="Load More Plans"
+                loadMoreText="Load more plans"
                 records={plans}
                 renderItem={(plan) => (
                     <PlanListItem

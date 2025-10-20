@@ -36,7 +36,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                     <Table
                         highlightOnHover
                         layout={'fixed'}
-                        verticalSpacing="xs"
+                        verticalSpacing="sm"
                         withColumnBorders={false}
                         withRowBorders={false}
                         withTableBorder={false}
@@ -46,7 +46,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                 <Table.Th style={{textAlign: 'center', width: '60px'}}>
                                     <Text
                                         fw={600}
-                                        size="xs"
+                                        size="sm"
                                     >
                                         Set
                                     </Text>
@@ -54,7 +54,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                 <Table.Th style={{textAlign: 'center'}}>
                                     <Text
                                         fw={600}
-                                        size="xs"
+                                        size="sm"
                                     >
                                         Weight
                                     </Text>
@@ -62,7 +62,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                 <Table.Th style={{textAlign: 'center'}}>
                                     <Text
                                         fw={600}
-                                        size="xs"
+                                        size="sm"
                                     >
                                         Reps
                                     </Text>
@@ -70,7 +70,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                 <Table.Th style={{textAlign: 'center'}}>
                                     <Text
                                         fw={600}
-                                        size="xs"
+                                        size="sm"
                                     >
                                         Rest
                                     </Text>
@@ -91,7 +91,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                             {setIndex + 1}
                                         </Badge>
                                     </Table.Td>
-                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '4px'}}>
+                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
                                         <Controller
                                             control={control}
                                             name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.weight.value`}
@@ -103,7 +103,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                                         field.onChange(typeof value === 'number' ? value : undefined)
                                                     }
                                                     placeholder="0"
-                                                    size="xs"
+                                                    size="md"
                                                     styles={{
                                                         input: {
                                                             textAlign: 'center',
@@ -116,7 +116,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                             )}
                                         />
                                     </Table.Td>
-                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '4px'}}>
+                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
                                         <Controller
                                             control={control}
                                             name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.reps.value`}
@@ -129,7 +129,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                                         field.onChange(typeof value === 'number' ? value : undefined)
                                                     }
                                                     placeholder="12"
-                                                    size="xs"
+                                                    size="md"
                                                     styles={{
                                                         input: {
                                                             textAlign: 'center',
@@ -142,7 +142,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                             )}
                                         />
                                     </Table.Td>
-                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '4px'}}>
+                                    <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
                                         <Controller
                                             control={control}
                                             name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.rest_seconds.value`}
@@ -155,7 +155,7 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                                         field.onChange(typeof value === 'number' ? value : undefined)
                                                     }
                                                     placeholder="60"
-                                                    size="xs"
+                                                    size="md"
                                                     styles={{
                                                         input: {
                                                             textAlign: 'center',
@@ -172,11 +172,11 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                                         <ActionIcon
                                             color="red"
                                             onClick={() => removeSet(setIndex)}
-                                            radius="xl"
-                                            size="sm"
+                                            radius="lg"
+                                            size="lg"
                                             variant="subtle"
                                         >
-                                            <TrashIcon size={16} />
+                                            <TrashIcon size={18} />
                                         </ActionIcon>
                                     </Table.Td>
                                 </Table.Tr>
@@ -186,16 +186,16 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                 </Table.ScrollContainer>
             ) : (
                 <Paper
-                    p="md"
-                    radius="xl"
+                    p="lg"
+                    radius="lg"
                     style={{
-                        backgroundColor: 'var(--mantine-color-gray-0)',
-                        border: '2px dashed var(--mantine-color-gray-3)',
+                        backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+                        border: '2px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
                     }}
                 >
                     <Text
                         c="dimmed"
-                        size="xs"
+                        size="sm"
                         ta="center"
                     >
                         Add sets
@@ -206,8 +206,8 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
             {/* Add Set Button */}
             <Button
                 fullWidth
-                leftSection={<PlusIcon size={14} />}
-                mt="xs"
+                leftSection={<PlusIcon size={18} />}
+                mt="md"
                 onClick={() =>
                     addSet({
                         reps: {value: 0},
@@ -216,11 +216,11 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                         rest_seconds: {value: 60},
                     })
                 }
-                radius="xl"
-                size="xs"
+                radius="lg"
+                size="lg"
                 variant={sets.length === 0 ? 'filled' : 'light'}
             >
-                {sets.length === 0 ? 'Add Set' : 'Add Set'}
+                Add set
             </Button>
         </Stack>
     );

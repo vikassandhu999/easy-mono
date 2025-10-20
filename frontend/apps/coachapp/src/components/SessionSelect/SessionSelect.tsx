@@ -1,13 +1,12 @@
-import {Box, Card, Center, Group, Stack, Text, TextInput} from '@mantine/core';
+import {Box, Button, Center, Group, Stack, Text, TextInput, useMantineTheme} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
 import {BookOpenIcon, MagnifyingGlassIcon} from '@phosphor-icons/react';
 import {IconPlus} from '@tabler/icons-react';
 import {useMutation} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {Session} from '@/store/services/session';
 import {FixedBottom} from '@/components/containers/FixedBottom';
-import {useListSessionsQuery} from '@/store/services/session';
+import {Session, useListSessionsQuery} from '@/store/services/session';
 
 import RecordsList from '../layouts/RecordsList';
 import SessionListItem from './SessionListItem';
@@ -15,12 +14,13 @@ import SessionListItem from './SessionListItem';
 interface SessionSelectProps {
     multiple?: boolean;
     onCreateNew?: () => void;
-    onSelect: (selected: string | string[]) => PromiseLike<void>;
+    onSelect: (selected: string | string[]) => void;
     selectedIds?: string[];
     sessionType?: Session['session_type'];
 }
 
 const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionType}: SessionSelectProps) => {
+    const theme = useMantineTheme();
     const [searchTerm, setSearchTerm] = useState('');
     const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(selectedIds ?? []);
     const onSearchChangeDebounced = useDebouncedCallback(setSearchTerm, 300);
@@ -64,92 +64,30 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
     };
 
     return (
-        <Stack gap="md">
+        <Stack gap="lg">
             {onCreateNew && (
-                <Card
-                    aria-label="Create new custom session"
+                <Button
+                    fullWidth
+                    leftSection={<IconPlus size={18} />}
                     onClick={() => onCreateNew()}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onCreateNew();
-                        }
-                    }}
-                    p="sm"
-                    radius="xl"
-                    role="button"
-                    style={{
-                        backgroundColor: 'var(--mantine-color-brand-0)',
-                        border: '2px dashed var(--mantine-color-brand-3)',
-                        cursor: 'pointer',
-                        transition: 'all 200ms ease',
-                    }}
-                    styles={{
-                        root: {
-                            '&:hover': {
-                                backgroundColor: 'var(--mantine-color-brand-1)',
-                                borderColor: 'var(--mantine-color-brand-4)',
-                                transform: 'scale(1.01)',
-                            },
-                            '&:active': {
-                                transform: 'scale(0.99)',
-                            },
-                        },
-                    }}
-                    tabIndex={0}
+                    radius="lg"
+                    size="lg"
+                    variant="light"
                 >
-                    <Group
-                        align="center"
-                        gap="sm"
-                        wrap="nowrap"
-                    >
-                        <Center
-                            h={36}
-                            style={{
-                                backgroundColor: 'var(--mantine-color-brand-2)',
-                                borderRadius: 6,
-                                flexShrink: 0,
-                            }}
-                            w={36}
-                        >
-                            <IconPlus
-                                color={'var(--mantine-color-brand-6)'}
-                                size={18}
-                            />
-                        </Center>
-                        <Box style={{flex: 1, minWidth: 0}}>
-                            <Text
-                                fw={600}
-                                lineClamp={1}
-                                size="sm"
-                                style={{
-                                    color: 'var(--mantine-color-gray-9)',
-                                }}
-                            >
-                                Create {sessionType}
-                            </Text>
-                            <Text
-                                c="dimmed"
-                                lineClamp={1}
-                                size="xs"
-                            >
-                                Custom {sessionType} with your content
-                            </Text>
-                        </Box>
-                    </Group>
-                </Card>
+                    Create {sessionType}
+                </Button>
             )}
 
             <Box>
                 <Group
                     align="center"
                     justify="space-between"
-                    mb="sm"
+                    mb="md"
                 >
                     <Text
                         c="dimmed"
                         fw={600}
-                        size="xs"
+                        size="sm"
                     >
                         {onCreateNew ? 'Or choose existing' : 'Choose session'}
                     </Text>
@@ -157,56 +95,56 @@ const SessionSelect = ({multiple, onCreateNew, onSelect, selectedIds, sessionTyp
                         <Text
                             c="blue"
                             fw={600}
-                            size="xs"
+                            size="sm"
                         >
                             {currentSelectedIds.length} selected
                         </Text>
                     )}
                 </Group>
 
-                <Stack gap="sm">
+                <Stack gap="md">
                     <TextInput
-                        leftSection={<MagnifyingGlassIcon size={16} />}
+                        leftSection={<MagnifyingGlassIcon size={18} />}
                         onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                         placeholder="Search sessions..."
-                        size="sm"
+                        size="md"
                     />
 
                     <RecordsList
                         emptyState={
-                            <Center py="lg">
+                            <Center py="xl">
                                 <Stack
                                     align="center"
-                                    gap="sm"
+                                    gap="md"
                                     maw={300}
                                     ta="center"
                                 >
                                     <Box
-                                        h={36}
+                                        h={48}
                                         style={{
                                             alignItems: 'center',
-                                            backgroundColor: 'var(--mantine-color-gray-1)',
+                                            backgroundColor: theme.colors.gray[1],
                                             borderRadius: '50%',
                                             display: 'flex',
                                             justifyContent: 'center',
                                         }}
-                                        w={36}
+                                        w={48}
                                     >
                                         <BookOpenIcon
-                                            size={20}
+                                            size={24}
                                             style={{opacity: 0.25}}
                                             weight="duotone"
                                         />
                                     </Box>
                                     <Text
                                         fw={600}
-                                        size="sm"
+                                        size="md"
                                     >
                                         No sessions
                                     </Text>
                                     <Text
                                         c="dimmed"
-                                        size="xs"
+                                        size="sm"
                                     >
                                         {searchTerm ? `No results for "${searchTerm}"` : 'Create your first session'}
                                     </Text>

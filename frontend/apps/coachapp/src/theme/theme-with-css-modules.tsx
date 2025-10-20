@@ -138,7 +138,6 @@ const baseInteractiveFieldStyles = {
     fontSize: 'var(--body-font-size)',
     fontWeight: 400,
     lineHeight: 1.5,
-    padding: 'calc(var(--ce-size-sm) + 2px) var(--ce-size-md)',
     transition: 'border-color 150ms ease, box-shadow 150ms ease',
     '&:focus, &:focus-visible': {
         outline: 'none',
@@ -311,9 +310,6 @@ export const theme = createTheme({
                 error: {...formErrorStyles},
                 input: {
                     ...baseInteractiveFieldStyles,
-                    minHeight: '54px',
-                    paddingTop: 'calc(var(--ce-size-sm) + 2px)',
-                    paddingBottom: 'calc(var(--ce-size-sm) + 2px)',
                 },
                 label: {...formLabelStyles},
                 values: {
@@ -463,7 +459,6 @@ export const theme = createTheme({
                 error: {...formErrorStyles},
                 input: {
                     ...baseInteractiveFieldStyles,
-                    minHeight: '160px',
                     resize: 'vertical',
                     padding: 'var(--ce-size-md)',
                 },

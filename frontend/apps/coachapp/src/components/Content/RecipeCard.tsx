@@ -1,10 +1,22 @@
-import {Badge, Card, Group, Image, Stack, Text, useMantineTheme} from '@mantine/core';
-import {IconClock} from '@tabler/icons-react';
+/**
+ * Recipe Card Component
+ *
+ * Displays recipe content in a list format optimized for coaches.
+ * Shows key information needed for meal planning and client assignment.
+ *
+ * UX Focus:
+ * - Recipe name (primary)
+ * - Meal type (breakfast, lunch, dinner - critical for planning)
+ * - Time to prepare (practical constraint)
+ * - Servings (portion planning)
+ * - Key macros (calories, protein - most referenced)
+ */
+
+import {Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
+import {IconClock, IconFlame, IconMeat} from '@tabler/icons-react';
 import React, {FC} from 'react';
 
 import {Content} from '@/store/services/contents';
-
-import RecipeSampleImage from '../../../public/recipe_placeholder.png';
 
 interface RecipeCardProps {
     content: Content;
@@ -22,6 +34,11 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
             onClick();
         }
     };
+
+    const mealTypes = content.recipe_definition?.meal_types || [];
+    const totalTime = content.recipe_definition?.total_time_minutes;
+    const servings = content.recipe_definition?.servings;
+    const nutrition = content.recipe_definition?.nutrition_per_serving;
 
     return (
         <Card
@@ -58,26 +75,15 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
             tabIndex={onClick ? 0 : undefined}
         >
             <Group
-                gap="md"
+                justify="space-between"
                 wrap="nowrap"
             >
-                {/* Recipe Image */}
-                <Image
-                    alt={content.name}
-                    h={56}
-                    radius="md"
-                    src={RecipeSampleImage}
-                    style={{objectFit: 'cover'}}
-                    w={56}
-                />
-
-                {/* Main content */}
                 <Stack
                     flex={1}
-                    gap="sm"
+                    gap="xs"
                     style={{minWidth: 0}}
                 >
-                    {/* Title */}
+                    {/* Recipe name */}
                     <Text
                         fw={600}
                         lineClamp={1}
@@ -90,26 +96,43 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
                         {content.name}
                     </Text>
 
-                    {/* Metadata - Meal type, time, servings, calories */}
-                    <Group gap="xs">
-                        {content.recipe_definition?.meal_types && content.recipe_definition.meal_types.length > 0 && (
-                            <Badge
-                                color="gray"
-                                radius="xl"
-                                size="sm"
-                                styles={{
-                                    label: {
-                                        textTransform: 'capitalize',
-                                        fontWeight: 500,
-                                    },
-                                }}
-                                variant="dot"
-                            >
-                                {content.recipe_definition.meal_types[0]}
-                            </Badge>
-                        )}
+                    {/* Metadata Row 1: Meal Type (most important for planning) */}
+                    {mealTypes.length > 0 && (
+                        <Group gap="xs">
+                            {mealTypes.slice(0, 2).map((type, idx) => (
+                                <Badge
+                                    color="blue"
+                                    key={`meal-${idx}`}
+                                    radius="xl"
+                                    size="sm"
+                                    styles={{
+                                        label: {
+                                            textTransform: 'capitalize',
+                                            fontWeight: 500,
+                                        },
+                                    }}
+                                    variant="light"
+                                >
+                                    {type}
+                                </Badge>
+                            ))}
+                            {mealTypes.length > 2 && (
+                                <Badge
+                                    color="blue"
+                                    radius="xl"
+                                    size="sm"
+                                    variant="light"
+                                >
+                                    +{mealTypes.length - 2}
+                                </Badge>
+                            )}
+                        </Group>
+                    )}
 
-                        {content.recipe_definition?.total_time_minutes && (
+                    {/* Metadata Row 2: Time, Servings, Nutrition */}
+                    <Group gap="xs">
+                        {/* Time */}
+                        {totalTime && (
                             <Badge
                                 color="gray"
                                 leftSection={<IconClock size={12} />}
@@ -117,33 +140,67 @@ export const RecipeCard: FC<RecipeCardProps> = ({content, onClick}) => {
                                 size="sm"
                                 variant="dot"
                             >
-                                {content.recipe_definition.total_time_minutes}m
+                                {totalTime}m
                             </Badge>
                         )}
 
-                        {content.recipe_definition?.servings && (
+                        {/* Servings */}
+                        {servings && (
                             <Badge
                                 color="gray"
                                 radius="xl"
                                 size="sm"
                                 variant="dot"
                             >
-                                {content.recipe_definition.servings} servings
+                                {servings} {servings === 1 ? 'serving' : 'servings'}
                             </Badge>
                         )}
 
-                        {content.recipe_definition?.nutrition_per_serving?.calories && (
+                        {/* Calories - Most referenced macro */}
+                        {nutrition?.calories && (
                             <Badge
                                 color="gray"
+                                leftSection={<IconFlame size={12} />}
                                 radius="xl"
                                 size="sm"
-                                variant="dot"
+                                variant="outline"
                             >
-                                {Math.round(content.recipe_definition.nutrition_per_serving.calories)} cal
+                                {Math.round(nutrition.calories)}
+                            </Badge>
+                        )}
+
+                        {/* Protein - Second most referenced macro */}
+                        {nutrition?.macros?.protein_g && (
+                            <Badge
+                                color="gray"
+                                leftSection={<IconMeat size={12} />}
+                                radius="xl"
+                                size="sm"
+                                variant="outline"
+                            >
+                                {Math.round(nutrition.macros.protein_g)}g
                             </Badge>
                         )}
                     </Group>
                 </Stack>
+
+                {/* Scope indicator - subtle visual on the right */}
+                {content.scope === 'system' && (
+                    <Badge
+                        color="gray"
+                        radius="xl"
+                        size="sm"
+                        style={{flexShrink: 0}}
+                        styles={{
+                            label: {
+                                fontWeight: 400,
+                            },
+                        }}
+                        variant="dot"
+                    >
+                        System
+                    </Badge>
+                )}
             </Group>
         </Card>
     );

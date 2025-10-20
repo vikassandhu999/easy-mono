@@ -1,16 +1,13 @@
-import type {TablerIcon} from '@tabler/icons-react';
-
-import {Group, Radio, Text} from '@mantine/core';
+import {Box, Group, Radio, Text} from '@mantine/core';
 
 /**
  * RadioCardGroup - Reusable radio button group with card styling
  *
  * Provides consistent styling for radio groups across all content forms.
- * Supports optional icons for each option.
+ * Uses CSS Grid for responsive layout that wraps cleanly on mobile.
  */
 
 export interface RadioCardOption {
-    icon?: TablerIcon;
     label: string;
     value: string;
 }
@@ -29,28 +26,45 @@ export function RadioCardGroup({label, onChange, options, value}: RadioCardGroup
             onChange={onChange}
             value={value ?? ''}
         >
-            <Group
-                gap="xs"
+            <Box
                 mt="xs"
+                style={{
+                    display: 'grid',
+                    gap: 'var(--mantine-spacing-xs)',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                }}
             >
                 {options.map((option) => {
-                    const Icon = option.icon;
                     return (
                         <Radio.Card
                             key={option.value}
                             p="sm"
-                            radius="md"
+                            radius="lg"
                             value={option.value}
                         >
-                            <Group wrap="nowrap">
-                                <Radio.Indicator />
-                                {Icon && <Icon size={16} />}
-                                <Text size="sm">{option.label}</Text>
+                            <Group
+                                gap="sm"
+                                style={{minWidth: 0}}
+                                wrap="nowrap"
+                            >
+                                <Radio.Indicator
+                                    radius={9999}
+                                    style={{flexShrink: 0}}
+                                />
+                                <Text
+                                    size="md"
+                                    style={{
+                                        flexGrow: 1,
+                                        minWidth: 0,
+                                    }}
+                                >
+                                    {option.label}
+                                </Text>
                             </Group>
                         </Radio.Card>
                     );
                 })}
-            </Group>
+            </Box>
         </Radio.Group>
     );
 }

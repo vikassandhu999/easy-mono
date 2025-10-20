@@ -45,13 +45,13 @@ export function AddLabelSection({onAdd}: AddLabelSectionProps) {
 
     return (
         <Box
-            pb="md"
+            pb="lg"
             style={{
-                borderBottom: `1px solid ${theme.colors.gray[3]}`,
+                borderBottom: `1px solid light-dark(${theme.colors.gray[3]}, ${theme.colors.dark[4]})`,
             }}
         >
             <Grid>
-                <GridCol span={{base: 12, md: 4, lg: 2}}>
+                <GridCol span={{base: 12, md: 4, lg: 3}}>
                     {isAdding ? (
                         <TextInput
                             onBlur={handleBlur}
@@ -59,7 +59,7 @@ export function AddLabelSection({onAdd}: AddLabelSectionProps) {
                             onKeyDown={handleKeyDown}
                             placeholder="Label name"
                             ref={inputRef}
-                            size="sm"
+                            size="md"
                             styles={{
                                 input: {
                                     fontSize: '14px',
@@ -75,16 +75,19 @@ export function AddLabelSection({onAdd}: AddLabelSectionProps) {
                             onClick={() => setIsAdding(true)}
                             style={{
                                 cursor: 'pointer',
-                                transition: 'opacity 0.15s ease',
-                                '&:hover': {
-                                    opacity: 0.7,
+                            }}
+                            styles={{
+                                root: {
+                                    '&:hover': {
+                                        opacity: 0.7,
+                                    },
                                 },
                             }}
                             wrap="nowrap"
                         >
                             <IconPlus
                                 color={theme.colors.gray[6]}
-                                size={16}
+                                size={18}
                             />
                             <Text
                                 c="gray.7"

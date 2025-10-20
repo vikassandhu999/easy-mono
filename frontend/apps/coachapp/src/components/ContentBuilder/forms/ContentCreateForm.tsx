@@ -5,6 +5,8 @@ import {IconAlertCircle} from '@tabler/icons-react';
 import {useEffect, useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 
+import {FixedBottomBar} from '@/components/containers/FixedBottomBar';
+
 import {FormButtons} from '../components';
 import {
     ContentCreateFormProps,
@@ -88,6 +90,7 @@ export default function ContentCreateForm({
                     overflow: 'auto',
                     paddingBlock: 'var(--mantine-spacing-lg)',
                     paddingInline: 'var(--mantine-spacing-lg)',
+                    paddingBottom: 'calc(var(--mantine-spacing-lg) + var(--ce-appbar-height, 0px))',
                 }}
             >
                 {/* Render type-specific form */}
@@ -96,15 +99,7 @@ export default function ContentCreateForm({
             </Stack>
 
             {/* Fixed Submit Button(s) */}
-            <div
-                style={{
-                    backgroundColor: 'white',
-                    borderTop: '1px solid var(--mantine-color-gray-3)',
-                    flexShrink: 0,
-                    paddingBlock: 'var(--mantine-spacing-lg)',
-                    paddingInline: 'var(--mantine-spacing-lg)',
-                }}
-            >
+            <FixedBottomBar maxWidth={560}>
                 <FormButtons
                     isSubmitting={isSubmitting}
                     onSave={handleSubmit((values) => handleFormSubmit(values, 'continue'), handleValidationError)}
@@ -112,7 +107,7 @@ export default function ContentCreateForm({
                     showSaveOptions={showSaveOptions}
                     submitLabel={submitLabel}
                 />
-            </div>
+            </FixedBottomBar>
         </form>
     );
 }

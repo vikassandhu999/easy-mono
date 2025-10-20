@@ -4,9 +4,7 @@ import {IconAlertCircle} from '@tabler/icons-react';
 import {useState} from 'react';
 import {Controller} from 'react-hook-form';
 
-import {ChipSelect} from '@/components/ChipSelect';
-
-import {InstructionsList, RadioCardGroup} from '../../components';
+import {CheckboxButtonGroup, InstructionsList, RadioCardGroup} from '../../components';
 import {
     CATEGORY_OPTIONS,
     EQUIPMENT_OPTIONS,
@@ -201,7 +199,6 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                 data={[...FORM_SECTIONS]}
                 fullWidth
                 onChange={setSelectedTab}
-                radius="md"
                 size="md"
                 value={selectedTab}
             />
@@ -237,6 +234,7 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                                 {...field}
                                 decimalScale={2}
                                 description="Estimated calories burned per minute"
+                                hideControls
                                 label="Calories per minute (optional)"
                                 min={0}
                                 placeholder="e.g., 5.5"
@@ -250,13 +248,11 @@ export default function ExerciseForm({form}: ExerciseFormProps) {
                         control={control}
                         name="exercise_definition.equipment"
                         render={({field}) => (
-                            <ChipSelect
-                                {...field}
-                                data={EQUIPMENT_OPTIONS}
+                            <CheckboxButtonGroup
                                 label="Equipment"
-                                multiple
+                                onChange={field.onChange}
+                                options={EQUIPMENT_OPTIONS}
                                 value={field.value ?? []}
-                                variant="outline"
                             />
                         )}
                     />

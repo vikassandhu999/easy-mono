@@ -1,4 +1,4 @@
-import {ActionIcon, Box, Card, Center, Group, Text} from '@mantine/core';
+import {ActionIcon, Box, Card, Center, Group, Text, useMantineTheme} from '@mantine/core';
 import {IconCheck, IconPlus} from '@tabler/icons-react';
 
 import {Session} from '@/store/services/session';
@@ -12,6 +12,7 @@ interface SessionListItemProps {
 }
 
 export default function SessionListItem({isSelected, onToggle, session}: SessionListItemProps) {
+    const theme = useMantineTheme();
     const typeConfig = getSessionTypeConfig(session.session_type);
     const IconComponent = typeConfig.icon;
 
@@ -29,25 +30,33 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                     handleClick();
                 }
             }}
-            p="sm"
-            radius="xl"
+            p="lg"
+            radius={0}
             role="button"
+            style={{
+                cursor: 'pointer',
+                borderBottom: `1px solid ${theme.colors.gray[3]}`,
+                transition: 'all 0.15s ease',
+            }}
             styles={{
                 root: {
+                    backgroundColor: isSelected ? theme.colors.blue[0] : 'transparent',
                     '&:hover': {
-                        borderColor: isSelected ? 'var(--mantine-color-blue-7)' : 'var(--mantine-color-gray-4)',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isSelected ? theme.colors.blue[0] : theme.colors.gray[0],
                         transform: 'translateY(-1px)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                     },
-                    backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-white)',
-                    borderColor: isSelected ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-3)',
-                    cursor: 'pointer',
-                    transform: 'translateY(0)',
-                    transition: 'all 0.1s ease',
+                    '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                    },
+                    '&:focus-visible': {
+                        outline: '2px solid var(--mantine-color-brand-6)',
+                        outlineOffset: '2px',
+                    },
                 },
             }}
             tabIndex={0}
-            withBorder
         >
             <Group
                 align="center"
@@ -72,9 +81,9 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                     <Text
                         fw={isSelected ? 700 : 600}
                         lineClamp={1}
-                        size="sm"
+                        size="md"
                         style={{
-                            color: isSelected ? 'var(--mantine-color-blue-8)' : 'var(--mantine-color-gray-9)',
+                            color: isSelected ? theme.colors.blue[8] : theme.colors.gray[9],
                         }}
                     >
                         {session.name}
@@ -83,20 +92,20 @@ export default function SessionListItem({isSelected, onToggle, session}: Session
                         <Text
                             c={isSelected ? 'blue.6' : 'dimmed'}
                             lineClamp={1}
-                            size="xs"
+                            size="sm"
                         >
                             {session.description || typeConfig.description}
                         </Text>
                     )}
                 </Box>
-                <Center>
+                <Center style={{flexShrink: 0}}>
                     <ActionIcon
                         color={isSelected ? 'blue' : 'gray'}
                         radius="xl"
-                        size="md"
+                        size="lg"
                         variant={isSelected ? 'filled' : 'light'}
                     >
-                        {isSelected ? <IconCheck size={16} /> : <IconPlus size={16} />}
+                        {isSelected ? <IconCheck size={18} /> : <IconPlus size={18} />}
                     </ActionIcon>
                 </Center>
             </Group>

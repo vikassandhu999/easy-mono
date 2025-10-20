@@ -86,12 +86,11 @@ export default function SessionCreateForm({
         >
             {/* Scrollable content */}
             <Stack
-                gap="md"
+                gap="lg"
+                p="lg"
                 style={{
                     flex: 1,
                     overflow: 'auto',
-                    paddingBlock: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
                 }}
             >
                 {/* Render appropriate form based on session type */}
@@ -115,11 +114,10 @@ export default function SessionCreateForm({
             {/* Sticky Submit Button(s) */}
             <Group
                 justify="flex-end"
+                p="lg"
                 style={{
-                    borderTop: '1px solid var(--mantine-color-gray-2)',
+                    borderTop: '1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))',
                     flexShrink: 0,
-                    paddingBlock: 'var(--ce-size-md)',
-                    paddingInline: 'var(--ce-size-md)',
                 }}
             >
                 {showSaveOptions ? (
@@ -128,16 +126,16 @@ export default function SessionCreateForm({
                             color="gray"
                             loading={isSubmitting}
                             onClick={handleSubmit((values) => handleFormSubmit(values, 'continue'))}
-                            radius="xl"
-                            size="md"
+                            radius="lg"
+                            size="lg"
                             variant="light"
                         >
                             Save
                         </Button>
                         <Button
                             loading={isSubmitting}
-                            radius="xl"
-                            size="md"
+                            radius="lg"
+                            size="lg"
                             type="submit"
                         >
                             Save & Close
@@ -146,8 +144,8 @@ export default function SessionCreateForm({
                 ) : (
                     <Button
                         loading={isSubmitting}
-                        radius="xl"
-                        size="md"
+                        radius="lg"
+                        size="lg"
                         type="submit"
                     >
                         {submitLabel}

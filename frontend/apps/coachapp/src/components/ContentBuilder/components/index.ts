@@ -1,3 +1,6 @@
+export {CheckboxButtonGroup} from './CheckboxButtonGroup';
+export type {CheckboxButtonGroupProps, CheckboxButtonOption} from './CheckboxButtonGroup';
+
 export {FormButtons} from './FormButtons';
 export type {FormButtonsProps} from './FormButtons';
 

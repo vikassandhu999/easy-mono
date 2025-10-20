@@ -6,6 +6,8 @@ import Header from '@/components/layouts/Header';
 import {type Client} from '@/store/services/clients';
 import {useCreateClientMutation} from '@/store/services/clients';
 
+import HeadingContainer from '../containers/HeaderContainer';
+
 type InviteClientDrawerProps = {
     onClientCreated?: (client: Client) => void;
     stack: ReturnType<typeof useDrawersStack<'invite-client' | any>>;
@@ -39,16 +41,12 @@ export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerP
                 h="100%"
             >
                 {/* Header - Constrained Width */}
-                <Container
-                    p="md"
-                    size={560}
-                    w="100%"
-                >
+                <HeadingContainer style={{maxWidth: '560px', width: '100%'}}>
                     <Header
                         onBack={() => stack.close('invite-client')}
                         title="Invite client"
                     />
-                </Container>
+                </HeadingContainer>
 
                 {/* Content Area - Scrollable, Constrained Width */}
                 <Container

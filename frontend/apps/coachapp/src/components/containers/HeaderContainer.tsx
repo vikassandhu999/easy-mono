@@ -1,4 +1,4 @@
-import {Box, MantineColor, MantineSpacing, useMantineTheme} from '@mantine/core';
+import {Box, MantineColor, useMantineTheme} from '@mantine/core';
 import {PropsWithChildren} from 'react';
 
 import PaddingContainer from './PaddingContainer';

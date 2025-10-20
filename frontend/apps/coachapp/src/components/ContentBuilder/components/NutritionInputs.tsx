@@ -21,10 +21,9 @@ export function NutritionInputs({form}: NutritionInputsProps) {
         <>
             <Text
                 fw={600}
-                mt="md"
-                size="sm"
+                size="md"
             >
-                Nutrition (Per Serving)
+                Nutrition per serving
             </Text>
 
             <Group
@@ -41,10 +40,7 @@ export function NutritionInputs({form}: NutritionInputsProps) {
                             label="Calories"
                             min={0}
                             placeholder="350"
-                            radius="xl"
-                            size="sm"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -58,11 +54,8 @@ export function NutritionInputs({form}: NutritionInputsProps) {
                             label="Protein"
                             min={0}
                             placeholder="30"
-                            radius="xl"
-                            size="sm"
                             suffix=" g"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -82,11 +75,8 @@ export function NutritionInputs({form}: NutritionInputsProps) {
                             label="Carbs"
                             min={0}
                             placeholder="25"
-                            radius="xl"
-                            size="sm"
                             suffix=" g"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -100,11 +90,8 @@ export function NutritionInputs({form}: NutritionInputsProps) {
                             label="Fats"
                             min={0}
                             placeholder="15"
-                            radius="xl"
-                            size="sm"
                             suffix=" g"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />
@@ -118,11 +105,8 @@ export function NutritionInputs({form}: NutritionInputsProps) {
                             label="Fiber"
                             min={0}
                             placeholder="5"
-                            radius="xl"
-                            size="sm"
                             suffix=" g"
                             value={field.value ?? undefined}
-                            variant="filled"
                         />
                     )}
                 />

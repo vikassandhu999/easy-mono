@@ -6,6 +6,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import type {AddSessionContext} from '@/components/PlanSessionsView';
 import type {PlanSession} from '@/store/services/plan_sessions';
 
+import PaddingContainer from '@/components/containers/PaddingContainer';
 import {DAY_NAMES} from '@/components/PlanSessionsView/constants';
 
 import type {DrawerView, SessionTypeFilter} from '../PlanBuilder.types';
@@ -150,6 +151,7 @@ export function PlanBuilderModal({
 
     return (
         <Modal
+            fullScreen
             onClose={onClose}
             opened={isOpen}
             size="xl"
@@ -157,14 +159,17 @@ export function PlanBuilderModal({
                 body: {
                     display: 'flex',
                     flexDirection: 'column',
-                    height: '85vh',
-                    maxHeight: '900px',
+                    height: '100%',
                     padding: 0,
                 },
                 content: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
                     padding: 0,
                 },
             }}
+            transitionProps={{duration: 200}}
             withCloseButton={false}
         >
             {drawerView === 'select-session' && (

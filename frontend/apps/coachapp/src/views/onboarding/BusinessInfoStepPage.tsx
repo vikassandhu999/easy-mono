@@ -1,40 +1,64 @@
-import {zodResolver} from '@hookform/resolvers/zod';
-import {Alert, Button, rem, Stack, Textarea, TextInput} from '@mantine/core';
+import {Alert, Button, Stack, Textarea, TextInput} from '@mantine/core';
+import {useForm, zodResolver} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
-import {ArrowRightIcon} from '@phosphor-icons/react';
-import {IconBuilding, IconInfoCircle} from '@tabler/icons-react';
+import {ArrowRight} from '@phosphor-icons/react';
+import {IconAlertCircle, IconBuilding} from '@tabler/icons-react';
 import React, {useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
+import {z} from 'zod';
+
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
-import {BusinessAPI, CreateBusiness_zod, CreateBusinessProps} from '@/store/services/business';
+import {BusinessAPI} from '@/store/services/business';
 
-const createBusinessResolver = zodResolver(CreateBusiness_zod);
+const businessInfoSchema = z.object({
+    about: z.string().optional(),
+    handle: z
+        .string()
+        .min(3, 'Username must be at least 3 characters')
+        .max(30, 'Username must be less than 30 characters')
+        .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
+    name: z.string().min(2, 'Business name is required'),
+});
+
+type BusinessInfoFormValues = z.infer<typeof businessInfoSchema>;
 
 const BusinessInfoStepPage: React.FC = () => {
     const {verifyAuth} = useAuth();
     const navigate = useNavigate();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string>('');
 
-    const {
-        control,
-        formState: {errors, isValid},
-        handleSubmit,
-    } = useForm<CreateBusinessProps>({
-        defaultValues: {about: '', handle: '', name: ''},
-        mode: 'onChange',
-        resolver: createBusinessResolver,
+    const form = useForm<BusinessInfoFormValues>({
+        initialValues: {
+            about: '',
+            handle: '',
+            name: '',
+        },
+        validate: zodResolver(businessInfoSchema),
     });
 
-    const onSubmit = async (data: CreateBusinessProps) => {
-        setIsSubmitting(true);
+    const getErrorMessage = (err: unknown) => {
+        const apiError = err as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return 'Failed to save business information. Please try again.';
+    };
+
+    const onSubmit = async (data: BusinessInfoFormValues) => {
+        setError('');
 
         try {
             const res = await BusinessAPI.createBusiness(data);
             if (res.isError) {
                 const errorMessage = res.getError().message;
+                setError(errorMessage);
                 notifications.show({
                     color: 'red',
                     message: errorMessage,
@@ -47,17 +71,17 @@ const BusinessInfoStepPage: React.FC = () => {
             notifications.show({
                 color: 'green',
                 message: 'Business information saved successfully',
-                title: 'Success!',
+                title: 'Success',
             });
             navigate('/onboarding/profile');
         } catch (err) {
+            const errorMessage = getErrorMessage(err);
+            setError(errorMessage);
             notifications.show({
                 color: 'red',
-                message: 'Failed to save business information. Please try again.',
+                message: errorMessage,
                 title: 'Error',
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -66,109 +90,59 @@ const BusinessInfoStepPage: React.FC = () => {
             subtitle="Help us set up your coaching business profile"
             title="Tell us about your business"
         >
-            <Stack
-                component="form"
-                gap="md"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                <Controller
-                    control={control}
-                    name="name"
-                    render={({field}) => (
-                        <TextInput
-                            {...field}
-                            error={errors?.name?.message}
-                            label="Business Name"
-                            leftSection={<IconBuilding size="1.2rem" />}
-                            placeholder="e.g. Acme Fitness Centre"
-                            radius="xl"
-                            required
-                            size="md"
-                            styles={{
-                                input: {
-                                    height: 48,
-                                },
-                            }}
-                        />
+            <form onSubmit={form.onSubmit(onSubmit)}>
+                <Stack gap="lg">
+                    {/* Error Alert */}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertCircle size={16} />}
+                            title="Unable to save"
+                        >
+                            {error}
+                        </Alert>
                     )}
-                />
 
-                <Controller
-                    control={control}
-                    name="handle"
-                    render={({field}) => (
-                        <TextInput
-                            {...field}
-                            description="This will be your unique identifier on the platform"
-                            error={errors?.handle?.message}
-                            label="Username"
-                            placeholder="Choose a unique username"
-                            radius="xl"
-                            required
-                            size="md"
-                            styles={{
-                                input: {
-                                    height: 48,
-                                },
-                            }}
-                        />
-                    )}
-                />
+                    {/* Form Fields */}
+                    <TextInput
+                        label="Business name"
+                        leftSection={<IconBuilding size={16} />}
+                        placeholder="e.g. Acme Fitness"
+                        required
+                        size="lg"
+                        {...form.getInputProps('name')}
+                    />
 
-                <Controller
-                    control={control}
-                    name="about"
-                    render={({field}) => (
-                        <Textarea
-                            {...field}
-                            autosize
-                            error={errors?.about?.message}
-                            label="About Your Business (Optional)"
-                            maxRows={6}
-                            minRows={4}
-                            placeholder="Tell us about your business, services, and what makes you unique..."
-                            radius="xl"
-                            size="md"
-                            styles={{
-                                input: {
-                                    fontSize: rem(16),
-                                },
-                            }}
-                        />
-                    )}
-                />
+                    <TextInput
+                        description="This will be your unique identifier on the platform"
+                        label="Username"
+                        placeholder="Choose a unique username"
+                        required
+                        size="lg"
+                        {...form.getInputProps('handle')}
+                    />
 
-                {(errors.name || errors.handle || errors.about) && (
-                    <Alert
-                        color="red"
-                        icon={<IconInfoCircle size="1rem" />}
-                        radius="xl"
-                        variant="light"
+                    <Textarea
+                        autosize
+                        label="About your business (optional)"
+                        maxRows={6}
+                        minRows={4}
+                        placeholder="Tell us about your business, services, and what makes you unique..."
+                        size="lg"
+                        {...form.getInputProps('about')}
+                    />
+
+                    <Button
+                        fullWidth
+                        loading={form.submitting}
+                        rightSection={<ArrowRight size={16} />}
+                        size="lg"
+                        type="submit"
                     >
-                        Please fix the errors above to continue
-                    </Alert>
-                )}
-
-                <Button
-                    disabled={!isValid}
-                    fullWidth
-                    loaderProps={{
-                        type: 'bars',
-                    }}
-                    loading={isSubmitting}
-                    radius="xl"
-                    rightSection={<ArrowRightIcon />}
-                    size="md"
-                    styles={{
-                        root: {
-                            height: 48,
-                        },
-                    }}
-                    type="submit"
-                >
-                    Continue
-                </Button>
-            </Stack>
+                        Continue
+                    </Button>
+                </Stack>
+            </form>
         </AuthLayout>
     );
 };

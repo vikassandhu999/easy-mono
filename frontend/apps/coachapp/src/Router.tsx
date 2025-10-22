@@ -17,6 +17,7 @@ import SignUpCodeStepPage from './views/onboarding/SignUpCodeStepPage';
 import SignUpStepPage from './views/onboarding/SignUpStepPage';
 import PlansListPage from './views/plans/ListPage/ListPage';
 import {PlansListPageDrawers} from './views/plans/ListPage/ListPageDrawers';
+import ProfilePage from './views/profile/ProfilePage';
 
 const router = createBrowserRouter([
     {
@@ -126,6 +127,11 @@ const router = createBrowserRouter([
                     {
                         element: <PlanBuilder />,
                         path: '/plans/:planId/builder',
+                    },
+
+                    {
+                        element: <ProfilePage />,
+                        path: '/profile',
                     },
                 ],
                 element: <ProtectedRouteLayout />,

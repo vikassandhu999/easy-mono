@@ -2,8 +2,7 @@ import {notifications} from '@mantine/notifications';
 import * as React from 'react';
 import {FC, useCallback, useEffect, useMemo} from 'react';
 
-import {AccessToken, setTokenForAuthedClient} from '@/store/services/auth';
-import {useLogoutMutation, useRefreshTokenMutation} from '@/store/services/auth';
+import {AccessToken, setTokenForAuthedClient, useLogoutMutation, useRefreshTokenMutation} from '@/store/services/auth';
 
 import {useApp} from './AppProvider';
 

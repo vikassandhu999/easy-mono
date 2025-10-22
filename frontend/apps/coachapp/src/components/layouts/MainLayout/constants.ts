@@ -1,5 +1,5 @@
-import {ChatsIcon, FoldersIcon} from '@phosphor-icons/react';
-import {IconSmartHome, IconTable, IconUsers} from '@tabler/icons-react';
+import {FoldersIcon} from '@phosphor-icons/react';
+import {IconSettings2, IconSmartHome, IconTable, IconUsers} from '@tabler/icons-react';
 
 import {NavItem} from './types';
 
@@ -8,5 +8,5 @@ export const navItems: NavItem[] = [
     {href: '/plans', icon: IconTable, label: 'Plans'},
     {href: '/clients', icon: IconUsers, label: 'Clients'},
     {href: '/library', icon: FoldersIcon, label: 'Library'},
-    {href: '/chats', icon: ChatsIcon, label: 'Chats'},
+    {href: '/profile', icon: IconSettings2, label: 'Profile'},
 ];

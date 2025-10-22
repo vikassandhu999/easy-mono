@@ -1,9 +1,9 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Box, Button, Group, Stack, Text, Textarea, TextInput, useMantineTheme} from '@mantine/core';
+import {Button, Group, Stack, Text, Textarea, TextInput, ThemeIcon, useMantineTheme} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import {IconArrowRight} from '@tabler/icons-react';
+import {IconArrowRight, IconInfoCircle} from '@tabler/icons-react';
 import React from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 
 import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/store/services/plans';
 
@@ -22,19 +22,14 @@ const resolveTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, submitText}) => {
     const theme = useMantineTheme();
 
-    const {
-        control,
-        handleSubmit,
-        setValue,
-        formState: {isSubmitting},
-    } = useForm<CreatePlanProps>({
+    const {handleSubmit, setValue, formState, register, getValues} = useForm<CreatePlanProps>({
         defaultValues: {
             name: plan?.name ?? '',
             description: plan?.description ?? undefined,
             discipline,
             kind: plan?.kind ?? 'template',
             recurrence: plan?.recurrence ?? 'weekly',
-            duration_weeks: plan?.duration_weeks ?? 12,
+            duration_weeks: plan?.duration_weeks ?? 1,
             duration_days: plan?.duration_days ?? 30,
             timezone: plan?.timezone ?? resolveTimezone(),
             status: plan?.status ?? 'draft',
@@ -57,9 +52,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
         setValue('discipline', discipline);
     }, [discipline, setValue]);
 
+    React.useEffect(() => {
+        console.log(getValues('duration_weeks'));
+        console.log(formState.errors);
+    }, [formState, getValues]);
+
     const typeConfig = PLAN_DISCIPLINES[discipline]!;
 
-    // Get discipline-specific copy
     const getCopy = () => {
         if (discipline === 'workout') {
             return {
@@ -91,7 +90,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
             };
 
             if (payload.recurrence === 'weekly') {
-                payload.duration_weeks = payload.duration_weeks ?? 12;
+                payload.duration_weeks = payload.duration_weeks ?? 1;
                 payload.duration_days = undefined;
             } else if (payload.recurrence === 'daily') {
                 payload.duration_days = payload.duration_days ?? 30;
@@ -114,98 +113,84 @@ export const PlanForm: React.FC<PlanFormProps> = ({discipline, onSubmit, plan, s
 
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <Box
-                maw={560}
-                mx="auto"
+            <Stack
+                gap="lg"
+                px="md"
+                py="md"
             >
-                <Stack gap="lg">
-                    {/* Plan Type Badge */}
-                    <Group
-                        align="center"
-                        bg="gray.0"
-                        gap="md"
-                        p="lg"
+                {/* Decorative Badge  */}
+                <Group
+                    align="center"
+                    bg="gray.0"
+                    gap="md"
+                >
+                    <ThemeIcon
+                        color={typeConfig.color}
+                        size="xl"
                     >
-                        <Box
-                            style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: theme.radius.md,
-                                backgroundColor: typeConfig.color,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                            }}
-                        >
-                            <typeConfig.icon
-                                color={typeConfig.iconColor}
-                                size={24}
-                                stroke={1.5}
-                            />
-                        </Box>
-                        <Stack gap="xs">
-                            <Text
-                                fw={600}
-                                size="md"
-                            >
-                                {typeConfig.label} plan
-                            </Text>
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                {typeConfig.description}
-                            </Text>
-                        </Stack>
-                    </Group>
+                        <typeConfig.icon
+                            color={typeConfig.iconColor}
+                            size={24}
+                            stroke={1.5}
+                        />
+                    </ThemeIcon>
 
-                    {/* Basic Information Section */}
-                    <Stack gap="md">
+                    <Stack gap="xs">
+                        <Text
+                            fw={600}
+                            size="md"
+                        >
+                            {typeConfig.label} plan
+                        </Text>
                         <Text
                             c="dimmed"
                             size="sm"
                         >
-                            {copy.infoMessage}
+                            {typeConfig.description}
                         </Text>
-
-                        <Controller
-                            control={control}
-                            name="name"
-                            render={({field, fieldState}) => (
-                                <TextInput
-                                    {...field}
-                                    description={planNameDescription}
-                                    error={fieldState.error?.message}
-                                    label="Plan name"
-                                    withAsterisk
-                                />
-                            )}
-                        />
-
-                        <Controller
-                            control={control}
-                            name="description"
-                            render={({field, fieldState}) => (
-                                <Textarea
-                                    {...field}
-                                    description="Provide context on goals, progression, or special considerations for the plan."
-                                    error={fieldState.error?.message}
-                                    label="Plan description (optional)"
-                                    onChange={(e) => field.onChange(e.target.value || undefined)}
-                                    rows={4}
-                                    value={field.value || ''}
-                                />
-                            )}
-                        />
                     </Stack>
-                </Stack>
-            </Box>
+                </Group>
 
-            <FixedBottomBar maxWidth={560}>
+                <Group
+                    justify="flex-start"
+                    wrap="nowrap"
+                >
+                    <IconInfoCircle
+                        color={theme.colors.gray[6]}
+                        size={18}
+                    />
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                    >
+                        {copy.infoMessage}
+                    </Text>
+                </Group>
+
+                {/* Basic Form */}
+                <Stack gap="md">
+                    <TextInput
+                        {...register('name')}
+                        description={planNameDescription}
+                        error={formState.errors?.name?.message}
+                        label="Plan name"
+                        withAsterisk
+                    />
+
+                    <Textarea
+                        {...register('description')}
+                        description="Provide context on goals, progression, or special considerations for the plan."
+                        error={formState.errors?.description?.message}
+                        label="Plan description (optional)"
+                        rows={4}
+                    />
+                </Stack>
+            </Stack>
+
+            <FixedBottomBar>
                 <Button
                     fullWidth
-                    loading={isSubmitting}
+                    loading={formState.isSubmitting}
                     radius="xl"
                     rightSection={<IconArrowRight size={20} />}
                     size="lg"

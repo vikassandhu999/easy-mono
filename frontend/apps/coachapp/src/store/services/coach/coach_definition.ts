@@ -1,5 +1,12 @@
 import {z} from 'zod';
 
+export const CoachStats_zod = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    total_clients: z.number().int().nonnegative(),
+    total_plans: z.number().int().nonnegative(),
+});
+
 export const UpdateCoach_zod = z.object({
     available_days: z
         .array(z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']))
@@ -55,5 +62,14 @@ export interface Coach {
 }
 
 export type UpdateBusinessPreferencesProps = z.infer<typeof UpdateBusinessPreferences_zod>;
+
+export interface CoachStats {
+    id: string;
+    name: string;
+    total_clients: number;
+    total_plans: number;
+}
+
+export type CoachStatsProps = z.infer<typeof CoachStats_zod>;
 
 export type UpdateCoachProps = z.infer<typeof UpdateCoach_zod>;

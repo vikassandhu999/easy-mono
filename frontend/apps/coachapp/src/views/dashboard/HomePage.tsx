@@ -1,296 +1,276 @@
-import {ActionIcon, Avatar, Card, Group, rem, SimpleGrid, Stack, Text, ThemeIcon} from '@mantine/core';
 import {
-    IconCalendar,
-    IconChartBar,
-    IconChevronRight,
-    IconCoinRupee,
-    IconMessage,
-    IconPlus,
-    IconUser,
-    IconUsers,
-} from '@tabler/icons-react';
+    Avatar,
+    Box,
+    Card,
+    Group,
+    LoadingOverlay,
+    SimpleGrid,
+    Stack,
+    Text,
+    ThemeIcon,
+    Title,
+    useMantineTheme,
+} from '@mantine/core';
+import {IconCalendar, IconChevronRight, IconPlus, IconTreadmill, IconUserPlus, IconUsers} from '@tabler/icons-react';
+import {memo, useMemo} from 'react';
 import {useNavigate} from 'react-router';
 
-export default function HomePage() {
-    const navigate = useNavigate();
+import PaddingContainer from '@/components/containers/PaddingContainer';
+import PagePaper from '@/components/containers/PagePaper';
+import {useGetCoachQuery, useGetCoachStatsQuery} from '@/store/services/coach';
 
-    const dashboardStats = [
-        {
-            color: 'blue',
-            icon: IconCalendar,
-            label: 'Programs',
-            value: 12,
-        },
-        {
-            color: 'orange',
-            icon: IconUsers,
-            label: 'clients Joined',
-            value: 58,
-        },
-        {
-            color: 'violet',
-            icon: IconCoinRupee,
-            label: 'Total Revenue',
-            value: 10005550,
-        },
-        {
-            color: 'cyan',
-            icon: IconChartBar,
-            label: 'Growth',
-            value: '38%',
-        },
-    ];
+interface DashboardStat {
+    color: string;
+    icon: React.ComponentType<{size?: number | string}>;
+    label: string;
+    value: number | string;
+}
 
-    const menuItems = [
-        {icon: IconPlus, label: 'Create New Program', path: '/programs/create'},
-        {icon: IconUsers, label: 'Review Client Progress', path: '/clients'},
-        {icon: IconCalendar, label: 'Schedule Sessions', path: '/sessions'},
-        {icon: IconMessage, label: 'Chat with client', path: '/chat'},
-    ];
+interface QuickAction {
+    action: () => void;
+    icon: React.ComponentType<{size?: number | string}>;
+    id: string;
+    label: string;
+}
 
-    const recentClients = [
-        {joinedDays: 2, name: 'Sarah Johnson', program: 'Weight Loss Program'},
-        {joinedDays: 5, name: 'Mike Chen', program: 'Strength Training'},
-        {joinedDays: 7, name: 'Emma Davis', program: 'Cardio Fitness'},
-        {joinedDays: 10, name: 'Alex Rodriguez', program: 'Nutrition Plan'},
-        {joinedDays: 12, name: 'Lisa Williams', program: 'Yoga Basics'},
-    ];
+// Memoized StatCard component to prevent unnecessary re-renders
+interface StatCardProps {
+    stat: DashboardStat;
+}
 
-    return (
-        <Stack
-            gap="lg"
-            style={{
-                minHeight: '100vh',
-                padding: rem(20),
-                // background: '#f8f9fa',
-                // background:
-                //     'linear-gradient(180deg, rgba(59, 148, 255, .6) 0%, rgba(59, 148, 255, .6) 15%, #f8f9fa 15%, #f8f9fa 100%)',
+const StatCard = memo<StatCardProps>(({stat}) => (
+    <Card
+        bg="gray.1"
+        p="lg"
+        radius="lg"
+    >
+        <Stack gap="xs">
+            <ThemeIcon
+                color={stat.color}
+                radius="md"
+                size="lg"
+                variant="light"
+            >
+                <stat.icon size={20} />
+            </ThemeIcon>
+            <div>
+                <Text
+                    fw={700}
+                    size="xl"
+                >
+                    {stat.value}
+                </Text>
+                <Text
+                    c="dimmed"
+                    mt={4}
+                    size="sm"
+                >
+                    {stat.label}
+                </Text>
+            </div>
+        </Stack>
+    </Card>
+));
+
+StatCard.displayName = 'StatCard';
+
+// Memoized QuickActionItem component
+interface QuickActionItemProps {
+    action: QuickAction;
+    theme: any;
+}
+
+const QuickActionItem = memo<QuickActionItemProps>(({action, theme}) => (
+    <Box
+        component="button"
+        onClick={action.action}
+        style={{
+            background: 'transparent',
+            cursor: 'pointer',
+            padding: 0,
+            textAlign: 'left',
+            width: '100%',
+            border: 'none',
+            color: theme.colors.gray[6],
+        }}
+        type="button"
+    >
+        <Group
+            gap="md"
+            justify="space-between"
+            p="md"
+            style={(themeObj) => ({
+                borderRadius: themeObj.radius.sm,
+                transition: 'background-color 150ms ease',
+            })}
+            styles={{
+                root: {
+                    '&:hover': {
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                    },
+                },
             }}
+            wrap="nowrap"
         >
             <Group
-                mb="md"
-                top={0}
+                gap="md"
                 wrap="nowrap"
             >
-                <ActionIcon
-                    aria-label="View profile"
-                    onClick={() => navigate('/profile')}
-                    radius="xl"
-                    size="xl"
-                    variant="subtle"
+                <ThemeIcon
+                    color="gray"
+                    radius="md"
+                    size="md"
+                    variant="light"
                 >
-                    <Avatar
-                        color="yellow"
-                        radius="xl"
-                        size="lg"
-                        variant="light"
-                    />
-                </ActionIcon>
-                <Stack gap={4}>
-                    <Text size="xxl">Hello, Navraj</Text>
-                    <Text
-                        c="dark"
-                        size="lg"
-                    >
-                        Welcome back!
-                    </Text>
-                </Stack>
+                    <action.icon size={18} />
+                </ThemeIcon>
+                <Text
+                    fw={500}
+                    size="sm"
+                >
+                    {action.label}
+                </Text>
             </Group>
+            <IconChevronRight
+                color="var(--mantine-color-gray-6)"
+                size={18}
+            />
+        </Group>
+    </Box>
+));
 
-            {/* Stats Cards Grid */}
-            <SimpleGrid
-                cols={{base: 2, md: 4, sm: 2, xs: 2}}
-                mb="xl"
-                spacing="md"
-            >
-                {dashboardStats.map((stat, index) => (
-                    <Card
-                        key={index}
-                        p="lg"
-                        radius="xl"
-                        style={{
-                            background: 'rgb(255, 255, 255)',
-                            minHeight: rem(100),
-                        }}
-                        withBorder
+QuickActionItem.displayName = 'QuickActionItem';
+
+export default function HomePage() {
+    const theme = useMantineTheme();
+    const navigate = useNavigate();
+    const {data: coach, isLoading} = useGetCoachQuery();
+    const {data: stats, isLoading: statsLoading} = useGetCoachStatsQuery();
+
+    const dashboardStats = useMemo<DashboardStat[]>(
+        () => [
+            {
+                color: 'blue',
+                icon: IconCalendar,
+                label: 'Plans',
+                value: stats?.total_plans ?? 0,
+            },
+            {
+                color: 'green',
+                icon: IconUsers,
+                label: 'Clients joined',
+                value: stats?.total_clients ?? 0,
+            },
+        ],
+        [stats?.total_plans, stats?.total_clients],
+    );
+
+    const quickActions = useMemo<QuickAction[]>(
+        () => [
+            {
+                id: 'create-plan',
+                icon: IconPlus,
+                label: 'Create new plan',
+                action: () => navigate('/plans?selected_drawer=create-plan'),
+            },
+            {
+                id: 'add-client',
+                icon: IconUserPlus,
+                label: 'Add a client',
+                action: () => navigate('/clients'),
+            },
+            {
+                id: 'create-content',
+                icon: IconTreadmill,
+                label: 'Create new content',
+                action: () => navigate('/library'),
+            },
+        ],
+        [navigate],
+    );
+
+    // Memoize the coach name fallback
+    const coachName = useMemo(() => coach?.name ?? 'Coach', [coach?.name]);
+    const coachInitial = useMemo(() => coach?.name?.[0] ?? 'C', [coach?.name]);
+
+    return (
+        <PagePaper>
+            <LoadingOverlay
+                loaderProps={{
+                    type: 'bars',
+                }}
+                visible={isLoading || statsLoading}
+            />
+            <PaddingContainer style={{padding: 'var(--ce-size-lg)'}}>
+                <Stack gap="lg">
+                    {/* Coach Header */}
+                    <Group
+                        gap="md"
+                        mt="md"
+                        wrap="nowrap"
                     >
-                        <Stack
-                            align="flex-start"
-                            gap="xs"
+                        <Avatar
+                            color="blue"
+                            radius="xl"
+                            size="lg"
+                            src={coach?.profile_picture_url}
+                            variant="light"
                         >
-                            <ThemeIcon
-                                color={stat.color}
-                                radius="xl"
-                                size="lg"
-                                variant="light"
+                            {coachInitial}
+                        </Avatar>
+                        <Stack gap={4}>
+                            <Title
+                                order={2}
+                                size="h5"
                             >
-                                <stat.icon size={18} />
-                            </ThemeIcon>
-                            <Text
-                                c="dark"
-                                fw={700}
-                                size="xxl"
-                            >
-                                {stat.value}
-                            </Text>
+                                Hello, {coachName}
+                            </Title>
                             <Text
                                 c="dimmed"
-                                size="lg"
+                                size="sm"
                             >
-                                {stat.label}
+                                Welcome back
                             </Text>
                         </Stack>
-                    </Card>
-                ))}
-            </SimpleGrid>
-
-            {/* Menu Items */}
-            <Card
-                p="md"
-                radius="xl"
-                style={{
-                    background: 'rgb(255, 255, 255)',
-                }}
-                withBorder
-            >
-                <Stack gap="xs">
-                    <Group
-                        justify="space-between"
-                        mb="md"
-                    >
-                        <Text
-                            c="dimmed"
-                            fw={600}
-                            size="sm"
-                            tt="uppercase"
-                        >
-                            Quick Actions
-                        </Text>
                     </Group>
-                    {menuItems.map((item, index) => (
-                        <Group
-                            justify="space-between"
-                            key={index}
-                            onClick={() => navigate(item.path)}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                            p="md"
-                            style={{
-                                borderRadius: rem(8),
-                                cursor: 'pointer',
-                                transition: 'background-color 0.2s ease',
-                            }}
-                        >
-                            <Group gap="md">
-                                <ThemeIcon
-                                    color="gray"
-                                    radius="xl"
-                                    size="sm"
-                                    variant="light"
-                                >
-                                    <item.icon size={16} />
-                                </ThemeIcon>
-                                <Text
-                                    c="dark"
-                                    fw={500}
-                                >
-                                    {item.label}
-                                </Text>
-                            </Group>
-                            <IconChevronRight
-                                color="#999"
-                                size={16}
-                            />
-                        </Group>
-                    ))}
-                </Stack>
-            </Card>
 
-            {/* Recent clients Section */}
-            <Card
-                p="md"
-                radius="xl"
-                style={{
-                    background: 'rgb(255, 255, 255)',
-                }}
-                withBorder
-            >
-                <Group
-                    justify="space-between"
-                    mb="md"
-                >
-                    <Text
-                        c="dimmed"
-                        fw={600}
-                        size="sm"
-                        tt="uppercase"
+                    {/* Dashboard Stats */}
+                    <SimpleGrid
+                        cols={{base: 2, md: 2, sm: 2}}
+                        spacing="md"
                     >
-                        Recent Clients
-                    </Text>
-                    <Text
-                        c="blue"
-                        onClick={() => navigate('/clients')}
-                        size="sm"
-                        style={{cursor: 'pointer'}}
-                    >
-                        See all
-                    </Text>
-                </Group>
-                <Stack gap="xs">
-                    {recentClients.map((client, index) => (
-                        <Group
-                            justify="space-between"
-                            key={index}
-                            onClick={() => navigate(`/clients/${index}`)}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                            p="md"
-                            style={{
-                                borderRadius: rem(8),
-                                cursor: 'pointer',
-                                transition: 'background-color 0.2s ease',
-                            }}
-                        >
-                            <Group gap="md">
-                                <Avatar
-                                    c="blue"
-                                    radius="xl"
-                                    size="sm"
-                                >
-                                    <IconUser size={16} />
-                                </Avatar>
-                                <Stack gap={2}>
-                                    <Text
-                                        c="dark"
-                                        fw={500}
-                                        size="sm"
-                                    >
-                                        {client.name}
-                                    </Text>
-                                    <Text
-                                        c="dimmed"
-                                        size="xs"
-                                    >
-                                        {client.program} • {client.joinedDays} days ago
-                                    </Text>
-                                </Stack>
-                            </Group>
-                            <IconChevronRight
-                                color="#999"
-                                size={16}
+                        {dashboardStats.map((stat) => (
+                            <StatCard
+                                key={stat.label}
+                                stat={stat}
                             />
-                        </Group>
-                    ))}
+                        ))}
+                    </SimpleGrid>
+
+                    {/* Quick Actions */}
+                    <Card p="md">
+                        <Stack gap="xs">
+                            <Text
+                                c="dimmed"
+                                fw={600}
+                                mb="xs"
+                                size="xs"
+                                tt="uppercase"
+                            >
+                                Quick actions
+                            </Text>
+
+                            {quickActions.map((action) => (
+                                <QuickActionItem
+                                    action={action}
+                                    key={action.id}
+                                    theme={theme}
+                                />
+                            ))}
+                        </Stack>
+                    </Card>
                 </Stack>
-            </Card>
-        </Stack>
+            </PaddingContainer>
+        </PagePaper>
     );
 }

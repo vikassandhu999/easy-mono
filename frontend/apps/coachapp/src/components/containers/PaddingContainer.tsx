@@ -13,8 +13,8 @@ export default function PaddingContainer({children, marginBottom, paddingX, padd
     return (
         <Container
             mb={marginBottom ?? 0}
+            pb={paddingY}
             px={paddingX}
-            py={paddingY}
             ref={ref}
             size="md"
             style={style}

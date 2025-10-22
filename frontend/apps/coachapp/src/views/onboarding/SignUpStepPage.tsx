@@ -1,31 +1,32 @@
-import {zodResolver} from '@hookform/resolvers/zod';
-import {Anchor, Button, Group, Stack, Text, TextInput} from '@mantine/core';
+import {Anchor, Button, Stack, Text, TextInput} from '@mantine/core';
+import {useForm, zodResolver} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
-import {ArrowRightIcon} from '@phosphor-icons/react';
-import {IconInfoCircle, IconMail} from '@tabler/icons-react';
+import {ArrowRight} from '@phosphor-icons/react';
+import {IconMail} from '@tabler/icons-react';
 import React from 'react';
-import {Controller, useForm} from 'react-hook-form';
 import {createSearchParams, useNavigate} from 'react-router';
+import {z} from 'zod';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {SignUp_zod, SignUpProps} from '@/store/services/users';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useSignUpMutation} from '@/store/services/users';
 
-const signUpResolver = zodResolver(SignUp_zod);
+const signUpSchema = z.object({
+    email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+});
+
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpStepPage: React.FC = () => {
     const navigate = useNavigate();
     const [signUp, {isLoading}] = useSignUpMutation();
 
-    const {
-        control,
-        formState: {errors, isSubmitting},
-        handleSubmit,
-    } = useForm<SignUpProps>({
-        defaultValues: {email: ''},
-        resolver: signUpResolver,
+    const form = useForm<SignUpFormValues>({
+        initialValues: {
+            email: '',
+        },
+        validate: zodResolver(signUpSchema),
     });
 
     const getErrorMessage = (error: unknown) => {
@@ -37,10 +38,10 @@ const SignUpStepPage: React.FC = () => {
         if (apiError?.data && typeof apiError.data === 'string') {
             return apiError.data;
         }
-        return apiError?.message ?? 'Something went wrong. Please try again.';
+        return 'Something went wrong. Please try again.';
     };
 
-    const onSubmit = async (data: SignUpProps) => {
+    const onSubmit = async (data: SignUpFormValues) => {
         try {
             const response = await signUp(data).unwrap();
 
@@ -61,83 +62,69 @@ const SignUpStepPage: React.FC = () => {
             const message = getErrorMessage(error);
             notifications.show({
                 color: 'red',
-                icon: <IconInfoCircle size={16} />,
                 message,
-                title: 'Error',
+                title: 'Sign up failed',
             });
         }
     };
 
     return (
         <AuthLayout
-            subtitle="Boost your productivity and grow your client base effortlessly."
-            title="Let's get started."
+            subtitle="Boost your productivity and grow your client base effortlessly"
+            title="Get started"
         >
-            <Stack
-                component="form"
-                gap="lg"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                <Controller
-                    control={control}
-                    name="email"
-                    render={({field}) => (
-                        <TextInput
-                            {...field}
-                            error={errors?.email?.message}
-                            h={48}
-                            label="Email Address"
-                            leftSection={<IconMail size={16} />}
-                            placeholder="Enter your email"
-                            radius="xl"
-                            size="md"
-                        />
-                    )}
-                />
+            <form onSubmit={form.onSubmit(onSubmit)}>
+                <Stack gap="lg">
+                    {/* Form Fields */}
+                    <TextInput
+                        label="Email address"
+                        leftSection={<IconMail size={16} />}
+                        placeholder="your@email.com"
+                        size="lg"
+                        type="email"
+                        {...form.getInputProps('email')}
+                    />
 
-                <Button
-                    fullWidth
-                    h={48}
-                    loading={isSubmitting || isLoading}
-                    radius="xl"
-                    rightSection={<ArrowRightIcon size={20} />}
-                    size="md"
-                    type="submit"
-                >
-                    Continue
-                </Button>
+                    <Button
+                        fullWidth
+                        loading={isLoading}
+                        rightSection={<ArrowRight size={16} />}
+                        size="lg"
+                        type="submit"
+                    >
+                        Continue
+                    </Button>
 
-                {/* Footer Actions */}
-                <Stack gap="md">
-                    <Group
-                        gap="xs"
-                        justify="start"
+                    {/* Footer */}
+                    <Stack
+                        align="center"
+                        gap="md"
                     >
                         <Text
                             c="dimmed"
                             size="sm"
+                            ta="center"
                         >
-                            Already have an account?
+                            Already have an account?{' '}
+                            <Anchor
+                                fw={600}
+                                onClick={() => navigate('/login')}
+                                style={{cursor: 'pointer'}}
+                            >
+                                Sign in
+                            </Anchor>
                         </Text>
-                        <Anchor
-                            fw={500}
-                            onClick={() => navigate('/login')}
-                            size="sm"
-                            style={{cursor: 'pointer'}}
-                        >
-                            Login here
-                        </Anchor>
-                    </Group>
 
-                    <Text
-                        c="dimmed"
-                        size="xs"
-                        ta="left"
-                    >
-                        By clicking on Continue, you agree to our Terms of Service and Privacy Policy
-                    </Text>
+                        <Text
+                            c="dimmed"
+                            size="xs"
+                            ta="center"
+                        >
+                            By continuing, you agree to our Terms of Service and Privacy Policy
+                        </Text>
+                    </Stack>
                 </Stack>
-            </Stack>
+            </form>
         </AuthLayout>
     );
 };

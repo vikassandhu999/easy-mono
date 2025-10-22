@@ -15,7 +15,7 @@ interface AuthLayoutProps extends PropsWithChildren {
     title?: string;
 }
 
-export default function Index({
+export default function AuthLayout({
     children,
     error = false,
     illustrationAlt = 'Authentication background illustration',
@@ -36,9 +36,9 @@ export default function Index({
             <Grid.Col
                 span={{md: 6, xs: 12}}
                 style={{
-                    alignItems: 'start',
+                    alignItems: 'center',
                     display: 'flex',
-                    justifyContent: 'start',
+                    justifyContent: 'center',
                     minHeight: '100vh',
                     padding: 0,
                 }}
@@ -47,17 +47,14 @@ export default function Index({
                     p={{base: 'md', sm: 'lg'}}
                     size="sm"
                     style={{
-                        display: 'block',
-                        maxWidth: '420px',
+                        maxWidth: '480px',
                         width: '100%',
                     }}
                 >
                     <Stack
-                        align="center"
-                        gap="md"
+                        gap="xl"
                         style={{
-                            justifyContent: 'center',
-                            minHeight: isSmallScreen ? 'auto' : '60vh',
+                            width: '100%',
                         }}
                     >
                         {/* Brand Section */}
@@ -65,7 +62,7 @@ export default function Index({
                             <TextLogo
                                 aria-label="Coach Easy Logo"
                                 as="div"
-                                size={'lg'}
+                                size="lg"
                             />
                         </Box>
 
@@ -78,8 +75,9 @@ export default function Index({
                                 {title && (
                                     <Title
                                         c={error ? 'red' : 'dark'}
-                                        fw={600}
-                                        order={6}
+                                        fw={700}
+                                        order={2}
+                                        size="h3"
                                     >
                                         {title}
                                     </Title>
@@ -87,8 +85,7 @@ export default function Index({
                                 {subtitle && (
                                     <Text
                                         c="dimmed"
-                                        fw={400}
-                                        size={'sm'}
+                                        size="sm"
                                     >
                                         {subtitle}
                                     </Text>
@@ -104,12 +101,7 @@ export default function Index({
                         )}
 
                         {/* Form Content */}
-                        <Box
-                            mt={'lg'}
-                            w="100%"
-                        >
-                            <Stack gap="lg">{children}</Stack>
-                        </Box>
+                        {!loading && <Box w="100%">{children}</Box>}
                     </Stack>
                 </Container>
             </Grid.Col>

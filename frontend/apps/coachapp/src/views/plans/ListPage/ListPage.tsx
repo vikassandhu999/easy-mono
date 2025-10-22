@@ -1,5 +1,5 @@
 import {Flex, Image, Stack, Text, Title} from '@mantine/core';
-import {useEffect, useRef, useState} from 'react';
+import {memo, useCallback, useMemo} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
 import PaddingContainer from '@/components/containers/PaddingContainer';
@@ -11,13 +11,86 @@ import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
 import EmptyPlanImage from '../../../../public/empty_plan.png';
 import Header from './ListHeader';
 
+interface EmptyStateProps {
+    discipline: PlanDiscipline;
+    search: string;
+}
+
+const EmptyState = memo<EmptyStateProps>(({search, discipline}) => {
+    // Simple functions without useCallback - memo handles memoization
+    const getDisciplineLabel = () => {
+        if (discipline === 'workout') return 'Workout';
+        if (discipline === 'nutrition') return 'Nutrition';
+        return 'Workout';
+    };
+    const getEmptyStateDescription = () => {
+        if (search) {
+            return "We couldn't find any plans matching your search. Try using different keywords.";
+        }
+        if (discipline === 'workout') {
+            return 'Create personalized strength and endurance plans to guide your clients toward their fitness goals.';
+        }
+        if (discipline === 'nutrition') {
+            return 'Design structured nutrition plans to help your clients build healthy, sustainable eating habits.';
+        }
+        return 'Create personalized strength and endurance plans to guide your clients toward their fitness goals.';
+    };
+
+    const getEmptyStateTitle = () => {
+        if (search) {
+            return `No plans found for "${search}"`;
+        }
+        return `No ${getDisciplineLabel().toLowerCase()} plans yet`;
+    };
+
+    return (
+        <Flex
+            align="center"
+            direction="column"
+            gap="lg"
+            justify="center"
+            px="md"
+        >
+            <Image
+                alt={search ? 'No results illustration' : 'Empty plans illustration'}
+                src={EmptyPlanImage}
+                w={240}
+            />
+            <Stack
+                align="center"
+                gap="xs"
+            >
+                <Title
+                    order={5}
+                    ta="center"
+                >
+                    {getEmptyStateTitle()}
+                </Title>
+                <Text
+                    c="dimmed"
+                    maw={400}
+                    size="sm"
+                    ta="center"
+                >
+                    {getEmptyStateDescription()}
+                </Text>
+            </Stack>
+        </Flex>
+    );
+});
+
+EmptyState.displayName = 'EmptyState';
+
 function PlansListPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [search, setSearch] = useState('');
-    const [discipline, setDiscipline] = useState<PlanDiscipline>('workout');
     const navigate = useNavigate();
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch} = useListPlans(
+    // Memoize search and discipline state changes
+    const search = useMemo(() => searchParams.get('search') || '', [searchParams]);
+    const discipline = useMemo(() => (searchParams.get('discipline') as PlanDiscipline) || 'workout', [searchParams]);
+
+    // Fetching Plan List with stable query params
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListPlans(
         {
             search: search?.trim() || undefined,
             discipline,
@@ -25,73 +98,90 @@ function PlansListPage() {
         {skip: searchParams.get('selected_drawer') === 'create_plan'},
     );
 
-    const plans = data?.pages?.flatMap((page) => page.records) ?? [];
+    // Memoize flattened plans array
+    const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
-    const navigateRef = useRef(navigate);
-    useEffect(() => {
-        navigateRef.current = navigate;
-    }, [navigate]);
-
-    const refetchRef = useRef(refetch);
-    useEffect(() => {
-        refetchRef.current = refetch;
-    }, [refetch]);
-
-    const handleCreate = () => {
+    // Memoize callbacks
+    const handleCreate = useCallback(() => {
         setSearchParams({selected_drawer: 'create_plan'});
-    };
+    }, [setSearchParams]);
 
-    useEffect(() => {
-        const selectedDrawer = searchParams.get('selected_drawer');
-        const legacyPlanId = searchParams.get('plan_id');
+    const handleView = useCallback(
+        (id: string) => {
+            navigate(`/plans/${id}/builder`);
+        },
+        [navigate],
+    );
 
-        if (selectedDrawer === 'plan_builder' && legacyPlanId) {
-            setSearchParams(
-                (prev) => {
-                    prev.delete('selected_drawer');
-                    prev.delete('plan_id');
-                    prev.delete('plan_builder_view');
-                    prev.delete('plan_builder_kind');
-                    prev.delete('plan_builder_day');
-                    prev.delete('plan_builder_day_order');
-                    prev.delete('plan_builder_date');
-                    return prev;
-                },
-                {replace: true},
-            );
+    const handleDisciplineChange = useCallback(
+        (newDiscipline: PlanDiscipline) => {
+            setSearchParams((prev) => {
+                prev.set('discipline', newDiscipline);
+                prev.delete('search');
+                return prev;
+            });
+        },
+        [setSearchParams],
+    );
 
-            navigate(`/plans/${legacyPlanId}/builder`, {replace: true});
-        }
-    }, [navigate, searchParams, setSearchParams]);
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearchParams((prev) => {
+                if (value.trim()) {
+                    prev.set('search', value);
+                } else {
+                    prev.delete('search');
+                }
+                return prev;
+            });
+        },
+        [setSearchParams],
+    );
 
-    const handleView = (id: string) => navigate(`/plans/${id}/builder`);
+    // Handle legacy plan_id redirect
+    const selectedDrawer = searchParams.get('selected_drawer');
+    const legacyPlanId = searchParams.get('plan_id');
 
-    // Get discipline-specific empty state config
-    const getDisciplineLabel = () => {
-        if (discipline === 'workout') return 'Workout';
-        if (discipline === 'nutrition') return 'Nutrition';
-        return 'Workout';
-    };
+    if (selectedDrawer === 'plan_builder' && legacyPlanId) {
+        // Clean up and redirect
+        setSearchParams(
+            (prev) => {
+                prev.delete('selected_drawer');
+                prev.delete('plan_id');
+                prev.delete('plan_builder_view');
+                prev.delete('plan_builder_kind');
+                prev.delete('plan_builder_day');
+                prev.delete('plan_builder_day_order');
+                prev.delete('plan_builder_date');
+                return prev;
+            },
+            {replace: true},
+        );
+        navigate(`/plans/${legacyPlanId}/builder`, {replace: true});
+    }
 
-    const getEmptyStateDescription = () => {
-        if (search) {
-            return `Try different keywords or create a new plan.`;
-        }
-        if (discipline === 'workout') {
-            return 'Build strength and endurance plans to help your clients achieve their fitness goals.';
-        }
-        if (discipline === 'nutrition') {
-            return 'Guide your clients toward healthy eating habits with structured nutrition plans.';
-        }
-        return 'Build strength and endurance plans to help your clients achieve their fitness goals.';
-    };
+    // Memoize render item function
+    const renderItem = useCallback(
+        (plan: Plan) => (
+            <PlanListItem
+                key={plan.id}
+                onView={handleView}
+                plan={plan}
+            />
+        ),
+        [handleView],
+    );
 
-    const getEmptyStateTitle = () => {
-        if (search) {
-            return `No results for "${search}"`;
-        }
-        return `Create your first ${getDisciplineLabel().toLowerCase()} plan`;
-    };
+    // Memoize empty state
+    const emptyState = useMemo(
+        () => (
+            <EmptyState
+                discipline={discipline}
+                search={search}
+            />
+        ),
+        [discipline, search],
+    );
 
     return (
         <>
@@ -99,8 +189,8 @@ function PlansListPage() {
                 discipline={discipline}
                 isLoading={isLoading}
                 onCreateClick={handleCreate}
-                onDisciplineChange={setDiscipline}
-                onSearchChange={(value) => setSearch(value)}
+                onDisciplineChange={handleDisciplineChange}
+                onSearchChange={handleSearchChange}
             />
             <PagePaper>
                 <PaddingContainer
@@ -108,40 +198,7 @@ function PlansListPage() {
                     paddingY={'lg'}
                 >
                     <RecordsList<Plan>
-                        emptyState={
-                            <Flex
-                                align="center"
-                                direction="column"
-                                gap="md"
-                                justify="center"
-                                px="md"
-                            >
-                                <Image
-                                    alt={search ? 'No results illustration' : 'Empty plans illustration'}
-                                    src={EmptyPlanImage}
-                                    w={240}
-                                />
-                                <Stack
-                                    align="center"
-                                    gap="xs"
-                                >
-                                    <Title
-                                        order={3}
-                                        ta="center"
-                                    >
-                                        {getEmptyStateTitle()}
-                                    </Title>
-                                    <Text
-                                        c="dimmed"
-                                        maw={400}
-                                        size="md"
-                                        ta="center"
-                                    >
-                                        {getEmptyStateDescription()}
-                                    </Text>
-                                </Stack>
-                            </Flex>
-                        }
+                        emptyState={emptyState}
                         fetchNextPage={fetchNextPage}
                         gap={0}
                         hasNextPage={hasNextPage}
@@ -149,13 +206,7 @@ function PlansListPage() {
                         itemKey={(item) => item.id}
                         loadMoreText="Load more plans"
                         records={plans}
-                        renderItem={(plan) => (
-                            <PlanListItem
-                                key={plan.id}
-                                onView={handleView}
-                                plan={plan}
-                            />
-                        )}
+                        renderItem={renderItem}
                     />
                 </PaddingContainer>
             </PagePaper>

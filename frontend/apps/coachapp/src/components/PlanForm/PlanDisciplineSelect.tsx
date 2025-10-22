@@ -1,4 +1,4 @@
-import {Avatar, Group, Stack, Text, UnstyledButton, useMantineTheme} from '@mantine/core';
+import {Avatar, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
 import {IconChevronRight} from '@tabler/icons-react';
 
 import {PlanDiscipline} from '@/store/services/plans';
@@ -16,44 +16,39 @@ const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
     >;
 
     return (
-        <Stack gap="md">
+        <Stack
+            px="sm"
+            py="lg"
+        >
+            <Stack gap="sm">
+                <Text
+                    fw={600}
+                    size="lg"
+                >
+                    Choose plan type
+                </Text>
+                <Text
+                    c="dimmed"
+                    size="sm"
+                >
+                    Select a plan category to tailor the setup to your client's goals.
+                </Text>
+            </Stack>
+
             {entries.map(([discipline, config]) => {
                 const IconComponent = config.icon;
 
                 return (
-                    <UnstyledButton
+                    <Card
+                        component="button"
                         key={discipline}
                         onClick={() => onSelect(discipline)}
                         p="lg"
+                        radius="lg"
                         style={{
-                            backgroundColor: 'var(--mantine-color-white)',
-                            border: `1px solid ${theme.colors.gray[3]}`,
-                            borderRadius: theme.radius.md,
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                             cursor: 'pointer',
-                            display: 'block',
-                            textAlign: 'left',
-                            transition: 'all 150ms ease',
-                            width: '100%',
                         }}
-                        styles={{
-                            root: {
-                                '&:hover': {
-                                    borderColor: theme.colors.gray[4],
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                                    transform: 'translateY(-2px)',
-                                },
-                                '&:active': {
-                                    transform: 'translateY(0)',
-                                },
-                                '&:focus-visible': {
-                                    outline: `2px solid ${theme.colors.brand[5]}`,
-                                    outlineOffset: '2px',
-                                    borderColor: theme.colors.brand[5],
-                                    boxShadow: '0 0 0 4px rgba(31, 106, 255, 0.12)',
-                                },
-                            },
-                        }}
+                        withBorder
                     >
                         <Group
                             align="center"
@@ -76,8 +71,11 @@ const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
                                 </Avatar>
 
                                 <Stack
+                                    align="start"
                                     gap="xs"
+                                    justify="start"
                                     style={{flex: 1, minWidth: 0}}
+                                    ta="left"
                                 >
                                     <Text
                                         fw={600}
@@ -89,6 +87,7 @@ const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
                                         c="dimmed"
                                         size="sm"
                                         style={{lineHeight: 1.5}}
+                                        ta="left"
                                     >
                                         {config.description}
                                     </Text>
@@ -102,7 +101,7 @@ const PlanDisciplineSelect = ({onSelect}: PlanDisciplineSelectProps) => {
                                 style={{flexShrink: 0}}
                             />
                         </Group>
-                    </UnstyledButton>
+                    </Card>
                 );
             })}
         </Stack>

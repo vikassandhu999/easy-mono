@@ -2,6 +2,8 @@ import {baseAPISlice} from '../baseAPISlice';
 import {
     type BusinessPreferences,
     type Coach,
+    type CoachStats,
+    CoachStats_zod,
     UpdateBusinessPreferences_zod,
     type UpdateBusinessPreferencesProps,
     UpdateCoach_zod,
@@ -16,6 +18,15 @@ export const coachApi = baseAPISlice.injectEndpoints({
                 method: 'GET',
             }),
             providesTags: [{type: 'Coach', id: 'PROFILE'}],
+        }),
+
+        getCoachStats: build.query<CoachStats, void>({
+            query: () => ({
+                url: '/v1/coach/stats',
+                method: 'GET',
+            }),
+            transformResponse: (response) => CoachStats_zod.parse(response) as CoachStats,
+            providesTags: [{type: 'Coach', id: 'STATS'}],
         }),
 
         updateCoach: build.mutation<Coach, UpdateCoachProps>({
@@ -45,4 +56,5 @@ export const coachApi = baseAPISlice.injectEndpoints({
     overrideExisting: false,
 });
 
-export const {useGetCoachQuery, useUpdateCoachMutation, useUpdateBusinessPreferencesMutation} = coachApi;
+export const {useGetCoachQuery, useGetCoachStatsQuery, useUpdateCoachMutation, useUpdateBusinessPreferencesMutation} =
+    coachApi;

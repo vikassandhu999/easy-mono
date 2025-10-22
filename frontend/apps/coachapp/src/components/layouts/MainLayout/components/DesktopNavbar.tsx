@@ -4,7 +4,6 @@ import TextLogo from '@/components/TextLogo/TextLogo';
 
 import {NavItem} from '../types';
 import {NavItems} from './NavItems';
-import {UserInfo} from './UserInfo';
 
 interface DesktopNavbarProps {
     navItems: NavItem[];
@@ -28,13 +27,6 @@ export function DesktopNavbar({navItems, onNavigate}: DesktopNavbarProps) {
                     onNavigate={onNavigate}
                 />
             </Stack>
-
-            <Box
-                mt="auto"
-                pt="lg"
-            >
-                <UserInfo />
-            </Box>
         </>
     );
 }

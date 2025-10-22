@@ -1,38 +1,38 @@
-import {zodResolver} from '@hookform/resolvers/zod';
-import {Alert, Anchor, Button, Center, Group, PinInput, rem, Stack, Text} from '@mantine/core';
+import {Alert, Anchor, Button, Center, PinInput, Stack, Text} from '@mantine/core';
+import {useForm, zodResolver} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
-import {IconArrowLeft, IconArrowRight, IconInfoCircle} from '@tabler/icons-react';
+import {ArrowLeft, ArrowRight} from '@phosphor-icons/react';
+import {IconAlertCircle} from '@tabler/icons-react';
 import React, {useState} from 'react';
-import {useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
+import {z} from 'zod';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
-import {Verify_zod, VerifyProps} from '@/store/services/users';
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
 import {useVerifySignupMutation} from '@/store/services/users';
 
-const verifyResolver = zodResolver(Verify_zod);
+const verifySchema = z.object({
+    passcode: z.string().length(6, 'Code must be 6 digits'),
+    token_id: z.string().min(1),
+});
+
+type VerifyFormValues = z.infer<typeof verifySchema>;
 
 const SignUpCodeStepPage: React.FC = () => {
     const {saveAuthToken} = useAuth();
     const navigate = useNavigate();
     const [params] = useSearchParams();
-    const [code, setCode] = useState('');
     const [error, setError] = useState<string>('');
     const [verifySignup, {isLoading}] = useVerifySignupMutation();
 
-    const {
-        handleSubmit,
-        setValue,
-        formState: {isSubmitting},
-    } = useForm<VerifyProps>({
-        defaultValues: {
+    const form = useForm<VerifyFormValues>({
+        initialValues: {
             passcode: '',
             token_id: params.get('token_id') ?? '',
         },
-        resolver: verifyResolver,
+        validate: zodResolver(verifySchema),
     });
 
     const getErrorMessage = (err: unknown) => {
@@ -44,25 +44,20 @@ const SignUpCodeStepPage: React.FC = () => {
         if (apiError?.data && typeof apiError.data === 'string') {
             return apiError.data;
         }
-        return apiError?.message ?? 'Failed to verify code. Please try again.';
+        return 'Failed to verify code. Please try again.';
     };
 
-    const onSubmit = async (data: VerifyProps) => {
-        if (code.length !== 6) {
-            setError('Please enter the complete 6-digit code');
-            return;
-        }
-
+    const onSubmit = async (data: VerifyFormValues) => {
         setError('');
 
         try {
-            const response = await verifySignup({...data, passcode: code}).unwrap();
+            const response = await verifySignup(data).unwrap();
 
             await saveAuthToken(response);
             notifications.show({
                 color: 'green',
                 message: 'Account verified successfully',
-                title: 'Success!',
+                title: 'Success',
             });
             navigate('/onboarding/business');
         } catch (err) {
@@ -71,15 +66,9 @@ const SignUpCodeStepPage: React.FC = () => {
             notifications.show({
                 color: 'red',
                 message: errorMessage,
-                title: 'Error',
+                title: 'Verification failed',
             });
         }
-    };
-
-    const handleCodeChange = (value: string) => {
-        setCode(value);
-        setValue('passcode', value);
-        setError('');
     };
 
     const handleResendCode = async () => {
@@ -87,106 +76,92 @@ const SignUpCodeStepPage: React.FC = () => {
         notifications.show({
             color: 'blue',
             message: 'A new verification code has been sent to your email',
-            title: 'Code Sent',
+            title: 'Code sent',
         });
     };
 
     return (
         <AuthLayout
-            subtitle={`We've sent a 6-digit code to ${params.get('email') || 'your email'}`}
-            title="Enter Verification Code"
+            subtitle={`Enter the 6-digit code sent to ${params.get('email') || 'your email'}`}
+            title="Verify your email"
         >
-            <Stack
-                component="form"
-                gap="md"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                <Center>
-                    <PinInput
-                        error={!!error}
-                        length={6}
-                        onChange={handleCodeChange}
-                        placeholder="●"
-                        radius="xl"
-                        size="lg"
-                        styles={{
-                            input: {
-                                '&:focus': {
-                                    borderColor: 'var(--mantine-color-blue-6)',
-                                },
-                                border: error
-                                    ? '2px solid var(--mantine-color-red-6)'
-                                    : '2px solid var(--mantine-color-gray-3)',
-                                fontSize: rem(18),
-                                fontWeight: 600,
-                                height: rem(56),
-                                marginRight: rem(8),
-                                textAlign: 'center',
-                                width: rem(48),
-                            },
-                        }}
-                        type="number"
-                        value={code}
-                    />
-                </Center>
-
-                {error && (
-                    <Alert
-                        color="red"
-                        icon={<IconInfoCircle size="1rem" />}
-                        radius="xl"
-                        variant="light"
-                    >
-                        {error}
-                    </Alert>
-                )}
-
-                <Button
-                    disabled={code.length !== 6}
-                    fullWidth
-                    h={48}
-                    loading={isSubmitting || isLoading}
-                    radius="xl"
-                    rightSection={<IconArrowRight size={16} />}
-                    size="md"
-                    type="submit"
-                >
-                    Continue
-                </Button>
-
+            <form onSubmit={form.onSubmit(onSubmit)}>
                 <Stack gap="lg">
-                    <Group
-                        gap="xs"
-                        justify="left"
+                    {/* Error Alert */}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertCircle size={16} />}
+                            title="Verification failed"
+                        >
+                            {error}
+                        </Alert>
+                    )}
+
+                    {/* PIN Input */}
+                    <Stack gap="xs">
+                        <Center>
+                            <PinInput
+                                length={6}
+                                placeholder="○"
+                                size="lg"
+                                type="number"
+                                {...form.getInputProps('passcode')}
+                            />
+                        </Center>
+                        {form.errors.passcode && (
+                            <Text
+                                c="red"
+                                size="sm"
+                                ta="center"
+                            >
+                                {form.errors.passcode}
+                            </Text>
+                        )}
+                    </Stack>
+
+                    <Button
+                        disabled={form.values.passcode.length !== 6}
+                        fullWidth
+                        loading={isLoading}
+                        rightSection={<ArrowRight size={16} />}
+                        size="lg"
+                        type="submit"
+                    >
+                        Verify and continue
+                    </Button>
+
+                    {/* Footer */}
+                    <Stack
+                        align="center"
+                        gap="md"
                     >
                         <Text
                             c="dimmed"
-                            size="xs"
+                            size="sm"
+                            ta="center"
                         >
-                            Didn't receive the code?
+                            Didn't receive the code?{' '}
+                            <Anchor
+                                fw={600}
+                                onClick={handleResendCode}
+                                style={{cursor: 'pointer'}}
+                            >
+                                Resend
+                            </Anchor>
                         </Text>
-                        <Anchor
-                            fw={500}
-                            onClick={handleResendCode}
-                            size="xs"
-                            style={{cursor: 'pointer'}}
-                        >
-                            Resend code
-                        </Anchor>
-                    </Group>
 
-                    <Group justify="start">
                         <Button
-                            leftSection={<IconArrowLeft size={16} />}
+                            leftSection={<ArrowLeft size={16} />}
                             onClick={() => navigate(-1)}
-                            size="compact-sm"
+                            size="sm"
                             variant="subtle"
                         >
-                            Change Email
+                            Change email
                         </Button>
-                    </Group>
+                    </Stack>
                 </Stack>
-            </Stack>
+            </form>
         </AuthLayout>
     );
 };

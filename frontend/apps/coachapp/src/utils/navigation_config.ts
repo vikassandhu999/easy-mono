@@ -12,6 +12,7 @@ export const ROUTES_WITH_NAVIGATION = [
     '/chats', // chats list page
     '/settings', // Settings list page
     '/library', // library list page
+    '/profile',
 ];
 
 export const ROUTE_PATTERNS_WITH_NAVIGATION = [];

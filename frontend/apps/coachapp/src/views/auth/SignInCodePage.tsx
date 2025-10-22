@@ -1,15 +1,22 @@
-import {Alert, Anchor, Button, Group, PinInput, Stack, Text} from '@mantine/core';
-import {useForm} from '@mantine/form';
-import {ArrowRightIcon} from '@phosphor-icons/react';
-import {IconAlertCircle, IconArrowLeft} from '@tabler/icons-react';
+import {Alert, Anchor, Button, Center, PinInput, Stack, Text} from '@mantine/core';
+import {useForm, zodResolver} from '@mantine/form';
+import {ArrowLeft, ArrowRight} from '@phosphor-icons/react';
+import {IconAlertCircle} from '@tabler/icons-react';
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
+import {z} from 'zod';
 
 import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
 
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useAuth} from '@/providers/AuthProvider';
 import {SignInCodeRequest, useSignInCodeMutation} from '@/store/services/auth';
+
+const signInCodeSchema = z.object({
+    email: z.string().email(),
+    passcode: z.string().length(6, 'Code must be 6 digits'),
+    token_id: z.string().min(1),
+});
 
 const SignInCodePage: React.FC = () => {
     const {saveAuthToken} = useAuth();
@@ -24,13 +31,7 @@ const SignInCodePage: React.FC = () => {
             passcode: '',
             token_id: params.get('token_id') || '',
         },
-        validate: {
-            passcode: (value) => {
-                if (!value) return 'Please enter the verification code';
-                if (value.length !== 6) return 'Code must be 6 digits';
-                return null;
-            },
-        },
+        validate: zodResolver(signInCodeSchema),
     });
 
     const getErrorMessage = (err: unknown) => {
@@ -42,7 +43,7 @@ const SignInCodePage: React.FC = () => {
         if (apiError?.data && typeof apiError.data === 'string') {
             return apiError.data;
         }
-        return apiError?.message ?? 'Something went wrong';
+        return 'Something went wrong. Please try again.';
     };
 
     const onSubmit = async (data: SignInCodeRequest) => {
@@ -58,56 +59,44 @@ const SignInCodePage: React.FC = () => {
     };
 
     const handleResendCode = async () => {
-        // Implement resend logic here
+        // TODO: Implement resend logic
         console.log('Resending code to:', params.get('email'));
     };
 
     return (
         <AuthLayout
-            subtitle={`We sent a 6-digit verification code to ${params.get('email')}`}
-            title="Email verification"
+            subtitle={`Enter the 6-digit code sent to ${params.get('email')}`}
+            title="Verify your email"
         >
-            {/* Error Alert */}
-            {error && (
-                <Alert
-                    color="red"
-                    icon={<IconAlertCircle size={16} />}
-                    radius="xl"
-                    title="Verification failed"
-                >
-                    {error}
-                </Alert>
-            )}
+            <form onSubmit={form.onSubmit(onSubmit)}>
+                <Stack gap="lg">
+                    {/* Error Alert */}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertCircle size={16} />}
+                            title="Verification failed"
+                        >
+                            {error}
+                        </Alert>
+                    )}
 
-            {/* Form */}
-            <form
-                onSubmit={form.onSubmit(onSubmit)}
-                style={{width: '100%'}}
-            >
-                <Stack
-                    align="start"
-                    gap="sm"
-                >
-                    <Stack
-                        align={'center'}
-                        gap="xs"
-                        justify={'center'}
-                    >
-                        <PinInput
-                            length={6}
-                            placeholder="○"
-                            radius="xl"
-                            type="number"
-                            {...form.getInputProps('passcode')}
-                            size={'lg'}
-                            w={'max-content'}
-                        />
+                    {/* PIN Input */}
+                    <Stack gap="xs">
+                        <Center>
+                            <PinInput
+                                length={6}
+                                placeholder="○"
+                                size="lg"
+                                type="number"
+                                {...form.getInputProps('passcode')}
+                            />
+                        </Center>
                         {form.errors.passcode && (
                             <Text
                                 c="red"
                                 size="sm"
                                 ta="center"
-                                w={'100%'}
                             >
                                 {form.errors.passcode}
                             </Text>
@@ -117,54 +106,44 @@ const SignInCodePage: React.FC = () => {
                     <Button
                         fullWidth
                         loading={isLoading}
-                        radius="xl"
-                        rightSection={<ArrowRightIcon size={16} />}
-                        size="md"
+                        rightSection={<ArrowRight size={16} />}
+                        size="lg"
                         type="submit"
-                        variant="filled"
                     >
-                        Continue
+                        Verify and sign in
                     </Button>
+
+                    {/* Footer */}
+                    <Stack
+                        align="center"
+                        gap="md"
+                    >
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                            ta="center"
+                        >
+                            Didn't receive the code?{' '}
+                            <Anchor
+                                fw={600}
+                                onClick={handleResendCode}
+                                style={{cursor: 'pointer'}}
+                            >
+                                Resend
+                            </Anchor>
+                        </Text>
+
+                        <Button
+                            leftSection={<ArrowLeft size={16} />}
+                            onClick={() => navigate('/signin')}
+                            size="sm"
+                            variant="subtle"
+                        >
+                            Back to sign in
+                        </Button>
+                    </Stack>
                 </Stack>
             </form>
-
-            {/* Footer Actions */}
-            <Stack
-                align={'center'}
-                gap="md"
-            >
-                <Group
-                    gap="xs"
-                    justify="start"
-                >
-                    <Text
-                        c="dimmed"
-                        size="sm"
-                    >
-                        Didn't receive the code?
-                    </Text>
-                    <Anchor
-                        fw={500}
-                        onClick={handleResendCode}
-                        size="sm"
-                        style={{cursor: 'pointer'}}
-                        td={'underline'}
-                    >
-                        Resend code
-                    </Anchor>
-                </Group>
-
-                <Group justify="start">
-                    <Button
-                        leftSection={<IconArrowLeft size={16} />}
-                        onClick={() => navigate('/signin')}
-                        size="compact-sm"
-                        variant="subtle"
-                    >
-                        Back to sign in
-                    </Button>
-                </Group>
-            </Stack>
         </AuthLayout>
     );
 };

@@ -24,7 +24,14 @@ export default function HeadingContainer({bg = 'white', children, ref, style, wi
                 zIndex: 100,
             }}
         >
-            <PaddingContainer style={{paddingBlock: 'var(--ce-size-sm)', paddingInline: 'var(--ce-size-md)', ...style}}>
+            <PaddingContainer
+                style={{
+                    paddingBlock: 'var(--ce-size-sm)',
+                    paddingInline: 'var(--ce-size-md)',
+                    paddingBottom: 0,
+                    ...style,
+                }}
+            >
                 {children}
             </PaddingContainer>
         </Box>

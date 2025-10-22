@@ -19,9 +19,14 @@ export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerP
     return (
         <Drawer
             {...stack.register('invite-client')}
+            p={0}
             position="right"
             size="100%"
             styles={{
+                root: {
+                    marginTop: 0,
+                    paddingTop: 0,
+                },
                 body: {
                     padding: 0,
                     height: '100%',
@@ -51,7 +56,6 @@ export function InviteClientDrawer({onClientCreated, stack}: InviteClientDrawerP
                 {/* Content Area - Scrollable, Constrained Width */}
                 <Container
                     bg="gray.0"
-                    p="lg"
                     size={560}
                     style={{
                         flex: 1,

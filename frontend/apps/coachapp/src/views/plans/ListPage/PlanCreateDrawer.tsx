@@ -1,8 +1,10 @@
-import {Container, Drawer, Stack, Text} from '@mantine/core';
+import {Drawer, Stack, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import React, {useCallback, useMemo} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import HeadingContainer from '@/components/containers/HeaderContainer';
+import PaddingContainer from '@/components/containers/PaddingContainer';
 import Header from '@/components/layouts/Header';
 import PlanDisciplineSelect from '@/components/PlanForm/PlanDisciplineSelect';
 import {PlanForm} from '@/components/PlanForm/PlanForm';
@@ -61,89 +63,40 @@ export const PlanCreateDrawer = React.memo(function CreateDrawer() {
             opened={true}
             position="right"
             size="100%"
-            styles={{
-                body: {
-                    padding: 0,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                },
-                content: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                },
-            }}
             withCloseButton={false}
         >
-            <Stack
-                align="center"
-                gap="md"
-                h="100%"
+            <HeadingContainer>
+                <Header
+                    onBack={goBack}
+                    title={!selectedDiscipline ? 'Create plan' : 'Plan details'}
+                />
+            </HeadingContainer>
+
+            <PaddingContainer
+                paddingX={'md'}
+                paddingY={'lg'}
             >
-                {/* Header - Constrained Width */}
-                <Container
-                    p="md"
-                    size={560}
-                    w="100%"
-                >
-                    <Header
-                        onBack={goBack}
-                        title={!selectedDiscipline ? 'Create plan' : 'Plan details'}
+                {!selectedDiscipline ? (
+                    <PlanDisciplineSelect
+                        onSelect={(discipline) =>
+                            setSearchParams(
+                                (prev) => {
+                                    prev.set('discipline', discipline);
+                                    return prev;
+                                },
+                                {replace: true},
+                            )
+                        }
                     />
-                </Container>
-
-                {/* Content Area - Scrollable, Constrained Width */}
-                <Container
-                    bg="gray.0"
-                    p="lg"
-                    size={560}
-                    style={{
-                        flex: 1,
-                        overflow: 'auto',
-                    }}
-                    w="100%"
-                >
-                    {!selectedDiscipline ? (
-                        <Stack gap="lg">
-                            {/* Introduction Section */}
-                            <Stack gap="sm">
-                                <Text
-                                    fw={600}
-                                    size="lg"
-                                >
-                                    Choose plan type
-                                </Text>
-                                <Text
-                                    c="dimmed"
-                                    size="sm"
-                                >
-                                    Select a plan category to tailor the setup to your client's goals.
-                                </Text>
-                            </Stack>
-
-                            {/* Discipline Selection */}
-                            <PlanDisciplineSelect
-                                onSelect={(discipline) =>
-                                    setSearchParams(
-                                        (prev) => {
-                                            prev.set('discipline', discipline);
-                                            return prev;
-                                        },
-                                        {replace: true},
-                                    )
-                                }
-                            />
-                        </Stack>
-                    ) : (
-                        <PlanForm
-                            discipline={selectedDiscipline}
-                            onSubmit={handleSubmit}
-                            plan={{}}
-                            submitText={isCreatingPlan ? 'Creating plan...' : 'Create plan'}
-                        />
-                    )}
-                </Container>
-            </Stack>
+                ) : (
+                    <PlanForm
+                        discipline={selectedDiscipline}
+                        onSubmit={handleSubmit}
+                        plan={{}}
+                        submitText={isCreatingPlan ? 'Creating plan...' : 'Create plan'}
+                    />
+                )}
+            </PaddingContainer>
         </Drawer>
     );
 });

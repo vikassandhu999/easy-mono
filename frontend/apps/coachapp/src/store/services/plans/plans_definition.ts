@@ -70,21 +70,31 @@ export const CreatePlan_zod = z
     .object({
         name: z
             .string()
-            .min(2, 'Plan name must be at least 2 characters')
-            .max(255, 'Plan name must be less than 255 characters')
+            .min(2, 'Plan name must be at least 2 characters long')
+            .max(255, 'Plan name must not exceed 255 characters')
             .transform((val) => val.trim()),
         description: z
             .string()
             .optional()
-            .transform((val) => val?.trim() || undefined),
+            .transform((val) => (val && val.trim()) || undefined),
         discipline: z.enum(['nutrition', 'workout']),
         kind: z.enum(['client_copy', 'template']),
         recurrence: z.enum(['calendar', 'daily', 'weekly']),
-        duration_weeks: z.number().int().min(1).max(104).optional(),
-        duration_days: z.number().int().min(1).max(730).optional(),
+        duration_weeks: z
+            .number()
+            .int()
+            .min(1, 'Duration must be at least 1 week')
+            .max(104, 'Duration must not exceed 104 weeks')
+            .optional(),
+        duration_days: z
+            .number()
+            .int()
+            .min(1, 'Duration must be at least 1 day')
+            .max(730, 'Duration must not exceed 730 days')
+            .optional(),
         timezone: z.string().optional(),
         status: z.enum(['active', 'archived', 'draft']).optional(),
-        start_date: z.string().min(1, 'Start date is required'),
+        start_date: z.string().min(1, 'Please select a start date'),
         end_date: z.string().optional(),
         allow_client_edits: z.boolean().optional(),
         template_id: z.string().optional(),
@@ -98,7 +108,7 @@ export const CreatePlan_zod = z
             return true;
         },
         {
-            message: 'Weekly plans must be between 1 and 104 weeks',
+            message: 'Weekly plans require a duration between 1 and 104 weeks',
             path: ['duration_weeks'],
         },
     )
@@ -110,7 +120,7 @@ export const CreatePlan_zod = z
             return true;
         },
         {
-            message: 'Daily plans must be between 1 and 730 days',
+            message: 'Daily plans require a duration between 1 and 730 days',
             path: ['duration_days'],
         },
     );

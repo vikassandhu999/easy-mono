@@ -1,137 +1,121 @@
-import {zodResolver} from '@hookform/resolvers/zod';
 import {Alert, Button, Stack, TextInput} from '@mantine/core';
+import {useForm, zodResolver} from '@mantine/form';
 import {notifications} from '@mantine/notifications';
-import {ArrowRightIcon} from '@phosphor-icons/react';
-import {IconBriefcase, IconInfoCircle, IconUser} from '@tabler/icons-react';
-import React from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {ArrowRight} from '@phosphor-icons/react';
+import {IconAlertCircle, IconBriefcase, IconUser} from '@tabler/icons-react';
+import React, {useState} from 'react';
 import {useNavigate} from 'react-router';
+import {z} from 'zod';
 
-import {UpdateCoach_zod, UpdateCoachProps} from '@/store/services/coach';
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
+
 import AuthLayout from '@/components/layouts/AuthLayout';
 import {useUpdateCoachMutation} from '@/store/services/coach';
 
-const updateCoachResolver = zodResolver(UpdateCoach_zod);
+const coachInfoSchema = z.object({
+    name: z.string().min(2, 'Full name is required'),
+    title: z.string().min(2, 'Professional title is required'),
+});
+
+type CoachInfoFormValues = z.infer<typeof coachInfoSchema>;
 
 const CoachInfoStepPage: React.FC = () => {
     const navigate = useNavigate();
+    const [error, setError] = useState<string>('');
     const [updateCoach, {isLoading}] = useUpdateCoachMutation();
 
-    const {
-        control,
-        formState: {errors, isValid},
-        handleSubmit,
-    } = useForm<UpdateCoachProps>({
-        defaultValues: {name: '', title: ''},
-        mode: 'onChange',
-        resolver: updateCoachResolver,
+    const form = useForm<CoachInfoFormValues>({
+        initialValues: {
+            name: '',
+            title: '',
+        },
+        validate: zodResolver(coachInfoSchema),
     });
 
-    const onSubmit = async (data: UpdateCoachProps) => {
+    const getErrorMessage = (err: unknown) => {
+        const apiError = err as AxiosBaseQueryError | undefined;
+        if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+            const message = (apiError.data as {message?: string}).message;
+            if (message) return message;
+        }
+        if (apiError?.data && typeof apiError.data === 'string') {
+            return apiError.data;
+        }
+        return 'Failed to save your information. Please try again.';
+    };
+
+    const onSubmit = async (data: CoachInfoFormValues) => {
+        setError('');
+
         try {
             await updateCoach(data).unwrap();
 
             notifications.show({
                 color: 'green',
                 message: 'Your profile has been set up successfully',
-                title: 'Welcome!',
+                title: 'Welcome',
             });
             navigate('/');
-        } catch (err: any) {
+        } catch (err) {
+            const errorMessage = getErrorMessage(err);
+            setError(errorMessage);
             notifications.show({
                 color: 'red',
-                message: err?.data?.message || 'Failed to save your information. Please try again.',
-                title: 'Error',
+                message: errorMessage,
+                title: 'Unable to save',
             });
         }
     };
 
     return (
         <AuthLayout
-            subtitle="Tell us a little about yourself."
-            title="Final Step"
+            subtitle="Tell us a little about yourself"
+            title="Final step"
         >
-            <Stack
-                component="form"
-                gap="md"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                <Controller
-                    control={control}
-                    name="name"
-                    render={({field}) => (
-                        <TextInput
-                            {...field}
-                            error={errors?.name?.message}
-                            label="Your Full Name"
-                            leftSection={<IconUser size="1.2rem" />}
-                            placeholder="e.g. John Smith"
-                            radius="xl"
-                            required
-                            size="md"
-                            styles={{
-                                input: {
-                                    height: 48,
-                                },
-                            }}
-                        />
+            <form onSubmit={form.onSubmit(onSubmit)}>
+                <Stack gap="lg">
+                    {/* Error Alert */}
+                    {error && (
+                        <Alert
+                            color="red"
+                            icon={<IconAlertCircle size={16} />}
+                            title="Unable to save"
+                        >
+                            {error}
+                        </Alert>
                     )}
-                />
 
-                <Controller
-                    control={control}
-                    name="title"
-                    render={({field}) => (
-                        <TextInput
-                            {...field}
-                            description="This will be displayed on your profile and business cards"
-                            error={errors?.title?.message}
-                            label="Professional Title"
-                            leftSection={<IconBriefcase size="1.2rem" />}
-                            placeholder="e.g. Certified Fitness Coach"
-                            radius="xl"
-                            required
-                            size="md"
-                            styles={{
-                                input: {
-                                    height: 48,
-                                },
-                            }}
-                        />
-                    )}
-                />
+                    {/* Form Fields */}
+                    <TextInput
+                        label="Full name"
+                        leftSection={<IconUser size={16} />}
+                        placeholder="e.g. John Smith"
+                        required
+                        size="lg"
+                        {...form.getInputProps('name')}
+                    />
 
-                {(errors.name || errors.title) && (
-                    <Alert
-                        color="red"
-                        icon={<IconInfoCircle size="1rem" />}
-                        radius="xl"
-                        variant="light"
+                    <TextInput
+                        description="This will be displayed on your profile and business cards"
+                        label="Professional title"
+                        leftSection={<IconBriefcase size={16} />}
+                        placeholder="e.g. Certified Fitness Coach"
+                        required
+                        size="lg"
+                        {...form.getInputProps('title')}
+                    />
+
+                    <Button
+                        fullWidth
+                        loading={isLoading}
+                        rightSection={<ArrowRight size={16} />}
+                        size="lg"
+                        type="submit"
                     >
-                        Please fix the errors above to continue
-                    </Alert>
-                )}
-
-                <Button
-                    disabled={!isValid}
-                    fullWidth
-                    loaderProps={{
-                        type: 'bars',
-                    }}
-                    loading={isLoading}
-                    radius="xl"
-                    rightSection={<ArrowRightIcon />}
-                    size="md"
-                    styles={{
-                        root: {
-                            height: 48,
-                        },
-                    }}
-                    type="submit"
-                >
-                    {isLoading ? 'Setting up your profile...' : 'Complete Setup'}
-                </Button>
-            </Stack>
+                        Complete setup
+                    </Button>
+                </Stack>
+            </form>
         </AuthLayout>
     );
 };

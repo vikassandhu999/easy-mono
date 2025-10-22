@@ -1,13 +1,5 @@
 import {ActionIcon, Badge, Card, Divider, Group, Menu, MenuTarget, Stack, Text, useMantineTheme} from '@mantine/core';
-import {
-    IconCalendar,
-    IconCopy,
-    IconDotsVertical,
-    IconEdit,
-    IconTrash,
-    IconUserPlus,
-    IconUsers,
-} from '@tabler/icons-react';
+import {IconArchive, IconCalendar, IconDotsVertical, IconUserPlus} from '@tabler/icons-react';
 import React from 'react';
 
 import {PLAN_STATUS} from '@/components/Configs';
@@ -15,7 +7,71 @@ import {Plan} from '@/store/services/plans';
 
 export type PlanListItemProps = {
     onView: (planId: string) => void;
+    onAssignToClient?: (planId: string) => void;
+    onDuplicatePlan?: (planId: string) => void;
+    onDeletePlan?: (planId: string) => void;
     plan: Plan;
+};
+
+export type PlanListItemMenuProps = {
+    plan: Plan;
+    onArchive?: (planId: string) => void;
+    onAssignToClient?: (planId: string) => void;
+};
+
+export const PlanListItemMenu: React.FC<PlanListItemMenuProps> = () => {
+    return (
+        <Menu
+            position="bottom-end"
+            shadow="md"
+            width={200}
+        >
+            <MenuTarget>
+                <ActionIcon
+                    aria-label="Plan options"
+                    color="gray"
+                    onClick={(e) => e.stopPropagation()}
+                    radius="xl"
+                    size="lg"
+                    variant="subtle"
+                >
+                    <IconDotsVertical
+                        size={20}
+                        stroke={1.5}
+                    />
+                </ActionIcon>
+            </MenuTarget>
+
+            <Menu.Dropdown>
+                <Menu.Item
+                    leftSection={
+                        <IconUserPlus
+                            aria-hidden="true"
+                            size={18}
+                            stroke={1.5}
+                        />
+                    }
+                >
+                    Assign to client
+                </Menu.Item>
+
+                <Divider my="xs" />
+
+                <Menu.Item
+                    color="red"
+                    leftSection={
+                        <IconArchive
+                            aria-hidden="true"
+                            size={18}
+                            stroke={1.5}
+                        />
+                    }
+                >
+                    Archieve plan
+                </Menu.Item>
+            </Menu.Dropdown>
+        </Menu>
+    );
 };
 
 const PlanListItem: React.FC<PlanListItemProps> = ({plan, onView}) => {
@@ -136,22 +192,6 @@ const PlanListItem: React.FC<PlanListItemProps> = ({plan, onView}) => {
                         gap="lg"
                         wrap="wrap"
                     >
-                        {/* Client Count (for templates) */}
-                        {plan.kind === 'template' && (
-                            <Group gap="xs">
-                                <IconUsers
-                                    aria-hidden="true"
-                                    size={16}
-                                />
-                                <Text
-                                    c="dimmed"
-                                    size="sm"
-                                >
-                                    20 clients
-                                </Text>
-                            </Group>
-                        )}
-
                         {/* Duration */}
                         <Group gap="xs">
                             <IconCalendar
@@ -189,78 +229,7 @@ const PlanListItem: React.FC<PlanListItemProps> = ({plan, onView}) => {
                         )}
                     </Group>
                 </Stack>
-
-                <Menu
-                    position="bottom-end"
-                    shadow="md"
-                    width={200}
-                >
-                    <MenuTarget>
-                        <ActionIcon
-                            aria-label="Plan options"
-                            onClick={(e) => e.stopPropagation()}
-                            radius="xl"
-                            size="lg"
-                            variant="subtle"
-                        >
-                            <IconDotsVertical
-                                size={20}
-                                stroke={1.5}
-                            />
-                        </ActionIcon>
-                    </MenuTarget>
-
-                    <Menu.Dropdown>
-                        <Menu.Item
-                            leftSection={
-                                <IconUserPlus
-                                    aria-hidden="true"
-                                    size={18}
-                                    stroke={1.5}
-                                />
-                            }
-                        >
-                            Assign to client
-                        </Menu.Item>
-                        <Menu.Item
-                            leftSection={
-                                <IconCopy
-                                    aria-hidden="true"
-                                    size={18}
-                                    stroke={1.5}
-                                />
-                            }
-                        >
-                            Duplicate plan
-                        </Menu.Item>
-                        <Menu.Item
-                            leftSection={
-                                <IconEdit
-                                    aria-hidden="true"
-                                    size={18}
-                                    stroke={1.5}
-                                />
-                            }
-                        >
-                            Edit details
-                        </Menu.Item>
-
-                        <Divider my="xs" />
-
-                        <Menu.Item
-                            color="red"
-                            leftSection={
-                                <IconTrash
-                                    aria-hidden="true"
-                                    size={18}
-                                    stroke={1.5}
-                                />
-                            }
-                        >
-                            Delete plan
-                        </Menu.Item>
-                    </Menu.Dropdown>
-                </Menu>
+                <PlanListItemMenu plan={plan} />
             </Group>
         </Card>
     );

@@ -15,12 +15,12 @@ import {LoadingOverlay, Stack} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {memo, useCallback, useEffect} from 'react';
 
-import HeadingContainer from '@/components/containers/HeaderContainer';
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import {ExerciseCard} from '@/components/Content/ExerciseCard';
-import {useContentList} from '@/components/Content/hooks/useContentList';
-import {RecipeCard} from '@/components/Content/RecipeCard';
-import RecordsList from '@/components/layouts/RecordsList';
+import HeadingContainer from '@/shared/containers/HeaderContainer';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
+import {ExerciseCard} from '@/shared/Content/ExerciseCard';
+import {useContentList} from '@/shared/Content/hooks/useContentList';
+import {RecipeCard} from '@/shared/Content/RecipeCard';
+import RecordsList from '@/shared/layouts/RecordsList';
 import {Content} from '@/store/services/contents';
 
 import {

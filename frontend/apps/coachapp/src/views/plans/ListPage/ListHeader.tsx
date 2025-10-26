@@ -3,9 +3,9 @@ import {useDebouncedCallback} from '@mantine/hooks';
 import {IconTablePlus} from '@tabler/icons-react';
 import React from 'react';
 
-import {PLAN_DISCIPLINES} from '@/components/Configs';
-import HeadingContainer from '@/components/containers/HeaderContainer';
-import Header from '@/components/layouts/Header';
+import {PLAN_DISCIPLINES} from '@/shared/Configs';
+import HeadingContainer from '@/shared/containers/HeaderContainer';
+import Header from '@/shared/layouts/Header';
 import {PlanDiscipline} from '@/store/services/plans';
 
 type PlansPageProps = {

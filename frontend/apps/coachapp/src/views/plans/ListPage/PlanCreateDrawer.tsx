@@ -1,13 +1,13 @@
-import {Drawer, Stack, Text} from '@mantine/core';
+import {Drawer} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import React, {useCallback, useMemo} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import HeadingContainer from '@/components/containers/HeaderContainer';
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import Header from '@/components/layouts/Header';
-import PlanDisciplineSelect from '@/components/PlanForm/PlanDisciplineSelect';
-import {PlanForm} from '@/components/PlanForm/PlanForm';
+import HeadingContainer from '@/shared/containers/HeaderContainer';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
+import Header from '@/shared/layouts/Header';
+import PlanDisciplineSelect from '@/shared/PlanForm/PlanDisciplineSelect';
+import {PlanForm} from '@/shared/PlanForm/PlanForm';
 import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/store/services/plans';
 
 export type PlanCreateDrawerView = 'create-plan' | 'select-discipline';
@@ -57,6 +57,16 @@ export const PlanCreateDrawer = React.memo(function CreateDrawer() {
         }
     };
 
+    const handelDisciplineSelect = (discipline: string) => {
+        setSearchParams(
+            (prev) => {
+                prev.set('discipline', discipline);
+                return prev;
+            },
+            {replace: true},
+        );
+    };
+
     return (
         <Drawer
             onClose={goBack}
@@ -77,17 +87,7 @@ export const PlanCreateDrawer = React.memo(function CreateDrawer() {
                 paddingY={'lg'}
             >
                 {!selectedDiscipline ? (
-                    <PlanDisciplineSelect
-                        onSelect={(discipline) =>
-                            setSearchParams(
-                                (prev) => {
-                                    prev.set('discipline', discipline);
-                                    return prev;
-                                },
-                                {replace: true},
-                            )
-                        }
-                    />
+                    <PlanDisciplineSelect onSelect={handelDisciplineSelect} />
                 ) : (
                     <PlanForm
                         discipline={selectedDiscipline}

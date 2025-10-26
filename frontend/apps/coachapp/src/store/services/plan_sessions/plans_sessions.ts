@@ -34,6 +34,17 @@ type DeletePlanSessionArg = {
     planSessionId: string;
 };
 
+type DeletePlanSessionsByLabelArg = {
+    planId: string;
+    label: string;
+};
+
+type UpdatePlanSessionsLabelArg = {
+    planId: string;
+    oldLabel: string;
+    newLabel: string;
+};
+
 export const planSessionsApi = baseAPISlice.injectEndpoints({
     endpoints: (builder) => ({
         listPlanSessions: builder.query<PlanSessionList, ListPlanSessionsArg>({
@@ -101,6 +112,27 @@ export const planSessionsApi = baseAPISlice.injectEndpoints({
                 {type: 'PlanSessions', id: 'LIST'},
             ],
         }),
+        deletePlanSessionsByLabel: builder.mutation<{message?: string}, DeletePlanSessionsByLabelArg>({
+            query: ({planId, label}) => ({
+                url: `/v1/coach/plans/${planId}/sessions/label/${encodeURIComponent(label)}`,
+                method: 'delete',
+            }),
+            invalidatesTags: (_result, _error, {planId}) => [
+                {type: 'PlanSessions', id: `PLAN-${planId}`},
+                {type: 'PlanSessions', id: 'LIST'},
+            ],
+        }),
+        updatePlanSessionsLabel: builder.mutation<{message?: string}, UpdatePlanSessionsLabelArg>({
+            query: ({planId, oldLabel, newLabel}) => ({
+                url: `/v1/coach/plans/${planId}/sessions/label/${encodeURIComponent(oldLabel)}`,
+                method: 'patch',
+                data: {new_label: newLabel},
+            }),
+            invalidatesTags: (_result, _error, {planId}) => [
+                {type: 'PlanSessions', id: `PLAN-${planId}`},
+                {type: 'PlanSessions', id: 'LIST'},
+            ],
+        }),
     }),
 });
 
@@ -110,4 +142,6 @@ export const {
     useCreatePlanSessionMutation,
     useUpdatePlanSessionMutation,
     useDeletePlanSessionMutation,
+    useDeletePlanSessionsByLabelMutation,
+    useUpdatePlanSessionsLabelMutation,
 } = planSessionsApi;

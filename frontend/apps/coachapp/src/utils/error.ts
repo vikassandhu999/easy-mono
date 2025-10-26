@@ -1,5 +1,34 @@
 import {AxiosError} from 'axios';
 
+import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
+
+/**
+ * Extracts a user-friendly error message from API errors
+ * Handles AxiosBaseQueryError from RTK Query
+ */
+export function getApiErrorMessage(err: unknown): string {
+    const apiError = err as AxiosBaseQueryError | undefined;
+
+    // Check if error has a message property in data object
+    if (apiError?.data && typeof apiError.data === 'object' && 'message' in apiError.data) {
+        const message = (apiError.data as {message?: string}).message;
+        if (message) return message;
+    }
+
+    // Check if data itself is a string message
+    if (apiError?.data && typeof apiError.data === 'string') {
+        return apiError.data;
+    }
+
+    // Check if it's a regular Error object
+    if (err instanceof Error) {
+        return err.message;
+    }
+
+    // Default fallback message
+    return 'Something went wrong. Please try again.';
+}
+
 export class AppError extends Error {
     code: string;
     constructor(message: string, code: string) {

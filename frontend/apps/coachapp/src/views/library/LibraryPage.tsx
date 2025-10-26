@@ -14,9 +14,8 @@
 
 import {memo, useCallback} from 'react';
 
-import PaddingContainer from '@/components/containers/PaddingContainer';
-import PagePaper from '@/components/containers/PagePaper';
-import {ContentBuilderDrawer} from '@/components/ContentBuilder';
+import PagePaper from '@/shared/containers/PagePaper';
+import {ContentBuilderDrawer} from '@/shared/ContentBuilder';
 import {Content} from '@/store/services/contents';
 
 import {ContentListView} from './components';

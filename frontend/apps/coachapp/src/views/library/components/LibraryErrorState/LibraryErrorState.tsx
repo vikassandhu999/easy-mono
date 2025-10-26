@@ -9,7 +9,7 @@ import {Alert, Button, Stack, Text} from '@mantine/core';
 import {IconAlertCircle, IconRefresh} from '@tabler/icons-react';
 import {memo} from 'react';
 
-import PaddingContainer from '@/components/containers/PaddingContainer';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
 
 interface LibraryErrorStateProps {
     /**

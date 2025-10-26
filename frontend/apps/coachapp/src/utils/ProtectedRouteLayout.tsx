@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 import {Outlet, useLocation} from 'react-router';
 
-import {MainLayout} from '@/components/layouts';
+import {MainLayout} from '@/shared/layouts';
 
 import {shouldShowNavigation} from './navigation_config.ts';
 

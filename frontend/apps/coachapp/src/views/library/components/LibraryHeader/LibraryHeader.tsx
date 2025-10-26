@@ -9,7 +9,7 @@ import {Button, Group} from '@mantine/core';
 import {IconPlus} from '@tabler/icons-react';
 import {memo} from 'react';
 
-import Header from '@/components/layouts/Header';
+import Header from '@/shared/layouts/Header';
 
 interface LibraryHeaderProps {
     /**

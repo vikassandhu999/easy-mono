@@ -1,30 +1,35 @@
 import {ActionIcon, Badge, Card, Divider, Group, Menu, MenuTarget, Stack, Text, useMantineTheme} from '@mantine/core';
-import {IconArchive, IconCalendar, IconDotsVertical, IconUserPlus} from '@tabler/icons-react';
+import {IconCalendar, IconDotsVertical} from '@tabler/icons-react';
 import React from 'react';
 
 import {PLAN_STATUS} from '@/shared/Configs';
 import {Plan} from '@/store/services/plans';
 
+export type PlanListItemAction = {
+    id: string;
+    label: React.ReactNode | string;
+    action: (planId: string) => void;
+    danger?: boolean;
+    icon: React.ReactNode;
+    dividerBefore?: boolean;
+};
+
 export type PlanListItemProps = {
+    actions?: PlanListItemAction[];
     onView: (planId: string) => void;
-    onArchive?: (planId: string) => void;
-    onCopyToClient?: (planId: string) => void;
     plan: Plan;
 };
 
-export type PlanListItemMenuProps = PlanListItemProps;
+export type PlanListItemActionMenuProps = PlanListItemProps;
 
-export const PlanListItemMenu: React.FC<PlanListItemMenuProps> = (props) => {
-    const {onArchive, onCopyToClient, plan} = props;
+export const PlanListItemActionMenu: React.FC<PlanListItemActionMenuProps> = (props) => {
+    const {plan, actions} = props;
 
-    const copyPlanToClient = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const theme = useMantineTheme();
+
+    const handleAction = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, callback: (planId: string) => void) => {
         e.stopPropagation();
-        onCopyToClient(plan.id);
-    };
-
-    const archievePlan = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        e.stopPropagation();
-        onArchive(plan.id);
+        callback(plan.id);
     };
 
     return (
@@ -50,45 +55,40 @@ export const PlanListItemMenu: React.FC<PlanListItemMenuProps> = (props) => {
             </MenuTarget>
 
             <Menu.Dropdown>
-                <Menu.Item
-                    leftSection={
-                        <IconUserPlus
-                            aria-hidden="true"
-                            size={18}
-                            stroke={1.5}
-                        />
-                    }
-                    onClick={(e) => copyPlanToClient(e)}
-                >
-                    Assign to client
-                </Menu.Item>
-
-                <Divider my="xs" />
-
-                <Menu.Item
-                    color="red"
-                    leftSection={
-                        <IconArchive
-                            aria-hidden="true"
-                            size={18}
-                            stroke={1.5}
-                        />
-                    }
-                    onClick={(e) => archievePlan(e)}
-                >
-                    Archieve plan
-                </Menu.Item>
+                {actions &&
+                    actions.map((action) => {
+                        return (
+                            <>
+                                {action.dividerBefore && <Divider my="xs" />}
+                                <Menu.Item
+                                    color={action.danger && 'red'}
+                                    key={action.id}
+                                    leftSection={
+                                        action.danger && React.isValidElement(action.icon)
+                                            ? React.cloneElement(action.icon as React.ReactElement, {
+                                                  color: theme.colors.red[6],
+                                              })
+                                            : action.icon
+                                    }
+                                    onClick={(e) => handleAction(e, action.action)}
+                                >
+                                    {action.label}
+                                </Menu.Item>
+                            </>
+                        );
+                    })}
             </Menu.Dropdown>
         </Menu>
     );
 };
 
 const PlanListItem: React.FC<PlanListItemProps> = (props) => {
-    const {plan, onView} = props;
-    const theme = useMantineTheme();
-    const statusConfig = PLAN_STATUS[plan.status];
+    const {plan, onView, actions} = props;
 
-    // Format duration display
+    const theme = useMantineTheme();
+
+    const planStatusConfig = PLAN_STATUS[plan.status];
+
     const getDurationText = () => {
         if (plan.duration_weeks) {
             return `${plan.duration_weeks} ${plan.duration_weeks === 1 ? 'week' : 'weeks'}`;
@@ -99,18 +99,9 @@ const PlanListItem: React.FC<PlanListItemProps> = (props) => {
         return 'Ongoing';
     };
 
-    // Handle keyboard interactions
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onView(plan.id);
-        }
-    };
-
     return (
         <Card
             onClick={() => onView(plan.id)}
-            onKeyDown={handleKeyDown}
             radius={0}
             role="button"
             style={{
@@ -149,7 +140,6 @@ const PlanListItem: React.FC<PlanListItemProps> = (props) => {
                     gap="sm"
                     style={{flex: 1, minWidth: 0}}
                 >
-                    {/* Header Row - Name, Status */}
                     <Stack
                         gap="xs"
                         style={{flex: 1, minWidth: 0}}
@@ -172,14 +162,14 @@ const PlanListItem: React.FC<PlanListItemProps> = (props) => {
                             </Text>
 
                             {/* Status Badge */}
-                            {statusConfig && (
+                            {planStatusConfig && (
                                 <Badge
-                                    color={statusConfig.color}
+                                    color={planStatusConfig.color}
                                     radius="xl"
                                     size="sm"
                                     variant="light"
                                 >
-                                    {statusConfig.label}
+                                    {planStatusConfig.label}
                                 </Badge>
                             )}
                         </Group>
@@ -239,7 +229,8 @@ const PlanListItem: React.FC<PlanListItemProps> = (props) => {
                         )}
                     </Group>
                 </Stack>
-                <PlanListItemMenu {...props} />
+
+                {actions && <PlanListItemActionMenu {...props} />}
             </Group>
         </Card>
     );

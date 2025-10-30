@@ -8,7 +8,7 @@ import HeadingContainer from '@/shared/containers/HeaderContainer';
 import Header from '@/shared/layouts/Header';
 import {PlanDiscipline} from '@/store/services/plans';
 
-type ListHeaderProps = {
+type PlansPageProps = {
     discipline: PlanDiscipline;
     isLoading?: boolean;
     onCreateClick?: () => void;
@@ -17,13 +17,13 @@ type ListHeaderProps = {
     ref?: React.Ref<HTMLDivElement>;
 };
 
-export default function ListHeader({
+export default function PlansListHeader({
     discipline,
     onCreateClick,
     onDisciplineChange,
     onSearchChange,
     ref,
-}: ListHeaderProps) {
+}: PlansPageProps) {
     const onSearchChangeDebounced = useDebouncedCallback(onSearchChange, 300);
 
     const disciplineOptions = Object.entries(PLAN_DISCIPLINES).map(([key, config]) => ({
@@ -61,7 +61,6 @@ export default function ListHeader({
                     title="Plans"
                 />
 
-                {/* Discipline Filter */}
                 <ScrollArea
                     scrollbars="x"
                     type="never"

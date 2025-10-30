@@ -1,31 +1,23 @@
-import {useDisclosure} from '@mantine/hooks';
-import {useMemo, useState} from 'react';
+import {IconArchive, IconCopy} from '@tabler/icons-react';
+import {useMemo} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
-import ClientSelect from '@/shared/ClientSelect';
-import {ClientSelectDrawer} from '@/shared/ClientSelect/ClientSelect';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import RecordsList from '@/shared/layouts/RecordsList';
-import PlanListItem from '@/shared/PlanListItem/PlanListItem';
-import {Client} from '@/store/services/clients';
-import {Plan, PlanDiscipline, useCopyPlanToClient, useListPlans} from '@/store/services/plans';
+import PlanListItem, {PlanListItemAction} from '@/shared/PlanListItem/PlanListItem';
+import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
 
-import EmptyResult from '../listing/EmptyResult';
-import CopyToClientDrawer from './CopyToClientDrawer';
-import Header from './ListHeader';
+import {PLAN_DRAWER_VIEWS, PLAN_SEARCH_PARAMS, PLAN_SELECTED_DRAWER_KEY} from './constants';
+import EmptyResult from './PlanEmptyResult';
+import Header from './PlanListHeader';
 
 function PlansListPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
     const search = searchParams.get('search') || '';
-    const discipline = (searchParams.get('discipline') as PlanDiscipline) || 'workout';
-
-    const [clientDrawerOpened, {close: closeClientDrawer, open: openClientDrawer}] = useDisclosure();
-    const [clientCopyDrawerOpened, {close: closeClientCopyDrawer, open: openClientCopyDrawer}] = useDisclosure();
-
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const discipline = (searchParams.get('discipline') as PlanDiscipline) || 'nutrition';
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListPlans(
         {
@@ -35,9 +27,6 @@ function PlansListPage() {
         {skip: searchParams.get('selected_drawer') === 'create_plan'},
     );
 
-    const [copyPlanToClient] = useCopyPlanToClient();
-
-    // Keep useMemo for expensive flatMap operation
     const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
     const handleCreate = () => {
@@ -46,14 +35,6 @@ function PlansListPage() {
 
     const handleView = (id: string) => {
         navigate(`/plans/${id}/builder`);
-    };
-
-    const handleCopyToClient = async (planId: string, clientId: string) => {
-        await copyPlanToClient({
-            client_id: clientId,
-            planId,
-            start_date: '',
-        });
     };
 
     const handleDisciplineChange = (newDiscipline: PlanDiscipline) => {
@@ -75,7 +56,6 @@ function PlansListPage() {
         });
     };
 
-    // Handle legacy plan_id redirect
     const selectedDrawer = searchParams.get('selected_drawer');
     const legacyPlanId = searchParams.get('plan_id');
 
@@ -97,6 +77,32 @@ function PlansListPage() {
         navigate(`/plans/${legacyPlanId}/builder`, {replace: true});
     }
 
+    const listItemAction: PlanListItemAction[] = [
+        {
+            id: 'copy-to-client',
+            label: 'Assign to client',
+            action: (planId: string) => {
+                setSearchParams((prev) => {
+                    prev.set(PLAN_SELECTED_DRAWER_KEY, PLAN_DRAWER_VIEWS.SELECT_CLIENT);
+                    prev.set(PLAN_SEARCH_PARAMS.PLAN_ID, planId);
+                    return prev;
+                });
+            },
+            icon: <IconCopy />,
+        },
+        {
+            id: 'archieve-plan',
+            label: 'Archieve plan',
+            action: (planId: string) => {
+                // TODO : Add archieve plan logic
+                console.log('Implement it please', planId);
+            },
+            icon: <IconArchive />,
+            dividerBefore: true,
+            danger: true,
+        },
+    ];
+
     return (
         <>
             <Header
@@ -106,24 +112,7 @@ function PlansListPage() {
                 onDisciplineChange={handleDisciplineChange}
                 onSearchChange={handleSearchChange}
             />
-            <ClientSelectDrawer
-                close={closeClientDrawer}
-                multiple={false}
-                onComplete={(clients) => {
-                    setSelectedClient(clients[0]);
-                }}
-                open={openClientDrawer}
-                opened={clientDrawerOpened}
-            />
-            <CopyToClientDrawer
-                client={selectedClient}
-                close={closeClientCopyDrawer}
-                onCopy={(clientId, date) => {
-                    console.log(clientId, date);
-                }}
-                open={openClientCopyDrawer}
-                opened={clientCopyDrawerOpened}
-            />
+
             <PagePaper>
                 <PaddingContainer
                     paddingX={'xs'}
@@ -145,8 +134,8 @@ function PlansListPage() {
                         records={plans}
                         renderItem={(plan: Plan) => (
                             <PlanListItem
+                                actions={listItemAction}
                                 key={plan.id}
-                                onCopyToClient={openClientDrawer}
                                 onView={handleView}
                                 plan={plan}
                             />

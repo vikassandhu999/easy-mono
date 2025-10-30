@@ -1,14 +1,12 @@
 import {Box, Card, Center, Group, Stack, Text, TextInput} from '@mantine/core';
 import {useDebouncedCallback} from '@mantine/hooks';
-import {Coffee, MagnifyingGlassIcon} from '@phosphor-icons/react';
-import {IconPlus} from '@tabler/icons-react';
+import {IconCoffee, IconPlus, IconSearch} from '@tabler/icons-react';
 import {useMutation} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {Session} from '@/store/services/session';
 import {FixedBottom} from '@/shared/containers/FixedBottom';
 import RecordsList from '@/shared/layouts/RecordsList';
-import {useListSessionsQuery} from '@/store/services/session';
+import {Session, useListSessionsQuery} from '@/store/services/session';
 
 import MealListItem from './MealListItem';
 
@@ -164,7 +162,7 @@ const MealSelect = ({multiple, onCreateNew, onSelect, selectedIds}: MealSelectPr
 
                 <Stack gap="sm">
                     <TextInput
-                        leftSection={<MagnifyingGlassIcon size={16} />}
+                        leftSection={<IconSearch size={16} />}
                         onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                         placeholder="Search meals..."
                         size="sm"
@@ -190,7 +188,7 @@ const MealSelect = ({multiple, onCreateNew, onSelect, selectedIds}: MealSelectPr
                                         }}
                                         w={36}
                                     >
-                                        <Coffee
+                                        <IconCoffee
                                             size={20}
                                             style={{opacity: 0.25}}
                                             weight="duotone"

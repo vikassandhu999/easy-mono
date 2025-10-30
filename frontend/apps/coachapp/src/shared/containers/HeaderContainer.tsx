@@ -8,17 +8,26 @@ type Props = PropsWithChildren & {
     ref?: React.Ref<HTMLDivElement>;
     style?: React.CSSProperties;
     withBorder?: boolean;
+    sticky?: boolean;
 };
 
-export default function HeadingContainer({bg = 'white', children, ref, style, withBorder = false}: Props) {
+export default function HeadingContainer({
+    bg = 'white',
+    children,
+    ref,
+    style,
+    withBorder = false,
+    sticky = false,
+}: Props) {
     const theme = useMantineTheme();
+
     return (
         <Box
             bg={bg}
             ref={ref}
             style={{
                 borderBottom: withBorder ? `1px solid ${theme.colors.gray[2]}` : undefined,
-                position: 'sticky',
+                position: sticky ? 'fixed' : 'sticky',
                 top: 0,
                 width: '100%',
                 zIndex: 100,

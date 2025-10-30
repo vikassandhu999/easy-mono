@@ -5,7 +5,7 @@ export interface CopyPlanToClientProps {
     allow_client_edits?: boolean;
     client_id: string;
     name?: string;
-    planId: string;
+    plan_id: string;
     start_date?: string;
 }
 
@@ -120,8 +120,8 @@ export const plansApi = baseAPISlice.injectEndpoints({
         }),
 
         copyPlanToClient: build.mutation<Plan, CopyPlanToClientProps>({
-            query: ({planId, ...body}) => ({
-                url: `/v1/coach/plans/${planId}/copy-to-client`,
+            query: ({plan_id, ...body}) => ({
+                url: `/v1/coach/plans/${plan_id}/copy-to-client`,
                 method: 'post',
                 data: body,
             }),

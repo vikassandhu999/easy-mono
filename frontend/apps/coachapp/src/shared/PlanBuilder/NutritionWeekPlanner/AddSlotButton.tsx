@@ -9,7 +9,7 @@ export function AddSlotButton({onClick}: {onClick: () => void}) {
             leftSection={<IconPlus size={18} />}
             onClick={onClick}
             radius="lg"
-            size="lg"
+            size="md"
             variant="light"
         >
             Add session

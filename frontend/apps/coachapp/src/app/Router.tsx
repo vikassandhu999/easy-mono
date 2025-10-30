@@ -5,6 +5,10 @@ import SignInPage from '@/features/auth/SignInPage';
 import ClientDetailPage from '@/features/clients/ClientDetailPage';
 import ClientsListPage from '@/features/clients/ClientListPage';
 import HomePage from '@/features/home/HomePage';
+import PlanEditor from '@/shared/PlanEditor/PlanEditor';
+import PlanEditorDrawers from '@/shared/PlanEditor/PlanEditorDrawers';
+import PlansListPage from '@/views/plans/PlanListPage';
+import PlanListPageDrawers from '@/views/plans/PlanListPageDrawers';
 
 import BusinessInfoStepPage from '../features/onboarding/pages/BusinessInfoStepPage';
 import CoachInfoStepPage from '../features/onboarding/pages/CoachInfoStepPage';
@@ -16,8 +20,6 @@ import ProtectedRouteLayout from '../utils/ProtectedRouteLayout';
 import ChatsListPage from '../views/chats/ChatsListPage';
 import ChatViewPage from '../views/chats/ChatView/ChatViewPage';
 import LibraryPage from '../views/library/LibraryPage';
-import PlansListPage from '../views/plans/ListPage/ListPage';
-import {PlansListPageDrawers} from '../views/plans/ListPage/ListPageDrawers';
 import ProfilePage from '../views/profile/ProfilePage';
 
 const router = createBrowserRouter([
@@ -120,7 +122,7 @@ const router = createBrowserRouter([
                         children: [
                             {
                                 index: true,
-                                element: <PlansListPageDrawers />,
+                                element: <PlanListPageDrawers />,
                             },
                         ],
                     },
@@ -129,6 +131,16 @@ const router = createBrowserRouter([
                         path: '/plans/:planId/builder',
                     },
 
+                    {
+                        element: <PlanEditor />,
+                        path: '/plans/:planId/editor',
+                        children: [
+                            {
+                                index: true,
+                                element: <PlanEditorDrawers />,
+                            },
+                        ],
+                    },
                     {
                         element: <ProfilePage />,
                         path: '/profile',

@@ -8,7 +8,7 @@ import {useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {useUpdateCoachMutation} from '@/store/services/coach';
+import {useUpdateCoachMutation} from '@/services/coach';
 import {getApiErrorMessage} from '@/utils/error';
 
 const coachInfoSchema = z.object({

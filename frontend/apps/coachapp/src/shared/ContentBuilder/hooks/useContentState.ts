@@ -1,7 +1,7 @@
 import {skipToken} from '@reduxjs/toolkit/query';
 import {useState} from 'react';
 
-import {Content, ContentType, useGetContentQuery} from '@/store/services/contents';
+import {Content, ContentType, useGetContentQuery} from '@/services/contents';
 
 /**
  * Custom hook for managing content state

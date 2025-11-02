@@ -1,11 +1,4 @@
-import {Icon, IconBowlChopsticks, IconListDetails, IconRun, IconTreadmill} from '@tabler/icons-react';
-
-import {Content} from '@/store/services/contents';
-
-import {
-    SESSION_TYPE_CONFIG as PLAN_SESSION_TYPE_CONFIG,
-    type SessionTypeConfig as PlanSessionTypeConfig,
-} from './PlanBuilder/sessionTypes';
+import {Icon, IconBowlChopsticks, IconTreadmill} from '@tabler/icons-react';
 
 // Plan Disciplines - matches backend PlanDiscipline enum (workout, nutrition)
 export const PLAN_DISCIPLINES: Record<
@@ -47,26 +40,6 @@ export const PLAN_DISCIPLINES: Record<
     },
 };
 
-// DEPRECATED: Use PLAN_DISCIPLINES instead - keeping for backward compatibility
-export const SCHEDULE_CATEGORIES: Record<
-    'meal' | 'nutrition' | 'workout',
-    {
-        color: string;
-        description: string;
-        form: {
-            nameDescription?: string;
-            namePlaceholder?: string;
-        };
-        icon: Icon;
-        iconColor: string;
-        label: string;
-        optional?: boolean;
-    }
-> = {
-    ...PLAN_DISCIPLINES,
-    meal: PLAN_DISCIPLINES.nutrition, // Alias for backward compatibility
-};
-
 // Plan Status - matches backend PlanStatus enum (draft, active, archived)
 export const PLAN_STATUS = {
     archived: {
@@ -82,44 +55,3 @@ export const PLAN_STATUS = {
         label: 'Active',
     },
 };
-
-// DEPRECATED: Use PLAN_STATUS instead
-export const SCHEDULE_STATUS = {
-    archived: {
-        color: 'var(--mantine-color-red-4)',
-        label: 'Archived',
-    },
-    draft: {
-        color: 'var(--mantine-color-gray-5)',
-        label: 'Draft',
-    },
-    published: {
-        color: 'var(--mantine-color-green-6)',
-        label: 'Published',
-    },
-};
-
-export type SessionTypeConfig = PlanSessionTypeConfig;
-
-export const SESSION_TYPE_CONFIG = PLAN_SESSION_TYPE_CONFIG;
-
-export const CONTENT_TYPE_CONFIG: Record<Content['type'], SessionTypeConfig & {value: string}> = {
-    exercise: {
-        badgeColor: 'red',
-        color: 'var(--mantine-color-red-1)',
-        description: 'Physical movements, drills, and workout routines',
-        icon: IconRun,
-        iconColor: 'var(--mantine-color-red-7)',
-        label: 'Exercise',
-        value: 'exercise',
-    },
-    recipe: {
-        badgeColor: 'blue',
-        color: 'var(--mantine-color-blue-1)',
-        description: 'Complete recipes and meal preparations',
-        icon: IconListDetails,
-        iconColor: 'var(--mantine-color-blue-7)',
-        label: 'Recipe',
-        value: 'recipe',
-    },
-} as const;

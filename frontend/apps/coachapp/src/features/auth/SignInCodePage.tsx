@@ -8,7 +8,7 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuth} from '@/providers/AuthProvider';
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {SignInCodeRequest, SignInCodeRequest_zod, useSignInCodeMutation} from '@/store/services/auth';
+import {SignInCodeRequest, SignInCodeRequest_zod, useSignInCodeMutation} from '@/services/auth';
 import {getApiErrorMessage} from '@/utils/error';
 
 const SignInCodePage: React.FC = () => {

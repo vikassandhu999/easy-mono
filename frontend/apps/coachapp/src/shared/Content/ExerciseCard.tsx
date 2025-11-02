@@ -23,7 +23,7 @@ import {
 } from '@tabler/icons-react';
 import React, {FC} from 'react';
 
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 const CATEGORY_ICONS: Record<string, any> = {
     strength: IconBarbell,

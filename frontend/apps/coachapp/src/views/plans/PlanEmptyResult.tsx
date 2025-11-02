@@ -2,7 +2,7 @@ import {Flex, Image, Stack, Text, Title} from '@mantine/core';
 import {memo} from 'react';
 
 import EmptyPlanImage from '@/../public/empty_plan.png';
-import {PlanDiscipline} from '@/store/services/plans';
+import {PlanDiscipline} from '@/services/plans';
 
 const EMPTY_RESULT_TEXT = {
     search: `We couldn't find any plans matching your search. Try using different keywords.`,

@@ -3,7 +3,7 @@ import {IconBriefcase, IconCalendar, IconInfoCircle, IconMail, IconUser as IconU
 import {formatDistanceToNow} from 'date-fns';
 import {FC} from 'react';
 
-import {Coach} from '@/store/services/coach';
+import {Coach} from '@/services/coach';
 
 import {InfoRow} from '../InfoRow';
 

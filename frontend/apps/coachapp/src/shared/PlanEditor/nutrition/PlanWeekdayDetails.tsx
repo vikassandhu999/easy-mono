@@ -18,11 +18,10 @@ import {IconPlus, IconTrash} from '@tabler/icons-react';
 import {FC, useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router';
 
-import {AddSlotButton} from '@/shared/PlanBuilder/NutritionWeekPlanner/AddSlotButton';
-import {useAppDispatch, useAppSelector} from '@/store/hooks';
-import {useListPlanSessionsQuery} from '@/store/services/plan_sessions';
-import {Plan} from '@/store/services/plans';
-import {addUncommittedLabel, deleteUncommittedLabel} from '@/store/slices/planLabelsSlice';
+import {useListPlanSessionsQuery} from '@/services/plan_sessions';
+import {Plan} from '@/services/plans';
+import {addUncommittedLabel, deleteUncommittedLabel} from '@/slices/planLabelsSlice';
+import {useAppDispatch, useAppSelector} from '@/store';
 
 import {PLAN_EDITOR_DRAWER_KEY, PLAN_EDITOR_DRAWER_VIEWS, PLAN_EDITOR_SEARCH_PARAMS} from '../constants';
 
@@ -388,7 +387,12 @@ const LabelView: FC<LabelViewProps> = (props) => {
                         gap="xs"
                         py="xs"
                     >
-                        <AddSlotButton onClick={handleAddSession} />
+                        <Button
+                            fullWidth
+                            onClick={handleAddSession}
+                            rightSection={<IconPlus />}
+                            variant="light"
+                        />
                     </Stack>
                 </GridCol>
             </Grid>

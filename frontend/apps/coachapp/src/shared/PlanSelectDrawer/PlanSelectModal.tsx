@@ -1,7 +1,7 @@
 import {Drawer} from '@mantine/core';
 import {FC} from 'react';
 
-import {Plan} from '@/store/services/plans';
+import {Plan} from '@/services/plans';
 
 import PlanSelect from './PlanSelectDrawer';
 

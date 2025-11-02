@@ -7,7 +7,7 @@
 
 import {IconBarbell, IconSalad, TablerIcon} from '@tabler/icons-react';
 
-import {ContentType} from '@/store/services/contents';
+import {ContentType} from '@/services/contents';
 
 /**
  * Content types visible in the library

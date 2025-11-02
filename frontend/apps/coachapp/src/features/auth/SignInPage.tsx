@@ -7,7 +7,7 @@ import {useForm} from 'react-hook-form';
 import {createSearchParams, useNavigate} from 'react-router';
 
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {SignInRequest, SignInRequest_zod, useSignInMutation} from '@/store/services/auth';
+import {SignInRequest, SignInRequest_zod, useSignInMutation} from '@/services/auth';
 import {getApiErrorMessage} from '@/utils/error';
 
 const SignInPage: React.FC = () => {

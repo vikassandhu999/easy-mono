@@ -12,7 +12,7 @@ import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
 import {sortableKeyboardCoordinates} from '@dnd-kit/sortable';
 import {useCallback, useState} from 'react';
 
-import {SessionItemConfig} from '@/store/services/session';
+import {SessionItemConfig} from '@/services/session';
 
 interface UseDragAndDropProps {
     disabled?: boolean;

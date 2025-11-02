@@ -2,7 +2,7 @@ import {Alert, Divider, Paper, Stack, Text, Textarea, TextInput} from '@mantine/
 import {InfoIcon} from '@phosphor-icons/react';
 import {Controller, UseFormReturn} from 'react-hook-form';
 
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 import {SessionFormValues} from '../sessionForm';
 

@@ -3,7 +3,7 @@ import {CaretUpDownIcon} from '@phosphor-icons/react/dist/ssr';
 import {IconLogout2, IconPaint, IconUser} from '@tabler/icons-react';
 
 import {useAuth} from '@/providers/AuthProvider';
-import {useGetCoachQuery} from '@/store/services/coach';
+import {useGetCoachQuery} from '@/services/coach';
 
 export function UserInfo() {
     const {logout} = useAuth();

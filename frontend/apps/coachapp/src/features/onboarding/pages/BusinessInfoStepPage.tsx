@@ -9,7 +9,7 @@ import {z} from 'zod';
 
 import {useAuth} from '@/providers/AuthProvider';
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {BusinessAPI} from '@/store/services/business';
+import {BusinessAPI} from '@/services/business';
 import {getApiErrorMessage} from '@/utils/error';
 
 const businessInfoSchema = z.object({

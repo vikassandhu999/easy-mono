@@ -21,7 +21,7 @@ import {useMemo, useState} from 'react';
 
 import {CONTENT_TYPE_CONFIG} from '@/shared/Configs.tsx';
 import {FixedBottom} from '@/shared/containers/FixedBottom';
-import {Content, useListContentsInfiniteQuery} from '@/store/services/contents';
+import {Content, useListContentsInfiniteQuery} from '@/services/contents';
 
 import RecordsList from '../layouts/RecordsList';
 

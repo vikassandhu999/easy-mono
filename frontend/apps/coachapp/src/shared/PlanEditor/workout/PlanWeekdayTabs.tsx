@@ -2,7 +2,7 @@ import {Group, ScrollArea, Text, UnstyledButton, useMantineTheme} from '@mantine
 import {useMediaQuery} from '@mantine/hooks';
 import {FC, useEffect, useRef} from 'react';
 
-import {Plan} from '@/store/services/plans';
+import {Plan} from '@/services/plans';
 
 export const WEEKDAYS: Record<number, string> = {
     0: 'Monday',

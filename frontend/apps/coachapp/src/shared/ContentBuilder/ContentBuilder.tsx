@@ -1,7 +1,7 @@
 import {Alert, Button, LoadingOverlay, Stack} from '@mantine/core';
 import {IconAlertCircle, IconRefresh} from '@tabler/icons-react';
 
-import {ContentType} from '@/store/services/contents';
+import {ContentType} from '@/services/contents';
 
 import {ContentCreateForm} from './forms';
 import {useContentMutation, useContentState} from './hooks';

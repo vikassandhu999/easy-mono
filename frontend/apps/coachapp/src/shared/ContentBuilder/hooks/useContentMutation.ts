@@ -1,7 +1,7 @@
 import {notifications} from '@mantine/notifications';
 import {useCallback} from 'react';
 
-import {Content, useCreateContentMutation, useUpdateContentMutation} from '@/store/services/contents';
+import {Content, useCreateContentMutation, useUpdateContentMutation} from '@/services/contents';
 
 import {buildContentPayload, ContentBuildError, ContentFormValues, FormSubmitAction} from '../lib';
 

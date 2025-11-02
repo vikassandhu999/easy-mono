@@ -4,7 +4,7 @@ import {useMemo} from 'react';
 import {useParams} from 'react-router';
 
 import {useApp} from '@/providers/AppProvider';
-import {ChatsDirectAPI} from '@/store/services/chats';
+import {ChatsDirectAPI} from '@/services/chats';
 
 function ChatViewPage() {
     const {chatId} = useParams();

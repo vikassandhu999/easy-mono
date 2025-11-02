@@ -1,6 +1,6 @@
 import React, {FC, useState} from 'react';
 
-import {Plan} from '@/store/services/plans';
+import {Plan} from '@/services/plans';
 
 import PlanWeekdayDetails from './PlanWeekdayDetails';
 import PlanWeekDayTabs from './PlanWeekdayTabs';

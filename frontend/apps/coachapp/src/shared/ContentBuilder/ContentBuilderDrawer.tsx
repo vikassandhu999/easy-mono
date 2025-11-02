@@ -2,7 +2,7 @@ import {Container, Drawer, Stack} from '@mantine/core';
 import React, {useCallback} from 'react';
 
 import Header from '@/shared/layouts/Header';
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 import HeadingContainer from '../containers/HeaderContainer';
 import ContentBuilder from './ContentBuilder';

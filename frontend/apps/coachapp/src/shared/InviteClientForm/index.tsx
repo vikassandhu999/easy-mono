@@ -6,7 +6,7 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
 import {FixedBottomBar} from '@/shared/containers/FixedBottomBar';
-import {CreateClient_zod, CreateClientProps} from '@/store/services/clients';
+import {CreateClient_zod, CreateClientProps} from '@/services/clients';
 
 interface InviteClientFormProps {
     onSubmit: (data: CreateClientProps) => Promise<void>;

@@ -4,7 +4,7 @@
  * Type definitions for the library feature module.
  */
 
-import {Content, ContentType} from '@/store/services/contents';
+import {Content, ContentType} from '@/services/contents';
 
 /**
  * Props for content click handlers

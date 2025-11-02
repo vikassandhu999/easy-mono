@@ -2,7 +2,7 @@ import type {UseFormReturn} from 'react-hook-form';
 
 import {z} from 'zod';
 
-import {Content, ContentType} from '@/store/services/contents';
+import {Content, ContentType} from '@/services/contents';
 
 import {ContentFormSchema, ContentMediaSchema, ExerciseDefinitionSchema, RecipeDefinitionSchema} from './schemas';
 

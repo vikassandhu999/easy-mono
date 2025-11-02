@@ -1,7 +1,7 @@
 import {Avatar, Badge, Box, Card, Group, Stack, Text} from '@mantine/core';
 import {IconMail, IconPhone} from '@tabler/icons-react';
 
-import {Client} from '@/store/services/clients';
+import {Client} from '@/services/clients';
 import {getInitials, getMembershipStatusColor, getMembershipStatusLabel} from '@/utils/ui';
 
 export interface ProfileCardProps {

@@ -5,7 +5,7 @@ import {IconArrowRight, IconInfoCircle} from '@tabler/icons-react';
 import React from 'react';
 import {useForm} from 'react-hook-form';
 
-import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/store/services/plans';
+import {CreatePlan_zod, CreatePlanProps, Plan, PlanDiscipline, UpdatePlanProps} from '@/services/plans';
 
 import {PLAN_DISCIPLINES} from '../Configs';
 import {FixedBottomBar} from '../containers/FixedBottomBar';

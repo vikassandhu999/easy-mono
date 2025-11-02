@@ -17,7 +17,7 @@ import {useNavigate} from 'react-router';
 
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import {useGetCoachQuery, useGetCoachStatsQuery} from '@/store/services/coach';
+import {useGetCoachQuery, useGetCoachStatsQuery} from '@/services/coach';
 
 interface DashboardStat {
     color: string;

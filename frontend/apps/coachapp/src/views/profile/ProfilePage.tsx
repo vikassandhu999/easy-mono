@@ -4,7 +4,7 @@ import {useState} from 'react';
 
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import {useGetCoachQuery} from '@/store/services/coach';
+import {useGetCoachQuery} from '@/services/coach';
 
 import OtherTab from './tabs/OtherTab';
 import ProfileTab from './tabs/ProfileTab';

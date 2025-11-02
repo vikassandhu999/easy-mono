@@ -1,4 +1,4 @@
-import {Content, ContentType} from '@/store/services/contents';
+import {Content, ContentType} from '@/services/contents';
 
 import {ContentBuildError, ContentFormValues, ContentPayload, ExerciseDefinition, RecipeDefinition} from './types';
 import {sanitizeString} from './utils';

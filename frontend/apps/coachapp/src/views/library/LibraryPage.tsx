@@ -16,7 +16,7 @@ import {memo, useCallback} from 'react';
 
 import PagePaper from '@/shared/containers/PagePaper';
 import {ContentBuilderDrawer} from '@/shared/ContentBuilder';
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 import {ContentListView} from './components';
 import {CONTENT_TYPE_UI_CONFIG, VISIBLE_CONTENT_TYPES} from './constants';

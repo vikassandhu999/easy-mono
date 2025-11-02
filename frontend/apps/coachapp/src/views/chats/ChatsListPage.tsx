@@ -20,7 +20,7 @@ import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {useDebouncedValue} from '@/hooks/useDebouncedValue';
-import {useListChatsInfiniteQuery} from '@/store/services/chats';
+import {useListChatsInfiniteQuery} from '@/services/chats';
 
 import ChatListRow from './ChatListRow';
 import ChatSearchDialog from './ChatSearchDialog';

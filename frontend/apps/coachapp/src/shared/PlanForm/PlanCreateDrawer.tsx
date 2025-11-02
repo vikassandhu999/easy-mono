@@ -7,7 +7,7 @@ import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import Header from '@/shared/layouts/Header';
-import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/store/services/plans';
+import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/services/plans';
 
 import {PlanForm} from './PlanForm';
 

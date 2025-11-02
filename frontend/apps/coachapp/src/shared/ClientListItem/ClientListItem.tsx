@@ -2,7 +2,7 @@ import {Avatar, Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine
 import {IconChevronRight} from '@tabler/icons-react';
 import React from 'react';
 
-import {Client} from '@/store/services/clients';
+import {Client} from '@/services/clients';
 import {assignColorByToken, getInitials, getMembershipStatusColor, getMembershipStatusLabel} from '@/utils/ui';
 
 interface Props {

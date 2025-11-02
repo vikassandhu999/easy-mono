@@ -19,7 +19,7 @@ import {FC, useEffect, useMemo, useState} from 'react';
 
 import {ClientListItem} from '@/shared/ClientListItem/ClientListItem';
 import {FixedBottom} from '@/shared/containers/FixedBottom';
-import {Client, useListClientsInfiniteQuery} from '@/store/services/clients';
+import {Client, useListClientsInfiniteQuery} from '@/services/clients';
 
 import HeadingContainer from '../containers/HeaderContainer';
 import PaddingContainer from '../containers/PaddingContainer';

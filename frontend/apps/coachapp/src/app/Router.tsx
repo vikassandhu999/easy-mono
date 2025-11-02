@@ -126,10 +126,6 @@ const router = createBrowserRouter([
                             },
                         ],
                     },
-                    {
-                        element: <PlanBuilder />,
-                        path: '/plans/:planId/builder',
-                    },
 
                     {
                         element: <PlanEditor />,

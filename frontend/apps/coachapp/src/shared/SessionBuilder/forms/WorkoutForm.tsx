@@ -4,7 +4,7 @@ import {ListBulletsIcon, PlusIcon} from '@phosphor-icons/react';
 import {useState} from 'react';
 import {Controller, useFieldArray, UseFormReturn} from 'react-hook-form';
 
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 import ContentSelect from '../../ContentSelect';
 import {SessionFormValues} from '../sessionForm';

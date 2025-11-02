@@ -16,7 +16,7 @@ import {Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
 import {IconClock, IconFlame, IconMeat} from '@tabler/icons-react';
 import React, {FC} from 'react';
 
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 interface RecipeCardProps {
     content: Content;

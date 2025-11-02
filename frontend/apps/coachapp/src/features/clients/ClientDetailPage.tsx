@@ -23,8 +23,8 @@ import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import Header from '@/shared/layouts/Header';
 import {PlanCreationDrawerData} from '@/shared/PlanForm/PlanCreateDrawer';
-import {Client, useGetClientQuery} from '@/store/services/clients';
-import {PlanDiscipline} from '@/store/services/plans';
+import {Client, useGetClientQuery} from '@/services/clients';
+import {PlanDiscipline} from '@/services/plans';
 
 import {ClientOverviewTab} from './ClientOverviewTab';
 import {ClientPlansTab} from './ClientPlansTab';

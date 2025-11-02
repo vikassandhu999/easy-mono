@@ -1,4 +1,4 @@
-import {MembershipStatus} from '@/store/services/clients';
+import {MembershipStatus} from '@/services/clients';
 
 /**
  * Assigns a color from a predefined list based on the hash of a token.

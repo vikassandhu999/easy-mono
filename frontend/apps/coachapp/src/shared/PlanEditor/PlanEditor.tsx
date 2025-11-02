@@ -1,10 +1,9 @@
-import {ActionIcon, Alert, Button, LoadingOverlay} from '@mantine/core';
-import {useMediaQuery} from '@mantine/hooks';
-import {IconEye, IconX} from '@tabler/icons-react';
+import {Alert, LoadingOverlay} from '@mantine/core';
+import {IconX} from '@tabler/icons-react';
 import React from 'react';
 import {Outlet, useNavigate, useParams} from 'react-router';
 
-import {useGetPlan} from '@/store/services/plans';
+import {useGetPlan} from '@/services/plans';
 
 import HeadingContainer from '../containers/HeaderContainer';
 import PaddingContainer from '../containers/PaddingContainer';
@@ -14,7 +13,6 @@ import PlanWorkoutEditor from './workout/PlanWorkoutEditor';
 const PlanEditor = () => {
     const navigate = useNavigate();
     const params = useParams();
-    const isMobile = useMediaQuery('(max-width: 768px)');
 
     const planId = params.planId; // passed from URL param
 
@@ -52,28 +50,6 @@ const PlanEditor = () => {
                     <HeadingContainer withBorder={false}>
                         <LoadingOverlay visible={loadingVisible} />
                         <Header
-                            actions={
-                                isMobile ? (
-                                    <ActionIcon
-                                        aria-label="Plan details"
-                                        color="brand"
-                                        radius="xl"
-                                        size="lg"
-                                        variant="light"
-                                    >
-                                        <IconEye size={18} />
-                                    </ActionIcon>
-                                ) : (
-                                    <Button
-                                        leftSection={<IconEye size={16} />}
-                                        radius="xl"
-                                        size="sm"
-                                        variant="light"
-                                    >
-                                        Preview
-                                    </Button>
-                                )
-                            }
                             onBack={goBackToList}
                             title={plan?.name ?? 'Build Plan'}
                         />

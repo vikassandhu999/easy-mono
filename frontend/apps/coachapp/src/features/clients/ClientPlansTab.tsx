@@ -7,8 +7,8 @@ import {EmptyState} from '@/shared/layouts/EmptyState';
 import RecordsList from '@/shared/layouts/RecordsList';
 import {PlanCreationDrawer, PlanCreationDrawerData} from '@/shared/PlanForm/PlanCreateDrawer';
 import PlanListItem from '@/shared/PlanListItem/PlanListItem';
-import {Client} from '@/store/services/clients';
-import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
+import {Client} from '@/services/clients';
+import {Plan, PlanDiscipline, useListPlans} from '@/services/plans';
 
 export const ClientPlansTab = ({
     client,

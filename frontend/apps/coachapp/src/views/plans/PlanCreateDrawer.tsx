@@ -3,12 +3,12 @@ import {notifications} from '@mantine/notifications';
 import React, {useCallback, useMemo} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/services/plans';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import Header from '@/shared/layouts/Header';
 import PlanDisciplineSelect from '@/shared/PlanForm/PlanDisciplineSelect';
 import {PlanForm} from '@/shared/PlanForm/PlanForm';
-import {CreatePlanProps, Plan, PlanDiscipline, useCreatePlan} from '@/store/services/plans';
 
 import {PLAN_SEARCH_PARAMS, PLAN_SELECTED_DRAWER_KEY} from './constants';
 

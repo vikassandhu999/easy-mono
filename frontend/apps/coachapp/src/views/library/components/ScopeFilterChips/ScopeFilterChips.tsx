@@ -8,7 +8,7 @@
 import {Chip, Group} from '@mantine/core';
 import {memo, useMemo} from 'react';
 
-import {CONTENT_SCOPE_FILTERS, ContentScopeFilter} from '@/store/services/contents';
+import {CONTENT_SCOPE_FILTERS, ContentScopeFilter} from '@/services/contents';
 
 interface ScopeFilterChipsProps {
     /**

@@ -4,13 +4,13 @@ import {notifications} from '@mantine/notifications';
 import {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import {useGetClientQuery} from '@/services/clients';
+import {useCopyPlanToClient} from '@/services/plans';
 import ClientProfileCard from '@/shared/ClientProfileCard';
 import {FixedBottomBar} from '@/shared/containers/FixedBottomBar';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import Header from '@/shared/layouts/Header';
-import {useGetClientQuery} from '@/store/services/clients';
-import {useCopyPlanToClient} from '@/store/services/plans';
 
 import {parseDateToStr, PLAN_MIN_DATE_ASSIGN, PLAN_SEARCH_PARAMS} from './constants';
 

@@ -8,7 +8,7 @@ import {createSearchParams, useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {useSignUpMutation} from '@/store/services/users';
+import {useSignUpMutation} from '@/services/users';
 import {getApiErrorMessage} from '@/utils/error';
 
 const signUpSchema = z.object({

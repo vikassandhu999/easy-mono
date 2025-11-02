@@ -9,7 +9,7 @@ import {z} from 'zod';
 
 import {useAuth} from '@/providers/AuthProvider';
 import AuthLayout from '@/shared/layouts/AuthLayout';
-import {useVerifySignupMutation} from '@/store/services/users';
+import {useVerifySignupMutation} from '@/services/users';
 import {getApiErrorMessage} from '@/utils/error';
 
 const verifySchema = z.object({

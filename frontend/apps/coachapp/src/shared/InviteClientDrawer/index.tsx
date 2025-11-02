@@ -3,8 +3,8 @@ import {notifications} from '@mantine/notifications';
 
 import {InviteClientForm} from '@/shared/InviteClientForm';
 import Header from '@/shared/layouts/Header';
-import {type Client} from '@/store/services/clients';
-import {useCreateClientMutation} from '@/store/services/clients';
+import {type Client} from '@/services/clients';
+import {useCreateClientMutation} from '@/services/clients';
 
 import HeadingContainer from '../containers/HeaderContainer';
 

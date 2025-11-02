@@ -1,4 +1,4 @@
-import type {Session, SessionItemConfig, SessionType, WorkoutDefinition} from '@/store/services/session';
+import type {Session, SessionItemConfig, SessionType, WorkoutDefinition} from '@/services/session';
 
 export const WORKOUT_PLACEHOLDER_SECTION_ID = '__session_placeholder_section__';
 export const WORKOUT_PLACEHOLDER_EXERCISE_ID = '__session_placeholder_exercise__';

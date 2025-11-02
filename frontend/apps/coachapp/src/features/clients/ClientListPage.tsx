@@ -8,7 +8,7 @@ import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import {InviteClientDrawer} from '@/shared/InviteClientDrawer';
 import RecordsList from '@/shared/layouts/RecordsList';
-import {Client, useListClientsInfiniteQuery} from '@/store/services/clients';
+import {Client, useListClientsInfiniteQuery} from '@/services/clients';
 
 import ClientListHeader from './ClientListHeader';
 

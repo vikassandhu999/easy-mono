@@ -1,7 +1,7 @@
 import {Avatar, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
 import {IconChevronRight} from '@tabler/icons-react';
 
-import {PlanDiscipline} from '@/store/services/plans';
+import {PlanDiscipline} from '@/services/plans';
 
 import {PLAN_DISCIPLINES} from '../Configs';
 

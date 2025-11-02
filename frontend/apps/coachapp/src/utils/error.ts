@@ -1,6 +1,6 @@
 import {AxiosError} from 'axios';
 
-import type {AxiosBaseQueryError} from '@/store/services/baseAPISlice';
+import type {AxiosBaseQueryError} from '@/services/baseAPISlice';
 
 /**
  * Extracts a user-friendly error message from API errors

@@ -8,7 +8,7 @@
 import {Group, ScrollArea, SegmentedControl} from '@mantine/core';
 import {memo, useMemo} from 'react';
 
-import {ContentType} from '@/store/services/contents';
+import {ContentType} from '@/services/contents';
 
 import {CONTENT_TYPE_UI_CONFIG, VISIBLE_CONTENT_TYPES} from '../../constants';
 

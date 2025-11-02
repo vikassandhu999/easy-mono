@@ -1,24 +1,16 @@
 import {configureStore} from '@reduxjs/toolkit';
 import {setupListeners} from '@reduxjs/toolkit/query';
-import {FLUSH, PAUSE, PERSIST, persistReducer, persistStore, PURGE, REGISTER, REHYDRATE} from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import {type TypedUseSelectorHook, useDispatch, useSelector} from 'react-redux';
+import {FLUSH, PAUSE, PERSIST, persistStore, PURGE, REGISTER, REHYDRATE} from 'redux-persist';
 
-import {baseAPISlice} from '@/store/services/baseAPISlice';
-import planLabelsReducer from '@/store/slices/planLabelsSlice';
+import {baseAPISlice} from '@/services/baseAPISlice';
+import {planLabelsReducerPersisted} from '@/slices/planLabelsSlice';
 
-const planLabelsPersistConfig = {
-    key: 'coacheasy_plan_labels',
-    storage,
-    version: 1,
-    whitelist: ['uncommittedLabels'],
-};
-
-const persistedPlanLabelsReducer = persistReducer(planLabelsPersistConfig, planLabelsReducer);
-
+/* Redux store configuration */
 export const store = configureStore({
     reducer: {
         [baseAPISlice.reducerPath]: baseAPISlice.reducer,
-        planLabels: persistedPlanLabelsReducer,
+        planLabels: planLabelsReducerPersisted,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -28,9 +20,14 @@ export const store = configureStore({
         }).concat(baseAPISlice.middleware),
 });
 
+/* For persisted storage  */
 export const persistor = persistStore(store);
 
 setupListeners(store.dispatch);
 
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
+
+/* Typed hooks  */
+export const useAppDispatch: () => AppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

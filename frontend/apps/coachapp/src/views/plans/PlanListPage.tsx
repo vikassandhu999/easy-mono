@@ -2,11 +2,11 @@ import {IconArchive, IconCopy} from '@tabler/icons-react';
 import {useMemo} from 'react';
 import {Outlet, useNavigate, useSearchParams} from 'react-router';
 
+import {Plan, PlanDiscipline, useListPlans} from '@/services/plans';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import RecordsList from '@/shared/layouts/RecordsList';
 import PlanListItem, {PlanListItemAction} from '@/shared/PlanListItem/PlanListItem';
-import {Plan, PlanDiscipline, useListPlans} from '@/store/services/plans';
 
 import {PLAN_DRAWER_VIEWS, PLAN_SEARCH_PARAMS, PLAN_SELECTED_DRAWER_KEY} from './constants';
 import EmptyResult from './PlanEmptyResult';
@@ -34,7 +34,7 @@ function PlansListPage() {
     };
 
     const handleView = (id: string) => {
-        navigate(`/plans/${id}/builder`);
+        navigate(`/plans/${id}/editor`);
     };
 
     const handleDisciplineChange = (newDiscipline: PlanDiscipline) => {

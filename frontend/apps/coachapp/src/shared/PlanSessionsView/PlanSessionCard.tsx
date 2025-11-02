@@ -8,7 +8,7 @@ import {
     getSessionTypeBadgeColor,
     getSessionTypeLabel as getSessionTypeLabelFromConfig,
 } from '@/shared/PlanBuilder/sessionTypes';
-import {PlanSession} from '@/store/services/plan_sessions';
+import {PlanSession} from '@/services/plan_sessions';
 
 import {getScheduleWindow, getSessionDuration} from './utils';
 

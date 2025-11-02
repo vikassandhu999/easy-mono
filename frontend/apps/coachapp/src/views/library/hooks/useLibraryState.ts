@@ -7,7 +7,7 @@
 
 import {useCallback, useState} from 'react';
 
-import {Content, ContentType} from '@/store/services/contents';
+import {Content, ContentType} from '@/services/contents';
 
 import {VISIBLE_CONTENT_TYPES} from '../constants';
 import {DrawerState, LibraryViewState} from '../types';

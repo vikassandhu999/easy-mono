@@ -21,7 +21,7 @@ import {ExerciseCard} from '@/shared/Content/ExerciseCard';
 import {useContentList} from '@/shared/Content/hooks/useContentList';
 import {RecipeCard} from '@/shared/Content/RecipeCard';
 import RecordsList from '@/shared/layouts/RecordsList';
-import {Content} from '@/store/services/contents';
+import {Content} from '@/services/contents';
 
 import {
     ContentTypeFilter,

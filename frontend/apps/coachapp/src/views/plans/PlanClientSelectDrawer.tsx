@@ -2,11 +2,11 @@ import {Drawer, Space, Text} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {useNavigate, useSearchParams} from 'react-router';
 
+import {Client} from '@/services/clients';
 import ClientSelect from '@/shared/ClientSelect';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import Header from '@/shared/layouts/Header';
-import {Client} from '@/store/services/clients';
 
 import {PLAN_DRAWER_VIEWS, PLAN_SEARCH_PARAMS, PLAN_SELECTED_DRAWER_KEY} from './constants';
 

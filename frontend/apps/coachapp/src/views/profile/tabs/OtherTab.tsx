@@ -13,7 +13,7 @@ import {FC, useTransition} from 'react';
 import {Link, useNavigate} from 'react-router';
 
 import {useAuth} from '@/providers/AuthProvider';
-import {Coach} from '@/store/services/coach';
+import {Coach} from '@/services/coach';
 
 import {LogoutConfirmModal} from '../LogoutConfirmModal';
 

@@ -3,7 +3,7 @@ import {IconCalendar, IconDotsVertical} from '@tabler/icons-react';
 import React from 'react';
 
 import {PLAN_STATUS} from '@/shared/Configs';
-import {Plan} from '@/store/services/plans';
+import {Plan} from '@/services/plans';
 
 export type PlanListItemAction = {
     id: string;

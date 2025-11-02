@@ -1,9 +1,11 @@
 import {Button} from '@mantine/core';
-import {notifications} from '@mantine/notifications';
 import {IconPlus} from '@tabler/icons-react';
 import {FC} from 'react';
+import {useSearchParams} from 'react-router';
 
-import {Plan} from '@/store/services/plans';
+import {Plan} from '@/services/plans';
+
+import {PLAN_EDITOR_DRAWER_KEY, PLAN_EDITOR_DRAWER_VIEWS, PLAN_EDITOR_SEARCH_PARAMS} from '../constants';
 
 type PlanWeekdayDetailsProps = {
     plan: Plan;
@@ -12,20 +14,26 @@ type PlanWeekdayDetailsProps = {
 };
 
 const PlanWeekdayDetails: FC<PlanWeekdayDetailsProps> = (props) => {
+    const setSearchParams = useSearchParams()[1];
     const {plan, weekday} = props;
+
+    const handleAddSession = () => {
+        setSearchParams((prev) => {
+            prev.set(PLAN_EDITOR_DRAWER_KEY, PLAN_EDITOR_DRAWER_VIEWS.ADD_SESSION);
+            prev.set(PLAN_EDITOR_SEARCH_PARAMS.DISCIPLINE, plan.discipline);
+            prev.set(PLAN_EDITOR_SEARCH_PARAMS.WEEKDAY, weekday.toString());
+            return prev;
+        });
+    };
 
     return (
         <>
-            {plan.name} - {weekday}
             <Button
                 color="blue"
                 fullWidth
                 leftSection={<IconPlus size={18} />}
                 onClick={() => {
-                    notifications.show({
-                        color: 'red',
-                        message: 'Not Implemented Yet!',
-                    });
+                    handleAddSession();
                 }}
                 radius="lg"
                 size="md"

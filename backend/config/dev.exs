@@ -26,6 +26,24 @@ config :easy, EasyWeb.Endpoint,
   secret_key_base: "SvVJCnupjkXWkSeEBgMdkpfl/BhoaQuySnbgbIZIEXsVfvv9YrA6PJLzUl+xYwJ1",
   watchers: []
 
+# CoachApp endpoint configuration
+config :easy, CoachApp.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4001],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  secret_key_base: "HT6LHHL/kSeEBgMdkpfl/BhoaQuySnbgbIZIEXsVfvv9YrA6PJLzUl+xYwJ1COACH",
+  watchers: []
+
+# ClientApp endpoint configuration (if needed later)
+# config :easy, ClientApp.Endpoint,
+#   http: [ip: {127, 0, 0, 1}, port: 4002],
+#   check_origin: false,
+#   code_reloader: true,
+#   debug_errors: true,
+#   secret_key_base: "CLIENT123456789",
+#   watchers: []
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

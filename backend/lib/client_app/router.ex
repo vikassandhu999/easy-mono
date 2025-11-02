@@ -1,4 +1,4 @@
-defmodule EasyWeb.Router do
+defmodule ClientApp.Router do
   use EasyWeb, :router
 
   pipeline :api do
@@ -11,7 +11,6 @@ defmodule EasyWeb.Router do
 
   # Enable Swoosh mailbox preview in development
   if Application.compile_env(:easy, :dev_routes) do
-
     scope "/dev" do
       pipe_through [:fetch_session, :protect_from_forgery]
 

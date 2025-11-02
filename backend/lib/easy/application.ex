@@ -1,6 +1,4 @@
 defmodule Easy.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -8,14 +6,14 @@ defmodule Easy.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      EasyWeb.Telemetry,
       Easy.Repo,
       {DNSCluster, query: Application.get_env(:easy, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Easy.PubSub},
       # Start a worker by calling: Easy.Worker.start_link(arg)
       # {Easy.Worker, arg},
       # Start to serve requests, typically the last entry
-      EasyWeb.Endpoint
+      CoachApp.Endpoint,
+      ClientApp.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -24,11 +22,10 @@ defmodule Easy.Application do
     Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
-    EasyWeb.Endpoint.config_change(changed, removed)
+    CoachApp.Endpoint.config_change(changed, removed)
+    ClientApp.Endpoint.config_change(changed, removed)
     :ok
   end
 end

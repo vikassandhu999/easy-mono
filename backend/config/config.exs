@@ -22,6 +22,16 @@ config :easy, EasyWeb.Endpoint,
   pubsub_server: Easy.PubSub,
   live_view: [signing_salt: "7DsK08zq"]
 
+# Configures the CoachApp endpoint
+config :easy, CoachApp.Endpoint,
+  url: [host: "localhost", port: 4001],
+  adapter: Bandit.PhoenixAdapter,
+  render_errors: [
+    formats: [json: CoachApp.ErrorJSON],
+    layout: false
+  ],
+  pubsub_server: Easy.PubSub
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

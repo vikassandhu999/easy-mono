@@ -1,4 +1,4 @@
-defmodule EasyWeb.Endpoint do
+defmodule ClientApp.Endpoint do
   use Phoenix.Endpoint, otp_app: :easy
 
   # The session will be stored in the cookie and signed,
@@ -44,5 +44,5 @@ defmodule EasyWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug EasyWeb.Router
+  plug CoachApp.Router
 end

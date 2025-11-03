@@ -2,15 +2,15 @@ defmodule Easy.Tenant.Business do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  @primary_key {:id, Ecto.UUID, autogenerate: true}
+  @foreign_key_type Ecto.UUID
 
   schema "businesses" do
     field :handle, :string
     field :name, :string
     field :about, :string, default: ""
     field :logo_url, :string
-    field :owner_user_id, :binary_id
+    field :owner_user_id, Ecto.UUID
 
     timestamps(type: :utc_datetime_usec)
   end

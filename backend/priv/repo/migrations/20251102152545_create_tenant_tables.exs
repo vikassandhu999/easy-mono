@@ -4,14 +4,13 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
   def up do
     # Create businesses table
     create table(:businesses, primary_key: false) do
-      add :id, :binary_id, primary_key: true
+      add :id, :uuid, primary_key: true
       add :handle, :string, null: false
       add :name, :string, null: false
       add :about, :text, null: false, default: ""
       add :logo_url, :text
 
-      add :owner_user_id, references(:users, type: :binary_id, on_delete: :delete_all),
-        null: false
+      add :owner_user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime_usec)
     end
@@ -22,7 +21,7 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
 
     # Create business_plans table
     create table(:business_plans, primary_key: false) do
-      add :id, :binary_id, primary_key: true
+      add :id, :uuid, primary_key: true
       add :name, :string, null: false
       add :is_default, :boolean, null: false, default: false
       add :max_active_clients, :integer, null: false, default: 0
@@ -35,10 +34,9 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
 
     # Create business_plan_prices table
     create table(:business_plan_prices, primary_key: false) do
-      add :id, :binary_id, primary_key: true
+      add :id, :uuid, primary_key: true
 
-      add :plan_id, references(:business_plans, type: :binary_id, on_delete: :delete_all),
-        null: false
+      add :plan_id, references(:business_plans, type: :uuid, on_delete: :delete_all), null: false
 
       add :currency_code, :string, size: 3, null: false
       add :amount, :string, size: 50, null: false
@@ -58,10 +56,10 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
 
     # Create business_subscriptions table
     create table(:business_subscriptions, primary_key: false) do
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
+      add :business_id, references(:businesses, type: :uuid, on_delete: :delete_all),
         primary_key: true
 
-      add :plan_id, references(:business_plans, type: :binary_id), null: false
+      add :plan_id, references(:business_plans, type: :uuid), null: false
       add :max_active_clients, :integer, null: false, default: 0
       add :status, :integer, null: false, default: 1
       add :trial_start_date, :utc_datetime_usec
@@ -71,8 +69,8 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
       add :end_date, :utc_datetime_usec
       add :ended_at, :utc_datetime_usec, null: false, default: fragment("NOW()")
       add :ended_with_reason, :text, null: false, default: ""
-      add :latest_change_id, :binary_id
-      add :pending_change_id, :binary_id
+      add :latest_change_id, :uuid
+      add :pending_change_id, :uuid
       add :active_clients, :integer, null: false, default: 0
 
       timestamps(type: :utc_datetime_usec)
@@ -108,13 +106,12 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
 
     # Create business_subscription_changes table
     create table(:business_subscription_changes, primary_key: false) do
-      add :id, :binary_id, primary_key: true
+      add :id, :uuid, primary_key: true
 
-      add :business_id, references(:businesses, type: :binary_id, on_delete: :delete_all),
-        null: false
+      add :business_id, references(:businesses, type: :uuid, on_delete: :delete_all), null: false
 
-      add :plan_id, references(:business_plans, type: :binary_id), null: false
-      add :old_plan_id, references(:business_plans, type: :binary_id), null: false
+      add :plan_id, references(:business_plans, type: :uuid), null: false
+      add :old_plan_id, references(:business_plans, type: :uuid), null: false
       add :status, :integer, null: false, default: 1
       add :phase, :integer, null: false
       add :currency_code, :string, size: 3, null: false
@@ -124,7 +121,7 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
       add :billing_days, :integer
       add :start_date, :utc_datetime_usec, null: false
       add :valid_until, :utc_datetime_usec, null: false
-      add :payment_id, :binary_id
+      add :payment_id, :uuid
 
       timestamps(type: :utc_datetime_usec)
     end
@@ -164,8 +161,8 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
 
     # Add foreign key constraints for business_subscriptions referencing business_subscription_changes
     alter table(:business_subscriptions) do
-      modify :latest_change_id, references(:business_subscription_changes, type: :binary_id)
-      modify :pending_change_id, references(:business_subscription_changes, type: :binary_id)
+      modify :latest_change_id, references(:business_subscription_changes, type: :uuid)
+      modify :pending_change_id, references(:business_subscription_changes, type: :uuid)
     end
 
     # Insert default business plan
@@ -207,8 +204,8 @@ defmodule Easy.Repo.Migrations.CreateTenantTables do
   def down do
     # Drop foreign key constraints first
     alter table(:business_subscriptions) do
-      modify :pending_change_id, :binary_id
-      modify :latest_change_id, :binary_id
+      modify :pending_change_id, :uuid
+      modify :latest_change_id, :uuid
     end
 
     # Drop tables in reverse order

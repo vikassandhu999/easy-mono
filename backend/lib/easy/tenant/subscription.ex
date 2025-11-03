@@ -2,8 +2,8 @@ defmodule Easy.Tenant.Subscription do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:business_id, :binary_id, autogenerate: false}
-  @foreign_key_type :binary_id
+  @primary_key {:business_id, Ecto.UUID, autogenerate: false}
+  @foreign_key_type Ecto.UUID
 
   schema "business_subscriptions" do
     field :max_active_clients, :integer, default: 0
@@ -18,8 +18,8 @@ defmodule Easy.Tenant.Subscription do
     field :active_clients, :integer, default: 0
 
     belongs_to :plan, Easy.Tenant.Plan, foreign_key: :plan_id
-    field :latest_change_id, :binary_id
-    field :pending_change_id, :binary_id
+    field :latest_change_id, Ecto.UUID
+    field :pending_change_id, Ecto.UUID
 
     timestamps(type: :utc_datetime_usec)
   end

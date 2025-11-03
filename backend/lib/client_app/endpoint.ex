@@ -44,5 +44,39 @@ defmodule ClientApp.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+
+  # CORS configuration for cross-origin requests
+  plug CORSPlug,
+    origin: [
+      # Development URLs
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+      "http://127.0.0.1:5173",
+      # Production URLs (update these for your domains)
+      "https://yourdomain.com",
+      "https://app.yourdomain.com",
+      "https://client.yourdomain.com"
+    ],
+    credentials: true,
+    max_age: 86400,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    headers: [
+      "Authorization",
+      "Content-Type",
+      "Accept",
+      "Origin",
+      "User-Agent",
+      "DNT",
+      "Cache-Control",
+      "X-Mx-ReqToken",
+      "Keep-Alive",
+      "X-Requested-With",
+      "If-Modified-Since",
+      "X-CSRF-Token"
+    ]
+
   plug CoachApp.Router
 end

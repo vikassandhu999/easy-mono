@@ -1,31 +1,40 @@
 defmodule CoachApp.ErrorJSON do
   @moduledoc """
-  This module is invoked by your endpoint in case of errors on JSON requests.
-
-  See config/config.exs.
+  This module is invoked by the FallbackController to translate
+  errors into a JSON response.
   """
 
-  def render("error.json", %{message: message, code: code}) do
+  alias Easy.ApiError
+
+  # Handle ApiError structs
+  def error(%{error: %ApiError{} = error}) do
     %{
       error: %{
-        message: message,
-        code: code
+        code: error.code,
+        message: error.message,
+        details: error.details
       }
     }
   end
 
-  def render("error.json", %{message: message}) do
+  # Handle standard Phoenix error templates
+  def render(template, _assigns) do
+    status = template |> to_string() |> String.split(".") |> List.first() |> String.to_integer()
+    message = Phoenix.Controller.status_message_from_template(template)
+
     %{
       error: %{
+        code: status_to_code(status),
         message: message
       }
     }
   end
 
-  # By default, Phoenix returns the status message from
-  # the template name. For example, "404.json" becomes
-  # "Not Found".
-  def render(template, _assigns) do
-    %{errors: %{detail: Phoenix.Controller.status_message_from_template(template)}}
-  end
+  defp status_to_code(400), do: "BAD_REQUEST"
+  defp status_to_code(401), do: "UNAUTHORIZED"
+  defp status_to_code(403), do: "FORBIDDEN"
+  defp status_to_code(404), do: "NOT_FOUND"
+  defp status_to_code(422), do: "UNPROCESSABLE_ENTITY"
+  defp status_to_code(500), do: "INTERNAL_SERVER_ERROR"
+  defp status_to_code(_), do: "ERROR"
 end

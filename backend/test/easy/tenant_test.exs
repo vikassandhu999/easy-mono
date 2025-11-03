@@ -21,7 +21,12 @@ defmodule Easy.TenantTest do
     end
 
     test "create_business/1 with valid data creates a business" do
-      valid_attrs = %{handle: "some handle", name: "some name", about: "some about", logo_url: "some logo_url"}
+      valid_attrs = %{
+        handle: "some handle",
+        name: "some name",
+        about: "some about",
+        logo_url: "some logo_url"
+      }
 
       assert {:ok, %Business{} = business} = Tenant.create_business(valid_attrs)
       assert business.handle == "some handle"
@@ -36,7 +41,13 @@ defmodule Easy.TenantTest do
 
     test "update_business/2 with valid data updates the business" do
       business = business_fixture()
-      update_attrs = %{handle: "some updated handle", name: "some updated name", about: "some updated about", logo_url: "some updated logo_url"}
+
+      update_attrs = %{
+        handle: "some updated handle",
+        name: "some updated name",
+        about: "some updated about",
+        logo_url: "some updated logo_url"
+      }
 
       assert {:ok, %Business{} = business} = Tenant.update_business(business, update_attrs)
       assert business.handle == "some updated handle"

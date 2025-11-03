@@ -4,7 +4,7 @@ defmodule Easy.Repo.Migrations.CreateWhoamiTables do
   def up do
     # Create users table
     create table(:users, primary_key: false) do
-      add :id, :binary_id, primary_key: true
+      add :id, :uuid, primary_key: true
       add :email, :string
       add :email_confirmed_at, :utc_datetime_usec
       add :phone, :string
@@ -39,8 +39,8 @@ defmodule Easy.Repo.Migrations.CreateWhoamiTables do
 
     # Create usr_sessions table
     create table(:usr_sessions, primary_key: false) do
-      add :id, :binary_id, primary_key: true
-      add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+      add :id, :uuid, primary_key: true
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
       add :not_after, :utc_datetime_usec
       add :refresh_token, :text, null: false
       add :refreshed_at, :utc_datetime_usec
@@ -69,8 +69,8 @@ defmodule Easy.Repo.Migrations.CreateWhoamiTables do
 
     # Create otts (one time tokens) table
     create table(:otts, primary_key: false) do
-      add :id, :binary_id, primary_key: true
-      add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+      add :id, :uuid, primary_key: true
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
       add :token_type, :integer, null: false
       add :secret, :text, null: false
       add :relates_to_phone, :text

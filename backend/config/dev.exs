@@ -2,10 +2,10 @@ import Config
 
 # Configure your database
 config :easy, Easy.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "admin",
+  password: "L2KjxOH9al",
   hostname: "localhost",
-  database: "easy_dev",
+  database: "xobizz_admin",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -82,3 +82,16 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Authentication and JWT configuration
+config :easy, Easy.Accounts.Token,
+  secret_key: "dev-jwt-secret-key-should-be-changed-in-production"
+
+config :joken, default_signer: "dev-jwt-secret-key-should-be-changed-in-production"
+
+config :easy, Easy.Accounts.OTP, dev_otp: "123456"
+
+# CORS configuration for development
+config :cors_plug,
+  origin: ["*"],
+  credentials: true

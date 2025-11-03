@@ -31,3 +31,7 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Authentication and JWT configuration for tests
+config :easy, Easy.Accounts.Token, secret_key: "test-jwt-secret-key"
+config :joken, default_signer: "test-jwt-secret-key"

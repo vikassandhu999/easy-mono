@@ -2,13 +2,13 @@ defmodule Easy.Tenant.SubscriptionChange do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  @primary_key {:id, Ecto.UUID, autogenerate: true}
+  @foreign_key_type Ecto.UUID
 
   schema "business_subscription_changes" do
-    field :business_id, :binary_id
-    field :plan_id, :binary_id
-    field :old_plan_id, :binary_id
+    field :business_id, Ecto.UUID
+    field :plan_id, Ecto.UUID
+    field :old_plan_id, Ecto.UUID
     field :status, :integer, default: 1
     field :phase, :integer
     field :currency_code, :string
@@ -18,7 +18,7 @@ defmodule Easy.Tenant.SubscriptionChange do
     field :billing_days, :integer
     field :start_date, :utc_datetime_usec
     field :valid_until, :utc_datetime_usec
-    field :payment_id, :binary_id
+    field :payment_id, Ecto.UUID
 
     timestamps(type: :utc_datetime_usec)
   end

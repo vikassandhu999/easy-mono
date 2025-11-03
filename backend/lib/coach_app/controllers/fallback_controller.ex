@@ -1,93 +1,86 @@
 defmodule CoachApp.FallbackController do
   @moduledoc """
   Translates controller action results into valid `Plug.Conn` responses.
-
-  See `Phoenix.Controller.action_fallback/1` for more details.
   """
   use CoachApp, :controller
 
-  def call(conn, {:error, :not_found}) do
+  alias Easy.ApiError
+
+  # Handle Ecto.NoResultsError
+  def call(conn, {:error, %Ecto.NoResultsError{}}) do
+    error = ApiError.not_found()
+
     conn
-    |> put_status(:not_found)
+    |> put_status(error.status)
     |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{message: "Resource not found"})
+    |> render(:error, error: error)
   end
 
-  def call(conn, {:error, :unauthorized}) do
-    conn
-    |> put_status(:unauthorized)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{message: "Unauthorized"})
-  end
-
-  def call(conn, {:error, :email_or_phone_required}) do
-    conn
-    |> put_status(:bad_request)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{
-      message: "Either email or phone number is required",
-      code: "email_or_phone_required"
-    })
-  end
-
-  def call(conn, {:error, :user_already_exists}) do
-    conn
-    |> put_status(:conflict)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{
-      message: "User already exists",
-      code: "user_already_exists"
-    })
-  end
-
-  def call(conn, {:error, :invalid_passcode}) do
-    conn
-    |> put_status(:bad_request)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{
-      message: "Invalid passcode",
-      code: "invalid_passcode"
-    })
-  end
-
-  def call(conn, {:error, :token_not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{
-      message: "Token not found or expired",
-      code: "token_not_found"
-    })
-  end
-
-  def call(conn, {:error, :session_not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{
-      message: "Session not found",
-      code: "session_not_found"
-    })
-  end
-
+  # Handle Ecto.Changeset errors
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
+    error = ApiError.from_changeset(changeset)
+
     conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(json: CoachApp.ChangesetJSON)
-    |> render(:error, changeset: changeset)
+    |> put_status(error.status)
+    |> put_view(json: CoachApp.ErrorJSON)
+    |> render(:error, error: error)
   end
 
-  def call(conn, {:error, reason}) when is_atom(reason) do
+  # Handle ApiError structs
+  def call(conn, {:error, %ApiError{} = error}) do
     conn
-    |> put_status(:bad_request)
+    |> put_status(error.status)
     |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{message: to_string(reason)})
+    |> render(:error, error: error)
   end
 
-  def call(conn, {:error, reason}) when is_binary(reason) do
+  # Handle :not_found atoms
+  def call(conn, {:error, :not_found}) do
+    error = ApiError.not_found()
+
     conn
-    |> put_status(:bad_request)
+    |> put_status(error.status)
     |> put_view(json: CoachApp.ErrorJSON)
-    |> render(:error, %{message: reason})
+    |> render(:error, error: error)
+  end
+
+  # Handle :unauthorized atoms
+  def call(conn, {:error, :unauthorized}) do
+    error = ApiError.unauthorized()
+
+    conn
+    |> put_status(error.status)
+    |> put_view(json: CoachApp.ErrorJSON)
+    |> render(:error, error: error)
+  end
+
+  # Handle :forbidden atoms
+  def call(conn, {:error, :forbidden}) do
+    error = ApiError.forbidden()
+
+    conn
+    |> put_status(error.status)
+    |> put_view(json: CoachApp.ErrorJSON)
+    |> render(:error, error: error)
+  end
+
+  # Handle string errors
+  def call(conn, {:error, message}) when is_binary(message) do
+    error = ApiError.bad_request(message)
+
+    conn
+    |> put_status(error.status)
+    |> put_view(json: CoachApp.ErrorJSON)
+    |> render(:error, error: error)
+  end
+
+  # Catch-all for unexpected errors
+  def call(conn, {:error, _}) do
+    error = ApiError.internal_server_error()
+
+    conn
+    |> put_status(error.status)
+    |> put_view(json: CoachApp.ErrorJSON)
+    |> render(:error, error: error)
   end
 end

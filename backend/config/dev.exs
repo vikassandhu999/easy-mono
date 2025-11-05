@@ -5,7 +5,7 @@ config :easy, Easy.Repo,
   username: "admin",
   password: "L2KjxOH9al",
   hostname: "localhost",
-  database: "xobizz_admin",
+  database: "easy-db",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -25,24 +25,6 @@ config :easy, EasyWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "SvVJCnupjkXWkSeEBgMdkpfl/BhoaQuySnbgbIZIEXsVfvv9YrA6PJLzUl+xYwJ1",
   watchers: []
-
-# CoachApp endpoint configuration
-config :easy, CoachApp.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4001],
-  check_origin: false,
-  code_reloader: true,
-  debug_errors: true,
-  secret_key_base: "HT6LHHL/kSeEBgMdkpfl/BhoaQuySnbgbIZIEXsVfvv9YrA6PJLzUl+xYwJ1COACH",
-  watchers: []
-
-# ClientApp endpoint configuration (if needed later)
-# config :easy, ClientApp.Endpoint,
-#   http: [ip: {127, 0, 0, 1}, port: 4002],
-#   check_origin: false,
-#   code_reloader: true,
-#   debug_errors: true,
-#   secret_key_base: "CLIENT123456789",
-#   watchers: []
 
 # ## SSL Support
 #
@@ -90,6 +72,13 @@ config :easy, Easy.Accounts.Token,
 config :joken, default_signer: "dev-jwt-secret-key-should-be-changed-in-production"
 
 config :easy, Easy.Accounts.OTP, dev_otp: "123456"
+
+# OTP Configuration for Development
+# OTP_BYPASS_ENABLED: Accept "123456" as valid OTP code
+# OTP_LOG_ENABLED: Log generated OTP codes to console
+config :easy,
+  otp_bypass_enabled: true,
+  otp_log_enabled: true
 
 # CORS configuration for development
 config :cors_plug,

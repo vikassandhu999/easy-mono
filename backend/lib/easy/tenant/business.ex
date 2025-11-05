@@ -2,17 +2,51 @@ defmodule Easy.Tenant.Business do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, Ecto.UUID, autogenerate: true}
-  @foreign_key_type Ecto.UUID
+  alias Easy.Identity.User
+  alias Easy.Tenant.{Coach, Client}
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   schema "businesses" do
+    # Core identity
     field :handle, :string
     field :name, :string
-    field :about, :string, default: ""
+    field :about, :string
     field :logo_url, :string
-    field :owner_user_id, Ecto.UUID
 
-    timestamps(type: :utc_datetime_usec)
+    # Status
+    field :status, Ecto.Enum,
+      values: [:early, :trial, :active, :suspended, :cancelled],
+      default: :early
+
+    # Contact Info
+    field :email, :string
+    field :phone, :string
+    field :website, :string
+
+    # Address
+    field :address_line1, :string
+    field :address_line2, :string
+    field :city, :string
+    field :state, :string
+    field :postal_code, :string
+    field :country, :string, default: "IND"
+
+    # Settings
+    field :timezone, :string, default: "Asia/Kolkata"
+    field :settings, :map, default: %{}
+
+    # Onboarding (implement later)
+    field :onboarded_at, :utc_datetime
+    field :onboarding_step, :string
+
+    # Relationships
+    belongs_to :owner, User, foreign_key: :owner_user_id
+    has_many :coaches, Coach
+    has_many :clients, Client
+
+    timestamps(type: :utc_datetime)
   end
 
   @disallowed_handles ~w(
@@ -34,25 +68,79 @@ defmodule Easy.Tenant.Business do
     press kb knowledgebase v1 v2 v3 v4 v5 v6 v7 v8 v9 v10
   )
 
-  @doc false
+  @doc """
+  Changeset for creating/updating a business.
+  """
   def changeset(business, attrs) do
     business
-    |> cast(attrs, [:handle, :name, :about, :logo_url, :owner_user_id])
+    |> cast(attrs, [
+      :handle,
+      :name,
+      :about,
+      :logo_url,
+      :owner_user_id,
+      :status,
+      :email,
+      :phone,
+      :website,
+      :address_line1,
+      :address_line2,
+      :city,
+      :state,
+      :postal_code,
+      :country,
+      :timezone,
+      :settings,
+      :onboarded_at,
+      :onboarding_step
+    ])
     |> validate_required([:handle, :name, :owner_user_id])
+    |> validate_length(:name, min: 2, max: 100)
+    |> validate_length(:handle, min: 3, max: 50)
+    |> validate_handle()
+    |> validate_email()
+    |> foreign_key_constraint(:owner_user_id)
+    |> unique_constraint(:handle)
+  end
+
+  defp validate_handle(changeset) do
+    changeset
     |> validate_format(:handle, ~r/^[a-z0-9_]+$/,
-      message: "handle should only contain lowercase letters, numbers, and underscores"
+      message: "must contain only lowercase letters, numbers, and underscores"
     )
     |> validate_exclusion(:handle, @disallowed_handles,
-      message: "handle is not allowed, please try a different handle"
+      message: "is reserved, please choose another"
     )
-    |> unique_constraint(:handle,
-      name: :u_idx_handle,
-      message: "handle is already taken, please try a different handle"
-    )
+  end
+
+  defp validate_email(changeset) do
+    case get_field(changeset, :email) do
+      nil ->
+        changeset
+
+      _email ->
+        validate_format(changeset, :email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    end
   end
 
   @doc """
   Returns the list of disallowed handles.
   """
   def disallowed_handles, do: @disallowed_handles
+
+  @doc """
+  Checks if business has full access.
+  """
+  def has_full_access?(%__MODULE__{status: status}) do
+    status in [:early, :active]
+  end
+
+  @doc """
+  Checks if business is an early access member.
+  """
+  def early_member?(%__MODULE__{status: :early}), do: true
+
+  def early_member?(%__MODULE__{settings: settings}) do
+    get_in(settings, ["early_member"]) == true
+  end
 end

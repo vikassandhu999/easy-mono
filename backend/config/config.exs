@@ -11,6 +11,20 @@ config :easy,
   ecto_repos: [Easy.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Authentication and Session Configuration
+config :easy, :auth,
+  # OTP token settings
+  otp_expiry_minutes: 15,
+  otp_max_attempts: 5,
+
+  # Session settings
+  session_expiry_days: 30,
+  access_token_expiry_minutes: 15,
+
+  # Cleanup settings
+  cleanup_expired_tokens_older_than_days: 7,
+  cleanup_old_sessions_older_than_days: 90
+
 # Configures the endpoint
 config :easy, EasyWeb.Endpoint,
   url: [host: "localhost"],
@@ -21,16 +35,6 @@ config :easy, EasyWeb.Endpoint,
   ],
   pubsub_server: Easy.PubSub,
   live_view: [signing_salt: "7DsK08zq"]
-
-# Configures the CoachApp endpoint
-config :easy, CoachApp.Endpoint,
-  url: [host: "localhost", port: 4001],
-  adapter: Bandit.PhoenixAdapter,
-  render_errors: [
-    formats: [json: CoachApp.ErrorJSON],
-    layout: false
-  ],
-  pubsub_server: Easy.PubSub
 
 # Configures the mailer
 #

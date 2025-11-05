@@ -12,8 +12,7 @@ defmodule Easy.Application do
       # Start a worker by calling: Easy.Worker.start_link(arg)
       # {Easy.Worker, arg},
       # Start to serve requests, typically the last entry
-      CoachApp.Endpoint,
-      ClientApp.Endpoint
+      EasyWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -24,8 +23,7 @@ defmodule Easy.Application do
 
   @impl true
   def config_change(changed, _new, removed) do
-    CoachApp.Endpoint.config_change(changed, removed)
-    ClientApp.Endpoint.config_change(changed, removed)
+    EasyWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 end

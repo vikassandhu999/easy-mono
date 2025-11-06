@@ -13,17 +13,32 @@ config :easy,
 
 # Authentication and Session Configuration
 config :easy, :auth,
-  # OTP token settings
-  otp_expiry_minutes: 15,
-  otp_max_attempts: 5,
+  # OTP token settings (Requirements 2.4, 2.5)
+  otp_expiry_minutes: 10,
+  otp_max_attempts: 3,
+  invitation_expiry_days: 7,
 
-  # Session settings
-  session_expiry_days: 30,
-  access_token_expiry_minutes: 15,
+  # Rate limiting settings (Requirements 9.2, 9.3, 14.3)
+  rate_limit_window_minutes: 15,
+  rate_limit_max_requests: 3,
 
-  # Cleanup settings
+  # Session settings (Requirement 8.5)
+  session_expiry_days: 7,
+  access_token_expiry_days: 7,
+  refresh_token_expiry_days: 30,
+
+  # Cleanup settings (Requirement 14.4)
   cleanup_expired_tokens_older_than_days: 7,
   cleanup_old_sessions_older_than_days: 90
+
+# JWT Token Configuration
+# JWT secret is configured in runtime.exs for all environments
+config :easy, :jwt,
+  # Token expiration times
+  access_token_ttl_days: 7,
+  refresh_token_ttl_days: 30,
+  # Algorithm used for signing (HS256 - HMAC with SHA-256)
+  algorithm: "HS256"
 
 # Configures the endpoint
 config :easy, EasyWeb.Endpoint,
@@ -44,6 +59,13 @@ config :easy, EasyWeb.Endpoint,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+
+# Email delivery configuration
+config :easy, :email,
+  # From email address for all outgoing emails
+  from_email: {"Easy Coaching", "noreply@easycoaching.com"},
+  # Base URL for invitation links (overridden in runtime.exs)
+  app_url: "http://localhost:4000"
 
 # Configures Elixir's Logger
 config :logger, :default_formatter,

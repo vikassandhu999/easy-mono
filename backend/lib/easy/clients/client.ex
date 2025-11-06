@@ -1,183 +1,138 @@
 defmodule Easy.Clients.Client do
+  @moduledoc """
+  Client schema representing a customer managed by coaches within a business.
+
+  Clients can be in pending status (invited but not registered) or active status
+  (registered with a user account).
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Accounts.User
-  alias Easy.Organizations.Business
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "clients" do
-    field :name, :string
     field :email, :string
+    field :full_name, :string
     field :phone, :string
-
-    field :invitation_token, :string
-    field :invitation_email, :string
-    field :invitation_phone, :string
-
     field :notes, :string
+    # "pending", "active", "inactive", "archived"
+    field :status, :string
 
-    field :membership_status, Ecto.Enum,
-      values: [:active, :inactive, :paused, :pending],
-      default: :active
+    belongs_to :user, Easy.Accounts.User
+    belongs_to :business, Easy.Organizations.Business
+    many_to_many :coaches, Easy.Coaches.Coach, join_through: Easy.Clients.CoachClientAssignment
 
-    field :membership_start_date, :date
-    field :membership_end_date, :date
-
-    field :created_by, :binary_id
-
-    belongs_to :business, Business
-    belongs_to :user, User
-    # has_many :subscriptions, ClientSubscription
-
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
+  @valid_statuses ~w(pending active inactive archived)
+
+  @doc """
+  Changeset for creating a client.
+  Validates required fields, email format, phone format, and status values.
+  """
+  def changeset(client, attrs) do
+    client
+    |> cast(attrs, [:email, :full_name, :phone, :notes, :status, :user_id, :business_id])
+    |> validate_required([:email, :full_name, :business_id])
+    |> validate_email()
+    |> validate_phone()
+    |> validate_status()
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:business_id)
+    |> unique_constraint([:user_id, :business_id],
+      name: :clients_user_business_index,
+      message: "already has a client profile for this business"
+    )
+  end
+
+  @doc """
+  Changeset for creating a new client invitation.
+  Sets status to pending by default.
+  """
   def create_changeset(client, attrs) do
     client
-    |> cast(attrs, [
-      :business_id,
-      :coach_id,
-      :name,
-      :email,
-      :phone,
-      :invitation_token,
-      :invitation_email,
-      :invitation_phone,
-      :notes,
-      :membership_status,
-      :membership_start_date,
-      :membership_end_date,
-      :created_by,
-      :user_id
-    ])
-    |> validate_required([:business_id, :name])
-    |> validate_length(:name, min: 2, max: 100)
-    |> validate_contact_method()
+    |> cast(attrs, [:email, :full_name, :phone, :notes, :business_id])
+    |> validate_required([:email, :full_name, :business_id])
     |> validate_email()
     |> validate_phone()
+    |> put_change(:status, "pending")
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:coach_id)
-    |> foreign_key_constraint(:user_id)
-    |> unique_constraint([:business_id, :email],
-      name: :clients_business_id_email_index,
-      message: "already exists for this business"
-    )
-    |> unique_constraint([:business_id, :phone],
-      name: :clients_business_id_phone_index,
-      message: "already exists for this business"
-    )
   end
 
+  @doc """
+  Changeset for updating client information.
+  Allows updating contact info, notes, and status.
+  """
   def update_changeset(client, attrs) do
     client
-    |> cast(attrs, [
-      :name,
-      :email,
-      :phone,
-      :notes,
-      :membership_status,
-      :membership_start_date,
-      :membership_end_date,
-      :coach_id
-    ])
-    |> validate_length(:name, min: 2, max: 100)
+    |> cast(attrs, [:email, :full_name, :phone, :notes, :status])
     |> validate_email()
     |> validate_phone()
-    |> foreign_key_constraint(:coach_id)
-    |> unique_constraint([:business_id, :email],
-      name: :clients_business_id_email_index,
-      message: "already exists for this business"
-    )
-    |> unique_constraint([:business_id, :phone],
-      name: :clients_business_id_phone_index,
-      message: "already exists for this business"
-    )
+    |> validate_status()
   end
 
+  @doc """
+  Changeset for linking a client to a user account.
+  Used when a client completes registration.
+  """
   def link_user_changeset(client, user_id) do
     client
     |> change(user_id: user_id)
-    |> change(invitation_token: nil)
+    |> change(status: "active")
     |> foreign_key_constraint(:user_id)
   end
 
-  def membership_changeset(client, attrs) do
+  @doc """
+  Changeset for updating client status.
+  """
+  def status_changeset(client, status) do
     client
-    |> cast(attrs, [:membership_status, :membership_start_date, :membership_end_date])
-    |> validate_required([:membership_status])
-    |> validate_membership_dates()
+    |> change(status: status)
+    |> validate_status()
   end
 
-  defp validate_contact_method(changeset) do
-    email = get_field(changeset, :email)
-    phone = get_field(changeset, :phone)
-    invitation_email = get_field(changeset, :invitation_email)
-    invitation_phone = get_field(changeset, :invitation_phone)
-
-    cond do
-      email || phone || invitation_email || invitation_phone ->
-        changeset
-
-      true ->
-        add_error(
-          changeset,
-          :base,
-          "must have at least one contact method (email, phone, or invitation contact)"
-        )
-    end
-  end
+  # Private validation helpers
 
   defp validate_email(changeset) do
-    case get_field(changeset, :email) do
-      nil ->
-        changeset
-
-      _email ->
-        validate_format(changeset, :email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
-    end
+    changeset
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email address")
+    |> validate_length(:email, max: 255)
+    |> update_change(:email, &String.downcase/1)
   end
 
   defp validate_phone(changeset) do
-    case get_field(changeset, :phone) do
+    case get_change(changeset, :phone) do
       nil ->
         changeset
 
       _phone ->
         validate_format(changeset, :phone, ~r/^\+?[1-9]\d{1,14}$/,
-          message: "must be a valid phone number"
+          message: "must be a valid international phone number"
         )
     end
   end
 
-  defp validate_membership_dates(changeset) do
-    start_date = get_field(changeset, :membership_start_date)
-    end_date = get_field(changeset, :membership_end_date)
-
-    case {start_date, end_date} do
-      {nil, _} ->
-        changeset
-
-      {_, nil} ->
-        changeset
-
-      {start_d, end_d} ->
-        if Date.compare(start_d, end_d) == :lt do
-          changeset
-        else
-          add_error(changeset, :membership_end_date, "must be after start date")
-        end
-    end
+  defp validate_status(changeset) do
+    changeset
+    |> validate_inclusion(:status, @valid_statuses,
+      message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
+    )
   end
 
-  def active?(%__MODULE__{membership_status: :active}), do: true
+  @doc """
+  Returns true if the client is active.
+  """
+  def active?(%__MODULE__{status: "active"}), do: true
   def active?(%__MODULE__{}), do: false
 
+  @doc """
+  Returns true if the client has a linked user account.
+  """
   def has_user_account?(%__MODULE__{user_id: nil}), do: false
   def has_user_account?(%__MODULE__{user_id: _}), do: true
 
-  def has_pending_invitation?(%__MODULE__{invitation_token: nil}), do: false
-  def has_pending_invitation?(%__MODULE__{invitation_token: _}), do: true
+  @doc """
+  Returns true if the client is in pending status (invited but not registered).
+  """
+  def pending?(%__MODULE__{status: "pending"}), do: true
+  def pending?(%__MODULE__{}), do: false
 end

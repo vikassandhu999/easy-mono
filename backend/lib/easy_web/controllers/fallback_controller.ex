@@ -1,212 +1,183 @@
 defmodule EasyWeb.FallbackController do
+  @moduledoc """
+  Centralized error handling for API controllers.
+
+  This controller handles errors returned from controller actions via the
+  `action_fallback` mechanism. It provides consistent error responses across
+  all API endpoints.
+
+  ## Supported Error Types
+
+  - `{:error, %Ecto.Changeset{}}` - Validation errors (422)
+  - `{:error, %Easy.ApiError{}}` - Structured API errors
+  - `{:error, atom}` - Common error atoms (404, 401, 403, etc.)
+  - `{:error, string}` - Generic error messages (422)
+
+  ## Error Response Format
+
+  All errors are rendered in a consistent format:
+
+  ```json
+  {
+    "error": {
+      "message": "Human-readable error message",
+      "code": "machine_readable_error_code",
+      "details": {...}
+    }
+  }
+  ```
+  """
+
   use EasyWeb, :controller
 
   require Logger
 
+  alias Easy.ApiError
+  alias EasyWeb.ApiHelpers
+
+  # ============================================
+  # STRUCTURED ERROR TYPES
+  # ============================================
+
+  @doc """
+  Handles Ecto changeset validation errors.
+
+  Returns a 422 Unprocessable Entity response with field-level error details.
+  """
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(json: EasyWeb.ErrorJSON)
-    |> render(:changeset_error, changeset: changeset)
+    ApiHelpers.render_validation_error(conn, changeset)
   end
 
-  def call(conn, {:error, %Easy.ApiError{} = error}) do
-    conn
-    |> put_status(error.status)
-    |> json(%{
-      code: error.code,
-      error: error.message,
-      details: error.details
-    })
+  # Handles structured ApiError responses
+  def call(conn, {:error, %ApiError{} = error}) do
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> json(%{
-      code: "not_found",
-      error: "Resource not found",
-      details: nil
-    })
-  end
+  # ============================================
+  # COMMON ERROR ATOMS (400-499)
+  # ============================================
 
-  def call(conn, {:error, :unauthorized}) do
-    conn
-    |> put_status(:unauthorized)
-    |> json(%{
-      code: "unauthorized",
-      error: "Unauthorized access",
-      details: nil
-    })
-  end
-
-  def call(conn, {:error, :forbidden}) do
-    conn
-    |> put_status(:forbidden)
-    |> json(%{
-      code: "forbidden",
-      error: "Access forbidden",
-      details: nil
-    })
-  end
-
+  # Handles :bad_request errors (400)
   def call(conn, {:error, :bad_request}) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{
-      code: "bad_request",
-      error: "Bad request",
-      details: nil
-    })
+    error = ApiError.bad_request("Bad request")
+    ApiHelpers.render_api_error(conn, error)
   end
 
+  # Handles :unauthorized errors (401)
+  def call(conn, {:error, :unauthorized}) do
+    error = ApiError.unauthorized("Authentication required")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles :forbidden errors (403)
+  def call(conn, {:error, :forbidden}) do
+    error = ApiError.forbidden("Access denied")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles :not_found errors (404)
+  def call(conn, {:error, :not_found}) do
+    error = ApiError.not_found("Resource")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles :unprocessable_entity errors (422)
   def call(conn, {:error, :unprocessable_entity}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> json(%{
-      code: "unprocessable_entity",
-      error: "Unprocessable entity",
-      details: nil
-    })
+    error = ApiError.unprocessable_entity("Unprocessable entity")
+    ApiHelpers.render_api_error(conn, error)
   end
 
+  # Handles :rate_limited errors (429)
+  def call(conn, {:error, :rate_limited}) do
+    error = ApiError.rate_limited("Too many requests. Please try again later.")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  def call(conn, {:error, :rate_limited, retry_after}) when is_integer(retry_after) do
+    error = ApiError.rate_limited(retry_after)
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # ============================================
+  # DOMAIN-SPECIFIC ERROR ATOMS
+  # ============================================
+
+  # Handles token-related errors
   def call(conn, {:error, :token_not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> json(%{
-      code: "token_not_found",
-      error: "Token not found",
-      details: nil
-    })
+    error = ApiError.not_found("Token")
+    ApiHelpers.render_api_error(conn, error)
   end
 
   def call(conn, {:error, :token_expired}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> json(%{
-      code: "token_expired",
-      error: "Token has expired. Please request a new OTP.",
-      details: nil
-    })
+    error = ApiError.unprocessable_entity("Token has expired. Please request a new OTP.")
+    ApiHelpers.render_api_error(conn, error)
   end
 
   def call(conn, {:error, :token_already_used}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> json(%{
-      code: "token_already_used",
-      error: "Token has already been used. Please request a new OTP.",
-      details: nil
-    })
+    error =
+      ApiError.unprocessable_entity("Token has already been used. Please request a new OTP.")
+
+    ApiHelpers.render_api_error(conn, error)
   end
 
   def call(conn, {:error, :invalid_otp}) do
-    conn
-    |> put_status(:unauthorized)
-    |> json(%{
-      code: "invalid_otp",
-      error: "Invalid OTP code. Please try again.",
-      details: nil
-    })
+    error = ApiError.unauthorized("Invalid OTP code. Please try again.")
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  def call(conn, {:error, :rate_limited}) do
-    conn
-    |> put_status(:too_many_requests)
-    |> json(%{
-      code: "rate_limited",
-      error: "Too many requests. Please try again later.",
-      details: nil
-    })
-  end
-
-  def call(conn, {:error, :role_not_found}) do
-    conn
-    |> put_status(:forbidden)
-    |> json(%{
-      code: "role_not_found",
-      error: "User does not have the required role",
-      details: nil
-    })
-  end
-
+  # Handles session-related errors
   def call(conn, {:error, :session_not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> json(%{
-      code: "session_not_found",
-      error: "Session not found",
-      details: nil
-    })
+    error = ApiError.not_found("Session")
+    ApiHelpers.render_api_error(conn, error)
   end
 
   def call(conn, {:error, :session_expired}) do
-    conn
-    |> put_status(:unauthorized)
-    |> json(%{
-      code: "session_expired",
-      error: "Session has expired",
-      details: nil
-    })
+    error = ApiError.unauthorized("Session has expired")
+    ApiHelpers.render_api_error(conn, error)
   end
 
   def call(conn, {:error, :refresh_failed}) do
-    conn
-    |> put_status(:internal_server_error)
-    |> json(%{
-      code: "refresh_failed",
-      error: "Failed to refresh session",
-      details: nil
-    })
+    error = ApiError.internal_server_error("Failed to refresh session")
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  # Handle errors with string messages
+  # Handles role/permission-related errors
+  def call(conn, {:error, :role_not_found}) do
+    error = ApiError.forbidden("User does not have the required role")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # ============================================
+  # GENERIC ERROR HANDLERS
+  # ============================================
+
+  # Handles errors with string messages
   def call(conn, {:error, message}) when is_binary(message) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> json(%{
-      code: "error",
-      error: message,
-      details: nil
-    })
+    error = ApiError.unprocessable_entity(message)
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  # Catch-all for unexpected error formats
+  # Handles unexpected error formats
   def call(conn, {:error, reason}) do
     Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
 
-    conn
-    |> put_status(:internal_server_error)
-    |> json(%{
-      code: "internal_server_error",
-      error: "An unexpected error occurred",
-      details: nil
-    })
+    error = ApiError.internal_server_error("An unexpected error occurred")
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  # Handle nil responses (shouldn't happen but just in case)
+  # Handles nil responses (shouldn't happen but provides safety)
   def call(conn, nil) do
     Logger.error("Controller action returned nil")
 
-    conn
-    |> put_status(:internal_server_error)
-    |> json(%{
-      code: "internal_server_error",
-      error: "An unexpected error occurred",
-      details: nil
-    })
+    error = ApiError.internal_server_error("An unexpected error occurred")
+    ApiHelpers.render_api_error(conn, error)
   end
 
   # Catch-all for any other unexpected responses
   def call(conn, other) do
     Logger.error("Unexpected response in FallbackController: #{inspect(other)}")
 
-    conn
-    |> put_status(:internal_server_error)
-    |> json(%{
-      code: "internal_server_error",
-      error: "An unexpected error occurred",
-      details: nil
-    })
+    error = ApiError.internal_server_error("An unexpected error occurred")
+    ApiHelpers.render_api_error(conn, error)
   end
 end

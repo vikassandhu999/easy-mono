@@ -9,6 +9,8 @@ defmodule Easy.Application do
       Easy.Repo,
       {DNSCluster, query: Application.get_env(:easy, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Easy.PubSub},
+      # Task supervisor for async email delivery
+      {Task.Supervisor, name: Easy.TaskSupervisor},
       # Start a worker by calling: Easy.Worker.start_link(arg)
       # {Easy.Worker, arg},
       # Start to serve requests, typically the last entry

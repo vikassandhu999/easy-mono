@@ -3,241 +3,109 @@ defmodule Easy.Accounts.OneTimeToken do
   One-Time Token for OTP-based authentication flows.
 
   Used for:
-  - Authentication (unified signup/signin OTP flow)
-  - Invitation acceptance (coach/client invitations)
-  - Phone/email verification
-  - Password reset tokens
-  - MFA setup and login
-  - Account deletion, business transfer, payment confirmation
+  - Email verification during coach registration
+  - Login authentication
+  - Client invitation acceptance
 
-  Tokens are marked as 'used' after successful verification to prevent reuse.
+  Tokens contain:
+  - A UUID token for invitation links
+  - A 6-digit OTP code (hashed) for verification
+  - Type to distinguish different use cases
+  - Expiration and attempt tracking for security
   """
 
   use Ecto.Schema
-  import Ecto.Query
   import Ecto.Changeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "one_time_tokens" do
-    # Purpose
-    field :token_type, Ecto.Enum,
-      values: [
-        :authentication,
-        :invitation_acceptance,
-        :phone_verification,
-        :email_verification,
-        :coach_invitation,
-        :account_deletion,
-        :business_transfer,
-        :payment_confirmation,
-        :session_verification,
-        :mfa_setup,
-        :mfa_login
-      ]
-
-    # Base for OTP generation
-    field :secret, :string
-
-    # Expiration
+    field :token, :string
+    field :code, :string
+    field :type, :string
+    field :email, :string
     field :expires_at, :utc_datetime
-
-    # Track usage
-    field :used, :boolean, default: false
     field :used_at, :utc_datetime
+    field :attempts, :integer, default: 0
+    field :metadata, :map
 
-    # Contact info
-    field :relates_to_email, :string
-    field :relates_to_phone, :string
-
-    # Rate limiting
-    field :attempt_count, :integer, default: 0
-    field :last_attempt_at, :utc_datetime
-
-    # Link to user (may be nil during signup)
     belongs_to :user, Easy.Accounts.User
 
-    # Flexible metadata storage for token-specific data
-    field :metadata, :map, default: %{}
-
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc """
-  Creates changeset for new token.
+  Changeset for creating a new OTP token.
+  Validates required fields and hashes the OTP code before storage.
   """
   def changeset(token, attrs) do
     token
     |> cast(attrs, [
-      :token_type,
-      :secret,
+      :token,
+      :code,
+      :type,
+      :email,
       :expires_at,
-      :used,
       :used_at,
-      :relates_to_email,
-      :relates_to_phone,
-      :attempt_count,
-      :last_attempt_at,
-      :user_id,
-      :metadata
+      :attempts,
+      :metadata,
+      :user_id
     ])
-    |> validate_required([:token_type, :secret, :expires_at])
-    |> validate_contact_info()
-    |> validate_email_format()
-    |> validate_phone_format()
-    |> validate_expiry_in_future()
+    |> validate_required([:token, :code, :type, :email, :expires_at])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email address")
+    |> validate_inclusion(:type, ["email_verification", "login", "client_invitation"])
+    |> validate_number(:attempts, greater_than_or_equal_to: 0)
+    |> hash_code()
+    |> unique_constraint(:token)
     |> foreign_key_constraint(:user_id)
   end
 
-  @doc """
-  Returns map of available token types.
-  """
-  def token_types do
-    %{
-      authentication: :authentication,
-      invitation_acceptance: :invitation_acceptance,
-      phone_verification: :phone_verification,
-      email_verification: :email_verification,
-      coach_invitation: :coach_invitation,
-      account_deletion: :account_deletion,
-      business_transfer: :business_transfer,
-      payment_confirmation: :payment_confirmation,
-      session_verification: :session_verification,
-      mfa_setup: :mfa_setup,
-      mfa_login: :mfa_login
-    }
-  end
-
-  @doc """
-  Marks token as used to prevent reuse.
-  """
-  def mark_as_used(token) do
-    change(token, %{
-      used: true,
-      used_at: DateTime.utc_now() |> DateTime.truncate(:second)
-    })
-  end
-
-  @doc """
-  """
-  def find_recent_auth_token(email, phone) do
-    sixty_seconds_ago = DateTime.add(DateTime.utc_now(), -60, :second)
-
-    query =
-      from(t in __MODULE__,
-        where: t.token_type == :authentication,
-        where: t.used == false,
-        where: t.inserted_at > ^sixty_seconds_ago
-      )
-
-    query =
-      cond do
-        not is_nil(email) and not is_nil(phone) ->
-          from(t in query, where: t.relates_to_email == ^email or t.relates_to_phone == ^phone)
-
-        not is_nil(email) ->
-          from(t in query, where: t.relates_to_email == ^email)
-
-        not is_nil(phone) ->
-          from(t in query, where: t.relates_to_phone == ^phone)
-
-        true ->
-          query
-      end
-
-    Easy.Repo.one(query)
-  end
-
-  @doc """
-  Increments attempt count for rate limiting.
-  Used when wrong OTP is entered.
-  """
-  def increment_attempt(token) do
-    change(token, %{
-      attempt_count: (token.attempt_count || 0) + 1,
-      last_attempt_at: DateTime.utc_now() |> DateTime.truncate(:second)
-    })
-  end
-
-  @doc """
-  Checks if token is valid (not expired, not used).
-  """
-  def valid?(%__MODULE__{} = token) do
-    not_expired?(token) and not token.used
-  end
-
-  @doc """
-  Checks if token has not expired.
-  """
-  def not_expired?(%__MODULE__{expires_at: expires_at}) do
-    DateTime.compare(DateTime.utc_now(), expires_at) == :lt
-  end
-
-  # ============================================
-  # PRIVATE VALIDATIONS
-  # ============================================
-
-  defp validate_contact_info(changeset) do
-    email = get_field(changeset, :relates_to_email)
-    phone = get_field(changeset, :relates_to_phone)
-
-    if is_nil(email) and is_nil(phone) do
-      add_error(changeset, :relates_to_email, "either email or phone must be provided")
-    else
-      changeset
-    end
-  end
-
-  defp validate_email_format(changeset) do
-    case get_field(changeset, :relates_to_email) do
+  # Hashes the OTP code using bcrypt before storing.
+  # Only hashes if the code field has changed.
+  defp hash_code(changeset) do
+    case get_change(changeset, :code) do
       nil ->
         changeset
 
-      _email ->
-        validate_format(changeset, :relates_to_email, ~r/^[^\s]+@[^\s]+$/,
-          message: "must be a valid email address"
-        )
-    end
-  end
-
-  defp validate_phone_format(changeset) do
-    case get_field(changeset, :relates_to_phone) do
-      nil ->
-        changeset
-
-      _phone ->
-        validate_format(changeset, :relates_to_phone, ~r/^\+?[1-9]\d{1,14}$/,
-          message: "must be a valid phone number in E.164 format"
-        )
-    end
-  end
-
-  defp validate_expiry_in_future(changeset) do
-    case get_change(changeset, :expires_at) do
-      nil ->
-        changeset
-
-      expires_at ->
-        if DateTime.compare(expires_at, DateTime.utc_now()) == :gt do
-          changeset
-        else
-          add_error(changeset, :expires_at, "must be in the future")
-        end
+      code ->
+        hashed_code = Bcrypt.hash_pwd_salt(code)
+        put_change(changeset, :code, hashed_code)
     end
   end
 
   @doc """
-  Gets a valid (not expired, not used) token by ID and type.
-  Used during OTP verification.
+  Verifies an OTP code against the hashed code in the token.
+  Returns true if the code matches, false otherwise.
   """
-  def get_valid_token(token_id, token_type) do
-    from(t in __MODULE__,
-      where: t.id == ^token_id,
-      where: t.token_type == ^token_type,
-      where: t.used == false,
-      where: t.expires_at > ^DateTime.utc_now()
-    )
-    |> Easy.Repo.one()
+  def verify_code(%__MODULE__{code: hashed_code}, code) when is_binary(code) do
+    Bcrypt.verify_pass(code, hashed_code)
+  end
+
+  @doc """
+  Checks if the token has expired.
+  Returns true if expired, false otherwise.
+  """
+  def expired?(%__MODULE__{expires_at: expires_at}) do
+    DateTime.compare(DateTime.utc_now(), expires_at) != :lt
+  end
+
+  @doc """
+  Checks if the token has been used.
+  Returns true if used, false otherwise.
+  """
+  def used?(%__MODULE__{used_at: used_at}) do
+    not is_nil(used_at)
+  end
+
+  @doc """
+  Marks the token as used with the current timestamp.
+  """
+  def mark_used_changeset(token) do
+    change(token, used_at: DateTime.utc_now() |> DateTime.truncate(:second))
+  end
+
+  @doc """
+  Increments the attempt counter for the token.
+  """
+  def increment_attempts_changeset(token) do
+    change(token, attempts: token.attempts + 1)
   end
 end

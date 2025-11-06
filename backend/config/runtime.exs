@@ -10,7 +10,16 @@ import Config
 # JWT Secret for all environments
 config :easy,
   jwt_secret:
-    System.get_env("JWT_SECRET") || "dev-secret-key-minimum-32-characters-long-for-hs256"
+    System.get_env("JWT_SECRET") || "dev-secret-key-minimum-32-characters-long-for-hs256",
+  app_url: System.get_env("APP_URL") || "http://localhost:4000"
+
+# Email configuration for all environments
+config :easy, :email,
+  from_email: {
+    System.get_env("EMAIL_FROM_NAME") || "Easy Coaching",
+    System.get_env("EMAIL_FROM_ADDRESS") || "noreply@easycoaching.com"
+  },
+  app_url: System.get_env("APP_URL") || "http://localhost:4000"
 
 # ## Using releases
 #
@@ -117,18 +126,42 @@ if config_env() == :prod do
   # ## Configuring the mailer
   #
   # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :easy, Easy.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  # Configure Swoosh adapter based on environment variables
+  mailer_adapter = System.get_env("MAILER_ADAPTER") || "postmark"
+
+  case mailer_adapter do
+    "postmark" ->
+      config :easy, Easy.Mailer,
+        adapter: Swoosh.Adapters.Postmark,
+        api_key: System.get_env("POSTMARK_API_KEY")
+
+    "sendgrid" ->
+      config :easy, Easy.Mailer,
+        adapter: Swoosh.Adapters.Sendgrid,
+        api_key: System.get_env("SENDGRID_API_KEY")
+
+    "mailgun" ->
+      config :easy, Easy.Mailer,
+        adapter: Swoosh.Adapters.Mailgun,
+        api_key: System.get_env("MAILGUN_API_KEY"),
+        domain: System.get_env("MAILGUN_DOMAIN")
+
+    "smtp" ->
+      config :easy, Easy.Mailer,
+        adapter: Swoosh.Adapters.SMTP,
+        relay: System.get_env("SMTP_RELAY"),
+        username: System.get_env("SMTP_USERNAME"),
+        password: System.get_env("SMTP_PASSWORD"),
+        port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+        tls: :always
+
+    _ ->
+      # Default to Postmark
+      config :easy, Easy.Mailer,
+        adapter: Swoosh.Adapters.Postmark,
+        api_key: System.get_env("POSTMARK_API_KEY")
+  end
+
+  # Configure Swoosh API client to use Req (already available in dependencies)
+  config :swoosh, :api_client, Swoosh.ApiClient.Req
 end

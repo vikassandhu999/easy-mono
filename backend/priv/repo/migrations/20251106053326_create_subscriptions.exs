@@ -15,6 +15,10 @@ defmodule Easy.Repo.Migrations.CreateSubscriptions do
     end
 
     create index(:subscriptions, [:business_id])
-    create unique_index(:subscriptions, [:business_id], where: "status = 'active'", name: :subscriptions_business_active_index)
+
+    create unique_index(:subscriptions, [:business_id],
+             where: "status = 'active'",
+             name: :subscriptions_business_active_index
+           )
   end
 end

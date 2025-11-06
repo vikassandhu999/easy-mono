@@ -17,6 +17,10 @@ defmodule Easy.Repo.Migrations.CreateClients do
     create index(:clients, [:user_id])
     create index(:clients, [:business_id])
     create index(:clients, [:email])
-    create unique_index(:clients, [:user_id, :business_id], where: "user_id IS NOT NULL", name: :clients_user_business_index)
+
+    create unique_index(:clients, [:user_id, :business_id],
+             where: "user_id IS NOT NULL",
+             name: :clients_user_business_index
+           )
   end
 end

@@ -70,8 +70,6 @@ defmodule Easy.Auth.JWT do
   """
   def default_expiry_minutes, do: @access_token_expiry_minutes
 
-
-
   defp build_claims(user, session, expiry_minutes, issuer, audience) do
     now = DateTime.utc_now()
     exp_time = DateTime.add(now, expiry_minutes * 60, :second)

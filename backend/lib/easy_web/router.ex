@@ -1,113 +1,113 @@
 defmodule EasyWeb.Router do
   use EasyWeb, :router
 
+  # ============================================
+  # PIPELINES
+  # ============================================
+
   pipeline :api do
     plug :accepts, ["json"]
   end
 
-  # Health check
+  pipeline :authenticated do
+    plug EasyWeb.Plugs.EnsureAuthenticated
+    plug EasyWeb.Plugs.LoadCurrentUser
+  end
+
+  # ============================================
+  # HEALTH CHECK
+  # ============================================
+
   scope "/api", EasyWeb do
     pipe_through :api
 
     get "/health", HealthController, :index
   end
 
-  scope "/api/v1/auth", EasyWeb.Auth do
+  # ============================================
+  # OAUTH 2.0 ENDPOINTS
+  # ============================================
+
+  scope "/oauth", EasyWeb do
     pipe_through :api
 
-    post "/request-otp", OTPController, :request
-    post "/verify-otp", OTPController, :verify
-    post "/refresh", SessionController, :refresh
-    post "/logout", SessionController, :logout
+    post "/authorize", OAuthController, :authorize
+    post "/token", OAuthController, :token
+    post "/revoke", OAuthController, :revoke
+    get "/userinfo", OAuthController, :userinfo
   end
 
-  # scope "/api/v1/invitations", EasyWeb.Invitations do
-  #   pipe_through :api
+  # ============================================
+  # PUBLIC AUTHENTICATION ENDPOINTS
+  # ============================================
 
-  #   get "/:token", InvitationController, :show
-  #   post "/:token/accept", InvitationController, :accept
-  # end
+  scope "/api/auth", EasyWeb do
+    pipe_through :api
 
-  # # ============================================
-  # # AUTHENTICATED USER ROUTES (Onboarding)
-  # # ============================================
+    post "/register", AuthController, :register
+  end
 
-  # scope "/api/v1/onboarding", EasyWeb.Onboarding do
-  #   pipe_through [:api, :authenticate]
+  # ============================================
+  # PUBLIC INVITATION ENDPOINTS
+  # ============================================
 
-  #   get "/status", OnboardingController, :status
-  #   post "/business", OnboardingController, :create_business
-  #   post "/complete", OnboardingController, :complete
-  # end
+  scope "/api/invitations", EasyWeb do
+    pipe_through :api
 
-  # # ============================================
-  # # COACH ROUTES (Authenticated + Coach Role)
-  # # ============================================
+    get "/:token", ClientController, :show_invitation
+    post "/:token/accept", ClientController, :accept_invitation
+  end
 
-  # scope "/api/v1/coach", EasyWeb.Coach do
-  #   pipe_through [:api, :authenticate, :require_coach]
+  # ============================================
+  # AUTHENTICATED ONBOARDING ENDPOINTS
+  # ============================================
 
-  #   # Dashboard
-  #   get "/dashboard", DashboardController, :index
+  scope "/api/onboarding", EasyWeb do
+    pipe_through [:api, :authenticated]
 
-  #   # Profile
-  #   get "/profile", ProfileController, :show
-  #   put "/profile", ProfileController, :update
-  #   patch "/profile", ProfileController, :update
+    post "/business", OnboardingController, :create_business
+  end
 
-  #   # Business management
-  #   get "/business", BusinessController, :show
-  #   put "/business", BusinessController, :update
-  #   patch "/business", BusinessController, :update
+  # ============================================
+  # AUTHENTICATED BUSINESS ENDPOINTS
+  # ============================================
 
-  #   # Client management
-  #   get "/clients", ClientController, :index
-  #   post "/clients", ClientController, :create
-  #   get "/clients/:id", ClientController, :show
-  #   put "/clients/:id", ClientController, :update
-  #   patch "/clients/:id", ClientController, :update
-  #   delete "/clients/:id", ClientController, :delete
+  scope "/api/businesses", EasyWeb do
+    pipe_through [:api, :authenticated]
 
-  #   # Client invitations
-  #   post "/clients/invite", ClientController, :invite
-  #   post "/clients/:id/resend-invitation", ClientController, :resend_invitation
+    get "/:id", BusinessController, :show
+    patch "/:id", BusinessController, :update
+    get "/:id/coaches", BusinessController, :list_coaches
+    get "/:id/clients", BusinessController, :list_clients
+    get "/:id/subscription", BusinessController, :show_subscription
+  end
 
-  #   # Client subscriptions (nested under client)
-  #   get "/clients/:client_id/subscriptions", ClientSubscriptionController, :index
-  #   post "/clients/:client_id/subscriptions", ClientSubscriptionController, :create
+  # ============================================
+  # AUTHENTICATED COACH ENDPOINTS
+  # ============================================
 
-  #   # Subscriptions (direct access)
-  #   get "/subscriptions", ClientSubscriptionController, :list_all
-  #   get "/subscriptions/:id", ClientSubscriptionController, :show
-  #   put "/subscriptions/:id", ClientSubscriptionController, :update
-  #   patch "/subscriptions/:id", ClientSubscriptionController, :update
-  #   delete "/subscriptions/:id", ClientSubscriptionController, :delete
+  scope "/api/coaches", EasyWeb do
+    pipe_through [:api, :authenticated]
 
-  #   # Subscription actions
-  #   post "/subscriptions/:id/record-payment", ClientSubscriptionController, :record_payment
-  #   post "/subscriptions/:id/cancel", ClientSubscriptionController, :cancel
-  # end
+    get "/:id", CoachController, :show
+    patch "/:id", CoachController, :update
+    get "/:id/clients", CoachController, :list_clients
+    post "/:id/clients/:client_id/assign", CoachController, :assign_client
+    delete "/:id/clients/:client_id/unassign", CoachController, :unassign_client
+  end
 
-  # # ============================================
-  # # CLIENT ROUTES (Authenticated + Client Role)
-  # # ============================================
+  # ============================================
+  # AUTHENTICATED CLIENT ENDPOINTS
+  # ============================================
 
-  # scope "/api/v1/client", EasyWeb.Client do
-  #   pipe_through [:api, :authenticate, :require_client]
+  scope "/api/clients", EasyWeb do
+    pipe_through [:api, :authenticated]
 
-  #   # Dashboard
-  #   get "/dashboard", DashboardController, :index
-
-  #   # Profile
-  #   get "/profile", ProfileController, :show
-  #   put "/profile", ProfileController, :update
-  #   patch "/profile", ProfileController, :update
-
-  #   # Coach info
-  #   get "/coach", CoachController, :show
-
-  #   # Subscriptions (read-only)
-  #   get "/subscriptions", SubscriptionController, :index
-  #   get "/subscriptions/:id", SubscriptionController, :show
-  # end
+    get "/", ClientController, :index
+    post "/invite", ClientController, :invite
+    get "/:id", ClientController, :show
+    patch "/:id", ClientController, :update
+    get "/:id/coaches", ClientController, :list_coaches
+    patch "/:id/status", ClientController, :update_status
+  end
 end

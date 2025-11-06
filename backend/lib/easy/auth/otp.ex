@@ -12,7 +12,6 @@ defmodule Easy.Auth.OTP do
 
   @otp_validity_window_seconds 30
 
-
   @doc """
   Returns the OTP validity window in seconds.
   """
@@ -22,7 +21,6 @@ defmodule Easy.Auth.OTP do
   Returns the bypass code used in development.
   """
   def bypass_code, do: "123456"
-
 
   @doc """
   Generates an OTP code from a secret.
@@ -58,7 +56,6 @@ defmodule Easy.Auth.OTP do
         verify_totp(secret, code)
     end
   end
-
 
   defp verify_totp(secret, code) do
     current_time = System.os_time(:second)

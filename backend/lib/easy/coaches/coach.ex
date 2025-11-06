@@ -1,141 +1,101 @@
-defmodule Easy.Organizations.Coach do
+defmodule Easy.Coaches.Coach do
+  @moduledoc """
+  Coach schema representing a coach profile within a business.
+
+  Coaches provide coaching services and manage clients within their business context.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Accounts.User
-  alias Easy.Organizations.Business
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "coaches" do
-    field :name, :string
-    field :title, :string
-    field :about, :string
-    field :profile_picture_url, :string
+    field :bio, :string
+    field :specialties, {:array, :string}
+    field :credentials, :map
+    field :status, :string, default: "active"
 
-    field :contact_email, :string
-    field :contact_phone, :string
+    belongs_to :user, Easy.Accounts.User
+    belongs_to :business, Easy.Organizations.Business
+    many_to_many :clients, Easy.Clients.Client, join_through: Easy.Clients.CoachClientAssignment
 
-    field :specializations, {:array, :string}
+    timestamps()
+  end
 
-    field :is_active, :boolean, default: true
+  @valid_statuses ~w(active inactive suspended)
 
-    field :website, :string
-    field :instagram_handle, :string
-    field :facebook_url, :string
-    field :linkedin_url, :string
-    field :twitter_handle, :string
-    field :youtube_url, :string
-
-    field :settings, :map, default: %{}
-
-    # Relationships
-    belongs_to :business, Business
-    belongs_to :user, User
-
-    timestamps(type: :utc_datetime)
+  @doc """
+  Changeset for creating or updating a coach profile.
+  Validates required fields, status values, and unique constraint on user_id + business_id.
+  """
+  def changeset(coach, attrs) do
+    coach
+    |> cast(attrs, [:bio, :specialties, :credentials, :status])
+    |> validate_status()
+    |> validate_credentials()
   end
 
   @doc """
-  Changeset for creating a new coach.
+  Changeset for creating a new coach profile.
+  Requires user_id and business_id, sets default status to active.
   """
   def create_changeset(coach, attrs) do
     coach
-    |> cast(attrs, [
-      :business_id,
-      :user_id,
-      :name,
-      :title,
-      :about,
-      :profile_picture_url,
-      :contact_email,
-      :contact_phone,
-      :specializations,
-      :is_active,
-      :website,
-      :instagram_handle,
-      :facebook_url,
-      :linkedin_url,
-      :twitter_handle,
-      :youtube_url,
-      :settings
-    ])
-    |> validate_required([:business_id, :user_id, :name])
-    |> validate_length(:name, min: 2, max: 100)
-    |> validate_email(:contact_email)
-    |> validate_urls()
-    |> foreign_key_constraint(:business_id)
+    |> cast(attrs, [:user_id, :business_id, :bio, :specialties, :credentials, :status])
+    |> validate_required([:user_id, :business_id])
+    |> validate_status()
+    |> validate_credentials()
+    |> ensure_status()
     |> foreign_key_constraint(:user_id)
-    |> unique_constraint([:business_id, :user_id],
-      message: "already exists as a coach for this business"
+    |> foreign_key_constraint(:business_id)
+    |> unique_constraint([:user_id, :business_id],
+      name: :coaches_user_id_business_id_index,
+      message: "already has a coach profile for this business"
     )
   end
 
+  # Ensure status is set to active if not provided
+  defp ensure_status(changeset) do
+    case get_field(changeset, :status) do
+      nil -> put_change(changeset, :status, "active")
+      _ -> changeset
+    end
+  end
+
   @doc """
-  Changeset for updating coach details.
+  Changeset for updating coach profile details.
+  Allows updating bio, specialties, credentials, and status.
   """
   def update_changeset(coach, attrs) do
     coach
-    |> cast(attrs, [
-      :name,
-      :title,
-      :about,
-      :profile_picture_url,
-      :contact_email,
-      :contact_phone,
-      :specializations,
-      :is_active,
-      :website,
-      :instagram_handle,
-      :facebook_url,
-      :linkedin_url,
-      :twitter_handle,
-      :youtube_url,
-      :settings
-    ])
-    |> validate_length(:name, min: 2, max: 100)
-    |> validate_email(:contact_email)
-    |> validate_urls()
+    |> cast(attrs, [:bio, :specialties, :credentials, :status])
+    |> validate_status()
+    |> validate_credentials()
   end
 
   # Private validation helpers
 
-  defp validate_email(changeset, field) do
-    case get_field(changeset, field) do
-      nil ->
-        changeset
-
-      _email ->
-        validate_format(changeset, field, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
-    end
-  end
-
-  defp validate_urls(changeset) do
+  defp validate_status(changeset) do
     changeset
-    |> validate_url(:website)
-    |> validate_url(:facebook_url)
-    |> validate_url(:linkedin_url)
-    |> validate_url(:youtube_url)
+    |> validate_inclusion(:status, @valid_statuses,
+      message: "must be one of: #{Enum.join(@valid_statuses, ", ")}"
+    )
   end
 
-  defp validate_url(changeset, field) do
-    case get_field(changeset, field) do
+  defp validate_credentials(changeset) do
+    case get_change(changeset, :credentials) do
       nil ->
         changeset
 
-      url ->
-        if String.starts_with?(url, ["http://", "https://"]) do
-          changeset
-        else
-          add_error(changeset, field, "must start with http:// or https://")
-        end
+      credentials when is_map(credentials) ->
+        changeset
+
+      _ ->
+        add_error(changeset, :credentials, "must be a valid map")
     end
   end
 
   @doc """
   Returns true if the coach is active.
   """
-  def active?(%__MODULE__{is_active: true}), do: true
+  def active?(%__MODULE__{status: "active"}), do: true
   def active?(%__MODULE__{}), do: false
 end

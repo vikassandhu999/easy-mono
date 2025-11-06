@@ -6,11 +6,21 @@ defmodule EasyWeb.Plugs.ApiErrorHandler do
   are converted to proper JSON error responses instead of HTML error pages.
 
   Use this in your endpoint or router to ensure API routes always return JSON.
+
+  ## Handled Exception Types
+
+  - `Ecto.NoResultsError` - Returns 404 Not Found
+  - `Ecto.InvalidChangesetError` - Returns 422 Validation Error
+  - `Phoenix.Router.NoRouteError` - Returns 404 Not Found
+  - `Ecto.ConstraintError` - Returns 422 Constraint Violation
+  - `DBConnection.ConnectionError` - Returns 503 Service Unavailable
+  - All other exceptions - Returns 500 Internal Server Error
   """
 
-  import Plug.Conn
-  import Phoenix.Controller, only: [json: 2]
   require Logger
+
+  alias Easy.ApiError
+  alias EasyWeb.ApiHelpers
 
   def init(opts), do: opts
 
@@ -23,6 +33,10 @@ defmodule EasyWeb.Plugs.ApiErrorHandler do
     end
   end
 
+  # ============================================
+  # PRIVATE HELPERS
+  # ============================================
+
   defp handle_error(conn, kind, reason, stack) do
     # Log the error for debugging
     Logger.error("""
@@ -30,72 +44,54 @@ defmodule EasyWeb.Plugs.ApiErrorHandler do
     #{Exception.format(kind, reason, stack)}
     """)
 
-    # Determine HTTP status code and error message
-    {status, code, message} = error_info(kind, reason)
+    # Convert exception to ApiError
+    error = exception_to_api_error(kind, reason)
 
     # Send JSON error response
-    conn
-    |> put_status(status)
-    |> json(%{
-      code: code,
-      error: message,
-      details: error_details(reason)
-    })
+    ApiHelpers.render_api_error(conn, error)
   end
 
-  defp error_info(:error, %Ecto.NoResultsError{}) do
-    {404, "not_found", "Resource not found"}
+  # Converts exceptions to ApiError structs
+  defp exception_to_api_error(:error, %Ecto.NoResultsError{}) do
+    ApiError.not_found("Resource")
   end
 
-  defp error_info(:error, %Ecto.InvalidChangesetError{changeset: changeset}) do
-    details = traverse_errors(changeset)
-    {422, "validation_error", "Validation failed", details}
+  defp exception_to_api_error(:error, %Ecto.InvalidChangesetError{changeset: changeset}) do
+    ApiError.validation_error(changeset)
   end
 
-  defp error_info(:error, %Phoenix.Router.NoRouteError{}) do
-    {404, "not_found", "Route not found"}
+  defp exception_to_api_error(:error, %Phoenix.Router.NoRouteError{}) do
+    ApiError.not_found("Route")
   end
 
-  defp error_info(:error, %ArgumentError{message: _message}) do
-    # This catches the DateTime truncation error and other argument errors
-    {500, "internal_server_error", "Internal server error"}
+  defp exception_to_api_error(:error, %ArgumentError{}) do
+    # This catches DateTime truncation errors and other argument errors
+    ApiError.internal_server_error("Internal server error")
   end
 
-  defp error_info(:error, %Ecto.ConstraintError{} = _error) do
-    {422, "constraint_violation", "Database constraint violation"}
+  defp exception_to_api_error(:error, %Ecto.ConstraintError{}) do
+    ApiError.unprocessable_entity("Database constraint violation")
   end
 
-  defp error_info(:error, %DBConnection.ConnectionError{}) do
-    {503, "service_unavailable", "Database connection error"}
+  defp exception_to_api_error(:error, %DBConnection.ConnectionError{}) do
+    %ApiError{
+      status: 503,
+      code: "service_unavailable",
+      message: "Database connection error",
+      details: nil,
+      headers: nil
+    }
   end
 
-  defp error_info(:throw, _value) do
-    {500, "internal_server_error", "Internal server error"}
+  defp exception_to_api_error(:throw, _value) do
+    ApiError.internal_server_error("Internal server error")
   end
 
-  defp error_info(:exit, _reason) do
-    {500, "internal_server_error", "Internal server error"}
+  defp exception_to_api_error(:exit, _reason) do
+    ApiError.internal_server_error("Internal server error")
   end
 
-  defp error_info(_kind, _reason) do
-    {500, "internal_server_error", "An unexpected error occurred"}
-  end
-
-  defp error_details(%{message: message}) when is_binary(message) do
-    %{message: message}
-  end
-
-  defp error_details(%Ecto.Changeset{} = changeset) do
-    traverse_errors(changeset)
-  end
-
-  defp error_details(_), do: nil
-
-  defp traverse_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end)
+  defp exception_to_api_error(_kind, _reason) do
+    ApiError.internal_server_error("An unexpected error occurred")
   end
 end

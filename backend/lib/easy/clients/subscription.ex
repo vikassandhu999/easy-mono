@@ -2,7 +2,8 @@ defmodule Easy.Clients.Subscription do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Organizations.{Client, Business}
+  alias Easy.Clients.Client
+  alias Easy.Organizations.Business
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id

@@ -1,240 +1,82 @@
 defmodule Easy.Accounts.Session do
+  @moduledoc """
+  Session schema for managing authenticated user sessions.
+
+  Sessions store JWT token information and track session lifecycle:
+  - Access tokens (JWT) for API authentication
+  - Refresh tokens for obtaining new access tokens
+  - Expiration and activity tracking
+  - Revocation support for logout and security
+
+  Sessions are created after successful OTP verification and can be
+  refreshed using the refresh token until revoked or expired.
+  """
+
   use Ecto.Schema
-
   import Ecto.Changeset
-  import Ecto.Query
 
-  alias Easy.Accounts.User
-  alias Easy.Repo
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
-  schema "user_sessions" do
+  schema "sessions" do
+    field :token, :string
     field :refresh_token, :string
     field :expires_at, :utc_datetime
-    field :refreshed_at, :utc_datetime
-    field :revoked_at, :utc_datetime
     field :last_activity_at, :utc_datetime
+    field :revoked_at, :utc_datetime
 
-    # Device information
-    field :device_name, :string
-    field :device_type, :string
-    field :user_agent, :string
-    field :ip, :string
+    belongs_to :user, Easy.Accounts.User
 
-    belongs_to :user, User
-
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc """
   Changeset for creating a new session.
+  Validates required fields and ensures tokens are unique.
   """
   def changeset(session, attrs) do
     session
-    |> cast(attrs, [
-      :user_id,
-      :refresh_token,
-      :expires_at,
-      :refreshed_at,
-      :revoked_at,
-      :last_activity_at,
-      :device_name,
-      :device_type,
-      :user_agent,
-      :ip
-    ])
-    |> validate_required([:user_id, :refresh_token, :expires_at])
-    |> validate_length(:refresh_token, min: 32)
-    |> validate_inclusion(:device_type, ["mobile", "web", "desktop", "tablet", "unknown"],
-      message: "must be one of: mobile, web, desktop, tablet, unknown"
-    )
+    |> cast(attrs, [:token, :refresh_token, :expires_at, :last_activity_at, :revoked_at, :user_id])
+    |> validate_required([:token, :refresh_token, :expires_at, :last_activity_at, :user_id])
+    |> unique_constraint(:token)
     |> unique_constraint(:refresh_token)
     |> foreign_key_constraint(:user_id)
   end
 
   @doc """
-  Changeset for creating a new session.
-  Sets default expiration of 30 days if not provided.
+  Changeset for revoking a session.
+  Sets revoked_at to the current timestamp.
   """
-  def create_changeset(session, attrs) do
-    attrs_with_defaults =
-      Map.put_new(attrs, :expires_at, DateTime.add(DateTime.utc_now(), 30, :day))
-
-    session
-    |> cast(attrs_with_defaults, [
-      :user_id,
-      :refresh_token,
-      :expires_at,
-      :refreshed_at,
-      :device_name,
-      :device_type,
-      :user_agent,
-      :ip
-    ])
-    |> validate_required([:user_id, :refresh_token, :expires_at])
-    |> validate_length(:refresh_token, min: 32)
-    |> unique_constraint(:refresh_token)
-    |> foreign_key_constraint(:user_id)
+  def revoke_changeset(session) do
+    change(session, revoked_at: DateTime.utc_now() |> DateTime.truncate(:second))
   end
 
   @doc """
-  Changeset for refreshing a session.
+  Changeset for updating last activity timestamp.
+  Used to track session usage and implement idle timeout.
   """
-  def refresh_changeset(session, attrs) do
-    session
-    |> cast(attrs, [:refresh_token, :refreshed_at, :expires_at, :last_activity_at])
-    |> validate_required([:refresh_token, :refreshed_at, :expires_at])
-    |> validate_length(:refresh_token, min: 32)
-    |> unique_constraint(:refresh_token)
+  def update_activity_changeset(session) do
+    change(session, last_activity_at: DateTime.utc_now() |> DateTime.truncate(:second))
   end
 
   @doc """
-  Marks a session as revoked.
-  Returns {:ok, session} or {:error, changeset}.
+  Checks if the session has expired.
+  Returns true if expired, false otherwise.
   """
-  def revoke(%__MODULE__{} = session) do
-    session
-    |> change(%{revoked_at: DateTime.utc_now() |> DateTime.truncate(:second)})
-    |> Repo.update()
+  def expired?(%__MODULE__{expires_at: expires_at}) do
+    DateTime.compare(DateTime.utc_now(), expires_at) != :lt
   end
 
   @doc """
-  Refreshes a session with a new refresh token and expiry.
-  Returns {:ok, session} or {:error, changeset}.
+  Checks if the session has been revoked.
+  Returns true if revoked, false otherwise.
   """
-  def refresh(%__MODULE__{} = session, new_refresh_token, new_expires_at) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    session
-    |> refresh_changeset(%{
-      refresh_token: new_refresh_token,
-      refreshed_at: now,
-      expires_at: new_expires_at,
-      last_activity_at: now
-    })
-    |> Repo.update()
+  def revoked?(%__MODULE__{revoked_at: revoked_at}) do
+    not is_nil(revoked_at)
   end
 
   @doc """
-  Updates the last_activity_at timestamp for a session.
-  Returns {:ok, session} or {:error, changeset}.
+  Checks if the session is valid (not expired and not revoked).
+  Returns true if valid, false otherwise.
   """
-  def touch_activity(%__MODULE__{} = session) do
-    session
-    |> change(%{last_activity_at: DateTime.utc_now() |> DateTime.truncate(:second)})
-    |> Repo.update()
-  end
-
-  @doc """
-  Checks if a session is currently active (not expired and not revoked).
-  """
-  def active?(%__MODULE__{} = session) do
-    now = DateTime.utc_now()
-
-    is_nil(session.revoked_at) &&
-      DateTime.compare(session.expires_at, now) == :gt
-  end
-
-  @doc """
-  Query to find an active session by ID.
-  Returns the session if active, nil otherwise.
-  """
-  def get_active_session(session_id) do
-    now = DateTime.utc_now()
-
-    from(s in __MODULE__,
-      where: s.id == ^session_id,
-      where: is_nil(s.revoked_at),
-      where: s.expires_at > ^now
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Query to find an active session by refresh token.
-  Returns the session if active, nil otherwise.
-  """
-  def get_active_session_by_refresh_token(refresh_token) do
-    now = DateTime.utc_now()
-
-    from(s in __MODULE__,
-      where: s.refresh_token == ^refresh_token,
-      where: is_nil(s.revoked_at),
-      where: s.expires_at > ^now
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Query to get all active sessions for a user.
-  """
-  def get_active_sessions_for_user(user_id) do
-    now = DateTime.utc_now()
-
-    from(s in __MODULE__,
-      where: s.user_id == ^user_id,
-      where: is_nil(s.revoked_at),
-      where: s.expires_at > ^now,
-      order_by: [desc: s.last_activity_at]
-    )
-    |> Repo.all()
-  end
-
-  @doc """
-  Query to get all sessions (including inactive) for a user.
-  Useful for "active devices" management UI.
-  """
-  def get_all_sessions_for_user(user_id) do
-    from(s in __MODULE__,
-      where: s.user_id == ^user_id,
-      order_by: [desc: s.last_activity_at]
-    )
-    |> Repo.all()
-  end
-
-  @doc """
-  Revokes all active sessions for a user (logout from all devices).
-  Returns {count, nil} where count is the number of sessions revoked.
-  """
-  def revoke_all_for_user(user_id) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    from(s in __MODULE__,
-      where: s.user_id == ^user_id,
-      where: is_nil(s.revoked_at),
-      where: s.expires_at > ^now
-    )
-    |> Repo.update_all(set: [revoked_at: now])
-  end
-
-  @doc """
-  Deletes old sessions (revoked or expired) older than the given date.
-  Useful for cleanup jobs.
-  Returns {count, nil} where count is the number of deleted sessions.
-  """
-  def delete_old_sessions(older_than \\ nil) do
-    cutoff_date = older_than || DateTime.add(DateTime.utc_now(), -90, :day)
-    now = DateTime.utc_now()
-
-    from(s in __MODULE__,
-      where:
-        (not is_nil(s.revoked_at) and s.revoked_at < ^cutoff_date) or
-          (s.expires_at < ^now and s.expires_at < ^cutoff_date)
-    )
-    |> Repo.delete_all()
-  end
-
-  @doc """
-  Returns a query for sessions that are expired or revoked.
-  Useful for cleanup or analytics.
-  """
-  def inactive_sessions_query do
-    now = DateTime.utc_now()
-
-    from(s in __MODULE__,
-      where: not is_nil(s.revoked_at) or s.expires_at <= ^now
-    )
+  def valid?(%__MODULE__{} = session) do
+    not expired?(session) and not revoked?(session)
   end
 end

@@ -1,9 +1,9 @@
-defmodule Easy.Tenant.Coach do
+defmodule Easy.Organizations.Coach do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Identity.User
-  alias Easy.Tenant.{Business, Client}
+  alias Easy.Accounts.User
+  alias Easy.Organizations.Business
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -33,7 +33,6 @@ defmodule Easy.Tenant.Coach do
     # Relationships
     belongs_to :business, Business
     belongs_to :user, User
-    has_many :clients, Client
 
     timestamps(type: :utc_datetime)
   end

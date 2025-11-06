@@ -1,30 +1,24 @@
-defmodule Easy.Tenant.Client do
+defmodule Easy.Clients.Client do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Identity.User
-  alias Easy.Tenant.{Business, Coach, ClientSubscription}
+  alias Easy.Accounts.User
+  alias Easy.Organizations.Business
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "clients" do
-    # Identity
     field :name, :string
-
-    # Contact info
     field :email, :string
     field :phone, :string
 
-    # Invitation fields (for clients not yet registered)
     field :invitation_token, :string
     field :invitation_email, :string
     field :invitation_phone, :string
 
-    # Notes from coach
     field :notes, :string
 
-    # Membership details
     field :membership_status, Ecto.Enum,
       values: [:active, :inactive, :paused, :pending],
       default: :active
@@ -32,21 +26,15 @@ defmodule Easy.Tenant.Client do
     field :membership_start_date, :date
     field :membership_end_date, :date
 
-    # Audit
     field :created_by, :binary_id
 
-    # Relationships
     belongs_to :business, Business
     belongs_to :user, User
-    belongs_to :coach, Coach
-    has_many :subscriptions, ClientSubscription
+    # has_many :subscriptions, ClientSubscription
 
     timestamps(type: :utc_datetime)
   end
 
-  @doc """
-  Changeset for creating a new client (invited or direct signup).
-  """
   def create_changeset(client, attrs) do
     client
     |> cast(attrs, [
@@ -83,9 +71,6 @@ defmodule Easy.Tenant.Client do
     )
   end
 
-  @doc """
-  Changeset for updating client details.
-  """
   def update_changeset(client, attrs) do
     client
     |> cast(attrs, [
@@ -112,9 +97,6 @@ defmodule Easy.Tenant.Client do
     )
   end
 
-  @doc """
-  Changeset for linking a client to a registered user after invitation acceptance.
-  """
   def link_user_changeset(client, user_id) do
     client
     |> change(user_id: user_id)
@@ -122,17 +104,12 @@ defmodule Easy.Tenant.Client do
     |> foreign_key_constraint(:user_id)
   end
 
-  @doc """
-  Changeset for updating membership status.
-  """
   def membership_changeset(client, attrs) do
     client
     |> cast(attrs, [:membership_status, :membership_start_date, :membership_end_date])
     |> validate_required([:membership_status])
     |> validate_membership_dates()
   end
-
-  # Private validation helpers
 
   defp validate_contact_method(changeset) do
     email = get_field(changeset, :email)
@@ -195,21 +172,12 @@ defmodule Easy.Tenant.Client do
     end
   end
 
-  @doc """
-  Returns true if the client is active.
-  """
   def active?(%__MODULE__{membership_status: :active}), do: true
   def active?(%__MODULE__{}), do: false
 
-  @doc """
-  Returns true if the client has a linked user account.
-  """
   def has_user_account?(%__MODULE__{user_id: nil}), do: false
   def has_user_account?(%__MODULE__{user_id: _}), do: true
 
-  @doc """
-  Returns true if the client has a pending invitation.
-  """
   def has_pending_invitation?(%__MODULE__{invitation_token: nil}), do: false
   def has_pending_invitation?(%__MODULE__{invitation_token: _}), do: true
 end

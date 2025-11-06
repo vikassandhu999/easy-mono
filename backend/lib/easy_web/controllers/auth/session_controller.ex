@@ -1,7 +1,7 @@
 defmodule EasyWeb.Auth.SessionController do
   use EasyWeb, :controller
 
-  alias Easy.Identity
+  alias Easy.Accounts
   alias Easy.ApiError
 
   @doc """
@@ -28,6 +28,7 @@ defmodule EasyWeb.Auth.SessionController do
     end
   end
 
+  @spec refresh(Plug.Conn.t(), any()) :: Plug.Conn.t()
   @doc """
   POST /api/v1/auth/refresh
   Refresh access token using refresh token from cookie
@@ -81,13 +82,15 @@ defmodule EasyWeb.Auth.SessionController do
       http_only: true,
       secure: true,
       same_site: "Lax",
-      max_age: 60 * 60  # 1 hour
+      # 1 hour
+      max_age: 60 * 60
     )
     |> put_resp_cookie("refresh_token", refresh_token,
       http_only: true,
       secure: true,
       same_site: "Lax",
-      max_age: 60 * 60 * 24 * 30  # 30 days
+      # 30 days
+      max_age: 60 * 60 * 24 * 30
     )
   end
 

@@ -1,14 +1,8 @@
 defmodule EasyWeb.FallbackController do
-  @moduledoc """
-  Translates controller action results into valid `Plug.Conn` responses.
-
-  See `Phoenix.Controller.action_fallback/1` for more details.
-  """
   use EasyWeb, :controller
 
   require Logger
 
-  # This clause handles errors returned from Ecto's insert/update/delete.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
@@ -16,7 +10,6 @@ defmodule EasyWeb.FallbackController do
     |> render(:changeset_error, changeset: changeset)
   end
 
-  # Handle custom ApiError responses
   def call(conn, {:error, %Easy.ApiError{} = error}) do
     conn
     |> put_status(error.status)
@@ -27,7 +20,6 @@ defmodule EasyWeb.FallbackController do
     })
   end
 
-  # Handle atom errors with generic responses
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)

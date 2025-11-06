@@ -1,4 +1,4 @@
-defmodule Easy.Identity.User do
+defmodule Easy.Accounts.User do
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -151,8 +151,6 @@ defmodule Easy.Identity.User do
     |> confirm_phone_changeset()
     |> Repo.update()
   end
-
-  # Private Validation Functions
 
   defp validate_email(changeset) do
     changeset

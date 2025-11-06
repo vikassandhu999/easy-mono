@@ -1,31 +1,26 @@
-defmodule Easy.Tenant.Business do
+defmodule Easy.Organizations.Business do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Easy.Identity.User
-  alias Easy.Tenant.{Coach, Client}
+  alias Easy.Accounts.User
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "businesses" do
-    # Core identity
     field :handle, :string
     field :name, :string
     field :about, :string
     field :logo_url, :string
 
-    # Status
     field :status, Ecto.Enum,
       values: [:early, :trial, :active, :suspended, :cancelled],
       default: :early
 
-    # Contact Info
     field :email, :string
     field :phone, :string
     field :website, :string
 
-    # Address
     field :address_line1, :string
     field :address_line2, :string
     field :city, :string
@@ -33,18 +28,13 @@ defmodule Easy.Tenant.Business do
     field :postal_code, :string
     field :country, :string, default: "IND"
 
-    # Settings
     field :timezone, :string, default: "Asia/Kolkata"
     field :settings, :map, default: %{}
 
-    # Onboarding (implement later)
     field :onboarded_at, :utc_datetime
     field :onboarding_step, :string
 
-    # Relationships
     belongs_to :owner, User, foreign_key: :owner_user_id
-    has_many :coaches, Coach
-    has_many :clients, Client
 
     timestamps(type: :utc_datetime)
   end
@@ -68,9 +58,6 @@ defmodule Easy.Tenant.Business do
     press kb knowledgebase v1 v2 v3 v4 v5 v6 v7 v8 v9 v10
   )
 
-  @doc """
-  Changeset for creating/updating a business.
-  """
   def changeset(business, attrs) do
     business
     |> cast(attrs, [
@@ -123,21 +110,12 @@ defmodule Easy.Tenant.Business do
     end
   end
 
-  @doc """
-  Returns the list of disallowed handles.
-  """
   def disallowed_handles, do: @disallowed_handles
 
-  @doc """
-  Checks if business has full access.
-  """
   def has_full_access?(%__MODULE__{status: status}) do
     status in [:early, :active]
   end
 
-  @doc """
-  Checks if business is an early access member.
-  """
   def early_member?(%__MODULE__{status: :early}), do: true
 
   def early_member?(%__MODULE__{settings: settings}) do

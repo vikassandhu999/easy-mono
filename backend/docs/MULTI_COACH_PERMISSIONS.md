@@ -113,6 +113,6 @@ end
 ### Current Code (Already Implemented)
 
 ```elixir
-# In Easy.Tenant context
+# In Easy.Organizations context
 
 # Business

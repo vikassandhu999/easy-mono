@@ -1,25 +1,9 @@
 defmodule EasyWeb.Router do
   use EasyWeb, :router
 
-  # ============================================
-  # PIPELINES
-  # ============================================
-
   pipeline :api do
     plug :accepts, ["json"]
   end
-
-  # pipeline :authenticate do
-  #   plug EasyWeb.Plugs.Authenticate
-  # end
-
-  # pipeline :require_coach do
-  #   plug EasyWeb.Plugs.RequireCoach
-  # end
-
-  # pipeline :require_client do
-  #   plug EasyWeb.Plugs.RequireClient
-  # end
 
   # Health check
   scope "/api", EasyWeb do
@@ -27,10 +11,6 @@ defmodule EasyWeb.Router do
 
     get "/health", HealthController, :index
   end
-
-  # ============================================
-  # PUBLIC ROUTES (No Authentication)
-  # ============================================
 
   scope "/api/v1/auth", EasyWeb.Auth do
     pipe_through :api

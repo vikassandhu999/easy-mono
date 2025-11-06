@@ -1,10 +1,10 @@
-defmodule Easy.Identity.Session do
+defmodule Easy.Accounts.Session do
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Easy.Identity.User
+  alias Easy.Accounts.User
   alias Easy.Repo
 
   @primary_key {:id, :binary_id, autogenerate: true}

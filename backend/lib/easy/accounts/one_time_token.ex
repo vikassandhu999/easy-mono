@@ -1,5 +1,4 @@
-# lib/easy/identity/one_time_token.ex
-defmodule Easy.Identity.OneTimeToken do
+defmodule Easy.Accounts.OneTimeToken do
   @moduledoc """
   One-Time Token for OTP-based authentication flows.
 
@@ -57,7 +56,7 @@ defmodule Easy.Identity.OneTimeToken do
     field :last_attempt_at, :utc_datetime
 
     # Link to user (may be nil during signup)
-    belongs_to :user, Easy.Identity.User
+    belongs_to :user, Easy.Accounts.User
 
     # Flexible metadata storage for token-specific data
     field :metadata, :map, default: %{}

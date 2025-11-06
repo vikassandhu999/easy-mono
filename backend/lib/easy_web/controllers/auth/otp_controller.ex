@@ -1,7 +1,6 @@
 defmodule EasyWeb.Auth.OTPController do
   use EasyWeb, :controller
 
-  alias Easy.Identity
   alias Easy.Auth.JWT
   alias Easy.ApiError
 

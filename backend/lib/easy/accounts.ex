@@ -1,6 +1,6 @@
-defmodule Easy.Identity do
+defmodule Easy.Accounts do
   @moduledoc """
-  Identity context handles user authentication and session management.
+  Accounts context handles user authentication and session management.
 
   This is the public API for:
   - OTP-based authentication (request/verify)
@@ -11,8 +11,7 @@ defmodule Easy.Identity do
   import Ecto.Query, warn: false
 
   alias Easy.Repo
-  alias Easy.Identity.{User, OneTimeToken, Session}
-  alias Easy.Tenant
+  alias Easy.Accounts.{User, OneTimeToken, Session}
   alias Easy.Auth.{OTP, JWT, TokenGenerator}
 
   # ============================================

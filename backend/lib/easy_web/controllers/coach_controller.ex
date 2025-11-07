@@ -1,7 +1,8 @@
 defmodule EasyWeb.CoachController do
   use EasyWeb, :controller
 
-  alias Easy.{Coaches, Clients, Repo}
+  alias Easy.{Coaches, Clients, Repo, ApiError}
+  alias EasyWeb.ResponseHelpers
 
   action_fallback EasyWeb.FallbackController
 
@@ -73,33 +74,17 @@ defmodule EasyWeb.CoachController do
 
     case Coaches.get_coach_with_preloads(id, [:user, :business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Coach not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Coach")
+        render_error(conn, error)
 
       coach ->
         # Check if user belongs to the same business
         if user_can_access_coach?(user, coach) do
           conn
-          |> json(%{
-            coach: format_coach(coach)
-          })
+          |> json(%{coach: format_coach(coach)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this coach",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this coach")
+          render_error(conn, error)
         end
     end
   end
@@ -164,15 +149,8 @@ defmodule EasyWeb.CoachController do
 
     case Coaches.get_coach(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Coach not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Coach")
+        render_error(conn, error)
 
       coach ->
         # Check if user owns this coach profile
@@ -185,31 +163,15 @@ defmodule EasyWeb.CoachController do
               updated_coach = Repo.preload(updated_coach, [:user, :business])
 
               conn
-              |> json(%{
-                coach: format_coach(updated_coach)
-              })
+              |> json(%{coach: format_coach(updated_coach)})
 
             {:error, changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{
-                error: %{
-                  message: "Validation failed",
-                  code: "validation_error",
-                  details: translate_changeset_errors(changeset)
-                }
-              })
+              error = ApiError.validation_error(changeset)
+              render_error(conn, error)
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You can only update your own coach profile",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You can only update your own coach profile")
+          render_error(conn, error)
         end
     end
   end
@@ -245,15 +207,8 @@ defmodule EasyWeb.CoachController do
 
     case Coaches.get_coach_with_preloads(id, [:business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Coach not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Coach")
+        render_error(conn, error)
 
       coach ->
         # Check if user can access this coach
@@ -263,19 +218,10 @@ defmodule EasyWeb.CoachController do
             |> Repo.preload(:user)
 
           conn
-          |> json(%{
-            clients: Enum.map(clients, &format_client/1)
-          })
+          |> json(%{clients: Enum.map(clients, &format_client/1)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this coach",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this coach")
+          render_error(conn, error)
         end
     end
   end
@@ -338,71 +284,31 @@ defmodule EasyWeb.CoachController do
       })
     else
       {:error, :coach_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Coach not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Coach")
+        render_error(conn, error)
 
       {:error, :client_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       {:error, :forbidden} ->
-        conn
-        |> put_status(:forbidden)
-        |> json(%{
-          error: %{
-            message: "You do not have permission to manage this coach's assignments",
-            code: "forbidden",
-            details: nil
-          }
-        })
+        error =
+          ApiError.forbidden("You do not have permission to manage this coach's assignments")
+
+        render_error(conn, error)
 
       {:error, :different_business} ->
-        conn
-        |> put_status(:forbidden)
-        |> json(%{
-          error: %{
-            message: "Client does not belong to the same business",
-            code: "forbidden",
-            details: nil
-          }
-        })
+        error = ApiError.forbidden("Client does not belong to the same business")
+        render_error(conn, error)
 
       {:error, %Ecto.Changeset{} = changeset} ->
         # Check if it's a unique constraint violation
         if has_unique_constraint_error?(changeset) do
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{
-            error: %{
-              message: "Client is already assigned to this coach",
-              code: "already_assigned",
-              details: nil
-            }
-          })
+          error = ApiError.from_code(:already_assigned, nil, nil)
+          render_error(conn, error)
         else
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{
-            error: %{
-              message: "Validation failed",
-              code: "validation_error",
-              details: translate_changeset_errors(changeset)
-            }
-          })
+          error = ApiError.validation_error(changeset)
+          render_error(conn, error)
         end
     end
   end
@@ -449,48 +355,23 @@ defmodule EasyWeb.CoachController do
       })
     else
       {:error, :coach_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Coach not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Coach")
+        render_error(conn, error)
 
       {:error, :client_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       {:error, :forbidden} ->
-        conn
-        |> put_status(:forbidden)
-        |> json(%{
-          error: %{
-            message: "You do not have permission to manage this coach's assignments",
-            code: "forbidden",
-            details: nil
-          }
-        })
+        error =
+          ApiError.forbidden("You do not have permission to manage this coach's assignments")
+
+        render_error(conn, error)
 
       {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client is not assigned to this coach",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Assignment")
+        error = %{error | message: "Client is not assigned to this coach"}
+        render_error(conn, error)
     end
   end
 
@@ -571,59 +452,29 @@ defmodule EasyWeb.CoachController do
   end
 
   # Formats coach for JSON response
-  defp format_coach(coach) do
-    %{
-      id: to_string(coach.id),
-      user_id: to_string(coach.user_id),
-      business_id: to_string(coach.business_id),
-      status: coach.status,
-      bio: coach.bio,
-      specialties: coach.specialties || [],
-      credentials: coach.credentials || %{},
-      user: if(coach.user, do: format_user(coach.user), else: nil)
-    }
-  end
+  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
 
   # Formats client for JSON response
-  defp format_client(client) do
-    %{
-      id: to_string(client.id),
-      email: client.email,
-      full_name: client.full_name,
-      phone: client.phone,
-      status: client.status,
-      business_id: to_string(client.business_id),
-      user_id: if(client.user_id, do: to_string(client.user_id), else: nil),
-      notes: client.notes
-    }
-  end
-
-  # Formats user for JSON response
-  defp format_user(user) do
-    %{
-      id: to_string(user.id),
-      email: user.email,
-      full_name: user.full_name,
-      email_verified: user.email_verified
-    }
-  end
+  defp format_client(client), do: ResponseHelpers.format_client(client)
 
   # Formats assignment for JSON response
-  defp format_assignment(assignment) do
-    %{
-      id: to_string(assignment.id),
-      coach_id: to_string(assignment.coach_id),
-      client_id: to_string(assignment.client_id),
-      assigned_at: assignment.assigned_at
-    }
+  defp format_assignment(assignment), do: ResponseHelpers.format_assignment(assignment)
+
+  # Renders an API error response
+  defp render_error(conn, %ApiError{} = error) do
+    conn = maybe_add_headers(conn, error)
+
+    conn
+    |> put_status(error.status)
+    |> json(ApiError.to_json(error))
   end
 
-  # Translates changeset errors to a map of field => [errors]
-  defp translate_changeset_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
+  # Adds headers from ApiError to the connection if present
+  defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
+
+  defp maybe_add_headers(conn, %ApiError{headers: headers}) do
+    Enum.reduce(headers, conn, fn {key, value}, acc ->
+      put_resp_header(acc, key, value)
     end)
   end
 end

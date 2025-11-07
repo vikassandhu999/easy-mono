@@ -43,8 +43,7 @@ defmodule Easy.Coaches do
     create_coach(user_id, business_id, attrs)
   end
 
-  def create_coach(user_id, business_id, attrs)
-      when is_integer(user_id) and is_integer(business_id) do
+  def create_coach(user_id, business_id, attrs) do
     attrs_with_ids =
       attrs
       |> Map.put(:user_id, user_id)

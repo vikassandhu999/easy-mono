@@ -1,7 +1,8 @@
 defmodule EasyWeb.ClientController do
   use EasyWeb, :controller
 
-  alias Easy.{Clients, Coaches, Repo}
+  alias Easy.{Clients, Coaches, Repo, ApiError}
+  alias EasyWeb.ResponseHelpers
 
   action_fallback EasyWeb.FallbackController
 
@@ -41,7 +42,11 @@ defmodule EasyWeb.ClientController do
       "status": "pending",
       "business_id": "456"
     },
-    "invitation_url": "https://app.example.com/invite/550e8400-..."
+    "invitation": {
+      "token_id": "550e8400-e29b-41d4-a716-446655440000",
+      "invitation_url": "https://app.example.com/invite/550e8400-...",
+      "expires_at": "2024-01-08T12:00:00Z"
+    }
   }
   ```
 
@@ -93,15 +98,8 @@ defmodule EasyWeb.ClientController do
 
     case coach do
       nil ->
-        conn
-        |> put_status(:forbidden)
-        |> json(%{
-          error: %{
-            message: "You must be a coach to invite clients",
-            code: "forbidden",
-            details: nil
-          }
-        })
+        error = ApiError.forbidden("You must be a coach to invite clients")
+        render_error(conn, error)
 
       coach ->
         # Extract invitation attributes
@@ -113,7 +111,7 @@ defmodule EasyWeb.ClientController do
         }
 
         case Clients.create_invitation(coach, attrs) do
-          {:ok, %{client: client, invitation_token: token_uuid}} ->
+          {:ok, %{client: client, invitation_token: token_uuid, expires_at: expires_at}} ->
             # Build invitation URL
             invitation_url = build_invitation_url(conn, token_uuid)
 
@@ -121,59 +119,51 @@ defmodule EasyWeb.ClientController do
             |> put_status(:created)
             |> json(%{
               client: format_client(client),
-              invitation_url: invitation_url
+              invitation:
+                ResponseHelpers.format_invitation_response(token_uuid, invitation_url, expires_at)
             })
 
           {:error, :rate_limited, retry_after} ->
-            conn
-            |> put_status(:too_many_requests)
-            |> put_resp_header("retry-after", to_string(retry_after))
-            |> json(%{
-              error: %{
-                message: "Too many invitation requests. Please try again later.",
-                code: "rate_limit_exceeded",
-                details: %{
-                  retry_after: retry_after
-                }
-              }
-            })
+            error =
+              ApiError.from_code(:rate_limit_exceeded, retry_after, %{retry_after: retry_after})
+
+            render_error(conn, error)
 
           {:error, changeset} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{
-              error: %{
-                message: "Validation failed",
-                code: "validation_error",
-                details: translate_changeset_errors(changeset)
-              }
-            })
+            error = ApiError.validation_error(changeset)
+            render_error(conn, error)
         end
     end
   end
 
   @doc """
-  GET /api/invitations/:token
+  GET /api/invitations/:token_id
 
   Validates an invitation token and returns invitation details.
   This is a public endpoint (no authentication required).
 
   ## Parameters
-  - token: The invitation token UUID (in URL path)
+  - token_id: The invitation token UUID (in URL path)
 
   ## Response
 
   Success (200):
   ```json
   {
+    "invitation": {
+      "token_id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "valid",
+      "expires_at": "2024-01-08T12:00:00Z"
+    },
     "client": {
       "email": "client@example.com",
       "full_name": "Jane Client"
     },
     "business": {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
       "name": "Coaching Pro"
     },
-    "coach": {
+    "inviting_coach": {
       "full_name": "John Coach"
     }
   }
@@ -211,78 +201,95 @@ defmodule EasyWeb.ClientController do
   }
   ```
   """
-  def show_invitation(conn, %{"token" => token}) do
-    case Clients.get_invitation(token) do
-      {:ok, %{token: _token, client: client}} ->
+  def show_invitation(conn, %{"token_id" => token_id}) do
+    case Clients.get_invitation(token_id) do
+      {:ok, %{token: token, client: client}} ->
         # Preload business and get inviting coach info
         client = Repo.preload(client, [:business])
 
         # Get inviting coach from token metadata
-        inviting_coach = get_inviting_coach(token)
+        inviting_coach = get_inviting_coach(token_id)
 
         conn
         |> json(%{
+          invitation: %{
+            token_id: token_id,
+            status: "valid",
+            expires_at: DateTime.to_iso8601(token.expires_at)
+          },
           client: %{
             email: client.email,
             full_name: client.full_name
           },
           business: %{
+            id: to_string(client.business_id),
             name: client.business.name
           },
-          coach: if(inviting_coach, do: %{full_name: inviting_coach.user.full_name}, else: nil)
+          inviting_coach:
+            if(inviting_coach, do: %{full_name: inviting_coach.user.full_name}, else: nil)
         })
 
       {:error, :invalid_token} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Invitation not found or invalid",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Invitation")
+        error = %{error | message: "Invitation not found or invalid"}
+        render_error(conn, error)
 
       {:error, :token_expired} ->
-        conn
-        |> put_status(:gone)
-        |> json(%{
-          error: %{
-            message: "This invitation has expired",
-            code: "invitation_expired",
-            details: nil
-          }
-        })
+        error = ApiError.from_code(:invitation_expired, nil, nil)
+        render_error(conn, error)
 
       {:error, :token_used} ->
-        conn
-        |> put_status(:gone)
-        |> json(%{
-          error: %{
-            message: "This invitation has already been used",
-            code: "invitation_used",
-            details: nil
-          }
-        })
+        error = ApiError.from_code(:invitation_used, nil, nil)
+        render_error(conn, error)
+
+      {:error, :metadata_validation_failed, reason} ->
+        error = ApiError.from_code(:metadata_validation_failed, reason, %{reason: reason})
+        render_error(conn, error)
     end
   end
 
   @doc """
-  POST /api/invitations/:token/accept
+  POST /api/invitations/:token_id/accept
 
-  Accepts an invitation and initiates client registration by sending OTP.
+  Accepts an invitation and completes client registration with OTP verification.
+  This combines the previous "accept" and "complete" steps into a single endpoint.
   This is a public endpoint (no authentication required).
 
   ## Parameters
-  - token: The invitation token UUID (in URL path)
+  - token_id: The invitation token UUID (in URL path)
+  - code: The 6-digit OTP code sent to the client's email (in request body)
 
   ## Response
 
   Success (200):
   ```json
   {
-    "status": "verification_pending",
-    "message": "Verification code sent to your email"
+    "user": {
+      "id": "b8c9d0e1-f2a3-4567-1234-567890123456",
+      "email": "client@example.com",
+      "full_name": "Jane Client",
+      "email_verified": true,
+      "roles": ["client"],
+      "client_profile": {
+        "id": "f6a7b8c9-d0e1-2345-f012-345678901234",
+        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+        "status": "active",
+        "assigned_coaches": [
+          {
+            "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+            "user": {
+              "full_name": "John Coach"
+            }
+          }
+        ]
+      }
+    },
+    "session": {
+      "access_token": "eyJhbGc...",
+      "refresh_token": "eyJhbGc...",
+      "expires_at": "2024-01-08T12:00:00Z",
+      "expires_in": 604800
+    }
   }
   ```
 
@@ -308,85 +315,91 @@ defmodule EasyWeb.ClientController do
   }
   ```
 
-  Rate limit (429):
+  Invalid OTP (400):
   ```json
   {
     "error": {
-      "message": "Too many verification requests. Please try again later.",
-      "code": "rate_limit_exceeded",
+      "message": "The provided code is invalid or has expired",
+      "code": "invalid_otp",
       "details": {
-        "retry_after": 300
+        "attempts_remaining": 2
       }
     }
   }
   ```
   """
-  def accept_invitation(conn, %{"token" => token}) do
-    case Clients.accept_invitation(token) do
-      {:ok, :verification_pending} ->
+  def accept_invitation(conn, %{"token_id" => token_id, "code" => code}) do
+    case Clients.complete_client_registration(token_id, code) do
+      {:ok, %{user: user, client: client, session: session_data}} ->
+        # Preload assigned coaches for the response
+        client = Repo.preload(client, coaches: [:user])
+
+        # Build user response with client profile
+        user_response = %{
+          id: to_string(user.id),
+          email: user.email,
+          full_name: user.full_name,
+          email_verified: user.email_verified,
+          roles: ["client"],
+          client_profile: %{
+            id: to_string(client.id),
+            business_id: to_string(client.business_id),
+            status: client.status,
+            assigned_coaches:
+              Enum.map(client.coaches, fn coach ->
+                %{
+                  id: to_string(coach.id),
+                  user: %{
+                    full_name: coach.user.full_name
+                  }
+                }
+              end)
+          }
+        }
+
+        # Build session response
+        session_response = %{
+          session_id: to_string(session_data.session.id),
+          access_token: session_data.access_token,
+          refresh_token: session_data.refresh_token,
+          expires_at: DateTime.to_iso8601(session_data.session.expires_at),
+          expires_in: session_data.expires_in
+        }
+
         conn
         |> json(%{
-          status: "verification_pending",
-          message: "Verification code sent to your email"
+          user: user_response,
+          session: session_response
         })
 
       {:error, :invalid_token} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Invitation not found or invalid",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Invitation")
+        error = %{error | message: "Invitation not found or invalid"}
+        render_error(conn, error)
 
       {:error, :token_expired} ->
-        conn
-        |> put_status(:gone)
-        |> json(%{
-          error: %{
-            message: "This invitation has expired",
-            code: "invitation_expired",
-            details: nil
-          }
-        })
+        error = ApiError.from_code(:invitation_expired, nil, nil)
+        render_error(conn, error)
 
       {:error, :token_used} ->
-        conn
-        |> put_status(:gone)
-        |> json(%{
-          error: %{
-            message: "This invitation has already been used",
-            code: "invitation_used",
-            details: nil
-          }
-        })
+        error = ApiError.from_code(:invitation_used, nil, nil)
+        render_error(conn, error)
 
-      {:error, :rate_limited, retry_after} ->
-        conn
-        |> put_status(:too_many_requests)
-        |> put_resp_header("retry-after", to_string(retry_after))
-        |> json(%{
-          error: %{
-            message: "Too many verification requests. Please try again later.",
-            code: "rate_limit_exceeded",
-            details: %{
-              retry_after: retry_after
-            }
-          }
-        })
+      {:error, :invalid_otp} ->
+        error = ApiError.from_code(:invalid_otp, nil, nil)
+        render_error(conn, error)
+
+      {:error, :max_attempts} ->
+        error = ApiError.from_code(:max_attempts_exceeded, nil, nil)
+        render_error(conn, error)
+
+      {:error, :metadata_validation_failed, reason} ->
+        error = ApiError.from_code(:metadata_validation_failed, reason, %{reason: reason})
+        render_error(conn, error)
 
       {:error, _reason} ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{
-          error: %{
-            message: "An error occurred while processing your request",
-            code: "internal_error",
-            details: nil
-          }
-        })
+        error = ApiError.from_code(:internal_error, nil, nil)
+        render_error(conn, error)
     end
   end
 
@@ -443,33 +456,17 @@ defmodule EasyWeb.ClientController do
 
     case Clients.get_client_with_preloads(id, [:user, :business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       client ->
         # Check if user can access this client
         if user_can_access_client?(user, client) do
           conn
-          |> json(%{
-            client: format_client(client)
-          })
+          |> json(%{client: format_client(client)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this client",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this client")
+          render_error(conn, error)
         end
     end
   end
@@ -534,15 +531,8 @@ defmodule EasyWeb.ClientController do
 
     case Clients.get_client_with_preloads(id, [:business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       client ->
         # Check if user is a coach in the same business
@@ -555,31 +545,15 @@ defmodule EasyWeb.ClientController do
               updated_client = Repo.preload(updated_client, [:user, :business])
 
               conn
-              |> json(%{
-                client: format_client(updated_client)
-              })
+              |> json(%{client: format_client(updated_client)})
 
             {:error, changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{
-                error: %{
-                  message: "Validation failed",
-                  code: "validation_error",
-                  details: translate_changeset_errors(changeset)
-                }
-              })
+              error = ApiError.validation_error(changeset)
+              render_error(conn, error)
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to update this client",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to update this client")
+          render_error(conn, error)
         end
     end
   end
@@ -643,15 +617,8 @@ defmodule EasyWeb.ClientController do
 
     case coach do
       nil ->
-        conn
-        |> put_status(:forbidden)
-        |> json(%{
-          error: %{
-            message: "You must be a coach to list clients",
-            code: "forbidden",
-            details: nil
-          }
-        })
+        error = ApiError.forbidden("You must be a coach to list clients")
+        render_error(conn, error)
 
       coach ->
         # Parse pagination parameters
@@ -719,15 +686,8 @@ defmodule EasyWeb.ClientController do
 
     case Clients.get_client_with_preloads(id, [:business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       client ->
         # Check if user can access this client
@@ -737,19 +697,10 @@ defmodule EasyWeb.ClientController do
             |> Repo.preload(:user)
 
           conn
-          |> json(%{
-            coaches: Enum.map(coaches, &format_coach/1)
-          })
+          |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this client",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this client")
+          render_error(conn, error)
         end
     end
   end
@@ -800,15 +751,8 @@ defmodule EasyWeb.ClientController do
 
     case Clients.get_client_with_preloads(id, [:business]) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Client not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Client")
+        render_error(conn, error)
 
       client ->
         # Check if user is a coach in the same business
@@ -818,31 +762,15 @@ defmodule EasyWeb.ClientController do
               updated_client = Repo.preload(updated_client, [:user, :business])
 
               conn
-              |> json(%{
-                client: format_client(updated_client)
-              })
+              |> json(%{client: format_client(updated_client)})
 
             {:error, changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{
-                error: %{
-                  message: "Validation failed",
-                  code: "validation_error",
-                  details: translate_changeset_errors(changeset)
-                }
-              })
+              error = ApiError.validation_error(changeset)
+              render_error(conn, error)
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to update this client",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to update this client")
+          render_error(conn, error)
         end
     end
   end
@@ -977,49 +905,26 @@ defmodule EasyWeb.ClientController do
   defp parse_offset(_), do: 0
 
   # Formats client for JSON response
-  defp format_client(client) do
-    %{
-      id: to_string(client.id),
-      email: client.email,
-      full_name: client.full_name,
-      phone: client.phone,
-      status: client.status,
-      business_id: to_string(client.business_id),
-      user_id: if(client.user_id, do: to_string(client.user_id), else: nil),
-      notes: client.notes
-    }
-  end
+  defp format_client(client), do: ResponseHelpers.format_client(client)
 
   # Formats coach for JSON response
-  defp format_coach(coach) do
-    %{
-      id: to_string(coach.id),
-      user_id: to_string(coach.user_id),
-      business_id: to_string(coach.business_id),
-      status: coach.status,
-      bio: coach.bio,
-      specialties: coach.specialties || [],
-      credentials: coach.credentials || %{},
-      user: if(coach.user, do: format_user(coach.user), else: nil)
-    }
+  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
+
+  # Renders an API error response
+  defp render_error(conn, %ApiError{} = error) do
+    conn = maybe_add_headers(conn, error)
+
+    conn
+    |> put_status(error.status)
+    |> json(ApiError.to_json(error))
   end
 
-  # Formats user for JSON response
-  defp format_user(user) do
-    %{
-      id: to_string(user.id),
-      email: user.email,
-      full_name: user.full_name,
-      email_verified: user.email_verified
-    }
-  end
+  # Adds headers from ApiError to the connection if present
+  defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
 
-  # Translates changeset errors to a map of field => [errors]
-  defp translate_changeset_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
+  defp maybe_add_headers(conn, %ApiError{headers: headers}) do
+    Enum.reduce(headers, conn, fn {key, value}, acc ->
+      put_resp_header(acc, key, value)
     end)
   end
 end

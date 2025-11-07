@@ -12,7 +12,7 @@ defmodule Easy.ApiError do
   {
     "error": {
       "message": "Human-readable error message",
-      "code": "machine_readable_error_code",
+      "code": "MACHINE_READABLE_ERROR_CODE",
       "details": {
         "field_name": ["error message"]
       }
@@ -26,6 +26,7 @@ defmodule Easy.ApiError do
   - 401 Unauthorized: Authentication required (includes WWW-Authenticate header)
   - 403 Forbidden: Authenticated but insufficient permissions
   - 404 Not Found: Resource does not exist
+  - 410 Gone: Resource existed but is no longer available (expired tokens)
   - 422 Unprocessable Entity: Validation errors or business logic failures
   - 429 Too Many Requests: Rate limit exceeded (includes Retry-After header)
   - 500 Internal Server Error: Unexpected server errors
@@ -43,7 +44,12 @@ defmodule Easy.ApiError do
 
       # Rate limit error
       error = ApiError.rate_limited(300)
+
+      # Using error codes
+      error = ApiError.from_code(:token_expired)
   """
+
+  alias EasyWeb.ApiErrorCodes
 
   defstruct [:status, :code, :message, :details, :headers]
 
@@ -56,6 +62,154 @@ defmodule Easy.ApiError do
         }
 
   @doc """
+  Creates an error from a predefined error code.
+
+  ## Examples
+
+      iex> ApiError.from_code(:token_expired)
+      %ApiError{status: 410, code: "TOKEN_EXPIRED", message: "The token has expired"}
+
+      iex> ApiError.from_code(:invalid_otp, "Wrong code")
+      %ApiError{status: 400, code: "INVALID_OTP", message: "Wrong code"}
+  """
+  @spec from_code(atom(), String.t() | integer() | nil, map() | nil) :: t()
+  def from_code(error_code, message_or_param \\ nil, details \\ nil)
+
+  def from_code(:validation_error, message, details) do
+    {code, msg, status} = ApiErrorCodes.validation_error(message || "Validation failed")
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invalid_otp, message, details) do
+    {code, msg, status} = ApiErrorCodes.invalid_otp(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:token_expired, message, details) do
+    {code, msg, status} = ApiErrorCodes.token_expired(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:token_used, message, details) do
+    {code, msg, status} = ApiErrorCodes.token_used(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:token_not_found, message, details) do
+    {code, msg, status} = ApiErrorCodes.token_not_found(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invalid_token_type, message, details) do
+    {code, msg, status} = ApiErrorCodes.invalid_token_type(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invalid_refresh_token, message, details) do
+    {code, msg, status} = ApiErrorCodes.invalid_refresh_token(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invalid_token, message, details) do
+    {code, msg, status} = ApiErrorCodes.invalid_token(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:session_not_found, message, details) do
+    {code, msg, status} = ApiErrorCodes.session_not_found(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:rate_limit_exceeded, retry_after, details) when is_integer(retry_after) do
+    {code, msg, status} = ApiErrorCodes.rate_limit_exceeded(retry_after)
+    new(status, code, msg, details, [{"retry-after", to_string(retry_after)}])
+  end
+
+  def from_code(:rate_limit_exceeded, message, details) do
+    {code, msg, status} = ApiErrorCodes.rate_limit_exceeded(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:max_attempts_exceeded, message, details) do
+    {code, msg, status} = ApiErrorCodes.max_attempts_exceeded(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:unauthorized, message, details) do
+    {code, msg, status} = ApiErrorCodes.unauthorized(message)
+    new(status, code, msg, details, [{"www-authenticate", "Bearer"}])
+  end
+
+  def from_code(:forbidden, message, details) do
+    {code, msg, status} = ApiErrorCodes.forbidden(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:not_found, resource, details) do
+    {code, msg, status} = ApiErrorCodes.not_found(resource)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:user_not_found, message, details) do
+    {code, msg, status} = ApiErrorCodes.user_not_found(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:conflict, message, details) do
+    {code, msg, status} = ApiErrorCodes.conflict(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:already_assigned, message, details) do
+    {code, msg, status} = ApiErrorCodes.already_assigned(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:business_exists, message, details) do
+    {code, msg, status} = ApiErrorCodes.business_exists(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invitation_expired, message, details) do
+    {code, msg, status} = ApiErrorCodes.invitation_expired(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:invitation_used, message, details) do
+    {code, msg, status} = ApiErrorCodes.invitation_used(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:metadata_validation_failed, reason, details) do
+    {code, msg, status} = ApiErrorCodes.metadata_validation_failed(reason)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:internal_error, message, details) do
+    {code, msg, status} = ApiErrorCodes.internal_error(message)
+    new(status, code, msg, details)
+  end
+
+  @doc """
+  Creates a new ApiError struct.
+
+  ## Examples
+
+      iex> ApiError.new(404, "NOT_FOUND", "Resource not found")
+      %ApiError{status: 404, code: "NOT_FOUND", message: "Resource not found"}
+  """
+  @spec new(integer(), String.t(), String.t(), map() | nil, list() | nil) :: t()
+  def new(status, code, message, details \\ nil, headers \\ nil) do
+    %__MODULE__{
+      status: status,
+      code: code,
+      message: message,
+      details: details,
+      headers: headers
+    }
+  end
+
+  @doc """
   Creates a bad request error (400).
 
   Used when the request is malformed or contains invalid parameters.
@@ -63,20 +217,14 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.bad_request("Invalid email format")
-      %ApiError{status: 400, code: "bad_request", message: "Invalid email format"}
+      %ApiError{status: 400, code: "BAD_REQUEST", message: "Invalid email format"}
 
       iex> ApiError.bad_request("Missing parameters", %{required: ["email", "name"]})
-      %ApiError{status: 400, code: "bad_request", message: "Missing parameters", details: %{required: ["email", "name"]}}
+      %ApiError{status: 400, code: "BAD_REQUEST", message: "Missing parameters", details: %{required: ["email", "name"]}}
   """
   @spec bad_request(String.t(), map() | nil) :: t()
   def bad_request(message, details \\ nil) do
-    %__MODULE__{
-      status: 400,
-      code: "bad_request",
-      message: message,
-      details: details,
-      headers: nil
-    }
+    new(400, "BAD_REQUEST", message, details)
   end
 
   @doc """
@@ -88,20 +236,14 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.unauthorized()
-      %ApiError{status: 401, code: "unauthorized", message: "Authentication required"}
+      %ApiError{status: 401, code: "UNAUTHORIZED", message: "Authentication required"}
 
       iex> ApiError.unauthorized("Invalid token")
-      %ApiError{status: 401, code: "unauthorized", message: "Invalid token"}
+      %ApiError{status: 401, code: "UNAUTHORIZED", message: "Invalid token"}
   """
   @spec unauthorized(String.t()) :: t()
   def unauthorized(message \\ "Authentication required") do
-    %__MODULE__{
-      status: 401,
-      code: "unauthorized",
-      message: message,
-      details: nil,
-      headers: [{"www-authenticate", "Bearer"}]
-    }
+    new(401, "UNAUTHORIZED", message, nil, [{"www-authenticate", "Bearer"}])
   end
 
   @doc """
@@ -112,20 +254,14 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.forbidden()
-      %ApiError{status: 403, code: "forbidden", message: "Access denied"}
+      %ApiError{status: 403, code: "FORBIDDEN", message: "Access denied"}
 
       iex> ApiError.forbidden("You do not have permission to update this resource")
-      %ApiError{status: 403, code: "forbidden", message: "You do not have permission to update this resource"}
+      %ApiError{status: 403, code: "FORBIDDEN", message: "You do not have permission to update this resource"}
   """
   @spec forbidden(String.t()) :: t()
   def forbidden(message \\ "Access denied") do
-    %__MODULE__{
-      status: 403,
-      code: "forbidden",
-      message: message,
-      details: nil,
-      headers: nil
-    }
+    new(403, "FORBIDDEN", message)
   end
 
   @doc """
@@ -136,20 +272,14 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.not_found()
-      %ApiError{status: 404, code: "not_found", message: "Resource not found"}
+      %ApiError{status: 404, code: "NOT_FOUND", message: "Resource not found"}
 
       iex> ApiError.not_found("Business")
-      %ApiError{status: 404, code: "not_found", message: "Business not found"}
+      %ApiError{status: 404, code: "NOT_FOUND", message: "Business not found"}
   """
   @spec not_found(String.t()) :: t()
   def not_found(resource \\ "Resource") do
-    %__MODULE__{
-      status: 404,
-      code: "not_found",
-      message: "#{resource} not found",
-      details: nil,
-      headers: nil
-    }
+    new(404, "NOT_FOUND", "#{resource} not found")
   end
 
   @doc """
@@ -160,17 +290,11 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.conflict("Email already exists")
-      %ApiError{status: 409, code: "conflict", message: "Email already exists"}
+      %ApiError{status: 409, code: "CONFLICT", message: "Email already exists"}
   """
   @spec conflict(String.t(), map() | nil) :: t()
   def conflict(message, details \\ nil) do
-    %__MODULE__{
-      status: 409,
-      code: "conflict",
-      message: message,
-      details: details,
-      headers: nil
-    }
+    new(409, "CONFLICT", message, details)
   end
 
   @doc """
@@ -181,17 +305,11 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.unprocessable_entity("Cannot delete active subscription")
-      %ApiError{status: 422, code: "unprocessable_entity", message: "Cannot delete active subscription"}
+      %ApiError{status: 422, code: "UNPROCESSABLE_ENTITY", message: "Cannot delete active subscription"}
   """
   @spec unprocessable_entity(String.t(), map() | nil) :: t()
   def unprocessable_entity(message, details \\ nil) do
-    %__MODULE__{
-      status: 422,
-      code: "unprocessable_entity",
-      message: message,
-      details: details,
-      headers: nil
-    }
+    new(422, "UNPROCESSABLE_ENTITY", message, details)
   end
 
   @doc """
@@ -205,34 +323,28 @@ defmodule Easy.ApiError do
       iex> ApiError.rate_limited(300)
       %ApiError{
         status: 429,
-        code: "rate_limited",
+        code: "RATE_LIMIT_EXCEEDED",
         message: "Rate limit exceeded. Please try again in 300 seconds",
         details: %{retry_after: 300},
         headers: [{"retry-after", "300"}]
       }
 
       iex> ApiError.rate_limited("Too many requests")
-      %ApiError{status: 429, code: "rate_limited", message: "Too many requests"}
+      %ApiError{status: 429, code: "RATE_LIMIT_EXCEEDED", message: "Too many requests"}
   """
   @spec rate_limited(String.t() | integer()) :: t()
   def rate_limited(retry_after) when is_integer(retry_after) do
-    %__MODULE__{
-      status: 429,
-      code: "rate_limited",
-      message: "Rate limit exceeded. Please try again in #{retry_after} seconds",
-      details: %{retry_after: retry_after},
-      headers: [{"retry-after", to_string(retry_after)}]
-    }
+    new(
+      429,
+      "RATE_LIMIT_EXCEEDED",
+      "Rate limit exceeded. Please try again in #{retry_after} seconds",
+      %{retry_after: retry_after},
+      [{"retry-after", to_string(retry_after)}]
+    )
   end
 
   def rate_limited(message) when is_binary(message) do
-    %__MODULE__{
-      status: 429,
-      code: "rate_limited",
-      message: message,
-      details: nil,
-      headers: nil
-    }
+    new(429, "RATE_LIMIT_EXCEEDED", message)
   end
 
   @doc """
@@ -244,20 +356,14 @@ defmodule Easy.ApiError do
   ## Examples
 
       iex> ApiError.internal_server_error()
-      %ApiError{status: 500, code: "internal_server_error", message: "Internal server error"}
+      %ApiError{status: 500, code: "INTERNAL_ERROR", message: "Internal server error"}
 
       iex> ApiError.internal_server_error("Database connection failed")
-      %ApiError{status: 500, code: "internal_server_error", message: "Database connection failed"}
+      %ApiError{status: 500, code: "INTERNAL_ERROR", message: "Database connection failed"}
   """
   @spec internal_server_error(String.t()) :: t()
   def internal_server_error(message \\ "Internal server error") do
-    %__MODULE__{
-      status: 500,
-      code: "internal_server_error",
-      message: message,
-      details: nil,
-      headers: nil
-    }
+    new(500, "INTERNAL_ERROR", message)
   end
 
   @doc """
@@ -272,7 +378,7 @@ defmodule Easy.ApiError do
       iex> ApiError.validation_error(changeset)
       %ApiError{
         status: 422,
-        code: "validation_error",
+        code: "VALIDATION_ERROR",
         message: "Validation failed",
         details: %{
           email: ["can't be blank"],
@@ -283,14 +389,7 @@ defmodule Easy.ApiError do
   @spec validation_error(Ecto.Changeset.t()) :: t()
   def validation_error(%Ecto.Changeset{} = changeset) do
     details = changeset_errors_to_map(changeset)
-
-    %__MODULE__{
-      status: 422,
-      code: "validation_error",
-      message: "Validation failed",
-      details: details,
-      headers: nil
-    }
+    new(422, "VALIDATION_ERROR", "Validation failed", details)
   end
 
   @doc """

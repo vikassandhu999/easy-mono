@@ -25,15 +25,31 @@ defmodule EasyWeb.Router do
   end
 
   # ============================================
-  # OAUTH 2.0 ENDPOINTS
+  # OAUTH 2.0 ENDPOINTS (DEPRECATED)
   # ============================================
+  # DEPRECATED: These OAuth 2.0 endpoints are maintained for backward compatibility only.
+  # New integrations should use the simplified authentication endpoints under /api/auth:
+  #   - POST /api/auth/send-otp - Generate and send OTP
+  #   - POST /api/auth/verify-otp - Verify OTP and create session
+  #   - POST /api/auth/refresh - Refresh access token
+  #   - POST /api/auth/logout - Revoke session
+  #
+  # The OAuth endpoints will be removed in a future version.
+  # Please migrate to the new authentication flow.
 
   scope "/oauth", EasyWeb do
     pipe_through :api
 
+    # DEPRECATED: Use POST /api/auth/send-otp instead
     post "/authorize", OAuthController, :authorize
+
+    # DEPRECATED: Use POST /api/auth/verify-otp instead
     post "/token", OAuthController, :token
+
+    # DEPRECATED: Use POST /api/auth/logout instead
     post "/revoke", OAuthController, :revoke
+
+    # DEPRECATED: User info is now included in verify-otp response
     get "/userinfo", OAuthController, :userinfo
   end
 
@@ -45,6 +61,19 @@ defmodule EasyWeb.Router do
     pipe_through :api
 
     post "/register", AuthController, :register
+    post "/send-otp", AuthController, :send_otp
+    post "/verify-otp", AuthController, :verify_otp
+    post "/refresh", AuthController, :refresh
+  end
+
+  # ============================================
+  # AUTHENTICATED AUTH ENDPOINTS
+  # ============================================
+
+  scope "/api/auth", EasyWeb do
+    pipe_through [:api, :authenticated]
+
+    post "/logout", AuthController, :logout
   end
 
   # ============================================
@@ -54,8 +83,8 @@ defmodule EasyWeb.Router do
   scope "/api/invitations", EasyWeb do
     pipe_through :api
 
-    get "/:token", ClientController, :show_invitation
-    post "/:token/accept", ClientController, :accept_invitation
+    get "/:token_id", ClientController, :show_invitation
+    post "/:token_id/accept", ClientController, :accept_invitation
   end
 
   # ============================================

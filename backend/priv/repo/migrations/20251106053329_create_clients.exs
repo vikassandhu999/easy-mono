@@ -2,14 +2,15 @@ defmodule Easy.Repo.Migrations.CreateClients do
   use Ecto.Migration
 
   def change do
-    create table(:clients) do
+    create table(:clients, primary_key: false) do
+      add :id, :uuid, primary_key: true, default: fragment("gen_random_uuid()")
       add :email, :string, null: false
       add :full_name, :string, null: false
       add :phone, :string
       add :notes, :text
       add :status, :string, default: "pending", null: false
-      add :user_id, references(:users, on_delete: :nothing)
-      add :business_id, references(:businesses, on_delete: :delete_all), null: false
+      add :user_id, references(:users, type: :uuid, on_delete: :nothing)
+      add :business_id, references(:businesses, type: :uuid, on_delete: :delete_all), null: false
 
       timestamps()
     end

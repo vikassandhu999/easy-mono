@@ -17,8 +17,11 @@ defmodule Easy.Accounts.OneTimeToken do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "one_time_tokens" do
-    field :token, :string
+    field :token, :binary_id
     field :code, :string
     field :type, :string
     field :email, :string

@@ -2,13 +2,14 @@ defmodule Easy.Repo.Migrations.CreateSessions do
   use Ecto.Migration
 
   def change do
-    create table(:sessions) do
+    create table(:sessions, primary_key: false) do
+      add :id, :uuid, primary_key: true, default: fragment("gen_random_uuid()")
       add :token, :string, null: false
       add :refresh_token, :string, null: false
       add :expires_at, :utc_datetime, null: false
       add :last_activity_at, :utc_datetime, null: false
       add :revoked_at, :utc_datetime
-      add :user_id, references(:users, on_delete: :delete_all), null: false
+      add :user_id, references(:users, type: :uuid, on_delete: :delete_all), null: false
 
       timestamps()
     end

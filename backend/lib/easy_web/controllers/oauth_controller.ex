@@ -9,13 +9,21 @@ defmodule EasyWeb.OAuthController do
   @moduledoc """
   OAuth 2.0-style token endpoint for authentication.
 
+  DEPRECATED: These OAuth 2.0 endpoints are maintained for backward compatibility only.
+  New integrations should use the simplified authentication endpoints under /api/auth.
+  These endpoints will be removed in a future version.
+
   Implements RFC 6749 compliant token endpoint with support for:
   - OTP-based authentication (grant_type=otp)
   - Refresh token flow (grant_type=refresh_token)
   """
 
+  @deprecation_warning "This endpoint is deprecated. Please use /api/auth endpoints instead. See documentation for migration guide."
+
   @doc """
   POST /oauth/authorize
+
+  DEPRECATED: Use POST /api/auth/send-otp instead.
 
   OAuth 2.0-style authorization endpoint for initiating OTP authentication.
 
@@ -55,6 +63,9 @@ defmodule EasyWeb.OAuthController do
   ```
   """
   def authorize(conn, params) do
+    conn = put_resp_header(conn, "deprecation", "true")
+    conn = put_resp_header(conn, "x-deprecation-warning", @deprecation_warning)
+
     with {:ok, email} <- validate_required_param(params, "email") do
       # Determine if this is a resend request
       is_resend = params["resend"] == "true" || params["resend"] == true
@@ -118,6 +129,8 @@ defmodule EasyWeb.OAuthController do
   @doc """
   POST /oauth/token
 
+  DEPRECATED: Use POST /api/auth/verify-otp or POST /api/auth/refresh instead.
+
   OAuth 2.0 token endpoint supporting multiple grant types.
 
   ## Grant Types
@@ -173,6 +186,9 @@ defmodule EasyWeb.OAuthController do
   - slow_down: Rate limit exceeded
   """
   def token(conn, params) do
+    conn = put_resp_header(conn, "deprecation", "true")
+    conn = put_resp_header(conn, "x-deprecation-warning", @deprecation_warning)
+
     case params["grant_type"] do
       "otp" ->
         handle_otp_grant(conn, params)
@@ -244,6 +260,14 @@ defmodule EasyWeb.OAuthController do
         {:error, :token_not_found} ->
           render_oauth_error(conn, OAuthError.invalid_grant("No valid OTP found for this email"))
 
+        {:error, :invalid_token_type} ->
+          render_oauth_error(
+            conn,
+            OAuthError.invalid_grant(
+              "Token type mismatch. This token cannot be used for this operation"
+            )
+          )
+
         {:error, _reason} ->
           render_oauth_error(conn, OAuthError.invalid_grant("Authentication failed"))
       end
@@ -290,6 +314,8 @@ defmodule EasyWeb.OAuthController do
   @doc """
   POST /oauth/revoke
 
+  DEPRECATED: Use POST /api/auth/logout instead.
+
   OAuth 2.0 token revocation endpoint.
 
   Revokes an access token or refresh token, invalidating the session.
@@ -317,6 +343,9 @@ defmodule EasyWeb.OAuthController do
   ```
   """
   def revoke(conn, params) do
+    conn = put_resp_header(conn, "deprecation", "true")
+    conn = put_resp_header(conn, "x-deprecation-warning", @deprecation_warning)
+
     with {:ok, token} <- validate_required_param(params, "token") do
       case Accounts.revoke_session(token) do
         {:ok, _session} ->
@@ -344,6 +373,8 @@ defmodule EasyWeb.OAuthController do
 
   @doc """
   GET /oauth/userinfo
+
+  DEPRECATED: User info is now included in POST /api/auth/verify-otp response.
 
   OAuth 2.0 UserInfo endpoint.
 
@@ -384,6 +415,9 @@ defmodule EasyWeb.OAuthController do
   ```
   """
   def userinfo(conn, _params) do
+    conn = put_resp_header(conn, "deprecation", "true")
+    conn = put_resp_header(conn, "x-deprecation-warning", @deprecation_warning)
+
     with {:ok, token} <- extract_bearer_token(conn),
          {:ok, claims} <- Accounts.Token.verify_token(token),
          user_id <- claims["sub"],

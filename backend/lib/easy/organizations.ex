@@ -208,8 +208,7 @@ defmodule Easy.Organizations do
     create_subscription(business_id, plan_id)
   end
 
-  def create_subscription(business_id, plan_id)
-      when is_integer(business_id) and is_integer(plan_id) do
+  def create_subscription(business_id, plan_id) do
     %Subscription{}
     |> Subscription.create_changeset(business_id, plan_id)
     |> Repo.insert()

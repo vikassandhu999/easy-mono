@@ -9,10 +9,13 @@ defmodule Easy.Clients.CoachClientAssignment do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "coach_client_assignments" do
     field :assigned_at, :utc_datetime
     # User who created the assignment
-    field :assigned_by_id, :id
+    field :assigned_by_id, :binary_id
 
     belongs_to :coach, Easy.Coaches.Coach
     belongs_to :client, Easy.Clients.Client

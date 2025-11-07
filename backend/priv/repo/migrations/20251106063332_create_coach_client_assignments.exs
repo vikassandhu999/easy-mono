@@ -2,11 +2,12 @@ defmodule Easy.Repo.Migrations.CreateCoachClientAssignments do
   use Ecto.Migration
 
   def change do
-    create table(:coach_client_assignments) do
+    create table(:coach_client_assignments, primary_key: false) do
+      add :id, :uuid, primary_key: true, default: fragment("gen_random_uuid()")
       add :assigned_at, :utc_datetime, null: false
-      add :assigned_by_id, :bigint
-      add :coach_id, references(:coaches, on_delete: :delete_all), null: false
-      add :client_id, references(:clients, on_delete: :delete_all), null: false
+      add :assigned_by_id, :uuid
+      add :coach_id, references(:coaches, type: :uuid, on_delete: :delete_all), null: false
+      add :client_id, references(:clients, type: :uuid, on_delete: :delete_all), null: false
 
       timestamps()
     end

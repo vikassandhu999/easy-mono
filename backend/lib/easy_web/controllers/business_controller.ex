@@ -1,7 +1,8 @@
 defmodule EasyWeb.BusinessController do
   use EasyWeb, :controller
 
-  alias Easy.{Organizations, Repo}
+  alias Easy.{Organizations, Repo, ApiError}
+  alias EasyWeb.ResponseHelpers
 
   action_fallback EasyWeb.FallbackController
 
@@ -67,33 +68,17 @@ defmodule EasyWeb.BusinessController do
 
     case Organizations.get_business(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Business not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Business")
+        render_error(conn, error)
 
       business ->
         # Check if user belongs to this business
         if user_belongs_to_business?(user, business) do
           conn
-          |> json(%{
-            business: format_business(business)
-          })
+          |> json(%{business: format_business(business)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this business",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this business")
+          render_error(conn, error)
         end
     end
   end
@@ -156,15 +141,8 @@ defmodule EasyWeb.BusinessController do
 
     case Organizations.get_business(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Business not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Business")
+        render_error(conn, error)
 
       business ->
         # Check if user is the owner
@@ -175,31 +153,15 @@ defmodule EasyWeb.BusinessController do
           case Organizations.update_business(business, attrs) do
             {:ok, updated_business} ->
               conn
-              |> json(%{
-                business: format_business(updated_business)
-              })
+              |> json(%{business: format_business(updated_business)})
 
             {:error, changeset} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{
-                error: %{
-                  message: "Validation failed",
-                  code: "validation_error",
-                  details: translate_changeset_errors(changeset)
-                }
-              })
+              error = ApiError.validation_error(changeset)
+              render_error(conn, error)
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "Only the business owner can update business information",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("Only the business owner can update business information")
+          render_error(conn, error)
         end
     end
   end
@@ -236,15 +198,8 @@ defmodule EasyWeb.BusinessController do
 
     case Organizations.get_business(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Business not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Business")
+        render_error(conn, error)
 
       business ->
         # Check if user belongs to this business
@@ -254,19 +209,10 @@ defmodule EasyWeb.BusinessController do
             |> Repo.preload(:user)
 
           conn
-          |> json(%{
-            coaches: Enum.map(coaches, &format_coach/1)
-          })
+          |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this business",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this business")
+          render_error(conn, error)
         end
     end
   end
@@ -312,15 +258,8 @@ defmodule EasyWeb.BusinessController do
 
     case Organizations.get_business(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Business not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Business")
+        render_error(conn, error)
 
       business ->
         # Check if user belongs to this business
@@ -345,22 +284,11 @@ defmodule EasyWeb.BusinessController do
           conn
           |> json(%{
             clients: Enum.map(clients, &format_client/1),
-            pagination: %{
-              limit: limit,
-              offset: offset,
-              total: total
-            }
+            pagination: ResponseHelpers.format_pagination(limit, offset, total)
           })
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this business",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this business")
+          render_error(conn, error)
         end
     end
   end
@@ -412,50 +340,28 @@ defmodule EasyWeb.BusinessController do
 
     case Organizations.get_business(id) do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          error: %{
-            message: "Business not found",
-            code: "not_found",
-            details: nil
-          }
-        })
+        error = ApiError.not_found("Business")
+        render_error(conn, error)
 
       business ->
         # Check if user belongs to this business
         if user_belongs_to_business?(user, business) do
           case Organizations.get_subscription(business.id) do
             nil ->
-              conn
-              |> put_status(:not_found)
-              |> json(%{
-                error: %{
-                  message: "No active subscription found",
-                  code: "not_found",
-                  details: nil
-                }
-              })
+              error = ApiError.not_found("Subscription")
+              error = %{error | message: "No active subscription found"}
+              render_error(conn, error)
 
             subscription ->
               # Preload plan
               subscription = Repo.preload(subscription, :plan)
 
               conn
-              |> json(%{
-                subscription: format_subscription(subscription)
-              })
+              |> json(%{subscription: format_subscription(subscription)})
           end
         else
-          conn
-          |> put_status(:forbidden)
-          |> json(%{
-            error: %{
-              message: "You do not have permission to access this business",
-              code: "forbidden",
-              details: nil
-            }
-          })
+          error = ApiError.forbidden("You do not have permission to access this business")
+          render_error(conn, error)
         end
     end
   end
@@ -527,90 +433,32 @@ defmodule EasyWeb.BusinessController do
   defp parse_offset(_), do: 0
 
   # Formats business for JSON response
-  defp format_business(business) do
-    %{
-      id: to_string(business.id),
-      name: business.name,
-      slug: business.slug,
-      description: business.description,
-      owner_id: to_string(business.owner_id),
-      status: business.status
-    }
-  end
+  defp format_business(business), do: ResponseHelpers.format_business(business)
 
   # Formats coach for JSON response
-  defp format_coach(coach) do
-    %{
-      id: to_string(coach.id),
-      user_id: to_string(coach.user_id),
-      business_id: to_string(coach.business_id),
-      status: coach.status,
-      bio: coach.bio,
-      specialties: coach.specialties || [],
-      credentials: coach.credentials || %{},
-      user: if(coach.user, do: format_user(coach.user), else: nil)
-    }
-  end
+  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
 
   # Formats client for JSON response
-  defp format_client(client) do
-    %{
-      id: to_string(client.id),
-      email: client.email,
-      full_name: client.full_name,
-      phone: client.phone,
-      status: client.status,
-      business_id: to_string(client.business_id),
-      user_id: if(client.user_id, do: to_string(client.user_id), else: nil),
-      notes: client.notes
-    }
-  end
-
-  # Formats user for JSON response
-  defp format_user(user) do
-    %{
-      id: to_string(user.id),
-      email: user.email,
-      full_name: user.full_name,
-      email_verified: user.email_verified
-    }
-  end
+  defp format_client(client), do: ResponseHelpers.format_client(client)
 
   # Formats subscription with plan for JSON response
-  defp format_subscription(subscription) do
-    %{
-      id: to_string(subscription.id),
-      business_id: to_string(subscription.business_id),
-      plan_id: to_string(subscription.plan_id),
-      status: subscription.status,
-      started_at: subscription.started_at,
-      current_period_start: subscription.current_period_start,
-      current_period_end: subscription.current_period_end,
-      cancelled_at: subscription.cancelled_at,
-      plan: if(subscription.plan, do: format_plan(subscription.plan), else: nil)
-    }
+  defp format_subscription(subscription), do: ResponseHelpers.format_subscription(subscription)
+
+  # Renders an API error response
+  defp render_error(conn, %ApiError{} = error) do
+    conn = maybe_add_headers(conn, error)
+
+    conn
+    |> put_status(error.status)
+    |> json(ApiError.to_json(error))
   end
 
-  # Formats plan for JSON response
-  defp format_plan(plan) do
-    %{
-      id: to_string(plan.id),
-      name: plan.name,
-      slug: plan.slug,
-      description: plan.description,
-      price_cents: plan.price_cents,
-      billing_interval: plan.billing_interval,
-      features: plan.features,
-      limits: plan.limits
-    }
-  end
+  # Adds headers from ApiError to the connection if present
+  defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
 
-  # Translates changeset errors to a map of field => [errors]
-  defp translate_changeset_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
+  defp maybe_add_headers(conn, %ApiError{headers: headers}) do
+    Enum.reduce(headers, conn, fn {key, value}, acc ->
+      put_resp_header(acc, key, value)
     end)
   end
 end

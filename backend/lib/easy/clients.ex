@@ -32,7 +32,7 @@ defmodule Easy.Clients do
     - attrs: Map of client attributes (email, full_name, phone, notes, business_id)
 
   ## Returns
-    - {:ok, %{client: client, invitation_token: token_uuid}} on success
+    - {:ok, %{client: client, invitation_token: token_uuid, expires_at: datetime}} on success
     - {:error, changeset} on validation failure
     - {:error, :rate_limited, retry_after} if rate limit exceeded
 
@@ -43,7 +43,7 @@ defmodule Easy.Clients do
         full_name: "Jane Client",
         business_id: 123
       })
-      {:ok, %{client: %Client{}, invitation_token: "550e8400-..."}}
+      {:ok, %{client: %Client{}, invitation_token: "550e8400-...", expires_at: ~U[2024-01-08 12:00:00Z]}}
   """
   def create_invitation(%Coach{id: coach_id, business_id: business_id} = coach, attrs) do
     # Preload user and business for email
@@ -81,7 +81,76 @@ defmodule Easy.Clients do
   defp create_invitation_with_details(coach_id, business_id, attrs, coach_name, business_name) do
     # Ensure business_id is set in attrs
     attrs_with_business = Map.put(attrs, :business_id, business_id)
+    email = attrs_with_business["email"] || attrs_with_business[:email]
 
+    # Check for existing pending invitation (idempotency)
+    case get_existing_pending_invitation(email, business_id) do
+      {:ok, existing_client, existing_token} ->
+        # Return existing invitation
+        {:ok,
+         %{
+           client: existing_client,
+           invitation_token: existing_token.token,
+           expires_at: existing_token.expires_at
+         }}
+
+      nil ->
+        # No existing invitation, create new one
+        create_new_invitation(
+          attrs_with_business,
+          coach_id,
+          business_id,
+          coach_name,
+          business_name
+        )
+    end
+  end
+
+  # Gets an existing pending invitation for the same email and business
+  defp get_existing_pending_invitation(email, business_id) do
+    # Find pending client with this email in this business
+    client =
+      from(c in Client,
+        where:
+          c.email == ^String.downcase(email) and c.business_id == ^business_id and
+            c.status == "pending",
+        limit: 1
+      )
+      |> Repo.one()
+
+    case client do
+      nil ->
+        nil
+
+      client ->
+        # Find active invitation token for this client
+        token =
+          from(t in Easy.Accounts.OneTimeToken,
+            where:
+              t.type == "client_invitation" and
+                is_nil(t.used_at) and
+                t.expires_at > ^DateTime.utc_now() and
+                fragment("?->>'client_id' = ?", t.metadata, ^to_string(client.id)),
+            order_by: [desc: t.inserted_at],
+            limit: 1
+          )
+          |> Repo.one()
+
+        case token do
+          nil -> nil
+          token -> {:ok, client, token}
+        end
+    end
+  end
+
+  # Creates a new invitation
+  defp create_new_invitation(
+         attrs_with_business,
+         coach_id,
+         business_id,
+         coach_name,
+         business_name
+       ) do
     # Create client with pending status
     case %Client{}
          |> Client.create_changeset(attrs_with_business)
@@ -96,10 +165,10 @@ defmodule Easy.Clients do
 
         # Generate the token without sending email
         case generate_invitation_token(client.email, metadata) do
-          {:ok, token_uuid} ->
+          {:ok, token_uuid, expires_at} ->
             # Send invitation email with proper template
             send_invitation_email(client.email, token_uuid, coach_name, business_name)
-            {:ok, %{client: client, invitation_token: token_uuid}}
+            {:ok, %{client: client, invitation_token: token_uuid, expires_at: expires_at}}
 
           {:error, :rate_limited, retry_after} ->
             # Clean up the client record if token generation fails
@@ -144,7 +213,7 @@ defmodule Easy.Clients do
              |> Easy.Accounts.OneTimeToken.changeset(attrs)
              |> Repo.insert() do
           {:ok, _token} ->
-            {:ok, token_uuid}
+            {:ok, token_uuid, expires_at}
 
           {:error, changeset} ->
             {:error, changeset}
@@ -188,6 +257,7 @@ defmodule Easy.Clients do
   - The token is of type "client_invitation"
   - The token has not been used
   - The token has not expired
+  - The token metadata is valid (client_id, business_id, inviting_coach_id)
 
   Returns the invitation token with preloaded client data.
 
@@ -199,6 +269,7 @@ defmodule Easy.Clients do
     - {:error, :invalid_token} if token doesn't exist or is invalid
     - {:error, :token_expired} if token has expired
     - {:error, :token_used} if token was already used
+    - {:error, :metadata_validation_failed, reason} if metadata validation fails
 
   ## Examples
 
@@ -222,86 +293,89 @@ defmodule Easy.Clients do
             {:error, :token_expired}
 
           true ->
-            # Get client from metadata
-            client_id = token.metadata["client_id"]
+            # Validate metadata
+            case validate_invitation_metadata(token.metadata) do
+              {:ok, client_id} ->
+                case get_client(client_id) do
+                  nil ->
+                    {:error, :metadata_validation_failed, "Client not found"}
 
-            case get_client(client_id) do
-              nil ->
-                {:error, :invalid_token}
+                  client ->
+                    # Preload business for invitation display
+                    client = Repo.preload(client, :business)
+                    {:ok, %{token: token, client: client}}
+                end
 
-              client ->
-                # Preload business for invitation display
-                client = Repo.preload(client, :business)
-                {:ok, %{token: token, client: client}}
+              {:error, reason} ->
+                {:error, :metadata_validation_failed, reason}
             end
         end
     end
   end
 
   @doc """
-  Accepts a client invitation and sends OTP for registration.
+  Validates invitation token metadata.
 
-  This function:
-  1. Validates the invitation token
-  2. Sends a new OTP code to the client's email for verification
-  3. Returns verification_pending status
-
-  The invitation token itself is NOT marked as used yet - it will be
-  marked as used when the client completes registration with verify_otp.
+  Checks that:
+  - client_id exists in metadata
+  - business_id exists in metadata
+  - inviting_coach_id exists in metadata and references a valid coach
 
   ## Parameters
-    - token_uuid: The invitation token UUID
+    - metadata: The token metadata map
 
   ## Returns
-    - {:ok, :verification_pending} on success
-    - {:error, reason} on failure
+    - {:ok, client_id} on success
+    - {:error, reason} on validation failure
 
   ## Examples
 
-      iex> accept_invitation("550e8400-e29b-41d4-a716-446655440000")
-      {:ok, :verification_pending}
+      iex> validate_invitation_metadata(%{"client_id" => "123", "business_id" => "456", "inviting_coach_id" => "789"})
+      {:ok, "123"}
 
-      iex> accept_invitation("invalid-uuid")
-      {:error, :invalid_token}
+      iex> validate_invitation_metadata(%{})
+      {:error, "Missing client_id in invitation metadata"}
   """
-  def accept_invitation(token_uuid) do
-    case get_invitation(token_uuid) do
-      {:ok, %{token: token, client: _client}} ->
-        # Send OTP to client's email for registration verification
-        # The OTP type is still "client_invitation" and includes the token_uuid in metadata
-        metadata = Map.put(token.metadata, "invitation_token", token_uuid)
+  def validate_invitation_metadata(metadata) do
+    cond do
+      is_nil(metadata["client_id"]) ->
+        {:error, "Missing client_id in invitation metadata"}
 
-        case Accounts.generate_otp(token.email, "client_invitation", metadata) do
-          {:ok, _otp_token_uuid} ->
-            {:ok, :verification_pending}
+      is_nil(metadata["business_id"]) ->
+        {:error, "Missing business_id in invitation metadata"}
 
-          {:error, :rate_limited, retry_after} ->
-            {:error, :rate_limited, retry_after}
+      is_nil(metadata["inviting_coach_id"]) ->
+        {:error, "Missing inviting_coach_id in invitation metadata"}
 
-          {:error, reason} ->
-            {:error, reason}
+      true ->
+        # Validate that inviting coach exists
+        case Easy.Coaches.get_coach(metadata["inviting_coach_id"]) do
+          nil ->
+            {:error, "Inviting coach not found"}
+
+          _coach ->
+            {:ok, metadata["client_id"]}
         end
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
   @doc """
   Completes client registration by verifying OTP and creating user account.
 
-  This function:
-  1. Verifies the OTP code
-  2. Creates a user account for the client
-  3. Links the user to the existing client record
-  4. Activates the client (changes status to "active")
-  5. Automatically creates a coach-client assignment to the inviting coach
-  6. Creates a session for the new user
+  This function combines the previous "accept" and "complete" steps into a single operation.
+  It:
+  1. Validates the invitation token
+  2. Verifies the OTP code against the invitation token
+  3. Creates a user account for the client
+  4. Links the user to the existing client record
+  5. Activates the client (changes status to "active")
+  6. Automatically creates a coach-client assignment to the inviting coach
+  7. Creates a session for the new user
+  8. Marks the invitation token as used
 
   ## Parameters
-    - email: The client's email address
-    - otp_code: The 6-digit OTP code
-    - invitation_token: The invitation token UUID
+    - token_id: The invitation token UUID
+    - code: The 6-digit OTP code
 
   ## Returns
     - {:ok, %{user: user, client: client, session: session_data}} on success
@@ -309,37 +383,51 @@ defmodule Easy.Clients do
 
   ## Examples
 
-      iex> complete_client_registration("client@example.com", "123456", "550e8400-...")
+      iex> complete_client_registration("550e8400-...", "123456")
       {:ok, %{
         user: %User{},
         client: %Client{status: "active"},
         session: %{access_token: "...", refresh_token: "..."}
       }}
 
-      iex> complete_client_registration("client@example.com", "wrong", "550e8400-...")
+      iex> complete_client_registration("550e8400-...", "wrong")
       {:error, :invalid_otp}
   """
-  def complete_client_registration(email, otp_code, invitation_token) do
-    # Verify OTP code
-    case Accounts.verify_otp(email, otp_code, "client_invitation") do
-      {:ok, otp_token} ->
-        # Get the invitation token to retrieve client and coach info
-        case get_invitation(invitation_token) do
-          {:ok, %{client: client}} ->
-            # Extract metadata from OTP token
-            client_id = otp_token.metadata["client_id"]
-            inviting_coach_id = otp_token.metadata["inviting_coach_id"]
+  def complete_client_registration(token_id, code) do
+    # Get the invitation token to retrieve client and coach info
+    case get_invitation(token_id) do
+      {:ok, %{token: invitation_token, client: client}} ->
+        # Verify the OTP code against the invitation token
+        # The invitation token itself contains the OTP code
+        if not Easy.Accounts.OneTimeToken.verify_code(invitation_token, code) do
+          # Increment attempts on the invitation token
+          invitation_token
+          |> Easy.Accounts.OneTimeToken.increment_attempts_changeset()
+          |> Repo.update()
+
+          {:error, :invalid_otp}
+        else
+          # Check if max attempts exceeded
+          auth_config = Application.get_env(:easy, :auth, [])
+          max_attempts = Keyword.get(auth_config, :otp_max_attempts, 3)
+
+          if invitation_token.attempts >= max_attempts do
+            {:error, :max_attempts}
+          else
+            # Extract metadata from invitation token
+            client_id = invitation_token.metadata["client_id"]
+            inviting_coach_id = invitation_token.metadata["inviting_coach_id"]
 
             # Verify the client_id matches
             if client.id != client_id do
-              {:error, :invalid_invitation}
+              {:error, :metadata_validation_failed, "Client ID mismatch"}
             else
               # Use a transaction to ensure all operations succeed or fail together
               Ecto.Multi.new()
               |> Ecto.Multi.run(:user, fn _repo, _changes ->
                 # Create user account
                 Accounts.create_user(%{
-                  email: email,
+                  email: client.email,
                   full_name: client.full_name,
                   email_verified: true,
                   email_verified_at: DateTime.utc_now() |> DateTime.truncate(:second)
@@ -363,6 +451,12 @@ defmodule Easy.Clients do
                   {:ok, nil}
                 end
               end)
+              |> Ecto.Multi.run(:mark_used, fn _repo, _changes ->
+                # Mark invitation token as used
+                invitation_token
+                |> Easy.Accounts.OneTimeToken.mark_used_changeset()
+                |> Repo.update()
+              end)
               |> Ecto.Multi.run(:session, fn _repo, %{user: user} ->
                 # Create session for the new user
                 Accounts.create_session(user)
@@ -381,10 +475,11 @@ defmodule Easy.Clients do
                   {:error, reason}
               end
             end
-
-          {:error, reason} ->
-            {:error, reason}
+          end
         end
+
+      {:error, :metadata_validation_failed, reason} ->
+        {:error, :metadata_validation_failed, reason}
 
       {:error, reason} ->
         {:error, reason}

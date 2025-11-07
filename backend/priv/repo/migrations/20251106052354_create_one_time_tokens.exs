@@ -2,8 +2,9 @@ defmodule Easy.Repo.Migrations.CreateOneTimeTokens do
   use Ecto.Migration
 
   def change do
-    create table(:one_time_tokens) do
-      add :token, :string, null: false
+    create table(:one_time_tokens, primary_key: false) do
+      add :id, :uuid, primary_key: true, default: fragment("gen_random_uuid()")
+      add :token, :uuid, null: false, default: fragment("gen_random_uuid()")
       add :code, :string, null: false
       add :type, :string, null: false
       add :email, :string, null: false
@@ -11,7 +12,7 @@ defmodule Easy.Repo.Migrations.CreateOneTimeTokens do
       add :used_at, :utc_datetime
       add :attempts, :integer, default: 0, null: false
       add :metadata, :map
-      add :user_id, references(:users, on_delete: :nothing)
+      add :user_id, references(:users, type: :uuid, on_delete: :nothing)
 
       timestamps()
     end

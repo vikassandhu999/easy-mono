@@ -7,6 +7,9 @@ defmodule Easy.Organizations.Subscription do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "subscriptions" do
     field :status, :string
     field :started_at, :utc_datetime

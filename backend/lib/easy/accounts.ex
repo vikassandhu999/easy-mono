@@ -624,6 +624,8 @@ defmodule Easy.Accounts do
 
   # Sends OTP email based on type
   defp send_otp_email(email, code, type, metadata \\ %{}) do
+    IO.inspect(%{email: email, code: code})
+
     email_struct =
       case type do
         "email_verification" -> Easy.Emails.otp_verification_email(email, code)
@@ -695,11 +697,15 @@ defmodule Easy.Accounts do
     session_expiry_days = Keyword.get(auth_config, :session_expiry_days, 7)
     expires_at = DateTime.add(now, session_expiry_days * 24 * 60 * 60, :second)
 
+    # Use unique temporary values to avoid unique constraint violations
+    temp_token = "temp_#{Ecto.UUID.generate()}"
+    temp_refresh = "temp_#{Ecto.UUID.generate()}"
+
     session_attrs = %{
       # Will be replaced with actual JWT
-      token: "temp",
+      token: temp_token,
       # Will be replaced with actual JWT
-      refresh_token: "temp",
+      refresh_token: temp_refresh,
       expires_at: expires_at,
       last_activity_at: now,
       user_id: user.id

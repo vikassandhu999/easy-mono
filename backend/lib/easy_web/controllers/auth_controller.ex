@@ -254,10 +254,20 @@ defmodule EasyWeb.AuthController do
         error = ApiError.from_code(:user_not_found, nil, nil)
         render_error(conn, error)
 
-      {:error, reason} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
+        # Handle changeset errors
+        error = ApiError.unprocessable_entity("Failed to create session", changeset)
+        render_error(conn, error)
+
+      {:error, reason} when is_atom(reason) or is_binary(reason) ->
         error =
           ApiError.unprocessable_entity("Failed to verify OTP", %{reason: to_string(reason)})
 
+        render_error(conn, error)
+
+      {:error, _reason} ->
+        # Fallback for other error types
+        error = ApiError.internal_server_error("An unexpected error occurred")
         render_error(conn, error)
     end
   end

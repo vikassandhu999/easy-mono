@@ -1,20 +1,40 @@
 # OAuth Routes Configuration
 
+⚠️ **DEPRECATED**: These OAuth endpoints are deprecated and will be removed in a future version. Please migrate to the new authentication endpoints documented in [Authentication API](./AUTHENTICATION_API.md).
+
 This document describes the OAuth 2.0 routes configuration for the coaching platform.
 
-## OAuth Endpoints
+## Migration Notice
+
+**New Authentication API Available**: We recommend migrating to the simplified authentication endpoints:
+
+- [Authentication API Documentation](./AUTHENTICATION_API.md)
+- [Migration Guide](./MIGRATION_GUIDE.md)
+
+The new API provides:
+
+- Simpler request/response formats
+- Explicit token references with UUIDs
+- Better error handling with machine-readable codes
+- Reduced API calls for common flows
+
+## OAuth Endpoints (Deprecated)
 
 All OAuth endpoints are configured under the `/oauth` path and follow RFC 6749 (OAuth 2.0) conventions.
+
+**These endpoints will continue to work but are no longer recommended for new integrations.**
 
 ### 1. POST /oauth/authorize
 
 Initiates the OTP authentication flow by sending a verification code to the user's email.
 
 **Parameters:**
+
 - `email` (required): User's email address
 - `resend` (optional): Set to "true" to resend OTP
 
 **Response (200):**
+
 ```json
 {
   "status": "verification_pending"
@@ -22,6 +42,7 @@ Initiates the OTP authentication flow by sending a verification code to the user
 ```
 
 **Error Response (429 - Rate Limited):**
+
 ```json
 {
   "error": "slow_down",
@@ -36,11 +57,13 @@ Exchanges credentials for access and refresh tokens. Supports multiple grant typ
 #### Grant Type: OTP
 
 **Parameters:**
+
 - `grant_type`: "otp" (required)
 - `email`: User's email address (required)
 - `code`: 6-digit OTP code (required)
 
 **Response (200):**
+
 ```json
 {
   "access_token": "eyJhbGc...",
@@ -53,10 +76,12 @@ Exchanges credentials for access and refresh tokens. Supports multiple grant typ
 #### Grant Type: Refresh Token
 
 **Parameters:**
+
 - `grant_type`: "refresh_token" (required)
 - `refresh_token`: Valid refresh token (required)
 
 **Response (200):**
+
 ```json
 {
   "access_token": "eyJhbGc...",
@@ -66,6 +91,7 @@ Exchanges credentials for access and refresh tokens. Supports multiple grant typ
 ```
 
 **Error Response (400):**
+
 ```json
 {
   "error": "invalid_grant",
@@ -78,9 +104,11 @@ Exchanges credentials for access and refresh tokens. Supports multiple grant typ
 Revokes an access token or refresh token, invalidating the session.
 
 **Parameters:**
+
 - `token` (required): The access token or refresh token to revoke
 
 **Response (200):**
+
 ```json
 {
   "status": "revoked"
@@ -92,9 +120,11 @@ Revokes an access token or refresh token, invalidating the session.
 Returns the current user's profile information. Requires authentication.
 
 **Headers:**
+
 - `Authorization: Bearer <access_token>` (required)
 
 **Response (200):**
+
 ```json
 {
   "sub": "123",
@@ -106,6 +136,7 @@ Returns the current user's profile information. Requires authentication.
 ```
 
 **Error Response (401):**
+
 ```json
 {
   "error": "invalid_token",
@@ -120,6 +151,7 @@ CORS is configured globally in `lib/easy_web/endpoint.ex` using the `CORSPlug` l
 ### Allowed Origins
 
 **Development:**
+
 - http://localhost:2020
 - http://localhost:3000
 - http://localhost:3001
@@ -129,6 +161,7 @@ CORS is configured globally in `lib/easy_web/endpoint.ex` using the `CORSPlug` l
 - http://127.0.0.1:5173
 
 **Production:**
+
 - https://yourdomain.com
 - https://app.yourdomain.com
 - https://coach.yourdomain.com
@@ -179,6 +212,7 @@ end
 ```
 
 All OAuth endpoints use the `:api` pipeline which:
+
 - Accepts JSON content type
 - Parses JSON request bodies
 - Returns JSON responses

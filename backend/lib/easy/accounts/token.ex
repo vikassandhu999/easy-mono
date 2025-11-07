@@ -108,25 +108,29 @@ defmodule Easy.Accounts.Token do
   @doc """
   Extracts the user ID from token claims.
 
+  Returns the user ID as a UUID string.
+
   ## Examples
 
-      iex> get_user_id(%{"sub" => "123"})
-      123
+      iex> get_user_id(%{"sub" => "a1b2c3d4-e5f6-7890-abcd-ef1234567890"})
+      "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
   """
   def get_user_id(%{"sub" => sub}) when is_binary(sub) do
-    String.to_integer(sub)
+    sub
   end
 
   @doc """
   Extracts the session ID from token claims.
 
+  Returns the session ID as a UUID string.
+
   ## Examples
 
-      iex> get_session_id(%{"jti" => "456"})
-      456
+      iex> get_session_id(%{"jti" => "b2c3d4e5-f6a7-8901-bcde-f12345678901"})
+      "b2c3d4e5-f6a7-8901-bcde-f12345678901"
   """
   def get_session_id(%{"jti" => jti}) when is_binary(jti) do
-    String.to_integer(jti)
+    jti
   end
 
   # Private functions

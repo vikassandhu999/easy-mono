@@ -17,13 +17,13 @@ This document describes all configuration options for the Easy Coaching Platform
 
 These environment variables **must** be set in production:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `ecto://user:pass@host/dbname` |
-| `SECRET_KEY_BASE` | Phoenix secret key base (generate with `mix phx.gen.secret`) | `abc123...` |
-| `JWT_SECRET` | Secret key for signing JWT tokens (min 32 characters) | `your-secret-key-minimum-32-chars` |
-| `PHX_HOST` | Public hostname for the application | `api.example.com` |
-| `PORT` | HTTP port to bind to | `4000` |
+| Variable          | Description                                                  | Example                            |
+| ----------------- | ------------------------------------------------------------ | ---------------------------------- |
+| `DATABASE_URL`    | PostgreSQL connection string                                 | `ecto://user:pass@host/dbname`     |
+| `SECRET_KEY_BASE` | Phoenix secret key base (generate with `mix phx.gen.secret`) | `abc123...`                        |
+| `JWT_SECRET`      | Secret key for signing JWT tokens (min 32 characters)        | `your-secret-key-minimum-32-chars` |
+| `PHX_HOST`        | Public hostname for the application                          | `api.example.com`                  |
+| `PORT`            | HTTP port to bind to                                         | `4000`                             |
 
 ### Email Configuration
 
@@ -63,19 +63,19 @@ SMTP_PORT=587
 
 ### Email Sender Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `EMAIL_FROM_NAME` | Display name for outgoing emails | `Easy Coaching` |
+| Variable             | Description                       | Default                    |
+| -------------------- | --------------------------------- | -------------------------- |
+| `EMAIL_FROM_NAME`    | Display name for outgoing emails  | `Easy Coaching`            |
 | `EMAIL_FROM_ADDRESS` | Email address for outgoing emails | `noreply@easycoaching.com` |
-| `APP_URL` | Base URL for invitation links | `http://localhost:4000` |
+| `APP_URL`            | Base URL for invitation links     | `http://localhost:4000`    |
 
 ### Optional Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `POOL_SIZE` | Database connection pool size | `10` |
-| `ECTO_IPV6` | Enable IPv6 for database connections | `false` |
-| `DNS_CLUSTER_QUERY` | DNS query for clustering | - |
+| Variable            | Description                          | Default |
+| ------------------- | ------------------------------------ | ------- |
+| `POOL_SIZE`         | Database connection pool size        | `10`    |
+| `ECTO_IPV6`         | Enable IPv6 for database connections | `false` |
+| `DNS_CLUSTER_QUERY` | DNS query for clustering             | -       |
 
 ## Application Configuration
 
@@ -85,23 +85,27 @@ Configure authentication behavior in `config/config.exs`:
 
 ```elixir
 config :easy, :auth,
-  # OTP token settings (Requirements 2.4, 2.5)
+  # OTP token settings
   otp_expiry_minutes: 10,              # OTP code expiration time
   otp_max_attempts: 3,                 # Maximum OTP verification attempts
   invitation_expiry_days: 7,           # Client invitation token expiration
 
-  # Rate limiting settings (Requirements 9.2, 9.3, 14.3)
+  # Rate limiting settings
   rate_limit_window_minutes: 15,       # Rate limit time window
   rate_limit_max_requests: 3,          # Maximum OTP requests per window
 
-  # Session settings (Requirement 8.5)
+  # Session settings
   session_expiry_days: 7,              # Session validity period
   access_token_expiry_days: 7,         # JWT access token expiration
   refresh_token_expiry_days: 30,       # JWT refresh token expiration
 
-  # Cleanup settings (Requirement 14.4)
+  # Cleanup settings
   cleanup_expired_tokens_older_than_days: 7,    # Delete old OTP tokens
-  cleanup_old_sessions_older_than_days: 90      # Delete old sessions
+  cleanup_old_sessions_older_than_days: 90,     # Delete old sessions
+
+  # Idempotency settings (NEW)
+  idempotent_otp_window_seconds: 60,   # Return same token_id if OTP requested within this window
+  idempotent_operations_enabled: true  # Enable idempotent behavior for critical operations
 ```
 
 ### JWT Configuration
@@ -141,18 +145,21 @@ config :easy, :email,
 ### OTP (One-Time Password) Settings
 
 **OTP Expiration** (`otp_expiry_minutes`)
+
 - Default: 10 minutes
 - Controls how long OTP codes remain valid
 - Applies to email verification and login OTP codes
 - Client invitation tokens use `invitation_expiry_days` instead
 
 **OTP Max Attempts** (`otp_max_attempts`)
+
 - Default: 3 attempts
 - Maximum number of times a user can attempt to verify an OTP code
 - After exceeding this limit, a new OTP must be requested
 - Prevents brute force attacks
 
 **Invitation Expiry** (`invitation_expiry_days`)
+
 - Default: 7 days
 - How long client invitation links remain valid
 - Longer expiry allows flexibility for client onboarding
@@ -160,11 +167,13 @@ config :easy, :email,
 ### Rate Limiting
 
 **Rate Limit Window** (`rate_limit_window_minutes`)
+
 - Default: 15 minutes
 - Time window for counting OTP requests
 - Prevents abuse of OTP generation
 
 **Rate Limit Max Requests** (`rate_limit_max_requests`)
+
 - Default: 3 requests
 - Maximum OTP requests allowed per email within the time window
 - Returns HTTP 429 with `Retry-After` header when exceeded
@@ -172,16 +181,19 @@ config :easy, :email,
 ### Session Management
 
 **Session Expiry** (`session_expiry_days`)
+
 - Default: 7 days
 - How long a session remains valid
 - Sessions are automatically cleaned up after expiration
 
 **Access Token Expiry** (`access_token_expiry_days`)
+
 - Default: 7 days
 - Lifetime of JWT access tokens
 - Tokens include user ID, email, and roles
 
 **Refresh Token Expiry** (`refresh_token_expiry_days`)
+
 - Default: 30 days
 - Lifetime of JWT refresh tokens
 - Used to obtain new access tokens without re-authentication
@@ -189,14 +201,49 @@ config :easy, :email,
 ### Cleanup Settings
 
 **Expired Tokens Cleanup** (`cleanup_expired_tokens_older_than_days`)
+
 - Default: 7 days
 - Deletes OTP tokens that expired more than this many days ago
 - Should be run periodically as a background job
 
 **Old Sessions Cleanup** (`cleanup_old_sessions_older_than_days`)
+
 - Default: 90 days
 - Deletes sessions that expired more than this many days ago
 - Should be run periodically as a background job
+
+### Idempotency Settings
+
+**Idempotent OTP Window** (`idempotent_otp_window_seconds`)
+
+- Default: 60 seconds
+- When a duplicate OTP request is made within this window, the same token_id is returned
+- Prevents duplicate OTP codes from being sent for accidental retries
+- Improves user experience by handling network retries gracefully
+
+**Idempotent Operations Enabled** (`idempotent_operations_enabled`)
+
+- Default: true
+- Enables idempotent behavior for critical operations:
+  - OTP generation returns existing token_id if requested within window
+  - Business creation returns existing business if user already owns one
+  - Client invitation returns existing invitation if one is pending
+- Set to false to disable idempotency (not recommended for production)
+
+**How Idempotency Works:**
+
+1. **OTP Generation**: When a user requests an OTP, the system checks if a valid OTP was generated within the last 60 seconds. If found, the existing token_id is returned instead of generating a new one.
+
+2. **Business Creation**: When a user attempts to create a business, the system checks if they already own one. If found, the existing business is returned with HTTP 200 instead of creating a duplicate.
+
+3. **Client Invitation**: When a coach invites a client, the system checks if a pending invitation already exists for that email/business combination. If found, the existing invitation is returned.
+
+**Benefits:**
+
+- Handles network retries gracefully without creating duplicates
+- Improves user experience by preventing duplicate emails
+- Reduces database load from retry attempts
+- Maintains data consistency
 
 ## Email Configuration
 
@@ -270,6 +317,7 @@ DATABASE_URL=ecto://user:pass@host/database
 ```
 
 Optional settings:
+
 - `POOL_SIZE` - Number of database connections (default: 10)
 - `ECTO_IPV6` - Set to `true` or `1` to enable IPv6
 
@@ -411,21 +459,25 @@ config :easy, Easy.Accounts.Token,
 ### Common Issues
 
 **"JWT secret not configured" error**
+
 - Ensure `JWT_SECRET` environment variable is set
 - In development, check `config/dev.exs` for the default secret
 
 **Emails not sending**
+
 - Check email adapter configuration
 - Verify API keys are correct
 - Check logs for email delivery errors
 - In development, check `/dev/mailbox` for local emails
 
 **Rate limit errors**
+
 - Check `rate_limit_window_minutes` and `rate_limit_max_requests` settings
 - Consider increasing limits if legitimate users are affected
 - Check for abuse patterns in logs
 
 **Database connection errors**
+
 - Verify `DATABASE_URL` is correct
 - Check database server is running
 - Verify network connectivity

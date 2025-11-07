@@ -323,40 +323,40 @@ This implementation plan breaks down the API refinement and UUID migration into 
   - Verify retry_after is returned correctly
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [-] 10. Update all API responses to use UUIDs
+- [x] 10. Update all API responses to use UUIDs
 - [x] 10.1 Update user-related responses
 
   - Ensure all user_id fields return UUIDs as strings
   - Update session responses to include UUID session_id
   - _Requirements: 1.5_
 
-- [-] 10.2 Update business-related responses
+- [x] 10.2 Update business-related responses
 
   - Ensure business_id, owner_id return UUIDs
   - Update subscription responses with UUID IDs
   - _Requirements: 1.5_
 
-- [ ] 10.3 Update coach and client responses
+- [x] 10.3 Update coach and client responses
 
   - Ensure coach_id, client_id return UUIDs
   - Update assignment responses with UUID IDs
   - _Requirements: 1.5_
 
-- [ ] 10.4 Update invitation responses
+- [x] 10.4 Update invitation responses
 
   - Ensure token_id is returned as UUID string
   - Update all related entity IDs to UUIDs
   - _Requirements: 1.5, 2.1_
 
-- [ ] 11. Testing and validation
-- [ ] 11.1 Update existing tests for UUID support
+- [x] 11. Testing and validation
+- [x] 11.1 Update existing tests for UUID support
 
   - Update all test fixtures to use UUIDs
   - Update test assertions to expect UUID strings
   - Fix any broken tests due to UUID migration
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 11.2 Add tests for new authentication endpoints
+- [x] 11.2 Add tests for new authentication endpoints
 
   - Test POST /api/auth/send-otp endpoint
   - Test POST /api/auth/verify-otp endpoint
@@ -364,35 +364,35 @@ This implementation plan breaks down the API refinement and UUID migration into 
   - Test POST /api/auth/logout endpoint
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
-- [ ] 11.3 Add tests for streamlined flows
+- [x] 11.3 Add tests for streamlined flows
 
   - Test complete coach registration flow (3 API calls)
   - Test complete client invitation flow (3 API calls)
   - Verify responses include all necessary data
   - _Requirements: 3.7, 4.8_
 
-- [ ] 11.4 Add tests for error handling
+- [x] 11.4 Add tests for error handling
 
   - Test all error codes are returned correctly
   - Test error response format consistency
   - Test rate limiting error responses
   - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
 
-- [ ] 11.5 Add tests for idempotency
+- [x] 11.5 Add tests for idempotency
 
   - Test duplicate OTP generation returns same token_id
   - Test duplicate business creation returns existing business
   - Test duplicate invitation returns existing invitation
   - _Requirements: 18.1, 18.2, 18.3_
 
-- [ ] 11.6 Add tests for token type validation
+- [x] 11.6 Add tests for token type validation
 
   - Test token type mismatch errors
   - Test metadata validation errors
   - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 17.1, 17.2, 17.3, 17.4_
 
-- [ ] 12. Documentation and cleanup
-- [ ] 12.1 Update API documentation
+- [x] 12. Documentation and cleanup
+- [x] 12.1 Update API documentation
 
   - Document new authentication endpoints
   - Document streamlined flows
@@ -400,20 +400,20 @@ This implementation plan breaks down the API refinement and UUID migration into 
   - Mark OAuth endpoints as deprecated
   - _Requirements: 11.7, 19.2_
 
-- [ ] 12.2 Update configuration documentation
+- [x] 12.2 Update configuration documentation
 
   - Document new configuration options
   - Document idempotency settings
   - _Requirements: Configuration section in design_
 
-- [ ] 12.3 Create migration guide for API consumers
+- [x] 12.3 Create migration guide for API consumers
 
   - Document changes from integer IDs to UUIDs
   - Document changes from OAuth to simple auth endpoints
   - Provide code examples for migration
   - _Requirements: 11.7_
 
-- [ ] 12.4 Run final validation
+- [x] 12.4 Run final validation
   - Run `mix precommit` to check for issues
   - Verify all tests pass
   - Verify database migrations work correctly

@@ -6,8 +6,8 @@ import Config
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :easy, Easy.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "admin",
+  password: "L2KjxOH9al",
   hostname: "localhost",
   database: "easy_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,

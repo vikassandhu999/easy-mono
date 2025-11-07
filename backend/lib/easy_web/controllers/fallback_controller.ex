@@ -148,6 +148,56 @@ defmodule EasyWeb.FallbackController do
   end
 
   # ============================================
+  # NUTRITION-SPECIFIC ERROR ATOMS
+  # ============================================
+
+  # Handles ingredient deletion protection
+  def call(conn, {:error, :ingredient_in_use}) do
+    error =
+      ApiError.unprocessable_entity(
+        "Cannot delete ingredient because it is used in one or more recipes or meals"
+      )
+
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles recipe deletion protection
+  def call(conn, {:error, :recipe_in_use}) do
+    error =
+      ApiError.unprocessable_entity(
+        "Cannot delete recipe because it is used in one or more meals"
+      )
+
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles meal not found errors
+  def call(conn, {:error, :meal_not_found}) do
+    error = ApiError.not_found("Meal")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles recipe not found errors
+  def call(conn, {:error, :recipe_not_found}) do
+    error = ApiError.not_found("Recipe")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles ingredient not found errors
+  def call(conn, {:error, :ingredient_not_found}) do
+    error = ApiError.not_found("Ingredient")
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # Handles business mismatch errors (cross-business access attempts)
+  def call(conn, {:error, :business_mismatch}) do
+    error =
+      ApiError.unprocessable_entity("Resources must belong to the same business")
+
+    ApiHelpers.render_api_error(conn, error)
+  end
+
+  # ============================================
   # GENERIC ERROR HANDLERS
   # ============================================
 

@@ -1,9 +1,7 @@
 defmodule EasyWeb.Router do
   use EasyWeb, :router
 
-  # ============================================
   # PIPELINES
-  # ============================================
 
   pipeline :api do
     plug :accepts, ["json"]
@@ -14,9 +12,7 @@ defmodule EasyWeb.Router do
     plug EasyWeb.Plugs.LoadCurrentUser
   end
 
-  # ============================================
   # HEALTH CHECK
-  # ============================================
 
   scope "/api", EasyWeb do
     pipe_through :api
@@ -24,38 +20,7 @@ defmodule EasyWeb.Router do
     get "/health", HealthController, :index
   end
 
-  # ============================================
-  # OAUTH 2.0 ENDPOINTS (DEPRECATED)
-  # ============================================
-  # DEPRECATED: These OAuth 2.0 endpoints are maintained for backward compatibility only.
-  # New integrations should use the simplified authentication endpoints under /api/auth:
-  #   - POST /api/auth/send-otp - Generate and send OTP
-  #   - POST /api/auth/verify-otp - Verify OTP and create session
-  #   - POST /api/auth/refresh - Refresh access token
-  #   - POST /api/auth/logout - Revoke session
-  #
-  # The OAuth endpoints will be removed in a future version.
-  # Please migrate to the new authentication flow.
-
-  scope "/oauth", EasyWeb do
-    pipe_through :api
-
-    # DEPRECATED: Use POST /api/auth/send-otp instead
-    post "/authorize", OAuthController, :authorize
-
-    # DEPRECATED: Use POST /api/auth/verify-otp instead
-    post "/token", OAuthController, :token
-
-    # DEPRECATED: Use POST /api/auth/logout instead
-    post "/revoke", OAuthController, :revoke
-
-    # DEPRECATED: User info is now included in verify-otp response
-    get "/userinfo", OAuthController, :userinfo
-  end
-
-  # ============================================
   # PUBLIC AUTHENTICATION ENDPOINTS
-  # ============================================
 
   scope "/api/auth", EasyWeb do
     pipe_through :api
@@ -66,9 +31,7 @@ defmodule EasyWeb.Router do
     post "/refresh", AuthController, :refresh
   end
 
-  # ============================================
   # AUTHENTICATED AUTH ENDPOINTS
-  # ============================================
 
   scope "/api/auth", EasyWeb do
     pipe_through [:api, :authenticated]
@@ -76,9 +39,7 @@ defmodule EasyWeb.Router do
     post "/logout", AuthController, :logout
   end
 
-  # ============================================
   # PUBLIC INVITATION ENDPOINTS
-  # ============================================
 
   scope "/api/invitations", EasyWeb do
     pipe_through :api
@@ -87,9 +48,7 @@ defmodule EasyWeb.Router do
     post "/:token_id/accept", ClientController, :accept_invitation
   end
 
-  # ============================================
   # AUTHENTICATED ONBOARDING ENDPOINTS
-  # ============================================
 
   scope "/api/onboarding", EasyWeb do
     pipe_through [:api, :authenticated]
@@ -97,9 +56,7 @@ defmodule EasyWeb.Router do
     post "/business", OnboardingController, :create_business
   end
 
-  # ============================================
   # AUTHENTICATED BUSINESS ENDPOINTS
-  # ============================================
 
   scope "/api/businesses", EasyWeb do
     pipe_through [:api, :authenticated]
@@ -111,9 +68,7 @@ defmodule EasyWeb.Router do
     get "/:id/subscription", BusinessController, :show_subscription
   end
 
-  # ============================================
   # AUTHENTICATED COACH ENDPOINTS
-  # ============================================
 
   scope "/api/coaches", EasyWeb do
     pipe_through [:api, :authenticated]
@@ -125,9 +80,7 @@ defmodule EasyWeb.Router do
     delete "/:id/clients/:client_id/unassign", CoachController, :unassign_client
   end
 
-  # ============================================
   # AUTHENTICATED CLIENT ENDPOINTS
-  # ============================================
 
   scope "/api/clients", EasyWeb do
     pipe_through [:api, :authenticated]
@@ -138,5 +91,63 @@ defmodule EasyWeb.Router do
     patch "/:id", ClientController, :update
     get "/:id/coaches", ClientController, :list_coaches
     patch "/:id/status", ClientController, :update_status
+  end
+
+  # AUTHENTICATED NUTRITION ENDPOINTS
+
+  scope "/api/businesses/:business_id", EasyWeb do
+    pipe_through [:api, :authenticated]
+
+    # Ingredient endpoints
+    get "/ingredients", IngredientController, :index
+    post "/ingredients", IngredientController, :create
+
+    # Recipe endpoints
+    get "/recipes", RecipeController, :index
+    post "/recipes", RecipeController, :create
+
+    # Meal endpoints
+    get "/meals", MealController, :index
+    post "/meals", MealController, :create
+  end
+
+  scope "/api/ingredients", EasyWeb do
+    pipe_through [:api, :authenticated]
+
+    get "/:id", IngredientController, :show
+    patch "/:id", IngredientController, :update
+    delete "/:id", IngredientController, :delete
+  end
+
+  scope "/api/recipes", EasyWeb do
+    pipe_through [:api, :authenticated]
+
+    get "/:id", RecipeController, :show
+    patch "/:id", RecipeController, :update
+    delete "/:id", RecipeController, :delete
+
+    # Recipe ingredient endpoints
+    post "/:recipe_id/ingredients", RecipeController, :add_ingredient
+    patch "/:recipe_id/ingredients/:ingredient_id", RecipeController, :update_ingredient
+    delete "/:recipe_id/ingredients/:ingredient_id", RecipeController, :remove_ingredient
+  end
+
+  scope "/api/meals", EasyWeb do
+    pipe_through [:api, :authenticated]
+
+    get "/:id", MealController, :show
+    patch "/:id", MealController, :update
+    delete "/:id", MealController, :delete
+    post "/:id/duplicate", MealController, :duplicate
+
+    # Meal recipe endpoints
+    post "/:meal_id/recipes", MealController, :add_recipe
+    patch "/:meal_id/recipes/:recipe_id", MealController, :update_recipe
+    delete "/:meal_id/recipes/:recipe_id", MealController, :remove_recipe
+
+    # Meal ingredient endpoints
+    post "/:meal_id/ingredients", MealController, :add_ingredient
+    patch "/:meal_id/ingredients/:ingredient_id", MealController, :update_ingredient
+    delete "/:meal_id/ingredients/:ingredient_id", MealController, :remove_ingredient
   end
 end

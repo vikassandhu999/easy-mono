@@ -809,7 +809,7 @@ defmodule Easy.Accounts do
          %User{} = user <- get_user_by_email(token.email) do
       # Mark email as verified if this is an email_verification token
       user =
-        if token.type == "email_verification" and not user.email_verified do
+        if not user.email_verified do
           case mark_email_verified(user) do
             {:ok, verified_user} -> verified_user
             {:error, _} -> user
@@ -820,6 +820,7 @@ defmodule Easy.Accounts do
 
       # Create session (which now includes user data with roles and profiles)
       case create_session(user) do
+
         {:ok, %{user: user_data, session: session_data}} ->
           # Format session response for API
           session_response = %{

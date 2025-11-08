@@ -1,7 +1,7 @@
 defmodule EasyWeb.CoachController do
   use EasyWeb, :controller
 
-  alias Easy.{Coaches, Clients, Repo, ApiError}
+  alias Easy.{Coaches, ApiError}
   alias EasyWeb.ResponseHelpers
 
   action_fallback EasyWeb.FallbackController
@@ -70,22 +70,20 @@ defmodule EasyWeb.CoachController do
   ```
   """
   def show(conn, %{"id" => id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Coaches.get_coach_with_preloads(id, [:user, :business]) do
-      nil ->
+    case Coaches.get_coach(scope, id) do
+      {:ok, coach} ->
+        conn
+        |> json(%{coach: format_coach(coach)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Coach")
         render_error(conn, error)
 
-      coach ->
-        # Check if user belongs to the same business
-        if user_can_access_coach?(user, coach) do
-          conn
-          |> json(%{coach: format_coach(coach)})
-        else
-          error = ApiError.forbidden("You do not have permission to access this coach")
-          render_error(conn, error)
-        end
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to access this coach")
+        render_error(conn, error)
     end
   end
 
@@ -145,34 +143,27 @@ defmodule EasyWeb.CoachController do
   ```
   """
   def update(conn, %{"id" => id} = params) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Coaches.get_coach(id) do
-      nil ->
+    # Extract update attributes
+    attrs = Map.take(params, ["bio", "specialties", "credentials"])
+
+    case Coaches.update_coach(scope, id, attrs) do
+      {:ok, updated_coach} ->
+        conn
+        |> json(%{coach: format_coach(updated_coach)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Coach")
         render_error(conn, error)
 
-      coach ->
-        # Check if user owns this coach profile
-        if coach.user_id == user.id do
-          # Extract update attributes
-          attrs = Map.take(params, ["bio", "specialties", "credentials"])
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You can only update your own coach profile")
+        render_error(conn, error)
 
-          case Coaches.update_coach(coach, attrs) do
-            {:ok, updated_coach} ->
-              updated_coach = Repo.preload(updated_coach, [:user, :business])
-
-              conn
-              |> json(%{coach: format_coach(updated_coach)})
-
-            {:error, changeset} ->
-              error = ApiError.validation_error(changeset)
-              render_error(conn, error)
-          end
-        else
-          error = ApiError.forbidden("You can only update your own coach profile")
-          render_error(conn, error)
-        end
+      {:error, %Ecto.Changeset{} = changeset} ->
+        error = ApiError.validation_error(changeset)
+        render_error(conn, error)
     end
   end
 
@@ -203,26 +194,26 @@ defmodule EasyWeb.CoachController do
   ```
   """
   def list_clients(conn, %{"id" => id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Coaches.get_coach_with_preloads(id, [:business]) do
-      nil ->
+    case Coaches.list_coach_clients(scope, id) do
+      {:ok, clients} ->
+        conn
+        |> json(%{clients: Enum.map(clients, &format_client/1)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Coach")
         render_error(conn, error)
 
-      coach ->
-        # Check if user can access this coach
-        if user_can_access_coach?(user, coach) do
-          clients =
-            Coaches.list_coach_clients(coach.id)
-            |> Repo.preload(:user)
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to access this coach")
+        render_error(conn, error)
 
-          conn
-          |> json(%{clients: Enum.map(clients, &format_client/1)})
-        else
-          error = ApiError.forbidden("You do not have permission to access this coach")
-          render_error(conn, error)
-        end
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to list clients", %{reason: to_string(reason)})
+
+        render_error(conn, error)
     end
   end
 
@@ -270,19 +261,16 @@ defmodule EasyWeb.CoachController do
   ```
   """
   def assign_client(conn, %{"id" => coach_id, "client_id" => client_id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    with {:ok, coach} <- get_coach_or_error(coach_id),
-         {:ok, client} <- get_client_or_error(client_id),
-         :ok <- authorize_coach_access(user, coach),
-         :ok <- verify_same_business(coach, client),
-         {:ok, assignment} <- Coaches.assign_client(coach.id, client.id) do
-      conn
-      |> put_status(:created)
-      |> json(%{
-        assignment: format_assignment(assignment)
-      })
-    else
+    case Coaches.assign_client(scope, coach_id, client_id) do
+      {:ok, assignment} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          assignment: format_assignment(assignment)
+        })
+
       {:error, :coach_not_found} ->
         error = ApiError.not_found("Coach")
         render_error(conn, error)
@@ -310,6 +298,12 @@ defmodule EasyWeb.CoachController do
           error = ApiError.validation_error(changeset)
           render_error(conn, error)
         end
+
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to assign client", %{reason: to_string(reason)})
+
+        render_error(conn, error)
     end
   end
 
@@ -343,17 +337,15 @@ defmodule EasyWeb.CoachController do
   ```
   """
   def unassign_client(conn, %{"id" => coach_id, "client_id" => client_id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    with {:ok, coach} <- get_coach_or_error(coach_id),
-         {:ok, _client} <- get_client_or_error(client_id),
-         :ok <- authorize_coach_access(user, coach),
-         {:ok, _assignment} <- Coaches.unassign_client(coach.id, client_id) do
-      conn
-      |> json(%{
-        message: "Client successfully unassigned from coach"
-      })
-    else
+    case Coaches.unassign_client(scope, coach_id, client_id) do
+      {:ok, _assignment} ->
+        conn
+        |> json(%{
+          message: "Client successfully unassigned from coach"
+        })
+
       {:error, :coach_not_found} ->
         error = ApiError.not_found("Coach")
         render_error(conn, error)
@@ -372,77 +364,18 @@ defmodule EasyWeb.CoachController do
         error = ApiError.not_found("Assignment")
         error = %{error | message: "Client is not assigned to this coach"}
         render_error(conn, error)
+
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to unassign client", %{reason: to_string(reason)})
+
+        render_error(conn, error)
     end
   end
 
   # ============================================
   # PRIVATE HELPERS
   # ============================================
-
-  # Checks if user can access a coach (owns the profile or belongs to same business)
-  defp user_can_access_coach?(user, coach) do
-    import Ecto.Query
-
-    # User owns the coach profile
-    if coach.user_id == user.id do
-      true
-    else
-      # User belongs to the same business (as owner or another coach)
-      business_id = coach.business_id
-
-      # Check if user is business owner
-      owner_query =
-        from b in Easy.Organizations.Business,
-          where: b.id == ^business_id and b.owner_id == ^user.id,
-          limit: 1
-
-      if Repo.exists?(owner_query) do
-        true
-      else
-        # Check if user is a coach in the same business
-        coach_query =
-          from c in Easy.Coaches.Coach,
-            where: c.user_id == ^user.id and c.business_id == ^business_id,
-            limit: 1
-
-        Repo.exists?(coach_query)
-      end
-    end
-  end
-
-  # Gets coach or returns error tuple
-  defp get_coach_or_error(coach_id) do
-    case Coaches.get_coach_with_preloads(coach_id, [:business]) do
-      nil -> {:error, :coach_not_found}
-      coach -> {:ok, coach}
-    end
-  end
-
-  # Gets client or returns error tuple
-  defp get_client_or_error(client_id) do
-    case Clients.get_client_with_preloads(client_id, [:business]) do
-      nil -> {:error, :client_not_found}
-      client -> {:ok, client}
-    end
-  end
-
-  # Authorizes user access to coach
-  defp authorize_coach_access(user, coach) do
-    if user_can_access_coach?(user, coach) do
-      :ok
-    else
-      {:error, :forbidden}
-    end
-  end
-
-  # Verifies coach and client belong to same business
-  defp verify_same_business(coach, client) do
-    if coach.business_id == client.business_id do
-      :ok
-    else
-      {:error, :different_business}
-    end
-  end
 
   # Checks if changeset has unique constraint error
   defp has_unique_constraint_error?(changeset) do

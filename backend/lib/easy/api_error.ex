@@ -144,6 +144,26 @@ defmodule Easy.ApiError do
     new(status, code, msg, details)
   end
 
+  def from_code(:business_mismatch, message, details) do
+    {code, msg, status} = ApiErrorCodes.business_mismatch(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:missing_context, message, details) do
+    {code, msg, status} = ApiErrorCodes.missing_context(message)
+    new(status, code, msg, details)
+  end
+
+  def from_code(:missing_token, message, details) do
+    {code, msg, status} = ApiErrorCodes.missing_token(message)
+    new(status, code, msg, details, [{"www-authenticate", "Bearer"}])
+  end
+
+  def from_code(:expired_token, message, details) do
+    {code, msg, status} = ApiErrorCodes.expired_token(message)
+    new(status, code, msg, details, [{"www-authenticate", "Bearer"}])
+  end
+
   def from_code(:not_found, resource, details) do
     {code, msg, status} = ApiErrorCodes.not_found(resource)
     new(status, code, msg, details)

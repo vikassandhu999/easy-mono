@@ -6,6 +6,18 @@ defmodule Easy.Clients do
   - Client CRUD operations
   - Client invitation flow
   - Client-coach relationships
+
+  ## Scope-Based Functions
+
+  The new scope-based functions accept an `Easy.Auth.Scope` struct as the first
+  parameter and automatically apply business context filtering and authorization.
+  These functions ensure proper tenant isolation and authorization enforcement.
+
+  ## Legacy Functions
+
+  The older functions without scope parameters are maintained for backward
+  compatibility but will be deprecated in future versions. New code should use
+  scope-based functions.
   """
 
   import Ecto.Query, warn: false
@@ -14,9 +26,318 @@ defmodule Easy.Clients do
   alias Easy.Clients.Client
   alias Easy.Accounts
   alias Easy.Coaches.Coach
+  alias Easy.Auth.Scope
+  alias Easy.QueryHelpers
+  alias EasyWeb.Authorization
 
   # ============================================
-  # CLIENT INVITATION FLOW
+  # SCOPE-BASED CLIENT QUERY FUNCTIONS
+  # ============================================
+
+  @doc """
+  Lists all clients in the scope's business context.
+
+  Automatically filters clients by the business_id from the scope,
+  ensuring proper tenant isolation.
+
+  ## Parameters
+    - scope: The scope struct containing business context
+
+  ## Returns
+    - {:ok, [%Client{}]} on success
+    - {:error, :forbidden} if scope has no business context
+
+  ## Examples
+
+      iex> list_clients(scope)
+      {:ok, [%Client{}, %Client{}]}
+
+      iex> list_clients(scope_without_business)
+      {:error, :forbidden}
+  """
+  def list_clients(%Scope{} = scope) do
+    if Scope.has_business_context?(scope) do
+      clients =
+        from(c in Client, order_by: [desc: c.inserted_at])
+        |> QueryHelpers.scope_to_business(scope)
+        |> Repo.all()
+
+      {:ok, clients}
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @doc """
+  Gets a client by ID with scope-based authorization.
+
+  Verifies that the scope has access to the requested client profile.
+  Access is granted if:
+  - The scope's client_id matches the requested client_id (user owns the profile)
+  - The scope's business_id matches the client's business_id (same business)
+
+  ## Parameters
+    - scope: The scope struct containing authorization context
+    - client_id: The client ID to retrieve
+
+  ## Returns
+    - {:ok, %Client{}} on success
+    - {:error, :not_found} if client doesn't exist
+    - {:error, :forbidden} if scope doesn't have access to the client
+
+  ## Examples
+
+      iex> get_client(scope, "client-uuid")
+      {:ok, %Client{}}
+
+      iex> get_client(scope, "other-business-client-uuid")
+      {:error, :forbidden}
+
+      iex> get_client(scope, "nonexistent-uuid")
+      {:error, :not_found}
+  """
+  def get_client(%Scope{} = scope, client_id) when is_binary(client_id) do
+    case Repo.get(Client, client_id) do
+      nil ->
+        {:error, :not_found}
+
+      client ->
+        # Check if scope has access to this client
+        # Access granted if: user owns the client profile OR client is in scope's business
+        cond do
+          scope.client_id == client_id ->
+            {:ok, client}
+
+          scope.business_id == client.business_id ->
+            {:ok, client}
+
+          true ->
+            {:error, :forbidden}
+        end
+    end
+  end
+
+  # ============================================
+  # SCOPE-BASED CLIENT MUTATION FUNCTIONS
+  # ============================================
+
+  @doc """
+  Creates a client profile using scope-based authorization.
+
+  Uses the business_id from the scope to create the client profile,
+  ensuring the client is created in the correct business context.
+
+  ## Parameters
+    - scope: The scope struct containing business context
+    - attrs: Map of client attributes (email, full_name, phone, notes, status)
+
+  ## Returns
+    - {:ok, %Client{}} on success
+    - {:error, :forbidden} if scope has no business context
+    - {:error, changeset} on validation failure
+
+  ## Examples
+
+      iex> create_client(scope, %{email: "client@example.com", full_name: "Jane Doe"})
+      {:ok, %Client{}}
+
+      iex> create_client(scope_without_business, %{email: "client@example.com"})
+      {:error, :forbidden}
+
+      iex> create_client(scope, %{email: "invalid"})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_client(%Scope{business_id: business_id} = _scope, attrs)
+      when not is_nil(business_id) do
+    attrs_with_business =
+      attrs
+      |> Map.put(:business_id, business_id)
+
+    %Client{}
+    |> Client.create_changeset(attrs_with_business)
+    |> Repo.insert()
+  end
+
+  def create_client(%Scope{}, _attrs), do: {:error, :forbidden}
+
+  @doc """
+  Updates a client with scope-based authorization.
+
+  Verifies that the scope has access to update the client profile.
+  Access is granted if:
+  - The scope's client_id matches the requested client_id (user owns the profile)
+  - The scope has a coach_id in the same business as the client
+
+  ## Parameters
+    - scope: The scope struct containing authorization context
+    - client_id: The client ID to update
+    - attrs: Map of attributes to update
+
+  ## Returns
+    - {:ok, %Client{}} on success
+    - {:error, :not_found} if client doesn't exist
+    - {:error, :forbidden} if scope doesn't have access to update the client
+    - {:error, changeset} on validation failure
+
+  ## Examples
+
+      iex> update_client(scope, "client-uuid", %{notes: "Updated notes"})
+      {:ok, %Client{}}
+
+      iex> update_client(scope, "other-client-uuid", %{notes: "..."})
+      {:error, :forbidden}
+
+      iex> update_client(scope, "client-uuid", %{email: "invalid"})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_client(%Scope{} = scope, client_id, attrs) when is_binary(client_id) do
+    with {:ok, client} <- get_client(scope, client_id),
+         :ok <- verify_client_update_access(scope, client_id, client.business_id) do
+      client
+      |> Client.update_changeset(attrs)
+      |> Repo.update()
+    end
+  end
+
+  # Helper to verify update access - client can update themselves, or coach can update clients in their business
+  defp verify_client_update_access(
+         %Scope{client_id: client_id},
+         requested_client_id,
+         _business_id
+       )
+       when client_id == requested_client_id do
+    :ok
+  end
+
+  defp verify_client_update_access(
+         %Scope{coach_id: coach_id, business_id: business_id},
+         _client_id,
+         client_business_id
+       )
+       when not is_nil(coach_id) and business_id == client_business_id do
+    :ok
+  end
+
+  defp verify_client_update_access(_scope, _client_id, _business_id), do: {:error, :forbidden}
+
+  @doc """
+  Deletes a client with scope-based authorization.
+
+  Verifies that the scope has access to delete the client profile.
+  Only business owners can delete client profiles.
+
+  ## Parameters
+    - scope: The scope struct containing authorization context
+    - client_id: The client ID to delete
+
+  ## Returns
+    - {:ok, %Client{}} on success
+    - {:error, :not_found} if client doesn't exist
+    - {:error, :forbidden} if scope doesn't have permission to delete the client
+
+  ## Examples
+
+      iex> delete_client(owner_scope, "client-uuid")
+      {:ok, %Client{}}
+
+      iex> delete_client(coach_scope, "client-uuid")
+      {:error, :forbidden}
+
+      iex> delete_client(scope, "nonexistent-uuid")
+      {:error, :not_found}
+  """
+  def delete_client(%Scope{} = scope, client_id) when is_binary(client_id) do
+    with {:ok, client} <- get_client(scope, client_id),
+         :ok <- Authorization.authorize_business_owner(scope, client.business_id) do
+      Repo.delete(client)
+    end
+  end
+
+  # ============================================
+  # SCOPE-BASED CLIENT INVITATION FUNCTIONS
+  # ============================================
+
+  @doc """
+  Creates a client invitation using scope-based authorization.
+
+  Uses the business_id and coach_id from the scope to create the invitation,
+  ensuring proper business context and tracking the inviting coach.
+
+  ## Parameters
+    - scope: The scope struct containing business and coach context
+    - attrs: Map of client attributes (email, full_name, phone, notes)
+
+  ## Returns
+    - {:ok, %{client: client, invitation_token: token_uuid, expires_at: datetime}} on success
+    - {:error, :forbidden} if scope has no business or coach context
+    - {:error, changeset} on validation failure
+    - {:error, :rate_limited, retry_after} if rate limit exceeded
+
+  ## Examples
+
+      iex> invite_client(scope, %{email: "client@example.com", full_name: "Jane Client"})
+      {:ok, %{client: %Client{}, invitation_token: "550e8400-...", expires_at: ~U[2024-01-08 12:00:00Z]}}
+
+      iex> invite_client(scope_without_coach, %{email: "client@example.com"})
+      {:error, :forbidden}
+  """
+  def invite_client(%Scope{business_id: business_id, coach_id: coach_id} = _scope, attrs)
+      when not is_nil(business_id) and not is_nil(coach_id) do
+    # Load coach with user and business for email details
+    case Repo.get(Coach, coach_id) do
+      nil ->
+        {:error, :coach_not_found}
+
+      coach ->
+        coach = Repo.preload(coach, [:user, :business])
+
+        create_invitation_with_details(
+          coach_id,
+          business_id,
+          attrs,
+          coach.user.full_name,
+          coach.business.name
+        )
+    end
+  end
+
+  def invite_client(%Scope{}, _attrs), do: {:error, :forbidden}
+
+  @doc """
+  Completes client registration by verifying OTP and creating user account.
+
+  This function handles the invitation acceptance flow with business context.
+  It validates the invitation token, verifies the OTP, creates a user account,
+  links it to the client profile, and creates a session with business context.
+
+  ## Parameters
+    - token_id: The invitation token UUID
+    - code: The 6-digit OTP code
+
+  ## Returns
+    - {:ok, %{user: user, client: client, session: session_data}} on success
+    - {:error, reason} on failure
+
+  ## Examples
+
+      iex> accept_invitation("550e8400-...", "123456")
+      {:ok, %{
+        user: %User{},
+        client: %Client{status: "active"},
+        session: %{access_token: "...", refresh_token: "..."}
+      }}
+
+      iex> accept_invitation("550e8400-...", "wrong")
+      {:error, :invalid_otp}
+  """
+  def accept_invitation(token_id, code) do
+    # Delegate to the existing complete_client_registration function
+    # which already handles business context properly
+    complete_client_registration(token_id, code)
+  end
+
+  # ============================================
+  # CLIENT INVITATION FLOW (LEGACY)
   # ============================================
 
   @doc """
@@ -62,7 +383,7 @@ defmodule Easy.Clients do
       when is_integer(coach_id) and is_integer(business_id) do
     # Load coach with user and business for email details
     coach =
-      Easy.Coaches.get_coach(coach_id)
+      Easy.Coaches.get_coach_legacy(coach_id)
       |> Repo.preload([:user, :business])
 
     if coach do
@@ -308,7 +629,7 @@ defmodule Easy.Clients do
             # Validate metadata
             case validate_invitation_metadata(token.metadata) do
               {:ok, client_id} ->
-                case get_client(client_id) do
+                case get_client_legacy(client_id) do
                   nil ->
                     {:error, :metadata_validation_failed, "Client not found"}
 
@@ -361,7 +682,7 @@ defmodule Easy.Clients do
 
       true ->
         # Validate that inviting coach exists
-        case Easy.Coaches.get_coach(metadata["inviting_coach_id"]) do
+        case Easy.Coaches.get_coach_legacy(metadata["inviting_coach_id"]) do
           nil ->
             {:error, "Inviting coach not found"}
 
@@ -499,25 +820,30 @@ defmodule Easy.Clients do
   end
 
   # ============================================
-  # CLIENT MANAGEMENT
+  # CLIENT MANAGEMENT (LEGACY)
   # ============================================
 
   @doc """
   Gets a client by ID.
   Returns the client struct or nil if not found.
 
+  **DEPRECATED:** Use `get_client/2` with scope parameter instead.
+  This legacy function will be removed in a future version.
+
   ## Examples
 
-      iex> get_client(123)
+      iex> get_client_legacy(123)
       %Client{}
 
-      iex> get_client(999)
+      iex> get_client_legacy(999)
       nil
   """
-  def get_client(id), do: Repo.get(Client, id)
+  def get_client_legacy(id), do: Repo.get(Client, id)
 
   @doc """
   Gets a client by ID and preloads associations.
+
+  **DEPRECATED:** This legacy function will be removed in a future version.
 
   ## Parameters
     - id: The client ID
@@ -532,7 +858,7 @@ defmodule Easy.Clients do
       %Client{user: %User{}}
   """
   def get_client_with_preloads(id, preloads \\ [:user, :business]) do
-    case get_client(id) do
+    case get_client_legacy(id) do
       nil -> nil
       client -> Repo.preload(client, preloads)
     end
@@ -541,15 +867,18 @@ defmodule Easy.Clients do
   @doc """
   Updates a client with the given attributes.
 
+  **DEPRECATED:** Use `update_client/3` with scope parameter instead.
+  This legacy function will be removed in a future version.
+
   ## Examples
 
-      iex> update_client(client, %{notes: "Updated notes"})
+      iex> update_client_legacy(client, %{notes: "Updated notes"})
       {:ok, %Client{}}
 
-      iex> update_client(client, %{email: "invalid"})
+      iex> update_client_legacy(client, %{email: "invalid"})
       {:error, %Ecto.Changeset{}}
   """
-  def update_client(%Client{} = client, attrs) do
+  def update_client_legacy(%Client{} = client, attrs) do
     client
     |> Client.update_changeset(attrs)
     |> Repo.update()
@@ -576,6 +905,9 @@ defmodule Easy.Clients do
   @doc """
   Lists clients with optional filtering and pagination.
 
+  **DEPRECATED:** Use `list_clients/1` with scope parameter instead.
+  This legacy function will be removed in a future version.
+
   ## Parameters
     - business_id: The business ID to filter by
     - opts: Keyword list of options
@@ -585,10 +917,10 @@ defmodule Easy.Clients do
 
   ## Examples
 
-      iex> list_clients(123, status: "active", limit: 10)
+      iex> list_clients_legacy(123, status: "active", limit: 10)
       [%Client{}, %Client{}]
   """
-  def list_clients(business_id, opts \\ []) do
+  def list_clients_legacy(business_id, opts \\ []) do
     status = Keyword.get(opts, :status)
     limit = Keyword.get(opts, :limit, 50)
     offset = Keyword.get(opts, :offset, 0)
@@ -613,6 +945,8 @@ defmodule Easy.Clients do
   @doc """
   Lists all coaches assigned to a client.
 
+  **DEPRECATED:** This legacy function will be removed in a future version.
+
   ## Parameters
     - client_id: The client ID
 
@@ -625,7 +959,7 @@ defmodule Easy.Clients do
       [%Coach{}, %Coach{}]
   """
   def list_client_coaches(client_id) do
-    case get_client(client_id) do
+    case get_client_legacy(client_id) do
       nil ->
         []
 

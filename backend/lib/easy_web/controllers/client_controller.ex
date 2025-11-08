@@ -1,7 +1,7 @@
 defmodule EasyWeb.ClientController do
   use EasyWeb, :controller
 
-  alias Easy.{Clients, Coaches, Repo, ApiError}
+  alias Easy.{Clients, Coaches, ApiError}
   alias EasyWeb.ResponseHelpers
 
   action_fallback EasyWeb.FallbackController
@@ -89,50 +89,50 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def invite(conn, params) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    # Get the coach profile for the current user
-    # For MVP, we'll use the first coach profile found
-    # In the future, this should be specified by business_id parameter
-    coach = get_user_coach(user.id)
+    # Extract invitation attributes
+    attrs = %{
+      "email" => params["email"],
+      "full_name" => params["full_name"],
+      "phone" => params["phone"],
+      "notes" => params["notes"]
+    }
 
-    case coach do
-      nil ->
+    case Clients.invite_client(scope, attrs) do
+      {:ok, %{client: client, invitation_token: token_uuid, expires_at: expires_at}} ->
+        # Build invitation URL
+        invitation_url = build_invitation_url(conn, token_uuid)
+
+        conn
+        |> put_status(:created)
+        |> json(%{
+          client: format_client(client),
+          invitation:
+            ResponseHelpers.format_invitation_response(token_uuid, invitation_url, expires_at)
+        })
+
+      {:error, :forbidden} ->
         error = ApiError.forbidden("You must be a coach to invite clients")
         render_error(conn, error)
 
-      coach ->
-        # Extract invitation attributes
-        attrs = %{
-          "email" => params["email"],
-          "full_name" => params["full_name"],
-          "phone" => params["phone"],
-          "notes" => params["notes"]
-        }
+      {:error, :rate_limited, retry_after} ->
+        error =
+          ApiError.from_code(:rate_limit_exceeded, retry_after, %{retry_after: retry_after})
 
-        case Clients.create_invitation(coach, attrs) do
-          {:ok, %{client: client, invitation_token: token_uuid, expires_at: expires_at}} ->
-            # Build invitation URL
-            invitation_url = build_invitation_url(conn, token_uuid)
+        render_error(conn, error)
 
-            conn
-            |> put_status(:created)
-            |> json(%{
-              client: format_client(client),
-              invitation:
-                ResponseHelpers.format_invitation_response(token_uuid, invitation_url, expires_at)
-            })
+      {:error, %Ecto.Changeset{} = changeset} ->
+        error = ApiError.validation_error(changeset)
+        render_error(conn, error)
 
-          {:error, :rate_limited, retry_after} ->
-            error =
-              ApiError.from_code(:rate_limit_exceeded, retry_after, %{retry_after: retry_after})
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to create invitation", %{
+            reason: to_string(reason)
+          })
 
-            render_error(conn, error)
-
-          {:error, changeset} ->
-            error = ApiError.validation_error(changeset)
-            render_error(conn, error)
-        end
+        render_error(conn, error)
     end
   end
 
@@ -205,7 +205,7 @@ defmodule EasyWeb.ClientController do
     case Clients.get_invitation(token_id) do
       {:ok, %{token: token, client: client}} ->
         # Preload business and get inviting coach info
-        client = Repo.preload(client, [:business])
+        client = Easy.Repo.preload(client, [:business])
 
         # Get inviting coach from token metadata
         inviting_coach = get_inviting_coach(token_id)
@@ -332,7 +332,7 @@ defmodule EasyWeb.ClientController do
     case Clients.complete_client_registration(token_id, code) do
       {:ok, %{user: user, client: client, session: session_data}} ->
         # Preload assigned coaches for the response
-        client = Repo.preload(client, coaches: [:user])
+        client = Easy.Repo.preload(client, coaches: [:user])
 
         # Build user response with client profile
         user_response = %{
@@ -505,22 +505,20 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def show(conn, %{"id" => id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Clients.get_client_with_preloads(id, [:user, :business]) do
-      nil ->
+    case Clients.get_client(scope, id) do
+      {:ok, client} ->
+        conn
+        |> json(%{client: format_client(client)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Client")
         render_error(conn, error)
 
-      client ->
-        # Check if user can access this client
-        if user_can_access_client?(user, client) do
-          conn
-          |> json(%{client: format_client(client)})
-        else
-          error = ApiError.forbidden("You do not have permission to access this client")
-          render_error(conn, error)
-        end
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to access this client")
+        render_error(conn, error)
     end
   end
 
@@ -580,34 +578,33 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def update(conn, %{"id" => id} = params) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Clients.get_client_with_preloads(id, [:business]) do
-      nil ->
+    # Extract update attributes (email cannot be updated)
+    attrs = Map.take(params, ["full_name", "phone", "notes"])
+
+    case Clients.update_client(scope, id, attrs) do
+      {:ok, updated_client} ->
+        conn
+        |> json(%{client: format_client(updated_client)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Client")
         render_error(conn, error)
 
-      client ->
-        # Check if user is a coach in the same business
-        if user_is_coach_in_business?(user, client.business_id) do
-          # Extract update attributes (email cannot be updated)
-          attrs = Map.take(params, ["full_name", "phone", "notes"])
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to update this client")
+        render_error(conn, error)
 
-          case Clients.update_client(client, attrs) do
-            {:ok, updated_client} ->
-              updated_client = Repo.preload(updated_client, [:user, :business])
+      {:error, %Ecto.Changeset{} = changeset} ->
+        error = ApiError.validation_error(changeset)
+        render_error(conn, error)
 
-              conn
-              |> json(%{client: format_client(updated_client)})
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to update client", %{reason: to_string(reason)})
 
-            {:error, changeset} ->
-              error = ApiError.validation_error(changeset)
-              render_error(conn, error)
-          end
-        else
-          error = ApiError.forbidden("You do not have permission to update this client")
-          render_error(conn, error)
-        end
+        render_error(conn, error)
     end
   end
 
@@ -661,36 +658,19 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def index(conn, params) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    # Get the coach profile for the current user
-    # For MVP, we'll use the first coach profile found
-    # In the future, business_id should be required parameter
-    coach = get_user_coach(user.id)
+    # Parse pagination parameters
+    limit = parse_limit(params["limit"])
+    offset = parse_offset(params["offset"])
+    status = params["status"]
 
-    case coach do
-      nil ->
-        error = ApiError.forbidden("You must be a coach to list clients")
-        render_error(conn, error)
+    # Build options
+    opts = [limit: limit, offset: offset]
+    opts = if status, do: Keyword.put(opts, :status, status), else: opts
 
-      coach ->
-        # Parse pagination parameters
-        limit = parse_limit(params["limit"])
-        offset = parse_offset(params["offset"])
-        status = params["status"]
-
-        # Build options
-        opts = [limit: limit, offset: offset]
-        opts = if status, do: Keyword.put(opts, :status, status), else: opts
-
-        # Get clients for the coach's business
-        clients =
-          Clients.list_clients(coach.business_id, opts)
-          |> Repo.preload(:user)
-
-        # Get total count for pagination
-        total = count_business_clients(coach.business_id, status)
-
+    case Clients.list_clients(scope, opts) do
+      {:ok, clients, total} ->
         conn
         |> json(%{
           clients: Enum.map(clients, &format_client/1),
@@ -700,6 +680,16 @@ defmodule EasyWeb.ClientController do
             total: total
           }
         })
+
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You must be a coach to list clients")
+        render_error(conn, error)
+
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to list clients", %{reason: to_string(reason)})
+
+        render_error(conn, error)
     end
   end
 
@@ -735,26 +725,26 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def list_coaches(conn, %{"id" => id}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Clients.get_client_with_preloads(id, [:business]) do
-      nil ->
+    case Clients.list_client_coaches(scope, id) do
+      {:ok, coaches} ->
+        conn
+        |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Client")
         render_error(conn, error)
 
-      client ->
-        # Check if user can access this client
-        if user_can_access_client?(user, client) do
-          coaches =
-            Clients.list_client_coaches(client.id)
-            |> Repo.preload(:user)
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to access this client")
+        render_error(conn, error)
 
-          conn
-          |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
-        else
-          error = ApiError.forbidden("You do not have permission to access this client")
-          render_error(conn, error)
-        end
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to list coaches", %{reason: to_string(reason)})
+
+        render_error(conn, error)
     end
   end
 
@@ -800,49 +790,38 @@ defmodule EasyWeb.ClientController do
   ```
   """
   def update_status(conn, %{"id" => id, "status" => status}) do
-    user = conn.assigns.current_user
+    scope = conn.assigns[:scope]
 
-    case Clients.get_client_with_preloads(id, [:business]) do
-      nil ->
+    case Clients.update_client_status(scope, id, status) do
+      {:ok, updated_client} ->
+        conn
+        |> json(%{client: format_client(updated_client)})
+
+      {:error, :not_found} ->
         error = ApiError.not_found("Client")
         render_error(conn, error)
 
-      client ->
-        # Check if user is a coach in the same business
-        if user_is_coach_in_business?(user, client.business_id) do
-          case Clients.update_client_status(client, status) do
-            {:ok, updated_client} ->
-              updated_client = Repo.preload(updated_client, [:user, :business])
+      {:error, :forbidden} ->
+        error = ApiError.forbidden("You do not have permission to update this client")
+        render_error(conn, error)
 
-              conn
-              |> json(%{client: format_client(updated_client)})
+      {:error, %Ecto.Changeset{} = changeset} ->
+        error = ApiError.validation_error(changeset)
+        render_error(conn, error)
 
-            {:error, changeset} ->
-              error = ApiError.validation_error(changeset)
-              render_error(conn, error)
-          end
-        else
-          error = ApiError.forbidden("You do not have permission to update this client")
-          render_error(conn, error)
-        end
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to update client status", %{
+            reason: to_string(reason)
+          })
+
+        render_error(conn, error)
     end
   end
 
   # ============================================
   # PRIVATE HELPERS
   # ============================================
-
-  # Gets the first coach profile for a user
-  # In the future, this should accept a business_id parameter
-  defp get_user_coach(user_id) do
-    import Ecto.Query
-
-    from(c in Easy.Coaches.Coach,
-      where: c.user_id == ^user_id,
-      limit: 1
-    )
-    |> Repo.one()
-  end
 
   # Gets the inviting coach from the invitation token
   defp get_inviting_coach(token_uuid) do
@@ -854,7 +833,7 @@ defmodule EasyWeb.ClientController do
         where: t.token == ^token_uuid,
         limit: 1
       )
-      |> Repo.one()
+      |> Easy.Repo.one()
 
     if token && token.metadata["inviting_coach_id"] do
       Coaches.get_coach_with_preloads(token.metadata["inviting_coach_id"], [:user])
@@ -886,49 +865,6 @@ defmodule EasyWeb.ClientController do
       end
 
     "#{scheme}://#{host}#{port_string}"
-  end
-
-  # Checks if user can access a client (is a coach in same business or is the client)
-  defp user_can_access_client?(user, client) do
-    import Ecto.Query
-
-    # User is the client
-    if client.user_id == user.id do
-      true
-    else
-      # User is a coach in the same business
-      user_is_coach_in_business?(user, client.business_id)
-    end
-  end
-
-  # Checks if user is a coach in a specific business
-  defp user_is_coach_in_business?(user, business_id) do
-    import Ecto.Query
-
-    query =
-      from c in Easy.Coaches.Coach,
-        where: c.user_id == ^user.id and c.business_id == ^business_id,
-        limit: 1
-
-    Repo.exists?(query)
-  end
-
-  # Counts total clients in a business with optional status filter
-  defp count_business_clients(business_id, status) do
-    import Ecto.Query
-
-    query =
-      from c in Easy.Clients.Client,
-        where: c.business_id == ^business_id
-
-    query =
-      if status do
-        from c in query, where: c.status == ^status
-      else
-        query
-      end
-
-    Repo.aggregate(query, :count)
   end
 
   # Parses limit parameter with validation

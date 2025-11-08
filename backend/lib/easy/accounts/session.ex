@@ -24,6 +24,7 @@ defmodule Easy.Accounts.Session do
     field :expires_at, :utc_datetime
     field :last_activity_at, :utc_datetime
     field :revoked_at, :utc_datetime
+    field :business_id, :binary_id
 
     belongs_to :user, Easy.Accounts.User
 
@@ -36,7 +37,15 @@ defmodule Easy.Accounts.Session do
   """
   def changeset(session, attrs) do
     session
-    |> cast(attrs, [:token, :refresh_token, :expires_at, :last_activity_at, :revoked_at, :user_id])
+    |> cast(attrs, [
+      :token,
+      :refresh_token,
+      :expires_at,
+      :last_activity_at,
+      :revoked_at,
+      :user_id,
+      :business_id
+    ])
     |> validate_required([:token, :refresh_token, :expires_at, :last_activity_at, :user_id])
     |> unique_constraint(:token)
     |> unique_constraint(:refresh_token)

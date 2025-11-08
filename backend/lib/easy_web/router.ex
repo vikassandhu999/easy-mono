@@ -12,6 +12,11 @@ defmodule EasyWeb.Router do
     plug EasyWeb.Plugs.LoadCurrentUser
   end
 
+  pipeline :api_authenticated do
+    plug :accepts, ["json"]
+    plug EasyWeb.Plugs.AuthenticateToken
+  end
+
   # HEALTH CHECK
 
   scope "/api", EasyWeb do
@@ -34,9 +39,11 @@ defmodule EasyWeb.Router do
   # AUTHENTICATED AUTH ENDPOINTS
 
   scope "/api/auth", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
     post "/logout", AuthController, :logout
+    post "/switch-context", AuthController, :switch_context
+    get "/contexts", AuthController, :list_contexts
   end
 
   # PUBLIC INVITATION ENDPOINTS
@@ -51,7 +58,7 @@ defmodule EasyWeb.Router do
   # AUTHENTICATED ONBOARDING ENDPOINTS
 
   scope "/api/onboarding", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
     post "/business", OnboardingController, :create_business
   end
@@ -59,7 +66,7 @@ defmodule EasyWeb.Router do
   # AUTHENTICATED BUSINESS ENDPOINTS
 
   scope "/api/businesses", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
     get "/:id", BusinessController, :show
     patch "/:id", BusinessController, :update
@@ -71,7 +78,7 @@ defmodule EasyWeb.Router do
   # AUTHENTICATED COACH ENDPOINTS
 
   scope "/api/coaches", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
     get "/:id", CoachController, :show
     patch "/:id", CoachController, :update
@@ -83,7 +90,7 @@ defmodule EasyWeb.Router do
   # AUTHENTICATED CLIENT ENDPOINTS
 
   scope "/api/clients", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
     get "/", ClientController, :index
     post "/invite", ClientController, :invite
@@ -95,33 +102,21 @@ defmodule EasyWeb.Router do
 
   # AUTHENTICATED NUTRITION ENDPOINTS
 
-  scope "/api/businesses/:business_id", EasyWeb do
-    pipe_through [:api, :authenticated]
-
-    # Ingredient endpoints
-    get "/ingredients", IngredientController, :index
-    post "/ingredients", IngredientController, :create
-
-    # Recipe endpoints
-    get "/recipes", RecipeController, :index
-    post "/recipes", RecipeController, :create
-
-    # Meal endpoints
-    get "/meals", MealController, :index
-    post "/meals", MealController, :create
-  end
-
   scope "/api/ingredients", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
+    get "/", IngredientController, :index
+    post "/", IngredientController, :create
     get "/:id", IngredientController, :show
     patch "/:id", IngredientController, :update
     delete "/:id", IngredientController, :delete
   end
 
   scope "/api/recipes", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
+    get "/", RecipeController, :index
+    post "/", RecipeController, :create
     get "/:id", RecipeController, :show
     patch "/:id", RecipeController, :update
     delete "/:id", RecipeController, :delete
@@ -133,8 +128,10 @@ defmodule EasyWeb.Router do
   end
 
   scope "/api/meals", EasyWeb do
-    pipe_through [:api, :authenticated]
+    pipe_through :api_authenticated
 
+    get "/", MealController, :index
+    post "/", MealController, :create
     get "/:id", MealController, :show
     patch "/:id", MealController, :update
     delete "/:id", MealController, :delete

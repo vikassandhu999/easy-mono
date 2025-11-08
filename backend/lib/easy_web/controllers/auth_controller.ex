@@ -105,7 +105,7 @@ defmodule EasyWeb.AuthController do
 
   This endpoint accepts a token_id (received from send-otp or register endpoints)
   and the OTP code. On successful verification, it returns the user profile with
-  roles and session tokens.
+  roles, session tokens, and business context.
 
   ## Parameters
   - token_id: The UUID of the OTP token (required)
@@ -113,7 +113,7 @@ defmodule EasyWeb.AuthController do
 
   ## Response
 
-  Success (200):
+  Success (200) - Single business context:
   ```json
   {
     "user": {
@@ -135,8 +135,49 @@ defmodule EasyWeb.AuthController do
       "access_token": "eyJhbGc...",
       "refresh_token": "eyJhbGc...",
       "expires_at": "2024-01-08T12:00:00Z",
-      "expires_in": 604800
+      "expires_in": 604800,
+      "context": {
+        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+        "coach_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "client_id": null,
+        "roles": ["coach"]
+      }
     }
+  }
+  ```
+
+  Success (200) - Multiple business contexts:
+  ```json
+  {
+    "user": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "email": "user@example.com",
+      "full_name": "John Doe",
+      "email_verified": true,
+      "roles": ["coach"]
+    },
+    "session": {
+      "access_token": "eyJhbGc...",
+      "refresh_token": "eyJhbGc...",
+      "expires_at": "2024-01-08T12:00:00Z",
+      "expires_in": 604800
+    },
+    "available_contexts": [
+      {
+        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+        "business_name": "Acme Coaching",
+        "roles": ["coach"],
+        "coach_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "client_id": null
+      },
+      {
+        "business_id": "d4e5f6a7-b8c9-0123-def0-123456789012",
+        "business_name": "Beta Wellness",
+        "roles": ["client"],
+        "coach_id": null,
+        "client_id": "e5f6a7b8-c9d0-1234-ef01-234567890123"
+      }
+    ]
   }
   ```
 
@@ -514,9 +555,11 @@ defmodule EasyWeb.AuthController do
   ```
   """
   def logout(conn, _params) do
+    scope = conn.assigns[:scope]
+
     # Extract the Bearer token from the Authorization header
     with {:ok, token} <- extract_bearer_token(conn),
-         {:ok, _session} <- Accounts.revoke_session(token) do
+         {:ok, _session} <- Accounts.revoke_session(scope, token) do
       conn
       |> put_status(:ok)
       |> json(%{status: "logged_out"})
@@ -538,6 +581,200 @@ defmodule EasyWeb.AuthController do
       {:error, reason} ->
         error = ApiError.unprocessable_entity("Failed to logout", %{reason: to_string(reason)})
         render_error(conn, error)
+    end
+  end
+
+  @doc """
+  POST /api/auth/switch-context
+
+  Switches the user's active business context by creating a new session.
+
+  This endpoint requires a valid Bearer token in the Authorization header.
+  The user must have access to the requested business (via coach or client profile).
+
+  ## Headers
+  - Authorization: Bearer <access_token> (required)
+
+  ## Parameters
+  - business_id: The UUID of the business to switch to (required)
+
+  ## Response
+
+  Success (200):
+  ```json
+  {
+    "session": {
+      "access_token": "eyJhbGc...",
+      "refresh_token": "eyJhbGc...",
+      "expires_at": "2024-01-08T12:00:00Z",
+      "expires_in": 604800
+    },
+    "context": {
+      "business_id": "550e8400-...",
+      "coach_id": "660e8400-...",
+      "client_id": null,
+      "roles": ["coach"]
+    }
+  }
+  ```
+
+  ## Error Responses
+
+  Validation error (400):
+  ```json
+  {
+    "error": {
+      "message": "Invalid request parameters",
+      "code": "VALIDATION_ERROR",
+      "details": {
+        "business_id": "is required"
+      }
+    }
+  }
+  ```
+
+  Unauthorized (401):
+  ```json
+  {
+    "error": {
+      "message": "Authentication required",
+      "code": "UNAUTHORIZED"
+    }
+  }
+  ```
+
+  Forbidden (403):
+  ```json
+  {
+    "error": {
+      "message": "Access denied",
+      "code": "FORBIDDEN",
+      "details": {
+        "reason": "business_not_accessible"
+      }
+    }
+  }
+  ```
+
+  Business not found (404):
+  ```json
+  {
+    "error": {
+      "message": "Business not found",
+      "code": "NOT_FOUND"
+    }
+  }
+  ```
+  """
+  def switch_context(conn, params) do
+    scope = conn.assigns[:scope]
+
+    with {:ok, business_id} <- validate_switch_context_params(params),
+         {:ok, result} <- Accounts.switch_business_context(scope, business_id) do
+      response = %{
+        session: ResponseHelpers.format_session(result.session),
+        context: ResponseHelpers.format_business_context(result.context)
+      }
+
+      conn
+      |> put_status(:ok)
+      |> json(response)
+    else
+      {:error, :validation_error, details} ->
+        error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
+        render_error(conn, error)
+
+      {:error, :forbidden} ->
+        error =
+          ApiError.from_code(
+            :forbidden,
+            "Access denied",
+            %{reason: "business_not_accessible"}
+          )
+
+        render_error(conn, error)
+
+      {:error, :not_found} ->
+        error = ApiError.from_code(:not_found, "Business not found", nil)
+        render_error(conn, error)
+
+      {:error, reason} ->
+        error =
+          ApiError.unprocessable_entity("Failed to switch context", %{
+            reason: to_string(reason)
+          })
+
+        render_error(conn, error)
+    end
+  end
+
+  @doc """
+  GET /api/auth/contexts
+
+  Lists all available business contexts for the authenticated user.
+
+  This endpoint requires a valid Bearer token in the Authorization header.
+  Returns all businesses where the user has a coach or client profile.
+
+  ## Headers
+  - Authorization: Bearer <access_token> (required)
+
+  ## Response
+
+  Success (200):
+  ```json
+  {
+    "contexts": [
+      {
+        "business_id": "550e8400-...",
+        "business_name": "Acme Coaching",
+        "roles": ["coach"],
+        "coach_id": "660e8400-...",
+        "client_id": null
+      },
+      {
+        "business_id": "770e8400-...",
+        "business_name": "Beta Fitness",
+        "roles": ["client"],
+        "coach_id": null,
+        "client_id": "880e8400-..."
+      }
+    ]
+  }
+  ```
+
+  ## Error Responses
+
+  Unauthorized (401):
+  ```json
+  {
+    "error": {
+      "message": "Authentication required",
+      "code": "UNAUTHORIZED"
+    }
+  }
+  ```
+  """
+  def list_contexts(conn, _params) do
+    scope = conn.assigns[:scope]
+
+    # Get the user
+    case Accounts.get_user(scope.user_id) do
+      nil ->
+        error = ApiError.from_code(:user_not_found, nil, nil)
+        render_error(conn, error)
+
+      user ->
+        # Get all available contexts
+        contexts = Accounts.get_user_business_contexts(user)
+
+        response = %{
+          contexts: ResponseHelpers.format_available_contexts(contexts)
+        }
+
+        conn
+        |> put_status(:ok)
+        |> json(response)
     end
   end
 
@@ -635,6 +872,17 @@ defmodule EasyWeb.AuthController do
       {:error, :validation_error, errors}
     else
       {:ok, String.downcase(email), type}
+    end
+  end
+
+  # Validates switch-context request parameters
+  defp validate_switch_context_params(params) do
+    business_id = params["business_id"]
+
+    if is_nil(business_id) or business_id == "" do
+      {:error, :validation_error, %{business_id: "is required"}}
+    else
+      {:ok, business_id}
     end
   end
 

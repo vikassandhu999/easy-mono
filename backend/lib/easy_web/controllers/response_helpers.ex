@@ -244,6 +244,124 @@ defmodule EasyWeb.ResponseHelpers do
   end
 
   @doc """
+  Formats a session with business context for JSON response.
+
+  Returns a map with session data and optional business context.
+  If context is nil, only session data is returned.
+
+  ## Examples
+
+      iex> session = %{access_token: "token123", refresh_token: "refresh123", expires_at: ~U[2024-01-08 12:00:00Z], expires_in: 604800}
+      iex> context = %{business_id: "550e8400-...", coach_id: "660e8400-...", client_id: nil, roles: ["coach"]}
+      iex> ResponseHelpers.format_session_with_context(session, context)
+      %{
+        access_token: "token123",
+        refresh_token: "refresh123",
+        expires_at: "2024-01-08T12:00:00Z",
+        expires_in: 604800,
+        context: %{
+          business_id: "550e8400-...",
+          coach_id: "660e8400-...",
+          client_id: nil,
+          roles: ["coach"]
+        }
+      }
+
+      iex> session = %{access_token: "token123", refresh_token: "refresh123", expires_at: ~U[2024-01-08 12:00:00Z], expires_in: 604800}
+      iex> ResponseHelpers.format_session_with_context(session, nil)
+      %{
+        access_token: "token123",
+        refresh_token: "refresh123",
+        expires_at: "2024-01-08T12:00:00Z",
+        expires_in: 604800
+      }
+  """
+  @spec format_session_with_context(map(), map() | nil) :: map()
+  def format_session_with_context(session, context \\ nil) do
+    base = format_session(session)
+
+    if context do
+      Map.put(base, :context, format_business_context(context))
+    else
+      base
+    end
+  end
+
+  @doc """
+  Formats business context for JSON response.
+
+  Returns a map with business_id, coach_id, client_id, and roles.
+  Returns nil if no business context is available.
+
+  ## Examples
+
+      iex> context = %{business_id: "550e8400-...", coach_id: "660e8400-...", client_id: nil, roles: ["coach"]}
+      iex> ResponseHelpers.format_business_context(context)
+      %{
+        business_id: "550e8400-...",
+        coach_id: "660e8400-...",
+        client_id: nil,
+        roles: ["coach"]
+      }
+
+      iex> ResponseHelpers.format_business_context(nil)
+      nil
+  """
+  @spec format_business_context(map() | nil) :: map() | nil
+  def format_business_context(nil), do: nil
+
+  def format_business_context(context) when is_map(context) do
+    %{
+      business_id: format_uuid(context[:business_id] || context.business_id),
+      coach_id: format_uuid(context[:coach_id] || context.coach_id),
+      client_id: format_uuid(context[:client_id] || context.client_id),
+      roles: context[:roles] || context.roles || []
+    }
+  end
+
+  @doc """
+  Formats available business contexts for JSON response.
+
+  Used when a user has multiple business contexts to choose from.
+
+  ## Examples
+
+      iex> contexts = [
+      ...>   %{business_id: "550e8400-...", business_name: "Acme Coaching", roles: ["coach"], coach_id: "660e8400-...", client_id: nil},
+      ...>   %{business_id: "770e8400-...", business_name: "Beta Fitness", roles: ["client"], coach_id: nil, client_id: "880e8400-..."}
+      ...> ]
+      iex> ResponseHelpers.format_available_contexts(contexts)
+      [
+        %{
+          business_id: "550e8400-...",
+          business_name: "Acme Coaching",
+          roles: ["coach"],
+          coach_id: "660e8400-...",
+          client_id: nil
+        },
+        %{
+          business_id: "770e8400-...",
+          business_name: "Beta Fitness",
+          roles: ["client"],
+          coach_id: nil,
+          client_id: "880e8400-..."
+        }
+      ]
+  """
+  @spec format_available_contexts([map()]) :: [map()]
+  def format_available_contexts(contexts) when is_list(contexts) do
+    Enum.map(contexts, fn context ->
+      %{
+        business_id: format_uuid(context.business_id),
+        business_name: context.business_name,
+        roles: context.roles,
+        coach_id: format_uuid(context[:coach_id]),
+        client_id: format_uuid(context[:client_id])
+      }
+    end)
+  end
+
+  @doc """
   Formats a subscription with plan for JSON response.
 
   ## Examples

@@ -118,6 +118,26 @@ defmodule EasyWeb.ApiErrorCodes do
     {"FORBIDDEN", message, 403}
   end
 
+  @doc "Business context mismatch (403)"
+  def business_mismatch(message \\ "Resource does not belong to your business context") do
+    {"BUSINESS_MISMATCH", message, 403}
+  end
+
+  @doc "Missing business context (403)"
+  def missing_context(message \\ "Business context required for this operation") do
+    {"MISSING_CONTEXT", message, 403}
+  end
+
+  @doc "Missing or invalid authorization header (401)"
+  def missing_token(message \\ "Missing or invalid authorization header") do
+    {"MISSING_TOKEN", message, 401}
+  end
+
+  @doc "Token has expired (401)"
+  def expired_token(message \\ "The access token has expired") do
+    {"EXPIRED_TOKEN", message, 401}
+  end
+
   # ============================================
   # RESOURCE ERRORS
   # ============================================
@@ -236,6 +256,10 @@ defmodule EasyWeb.ApiErrorCodes do
       "MAX_ATTEMPTS_EXCEEDED",
       "UNAUTHORIZED",
       "FORBIDDEN",
+      "BUSINESS_MISMATCH",
+      "MISSING_CONTEXT",
+      "MISSING_TOKEN",
+      "EXPIRED_TOKEN",
       "NOT_FOUND",
       "USER_NOT_FOUND",
       "CONFLICT",

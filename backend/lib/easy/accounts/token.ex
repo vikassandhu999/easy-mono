@@ -26,12 +26,13 @@ defmodule Easy.Accounts.Token do
   end
 
   @doc """
-  Generates an access token for a user with their roles.
+  Generates an access token for a user with their roles and business context.
 
   ## Parameters
     - user: The user struct
     - session_id: The session ID (jti claim)
     - roles: List of user roles (e.g., ["coach", "client"])
+    - business_context: Map with business_id, coach_id, client_id (optional, defaults to %{})
 
   ## Returns
     - {:ok, token} on success
@@ -39,10 +40,10 @@ defmodule Easy.Accounts.Token do
 
   ## Examples
 
-      iex> generate_access_token(user, 123, ["coach"])
+      iex> generate_access_token(user, 123, ["coach"], %{business_id: "uuid", coach_id: "uuid"})
       {:ok, "eyJhbGc..."}
   """
-  def generate_access_token(user, session_id, roles) do
+  def generate_access_token(user, session_id, roles, business_context \\ %{}) do
     extra_claims = %{
       "sub" => to_string(user.id),
       "email" => user.email,
@@ -51,6 +52,13 @@ defmodule Easy.Accounts.Token do
       "type" => "access"
     }
 
+    # Add business context claims if present
+    extra_claims =
+      extra_claims
+      |> maybe_add_claim("business_id", business_context[:business_id])
+      |> maybe_add_claim("coach_id", business_context[:coach_id])
+      |> maybe_add_claim("client_id", business_context[:client_id])
+
     case generate_and_sign(extra_claims, signer(), access_token_ttl()) do
       {:ok, token, _claims} -> {:ok, token}
       {:error, reason} -> {:error, reason}
@@ -58,11 +66,12 @@ defmodule Easy.Accounts.Token do
   end
 
   @doc """
-  Generates a refresh token for a user.
+  Generates a refresh token for a user with business context.
 
   ## Parameters
     - user: The user struct
     - session_id: The session ID (jti claim)
+    - business_context: Map with business_id (optional, defaults to %{})
 
   ## Returns
     - {:ok, token} on success
@@ -70,15 +79,18 @@ defmodule Easy.Accounts.Token do
 
   ## Examples
 
-      iex> generate_refresh_token(user, 123)
+      iex> generate_refresh_token(user, 123, %{business_id: "uuid"})
       {:ok, "eyJhbGc..."}
   """
-  def generate_refresh_token(user, session_id) do
+  def generate_refresh_token(user, session_id, business_context \\ %{}) do
     extra_claims = %{
       "sub" => to_string(user.id),
       "jti" => to_string(session_id),
       "type" => "refresh"
     }
+
+    # Add business_id to refresh token if present
+    extra_claims = maybe_add_claim(extra_claims, "business_id", business_context[:business_id])
 
     case generate_and_sign(extra_claims, signer(), refresh_token_ttl()) do
       {:ok, token, _claims} -> {:ok, token}
@@ -133,7 +145,34 @@ defmodule Easy.Accounts.Token do
     jti
   end
 
+  @doc """
+  Extracts business context from token claims.
+
+  Returns a map with business_id, coach_id, and client_id if present in claims.
+
+  ## Examples
+
+      iex> extract_business_context(%{"business_id" => "uuid1", "coach_id" => "uuid2"})
+      %{business_id: "uuid1", coach_id: "uuid2", client_id: nil}
+
+      iex> extract_business_context(%{})
+      %{business_id: nil, coach_id: nil, client_id: nil}
+  """
+  def extract_business_context(claims) when is_map(claims) do
+    %{
+      business_id: Map.get(claims, "business_id"),
+      coach_id: Map.get(claims, "coach_id"),
+      client_id: Map.get(claims, "client_id")
+    }
+  end
+
   # Private functions
+
+  defp maybe_add_claim(claims, _key, nil), do: claims
+
+  defp maybe_add_claim(claims, key, value) when is_binary(value) do
+    Map.put(claims, key, value)
+  end
 
   defp generate_and_sign(extra_claims, signer, ttl) do
     now = System.system_time(:second)

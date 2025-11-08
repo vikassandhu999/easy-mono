@@ -461,8 +461,48 @@ defmodule Easy.Accounts do
   end
 
   @doc """
-  Gets a user by ID.
+  Gets a user by ID with scope-based authorization.
+
+  Verifies that the requesting user (from scope) has permission to access
+  the requested user. Users can only access their own profile.
+
+  ## Parameters
+    - scope: The scope struct containing the requesting user's context
+    - user_id: The ID of the user to retrieve (UUID string)
+
+  ## Returns
+    - {:ok, user} if authorized and user exists
+    - {:error, :forbidden} if scope.user_id doesn't match requested user_id
+    - {:error, :not_found} if user doesn't exist
+
+  ## Examples
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> get_user(scope, "user-123")
+      {:ok, %User{}}
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> get_user(scope, "user-456")
+      {:error, :forbidden}
+  """
+  def get_user(%Easy.Auth.Scope{user_id: scope_user_id}, user_id)
+      when is_binary(user_id) do
+    # Users can only access their own profile
+    if scope_user_id == user_id do
+      case Repo.get(User, user_id) do
+        nil -> {:error, :not_found}
+        user -> {:ok, user}
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @doc """
+  Gets a user by ID (legacy version without authorization).
   Returns the user struct or nil if not found.
+
+  DEPRECATED: Use get_user/2 with scope for proper authorization.
 
   ## Examples
 
@@ -505,7 +545,54 @@ defmodule Easy.Accounts do
   end
 
   @doc """
-  Updates a user with the given attributes.
+  Updates a user with scope-based authorization.
+
+  Verifies that the requesting user (from scope) has permission to update
+  the target user. Users can only update their own profile.
+
+  ## Parameters
+    - scope: The scope struct containing the requesting user's context
+    - user_id: The ID of the user to update (UUID string)
+    - attrs: Map of attributes to update
+
+  ## Returns
+    - {:ok, user} if authorized and update succeeds
+    - {:error, :forbidden} if scope.user_id doesn't match user_id
+    - {:error, :not_found} if user doesn't exist
+    - {:error, changeset} if validation fails
+
+  ## Examples
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> update_user(scope, "user-123", %{full_name: "Jane Doe"})
+      {:ok, %User{}}
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> update_user(scope, "user-456", %{full_name: "Jane Doe"})
+      {:error, :forbidden}
+  """
+  def update_user(%Easy.Auth.Scope{user_id: scope_user_id}, user_id, attrs)
+      when is_binary(user_id) do
+    # Users can only update their own profile
+    if scope_user_id == user_id do
+      case Repo.get(User, user_id) do
+        nil ->
+          {:error, :not_found}
+
+        user ->
+          user
+          |> User.changeset(attrs)
+          |> Repo.update()
+      end
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @doc """
+  Updates a user with the given attributes (legacy version without authorization).
+
+  DEPRECATED: Use update_user/3 with scope for proper authorization.
 
   ## Examples
 
@@ -650,14 +737,66 @@ defmodule Easy.Accounts do
   # ============================================
 
   @doc """
-  Creates a session for a user and generates JWT tokens.
+  Creates a session for a user with an explicit business context.
+
+  This function validates that the user has access to the specified business_id
+  and creates a session with that business context.
+
+  ## Parameters
+    - user: The user struct
+    - business_id: The UUID string of the business to use for the session
+
+  ## Returns
+    - {:ok, %{user: user_data, session: session_data}} on success
+    - {:error, :forbidden} if user doesn't have access to the business
+    - {:error, changeset} on other failures
+
+  ## Examples
+
+      iex> create_session(user, "550e8400-...")
+      {:ok, %{user: %{...}, session: %{...}}}
+
+      iex> create_session(user, "invalid-business-id")
+      {:error, :forbidden}
+  """
+  def create_session(%User{} = user, business_id) when is_binary(business_id) do
+    # Get all available contexts for the user
+    available_contexts = get_user_business_contexts(user)
+
+    # Find the context matching the requested business_id
+    context =
+      Enum.find(available_contexts, fn ctx ->
+        ctx.business_id == business_id
+      end)
+
+    case context do
+      nil ->
+        {:error, :forbidden}
+
+      context ->
+        # Build business context map for token generation
+        business_context = %{
+          business_id: context.business_id,
+          coach_id: context.coach_id,
+          client_id: context.client_id,
+          roles: context.roles
+        }
+
+        # Create session with the specified business context
+        do_create_session(user, business_context)
+    end
+  end
+
+  @doc """
+  Creates a session for a user and generates JWT tokens with business context.
 
   This function:
   1. Preloads coach and client associations
   2. Determines the user's roles (coach, client, or both)
-  3. Generates access and refresh JWT tokens
-  4. Creates a session record in the database
-  5. Returns the session with tokens and complete user profile including roles and profiles
+  3. Automatically detects business context (if user has single business)
+  4. Generates access and refresh JWT tokens with business context
+  5. Creates a session record in the database with business_id
+  6. Returns the session with tokens and complete user profile including roles and profiles
 
   ## Parameters
     - user: The user struct (will be preloaded with coach and client associations)
@@ -689,84 +828,11 @@ defmodule Easy.Accounts do
       }}
   """
   def create_session(%User{} = user) do
-    # Preload associations to determine roles
-    user = Repo.preload(user, [:coach, :client])
+    # Determine business context (auto-select if single context)
+    business_context = determine_business_context(user)
 
-    # Determine user roles based on associations
-    roles = determine_user_roles(user)
-
-    # Create a temporary session record to get an ID for the JWT
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-    auth_config = Application.get_env(:easy, :auth, [])
-    session_expiry_days = Keyword.get(auth_config, :session_expiry_days, 7)
-    expires_at = DateTime.add(now, session_expiry_days * 24 * 60 * 60, :second)
-
-    # Use unique temporary values to avoid unique constraint violations
-    temp_token = "temp_#{Ecto.UUID.generate()}"
-    temp_refresh = "temp_#{Ecto.UUID.generate()}"
-
-    session_attrs = %{
-      # Will be replaced with actual JWT
-      token: temp_token,
-      # Will be replaced with actual JWT
-      refresh_token: temp_refresh,
-      expires_at: expires_at,
-      last_activity_at: now,
-      user_id: user.id
-    }
-
-    case %Session{}
-         |> Session.changeset(session_attrs)
-         |> Repo.insert() do
-      {:ok, session} ->
-        # Generate JWT tokens with the session ID
-        with {:ok, access_token} <- Token.generate_access_token(user, session.id, roles),
-             {:ok, refresh_token} <- Token.generate_refresh_token(user, session.id) do
-          # Update session with actual tokens
-          session
-          |> Session.changeset(%{
-            token: access_token,
-            refresh_token: refresh_token
-          })
-          |> Repo.update()
-          |> case do
-            {:ok, updated_session} ->
-              jwt_config = Application.get_env(:easy, :jwt, [])
-              access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
-
-              # Build complete user response with roles and profiles
-              user_response = build_user_response(user)
-
-              # Build session response
-              session_response = %{
-                session: updated_session,
-                access_token: access_token,
-                refresh_token: refresh_token,
-                # days in seconds
-                expires_in: access_token_ttl_days * 24 * 60 * 60
-              }
-
-              {:ok,
-               %{
-                 user: user_response,
-                 session: session_response
-               }}
-
-            {:error, changeset} ->
-              # Clean up the temporary session
-              Repo.delete(session)
-              {:error, changeset}
-          end
-        else
-          {:error, reason} ->
-            # Clean up the temporary session
-            Repo.delete(session)
-            {:error, reason}
-        end
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+    # Create session with the determined business context
+    do_create_session(user, business_context)
   end
 
   @doc """
@@ -778,6 +844,8 @@ defmodule Easy.Accounts do
   3. Marks the user's email as verified (for email_verification type)
   4. Creates a session with JWT tokens
   5. Returns complete user profile with roles and coach/client profiles
+  6. Includes business context in session response if user has a single business
+  7. Includes available contexts if user has multiple businesses
 
   ## Parameters
     - token_id: The UUID of the OneTimeToken record
@@ -785,7 +853,7 @@ defmodule Easy.Accounts do
     - expected_type: Optional expected token type for validation
 
   ## Returns
-    - {:ok, %{user: user_data, session: session_data}} on success
+    - {:ok, %{user: user_data, session: session_data, context: context, available_contexts: contexts}} on success
     - {:error, reason} on failure
 
   ## Examples
@@ -804,8 +872,15 @@ defmodule Easy.Accounts do
           access_token: "eyJhbGc...",
           refresh_token: "eyJhbGc...",
           expires_at: "2024-01-08T12:00:00Z",
-          expires_in: 604800
-        }
+          expires_in: 604800,
+          context: %{
+            business_id: "550e8400-...",
+            coach_id: "660e8400-...",
+            client_id: nil,
+            roles: ["coach"]
+          }
+        },
+        available_contexts: []
       }}
   """
   def verify_otp_and_create_session(token_id, code, expected_type \\ nil) do
@@ -822,11 +897,16 @@ defmodule Easy.Accounts do
           user
         end
 
+      # Get all available business contexts for the user
+      available_contexts = get_user_business_contexts(user)
+
+      # Determine business context (auto-select if single context)
+      business_context = determine_business_context(user)
+
       # Create session (which now includes user data with roles and profiles)
       case create_session(user) do
-
         {:ok, %{user: user_data, session: session_data}} ->
-          # Format session response for API
+          # Format session response for API with business context
           session_response = %{
             session_id: to_string(session_data.session.id),
             access_token: session_data.access_token,
@@ -835,7 +915,29 @@ defmodule Easy.Accounts do
             expires_in: session_data.expires_in
           }
 
-          {:ok, %{user: user_data, session: session_response}}
+          # Add context to session response if present
+          session_response =
+            if business_context do
+              Map.put(session_response, :context, business_context)
+            else
+              session_response
+            end
+
+          # Build response with available contexts
+          response = %{
+            user: user_data,
+            session: session_response
+          }
+
+          # Include available_contexts if user has multiple businesses
+          response =
+            if length(available_contexts) > 1 do
+              Map.put(response, :available_contexts, available_contexts)
+            else
+              response
+            end
+
+          {:ok, response}
 
         {:error, reason} ->
           {:error, reason}
@@ -850,19 +952,21 @@ defmodule Easy.Accounts do
   Refreshes a session using a refresh token.
 
   Validates the refresh token, checks if the session is still valid,
-  and generates a new access token.
+  preserves business context from the refresh token, and generates a new access token
+  with updated coach_id and client_id based on current user profiles.
 
   ## Parameters
     - refresh_token: The refresh token string
 
   ## Returns
-    - {:ok, %{access_token: token, expires_in: seconds}} on success
+    - {:ok, %{access_token: token, expires_in: seconds, context: business_context}} on success
     - {:error, reason} on failure
+    - {:error, :invalid_context} if business context is no longer valid
 
   ## Examples
 
       iex> refresh_session("eyJhbGc...")
-      {:ok, %{access_token: "eyJhbGc...", expires_in: 604800}}
+      {:ok, %{access_token: "eyJhbGc...", expires_in: 604800, context: %{...}}}
   """
   def refresh_session(refresh_token) do
     with {:ok, claims} <- Token.verify_token(refresh_token),
@@ -871,27 +975,34 @@ defmodule Easy.Accounts do
          %Session{} = session <- get_session_by_id(session_id),
          true <- Session.valid?(session),
          %User{} = user <- get_user(session.user_id) do
-      # Preload associations to determine roles
-      user = Repo.preload(user, [:coach, :client])
-      roles = determine_user_roles(user)
+      # Extract business_id from refresh token claims
+      business_id = Map.get(claims, "business_id")
 
-      # Generate new access token
-      case Token.generate_access_token(user, session.id, roles) do
-        {:ok, access_token} ->
-          # Update last activity
-          session
-          |> Session.update_activity_changeset()
-          |> Repo.update()
+      # Regenerate business context based on current user profiles
+      case regenerate_business_context(user, business_id) do
+        {:ok, business_context, roles} ->
+          # Generate new access token with updated business context
+          case Token.generate_access_token(user, session.id, roles, business_context) do
+            {:ok, access_token} ->
+              # Update last activity
+              session
+              |> Session.update_activity_changeset()
+              |> Repo.update()
 
-          jwt_config = Application.get_env(:easy, :jwt, [])
-          access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
+              jwt_config = Application.get_env(:easy, :jwt, [])
+              access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
 
-          {:ok,
-           %{
-             access_token: access_token,
-             # days in seconds
-             expires_in: access_token_ttl_days * 24 * 60 * 60
-           }}
+              {:ok,
+               %{
+                 access_token: access_token,
+                 # days in seconds
+                 expires_in: access_token_ttl_days * 24 * 60 * 60,
+                 context: business_context
+               }}
+
+            {:error, reason} ->
+              {:error, reason}
+          end
 
         {:error, reason} ->
           {:error, reason}
@@ -904,7 +1015,51 @@ defmodule Easy.Accounts do
   end
 
   @doc """
-  Revokes a session by marking it as revoked.
+  Revokes a session with scope-based authorization.
+
+  Verifies that the requesting user (from scope) owns the session being revoked.
+  Users can only revoke their own sessions.
+
+  ## Parameters
+    - scope: The scope struct containing the requesting user's context
+    - session_id: The session ID to revoke (UUID string or integer)
+
+  ## Returns
+    - {:ok, session} on success
+    - {:error, :forbidden} if session doesn't belong to scope.user_id
+    - {:error, :not_found} if session doesn't exist
+
+  ## Examples
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> revoke_session(scope, "session-456")
+      {:ok, %Session{revoked_at: ~U[2024-01-01 00:00:00Z]}}
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> revoke_session(scope, "other-user-session")
+      {:error, :forbidden}
+  """
+  def revoke_session(%Easy.Auth.Scope{user_id: scope_user_id}, session_id) do
+    case get_session_by_id(session_id) do
+      nil ->
+        {:error, :not_found}
+
+      %Session{user_id: session_user_id} = session ->
+        # Verify the session belongs to the requesting user
+        if to_string(session_user_id) == scope_user_id do
+          session
+          |> Session.revoke_changeset()
+          |> Repo.update()
+        else
+          {:error, :forbidden}
+        end
+    end
+  end
+
+  @doc """
+  Revokes a session by marking it as revoked (legacy version without authorization).
+
+  DEPRECATED: Use revoke_session/2 with scope for proper authorization.
 
   ## Parameters
     - token: The access token or session ID
@@ -934,7 +1089,51 @@ defmodule Easy.Accounts do
   end
 
   @doc """
-  Revokes all sessions for a user.
+  Revokes all sessions for a user with scope-based authorization.
+
+  Verifies that the requesting user (from scope) has permission to revoke
+  all sessions for the target user. Users can only revoke their own sessions.
+
+  ## Parameters
+    - scope: The scope struct containing the requesting user's context
+    - user_id: The user ID whose sessions should be revoked (UUID string)
+
+  ## Returns
+    - {:ok, count} where count is the number of sessions revoked
+    - {:error, :forbidden} if scope.user_id doesn't match user_id
+
+  ## Examples
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> revoke_all_user_sessions(scope, "user-123")
+      {:ok, 3}
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> revoke_all_user_sessions(scope, "user-456")
+      {:error, :forbidden}
+  """
+  def revoke_all_user_sessions(%Easy.Auth.Scope{user_id: scope_user_id}, user_id)
+      when is_binary(user_id) do
+    # Users can only revoke their own sessions
+    if scope_user_id == user_id do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      {count, _} =
+        from(s in Session,
+          where: s.user_id == ^user_id and is_nil(s.revoked_at)
+        )
+        |> Repo.update_all(set: [revoked_at: now])
+
+      {:ok, count}
+    else
+      {:error, :forbidden}
+    end
+  end
+
+  @doc """
+  Revokes all sessions for a user (legacy version without authorization).
+
+  DEPRECATED: Use revoke_all_user_sessions/2 with scope for proper authorization.
 
   ## Parameters
     - user_id: The user ID
@@ -1189,9 +1388,387 @@ defmodule Easy.Accounts do
     end
   end
 
+  @doc """
+  Determines the business context for a user automatically.
+
+  Implements auto-selection logic:
+  - If user has exactly one business context → returns that context
+  - If user has multiple business contexts → returns nil (requires explicit selection)
+  - If user has no business contexts → returns nil
+
+  ## Parameters
+    - user: The user struct (can be preloaded or not)
+
+  ## Returns
+    - Business context map with business_id, coach_id, client_id, roles if single context
+    - nil if user has no contexts or multiple contexts
+
+  ## Examples
+
+      iex> determine_business_context(user_with_one_business)
+      %{
+        business_id: "550e8400-...",
+        coach_id: "660e8400-...",
+        client_id: nil,
+        roles: ["coach"]
+      }
+
+      iex> determine_business_context(user_with_multiple_businesses)
+      nil
+
+      iex> determine_business_context(new_user)
+      nil
+  """
+  def determine_business_context(%User{} = user) do
+    contexts = get_user_business_contexts(user)
+
+    case contexts do
+      # Single context - auto-select it
+      [context] ->
+        %{
+          business_id: context.business_id,
+          coach_id: context.coach_id,
+          client_id: context.client_id,
+          roles: context.roles
+        }
+
+      # No contexts or multiple contexts - return nil
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Switches the user's business context by creating a new session with the specified business_id.
+
+  This function validates that the user has access to the requested business_id
+  (via coach or client profile) and creates a new session with that business context.
+
+  ## Parameters
+    - scope: The scope struct containing the current user's context
+    - business_id: The UUID string of the business to switch to
+
+  ## Returns
+    - {:ok, %{session: session_data, context: business_context}} on success
+    - {:error, :forbidden} if user doesn't have access to the business
+    - {:error, :not_found} if business doesn't exist
+    - {:error, changeset} on other failures
+
+  ## Examples
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> switch_business_context(scope, "550e8400-...")
+      {:ok, %{
+        session: %{
+          access_token: "eyJhbGc...",
+          refresh_token: "eyJhbGc...",
+          expires_at: "2024-01-08T12:00:00Z",
+          expires_in: 604800
+        },
+        context: %{
+          business_id: "550e8400-...",
+          coach_id: "660e8400-...",
+          client_id: nil,
+          roles: ["coach"]
+        }
+      }}
+
+      iex> scope = %Scope{user_id: "user-123"}
+      iex> switch_business_context(scope, "invalid-business-id")
+      {:error, :forbidden}
+  """
+  def switch_business_context(%Easy.Auth.Scope{user_id: user_id}, business_id)
+      when is_binary(business_id) do
+    # Get the user
+    case get_user(user_id) do
+      nil ->
+        {:error, :not_found}
+
+      user ->
+        # Get all available contexts for the user
+        available_contexts = get_user_business_contexts(user)
+
+        # Find the context matching the requested business_id
+        context =
+          Enum.find(available_contexts, fn ctx ->
+            ctx.business_id == business_id
+          end)
+
+        case context do
+          nil ->
+            {:error, :forbidden}
+
+          context ->
+            # Create new session with the specified business context
+            case create_session(user, business_id) do
+              {:ok, %{session: session_data}} ->
+                # Format the business context for response
+                business_context = %{
+                  business_id: context.business_id,
+                  coach_id: context.coach_id,
+                  client_id: context.client_id,
+                  roles: context.roles
+                }
+
+                # Format session response
+                session_response = %{
+                  access_token: session_data.access_token,
+                  refresh_token: session_data.refresh_token,
+                  expires_at: session_data.session.expires_at,
+                  expires_in: session_data.expires_in
+                }
+
+                {:ok, %{session: session_response, context: business_context}}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+        end
+    end
+  end
+
+  @doc """
+  Gets all available business contexts for a user.
+
+  Queries the user's coach and client profiles across all businesses
+  and returns a list of available contexts with roles and IDs.
+
+  ## Parameters
+    - user: The user struct (can be preloaded or not)
+
+  ## Returns
+    - List of business context maps, each containing:
+      - business_id: UUID string of the business
+      - business_name: Name of the business
+      - roles: List of roles in this business (["coach"], ["client"], or both)
+      - coach_id: UUID string if user is a coach in this business (nil otherwise)
+      - client_id: UUID string if user is a client in this business (nil otherwise)
+
+  ## Examples
+
+      iex> get_user_business_contexts(user)
+      [
+        %{
+          business_id: "550e8400-...",
+          business_name: "Acme Coaching",
+          roles: ["coach"],
+          coach_id: "660e8400-...",
+          client_id: nil
+        },
+        %{
+          business_id: "770e8400-...",
+          business_name: "Beta Wellness",
+          roles: ["coach", "client"],
+          coach_id: "880e8400-...",
+          client_id: "990e8400-..."
+        }
+      ]
+  """
+  def get_user_business_contexts(%User{} = user) do
+    # Query all coach profiles for this user with business preloaded
+    coach_profiles =
+      from(c in Easy.Coaches.Coach,
+        where: c.user_id == ^user.id,
+        preload: [:business]
+      )
+      |> Repo.all()
+
+    # Query all client profiles for this user with business preloaded
+    client_profiles =
+      from(c in Easy.Clients.Client,
+        where: c.user_id == ^user.id,
+        preload: [:business]
+      )
+      |> Repo.all()
+
+    # Build a map of business_id -> context data
+    contexts_map =
+      Enum.reduce(coach_profiles, %{}, fn coach, acc ->
+        business_id = to_string(coach.business_id)
+
+        context =
+          Map.get(acc, business_id, %{
+            business_id: business_id,
+            business_name: coach.business.name,
+            roles: [],
+            coach_id: nil,
+            client_id: nil
+          })
+
+        updated_context =
+          context
+          |> Map.update!(:roles, fn roles -> ["coach" | roles] end)
+          |> Map.put(:coach_id, to_string(coach.id))
+
+        Map.put(acc, business_id, updated_context)
+      end)
+
+    # Add client profiles to the contexts map
+    contexts_map =
+      Enum.reduce(client_profiles, contexts_map, fn client, acc ->
+        business_id = to_string(client.business_id)
+
+        context =
+          Map.get(acc, business_id, %{
+            business_id: business_id,
+            business_name: client.business.name,
+            roles: [],
+            coach_id: nil,
+            client_id: nil
+          })
+
+        updated_context =
+          context
+          |> Map.update!(:roles, fn roles -> ["client" | roles] end)
+          |> Map.put(:client_id, to_string(client.id))
+
+        Map.put(acc, business_id, updated_context)
+      end)
+
+    # Convert map to list and return
+    Map.values(contexts_map)
+  end
+
   # ============================================
   # PRIVATE HELPERS
   # ============================================
+
+  # Regenerates business context for token refresh
+  # Validates that the business context is still valid and updates coach_id/client_id
+  # based on current user profiles
+  defp regenerate_business_context(user, nil) do
+    # No business context in refresh token - user has no business profiles
+    # Preload associations to determine current roles
+    user = Repo.preload(user, [:coach, :client])
+    roles = determine_user_roles(user)
+
+    {:ok, %{}, roles}
+  end
+
+  defp regenerate_business_context(user, business_id) when is_binary(business_id) do
+    # Get all current business contexts for the user
+    contexts = get_user_business_contexts(user)
+
+    # Find the context matching the business_id from the refresh token
+    context =
+      Enum.find(contexts, fn ctx ->
+        ctx.business_id == business_id
+      end)
+
+    case context do
+      nil ->
+        # Business context no longer valid - user's profiles in this business were deleted
+        {:error, :invalid_context}
+
+      context ->
+        # Build updated business context with current coach_id and client_id
+        business_context = %{
+          business_id: context.business_id,
+          coach_id: context.coach_id,
+          client_id: context.client_id
+        }
+
+        {:ok, business_context, context.roles}
+    end
+  end
+
+  # Creates a session with the given business context
+  defp do_create_session(%User{} = user, business_context) do
+    # Preload associations to determine roles
+    user = Repo.preload(user, [:coach, :client])
+
+    # Determine user roles based on associations
+    roles = determine_user_roles(user)
+
+    # Extract business_id for session record (convert to binary_id if present)
+    business_id =
+      case business_context do
+        %{business_id: id} when is_binary(id) ->
+          case Ecto.UUID.cast(id) do
+            {:ok, uuid} -> uuid
+            :error -> nil
+          end
+
+        _ ->
+          nil
+      end
+
+    # Create a temporary session record to get an ID for the JWT
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    auth_config = Application.get_env(:easy, :auth, [])
+    session_expiry_days = Keyword.get(auth_config, :session_expiry_days, 7)
+    expires_at = DateTime.add(now, session_expiry_days * 24 * 60 * 60, :second)
+
+    # Use unique temporary values to avoid unique constraint violations
+    temp_token = "temp_#{Ecto.UUID.generate()}"
+    temp_refresh = "temp_#{Ecto.UUID.generate()}"
+
+    session_attrs = %{
+      # Will be replaced with actual JWT
+      token: temp_token,
+      # Will be replaced with actual JWT
+      refresh_token: temp_refresh,
+      expires_at: expires_at,
+      last_activity_at: now,
+      user_id: user.id,
+      business_id: business_id
+    }
+
+    case %Session{}
+         |> Session.changeset(session_attrs)
+         |> Repo.insert() do
+      {:ok, session} ->
+        # Generate JWT tokens with the session ID and business context
+        with {:ok, access_token} <-
+               Token.generate_access_token(user, session.id, roles, business_context || %{}),
+             {:ok, refresh_token} <-
+               Token.generate_refresh_token(user, session.id, business_context || %{}) do
+          # Update session with actual tokens
+          session
+          |> Session.changeset(%{
+            token: access_token,
+            refresh_token: refresh_token
+          })
+          |> Repo.update()
+          |> case do
+            {:ok, updated_session} ->
+              jwt_config = Application.get_env(:easy, :jwt, [])
+              access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
+
+              # Build complete user response with roles and profiles
+              user_response = build_user_response(user)
+
+              # Build session response
+              session_response = %{
+                session: updated_session,
+                access_token: access_token,
+                refresh_token: refresh_token,
+                # days in seconds
+                expires_in: access_token_ttl_days * 24 * 60 * 60
+              }
+
+              {:ok,
+               %{
+                 user: user_response,
+                 session: session_response
+               }}
+
+            {:error, changeset} ->
+              # Clean up the temporary session
+              Repo.delete(session)
+              {:error, changeset}
+          end
+        else
+          {:error, reason} ->
+            # Clean up the temporary session
+            Repo.delete(session)
+            {:error, reason}
+        end
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
 
   # Determines user roles based on associations
   defp determine_user_roles(user) do

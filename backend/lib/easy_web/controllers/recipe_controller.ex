@@ -7,8 +7,8 @@ defmodule EasyWeb.RecipeController do
 
   ## Endpoints
 
-  - GET /api/businesses/:business_id/recipes - List recipes
-  - POST /api/businesses/:business_id/recipes - Create recipe
+  - GET /api/recipes - List recipes
+  - POST /api/recipes - Create recipe
   - GET /api/recipes/:id - Show recipe
   - PATCH /api/recipes/:id - Update recipe
   - DELETE /api/recipes/:id - Delete recipe
@@ -28,8 +28,9 @@ defmodule EasyWeb.RecipeController do
   # ACTIONS
   # ============================================
 
+  @spec index(any(), map()) :: {:error, :forbidden} | Plug.Conn.t()
   @doc """
-  GET /api/businesses/:business_id/recipes
+  GET /api/recipes
 
   Lists all recipes for a business.
 
@@ -70,11 +71,11 @@ defmodule EasyWeb.RecipeController do
   }
   ```
   """
-  def index(conn, %{"business_id" => business_id} = params) do
-    current_user = conn.assigns.current_user
+  def index(conn, params) do
+    scope = conn.assigns.scope
 
-    with {:ok, _coach} <- get_coach_for_user(current_user),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, business_id) do
+    with {:ok, business_id} <- extract_business_id(scope),
+         {:ok, _coach_id} <- extract_coach_id(scope) do
       # Parse query parameters
       limit = min(parse_int(params["limit"], 50), 100)
       offset = parse_int(params["offset"], 0)
@@ -107,7 +108,7 @@ defmodule EasyWeb.RecipeController do
   end
 
   @doc """
-  POST /api/businesses/:business_id/recipes
+  POST /api/recipes
 
   Creates a new recipe in the business.
 
@@ -133,14 +134,14 @@ defmodule EasyWeb.RecipeController do
   }
   ```
   """
-  def create(conn, %{"business_id" => business_id} = params) do
-    current_user = conn.assigns.current_user
+  def create(conn, params) do
+    scope = conn.assigns.scope
 
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, business_id) do
+    with {:ok, business_id} <- extract_business_id(scope),
+         {:ok, coach_id} <- extract_coach_id(scope) do
       attrs = extract_recipe_attrs(params)
 
-      case Nutrition.create_recipe(business_id, coach.id, attrs) do
+      case Nutrition.create_recipe(business_id, coach_id, attrs) do
         {:ok, recipe} ->
           conn
           |> put_status(:created)
@@ -460,6 +461,26 @@ defmodule EasyWeb.RecipeController do
   # ============================================
   # PRIVATE HELPERS
   # ============================================
+
+  # Extracts business_id from scope
+  defp extract_business_id(%Easy.Auth.Scope{business_id: business_id})
+       when not is_nil(business_id) do
+    {:ok, business_id}
+  end
+
+  defp extract_business_id(_) do
+    {:error,
+     ApiError.forbidden("You must have an active business context to access this resource")}
+  end
+
+  # Extracts coach_id from scope
+  defp extract_coach_id(%Easy.Auth.Scope{coach_id: coach_id}) when not is_nil(coach_id) do
+    {:ok, coach_id}
+  end
+
+  defp extract_coach_id(_) do
+    {:error, ApiError.forbidden("You must be a coach to access this resource")}
+  end
 
   # Gets the coach profile for the current user
   defp get_coach_for_user(user) do

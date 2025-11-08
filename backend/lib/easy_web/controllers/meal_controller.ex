@@ -7,8 +7,8 @@ defmodule EasyWeb.MealController do
 
   ## Endpoints
 
-  - GET /api/businesses/:business_id/meals - List meals
-  - POST /api/businesses/:business_id/meals - Create meal
+  - GET /api/meals - List meals
+  - POST /api/meals - Create meal
   - GET /api/meals/:id - Show meal
   - PATCH /api/meals/:id - Update meal
   - DELETE /api/meals/:id - Delete meal
@@ -33,7 +33,7 @@ defmodule EasyWeb.MealController do
   # ============================================
 
   @doc """
-  GET /api/businesses/:business_id/meals
+  GET /api/meals
 
   Lists all meals for a business.
 
@@ -73,11 +73,11 @@ defmodule EasyWeb.MealController do
   }
   ```
   """
-  def index(conn, %{"business_id" => business_id} = params) do
-    current_user = conn.assigns.current_user
+  def index(conn, params) do
+    scope = conn.assigns.scope
 
-    with {:ok, _coach} <- get_coach_for_user(current_user),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, business_id) do
+    with {:ok, business_id} <- extract_business_id(scope),
+         {:ok, _coach_id} <- extract_coach_id(scope) do
       # Parse query parameters
       limit = min(parse_int(params["limit"], 50), 100)
       offset = parse_int(params["offset"], 0)
@@ -109,7 +109,7 @@ defmodule EasyWeb.MealController do
   end
 
   @doc """
-  POST /api/businesses/:business_id/meals
+  POST /api/meals
 
   Creates a new meal in the business.
 
@@ -134,14 +134,14 @@ defmodule EasyWeb.MealController do
   }
   ```
   """
-  def create(conn, %{"business_id" => business_id} = params) do
-    current_user = conn.assigns.current_user
+  def create(conn, params) do
+    scope = conn.assigns.scope
 
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, business_id) do
+    with {:ok, business_id} <- extract_business_id(scope),
+         {:ok, coach_id} <- extract_coach_id(scope) do
       attrs = extract_meal_attrs(params)
 
-      case Nutrition.create_meal(business_id, coach.id, attrs) do
+      case Nutrition.create_meal(business_id, coach_id, attrs) do
         {:ok, meal} ->
           conn
           |> put_status(:created)
@@ -646,6 +646,26 @@ defmodule EasyWeb.MealController do
   # ============================================
   # PRIVATE HELPERS
   # ============================================
+
+  # Extracts business_id from scope
+  defp extract_business_id(%Easy.Auth.Scope{business_id: business_id})
+       when not is_nil(business_id) do
+    {:ok, business_id}
+  end
+
+  defp extract_business_id(_) do
+    {:error,
+     ApiError.forbidden("You must have an active business context to access this resource")}
+  end
+
+  # Extracts coach_id from scope
+  defp extract_coach_id(%Easy.Auth.Scope{coach_id: coach_id}) when not is_nil(coach_id) do
+    {:ok, coach_id}
+  end
+
+  defp extract_coach_id(_) do
+    {:error, ApiError.forbidden("You must be a coach to access this resource")}
+  end
 
   # Gets the coach profile for the current user
   defp get_coach_for_user(user) do

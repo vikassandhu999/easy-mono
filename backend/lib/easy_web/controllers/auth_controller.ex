@@ -217,17 +217,23 @@ defmodule EasyWeb.AuthController do
       |> json(result)
     else
       {:error, :validation_error, details} ->
-        error = ApiError.bad_request("Invalid request parameters", details)
+        error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
       {:error, :invalid_otp} ->
         # Get remaining attempts if possible
-        token = if params["token_id"], do: Accounts.get_token_by_id(params["token_id"]), else: nil
+        token = fetch_token_for_feedback(params["token_id"])
         auth_config = Application.get_env(:easy, :auth, [])
         max_attempts = Keyword.get(auth_config, :otp_max_attempts, 3)
         attempts_remaining = if token, do: max(max_attempts - token.attempts, 0), else: 0
 
-        error = ApiError.from_code(:invalid_otp, nil, %{attempts_remaining: attempts_remaining})
+        error =
+          ApiError.from_code(
+            :invalid_otp,
+            "The provided code is invalid or has expired",
+            %{attempts_remaining: attempts_remaining}
+          )
+
         render_error(conn, error)
 
       {:error, :token_expired} ->
@@ -349,7 +355,7 @@ defmodule EasyWeb.AuthController do
       |> json(response)
     else
       {:error, :validation_error, details} ->
-        error = ApiError.bad_request("Invalid request parameters", details)
+        error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
       {:error, :invalid_token} ->
@@ -361,8 +367,9 @@ defmodule EasyWeb.AuthController do
         render_error(conn, error)
 
       {:error, reason} ->
-        error = ApiError.unauthorized("Failed to refresh token")
-        render_error(conn, %{error | details: %{reason: to_string(reason)}})
+        details = format_refresh_error_details(reason)
+        error = ApiError.from_code(:invalid_refresh_token, nil, details)
+        render_error(conn, error)
     end
   end
 
@@ -444,7 +451,7 @@ defmodule EasyWeb.AuthController do
       |> json(response)
     else
       {:error, :validation_error, details} ->
-        error = ApiError.bad_request("Invalid request parameters", details)
+        error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
       {:error, :user_not_found} ->
@@ -587,16 +594,30 @@ defmodule EasyWeb.AuthController do
 
   # Validates send-otp request parameters
   defp validate_send_otp_params(params) do
-    email = params["email"]
-    type = params["type"]
+    email =
+      case params["email"] do
+        value when is_binary(value) -> String.trim(value)
+        value -> value
+      end
+
+    type =
+      case params["type"] do
+        value when is_binary(value) -> value |> String.trim() |> String.downcase()
+        value -> value
+      end
 
     errors = %{}
 
     errors =
-      if is_nil(email) or email == "" do
-        Map.put(errors, :email, "is required")
-      else
-        errors
+      cond do
+        is_nil(email) or email == "" ->
+          Map.put(errors, :email, "is required")
+
+        not valid_email_format?(email) ->
+          Map.put(errors, :email, "must be a valid email address")
+
+        true ->
+          errors
       end
 
     errors =
@@ -613,7 +634,35 @@ defmodule EasyWeb.AuthController do
     if map_size(errors) > 0 do
       {:error, :validation_error, errors}
     else
-      {:ok, email, type}
+      {:ok, String.downcase(email), type}
+    end
+  end
+
+  defp valid_email_format?(email) when is_binary(email) do
+    Regex.match?(~r/^[^\s]+@[^\s]+$/i, email)
+  end
+
+  defp valid_email_format?(_email), do: false
+
+  defp format_refresh_error_details(reason) do
+    case extract_reason(reason) do
+      nil -> nil
+      value -> %{reason: value}
+    end
+  end
+
+  defp extract_reason(%{message: message}) when not is_nil(message), do: to_string(message)
+  defp extract_reason(%{reason: reason}) when not is_nil(reason), do: to_string(reason)
+  defp extract_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp extract_reason(reason) when is_binary(reason), do: reason
+  defp extract_reason(_reason), do: nil
+
+  defp fetch_token_for_feedback(nil), do: nil
+
+  defp fetch_token_for_feedback(token_id) do
+    case Ecto.UUID.cast(token_id) do
+      {:ok, uuid} -> Accounts.get_token_by_id(uuid) || Accounts.get_token_by_uuid(uuid)
+      :error -> nil
     end
   end
 

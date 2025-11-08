@@ -1,7 +1,7 @@
 defmodule EasyWeb.RateLimitingTest do
   use Easy.ConnCase, async: true
 
-  alias Easy.Accounts
+  alias Easy.{Accounts, Repo}
 
   @moduledoc """
   Tests for rate limiting functionality with the new token system.
@@ -12,9 +12,34 @@ defmodule EasyWeb.RateLimitingTest do
   - Rate limits are enforced per email address
   """
 
+  defp create_verified_user(email) do
+    {:ok, user} =
+      Accounts.create_user(%{
+        email: email,
+        full_name: "Test User",
+        email_verified: true
+      })
+
+    user
+  end
+
+  defp mark_token_used(token_id) do
+    token = Accounts.get_token_by_uuid(token_id)
+
+    token
+    |> Ecto.Changeset.change(%{
+      used_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.update!()
+
+    :ok
+  end
+
   describe "OTP generation rate limiting" do
     test "returns token_id for first 3 requests within 15 minutes", %{conn: conn} do
       email = "ratelimit#{System.unique_integer([:positive])}@example.com"
+
+      _user = create_verified_user(email)
 
       # First request should succeed
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -35,11 +60,14 @@ defmodule EasyWeb.RateLimitingTest do
     test "returns rate limit error with retry_after on 4th request", %{conn: conn} do
       email = "ratelimit#{System.unique_integer([:positive])}@example.com"
 
+      _user = create_verified_user(email)
+
       # Make 3 successful requests
-      for _ <- 1..3 do
+      Enum.each(1..3, fn _ ->
         conn_req = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
-        assert json_response(conn_req, 201)
-      end
+        %{"token_id" => token_id} = json_response(conn_req, 201)
+        mark_token_used(token_id)
+      end)
 
       # 4th request should be rate limited
       conn4 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -68,11 +96,15 @@ defmodule EasyWeb.RateLimitingTest do
       email1 = "ratelimit1#{System.unique_integer([:positive])}@example.com"
       email2 = "ratelimit2#{System.unique_integer([:positive])}@example.com"
 
+      _user1 = create_verified_user(email1)
+      _user2 = create_verified_user(email2)
+
       # Make 3 requests for email1
-      for _ <- 1..3 do
+      Enum.each(1..3, fn _ ->
         conn_req = post(conn, "/api/auth/send-otp", %{email: email1, type: "login"})
-        assert json_response(conn_req, 201)
-      end
+        %{"token_id" => token_id} = json_response(conn_req, 201)
+        mark_token_used(token_id)
+      end)
 
       # 4th request for email1 should be rate limited
       conn4 = post(conn, "/api/auth/send-otp", %{email: email1, type: "login"})
@@ -86,6 +118,8 @@ defmodule EasyWeb.RateLimitingTest do
     test "idempotency returns same token_id within 60 seconds without counting toward rate limit",
          %{conn: conn} do
       email = "idempotent#{System.unique_integer([:positive])}@example.com"
+
+      _user = create_verified_user(email)
 
       # First request
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -110,12 +144,18 @@ defmodule EasyWeb.RateLimitingTest do
       email = "register#{System.unique_integer([:positive])}@example.com"
 
       # Make 3 successful registration requests
-      for _ <- 1..3 do
+      Enum.each(1..3, fn attempt ->
         conn_req = post(conn, "/api/auth/register", %{email: email, full_name: "Test User"})
 
-        # First one creates user, subsequent ones fail validation but still count toward rate limit
-        json_response(conn_req, :created)
-      end
+        case attempt do
+          1 ->
+            json_response(conn_req, 201)
+
+          _ ->
+            assert %{"error" => %{"code" => code}} = json_response(conn_req, 422)
+            assert String.downcase(code) == "validation_error"
+        end
+      end)
 
       # 4th request should be rate limited
       conn4 = post(conn, "/api/auth/register", %{email: email, full_name: "Test User"})
@@ -144,9 +184,10 @@ defmodule EasyWeb.RateLimitingTest do
       email = "limited#{System.unique_integer([:positive])}@example.com"
 
       # Generate 3 tokens
-      for _ <- 1..3 do
-        {:ok, _token_id} = Accounts.generate_otp(email, "login")
-      end
+      Enum.each(1..3, fn _ ->
+        {:ok, token_id} = Accounts.generate_otp(email, "login")
+        mark_token_used(token_id)
+      end)
 
       # 4th check should be rate limited
       assert {:error, :rate_limited, retry_after} = Accounts.check_rate_limit(email)

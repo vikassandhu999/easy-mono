@@ -177,7 +177,11 @@ defmodule Easy.Accounts do
       {:error, :invalid_token_type}
   """
   def verify_otp(token_id, code, expected_type \\ nil) do
-    token = get_token_by_id(token_id)
+    token =
+      case Ecto.UUID.cast(token_id) do
+        {:ok, uuid} -> get_token_by_id(uuid) || get_token_by_uuid(uuid)
+        :error -> nil
+      end
 
     case token do
       nil ->

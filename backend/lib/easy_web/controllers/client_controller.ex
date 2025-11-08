@@ -358,12 +358,65 @@ defmodule EasyWeb.ClientController do
         }
 
         # Build session response
+        session_section =
+          cond do
+            is_map(session_data[:session]) -> session_data[:session]
+            is_map(session_data["session"]) -> session_data["session"]
+            true -> session_data
+          end
+
+        {session_id, session_expires_at, access_token, refresh_token, expires_in} =
+          cond do
+            match?(%{session: %_{}}, session_section) ->
+              %{
+                session: %_{} = session,
+                access_token: access_token,
+                refresh_token: refresh_token,
+                expires_in: expires_in
+              } = session_section
+
+              {session.id, session.expires_at, access_token, refresh_token, expires_in}
+
+            match?(%{"session" => %{}}, session_section) ->
+              %{
+                "session" => session,
+                "access_token" => access_token,
+                "refresh_token" => refresh_token,
+                "expires_in" => expires_in
+              } = session_section
+
+              session_id = session["id"] || session[:id]
+              session_expires_at = session["expires_at"] || session[:expires_at]
+
+              {session_id, session_expires_at, access_token, refresh_token, expires_in}
+
+            true ->
+              raise ArgumentError, "invalid session data structure"
+          end
+
+        expires_at_iso =
+          cond do
+            match?(%DateTime{}, session_expires_at) ->
+              DateTime.to_iso8601(session_expires_at)
+
+            match?(%NaiveDateTime{}, session_expires_at) ->
+              session_expires_at
+              |> DateTime.from_naive!("Etc/UTC")
+              |> DateTime.to_iso8601()
+
+            is_binary(session_expires_at) ->
+              session_expires_at
+
+            true ->
+              nil
+          end
+
         session_response = %{
-          session_id: to_string(session_data.session.id),
-          access_token: session_data.access_token,
-          refresh_token: session_data.refresh_token,
-          expires_at: DateTime.to_iso8601(session_data.session.expires_at),
-          expires_in: session_data.expires_in
+          session_id: to_string(session_id),
+          access_token: access_token,
+          refresh_token: refresh_token,
+          expires_at: expires_at_iso,
+          expires_in: expires_in
         }
 
         conn

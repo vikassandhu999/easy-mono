@@ -1,8 +1,7 @@
 defmodule Easy.AccountsTokenTypeValidationTest do
   use Easy.DataCase, async: true
 
-  alias Easy.{Accounts, Repo, Coaches, Organizations}
-  alias Easy.Accounts.OneTimeToken
+  alias Easy.{Accounts, Coaches, Organizations, Clients}
 
   describe "token type validation" do
     setup do
@@ -142,7 +141,6 @@ defmodule Easy.AccountsTokenTypeValidationTest do
 
   describe "invitation metadata validation" do
     setup do
-      # Create coach and business for invitation tests
       coach_email = "coach#{System.unique_integer([:positive])}@example.com"
 
       {:ok, coach_user} =
@@ -153,9 +151,8 @@ defmodule Easy.AccountsTokenTypeValidationTest do
         })
 
       {:ok, business} =
-        Organizations.create_business(%{
-          name: "Test Business #{System.unique_integer([:positive])}",
-          owner_id: coach_user.id
+        Organizations.create_business(coach_user, %{
+          name: "Test Business #{System.unique_integer([:positive])}"
         })
 
       {:ok, coach} =
@@ -165,198 +162,60 @@ defmodule Easy.AccountsTokenTypeValidationTest do
 
       %{
         coach: coach,
-        coach_user: coach_user,
         business: business
       }
     end
 
-    test "validates client_id in invitation metadata", %{
-      coach: coach,
-      business: business
-    } do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
+    test "returns client_id when metadata is valid", %{coach: coach, business: business} do
+      metadata = %{
+        "client_id" => Ecto.UUID.generate(),
+        "business_id" => business.id,
+        "inviting_coach_id" => coach.id
+      }
 
-      # Create client
-      {:ok, client} =
-        Easy.Clients.create_client(%{
-          email: client_email,
-          full_name: "Test Client",
-          business_id: business.id,
-          status: "pending"
-        })
-
-      # Create invitation token with metadata
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          client_id: client.id,
-          business_id: business.id,
-          inviting_coach_id: coach.id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # Validate metadata has client_id
-      assert token.metadata["client_id"] == client.id
-
-      # Validate with correct client_id should succeed
-      assert :ok = Accounts.validate_invitation_metadata(token, client.id)
-
-      # Validate with wrong client_id should fail
-      wrong_client_id = Ecto.UUID.generate()
-
-      assert {:error, :metadata_validation_failed, message} =
-               Accounts.validate_invitation_metadata(token, wrong_client_id)
-
-      assert message =~ "client_id"
+      assert {:ok, client_id} = Clients.validate_invitation_metadata(metadata)
+      assert client_id == metadata["client_id"]
     end
 
-    test "validates business_id in invitation metadata", %{
-      coach: coach,
-      business: business
-    } do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
+    test "returns error when client_id is missing", %{coach: coach, business: business} do
+      metadata = %{
+        "business_id" => business.id,
+        "inviting_coach_id" => coach.id
+      }
 
-      # Create client
-      {:ok, client} =
-        Easy.Clients.create_client(%{
-          email: client_email,
-          full_name: "Test Client",
-          business_id: business.id,
-          status: "pending"
-        })
-
-      # Create invitation token with metadata
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          client_id: client.id,
-          business_id: business.id,
-          inviting_coach_id: coach.id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # Validate metadata has business_id
-      assert token.metadata["business_id"] == business.id
+      assert {:error, reason} = Clients.validate_invitation_metadata(metadata)
+      assert reason =~ "client_id"
     end
 
-    test "validates inviting_coach_id exists in metadata", %{
-      coach: coach,
-      business: business
-    } do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
+    test "returns error when business_id is missing", %{coach: coach} do
+      metadata = %{
+        "client_id" => Ecto.UUID.generate(),
+        "inviting_coach_id" => coach.id
+      }
 
-      # Create client
-      {:ok, client} =
-        Easy.Clients.create_client(%{
-          email: client_email,
-          full_name: "Test Client",
-          business_id: business.id,
-          status: "pending"
-        })
-
-      # Create invitation token with metadata
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          client_id: client.id,
-          business_id: business.id,
-          inviting_coach_id: coach.id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # Validate metadata has inviting_coach_id
-      assert token.metadata["inviting_coach_id"] == coach.id
-
-      # Validate coach exists
-      assert Repo.get(Easy.Coaches.Coach, coach.id) != nil
+      assert {:error, reason} = Clients.validate_invitation_metadata(metadata)
+      assert reason =~ "business_id"
     end
 
-    test "returns error for missing metadata fields", %{business: business} do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
+    test "returns error when inviting_coach_id is missing", %{business: business} do
+      metadata = %{
+        "client_id" => Ecto.UUID.generate(),
+        "business_id" => business.id
+      }
 
-      # Create invitation token with incomplete metadata
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          business_id: business.id
-          # Missing client_id and inviting_coach_id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # Should fail validation due to missing client_id
-      client_id = Ecto.UUID.generate()
-
-      result = Accounts.validate_invitation_metadata(token, client_id)
-
-      # May return error for missing or mismatched metadata
-      assert match?({:error, _, _}, result) or result == :ok
+      assert {:error, reason} = Clients.validate_invitation_metadata(metadata)
+      assert reason =~ "inviting_coach_id"
     end
 
-    test "returns error when inviting_coach_id doesn't exist", %{
-      coach: coach,
-      business: business
-    } do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
+    test "returns error when inviting coach does not exist", %{business: business} do
+      metadata = %{
+        "client_id" => Ecto.UUID.generate(),
+        "business_id" => business.id,
+        "inviting_coach_id" => Ecto.UUID.generate()
+      }
 
-      # Create client
-      {:ok, client} =
-        Easy.Clients.create_client(%{
-          email: client_email,
-          full_name: "Test Client",
-          business_id: business.id,
-          status: "pending"
-        })
-
-      # Create invitation token with non-existent coach_id
-      non_existent_coach_id = Ecto.UUID.generate()
-
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          client_id: client.id,
-          business_id: business.id,
-          inviting_coach_id: non_existent_coach_id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # Validate that coach doesn't exist
-      assert Repo.get(Easy.Coaches.Coach, non_existent_coach_id) == nil
-
-      # This should be caught during invitation acceptance
-      # The validation may happen at different points in the flow
-    end
-
-    test "validates business_id matches client's business", %{
-      coach: coach,
-      business: business
-    } do
-      client_email = "client#{System.unique_integer([:positive])}@example.com"
-
-      # Create client
-      {:ok, client} =
-        Easy.Clients.create_client(%{
-          email: client_email,
-          full_name: "Test Client",
-          business_id: business.id,
-          status: "pending"
-        })
-
-      # Create invitation token with different business_id
-      wrong_business_id = Ecto.UUID.generate()
-
-      {:ok, token_uuid} =
-        Accounts.generate_otp(client_email, "client_invitation", %{
-          client_id: client.id,
-          business_id: wrong_business_id,
-          inviting_coach_id: coach.id
-        })
-
-      token = Accounts.get_token_by_uuid(token_uuid)
-
-      # The business_id in metadata doesn't match client's business_id
-      assert token.metadata["business_id"] != client.business_id
-
-      # This mismatch should be caught during validation
+      assert {:error, reason} = Clients.validate_invitation_metadata(metadata)
+      assert reason =~ "Inviting coach not found"
     end
   end
 end

@@ -13,9 +13,27 @@ defmodule EasyWeb.IdempotencyTest do
   - Idempotent operations return appropriate HTTP status codes
   """
 
+  defp create_verified_user(email, full_name \\ "Test User") do
+    {:ok, user} =
+      Accounts.create_user(%{
+        email: email,
+        full_name: full_name,
+        email_verified: true
+      })
+
+    user
+  end
+
+  defp create_business_for_user(user, attrs) do
+    {:ok, business} = Organizations.create_business(user, attrs)
+    business
+  end
+
   describe "OTP generation idempotency" do
     test "returns same token_id for duplicate requests within 60 seconds", %{conn: conn} do
       email = "idempotent#{System.unique_integer([:positive])}@example.com"
+
+      _user = create_verified_user(email)
 
       # First request
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -43,6 +61,8 @@ defmodule EasyWeb.IdempotencyTest do
     test "returns same token_id for multiple rapid requests", %{conn: conn} do
       email = "rapid#{System.unique_integer([:positive])}@example.com"
 
+      _user = create_verified_user(email)
+
       # Make 5 rapid requests
       responses =
         for _ <- 1..5 do
@@ -58,6 +78,8 @@ defmodule EasyWeb.IdempotencyTest do
     test "generates new token after 60 seconds", %{conn: conn} do
       email = "newtoken#{System.unique_integer([:positive])}@example.com"
 
+      _user = create_verified_user(email)
+
       # First request
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
       %{"token_id" => token_id1} = json_response(conn1, 201)
@@ -67,7 +89,10 @@ defmodule EasyWeb.IdempotencyTest do
 
       token
       |> Ecto.Changeset.change(%{
-        inserted_at: DateTime.add(DateTime.utc_now(), -61, :second)
+        inserted_at:
+          DateTime.utc_now()
+          |> DateTime.truncate(:second)
+          |> DateTime.add(-61, :second)
       })
       |> Repo.update!()
 
@@ -82,12 +107,14 @@ defmodule EasyWeb.IdempotencyTest do
     test "idempotency works for different token types separately", %{conn: conn} do
       email = "types#{System.unique_integer([:positive])}@example.com"
 
+      _user = create_verified_user(email)
+
       # Generate login token
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
       %{"token_id" => login_token_id} = json_response(conn1, 201)
 
-      # Generate email_verification token (different type)
-      conn2 = post(conn, "/api/auth/send-otp", %{email: email, type: "email_verification"})
+      # Generate registration token (different type)
+      conn2 = post(conn, "/api/auth/send-otp", %{email: email, type: "registration"})
       %{"token_id" => verification_token_id} = json_response(conn2, 201)
 
       # Should be different tokens
@@ -99,13 +126,15 @@ defmodule EasyWeb.IdempotencyTest do
       assert login_token_id == login_token_id2
 
       # Duplicate verification request should return same verification token
-      conn4 = post(conn, "/api/auth/send-otp", %{email: email, type: "email_verification"})
+      conn4 = post(conn, "/api/auth/send-otp", %{email: email, type: "registration"})
       %{"token_id" => verification_token_id2} = json_response(conn4, 201)
       assert verification_token_id == verification_token_id2
     end
 
     test "idempotent requests don't count toward rate limit", %{conn: conn} do
       email = "ratelimit#{System.unique_integer([:positive])}@example.com"
+
+      _user = create_verified_user(email)
 
       # First request
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -265,10 +294,9 @@ defmodule EasyWeb.IdempotencyTest do
           email_verified: true
         })
 
-      {:ok, business} =
-        Organizations.create_business(%{
-          name: "Test Business #{System.unique_integer([:positive])}",
-          owner_id: coach_user.id
+      business =
+        create_business_for_user(coach_user, %{
+          name: "Test Business #{System.unique_integer([:positive])}"
         })
 
       {:ok, _coach} =
@@ -410,7 +438,7 @@ defmodule EasyWeb.IdempotencyTest do
       invitation_token = Accounts.get_token_by_uuid(token_id1)
 
       invitation_token
-      |> Ecto.Changeset.change(%{used_at: DateTime.utc_now()})
+      |> Ecto.Changeset.change(%{used_at: DateTime.utc_now() |> DateTime.truncate(:second)})
       |> Repo.update!()
 
       # Activate the client (simulate completion)
@@ -457,7 +485,10 @@ defmodule EasyWeb.IdempotencyTest do
 
       invitation_token
       |> Ecto.Changeset.change(%{
-        expires_at: DateTime.add(DateTime.utc_now(), -1, :day)
+        expires_at:
+          DateTime.utc_now()
+          |> DateTime.add(-1, :day)
+          |> DateTime.truncate(:second)
       })
       |> Repo.update!()
 

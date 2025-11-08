@@ -13,6 +13,17 @@ defmodule EasyWeb.AuthEndpointsTest do
   - POST /api/auth/logout
   """
 
+  defp create_verified_user(email) do
+    {:ok, user} =
+      Accounts.create_user(%{
+        email: email,
+        full_name: "Test User",
+        email_verified: true
+      })
+
+    user
+  end
+
   describe "POST /api/auth/send-otp" do
     test "generates OTP and returns token_id for existing user", %{conn: conn} do
       email = "user#{System.unique_integer([:positive])}@example.com"
@@ -50,7 +61,7 @@ defmodule EasyWeb.AuthEndpointsTest do
     test "generates OTP for new user email", %{conn: conn} do
       email = "newuser#{System.unique_integer([:positive])}@example.com"
 
-      conn = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
+      conn = post(conn, "/api/auth/send-otp", %{email: email, type: "registration"})
 
       assert %{
                "token_id" => token_id,
@@ -110,6 +121,8 @@ defmodule EasyWeb.AuthEndpointsTest do
       conn: conn
     } do
       email = "idempotent#{System.unique_integer([:positive])}@example.com"
+
+      _user = create_verified_user(email)
 
       # First request
       conn1 = post(conn, "/api/auth/send-otp", %{email: email, type: "login"})
@@ -230,7 +243,10 @@ defmodule EasyWeb.AuthEndpointsTest do
 
       token
       |> Ecto.Changeset.change(%{
-        expires_at: DateTime.add(DateTime.utc_now(), -1, :hour)
+        expires_at:
+          DateTime.utc_now()
+          |> DateTime.truncate(:second)
+          |> DateTime.add(-1, :hour)
       })
       |> Repo.update!()
 
@@ -355,7 +371,7 @@ defmodule EasyWeb.AuthEndpointsTest do
       session = Repo.get_by(Accounts.Session, refresh_token: session_data.refresh_token)
 
       session
-      |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now()})
+      |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now() |> DateTime.truncate(:second)})
       |> Repo.update!()
 
       conn = post(conn, "/api/auth/refresh", %{refresh_token: session_data.refresh_token})
@@ -432,7 +448,7 @@ defmodule EasyWeb.AuthEndpointsTest do
       session = Repo.get_by(Accounts.Session, token: session_data.access_token)
 
       session
-      |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now()})
+      |> Ecto.Changeset.change(%{revoked_at: DateTime.utc_now() |> DateTime.truncate(:second)})
       |> Repo.update!()
 
       # Try to logout again

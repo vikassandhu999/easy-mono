@@ -43,7 +43,10 @@ defmodule EasyWeb.CoachRegistrationFlowTest do
       # STEP 2: Verify OTP
       # ============================================
       # Get the OTP token to extract the code for testing
-      token = Accounts.get_token_by_uuid(token_id)
+      token =
+        Accounts.get_token_by_id(token_id) ||
+          Accounts.get_token_by_uuid(token_id)
+
       assert token != nil
 
       # For testing, we need to get the actual OTP code
@@ -173,7 +176,10 @@ defmodule EasyWeb.CoachRegistrationFlowTest do
       conn1 = post(conn, "/api/auth/register", %{email: email, full_name: full_name})
       %{"token_id" => token_id} = json_response(conn1, 201)
 
-      token = Accounts.get_token_by_uuid(token_id)
+      token =
+        Accounts.get_token_by_id(token_id) ||
+          Accounts.get_token_by_uuid(token_id)
+
       code = get_test_otp_code(token)
 
       conn2 = post(conn, "/api/auth/verify-otp", %{token_id: token_id, code: code})

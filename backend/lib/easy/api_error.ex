@@ -1,9 +1,8 @@
 defmodule Easy.ApiError do
   @moduledoc """
-  Standardized API error structure and helpers for non-OAuth endpoints.
+  Standardized API error structure and helpers for all API endpoints.
 
-  This module provides a consistent error response format for all API endpoints
-  (excluding OAuth endpoints which use Easy.OAuthError for RFC 6749 compliance).
+  This module provides a consistent error response format for all API endpoints.
 
   ## Error Response Format
 

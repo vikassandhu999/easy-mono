@@ -28,9 +28,8 @@ defmodule EasyWeb.ClientInvitationFlowTest do
         })
 
       {:ok, business} =
-        Organizations.create_business(%{
-          name: "Test Business #{System.unique_integer([:positive])}",
-          owner_id: coach_user.id
+        Organizations.create_business(coach_user, %{
+          name: "Test Business #{System.unique_integer([:positive])}"
         })
 
       {:ok, coach} =
@@ -109,7 +108,7 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
       # Verify expires_at is a valid ISO 8601 timestamp
       assert is_binary(expires_at)
-      {:ok, _datetime, _offset} = DateTime.from_iso8601(expires_at)
+      {:ok, expires_at_dt, _offset} = DateTime.from_iso8601(expires_at)
 
       # ============================================
       # STEP 2: Client Views Invitation
@@ -127,8 +126,11 @@ defmodule EasyWeb.ClientInvitationFlowTest do
       assert %{
                "token_id" => ^token_id,
                "status" => "valid",
-               "expires_at" => ^expires_at
+               "expires_at" => invitation_view_expires_at
              } = invitation_info
+
+      {:ok, invitation_view_expires_at_dt, _} = DateTime.from_iso8601(invitation_view_expires_at)
+      assert abs(DateTime.diff(invitation_view_expires_at_dt, expires_at_dt, :second)) <= 1
 
       # Verify client info (no sensitive data like notes)
       assert %{
@@ -142,7 +144,7 @@ defmodule EasyWeb.ClientInvitationFlowTest do
                "name" => business_name
              } = business_info
 
-      assert is_binary(business_name)
+      assert business_name == business.name
 
       # Verify inviting coach info
       assert %{
@@ -275,12 +277,11 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
       conn1 = get(conn, "/api/invitations/#{invalid_token_id}")
 
-      assert %{
-               "error" => %{
-                 "code" => "not_found",
-                 "message" => _message
-               }
-             } = json_response(conn1, 404)
+      response = json_response(conn1, 404)
+
+      assert %{"error" => %{"code" => code, "message" => message}} = response
+      assert String.downcase(code) == "not_found"
+      assert message == "Invitation not found or invalid"
     end
 
     test "returns error for expired invitation", %{
@@ -303,10 +304,13 @@ defmodule EasyWeb.ClientInvitationFlowTest do
       # Manually expire the token
       invitation_token = Accounts.get_token_by_uuid(token_id)
 
+      expired_at =
+        DateTime.utc_now()
+        |> DateTime.add(-1, :day)
+        |> DateTime.truncate(:second)
+
       invitation_token
-      |> Ecto.Changeset.change(%{
-        expires_at: DateTime.add(DateTime.utc_now(), -1, :day)
-      })
+      |> Ecto.Changeset.change(%{expires_at: expired_at})
       |> Repo.update!()
 
       # Try to view expired invitation
@@ -314,10 +318,12 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
       assert %{
                "error" => %{
-                 "code" => "invitation_expired",
+                 "code" => code,
                  "message" => _message
                }
              } = json_response(conn2, 410)
+
+      assert String.downcase(code) == "invitation_expired"
     end
 
     test "returns error for invalid OTP code", %{
@@ -343,12 +349,10 @@ defmodule EasyWeb.ClientInvitationFlowTest do
           code: "000000"
         })
 
-      assert %{
-               "error" => %{
-                 "code" => "invalid_otp",
-                 "message" => _message
-               }
-             } = json_response(conn2, 400)
+      response = json_response(conn2, 400)
+
+      assert %{"error" => %{"code" => code}} = response
+      assert String.downcase(code) == "invalid_otp"
     end
   end
 

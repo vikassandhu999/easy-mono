@@ -79,8 +79,12 @@ defmodule Easy.Clients do
   end
 
   defp create_invitation_with_details(coach_id, business_id, attrs, coach_name, business_name) do
-    # Ensure business_id is set in attrs
-    attrs_with_business = Map.put(attrs, :business_id, business_id)
+    # Ensure business_id is set in attrs with consistent string keys to avoid mixed-key maps
+    attrs_with_business =
+      attrs
+      |> normalize_invitation_attrs()
+      |> Map.put("business_id", business_id)
+
     email = attrs_with_business["email"] || attrs_with_business[:email]
 
     # Check for existing pending invitation (idempotency)
@@ -141,6 +145,14 @@ defmodule Easy.Clients do
           token -> {:ok, client, token}
         end
     end
+  end
+
+  defp normalize_invitation_attrs(attrs) when is_map(attrs) do
+    Enum.reduce(attrs, %{}, fn
+      {key, value}, acc when is_atom(key) -> Map.put(acc, Atom.to_string(key), value)
+      {key, value}, acc when is_binary(key) -> Map.put(acc, key, value)
+      {key, value}, acc -> Map.put(acc, to_string(key), value)
+    end)
   end
 
   # Creates a new invitation

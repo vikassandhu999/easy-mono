@@ -141,7 +141,8 @@ defmodule Easy.Accounts.Token do
     claims =
       %{
         "iat" => now,
-        "exp" => now + ttl
+        "exp" => now + ttl,
+        "nonce" => Ecto.UUID.generate()
       }
       |> Map.merge(extra_claims)
 

@@ -147,4 +147,23 @@ defmodule EasyWeb.Router do
     patch "/:meal_id/ingredients/:ingredient_id", MealController, :update_ingredient
     delete "/:meal_id/ingredients/:ingredient_id", MealController, :remove_ingredient
   end
+
+  scope "/api/meal-plans", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", MealPlanController, :index
+    post "/", MealPlanController, :create
+    get "/:id", MealPlanController, :show
+    patch "/:id", MealPlanController, :update
+    delete "/:id", MealPlanController, :delete
+    post "/:id/duplicate", MealPlanController, :duplicate
+    post "/:id/publish", MealPlanController, :publish
+    post "/:id/archive", MealPlanController, :archive
+    post "/:id/assign", MealPlanController, :assign_to_client
+
+    # Meal plan meals endpoints
+    post "/:meal_plan_id/meals", MealPlanController, :add_meal
+    patch "/:meal_plan_id/meals/:meal_id", MealPlanController, :update_meal
+    delete "/:meal_plan_id/meals/:meal_id", MealPlanController, :remove_meal
+  end
 end

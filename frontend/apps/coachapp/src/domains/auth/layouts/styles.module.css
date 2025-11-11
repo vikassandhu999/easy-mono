@@ -1,0 +1,317 @@
+/* EasyOptionSelector CSS Module - Following best layout practices */
+
+.authLayout {
+  /* Mobile-first grid layout that adapts to content */
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for better mobile support */
+  
+  /* Ensure proper isolation and layout containment */
+  isolation: isolate;
+  contain: layout style;
+  
+  /* Base background with theme support */
+  background-color: var(--mantine-color-default);
+  color: var(--mantine-color-text);
+  
+  /* Safe area support for mobile devices */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Content section - always visible, contains the form */
+.contentSection {
+  /* Proper semantic role and layout */
+  grid-column: 1;
+  grid-row: 1;
+  
+  /* Flexible container that centers content */
+  display: flex;
+  
+  /* Responsive padding using design tokens */
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-md);
+  
+  /* Ensure content doesn't get too wide on large screens */
+  max-width: 100%;
+  width: 100%;
+  
+  /* Smooth transitions for responsive changes */
+  transition: padding 0.2s ease-in-out;
+  
+  /* Ensure proper overflow handling */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Content container for proper width management */
+.contentContainer {
+  /* Content-driven width with sensible limits */
+  width: 100%;
+  max-width: 420px; /* Optimal reading width */
+  
+  /* Vertical spacing using design system scale */
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xl);
+  
+}
+
+/* Brand section with proper hierarchy */
+.brandSection {
+  /* Center brand on all screen sizes */
+  display: block;
+}
+
+/* Form header section */
+.headerSection {
+  /* Consistent spacing and alignment */
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  text-align: left;
+  
+  /* Ensure proper reading flow */
+  max-width: 100%;
+}
+
+/* Form title styling */
+.title {
+  /* Use design system typography scale */
+  font-size: var(--mantine-h5-font-size);
+  line-height: var(--mantine-h5-line-height);
+  font-weight: var(--mantine-h5-font-weight);
+  letter-spacing: var(--mantine-h5-letter-spacing);
+  
+  /* Semantic color that adapts to theme */
+  color: var(--mantine-color-text);
+  
+  /* Proper spacing */
+  margin: 0;
+  
+  /* Ensure text doesn't break awkwardly */
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Form subtitle styling */
+.subtitle {
+  /* Use design system typography for body text */
+  font-size: var(--mantine-font-size-md);
+  line-height: var(--mantine-line-height-md);
+  
+  /* Secondary text color for hierarchy */
+  color: var(--mantine-color-dimmed);
+  
+  /* Proper spacing */
+  margin: 0;
+  
+  /* Optimal reading width */
+  max-width: var(--mantine-text-max-width);
+}
+
+/* Form content wrapper */
+.formContent {
+  /* Consistent vertical spacing */
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-lg);
+  
+  /* Ensure forms are full width */
+  width: 100%;
+}
+
+/* Illustration section - hidden by default, shown on larger screens */
+.illustrationSection {
+  /* Hidden on mobile, shown on desktop */
+  display: none;
+  grid-column: 2;
+  grid-row: 1;
+  
+  /* Center the illustration */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Prevent illustration from affecting content layout */
+  overflow: hidden;
+  position: relative;
+  
+  /* Subtle background to separate from content */
+  background: linear-gradient(135deg, 
+    var(--mantine-color-primary-0) 0%, 
+    var(--mantine-color-primary-1) 100%);
+}
+
+/* Illustration image styling */
+.illustration {
+  /* Responsive image that maintains aspect ratio */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  
+  /* Smooth loading transition */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.illustration.loaded {
+  opacity: 1;
+}
+
+/* Illustration fallback for loading states */
+.illustrationFallback {
+  /* Placeholder while image loads */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Subtle pattern or color */
+  background: linear-gradient(45deg, 
+    var(--mantine-color-primary-1), 
+    var(--mantine-color-primary-2));
+  
+  /* Loading indicator */
+  color: var(--mantine-color-primary-6);
+  font-size: var(--mantine-font-size-lg);
+}
+
+/* Tablet and small desktop breakpoint */
+@media (min-width: 768px) {
+  .authLayout {
+    /* Two-column layout on larger screens */
+    grid-template-columns: 1fr 1fr;
+    padding: 0; /* Remove safe area padding on desktop */
+  }
+  
+  .contentSection {
+    /* Adjust padding for desktop */
+    padding: var(--mantine-spacing-xl);
+  }
+  
+
+  
+  .illustrationSection {
+    /* Show illustration on desktop */
+    display: flex;
+  }
+}
+
+/* Large desktop breakpoint */
+@media (min-width: 1024px) {
+  .authLayout {
+    /* Slightly favor content over illustration */
+    grid-template-columns: 5fr 7fr;
+  }
+  
+  .contentSection {
+    /* More generous padding on large screens */
+    padding: var(--mantine-spacing-xl) var(--mantine-spacing-xl);
+  }
+  
+  .contentContainer {
+    /* Larger max width on big screens */
+    max-width: 480px;
+  }
+}
+
+/* Extra large screens */
+@media (min-width: 1440px) {
+  .contentContainer {
+    /* Even more generous spacing on very large screens */
+    max-width: 520px;
+    gap: var(--mantine-spacing-xl);
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 767px) {
+  .contentSection {
+    /* Reduce padding on small screens */
+    padding: var(--mantine-spacing-md) var(--mantine-spacing-sm);
+    
+    /* Ensure content starts higher on mobile for better UX */
+    justify-content: flex-start;
+    padding-top: calc(var(--mantine-spacing-xl) + env(safe-area-inset-top));
+  }
+  
+  .contentContainer {
+    /* Remove top margin on mobile to start content higher */
+    margin-top: 0;
+    margin-bottom: auto;
+    
+    /* Smaller gap on mobile */
+    gap: var(--mantine-spacing-lg);
+  }
+  
+  .brandSection {
+    /* Smaller brand on mobile */
+    margin-bottom: var(--mantine-spacing-sm);
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .contentSection,
+  .illustration {
+    /* Respect user's motion preferences */
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .title,
+  .subtitle {
+    /* Ensure text is readable in high contrast mode */
+    color: var(--mantine-color-text);
+  }
+  
+  .illustrationSection {
+    /* Remove subtle backgrounds in high contrast */
+    background: var(--mantine-color-default);
+  }
+}
+
+/* Dark theme optimizations */
+[data-mantine-color-scheme="dark"] .illustrationSection {
+  /* Darker gradient for dark theme */
+  background: linear-gradient(135deg, 
+    var(--mantine-color-dark-7) 0%, 
+    var(--mantine-color-dark-6) 100%);
+}
+
+/* Focus management for accessibility */
+.contentContainer:focus-within {
+  /* Subtle indication when form has focus */
+  outline: none;
+}
+
+/* Loading states */
+.contentSection.loading {
+  /* Indicate loading state */
+  cursor: wait;
+}
+
+/* Error states */
+.contentSection.error {
+  /* Subtle indication of error state */
+  border-left: 4px solid var(--mantine-color-error);
+  padding-left: calc(var(--mantine-spacing-md) - 4px);
+}
+
+/* Print styles */
+@media print {
+  .illustrationSection {
+    /* Hide illustration when printing */
+    display: none;
+  }
+  
+  .authLayout {
+    /* Single column for print */
+    grid-template-columns: 1fr;
+  }
+}

@@ -17,6 +17,55 @@ export interface CreateBusinessResponse {
     coach_id: string;
 }
 
+// Onboarding API types
+export const CreateBusinessRequest_zod = z.object({
+    name: z.string().min(2, 'Business name must be at least 2 characters'),
+    description: z.string().optional(),
+});
+
+export type CreateBusinessRequest = z.infer<typeof CreateBusinessRequest_zod>;
+
+export interface Business {
+    description: null | string;
+    id: string;
+    name: string;
+    owner_id: string;
+    slug: string;
+    status: string;
+}
+
+export interface CoachProfile {
+    bio: null | string;
+    business_id: string;
+    credentials: Record<string, unknown>;
+    id: string;
+    specialties: string[];
+    status: string;
+    user_id: string;
+}
+
+export interface Plan {
+    billing_interval: string;
+    id: string;
+    name: string;
+    price_cents: number;
+    slug: string;
+}
+
+export interface SubscriptionOnboarding {
+    business_id: string;
+    id: string;
+    plan: Plan;
+    plan_id: string;
+    status: string;
+}
+
+export interface CreateBusinessOnboardingResponse {
+    business: Business;
+    coach_profile: CoachProfile;
+    subscription: SubscriptionOnboarding;
+}
+
 export type Change = {
     billing_amount?: string;
     billing_days?: number;
@@ -49,16 +98,6 @@ export type PayResponse = {
         pay_page_url: string;
     };
     provider_code: 'PHONEPE';
-};
-
-export type Plan = {
-    id: string;
-    max_clients?: number;
-    max_clients_revised_from?: null | number;
-    name: string;
-    price_list?: null | Price[];
-    revised_at?: null | string;
-    type: string;
 };
 
 export type Price = {

@@ -1,4 +1,4 @@
-import {type AccessToken} from '@/services/auth';
+import {type AccessToken, type VerifyOTPResponse} from '@/services/auth';
 
 import {baseAPISlice} from '../baseAPISlice';
 import {
@@ -69,7 +69,7 @@ export const usersApi = baseAPISlice.injectEndpoints({
                 skipAuth: true,
             }),
         }),
-        verifySignup: build.mutation<AccessToken, VerifyProps>({
+        verifySignup: build.mutation<VerifyOTPResponse, VerifyProps>({
             query: (body) => ({
                 url: '/v1/auth/verify',
                 method: 'post',

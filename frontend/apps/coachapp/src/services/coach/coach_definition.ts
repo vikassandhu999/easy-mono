@@ -1,75 +1,78 @@
 import {z} from 'zod';
 
-export const CoachStats_zod = z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    total_clients: z.number().int().nonnegative(),
-    total_plans: z.number().int().nonnegative(),
-});
-
+// Zod schemas for validation
 export const UpdateCoach_zod = z.object({
-    available_days: z
-        .array(z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']))
-        .optional(),
-    available_time: z.string().optional(),
     bio: z.string().max(500).optional(),
-    biography: z.string().max(1000).optional(),
-    experience_years: z.number().int().min(0).max(100).optional(),
-    name: z.string().min(2).max(100).optional(),
-    profile_picture_url: z.string().url().optional(),
-    qualifications: z.string().max(500).optional(),
-    services_offered: z.array(z.string().min(2).max(100)).optional(),
-    social_media_links: z.record(z.string().url()).optional(),
-    specialization: z.string().min(2).max(100).optional(),
-    title: z.string().min(2).max(100).optional(),
+    specialties: z.array(z.string()).optional(),
+    credentials: z.record(z.any()).optional(),
 });
 
-export const UpdateBusinessPreferences_zod = z.object({
-    currency: z.string().optional(),
-    date_format: z.string().optional(),
-    language: z.string().optional(),
-    time_format: z.string().optional(),
-    timezone: z.string().optional(),
-});
-
-export interface BusinessPreferences {
-    currency?: string;
-    date_format?: string;
-    language?: string;
-    time_format?: string;
-    timezone?: string;
-    updated_at: string;
-}
-export interface Coach {
-    available_days?: string[];
-    available_time?: string;
-    bio?: string;
-    biography?: string;
-    business_id: string;
+// User interface (nested in coach response)
+export interface User {
     created_at: string;
     email: string;
-    experience_years?: number;
+    email_verified: boolean;
+    email_verified_at: null | string;
+    full_name: string;
     id: string;
-    name: string;
-    profile_picture_url?: string;
-    qualifications?: string;
-    services_offered?: string[];
-    social_media_links?: Record<string, string>;
-    specialization?: string;
-    title?: string;
     updated_at: string;
+}
+
+// Coach interface
+export interface Coach {
+    bio: null | string;
+    business_id: string;
+    created_at: string;
+    credentials: Record<string, any>;
+    id: string;
+    specialties: string[];
+    status: string;
+    updated_at: string;
+    user?: User;
     user_id: string;
 }
 
-export type UpdateBusinessPreferencesProps = z.infer<typeof UpdateBusinessPreferences_zod>;
-
-export interface CoachStats {
+// Client interface
+export interface Client {
+    business_id: string;
+    created_at: string;
+    email: string;
+    full_name: string;
     id: string;
-    name: string;
-    total_clients: number;
-    total_plans: number;
+    notes: null | string;
+    phone: null | string;
+    status: string;
+    updated_at: string;
+    user_id: null | string;
 }
 
-export type CoachStatsProps = z.infer<typeof CoachStats_zod>;
+// Coach-Client Assignment interface
+export interface CoachClientAssignment {
+    assigned_at: string;
+    assigned_by_id: null | string;
+    client_id: string;
+    coach_id: string;
+    created_at: string;
+    id: string;
+    updated_at: string;
+}
 
+// API Response types
+export interface CoachResponse {
+    coach: Coach;
+}
+
+export interface ClientsResponse {
+    clients: Client[];
+}
+
+export interface AssignmentResponse {
+    assignment: CoachClientAssignment;
+}
+
+export interface MessageResponse {
+    message: string;
+}
+
+// Type exports
 export type UpdateCoachProps = z.infer<typeof UpdateCoach_zod>;

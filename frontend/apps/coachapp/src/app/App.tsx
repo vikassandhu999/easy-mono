@@ -5,6 +5,7 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 import {AppProvider} from '@/providers/AppProvider';
 import AuthProvider from '@/providers/AuthProvider';
+import UserProvider from '@/providers/UserProvider';
 
 import {theme} from '../theme/index';
 import AppRouterProvider from './Router.tsx';
@@ -17,11 +18,13 @@ function App() {
             <Notifications position={'top-center'} />
             <ModalsProvider>
                 <QueryClientProvider client={queryClient}>
-                    <AuthProvider>
-                        <AppProvider>
-                            <AppRouterProvider />
-                        </AppProvider>
-                    </AuthProvider>
+                    <AppProvider>
+                        <AuthProvider>
+                            <UserProvider>
+                                <AppRouterProvider />
+                            </UserProvider>
+                        </AuthProvider>
+                    </AppProvider>
                 </QueryClientProvider>
             </ModalsProvider>
         </MantineProvider>

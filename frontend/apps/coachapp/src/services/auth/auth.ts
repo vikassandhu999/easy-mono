@@ -1,15 +1,19 @@
 import {
     type AccessToken,
-    type LoginProps,
-    type PasswordConfirmRequest,
-    type PasswordResetRequest,
+    type RefreshResponse,
+    type RegisterRequest,
+    type RegisterResponse,
     type RegisterWithPhoneRequest,
     type ResendVerifyRequest,
+    type SendOTPRequest,
+    type SendOTPResponse,
     type SendPasscodeRequest,
     type SendPhoneLoginOTPRequest,
     type SignInCodeRequest,
     type SignInRequest,
     type TokenValidation,
+    type VerifyOTPRequest,
+    type VerifyOTPResponse,
     type VerifyPhoneLoginOTPRequest,
 } from '@/services/auth';
 
@@ -17,48 +21,24 @@ import {baseAPISlice} from '../baseAPISlice';
 
 export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-        login: build.mutation<AccessToken, LoginProps>({
-            query: (body) => ({
-                url: '/v1/auth/token',
-                method: 'post',
-                data: {
-                    email: body.email,
-                    grant_type: 'password',
-                    password: body.password,
-                },
-                skipAuth: true,
-            }),
-        }),
-        logout: build.mutation<{message: string}, void>({
+        logout: build.mutation<{status: string}, void>({
             query: () => ({
-                url: '/v1/auth/logout',
+                url: '/api/auth/logout',
                 method: 'post',
             }),
         }),
-        passwordConfirm: build.mutation<AccessToken, PasswordConfirmRequest>({
+        refreshToken: build.mutation<RefreshResponse, void>({
+            query: () => ({
+                url: '/api/auth/refresh',
+                method: 'post',
+                data: {},
+            }),
+        }),
+        register: build.mutation<RegisterResponse, RegisterRequest>({
             query: (body) => ({
-                url: '/v1/auth/password-confirm',
+                url: '/api/auth/register',
                 method: 'post',
                 data: body,
-                skipAuth: true,
-            }),
-        }),
-        passwordReset: build.mutation<TokenValidation, PasswordResetRequest>({
-            query: (body) => ({
-                url: '/v1/auth/password-reset',
-                method: 'post',
-                data: body,
-                skipAuth: true,
-            }),
-        }),
-        refreshToken: build.mutation<AccessToken, void>({
-            query: () => ({
-                url: '/v1/auth/token',
-                method: 'post',
-                data: {
-                    grant_type: 'refresh_token',
-                },
-                skipAuth: true,
             }),
         }),
         registerWithPhone: build.mutation<AccessToken, RegisterWithPhoneRequest>({
@@ -66,7 +46,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/coach/auth/register-with-phone',
                 method: 'post',
                 data: body,
-                skipAuth: true,
             }),
         }),
         resendVerifyCode: build.mutation<TokenValidation, ResendVerifyRequest>({
@@ -74,7 +53,13 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/auth/verify-resend',
                 method: 'post',
                 data: body,
-                skipAuth: true,
+            }),
+        }),
+        sendOTP: build.mutation<SendOTPResponse, SendOTPRequest>({
+            query: (body) => ({
+                url: '/api/auth/send-otp',
+                method: 'post',
+                data: body,
             }),
         }),
         sendPasscode: build.mutation<TokenValidation, SendPasscodeRequest>({
@@ -82,7 +67,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/auth/send-passcode',
                 method: 'post',
                 data: body,
-                skipAuth: true,
             }),
         }),
         sendPhoneLoginOTP: build.mutation<TokenValidation, SendPhoneLoginOTPRequest>({
@@ -90,7 +74,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/coach/auth/send-phone-login-otp',
                 method: 'post',
                 data: body,
-                skipAuth: true,
             }),
         }),
         signIn: build.mutation<TokenValidation, SignInRequest>({
@@ -98,7 +81,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/auth/send-passcode',
                 method: 'post',
                 data: body,
-                skipAuth: true,
             }),
         }),
         signInCode: build.mutation<AccessToken, SignInCodeRequest>({
@@ -111,7 +93,13 @@ export const authApi = baseAPISlice.injectEndpoints({
                     passcode: body.passcode,
                     token_id: body.token_id,
                 },
-                skipAuth: true,
+            }),
+        }),
+        verifyOTP: build.mutation<VerifyOTPResponse, VerifyOTPRequest>({
+            query: (body) => ({
+                url: '/api/auth/verify-otp',
+                method: 'post',
+                data: body,
             }),
         }),
         verifyPhoneLoginOTP: build.mutation<AccessToken, VerifyPhoneLoginOTPRequest>({
@@ -119,7 +107,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/v1/coach/auth/verify-phone-login-otp',
                 method: 'post',
                 data: body,
-                skipAuth: true,
             }),
         }),
     }),
@@ -127,16 +114,16 @@ export const authApi = baseAPISlice.injectEndpoints({
 });
 
 export const {
-    useLoginMutation,
     useLogoutMutation,
-    usePasswordConfirmMutation,
-    usePasswordResetMutation,
     useRefreshTokenMutation,
+    useRegisterMutation,
     useRegisterWithPhoneMutation,
     useResendVerifyCodeMutation,
+    useSendOTPMutation,
     useSendPasscodeMutation,
     useSendPhoneLoginOTPMutation,
     useSignInMutation,
     useSignInCodeMutation,
+    useVerifyOTPMutation,
     useVerifyPhoneLoginOTPMutation,
 } = authApi;

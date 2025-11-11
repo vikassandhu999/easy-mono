@@ -5,9 +5,9 @@ import {Provider} from 'react-redux';
 import './index.css';
 import App from './app/App.tsx';
 import initializePWA from './app/pwa.tsx';
+// import initializePWA from './app/pwa.tsx';
 import {store} from './store';
 
-// DOM Content Loaded handler
 document.addEventListener('DOMContentLoaded', initializePWA);
 
 // Error boundary for React errors

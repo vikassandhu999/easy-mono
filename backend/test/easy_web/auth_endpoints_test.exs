@@ -209,6 +209,54 @@ defmodule EasyWeb.AuthEndpointsTest do
       {:ok, _datetime, _offset} = DateTime.from_iso8601(expires_at)
     end
 
+    test "sets access_token and refresh_token cookies in response", %{
+      conn: conn,
+      token_id: token_id,
+      code: code
+    } do
+      conn = post(conn, "/api/auth/verify-otp", %{token_id: token_id, code: code})
+
+      assert %{"session" => session_data} = json_response(conn, 200)
+
+      # Verify cookies are set in response
+      cookies = conn.resp_cookies
+
+      assert Map.has_key?(cookies, "access_token")
+      assert cookies["access_token"].value == session_data["access_token"]
+      assert cookies["access_token"].http_only == true
+      assert cookies["access_token"].same_site == "Lax"
+      assert cookies["access_token"].path == "/"
+      assert cookies["access_token"].max_age == session_data["expires_in"]
+
+      assert Map.has_key?(cookies, "refresh_token")
+      assert cookies["refresh_token"].value == session_data["refresh_token"]
+      assert cookies["refresh_token"].http_only == true
+      assert cookies["refresh_token"].same_site == "Lax"
+      assert cookies["refresh_token"].path == "/"
+      assert cookies["refresh_token"].max_age == 2_592_000
+    end
+
+    test "includes tokens in response body for backward compatibility", %{
+      conn: conn,
+      token_id: token_id,
+      code: code
+    } do
+      conn = post(conn, "/api/auth/verify-otp", %{token_id: token_id, code: code})
+
+      assert %{
+               "session" => %{
+                 "access_token" => access_token,
+                 "refresh_token" => refresh_token
+               }
+             } = json_response(conn, 200)
+
+      # Verify tokens are present in response body
+      assert is_binary(access_token)
+      assert String.length(access_token) > 0
+      assert is_binary(refresh_token)
+      assert String.length(refresh_token) > 0
+    end
+
     test "returns error for invalid OTP code", %{conn: conn, token_id: token_id} do
       conn = post(conn, "/api/auth/verify-otp", %{token_id: token_id, code: "000000"})
 
@@ -343,6 +391,61 @@ defmodule EasyWeb.AuthEndpointsTest do
       {:ok, _datetime, _offset} = DateTime.from_iso8601(expires_at)
     end
 
+    test "accepts refresh token from cookie", %{conn: conn, session_data: session_data} do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("cookie", "refresh_token=#{session_data.refresh_token}")
+        |> post("/api/auth/refresh", %{})
+
+      assert %{
+               "access_token" => new_access_token,
+               "expires_at" => _expires_at,
+               "expires_in" => expires_in
+             } = json_response(conn, 200)
+
+      assert is_binary(new_access_token)
+      assert is_integer(expires_in)
+      assert expires_in > 0
+    end
+
+    test "falls back to request body when cookie is missing", %{
+      conn: conn,
+      session_data: session_data
+    } do
+      conn =
+        post(conn, "/api/auth/refresh", %{
+          refresh_token: session_data.refresh_token
+        })
+
+      assert %{
+               "access_token" => new_access_token,
+               "expires_at" => _expires_at,
+               "expires_in" => expires_in
+             } = json_response(conn, 200)
+
+      assert is_binary(new_access_token)
+      assert is_integer(expires_in)
+      assert expires_in > 0
+    end
+
+    test "sets new access token cookie in response", %{conn: conn, session_data: session_data} do
+      conn =
+        post(conn, "/api/auth/refresh", %{
+          refresh_token: session_data.refresh_token
+        })
+
+      assert %{"access_token" => access_token} = json_response(conn, 200)
+
+      # Verify new access token cookie is set
+      cookies = conn.resp_cookies
+
+      assert Map.has_key?(cookies, "access_token")
+      assert cookies["access_token"].value == access_token
+      assert cookies["access_token"].http_only == true
+      assert cookies["access_token"].same_site == "Lax"
+      assert cookies["access_token"].path == "/"
+    end
+
     test "returns error for invalid refresh token", %{conn: conn} do
       conn = post(conn, "/api/auth/refresh", %{refresh_token: "invalid-token"})
 
@@ -401,7 +504,10 @@ defmodule EasyWeb.AuthEndpointsTest do
       %{user: user, session_data: session_data}
     end
 
-    test "revokes session and returns success", %{conn: conn, session_data: session_data} do
+    test "revokes session and returns success with Authorization header", %{
+      conn: conn,
+      session_data: session_data
+    } do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{session_data.access_token}")
@@ -414,7 +520,60 @@ defmodule EasyWeb.AuthEndpointsTest do
       assert session.revoked_at != nil
     end
 
-    test "returns error for missing authorization header", %{conn: conn} do
+    test "revokes session and clears cookies when using cookie authentication", %{
+      conn: conn,
+      session_data: session_data
+    } do
+      # Set both Authorization header (for AuthenticateToken plug) and cookies (to test cookie clearing)
+      # Note: The AuthenticateToken plug currently only reads from Authorization header
+      # Cookie support in the plug is implemented in a separate task
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer #{session_data.access_token}")
+        |> Plug.Conn.put_req_header(
+          "cookie",
+          "access_token=#{session_data.access_token}; refresh_token=#{session_data.refresh_token}"
+        )
+        |> post("/api/auth/logout", %{})
+
+      assert %{"status" => "logged_out"} = json_response(conn, 200)
+
+      # Verify session is revoked
+      session = Repo.get_by(Accounts.Session, token: session_data.access_token)
+      assert session.revoked_at != nil
+
+      # Verify cookies are cleared (Max-Age set to 0)
+      cookies = conn.resp_cookies
+
+      assert Map.has_key?(cookies, "access_token")
+      assert cookies["access_token"].max_age == 0
+
+      assert Map.has_key?(cookies, "refresh_token")
+      assert cookies["refresh_token"].max_age == 0
+    end
+
+    test "clears cookies even when using Authorization header", %{
+      conn: conn,
+      session_data: session_data
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{session_data.access_token}")
+        |> post("/api/auth/logout", %{})
+
+      assert %{"status" => "logged_out"} = json_response(conn, 200)
+
+      # Verify cookies are cleared
+      cookies = conn.resp_cookies
+
+      assert Map.has_key?(cookies, "access_token")
+      assert cookies["access_token"].max_age == 0
+
+      assert Map.has_key?(cookies, "refresh_token")
+      assert cookies["refresh_token"].max_age == 0
+    end
+
+    test "returns error for missing authorization header and cookie", %{conn: conn} do
       conn = post(conn, "/api/auth/logout", %{})
 
       assert %{
@@ -424,10 +583,32 @@ defmodule EasyWeb.AuthEndpointsTest do
                }
              } = json_response(conn, 401)
 
-      assert code in ["UNAUTHORIZED", "unauthorized"]
+      assert code in ["UNAUTHORIZED", "unauthorized", "MISSING_TOKEN"]
     end
 
-    test "returns error for invalid token", %{conn: conn} do
+    test "returns error for invalid token in cookie", %{conn: conn} do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("cookie", "access_token=invalid-token")
+        |> post("/api/auth/logout", %{})
+
+      assert %{
+               "error" => %{
+                 "code" => code,
+                 "message" => _message
+               }
+             } = json_response(conn, 401)
+
+      assert code in [
+               "UNAUTHORIZED",
+               "SESSION_NOT_FOUND",
+               "unauthorized",
+               "INVALID_TOKEN",
+               "MISSING_TOKEN"
+             ]
+    end
+
+    test "returns error for invalid token in header", %{conn: conn} do
       conn =
         conn
         |> put_req_header("authorization", "Bearer invalid-token")
@@ -440,7 +621,7 @@ defmodule EasyWeb.AuthEndpointsTest do
                }
              } = json_response(conn, 401)
 
-      assert code in ["UNAUTHORIZED", "SESSION_NOT_FOUND", "unauthorized"]
+      assert code in ["UNAUTHORIZED", "SESSION_NOT_FOUND", "unauthorized", "INVALID_TOKEN"]
     end
 
     test "returns error for already revoked session", %{conn: conn, session_data: session_data} do
@@ -465,6 +646,108 @@ defmodule EasyWeb.AuthEndpointsTest do
              } = json_response(conn, 401)
 
       assert code in ["UNAUTHORIZED", "SESSION_NOT_FOUND", "unauthorized"]
+    end
+  end
+
+  describe "POST /api/auth/switch-context" do
+    setup do
+      email = "switch#{System.unique_integer([:positive])}@example.com"
+
+      {:ok, user} =
+        Accounts.create_user(%{
+          email: email,
+          full_name: "Test User",
+          email_verified: true
+        })
+
+      # Create a business and coach profile for the user using legacy functions
+      {:ok, business} =
+        Easy.Organizations.create_business_legacy(user, %{
+          name: "Test Business"
+        })
+
+      {:ok, coach} =
+        Easy.Coaches.create_coach_legacy(user.id, business.id, %{
+          status: "active"
+        })
+
+      # Create a second business for context switching
+      {:ok, business2} =
+        Easy.Organizations.create_business_legacy(user, %{
+          name: "Second Business"
+        })
+
+      {:ok, coach2} =
+        Easy.Coaches.create_coach_legacy(user.id, business2.id, %{
+          status: "active"
+        })
+
+      # Create session for the first business
+      {:ok, %{session: session_data}} = Accounts.create_session(user, business.id)
+
+      %{
+        user: user,
+        business: business,
+        business2: business2,
+        coach: coach,
+        coach2: coach2,
+        session_data: session_data
+      }
+    end
+
+    test "sets new access_token and refresh_token cookies when switching context", %{
+      conn: conn,
+      session_data: session_data,
+      business2: business2
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{session_data.access_token}")
+        |> post("/api/auth/switch-context", %{business_id: business2.id})
+
+      assert %{
+               "session" => session,
+               "context" => _context
+             } = json_response(conn, 200)
+
+      # Verify cookies are set in response
+      cookies = conn.resp_cookies
+
+      assert Map.has_key?(cookies, "access_token")
+      assert cookies["access_token"].value == session["access_token"]
+      assert cookies["access_token"].http_only == true
+      assert cookies["access_token"].same_site == "Lax"
+      assert cookies["access_token"].path == "/"
+
+      assert Map.has_key?(cookies, "refresh_token")
+      assert cookies["refresh_token"].value == session["refresh_token"]
+      assert cookies["refresh_token"].http_only == true
+      assert cookies["refresh_token"].same_site == "Lax"
+      assert cookies["refresh_token"].path == "/"
+    end
+
+    test "includes session tokens in response body for backward compatibility", %{
+      conn: conn,
+      session_data: session_data,
+      business2: business2
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{session_data.access_token}")
+        |> post("/api/auth/switch-context", %{business_id: business2.id})
+
+      assert %{
+               "session" => %{
+                 "access_token" => access_token,
+                 "refresh_token" => refresh_token
+               }
+             } = json_response(conn, 200)
+
+      # Verify tokens are present in response body
+      assert is_binary(access_token)
+      assert String.length(access_token) > 0
+      assert is_binary(refresh_token)
+      assert String.length(refresh_token) > 0
     end
   end
 end

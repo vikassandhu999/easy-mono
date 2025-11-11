@@ -1,5 +1,8 @@
 import Config
 
+# Set environment to :dev
+config :easy, :environment, :dev
+
 # Configure your database
 config :easy, Easy.Repo,
   username: "admin",
@@ -43,10 +46,17 @@ config :swoosh, :api_client, false
 config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
 
 # Authentication and JWT configuration for development
-config :easy, Easy.Accounts.Token, secret_key: "dev-jwt-secret-key-minimum-32-characters-long"
-config :joken, default_signer: "dev-jwt-secret-key-minimum-32-characters-long"
+config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"
+
+config :easy, Easy.Accounts.Token,
+  secret_key: "dev-secret-key-minimum-32-characters-long-for-hs256"
+
+config :joken, default_signer: "dev-secret-key-minimum-32-characters-long-for-hs256"
 
 # CORS configuration for development - allow all origins
 config :cors_plug,
   origin: ["http://localhost:3000", "http://localhost:4000"],
   credentials: true
+
+# Cookie configuration for development - disable Secure flag for HTTP
+config :easy, EasyWeb.CookieHelper, secure: false

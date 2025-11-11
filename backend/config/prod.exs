@@ -23,5 +23,8 @@ config :cors_plug,
 config :easy, Easy.Accounts.Token,
   secret_key: System.get_env("JWT_SECRET_KEY") || "change-me-in-production"
 
+# Cookie configuration for production - enforce Secure flag for HTTPS
+config :easy, EasyWeb.CookieHelper, secure: true
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

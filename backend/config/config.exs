@@ -55,6 +55,15 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Cookie configuration for authentication
+config :easy, EasyWeb.CookieHelper,
+  secure: true,
+  domain: nil,
+  path: "/",
+  same_site: "Lax",
+  access_token_max_age: 604_800,
+  refresh_token_max_age: 2_592_000
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -1,214 +1,128 @@
 defmodule Easy.Nutrition do
   @moduledoc """
-  Nutrition context handles ingredient, recipe, and meal management.
+  Nutrition context handles recipe and meal management.
 
   This is the public API for:
-  - Ingredient CRUD operations
-  - Recipe management with ingredients
-  - Meal management with recipes and ingredients
-  - Nutritional calculations
+  - Recipe management with embedded ingredients as text arrays
+  - Meal management with recipes
+  - Manual nutritional value entry for recipes and meals
 
-  All resources are scoped to business context for data isolation.
+  ## Architecture
+
+  The nutrition system uses a simplified architecture where:
+  - **Recipes** contain embedded ingredient names as a PostgreSQL text array
+  - **Meals** contain one or more recipes (no direct ingredient associations)
+  - **Nutritional values** are manually entered by coaches, not automatically calculated
+
+  ## Embedded Ingredients
+
+  Ingredients are stored as simple text names within recipes using PostgreSQL's
+  native text array type. This eliminates the need for separate ingredient tables
+  and join tables, simplifying the data model.
+
+  Example recipe with embedded ingredients:
+  ```elixir
+  %Recipe{
+    name: "Grilled Chicken",
+    ingredients: ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
+    total_calories: Decimal.new("350"),
+    total_protein: Decimal.new("45"),
+    servings: 4
+  }
+  ```
+
+  ## Manual Nutrition Entry
+
+  Nutritional values (calories, protein, carbohydrates, fats, fiber) are manually
+  entered by coaches when creating or updating recipes and meals. The system does
+  not perform automatic calculations based on ingredients.
+
+  ## Creating Recipes with Ingredients
+
+  To create a recipe with embedded ingredients:
+
+  ```elixir
+  # Create a recipe with ingredient names and manual nutrition values
+  {:ok, recipe} = Nutrition.create_recipe(business_id, coach_id, %{
+    name: "Grilled Chicken Salad",
+    description: "Healthy protein-packed salad",
+    servings: 2,
+    prep_time_minutes: 20,
+    instructions: "1. Grill chicken\\n2. Chop vegetables\\n3. Mix together",
+    ingredients: [
+      "Chicken Breast",
+      "Mixed Greens",
+      "Cherry Tomatoes",
+      "Cucumber",
+      "Olive Oil",
+      "Lemon Juice"
+    ],
+    total_calories: Decimal.new("450"),
+    total_protein: Decimal.new("52"),
+    total_carbohydrates: Decimal.new("15"),
+    total_fats: Decimal.new("18"),
+    total_fiber: Decimal.new("5")
+  })
+  ```
+
+  ## Updating Recipe Ingredients
+
+  To update a recipe's ingredients:
+
+  ```elixir
+  # Add or remove ingredients by updating the array
+  {:ok, updated_recipe} = Nutrition.update_recipe(recipe, coach_id, %{
+    ingredients: [
+      "Chicken Breast",
+      "Mixed Greens",
+      "Cherry Tomatoes",
+      "Cucumber",
+      "Olive Oil",
+      "Lemon Juice",
+      "Feta Cheese"  # Added new ingredient
+    ]
+  })
+  ```
+
+  ## Creating Meals with Recipes
+
+  Meals contain only recipes (no direct ingredient associations):
+
+  ```elixir
+  # Create a meal
+  {:ok, meal} = Nutrition.create_meal(business_id, coach_id, %{
+    name: "Lunch",
+    meal_type: "lunch",
+    total_calories: Decimal.new("650"),
+    total_protein: Decimal.new("60")
+  })
+
+  # Add recipes to the meal
+  {:ok, _meal_recipe} = Nutrition.add_recipe_to_meal(
+    meal.id,
+    recipe.id,
+    Decimal.new("1.0")  # Serving multiplier
+  )
+  ```
+
+  ## Business Context Isolation
+
+  All resources are scoped to business context for data isolation. Coaches can
+  only access and modify recipes and meals within their own business.
+
+  ## Validation
+
+  The system validates:
+  - Ingredient names are non-empty strings (max 255 characters)
+  - Whitespace is trimmed from ingredient names
+  - Nutritional values are non-negative decimals
+  - Coaches belong to the same business as the resources they're modifying
   """
 
   import Ecto.Query, warn: false
 
   alias Easy.Repo
-  alias Easy.Nutrition.Ingredient
   alias Easy.Coaches.Coach
-
-  # ============================================
-  # INGREDIENT MANAGEMENT
-  # ============================================
-
-  @doc """
-  Creates an ingredient within a business context.
-
-  ## Parameters
-    - business_id: The business ID (UUID)
-    - coach_id: The coach ID creating the ingredient (UUID)
-    - attrs: Map of ingredient attributes (name, description, nutritional values, etc.)
-
-  ## Returns
-    - {:ok, ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :unauthorized} if coach doesn't belong to business
-
-  ## Examples
-
-      iex> create_ingredient(business_id, coach_id, %{name: "Chicken Breast", calories: 165})
-      {:ok, %Ingredient{}}
-
-      iex> create_ingredient(business_id, coach_id, %{name: ""})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_ingredient(business_id, coach_id, attrs) do
-    with {:ok, _coach} <- validate_coach_in_business(coach_id, business_id) do
-      attrs_with_ids =
-        attrs
-        |> Map.put(:business_id, business_id)
-        |> Map.put(:created_by_id, coach_id)
-
-      %Ingredient{}
-      |> Ingredient.create_changeset(attrs_with_ids)
-      |> Repo.insert()
-    end
-  end
-
-  @doc """
-  Gets an ingredient by ID.
-
-  Returns the ingredient struct or nil if not found.
-
-  ## Examples
-
-      iex> get_ingredient("123e4567-e89b-12d3-a456-426614174000")
-      %Ingredient{}
-
-      iex> get_ingredient("nonexistent-id")
-      nil
-  """
-  def get_ingredient(id), do: Repo.get(Ingredient, id)
-
-  @doc """
-  Lists ingredients within a business context with optional filtering and pagination.
-
-  ## Parameters
-    - business_id: The business ID
-    - opts: Options for filtering and pagination
-      - :limit - Number of items per page (default: 50)
-      - :offset - Number of items to skip (default: 0)
-      - :status - Filter by status (default: "active")
-      - :order_by - Field to order by (default: :name)
-
-  ## Returns
-    - List of ingredients
-
-  ## Examples
-
-      iex> list_ingredients(business_id)
-      [%Ingredient{}, %Ingredient{}]
-
-      iex> list_ingredients(business_id, limit: 10, offset: 0, status: "active")
-      [%Ingredient{}]
-  """
-  def list_ingredients(business_id, opts \\ []) do
-    limit = Keyword.get(opts, :limit, 50)
-    offset = Keyword.get(opts, :offset, 0)
-    status = Keyword.get(opts, :status, "active")
-    order_by = Keyword.get(opts, :order_by, :name)
-
-    from(i in Ingredient,
-      where: i.business_id == ^business_id,
-      where: i.status == ^status,
-      order_by: ^order_by,
-      limit: ^limit,
-      offset: ^offset
-    )
-    |> Repo.all()
-  end
-
-  @doc """
-  Updates an ingredient with the given attributes.
-
-  Validates that the ingredient belongs to the same business as the coach.
-
-  ## Parameters
-    - ingredient: The ingredient struct to update
-    - coach_id: The coach ID performing the update
-    - attrs: Map of attributes to update
-
-  ## Returns
-    - {:ok, ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :unauthorized} if coach doesn't belong to the same business as the ingredient
-
-  ## Examples
-
-      iex> update_ingredient(ingredient, coach_id, %{name: "Updated Name"})
-      {:ok, %Ingredient{}}
-
-      iex> update_ingredient(ingredient, coach_id, %{calories: -10})
-      {:error, %Ecto.Changeset{}}
-
-      iex> update_ingredient(ingredient, other_coach_id, %{name: "Updated Name"})
-      {:error, :unauthorized}
-  """
-  def update_ingredient(%Ingredient{} = ingredient, coach_id, attrs) do
-    with {:ok, _coach} <- validate_coach_in_business(coach_id, ingredient.business_id) do
-      ingredient
-      |> Ingredient.update_changeset(attrs)
-      |> Repo.update()
-    end
-  end
-
-  @doc """
-  Deletes an ingredient.
-
-  Prevents deletion if the ingredient is used in any recipes or meals.
-  Validates that the coach belongs to the same business as the ingredient.
-
-  ## Parameters
-    - ingredient: The ingredient struct to delete
-    - coach_id: The coach ID performing the deletion
-
-  ## Returns
-    - {:ok, ingredient} on success
-    - {:error, :ingredient_in_use} if ingredient is referenced by recipes or meals
-    - {:error, :unauthorized} if coach doesn't belong to the same business as the ingredient
-
-  ## Examples
-
-      iex> delete_ingredient(ingredient, coach_id)
-      {:ok, %Ingredient{}}
-
-      iex> delete_ingredient(ingredient_in_use, coach_id)
-      {:error, :ingredient_in_use}
-
-      iex> delete_ingredient(ingredient, other_coach_id)
-      {:error, :unauthorized}
-  """
-  def delete_ingredient(%Ingredient{} = ingredient, coach_id) do
-    with {:ok, _coach} <- validate_coach_in_business(coach_id, ingredient.business_id) do
-      if ingredient_in_use?(ingredient.id) do
-        {:error, :ingredient_in_use}
-      else
-        Repo.delete(ingredient)
-      end
-    end
-  end
-
-  @doc """
-  Searches for ingredients by name within a business context.
-
-  Performs a case-insensitive search on ingredient names.
-
-  ## Parameters
-    - business_id: The business ID
-    - query: Search string to match against ingredient names
-
-  ## Returns
-    - List of matching ingredients
-
-  ## Examples
-
-      iex> search_ingredients(business_id, "chicken")
-      [%Ingredient{name: "Chicken Breast"}, %Ingredient{name: "Chicken Thigh"}]
-
-      iex> search_ingredients(business_id, "xyz")
-      []
-  """
-  def search_ingredients(business_id, query) when is_binary(query) do
-    search_pattern = "%#{query}%"
-
-    from(i in Ingredient,
-      where: i.business_id == ^business_id,
-      where: i.status == "active",
-      where: ilike(i.name, ^search_pattern),
-      order_by: i.name
-    )
-    |> Repo.all()
-  end
 
   # ============================================
   # RECIPE MANAGEMENT
@@ -219,10 +133,24 @@ defmodule Easy.Nutrition do
   @doc """
   Creates a recipe within a business context.
 
+  Recipes contain embedded ingredient names as a text array. Nutritional values
+  are manually entered and not automatically calculated.
+
   ## Parameters
     - business_id: The business ID (UUID)
     - coach_id: The coach ID creating the recipe (UUID)
-    - attrs: Map of recipe attributes (name, description, instructions, etc.)
+    - attrs: Map of recipe attributes including:
+      - name: Recipe name (required, string)
+      - description: Recipe description (optional, string)
+      - instructions: Preparation instructions (optional, text)
+      - servings: Number of servings (optional, integer, default: 1)
+      - prep_time_minutes: Preparation time (optional, integer)
+      - ingredients: Array of ingredient names (optional, list of strings)
+      - total_calories: Manual calorie entry (optional, decimal)
+      - total_protein: Manual protein entry in grams (optional, decimal)
+      - total_carbohydrates: Manual carbs entry in grams (optional, decimal)
+      - total_fats: Manual fats entry in grams (optional, decimal)
+      - total_fiber: Manual fiber entry in grams (optional, decimal)
 
   ## Returns
     - {:ok, recipe} on success
@@ -231,10 +159,29 @@ defmodule Easy.Nutrition do
 
   ## Examples
 
-      iex> create_recipe(business_id, coach_id, %{name: "Grilled Chicken", servings: 4})
-      {:ok, %Recipe{}}
+      # Create a recipe with embedded ingredients and manual nutrition values
+      iex> create_recipe(business_id, coach_id, %{
+      ...>   name: "Grilled Chicken",
+      ...>   servings: 4,
+      ...>   ingredients: ["Chicken Breast", "Olive Oil", "Garlic", "Salt"],
+      ...>   total_calories: Decimal.new("350"),
+      ...>   total_protein: Decimal.new("45")
+      ...> })
+      {:ok, %Recipe{ingredients: ["Chicken Breast", "Olive Oil", "Garlic", "Salt"]}}
 
+      # Create a recipe without ingredients initially
+      iex> create_recipe(business_id, coach_id, %{name: "New Recipe", servings: 2})
+      {:ok, %Recipe{ingredients: []}}
+
+      # Validation error for empty name
       iex> create_recipe(business_id, coach_id, %{name: ""})
+      {:error, %Ecto.Changeset{}}
+
+      # Validation error for invalid ingredient (empty string)
+      iex> create_recipe(business_id, coach_id, %{
+      ...>   name: "Recipe",
+      ...>   ingredients: ["Valid Ingredient", ""]
+      ...> })
       {:error, %Ecto.Changeset{}}
   """
   def create_recipe(business_id, coach_id, attrs) do
@@ -256,8 +203,6 @@ defmodule Easy.Nutrition do
   ## Parameters
     - id: The recipe ID
     - preload: List of associations to preload (default: [])
-      - :recipe_ingredients - Preload recipe ingredients
-      - :ingredients - Preload ingredients through recipe_ingredients
       - :business - Preload business
       - :created_by - Preload coach who created the recipe
 
@@ -269,8 +214,8 @@ defmodule Easy.Nutrition do
       iex> get_recipe("123e4567-e89b-12d3-a456-426614174000")
       %Recipe{}
 
-      iex> get_recipe("123e4567-e89b-12d3-a456-426614174000", [:recipe_ingredients, :ingredients])
-      %Recipe{recipe_ingredients: [...], ingredients: [...]}
+      iex> get_recipe("123e4567-e89b-12d3-a456-426614174000", [:business, :created_by])
+      %Recipe{business: %Business{}, created_by: %Coach{}}
 
       iex> get_recipe("nonexistent-id")
       nil
@@ -324,11 +269,12 @@ defmodule Easy.Nutrition do
   Updates a recipe with the given attributes.
 
   Validates that the recipe belongs to the same business as the coach.
+  Can update embedded ingredients by providing a new array of ingredient names.
 
   ## Parameters
     - recipe: The recipe struct to update
     - coach_id: The coach ID performing the update
-    - attrs: Map of attributes to update
+    - attrs: Map of attributes to update (same as create_recipe/3)
 
   ## Returns
     - {:ok, recipe} on success
@@ -337,12 +283,28 @@ defmodule Easy.Nutrition do
 
   ## Examples
 
+      # Update recipe name
       iex> update_recipe(recipe, coach_id, %{name: "Updated Recipe Name"})
-      {:ok, %Recipe{}}
+      {:ok, %Recipe{name: "Updated Recipe Name"}}
 
+      # Update ingredients array (replaces entire array)
+      iex> update_recipe(recipe, coach_id, %{
+      ...>   ingredients: ["New Ingredient 1", "New Ingredient 2", "New Ingredient 3"]
+      ...> })
+      {:ok, %Recipe{ingredients: ["New Ingredient 1", "New Ingredient 2", "New Ingredient 3"]}}
+
+      # Update nutritional values
+      iex> update_recipe(recipe, coach_id, %{
+      ...>   total_calories: Decimal.new("400"),
+      ...>   total_protein: Decimal.new("50")
+      ...> })
+      {:ok, %Recipe{total_calories: #Decimal<400>, total_protein: #Decimal<50>}}
+
+      # Validation error for negative servings
       iex> update_recipe(recipe, coach_id, %{servings: -1})
       {:error, %Ecto.Changeset{}}
 
+      # Authorization error
       iex> update_recipe(recipe, other_coach_id, %{name: "Updated Recipe Name"})
       {:error, :unauthorized}
   """
@@ -423,145 +385,6 @@ defmodule Easy.Nutrition do
   end
 
   # ============================================
-  # RECIPE INGREDIENT MANAGEMENT
-  # ============================================
-
-  alias Easy.Nutrition.RecipeIngredient
-
-  @doc """
-  Adds an ingredient to a recipe with specified quantity and unit.
-
-  Validates that both recipe and ingredient exist and belong to the same business.
-  Prevents duplicate ingredients in the same recipe.
-
-  ## Parameters
-    - recipe_id: The recipe ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - quantity: The amount of ingredient (positive decimal)
-    - unit: The unit of measurement (g, kg, ml, l, cup, tbsp, tsp, oz, lb)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, recipe_ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :recipe_not_found} if recipe doesn't exist
-    - {:error, :ingredient_not_found} if ingredient doesn't exist
-    - {:error, :business_mismatch} if recipe and ingredient belong to different businesses
-    - {:error, :unauthorized} if coach doesn't belong to the recipe's business
-
-  ## Examples
-
-      iex> add_ingredient_to_recipe(recipe_id, ingredient_id, Decimal.new("200"), "g")
-      {:ok, %RecipeIngredient{}}
-
-      iex> add_ingredient_to_recipe(recipe_id, ingredient_id, Decimal.new("-10"), "g")
-      {:error, %Ecto.Changeset{}}
-
-      iex> add_ingredient_to_recipe(recipe_id, ingredient_id, Decimal.new("100"), "g")
-      {:error, %Ecto.Changeset{errors: [recipe_id: {"ingredient already added to this recipe", ...}]}}
-  """
-  def add_ingredient_to_recipe(recipe_id, ingredient_id, quantity, unit, coach_id \\ nil) do
-    with {:ok, recipe} <- fetch_recipe(recipe_id),
-         {:ok, ingredient} <- fetch_ingredient(ingredient_id),
-         :ok <- validate_same_business(recipe.business_id, ingredient.business_id),
-         :ok <- maybe_validate_coach(coach_id, recipe.business_id) do
-      attrs = %{
-        recipe_id: recipe_id,
-        ingredient_id: ingredient_id,
-        quantity: quantity,
-        unit: unit
-      }
-
-      %RecipeIngredient{}
-      |> RecipeIngredient.create_changeset(attrs)
-      |> Repo.insert()
-    end
-  end
-
-  @doc """
-  Removes an ingredient from a recipe.
-
-  ## Parameters
-    - recipe_id: The recipe ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, recipe_ingredient} on success
-    - {:error, :not_found} if the recipe-ingredient association doesn't exist
-    - {:error, :unauthorized} if coach doesn't belong to the recipe's business
-
-  ## Examples
-
-      iex> remove_ingredient_from_recipe(recipe_id, ingredient_id)
-      {:ok, %RecipeIngredient{}}
-
-      iex> remove_ingredient_from_recipe(recipe_id, nonexistent_ingredient_id)
-      {:error, :not_found}
-  """
-  def remove_ingredient_from_recipe(recipe_id, ingredient_id, coach_id \\ nil) do
-    with {:ok, recipe} <- fetch_recipe(recipe_id),
-         :ok <- maybe_validate_coach(coach_id, recipe.business_id) do
-      query =
-        from ri in RecipeIngredient,
-          where: ri.recipe_id == ^recipe_id and ri.ingredient_id == ^ingredient_id
-
-      case Repo.one(query) do
-        nil -> {:error, :not_found}
-        recipe_ingredient -> Repo.delete(recipe_ingredient)
-      end
-    end
-  end
-
-  @doc """
-  Updates a recipe ingredient's quantity, unit, or notes.
-
-  ## Parameters
-    - recipe_id: The recipe ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - attrs: Map of attributes to update (quantity, unit, notes)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, recipe_ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :not_found} if the recipe-ingredient association doesn't exist
-    - {:error, :unauthorized} if coach doesn't belong to the recipe's business
-
-  ## Examples
-
-      iex> update_recipe_ingredient(recipe_id, ingredient_id, %{quantity: Decimal.new("300")})
-      {:ok, %RecipeIngredient{}}
-
-      iex> update_recipe_ingredient(recipe_id, ingredient_id, %{unit: "kg"})
-      {:ok, %RecipeIngredient{}}
-
-      iex> update_recipe_ingredient(recipe_id, ingredient_id, %{quantity: Decimal.new("-10")})
-      {:error, %Ecto.Changeset{}}
-
-      iex> update_recipe_ingredient(recipe_id, nonexistent_ingredient_id, %{quantity: Decimal.new("100")})
-      {:error, :not_found}
-  """
-  def update_recipe_ingredient(recipe_id, ingredient_id, attrs, coach_id \\ nil) do
-    with {:ok, recipe} <- fetch_recipe(recipe_id),
-         :ok <- maybe_validate_coach(coach_id, recipe.business_id) do
-      query =
-        from ri in RecipeIngredient,
-          where: ri.recipe_id == ^recipe_id and ri.ingredient_id == ^ingredient_id
-
-      case Repo.one(query) do
-        nil ->
-          {:error, :not_found}
-
-        recipe_ingredient ->
-          recipe_ingredient
-          |> RecipeIngredient.update_changeset(attrs)
-          |> Repo.update()
-      end
-    end
-  end
-
-  # ============================================
   # VALIDATION HELPERS
   # ============================================
 
@@ -621,36 +444,6 @@ defmodule Easy.Nutrition do
       :ok
     else
       {:error, :unauthorized}
-    end
-  end
-
-  @doc """
-  Validates that an ingredient belongs to a specific business by ID.
-
-  ## Parameters
-    - ingredient_id: The ingredient ID
-    - business_id: The business ID to validate against
-
-  ## Returns
-    - {:ok, ingredient} if ingredient belongs to business
-    - {:error, :unauthorized} if ingredient doesn't belong to business or doesn't exist
-
-  ## Examples
-
-      iex> validate_ingredient_in_business(ingredient_id, business_id)
-      {:ok, %Ingredient{}}
-
-      iex> validate_ingredient_in_business(other_ingredient_id, business_id)
-      {:error, :unauthorized}
-  """
-  def validate_ingredient_in_business(ingredient_id, business_id) do
-    query =
-      from i in Ingredient,
-        where: i.id == ^ingredient_id and i.business_id == ^business_id
-
-    case Repo.one(query) do
-      nil -> {:error, :unauthorized}
-      ingredient -> {:ok, ingredient}
     end
   end
 
@@ -726,14 +519,6 @@ defmodule Easy.Nutrition do
     end
   end
 
-  # Fetches an ingredient by ID
-  defp fetch_ingredient(ingredient_id) do
-    case Repo.get(Ingredient, ingredient_id) do
-      nil -> {:error, :ingredient_not_found}
-      ingredient -> {:ok, ingredient}
-    end
-  end
-
   # Validates that two entities belong to the same business
   defp validate_same_business(business_id1, business_id2) do
     if business_id1 == business_id2 do
@@ -751,26 +536,6 @@ defmodule Easy.Nutrition do
       {:ok, _coach} -> :ok
       error -> error
     end
-  end
-
-  # Checks if an ingredient is used in any recipes or meals
-  defp ingredient_in_use?(ingredient_id) do
-    # Check if ingredient is used in recipe_ingredients
-    recipe_ingredient_query =
-      from ri in "recipe_ingredients",
-        where: ri.ingredient_id == ^ingredient_id,
-        select: count(ri.id)
-
-    # Check if ingredient is used in meal_ingredients
-    meal_ingredient_query =
-      from mi in "meal_ingredients",
-        where: mi.ingredient_id == ^ingredient_id,
-        select: count(mi.id)
-
-    recipe_count = Repo.one(recipe_ingredient_query) || 0
-    meal_count = Repo.one(meal_ingredient_query) || 0
-
-    recipe_count > 0 || meal_count > 0
   end
 
   # Checks if a recipe is used in any meals
@@ -791,15 +556,26 @@ defmodule Easy.Nutrition do
 
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealRecipe
-  alias Easy.Nutrition.MealIngredient
 
   @doc """
   Creates a meal within a business context.
 
+  Meals contain only recipes (no direct ingredient associations). Nutritional
+  values are manually entered and not automatically calculated from recipes.
+
   ## Parameters
     - business_id: The business ID (UUID)
     - coach_id: The coach ID creating the meal (UUID)
-    - attrs: Map of meal attributes (name, description, meal_type, etc.)
+    - attrs: Map of meal attributes including:
+      - name: Meal name (required, string)
+      - description: Meal description (optional, string)
+      - meal_type: Type of meal (optional, string: "breakfast", "lunch", "dinner", "snack")
+      - notes: Additional notes (optional, text)
+      - total_calories: Manual calorie entry (optional, decimal)
+      - total_protein: Manual protein entry in grams (optional, decimal)
+      - total_carbohydrates: Manual carbs entry in grams (optional, decimal)
+      - total_fats: Manual fats entry in grams (optional, decimal)
+      - total_fiber: Manual fiber entry in grams (optional, decimal)
 
   ## Returns
     - {:ok, meal} on success
@@ -808,9 +584,20 @@ defmodule Easy.Nutrition do
 
   ## Examples
 
-      iex> create_meal(business_id, coach_id, %{name: "Breakfast Bowl", meal_type: "breakfast"})
+      # Create a meal with manual nutrition values
+      iex> create_meal(business_id, coach_id, %{
+      ...>   name: "Breakfast Bowl",
+      ...>   meal_type: "breakfast",
+      ...>   total_calories: Decimal.new("550"),
+      ...>   total_protein: Decimal.new("30")
+      ...> })
       {:ok, %Meal{}}
 
+      # Create a meal without nutrition values (can be added later)
+      iex> create_meal(business_id, coach_id, %{name: "Lunch", meal_type: "lunch"})
+      {:ok, %Meal{}}
+
+      # Validation error
       iex> create_meal(business_id, coach_id, %{name: ""})
       {:error, %Ecto.Changeset{}}
   """
@@ -834,9 +621,7 @@ defmodule Easy.Nutrition do
     - id: The meal ID
     - preload: List of associations to preload (default: [])
       - :meal_recipes - Preload meal recipes
-      - :meal_ingredients - Preload meal ingredients
-      - :recipes - Preload recipes through meal_recipes
-      - :ingredients - Preload ingredients through meal_ingredients
+      - :recipes - Preload recipes through meal_recipes (includes embedded ingredients)
       - :business - Preload business
       - :created_by - Preload coach who created the meal
 
@@ -848,8 +633,12 @@ defmodule Easy.Nutrition do
       iex> get_meal("123e4567-e89b-12d3-a456-426614174000")
       %Meal{}
 
-      iex> get_meal("123e4567-e89b-12d3-a456-426614174000", [:meal_recipes, :meal_ingredients])
-      %Meal{meal_recipes: [...], meal_ingredients: [...]}
+      # Preload recipes to access their embedded ingredients
+      iex> get_meal("123e4567-e89b-12d3-a456-426614174000", [:recipes])
+      %Meal{recipes: [%Recipe{ingredients: ["Chicken", "Rice", "Vegetables"]}]}
+
+      iex> get_meal("123e4567-e89b-12d3-a456-426614174000", [:meal_recipes, :business])
+      %Meal{meal_recipes: [...], business: %Business{}}
 
       iex> get_meal("nonexistent-id")
       nil
@@ -1026,55 +815,6 @@ defmodule Easy.Nutrition do
   end
 
   @doc """
-  Adds an ingredient directly to a meal with specified quantity and unit.
-
-  Validates that both meal and ingredient exist and belong to the same business.
-
-  ## Parameters
-    - meal_id: The meal ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - quantity: The amount of ingredient (positive decimal)
-    - unit: The unit of measurement (g, kg, ml, l, cup, tbsp, tsp, oz, lb)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, meal_ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :meal_not_found} if meal doesn't exist
-    - {:error, :ingredient_not_found} if ingredient doesn't exist
-    - {:error, :business_mismatch} if meal and ingredient belong to different businesses
-    - {:error, :unauthorized} if coach doesn't belong to the meal's business
-
-  ## Examples
-
-      iex> add_ingredient_to_meal(meal_id, ingredient_id, Decimal.new("100"), "g")
-      {:ok, %MealIngredient{}}
-
-      iex> add_ingredient_to_meal(meal_id, ingredient_id, Decimal.new("-10"), "g")
-      {:error, %Ecto.Changeset{}}
-
-      iex> add_ingredient_to_meal(meal_id, ingredient_id, Decimal.new("100"), "invalid")
-      {:error, %Ecto.Changeset{}}
-  """
-  def add_ingredient_to_meal(meal_id, ingredient_id, quantity, unit, coach_id \\ nil) do
-    with {:ok, meal} <- fetch_meal(meal_id),
-         {:ok, ingredient} <- fetch_ingredient(ingredient_id),
-         :ok <- validate_same_business(meal.business_id, ingredient.business_id),
-         :ok <- maybe_validate_coach(coach_id, meal.business_id) do
-      attrs = %{
-        meal_id: meal_id,
-        ingredient_id: ingredient_id,
-        quantity: quantity,
-        unit: unit
-      }
-
-      %MealIngredient{}
-      |> MealIngredient.create_changeset(attrs)
-      |> Repo.insert()
-    end
-  end
-
-  @doc """
   Removes a recipe from a meal.
 
   ## Parameters
@@ -1105,41 +845,6 @@ defmodule Easy.Nutrition do
       case Repo.one(query) do
         nil -> {:error, :not_found}
         meal_recipe -> Repo.delete(meal_recipe)
-      end
-    end
-  end
-
-  @doc """
-  Removes an ingredient from a meal.
-
-  ## Parameters
-    - meal_id: The meal ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, meal_ingredient} on success
-    - {:error, :not_found} if the meal-ingredient association doesn't exist
-    - {:error, :unauthorized} if coach doesn't belong to the meal's business
-
-  ## Examples
-
-      iex> remove_ingredient_from_meal(meal_id, ingredient_id)
-      {:ok, %MealIngredient{}}
-
-      iex> remove_ingredient_from_meal(meal_id, nonexistent_ingredient_id)
-      {:error, :not_found}
-  """
-  def remove_ingredient_from_meal(meal_id, ingredient_id, coach_id \\ nil) do
-    with {:ok, meal} <- fetch_meal(meal_id),
-         :ok <- maybe_validate_coach(coach_id, meal.business_id) do
-      query =
-        from mi in MealIngredient,
-          where: mi.meal_id == ^meal_id and mi.ingredient_id == ^ingredient_id
-
-      case Repo.one(query) do
-        nil -> {:error, :not_found}
-        meal_ingredient -> Repo.delete(meal_ingredient)
       end
     end
   end
@@ -1192,167 +897,6 @@ defmodule Easy.Nutrition do
     end
   end
 
-  @doc """
-  Updates a meal ingredient's quantity, unit, or notes.
-
-  ## Parameters
-    - meal_id: The meal ID (UUID)
-    - ingredient_id: The ingredient ID (UUID)
-    - attrs: Map of attributes to update (quantity, unit, notes)
-    - coach_id: The coach ID performing the operation (optional, for validation)
-
-  ## Returns
-    - {:ok, meal_ingredient} on success
-    - {:error, changeset} on validation failure
-    - {:error, :not_found} if the meal-ingredient association doesn't exist
-    - {:error, :unauthorized} if coach doesn't belong to the meal's business
-
-  ## Examples
-
-      iex> update_meal_ingredient(meal_id, ingredient_id, %{quantity: Decimal.new("200")})
-      {:ok, %MealIngredient{}}
-
-      iex> update_meal_ingredient(meal_id, ingredient_id, %{unit: "kg"})
-      {:ok, %MealIngredient{}}
-
-      iex> update_meal_ingredient(meal_id, ingredient_id, %{quantity: Decimal.new("-10")})
-      {:error, %Ecto.Changeset{}}
-
-      iex> update_meal_ingredient(meal_id, nonexistent_ingredient_id, %{quantity: Decimal.new("100")})
-      {:error, :not_found}
-  """
-  def update_meal_ingredient(meal_id, ingredient_id, attrs, coach_id \\ nil) do
-    with {:ok, meal} <- fetch_meal(meal_id),
-         :ok <- maybe_validate_coach(coach_id, meal.business_id) do
-      query =
-        from mi in MealIngredient,
-          where: mi.meal_id == ^meal_id and mi.ingredient_id == ^ingredient_id
-
-      case Repo.one(query) do
-        nil ->
-          {:error, :not_found}
-
-        meal_ingredient ->
-          meal_ingredient
-          |> MealIngredient.update_changeset(attrs)
-          |> Repo.update()
-      end
-    end
-  end
-
-  # ============================================
-  # NUTRITIONAL CALCULATIONS
-  # ============================================
-
-  alias Easy.Nutrition.Calculations
-
-  @doc """
-  Calculates and updates the total nutritional values for a meal.
-
-  Aggregates nutrition from:
-  - Meal recipes: recipe totals multiplied by servings
-  - Meal ingredients: ingredient values scaled by quantity
-
-  Updates the meal's cached nutrition totals (total_calories, total_protein, etc.).
-
-  ## Parameters
-    - meal_id: The meal ID (UUID)
-
-  ## Returns
-    - {:ok, meal} with updated nutrition totals on success
-    - {:error, :meal_not_found} if meal doesn't exist
-
-  ## Examples
-
-      iex> calculate_meal_nutrition(meal_id)
-      {:ok, %Meal{total_calories: #Decimal<500>, ...}}
-
-      iex> calculate_meal_nutrition("nonexistent-id")
-      {:error, :meal_not_found}
-  """
-  def calculate_meal_nutrition(meal_id) do
-    # Fetch meal with all necessary preloads
-    meal =
-      Meal
-      |> Repo.get(meal_id)
-      |> Repo.preload(
-        meal_recipes: [recipe: []],
-        meal_ingredients: [ingredient: []]
-      )
-
-    case meal do
-      nil ->
-        {:error, :meal_not_found}
-
-      meal ->
-        # Calculate nutrition from meal recipes
-        recipe_nutrition = calculate_meal_recipes_nutrition(meal.meal_recipes)
-
-        # Calculate nutrition from meal ingredients
-        ingredient_nutrition = calculate_meal_ingredients_nutrition(meal.meal_ingredients)
-
-        # Sum all nutritional values
-        total_nutrition =
-          Calculations.sum_nutritional_values([recipe_nutrition, ingredient_nutrition])
-
-        # Update meal with calculated totals
-        meal
-        |> Meal.update_changeset(%{
-          total_calories: total_nutrition.calories,
-          total_protein: total_nutrition.protein,
-          total_carbohydrates: total_nutrition.carbohydrates,
-          total_fats: total_nutrition.fats,
-          total_fiber: total_nutrition.fiber
-        })
-        |> Repo.update()
-    end
-  end
-
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Calculates nutrition from meal recipes
-  defp calculate_meal_recipes_nutrition(meal_recipes) do
-    meal_recipes
-    |> Enum.map(fn meal_recipe ->
-      recipe = meal_recipe.recipe
-      servings = meal_recipe.servings
-
-      # Multiply recipe totals by servings
-      %{
-        calories: multiply_or_zero(recipe.total_calories, servings),
-        protein: multiply_or_zero(recipe.total_protein, servings),
-        carbohydrates: multiply_or_zero(recipe.total_carbohydrates, servings),
-        fats: multiply_or_zero(recipe.total_fats, servings),
-        fiber: multiply_or_zero(recipe.total_fiber, servings)
-      }
-    end)
-    |> Calculations.sum_nutritional_values()
-  end
-
-  # Calculates nutrition from meal ingredients
-  defp calculate_meal_ingredients_nutrition(meal_ingredients) do
-    meal_ingredients
-    |> Enum.map(fn meal_ingredient ->
-      ingredient = meal_ingredient.ingredient
-
-      quantity_grams =
-        Calculations.convert_to_grams(meal_ingredient.quantity, meal_ingredient.unit)
-
-      # Calculate ingredient nutrition based on quantity
-      Calculations.calculate_ingredient_nutrition(ingredient, quantity_grams)
-    end)
-    |> Calculations.sum_nutritional_values()
-  end
-
-  # Helper to multiply nutritional values or return zero if nil
-  defp multiply_or_zero(nil, _multiplier), do: Decimal.new(0)
-
-  defp multiply_or_zero(value, multiplier) do
-    Decimal.mult(value, multiplier)
-  end
-
   # Fetches a meal by ID
   defp fetch_meal(meal_id) do
     case Repo.get(Meal, meal_id) do
@@ -1366,14 +910,14 @@ defmodule Easy.Nutrition do
   # ============================================
 
   @doc """
-  Duplicates an existing meal with all its recipes and ingredients.
+  Duplicates an existing meal with all its recipes.
 
   Creates a new meal with:
   - All meal_recipes copied with their servings
-  - All meal_ingredients copied with their quantities
+  - Recipes include their embedded ingredients automatically
   - " (Copy)" appended to the meal name
-  - Recalculated nutritional values
   - Same business association
+  - Nutritional values are not copied (must be manually entered)
 
   ## Parameters
     - meal_id: The meal ID to duplicate (UUID)
@@ -1398,7 +942,7 @@ defmodule Easy.Nutrition do
     meal =
       Meal
       |> Repo.get(meal_id)
-      |> Repo.preload([:meal_recipes, :meal_ingredients])
+      |> Repo.preload([:meal_recipes])
 
     case meal do
       nil ->
@@ -1425,7 +969,7 @@ defmodule Easy.Nutrition do
               |> Meal.create_changeset(new_meal_attrs)
               |> Repo.insert()
 
-            # Copy all meal_recipes
+            # Copy all meal_recipes with their embedded ingredients
             Enum.each(meal.meal_recipes, fn meal_recipe ->
               meal_recipe_attrs = %{
                 meal_id: new_meal.id,
@@ -1439,26 +983,8 @@ defmodule Easy.Nutrition do
               |> Repo.insert!()
             end)
 
-            # Copy all meal_ingredients
-            Enum.each(meal.meal_ingredients, fn meal_ingredient ->
-              meal_ingredient_attrs = %{
-                meal_id: new_meal.id,
-                ingredient_id: meal_ingredient.ingredient_id,
-                quantity: meal_ingredient.quantity,
-                unit: meal_ingredient.unit,
-                notes: meal_ingredient.notes
-              }
-
-              %MealIngredient{}
-              |> MealIngredient.create_changeset(meal_ingredient_attrs)
-              |> Repo.insert!()
-            end)
-
-            # Recalculate nutritional values for the new meal
-            case calculate_meal_nutrition(new_meal.id) do
-              {:ok, updated_meal} -> updated_meal
-              {:error, reason} -> Repo.rollback(reason)
-            end
+            # Return the new meal (nutritional values are manually entered, not calculated)
+            new_meal
           end)
         end
     end

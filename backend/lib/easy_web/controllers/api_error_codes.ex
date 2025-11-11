@@ -41,39 +41,46 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Invalid OTP code provided (400)"
   def invalid_otp(message \\ "The provided code is invalid or has expired") do
-    {"INVALID_OTP", message, 400}
+    msg = message || "The provided code is invalid or has expired"
+    {"INVALID_OTP", msg, 400}
   end
 
   @doc "Token has expired (410)"
   def token_expired(message \\ "The token has expired") do
-    {"TOKEN_EXPIRED", message, 410}
+    msg = message || "The token has expired"
+    {"TOKEN_EXPIRED", msg, 410}
   end
 
   @doc "Token has already been used (410)"
   def token_used(message \\ "The token has already been used") do
-    {"TOKEN_USED", message, 410}
+    msg = message || "The token has already been used"
+    {"TOKEN_USED", msg, 410}
   end
 
   @doc "Token not found (404)"
   def token_not_found(message \\ "Token not found") do
-    {"TOKEN_NOT_FOUND", message, 404}
+    msg = message || "Token not found"
+    {"TOKEN_NOT_FOUND", msg, 404}
   end
 
   @doc "Invalid token type for operation (400)"
   def invalid_token_type(
         message \\ "Token type mismatch. This token cannot be used for this operation."
       ) do
-    {"INVALID_TOKEN_TYPE", message, 400}
+    msg = message || "Token type mismatch. This token cannot be used for this operation."
+    {"INVALID_TOKEN_TYPE", msg, 400}
   end
 
   @doc "Invalid refresh token (401)"
   def invalid_refresh_token(message \\ "The refresh token is invalid or has expired") do
-    {"INVALID_REFRESH_TOKEN", message, 401}
+    msg = message || "The refresh token is invalid or has expired"
+    {"INVALID_REFRESH_TOKEN", msg, 401}
   end
 
   @doc "Invalid access token (401)"
   def invalid_token(message \\ "The access token is invalid or has expired") do
-    {"INVALID_TOKEN", message, 401}
+    msg = message || "The access token is invalid or has expired"
+    {"INVALID_TOKEN", msg, 401}
   end
 
   # ============================================
@@ -82,7 +89,8 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Session not found or revoked (401)"
   def session_not_found(message \\ "Session not found or has been revoked") do
-    {"SESSION_NOT_FOUND", message, 401}
+    msg = message || "Session not found or has been revoked"
+    {"SESSION_NOT_FOUND", msg, 401}
   end
 
   # ============================================
@@ -101,7 +109,8 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Maximum OTP verification attempts exceeded (429)"
   def max_attempts_exceeded(message \\ "Maximum verification attempts exceeded") do
-    {"MAX_ATTEMPTS_EXCEEDED", message, 429}
+    msg = message || "Maximum verification attempts exceeded"
+    {"MAX_ATTEMPTS_EXCEEDED", msg, 429}
   end
 
   # ============================================
@@ -110,32 +119,38 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Authentication required (401)"
   def unauthorized(message \\ "Authentication required") do
-    {"UNAUTHORIZED", message, 401}
+    msg = message || "Authentication required"
+    {"UNAUTHORIZED", msg, 401}
   end
 
   @doc "Insufficient permissions (403)"
   def forbidden(message \\ "Access denied") do
-    {"FORBIDDEN", message, 403}
+    msg = message || "Access denied"
+    {"FORBIDDEN", msg, 403}
   end
 
   @doc "Business context mismatch (403)"
   def business_mismatch(message \\ "Resource does not belong to your business context") do
-    {"BUSINESS_MISMATCH", message, 403}
+    msg = message || "Resource does not belong to your business context"
+    {"BUSINESS_MISMATCH", msg, 403}
   end
 
   @doc "Missing business context (403)"
   def missing_context(message \\ "Business context required for this operation") do
-    {"MISSING_CONTEXT", message, 403}
+    msg = message || "Business context required for this operation"
+    {"MISSING_CONTEXT", msg, 403}
   end
 
   @doc "Missing or invalid authorization header (401)"
   def missing_token(message \\ "Missing or invalid authorization header") do
-    {"MISSING_TOKEN", message, 401}
+    msg = message || "Missing or invalid authorization header"
+    {"MISSING_TOKEN", msg, 401}
   end
 
   @doc "Token has expired (401)"
   def expired_token(message \\ "The access token has expired") do
-    {"EXPIRED_TOKEN", message, 401}
+    msg = message || "The access token has expired"
+    {"EXPIRED_TOKEN", msg, 401}
   end
 
   # ============================================
@@ -150,7 +165,8 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "User not found (404)"
   def user_not_found(message \\ "User not found") do
-    {"USER_NOT_FOUND", message, 404}
+    msg = message || "User not found"
+    {"USER_NOT_FOUND", msg, 404}
   end
 
   @doc "Resource conflict (409)"
@@ -166,7 +182,8 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Client already assigned to coach (422)"
   def already_assigned(message \\ "Client is already assigned to this coach") do
-    {"ALREADY_ASSIGNED", message, 422}
+    msg = message || "Client is already assigned to this coach"
+    {"ALREADY_ASSIGNED", msg, 422}
   end
 
   # ============================================
@@ -180,12 +197,14 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Invitation has expired (410)"
   def invitation_expired(message \\ "This invitation has expired") do
-    {"INVITATION_EXPIRED", message, 410}
+    msg = message || "This invitation has expired"
+    {"INVITATION_EXPIRED", msg, 410}
   end
 
   @doc "Invitation has been used (410)"
   def invitation_used(message \\ "This invitation has already been used") do
-    {"INVITATION_USED", message, 410}
+    msg = message || "This invitation has already been used"
+    {"INVITATION_USED", msg, 410}
   end
 
   @doc "Invitation metadata validation failed (400)"
@@ -229,7 +248,8 @@ defmodule EasyWeb.ApiErrorCodes do
 
   @doc "Internal server error (500)"
   def internal_error(message \\ "An error occurred while processing your request") do
-    {"INTERNAL_ERROR", message, 500}
+    msg = message || "An error occurred while processing your request"
+    {"INTERNAL_ERROR", msg, 500}
   end
 
   # ============================================

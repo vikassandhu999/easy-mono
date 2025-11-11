@@ -1,9 +1,61 @@
 defmodule Easy.Nutrition.Meal do
   @moduledoc """
-  Meal schema representing a reusable eating occasion with recipes and/or ingredients.
+  Meal schema representing a reusable eating occasion with recipes.
+
+  ## Overview
 
   Meals are reusable within a business context and can be added to future nutrition plans.
-  Nutritional totals are cached and calculated from meal recipes and meal ingredients.
+  Each meal contains:
+  - Basic information (name, description, meal type)
+  - One or more recipes (each recipe contains embedded ingredients)
+  - Manually entered nutritional totals
+  - Optional notes
+
+  ## Meal Composition
+
+  Meals contain only recipes (no direct ingredient associations). Each recipe added
+  to a meal includes:
+  - The recipe's embedded ingredient names
+  - A serving multiplier (e.g., 1.0 for one serving, 2.0 for double)
+  - Optional notes specific to this meal-recipe association
+
+  Example:
+  ```elixir
+  %Meal{
+    name: "Lunch",
+    meal_type: "lunch",
+    recipes: [
+      %Recipe{
+        name: "Grilled Chicken",
+        ingredients: ["Chicken Breast", "Olive Oil", "Garlic"]
+      },
+      %Recipe{
+        name: "Brown Rice",
+        ingredients: ["Brown Rice", "Water", "Salt"]
+      }
+    ]
+  }
+  ```
+
+  ## Manual Nutrition Entry
+
+  Nutritional values (calories, protein, carbohydrates, fats, fiber) are manually
+  entered by coaches when creating or updating meals. The system does not perform
+  automatic calculations based on recipes.
+
+  ## Meal Types
+
+  Valid meal types:
+  - `"breakfast"` - Morning meal
+  - `"lunch"` - Midday meal
+  - `"dinner"` - Evening meal
+  - `"snack"` - Between-meal snack
+
+  ## Status
+
+  Meals can be:
+  - `"active"` - Available for use in nutrition plans (default)
+  - `"archived"` - Hidden from normal listings but preserved for historical data
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -18,7 +70,7 @@ defmodule Easy.Nutrition.Meal do
     field :notes, :string
     field :status, :string, default: "active"
 
-    # Cached nutritional totals (calculated from recipes + ingredients)
+    # Manually entered nutritional totals
     field :total_calories, :decimal
     field :total_protein, :decimal
     field :total_carbohydrates, :decimal
@@ -31,8 +83,6 @@ defmodule Easy.Nutrition.Meal do
     # Relationships
     has_many :meal_recipes, Easy.Nutrition.MealRecipe
     has_many :recipes, through: [:meal_recipes, :recipe]
-    has_many :meal_ingredients, Easy.Nutrition.MealIngredient
-    has_many :ingredients, through: [:meal_ingredients, :ingredient]
 
     timestamps()
   end
@@ -42,7 +92,49 @@ defmodule Easy.Nutrition.Meal do
 
   @doc """
   Changeset for creating a new meal.
-  Requires business_id, created_by_id, name, and meal_type.
+
+  ## Required Fields
+  - business_id: UUID of the business
+  - created_by_id: UUID of the coach creating the meal
+  - name: Meal name (1-255 characters)
+  - meal_type: Type of meal ("breakfast", "lunch", "dinner", or "snack")
+
+  ## Optional Fields
+  - description: Meal description
+  - notes: Additional notes
+  - total_calories: Manual calorie entry (non-negative decimal)
+  - total_protein: Manual protein entry (non-negative decimal)
+  - total_carbohydrates: Manual carbs entry (non-negative decimal)
+  - total_fats: Manual fats entry (non-negative decimal)
+  - total_fiber: Manual fiber entry (non-negative decimal)
+  - status: Meal status ("active" or "archived", default: "active")
+
+  ## Validations
+  - Meal type must be one of: breakfast, lunch, dinner, snack
+  - Nutritional values must be non-negative decimals
+  - Status must be "active" or "archived"
+
+  ## Examples
+
+      # Create a meal with manual nutrition values
+      iex> create_changeset(%Meal{}, %{
+      ...>   business_id: business_id,
+      ...>   created_by_id: coach_id,
+      ...>   name: "Breakfast Bowl",
+      ...>   meal_type: "breakfast",
+      ...>   total_calories: Decimal.new("550"),
+      ...>   total_protein: Decimal.new("30")
+      ...> })
+      %Ecto.Changeset{valid?: true}
+
+      # Invalid: unsupported meal type
+      iex> create_changeset(%Meal{}, %{
+      ...>   business_id: business_id,
+      ...>   created_by_id: coach_id,
+      ...>   name: "Meal",
+      ...>   meal_type: "brunch"
+      ...> })
+      %Ecto.Changeset{valid?: false, errors: [meal_type: {"must be one of: breakfast, lunch, dinner, snack", []}]}
   """
   def create_changeset(meal, attrs) do
     meal
@@ -72,7 +164,38 @@ defmodule Easy.Nutrition.Meal do
 
   @doc """
   Changeset for updating a meal.
+
   Allows updating all fields except business_id and created_by_id.
+  Recipes are managed separately using the Nutrition context functions.
+
+  ## Updatable Fields
+  - name: Meal name
+  - description: Meal description
+  - meal_type: Type of meal
+  - notes: Additional notes
+  - total_calories: Manual calorie entry
+  - total_protein: Manual protein entry
+  - total_carbohydrates: Manual carbs entry
+  - total_fats: Manual fats entry
+  - total_fiber: Manual fiber entry
+  - status: Meal status
+
+  ## Examples
+
+      # Update nutritional values
+      iex> update_changeset(meal, %{
+      ...>   total_calories: Decimal.new("600"),
+      ...>   total_protein: Decimal.new("35")
+      ...> })
+      %Ecto.Changeset{valid?: true}
+
+      # Update meal type
+      iex> update_changeset(meal, %{meal_type: "dinner"})
+      %Ecto.Changeset{valid?: true}
+
+      # Invalid: negative calories
+      iex> update_changeset(meal, %{total_calories: Decimal.new("-100")})
+      %Ecto.Changeset{valid?: false, errors: [total_calories: {"must be non-negative", []}]}
   """
   def update_changeset(meal, attrs) do
     meal

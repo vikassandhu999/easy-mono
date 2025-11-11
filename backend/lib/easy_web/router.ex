@@ -102,16 +102,6 @@ defmodule EasyWeb.Router do
 
   # AUTHENTICATED NUTRITION ENDPOINTS
 
-  scope "/api/ingredients", EasyWeb do
-    pipe_through :api_authenticated
-
-    get "/", IngredientController, :index
-    post "/", IngredientController, :create
-    get "/:id", IngredientController, :show
-    patch "/:id", IngredientController, :update
-    delete "/:id", IngredientController, :delete
-  end
-
   scope "/api/recipes", EasyWeb do
     pipe_through :api_authenticated
 
@@ -120,11 +110,6 @@ defmodule EasyWeb.Router do
     get "/:id", RecipeController, :show
     patch "/:id", RecipeController, :update
     delete "/:id", RecipeController, :delete
-
-    # Recipe ingredient endpoints
-    post "/:recipe_id/ingredients", RecipeController, :add_ingredient
-    patch "/:recipe_id/ingredients/:ingredient_id", RecipeController, :update_ingredient
-    delete "/:recipe_id/ingredients/:ingredient_id", RecipeController, :remove_ingredient
   end
 
   scope "/api/meals", EasyWeb do
@@ -141,11 +126,6 @@ defmodule EasyWeb.Router do
     post "/:meal_id/recipes", MealController, :add_recipe
     patch "/:meal_id/recipes/:recipe_id", MealController, :update_recipe
     delete "/:meal_id/recipes/:recipe_id", MealController, :remove_recipe
-
-    # Meal ingredient endpoints
-    post "/:meal_id/ingredients", MealController, :add_ingredient
-    patch "/:meal_id/ingredients/:ingredient_id", MealController, :update_ingredient
-    delete "/:meal_id/ingredients/:ingredient_id", MealController, :remove_ingredient
   end
 
   scope "/api/meal-plans", EasyWeb do

@@ -83,6 +83,8 @@ defmodule Easy.Accounts.Token do
       {:ok, "eyJhbGc..."}
   """
   def generate_refresh_token(user, session_id, business_context \\ %{}) do
+    require Logger
+
     extra_claims = %{
       "sub" => to_string(user.id),
       "jti" => to_string(session_id),
@@ -91,6 +93,14 @@ defmodule Easy.Accounts.Token do
 
     # Add business_id to refresh token if present
     extra_claims = maybe_add_claim(extra_claims, "business_id", business_context[:business_id])
+
+    # Debug: Log secret being used for signing
+    secret_key = Application.get_env(:easy, :jwt_secret) || raise "JWT secret not configured"
+    secret_hash = :crypto.hash(:sha256, secret_key) |> Base.encode16() |> String.slice(0..9)
+
+    Logger.info(
+      "[JWT DEBUG] Generating refresh token - Secret hash: #{secret_hash}, length: #{String.length(secret_key)}"
+    )
 
     case generate_and_sign(extra_claims, signer(), refresh_token_ttl()) do
       {:ok, token, _claims} -> {:ok, token}
@@ -189,9 +199,18 @@ defmodule Easy.Accounts.Token do
   end
 
   defp signer do
+    require Logger
+
     secret_key =
       Application.get_env(:easy, :jwt_secret) ||
         raise "JWT secret not configured"
+
+    # Debug: Log secret hash (first 10 chars only for security)
+    secret_hash = :crypto.hash(:sha256, secret_key) |> Base.encode16() |> String.slice(0..9)
+
+    Logger.info(
+      "[JWT DEBUG] Secret hash (first 10 chars): #{secret_hash}, length: #{String.length(secret_key)}"
+    )
 
     Joken.Signer.create("HS256", secret_key)
   end

@@ -14,11 +14,8 @@ defmodule EasyWeb.MealController do
   - DELETE /api/meals/:id - Delete meal
   - POST /api/meals/:id/duplicate - Duplicate meal
   - POST /api/meals/:id/recipes - Add recipe to meal
-  - POST /api/meals/:id/ingredients - Add ingredient to meal
   - PATCH /api/meals/:id/recipes/:recipe_id - Update meal recipe
-  - PATCH /api/meals/:id/ingredients/:ingredient_id - Update meal ingredient
   - DELETE /api/meals/:id/recipes/:recipe_id - Remove recipe from meal
-  - DELETE /api/meals/:id/ingredients/:ingredient_id - Remove ingredient from meal
   """
 
   use EasyWeb, :controller
@@ -159,7 +156,7 @@ defmodule EasyWeb.MealController do
   @doc """
   GET /api/meals/:id
 
-  Shows a single meal with preloaded recipes and ingredients.
+  Shows a single meal with preloaded recipes.
 
   ## Response (200)
   ```json
@@ -175,28 +172,12 @@ defmodule EasyWeb.MealController do
           "recipe": {
             "id": "uuid",
             "name": "Oatmeal Base",
+            "ingredients": ["Oats", "Water", "Salt"],
             "total_calories": "300.00",
             "total_protein": "10.00",
             "total_carbohydrates": "50.00",
             "total_fats": "5.00",
             "total_fiber": "6.00"
-          }
-        }
-      ],
-      "meal_ingredients": [
-        {
-          "id": "uuid",
-          "quantity": "100.00",
-          "unit": "g",
-          "notes": "Fresh",
-          "ingredient": {
-            "id": "uuid",
-            "name": "Blueberries",
-            "calories": "57.00",
-            "protein": "0.74",
-            "carbohydrates": "14.49",
-            "fats": "0.33",
-            "fiber": "2.40"
           }
         }
       ],
@@ -209,11 +190,7 @@ defmodule EasyWeb.MealController do
     current_user = conn.assigns.current_user
 
     with {:ok, _coach} <- get_coach_for_user(current_user),
-         {:ok, meal} <-
-           fetch_meal(id,
-             meal_recipes: [recipe: []],
-             meal_ingredients: [ingredient: []]
-           ),
+         {:ok, meal} <- fetch_meal(id, meal_recipes: [recipe: []]),
          :ok <- Authorization.user_is_coach_in_business?(current_user, meal.business_id) do
       conn
       |> put_status(:ok)
@@ -401,79 +378,6 @@ defmodule EasyWeb.MealController do
   end
 
   @doc """
-  POST /api/meals/:id/ingredients
-
-  Adds an ingredient directly to a meal with quantity and unit.
-
-  ## Request Body
-  ```json
-  {
-    "ingredient_id": "uuid",
-    "quantity": 100,
-    "unit": "g",
-    "notes": "Fresh"
-  }
-  ```
-
-  ## Response (201)
-  ```json
-  {
-    "meal_ingredient": {
-      "id": "uuid",
-      "meal_id": "uuid",
-      "ingredient_id": "uuid",
-      "quantity": "100.00",
-      "unit": "g",
-      "notes": "Fresh",
-      "inserted_at": "2024-01-01T12:00:00Z",
-      "updated_at": "2024-01-01T12:00:00Z"
-    }
-  }
-  ```
-  """
-  def add_ingredient(conn, %{"id" => meal_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, meal} <- fetch_meal(meal_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, meal.business_id),
-         {:ok, ingredient_id} <- extract_ingredient_id(params),
-         {:ok, quantity} <- extract_quantity(params),
-         {:ok, unit} <- extract_unit(params) do
-      notes = params["notes"]
-
-      case Nutrition.add_ingredient_to_meal(meal_id, ingredient_id, quantity, unit, coach.id) do
-        {:ok, meal_ingredient} ->
-          # Add notes if provided
-          meal_ingredient =
-            if notes do
-              case Nutrition.update_meal_ingredient(
-                     meal_id,
-                     ingredient_id,
-                     %{notes: notes},
-                     coach.id
-                   ) do
-                {:ok, updated} -> updated
-                _ -> meal_ingredient
-              end
-            else
-              meal_ingredient
-            end
-
-          conn
-          |> put_status(:created)
-          |> json(%{meal_ingredient: format_meal_ingredient(meal_ingredient)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  @doc """
   PATCH /api/meals/:id/recipes/:recipe_id
 
   Updates a meal recipe's servings or notes.
@@ -525,59 +429,6 @@ defmodule EasyWeb.MealController do
   end
 
   @doc """
-  PATCH /api/meals/:id/ingredients/:ingredient_id
-
-  Updates a meal ingredient's quantity, unit, or notes.
-
-  ## Request Body
-  ```json
-  {
-    "quantity": 150,
-    "unit": "g",
-    "notes": "Organic"
-  }
-  ```
-
-  ## Response (200)
-  ```json
-  {
-    "meal_ingredient": {
-      "id": "uuid",
-      "quantity": "150.00",
-      "unit": "g",
-      "notes": "Organic",
-      ...
-    }
-  }
-  ```
-  """
-  def update_ingredient(conn, %{"id" => meal_id, "ingredient_id" => ingredient_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, meal} <- fetch_meal(meal_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, meal.business_id) do
-      attrs = extract_meal_ingredient_attrs(params)
-
-      case Nutrition.update_meal_ingredient(meal_id, ingredient_id, attrs, coach.id) do
-        {:ok, meal_ingredient} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{meal_ingredient: format_meal_ingredient(meal_ingredient)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, :not_found} ->
-          {:error, :not_found}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  @doc """
   DELETE /api/meals/:id/recipes/:recipe_id
 
   Removes a recipe from a meal.
@@ -600,39 +451,6 @@ defmodule EasyWeb.MealController do
           conn
           |> put_status(:ok)
           |> json(%{message: "Recipe removed from meal successfully"})
-
-        {:error, :not_found} ->
-          {:error, :not_found}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  @doc """
-  DELETE /api/meals/:id/ingredients/:ingredient_id
-
-  Removes an ingredient from a meal.
-
-  ## Response (200)
-  ```json
-  {
-    "message": "Ingredient removed from meal successfully"
-  }
-  ```
-  """
-  def remove_ingredient(conn, %{"id" => meal_id, "ingredient_id" => ingredient_id}) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, meal} <- fetch_meal(meal_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, meal.business_id) do
-      case Nutrition.remove_ingredient_from_meal(meal_id, ingredient_id, coach.id) do
-        {:ok, _meal_ingredient} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{message: "Ingredient removed from meal successfully"})
 
         {:error, :not_found} ->
           {:error, :not_found}
@@ -705,26 +523,10 @@ defmodule EasyWeb.MealController do
     |> put_if_present(params, "notes", :notes)
   end
 
-  # Extracts meal ingredient attributes from request params
-  defp extract_meal_ingredient_attrs(params) do
-    %{}
-    |> put_decimal_if_present(params, "quantity", :quantity)
-    |> put_if_present(params, "unit", :unit)
-    |> put_if_present(params, "notes", :notes)
-  end
-
   # Extracts recipe_id from params
   defp extract_recipe_id(params) do
     case Map.get(params, "recipe_id") do
       nil -> {:error, ApiError.bad_request("recipe_id is required")}
-      id -> {:ok, id}
-    end
-  end
-
-  # Extracts ingredient_id from params
-  defp extract_ingredient_id(params) do
-    case Map.get(params, "ingredient_id") do
-      nil -> {:error, ApiError.bad_request("ingredient_id is required")}
       id -> {:ok, id}
     end
   end
@@ -746,35 +548,6 @@ defmodule EasyWeb.MealController do
 
       _ ->
         {:error, ApiError.bad_request("servings must be a valid number")}
-    end
-  end
-
-  # Extracts quantity from params
-  defp extract_quantity(params) do
-    case Map.get(params, "quantity") do
-      nil ->
-        {:error, ApiError.bad_request("quantity is required")}
-
-      value when is_number(value) ->
-        {:ok, Decimal.new(to_string(value))}
-
-      value when is_binary(value) ->
-        case Decimal.parse(value) do
-          {decimal, _} -> {:ok, decimal}
-          :error -> {:error, ApiError.bad_request("quantity must be a valid number")}
-        end
-
-      _ ->
-        {:error, ApiError.bad_request("quantity must be a valid number")}
-    end
-  end
-
-  # Extracts unit from params
-  defp extract_unit(params) do
-    case Map.get(params, "unit") do
-      nil -> {:error, ApiError.bad_request("unit is required")}
-      unit when is_binary(unit) -> {:ok, unit}
-      _ -> {:error, ApiError.bad_request("unit must be a string")}
     end
   end
 
@@ -853,6 +626,7 @@ defmodule EasyWeb.MealController do
           recipe: %{
             id: mr.recipe.id,
             name: mr.recipe.name,
+            ingredients: mr.recipe.ingredients || [],
             total_calories: mr.recipe.total_calories,
             total_protein: mr.recipe.total_protein,
             total_carbohydrates: mr.recipe.total_carbohydrates,
@@ -864,30 +638,7 @@ defmodule EasyWeb.MealController do
         }
       end)
 
-    meal_ingredients =
-      Enum.map(meal.meal_ingredients, fn mi ->
-        %{
-          id: mi.id,
-          quantity: mi.quantity,
-          unit: mi.unit,
-          notes: mi.notes,
-          ingredient: %{
-            id: mi.ingredient.id,
-            name: mi.ingredient.name,
-            calories: mi.ingredient.calories,
-            protein: mi.ingredient.protein,
-            carbohydrates: mi.ingredient.carbohydrates,
-            fats: mi.ingredient.fats,
-            fiber: mi.ingredient.fiber
-          },
-          inserted_at: mi.inserted_at,
-          updated_at: mi.updated_at
-        }
-      end)
-
-    base
-    |> Map.put(:meal_recipes, meal_recipes)
-    |> Map.put(:meal_ingredients, meal_ingredients)
+    Map.put(base, :meal_recipes, meal_recipes)
   end
 
   # Formats a meal recipe for JSON response
@@ -900,20 +651,6 @@ defmodule EasyWeb.MealController do
       notes: meal_recipe.notes,
       inserted_at: meal_recipe.inserted_at,
       updated_at: meal_recipe.updated_at
-    }
-  end
-
-  # Formats a meal ingredient for JSON response
-  defp format_meal_ingredient(meal_ingredient) do
-    %{
-      id: meal_ingredient.id,
-      meal_id: meal_ingredient.meal_id,
-      ingredient_id: meal_ingredient.ingredient_id,
-      quantity: meal_ingredient.quantity,
-      unit: meal_ingredient.unit,
-      notes: meal_ingredient.notes,
-      inserted_at: meal_ingredient.inserted_at,
-      updated_at: meal_ingredient.updated_at
     }
   end
 end

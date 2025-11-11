@@ -12,9 +12,6 @@ defmodule EasyWeb.RecipeController do
   - GET /api/recipes/:id - Show recipe
   - PATCH /api/recipes/:id - Update recipe
   - DELETE /api/recipes/:id - Delete recipe
-  - POST /api/recipes/:id/ingredients - Add ingredient to recipe
-  - PATCH /api/recipes/:id/ingredients/:ingredient_id - Update recipe ingredient
-  - DELETE /api/recipes/:id/ingredients/:ingredient_id - Remove ingredient from recipe
   """
 
   use EasyWeb, :controller
@@ -22,7 +19,7 @@ defmodule EasyWeb.RecipeController do
   alias Easy.{Nutrition, ApiError}
   alias EasyWeb.Authorization
 
-  action_fallback EasyWeb.FallbackController
+  action_fallback(EasyWeb.FallbackController)
 
   # ============================================
   # ACTIONS
@@ -119,7 +116,13 @@ defmodule EasyWeb.RecipeController do
     "description": "Healthy grilled chicken breast",
     "instructions": "Season and grill for 6-8 minutes per side",
     "prep_time_minutes": 30,
-    "servings": 4
+    "servings": 4,
+    "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
+    "total_calories": 350,
+    "total_protein": 45,
+    "total_carbohydrates": 5,
+    "total_fats": 15,
+    "total_fiber": 1
   }
   ```
 
@@ -129,6 +132,7 @@ defmodule EasyWeb.RecipeController do
     "recipe": {
       "id": "uuid",
       "name": "Grilled Chicken",
+      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
       ...
     }
   }
@@ -159,7 +163,7 @@ defmodule EasyWeb.RecipeController do
   @doc """
   GET /api/recipes/:id
 
-  Shows a single recipe with preloaded ingredients.
+  Shows a single recipe with embedded ingredients.
 
   ## Response (200)
   ```json
@@ -167,23 +171,9 @@ defmodule EasyWeb.RecipeController do
     "recipe": {
       "id": "uuid",
       "name": "Grilled Chicken",
-      "recipe_ingredients": [
-        {
-          "id": "uuid",
-          "quantity": "400.00",
-          "unit": "g",
-          "notes": "boneless, skinless",
-          "ingredient": {
-            "id": "uuid",
-            "name": "Chicken Breast",
-            "calories": "165.00",
-            "protein": "31.00",
-            "carbohydrates": "0.00",
-            "fats": "3.60",
-            "fiber": "0.00"
-          }
-        }
-      ],
+      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
+      "total_calories": "350.00",
+      "total_protein": "45.00",
       ...
     }
   }
@@ -193,11 +183,11 @@ defmodule EasyWeb.RecipeController do
     current_user = conn.assigns.current_user
 
     with {:ok, _coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(id, [:recipe_ingredients, ingredients: []]),
+         {:ok, recipe} <- fetch_recipe(id),
          :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
       conn
       |> put_status(:ok)
-      |> json(%{recipe: format_recipe_with_ingredients(recipe)})
+      |> json(%{recipe: format_recipe(recipe)})
     end
   end
 
@@ -210,7 +200,8 @@ defmodule EasyWeb.RecipeController do
   ```json
   {
     "name": "Updated Recipe Name",
-    "servings": 6
+    "servings": 6,
+    "ingredients": ["Chicken Breast", "Olive Oil", "Garlic"]
   }
   ```
 
@@ -220,6 +211,7 @@ defmodule EasyWeb.RecipeController do
     "recipe": {
       "id": "uuid",
       "name": "Updated Recipe Name",
+      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic"],
       ...
     }
   }
@@ -299,165 +291,6 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  @doc """
-  POST /api/recipes/:id/ingredients
-
-  Adds an ingredient to a recipe with quantity and unit.
-
-  ## Request Body
-  ```json
-  {
-    "ingredient_id": "uuid",
-    "quantity": 400,
-    "unit": "g",
-    "notes": "boneless, skinless"
-  }
-  ```
-
-  ## Response (201)
-  ```json
-  {
-    "recipe_ingredient": {
-      "id": "uuid",
-      "recipe_id": "uuid",
-      "ingredient_id": "uuid",
-      "quantity": "400.00",
-      "unit": "g",
-      "notes": "boneless, skinless",
-      "inserted_at": "2024-01-01T12:00:00Z",
-      "updated_at": "2024-01-01T12:00:00Z"
-    }
-  }
-  ```
-  """
-  def add_ingredient(conn, %{"id" => recipe_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(recipe_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id),
-         {:ok, ingredient_id} <- extract_ingredient_id(params),
-         {:ok, quantity} <- extract_quantity(params),
-         {:ok, unit} <- extract_unit(params) do
-      notes = params["notes"]
-
-      case Nutrition.add_ingredient_to_recipe(recipe_id, ingredient_id, quantity, unit, coach.id) do
-        {:ok, recipe_ingredient} ->
-          # Add notes if provided
-          recipe_ingredient =
-            if notes do
-              case Nutrition.update_recipe_ingredient(
-                     recipe_id,
-                     ingredient_id,
-                     %{notes: notes},
-                     coach.id
-                   ) do
-                {:ok, updated} -> updated
-                _ -> recipe_ingredient
-              end
-            else
-              recipe_ingredient
-            end
-
-          conn
-          |> put_status(:created)
-          |> json(%{recipe_ingredient: format_recipe_ingredient(recipe_ingredient)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  @doc """
-  PATCH /api/recipes/:id/ingredients/:ingredient_id
-
-  Updates a recipe ingredient's quantity, unit, or notes.
-
-  ## Request Body
-  ```json
-  {
-    "quantity": 500,
-    "unit": "g",
-    "notes": "diced"
-  }
-  ```
-
-  ## Response (200)
-  ```json
-  {
-    "recipe_ingredient": {
-      "id": "uuid",
-      "quantity": "500.00",
-      "unit": "g",
-      "notes": "diced",
-      ...
-    }
-  }
-  ```
-  """
-  def update_ingredient(conn, %{"id" => recipe_id, "ingredient_id" => ingredient_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(recipe_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
-      attrs = extract_recipe_ingredient_attrs(params)
-
-      case Nutrition.update_recipe_ingredient(recipe_id, ingredient_id, attrs, coach.id) do
-        {:ok, recipe_ingredient} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{recipe_ingredient: format_recipe_ingredient(recipe_ingredient)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, :not_found} ->
-          {:error, :not_found}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  @doc """
-  DELETE /api/recipes/:id/ingredients/:ingredient_id
-
-  Removes an ingredient from a recipe.
-
-  ## Response (200)
-  ```json
-  {
-    "message": "Ingredient removed from recipe successfully"
-  }
-  ```
-  """
-  def remove_ingredient(conn, %{"id" => recipe_id, "ingredient_id" => ingredient_id}) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(recipe_id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
-      case Nutrition.remove_ingredient_from_recipe(recipe_id, ingredient_id, coach.id) do
-        {:ok, _recipe_ingredient} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{message: "Ingredient removed from recipe successfully"})
-
-        {:error, :not_found} ->
-          {:error, :not_found}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
   # ============================================
   # PRIVATE HELPERS
   # ============================================
@@ -506,57 +339,13 @@ defmodule EasyWeb.RecipeController do
     |> put_if_present(params, "instructions", :instructions)
     |> put_int_if_present(params, "prep_time_minutes", :prep_time_minutes)
     |> put_int_if_present(params, "servings", :servings)
+    |> put_array_if_present(params, "ingredients", :ingredients)
     |> put_decimal_if_present(params, "total_calories", :total_calories)
     |> put_decimal_if_present(params, "total_protein", :total_protein)
     |> put_decimal_if_present(params, "total_carbohydrates", :total_carbohydrates)
     |> put_decimal_if_present(params, "total_fats", :total_fats)
     |> put_decimal_if_present(params, "total_fiber", :total_fiber)
     |> put_if_present(params, "status", :status)
-  end
-
-  # Extracts recipe ingredient attributes from request params
-  defp extract_recipe_ingredient_attrs(params) do
-    %{}
-    |> put_decimal_if_present(params, "quantity", :quantity)
-    |> put_if_present(params, "unit", :unit)
-    |> put_if_present(params, "notes", :notes)
-  end
-
-  # Extracts ingredient_id from params
-  defp extract_ingredient_id(params) do
-    case Map.get(params, "ingredient_id") do
-      nil -> {:error, ApiError.bad_request("ingredient_id is required")}
-      id -> {:ok, id}
-    end
-  end
-
-  # Extracts quantity from params
-  defp extract_quantity(params) do
-    case Map.get(params, "quantity") do
-      nil ->
-        {:error, ApiError.bad_request("quantity is required")}
-
-      value when is_number(value) ->
-        {:ok, Decimal.new(to_string(value))}
-
-      value when is_binary(value) ->
-        case Decimal.parse(value) do
-          {decimal, _} -> {:ok, decimal}
-          :error -> {:error, ApiError.bad_request("quantity must be a valid number")}
-        end
-
-      _ ->
-        {:error, ApiError.bad_request("quantity must be a valid number")}
-    end
-  end
-
-  # Extracts unit from params
-  defp extract_unit(params) do
-    case Map.get(params, "unit") do
-      nil -> {:error, ApiError.bad_request("unit is required")}
-      unit when is_binary(unit) -> {:ok, unit}
-      _ -> {:error, ApiError.bad_request("unit must be a string")}
-    end
   end
 
   # Puts a value in the map if it's present in params
@@ -607,6 +396,15 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
+  # Puts an array value in the map if it's present in params
+  defp put_array_if_present(map, params, key, atom_key) do
+    case Map.get(params, key) do
+      nil -> map
+      value when is_list(value) -> Map.put(map, atom_key, value)
+      _ -> map
+    end
+  end
+
   # Parses an integer from a string or returns default
   defp parse_int(nil, default), do: default
   defp parse_int(value, _default) when is_integer(value), do: value
@@ -629,6 +427,7 @@ defmodule EasyWeb.RecipeController do
       instructions: recipe.instructions,
       prep_time_minutes: recipe.prep_time_minutes,
       servings: recipe.servings,
+      ingredients: recipe.ingredients || [],
       total_calories: recipe.total_calories,
       total_protein: recipe.total_protein,
       total_carbohydrates: recipe.total_carbohydrates,
@@ -639,48 +438,6 @@ defmodule EasyWeb.RecipeController do
       created_by_id: recipe.created_by_id,
       inserted_at: recipe.inserted_at,
       updated_at: recipe.updated_at
-    }
-  end
-
-  # Formats a recipe with ingredients for JSON response
-  defp format_recipe_with_ingredients(recipe) do
-    base = format_recipe(recipe)
-
-    recipe_ingredients =
-      Enum.map(recipe.recipe_ingredients, fn ri ->
-        %{
-          id: ri.id,
-          quantity: ri.quantity,
-          unit: ri.unit,
-          notes: ri.notes,
-          ingredient: %{
-            id: ri.ingredient.id,
-            name: ri.ingredient.name,
-            calories: ri.ingredient.calories,
-            protein: ri.ingredient.protein,
-            carbohydrates: ri.ingredient.carbohydrates,
-            fats: ri.ingredient.fats,
-            fiber: ri.ingredient.fiber
-          },
-          inserted_at: ri.inserted_at,
-          updated_at: ri.updated_at
-        }
-      end)
-
-    Map.put(base, :recipe_ingredients, recipe_ingredients)
-  end
-
-  # Formats a recipe ingredient for JSON response
-  defp format_recipe_ingredient(recipe_ingredient) do
-    %{
-      id: recipe_ingredient.id,
-      recipe_id: recipe_ingredient.recipe_id,
-      ingredient_id: recipe_ingredient.ingredient_id,
-      quantity: recipe_ingredient.quantity,
-      unit: recipe_ingredient.unit,
-      notes: recipe_ingredient.notes,
-      inserted_at: recipe_ingredient.inserted_at,
-      updated_at: recipe_ingredient.updated_at
     }
   end
 end

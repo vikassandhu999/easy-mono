@@ -35,3 +35,6 @@ config :phoenix, :plug_init_mode, :runtime
 # Authentication and JWT configuration for tests
 config :easy, Easy.Accounts.Token, secret_key: "test-jwt-secret-key"
 config :joken, default_signer: "test-jwt-secret-key"
+
+# Cookie configuration for tests - disable Secure flag for HTTP
+config :easy, EasyWeb.CookieHelper, secure: false

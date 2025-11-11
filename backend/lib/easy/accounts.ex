@@ -47,7 +47,7 @@ defmodule Easy.Accounts do
     case get_recent_token(email, type, 60) do
       %OneTimeToken{} = recent_token ->
         # Return existing token for idempotency
-        {:ok, recent_token.token}
+        {:ok, %{token_id: recent_token.token, expires_at: recent_token.expires_at}}
 
       nil ->
         # No recent token found, proceed with generation
@@ -131,10 +131,10 @@ defmodule Easy.Accounts do
         case %OneTimeToken{}
              |> OneTimeToken.changeset(attrs)
              |> Repo.insert() do
-          {:ok, _token} ->
+          {:ok, token} ->
             # Send email with OTP code
             send_otp_email(email, otp_code, type)
-            {:ok, token_uuid}
+            {:ok, %{token_id: token.token, expires_at: token.expires_at}}
 
           {:error, changeset} ->
             {:error, changeset}
@@ -399,43 +399,52 @@ defmodule Easy.Accounts do
       {:error, :rate_limited, 300}
   """
   def check_rate_limit(email) do
-    # Get rate limit configuration
-    auth_config = Application.get_env(:easy, :auth, [])
-    window_minutes = Keyword.get(auth_config, :rate_limit_window_minutes, 15)
-    max_requests = Keyword.get(auth_config, :rate_limit_max_requests, 3)
+    # Skip rate limiting in development environment
+    if Application.get_env(:easy, :environment) == :dev do
+      require Logger
+      Logger.debug("[RATE LIMIT] Skipped in development for #{email}")
+      {:ok, :allowed}
+    else
+      # Get rate limit configuration
+      auth_config = Application.get_env(:easy, :auth, [])
+      window_minutes = Keyword.get(auth_config, :rate_limit_window_minutes, 15)
+      max_requests = Keyword.get(auth_config, :rate_limit_max_requests, 3)
 
-    window_seconds = window_minutes * 60
-    window_ago = DateTime.add(DateTime.utc_now(), -window_seconds, :second)
+      window_seconds = window_minutes * 60
+      window_ago = DateTime.add(DateTime.utc_now(), -window_seconds, :second)
 
-    # Count OTP requests in the rate limit window for this email
-    count =
-      from(t in OneTimeToken,
-        where: t.email == ^email and t.inserted_at > ^window_ago,
-        select: count(t.id)
-      )
-      |> Repo.one()
-
-    if count >= max_requests do
-      # Find the oldest token to calculate retry_after
-      oldest_token =
+      # Count OTP requests in the rate limit window for this email
+      count =
         from(t in OneTimeToken,
           where: t.email == ^email and t.inserted_at > ^window_ago,
-          order_by: [asc: t.inserted_at],
-          limit: 1,
-          select: t.inserted_at
+          select: count(t.id)
         )
         |> Repo.one()
 
-      if oldest_token do
-        # Calculate when the rate limit window will reset
-        reset_time = DateTime.add(oldest_token, window_seconds, :second)
-        retry_after = DateTime.diff(reset_time, DateTime.utc_now())
-        {:error, :rate_limited, max(retry_after, 0)}
+      if count >= max_requests do
+        # Find the oldest token to calculate retry_after
+        oldest_token =
+          from(t in OneTimeToken,
+            where: t.email == ^email and t.inserted_at > ^window_ago,
+            order_by: [asc: t.inserted_at],
+            limit: 1,
+            select: t.inserted_at
+          )
+          |> Repo.one()
+
+        if oldest_token do
+          # Calculate when the rate limit window will reset
+          # Convert NaiveDateTime to DateTime (assuming UTC)
+          oldest_token_dt = DateTime.from_naive!(oldest_token, "Etc/UTC")
+          reset_time = DateTime.add(oldest_token_dt, window_seconds, :second)
+          retry_after = DateTime.diff(reset_time, DateTime.utc_now())
+          {:error, :rate_limited, max(retry_after, 0)}
+        else
+          {:ok, :allowed}
+        end
       else
         {:ok, :allowed}
       end
-    else
-      {:ok, :allowed}
     end
   end
 
@@ -621,7 +630,7 @@ defmodule Easy.Accounts do
       false
   """
   def email_taken?(email) when is_binary(email) do
-    query = from u in User, where: u.email == ^String.downcase(email)
+    query = from(u in User, where: u.email == ^String.downcase(email))
     Repo.exists?(query)
   end
 
@@ -886,7 +895,7 @@ defmodule Easy.Accounts do
   def verify_otp_and_create_session(token_id, code, expected_type \\ nil) do
     with {:ok, token} <- verify_otp(token_id, code, expected_type),
          %User{} = user <- get_user_by_email(token.email) do
-      # Mark email as verified if this is an email_verification token
+      # Mark email verified if not verifid.
       user =
         if not user.email_verified do
           case mark_email_verified(user) do
@@ -997,7 +1006,8 @@ defmodule Easy.Accounts do
                  access_token: access_token,
                  # days in seconds
                  expires_in: access_token_ttl_days * 24 * 60 * 60,
-                 context: business_context
+                 context: business_context,
+                 user: user
                }}
 
             {:error, reason} ->
@@ -1786,7 +1796,7 @@ defmodule Easy.Accounts do
   end
 
   # Builds a complete user response with roles and profiles
-  defp build_user_response(user) do
+  def build_user_response(user) do
     roles = determine_user_roles(user)
 
     base_response = %{

@@ -1,259 +1,55 @@
 defmodule EasyWeb.AuthController do
   use EasyWeb, :controller
 
-  alias Easy.{Accounts, ApiError}
-  alias EasyWeb.ResponseHelpers
+  alias Easy.{Accounts, ApiError, Repo}
+  alias EasyWeb.{ResponseHelpers, CookieHelper}
 
-  action_fallback EasyWeb.FallbackController
+  action_fallback(EasyWeb.FallbackController)
 
-  @moduledoc """
-  Authentication controller for user registration and authentication flows.
-
-  Handles:
-  - Coach registration (POST /api/auth/register)
-  - OTP generation (POST /api/auth/send-otp)
-  - OTP verification (POST /api/auth/verify-otp)
-  - Token refresh (POST /api/auth/refresh)
-  - Logout (POST /api/auth/logout)
-  """
-
-  @doc """
-  POST /api/auth/register
-
-  Registers a new coach user and initiates email verification.
-
-  This is the first step in the coach signup flow. The user provides their
-  email and full name, and receives an OTP code via email for verification.
-
-  ## Parameters
-  - email: User's email address (required)
-  - full_name: User's full name (required)
-
-  ## Response
-
-  Success (201):
-  ```json
-  {
-    "token_id": "550e8400-e29b-41d4-a716-446655440000",
-    "expires_at": "2024-01-01T12:10:00Z",
-    "status": "verification_pending"
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (422):
-  ```json
-  {
-    "error": {
-      "message": "Validation failed",
-      "code": "validation_error",
-      "details": {
-        "email": ["has already been taken"],
-        "full_name": ["can't be blank"]
-      }
-    }
-  }
-  ```
-
-  Rate limit exceeded (429):
-  ```json
-  {
-    "error": {
-      "message": "Rate limit exceeded. Please try again in 300 seconds",
-      "code": "rate_limited",
-      "details": {
-        "retry_after": 300
-      }
-    }
-  }
-  ```
-  """
+  # POST /api/auth/register
   def register(conn, params) do
-    email = params["email"]
-    full_name = params["full_name"]
+    with {:ok, email, full_name} <- validate_register_params(params),
+         {:ok, result} <- Accounts.register_user(email, full_name) do
+      response = %{
+        token_id: result.token_id,
+        expires_at: ResponseHelpers.format_timestamp(result.expires_at),
+        status: "pending_verification"
+      }
 
-    case Accounts.register_user(email, full_name) do
-      {:ok, %{user: _user, token_uuid: token_uuid}} ->
-        # Get the full token record to retrieve id and expires_at
-        token = Accounts.get_token_by_uuid(token_uuid)
-
-        response = ResponseHelpers.format_token_response(token, "verification_pending")
-
-        conn
-        |> put_status(:created)
-        |> json(response)
-
-      {:error, :rate_limited, retry_after} ->
-        error = ApiError.from_code(:rate_limit_exceeded, retry_after, %{retry_after: retry_after})
+      conn
+      |> put_status(:created)
+      |> json(response)
+    else
+      {:error, :validation_error, details} ->
+        error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        error = ApiError.validation_error(changeset)
+      {:error, :email_already_exists, user_data} ->
+        error = ApiError.from_code(:email_already_exists, nil, user_data)
+        render_error(conn, error)
+
+      {:error, :rate_limit_exceeded, retry_after} ->
+        error = ApiError.from_code(:rate_limit_exceeded, nil, %{retry_after: retry_after})
         render_error(conn, error)
 
       {:error, reason} ->
-        error = ApiError.unprocessable_entity("Registration failed", %{reason: to_string(reason)})
+        error = ApiError.internal_server_error("Registration failed: #{inspect(reason)}")
         render_error(conn, error)
     end
   end
 
-  @doc """
-  POST /api/auth/verify-otp
-
-  Verifies an OTP code and creates a session for the user.
-
-  This endpoint accepts a token_id (received from send-otp or register endpoints)
-  and the OTP code. On successful verification, it returns the user profile with
-  roles, session tokens, and business context.
-
-  ## Parameters
-  - token_id: The UUID of the OTP token (required)
-  - code: The 6-digit OTP code (required)
-
-  ## Response
-
-  Success (200) - Single business context:
-  ```json
-  {
-    "user": {
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "email": "user@example.com",
-      "full_name": "John Doe",
-      "email_verified": true,
-      "roles": ["coach"],
-      "coach_profile": {
-        "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-        "status": "active",
-        "bio": null,
-        "specialties": [],
-        "credentials": {}
-      }
-    },
-    "session": {
-      "access_token": "eyJhbGc...",
-      "refresh_token": "eyJhbGc...",
-      "expires_at": "2024-01-08T12:00:00Z",
-      "expires_in": 604800,
-      "context": {
-        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-        "coach_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "client_id": null,
-        "roles": ["coach"]
-      }
-    }
-  }
-  ```
-
-  Success (200) - Multiple business contexts:
-  ```json
-  {
-    "user": {
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "email": "user@example.com",
-      "full_name": "John Doe",
-      "email_verified": true,
-      "roles": ["coach"]
-    },
-    "session": {
-      "access_token": "eyJhbGc...",
-      "refresh_token": "eyJhbGc...",
-      "expires_at": "2024-01-08T12:00:00Z",
-      "expires_in": 604800
-    },
-    "available_contexts": [
-      {
-        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-        "business_name": "Acme Coaching",
-        "roles": ["coach"],
-        "coach_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-        "client_id": null
-      },
-      {
-        "business_id": "d4e5f6a7-b8c9-0123-def0-123456789012",
-        "business_name": "Beta Wellness",
-        "roles": ["client"],
-        "coach_id": null,
-        "client_id": "e5f6a7b8-c9d0-1234-ef01-234567890123"
-      }
-    ]
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (400):
-  ```json
-  {
-    "error": {
-      "message": "Invalid request parameters",
-      "code": "VALIDATION_ERROR",
-      "details": {
-        "token_id": "is required",
-        "code": "is required"
-      }
-    }
-  }
-  ```
-
-  Invalid OTP (400):
-  ```json
-  {
-    "error": {
-      "message": "The provided code is invalid or has expired",
-      "code": "INVALID_OTP",
-      "details": {
-        "attempts_remaining": 2
-      }
-    }
-  }
-  ```
-
-  Token expired (410):
-  ```json
-  {
-    "error": {
-      "message": "The token has expired",
-      "code": "TOKEN_EXPIRED"
-    }
-  }
-  ```
-
-  Token used (410):
-  ```json
-  {
-    "error": {
-      "message": "The token has already been used",
-      "code": "TOKEN_USED"
-    }
-  }
-  ```
-
-  Max attempts exceeded (429):
-  ```json
-  {
-    "error": {
-      "message": "Maximum verification attempts exceeded",
-      "code": "MAX_ATTEMPTS_EXCEEDED"
-    }
-  }
-  ```
-
-  Token not found (404):
-  ```json
-  {
-    "error": {
-      "message": "Token not found",
-      "code": "TOKEN_NOT_FOUND"
-    }
-  }
-  ```
-  """
+  # POST /api/auth/verify-otp
   def verify_otp(conn, params) do
     with {:ok, token_id, code} <- validate_verify_otp_params(params),
          {:ok, result} <- Accounts.verify_otp_and_create_session(token_id, code) do
+      session = result.session || result[:session]
+      access_token = session.access_token
+      refresh_token = session.refresh_token
+      expires_in = session.expires_in
+
       conn
+      |> CookieHelper.set_access_token_cookie(access_token, expires_in)
+      |> CookieHelper.set_refresh_token_cookie(refresh_token)
       |> put_status(:ok)
       |> json(result)
     else
@@ -262,7 +58,6 @@ defmodule EasyWeb.AuthController do
         render_error(conn, error)
 
       {:error, :invalid_otp} ->
-        # Get remaining attempts if possible
         token = fetch_token_for_feedback(params["token_id"])
         auth_config = Application.get_env(:easy, :auth, [])
         max_attempts = Keyword.get(auth_config, :otp_max_attempts, 3)
@@ -302,7 +97,6 @@ defmodule EasyWeb.AuthController do
         render_error(conn, error)
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # Handle changeset errors
         error = ApiError.unprocessable_entity("Failed to create session", changeset)
         render_error(conn, error)
 
@@ -313,484 +107,216 @@ defmodule EasyWeb.AuthController do
         render_error(conn, error)
 
       {:error, _reason} ->
-        # Fallback for other error types
         error = ApiError.internal_server_error("An unexpected error occurred")
         render_error(conn, error)
     end
   end
 
-  @doc """
-  POST /api/auth/refresh
-
-  Refreshes an access token using a valid refresh token.
-
-  This endpoint accepts a refresh token and returns a new access token
-  with updated expiration time. The refresh token remains valid and can
-  be used again until it expires.
-
-  ## Parameters
-  - refresh_token: The refresh token string (required)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "access_token": "eyJhbGc...",
-    "expires_at": "2024-01-08T12:00:00Z",
-    "expires_in": 604800
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (400):
-  ```json
-  {
-    "error": {
-      "message": "Invalid request parameters",
-      "code": "VALIDATION_ERROR",
-      "details": {
-        "refresh_token": "is required"
-      }
-    }
-  }
-  ```
-
-  Invalid refresh token (401):
-  ```json
-  {
-    "error": {
-      "message": "The refresh token is invalid or has expired",
-      "code": "INVALID_REFRESH_TOKEN"
-    }
-  }
-  ```
-
-  Session not found (401):
-  ```json
-  {
-    "error": {
-      "message": "Session not found or has been revoked",
-      "code": "SESSION_NOT_FOUND"
-    }
-  }
-  ```
-  """
+  # POST /api/auth/refresh
   def refresh(conn, params) do
-    with {:ok, refresh_token} <- validate_refresh_params(params),
-         {:ok, result} <- Accounts.refresh_session(refresh_token) do
-      # Calculate expires_at from expires_in
-      expires_at =
-        DateTime.utc_now()
-        |> DateTime.add(result.expires_in, :second)
+    require Logger
 
-      response = %{
-        access_token: result.access_token,
-        expires_at: ResponseHelpers.format_timestamp(expires_at),
-        expires_in: result.expires_in
-      }
+    conn = fetch_cookies(conn)
+    cookie_token = conn.cookies["refresh_token"]
+    Logger.info("[REFRESH DEBUG] Cookie token present: #{!is_nil(cookie_token)}")
 
-      conn
-      |> put_status(:ok)
-      |> json(response)
-    else
+    if cookie_token do
+      Logger.info("[REFRESH DEBUG] Cookie token length: #{String.length(cookie_token)}")
+      Logger.info("[REFRESH DEBUG] Cookie token prefix: #{String.slice(cookie_token, 0..50)}")
+    end
+
+    Logger.info("[REFRESH DEBUG] Body refresh_token present: #{!is_nil(params["refresh_token"])}")
+
+    params_with_conn = Map.put(params, :conn, conn)
+
+    with {:ok, refresh_token} <- validate_refresh_params(params_with_conn) do
+      Logger.info("[REFRESH DEBUG] Token to verify length: #{String.length(refresh_token)}")
+      Logger.info("[REFRESH DEBUG] Token to verify prefix: #{String.slice(refresh_token, 0..50)}")
+
+      case Accounts.refresh_session(refresh_token) do
+        {:ok, result} ->
+          user = Accounts.get_user(result.user.id) |> Repo.preload([:coach, :client])
+          user_response = Accounts.build_user_response(user)
+
+          response = %{user: user_response}
+
+          Logger.info("[REFRESH DEBUG] Success!")
+
+          conn
+          |> CookieHelper.set_access_token_cookie(result.access_token, result.expires_in)
+          |> put_status(:ok)
+          |> json(response)
+
+        {:error, reason} = error ->
+          Logger.error("[REFRESH DEBUG] Accounts.refresh_session failed: #{inspect(reason)}")
+          error
+      end
+    end
+    |> case do
+      {:ok, _} = success ->
+        success
+
+      conn when is_map(conn) ->
+        conn
+
       {:error, :validation_error, details} ->
+        Logger.warning("[REFRESH DEBUG] Validation error: #{inspect(details)}")
         error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
       {:error, :invalid_token} ->
+        Logger.warning("[REFRESH DEBUG] Invalid token - signature verification failed")
         error = ApiError.from_code(:invalid_refresh_token, nil, nil)
         render_error(conn, error)
 
       {:error, :session_not_found} ->
+        Logger.warning("[REFRESH DEBUG] Session not found in database")
         error = ApiError.from_code(:session_not_found, nil, nil)
         render_error(conn, error)
 
       {:error, reason} ->
+        Logger.error("[REFRESH DEBUG] Generic error: #{inspect(reason)}")
         details = format_refresh_error_details(reason)
         error = ApiError.from_code(:invalid_refresh_token, nil, details)
         render_error(conn, error)
     end
   end
 
-  @doc """
-  POST /api/auth/send-otp
-
-  Generates and sends an OTP code to the specified email address.
-
-  This endpoint supports both registration and login flows. For registration,
-  it will create a new user if one doesn't exist. For login, it requires an
-  existing user.
-
-  ## Parameters
-  - email: User's email address (required)
-  - type: OTP type - "registration" or "login" (required)
-
-  ## Response
-
-  Success (201):
-  ```json
-  {
-    "token_id": "550e8400-e29b-41d4-a716-446655440000",
-    "expires_at": "2024-01-01T12:10:00Z",
-    "status": "pending"
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (400):
-  ```json
-  {
-    "error": {
-      "message": "Invalid request parameters",
-      "code": "VALIDATION_ERROR",
-      "details": {
-        "email": "is required",
-        "type": "must be either 'registration' or 'login'"
-      }
-    }
-  }
-  ```
-
-  Rate limit exceeded (429):
-  ```json
-  {
-    "error": {
-      "message": "Rate limit exceeded. Please try again in 300 seconds",
-      "code": "RATE_LIMIT_EXCEEDED",
-      "details": {
-        "retry_after": 300
-      }
-    }
-  }
-  ```
-
-  User not found (404) - only for login type:
-  ```json
-  {
-    "error": {
-      "message": "User not found",
-      "code": "USER_NOT_FOUND"
-    }
-  }
-  ```
-  """
+  # POST /api/auth/send-otp
   def send_otp(conn, params) do
     with {:ok, email, type} <- validate_send_otp_params(params),
-         {:ok, otp_type} <- map_type_to_otp_type(type),
-         {:ok, token_id, expires_at} <- generate_otp_for_type(email, type, otp_type) do
+         otp_type <- map_type_to_otp_type(type),
+         {:ok, result} <- generate_otp_for_type(email, type, otp_type) do
       response = %{
-        token_id: ResponseHelpers.format_uuid(token_id),
-        expires_at: ResponseHelpers.format_timestamp(expires_at),
-        status: "pending"
+        token_id: result.token_id,
+        expires_at: ResponseHelpers.format_timestamp(result.expires_at),
+        status: "pending_verification"
       }
 
       conn
-      |> put_status(:created)
+      |> put_status(:ok)
       |> json(response)
     else
       {:error, :validation_error, details} ->
         error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
+        render_error(conn, error)
+
+      {:error, :rate_limit_exceeded, retry_after} ->
+        error = ApiError.from_code(:rate_limit_exceeded, nil, %{retry_after: retry_after})
         render_error(conn, error)
 
       {:error, :user_not_found} ->
-        error = ApiError.from_code(:user_not_found, nil, nil)
-        render_error(conn, error)
-
-      {:error, :rate_limited, retry_after} ->
-        error = ApiError.from_code(:rate_limit_exceeded, retry_after, %{retry_after: retry_after})
+        error = ApiError.not_found("User")
         render_error(conn, error)
 
       {:error, reason} ->
-        error =
-          ApiError.unprocessable_entity("Failed to generate OTP", %{reason: to_string(reason)})
-
+        error = ApiError.internal_server_error("Failed to send OTP: #{inspect(reason)}")
         render_error(conn, error)
     end
   end
 
-  @doc """
-  POST /api/auth/logout
-
-  Revokes the current session, logging the user out.
-
-  This endpoint requires a valid Bearer token in the Authorization header.
-  Upon successful logout, the session is revoked and the access token
-  becomes invalid.
-
-  ## Headers
-  - Authorization: Bearer <access_token> (required)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "status": "logged_out"
-  }
-  ```
-
-  ## Error Responses
-
-  Unauthorized (401):
-  ```json
-  {
-    "error": {
-      "message": "Missing or invalid authorization header",
-      "code": "UNAUTHORIZED"
-    }
-  }
-  ```
-
-  Session not found (401):
-  ```json
-  {
-    "error": {
-      "message": "Session not found or already revoked",
-      "code": "SESSION_NOT_FOUND"
-    }
-  }
-  ```
-  """
+  # POST /api/auth/logout
   def logout(conn, _params) do
-    scope = conn.assigns[:scope]
-
-    # Extract the Bearer token from the Authorization header
-    with {:ok, token} <- extract_bearer_token(conn),
-         {:ok, _session} <- Accounts.revoke_session(scope, token) do
+    with {:ok, access_token} <- extract_bearer_token(conn),
+         {:ok, claims} <- Easy.Accounts.Token.verify_token(access_token),
+         session_id <- Easy.Accounts.Token.get_session_id(claims),
+         %Easy.Accounts.Session{} = session <- Accounts.get_session_by_id(session_id),
+         :ok <- check_session_not_revoked(session),
+         {:ok, _session} <- Accounts.revoke_session(session.id) do
       conn
+      |> CookieHelper.clear_auth_cookies()
       |> put_status(:ok)
-      |> json(%{status: "logged_out"})
+      |> json(%{status: "success"})
     else
-      {:error, :missing_token} ->
-        error = ApiError.unauthorized("Missing or invalid authorization header")
+      {:error, :no_auth_header} ->
+        error = ApiError.unauthorized("Missing authorization header")
         render_error(conn, error)
 
-      {:error, :invalid_token} ->
-        error = ApiError.from_code(:invalid_token, nil, nil)
+      {:error, :invalid_auth_format} ->
+        error = ApiError.unauthorized("Invalid authorization format")
         render_error(conn, error)
 
-      {:error, :session_not_found} ->
-        error =
-          ApiError.from_code(:session_not_found, "Session not found or already revoked", nil)
+      {:error, _jwt_error} ->
+        error = ApiError.unauthorized("Invalid or expired token")
+        render_error(conn, error)
 
+      nil ->
+        error = ApiError.not_found("Session")
+        render_error(conn, error)
+
+      {:error, :already_revoked} ->
+        error = ApiError.from_code(:session_revoked, nil, nil)
         render_error(conn, error)
 
       {:error, reason} ->
-        error = ApiError.unprocessable_entity("Failed to logout", %{reason: to_string(reason)})
+        error = ApiError.internal_server_error("Logout failed: #{inspect(reason)}")
         render_error(conn, error)
     end
   end
 
-  @doc """
-  POST /api/auth/switch-context
-
-  Switches the user's active business context by creating a new session.
-
-  This endpoint requires a valid Bearer token in the Authorization header.
-  The user must have access to the requested business (via coach or client profile).
-
-  ## Headers
-  - Authorization: Bearer <access_token> (required)
-
-  ## Parameters
-  - business_id: The UUID of the business to switch to (required)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "session": {
-      "access_token": "eyJhbGc...",
-      "refresh_token": "eyJhbGc...",
-      "expires_at": "2024-01-08T12:00:00Z",
-      "expires_in": 604800
-    },
-    "context": {
-      "business_id": "550e8400-...",
-      "coach_id": "660e8400-...",
-      "client_id": null,
-      "roles": ["coach"]
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (400):
-  ```json
-  {
-    "error": {
-      "message": "Invalid request parameters",
-      "code": "VALIDATION_ERROR",
-      "details": {
-        "business_id": "is required"
-      }
-    }
-  }
-  ```
-
-  Unauthorized (401):
-  ```json
-  {
-    "error": {
-      "message": "Authentication required",
-      "code": "UNAUTHORIZED"
-    }
-  }
-  ```
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "Access denied",
-      "code": "FORBIDDEN",
-      "details": {
-        "reason": "business_not_accessible"
-      }
-    }
-  }
-  ```
-
-  Business not found (404):
-  ```json
-  {
-    "error": {
-      "message": "Business not found",
-      "code": "NOT_FOUND"
-    }
-  }
-  ```
-  """
+  # POST /api/auth/switch-context
   def switch_context(conn, params) do
-    scope = conn.assigns[:scope]
-
     with {:ok, business_id} <- validate_switch_context_params(params),
-         {:ok, result} <- Accounts.switch_business_context(scope, business_id) do
-      response = %{
-        session: ResponseHelpers.format_session(result.session),
-        context: ResponseHelpers.format_business_context(result.context)
-      }
-
+         {:ok, access_token} <- extract_bearer_token(conn),
+         {:ok, result} <- Accounts.switch_business_context(access_token, business_id) do
       conn
+      |> CookieHelper.set_access_token_cookie(result.access_token, result.expires_in)
+      |> CookieHelper.set_refresh_token_cookie(result.refresh_token)
       |> put_status(:ok)
-      |> json(response)
+      |> json(result)
     else
       {:error, :validation_error, details} ->
         error = ApiError.from_code(:validation_error, "Invalid request parameters", details)
         render_error(conn, error)
 
-      {:error, :forbidden} ->
-        error =
-          ApiError.from_code(
-            :forbidden,
-            "Access denied",
-            %{reason: "business_not_accessible"}
-          )
-
+      {:error, :no_auth_header} ->
+        error = ApiError.unauthorized("Missing authorization header")
         render_error(conn, error)
 
       {:error, :not_found} ->
-        error = ApiError.from_code(:not_found, "Business not found", nil)
+        error = ApiError.not_found("Business", %{business_id: params["business_id"]})
+        render_error(conn, error)
+
+      {:error, :forbidden} ->
+        error = ApiError.forbidden()
         render_error(conn, error)
 
       {:error, reason} ->
-        error =
-          ApiError.unprocessable_entity("Failed to switch context", %{
-            reason: to_string(reason)
-          })
-
+        error = ApiError.internal_server_error("Context switch failed: #{inspect(reason)}")
         render_error(conn, error)
     end
   end
 
-  @doc """
-  GET /api/auth/contexts
-
-  Lists all available business contexts for the authenticated user.
-
-  This endpoint requires a valid Bearer token in the Authorization header.
-  Returns all businesses where the user has a coach or client profile.
-
-  ## Headers
-  - Authorization: Bearer <access_token> (required)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "contexts": [
-      {
-        "business_id": "550e8400-...",
-        "business_name": "Acme Coaching",
-        "roles": ["coach"],
-        "coach_id": "660e8400-...",
-        "client_id": null
-      },
-      {
-        "business_id": "770e8400-...",
-        "business_name": "Beta Fitness",
-        "roles": ["client"],
-        "coach_id": null,
-        "client_id": "880e8400-..."
-      }
-    ]
-  }
-  ```
-
-  ## Error Responses
-
-  Unauthorized (401):
-  ```json
-  {
-    "error": {
-      "message": "Authentication required",
-      "code": "UNAUTHORIZED"
-    }
-  }
-  ```
-  """
+  # GET /api/auth/contexts
   def list_contexts(conn, _params) do
-    scope = conn.assigns[:scope]
-
-    # Get the user
-    case Accounts.get_user(scope.user_id) do
-      nil ->
-        error = ApiError.from_code(:user_not_found, nil, nil)
+    with {:ok, access_token} <- extract_bearer_token(conn),
+         {:ok, contexts} <- Accounts.list_user_contexts(access_token) do
+      conn
+      |> put_status(:ok)
+      |> json(%{contexts: contexts})
+    else
+      {:error, :no_auth_header} ->
+        error = ApiError.unauthorized("Missing authorization header")
         render_error(conn, error)
 
-      user ->
-        # Get all available contexts
-        contexts = Accounts.get_user_business_contexts(user)
-
-        response = %{
-          contexts: ResponseHelpers.format_available_contexts(contexts)
-        }
-
-        conn
-        |> put_status(:ok)
-        |> json(response)
+      {:error, reason} ->
+        error = ApiError.internal_server_error("Failed to list contexts: #{inspect(reason)}")
+        render_error(conn, error)
     end
   end
 
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
+  # Private helpers
 
-  # Extracts Bearer token from Authorization header
   defp extract_bearer_token(conn) do
     case Plug.Conn.get_req_header(conn, "authorization") do
       ["Bearer " <> token] -> {:ok, token}
-      _ -> {:error, :missing_token}
+      _ -> {:error, :no_auth_header}
     end
   end
 
-  # Validates verify-otp request parameters
+  defp check_session_not_revoked(%{revoked_at: nil}), do: :ok
+  defp check_session_not_revoked(%{revoked_at: _}), do: {:error, :already_revoked}
+
   defp validate_verify_otp_params(params) do
     token_id = params["token_id"]
     code = params["code"]
@@ -818,9 +344,12 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  # Validates refresh request parameters
   defp validate_refresh_params(params) do
-    refresh_token = params["refresh_token"]
+    refresh_token =
+      case CookieHelper.get_refresh_token_from_cookie(params[:conn] || params["conn"]) do
+        {:ok, token} -> token
+        {:error, :not_found} -> params["refresh_token"]
+      end
 
     if is_nil(refresh_token) or refresh_token == "" do
       {:error, :validation_error, %{refresh_token: "is required"}}
@@ -829,19 +358,9 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  # Validates send-otp request parameters
   defp validate_send_otp_params(params) do
-    email =
-      case params["email"] do
-        value when is_binary(value) -> String.trim(value)
-        value -> value
-      end
-
-    type =
-      case params["type"] do
-        value when is_binary(value) -> value |> String.trim() |> String.downcase()
-        value -> value
-      end
+    email = params["email"]
+    type = params["type"]
 
     errors = %{}
 
@@ -858,24 +377,24 @@ defmodule EasyWeb.AuthController do
       end
 
     errors =
-      if is_nil(type) or type == "" do
-        Map.put(errors, :type, "is required")
-      else
-        if type not in ["registration", "login"] do
-          Map.put(errors, :type, "must be either 'registration' or 'login'")
-        else
+      cond do
+        is_nil(type) or type == "" ->
+          Map.put(errors, :type, "is required")
+
+        type not in ["login", "registration"] ->
+          Map.put(errors, :type, "must be either 'login' or 'registration'")
+
+        true ->
           errors
-        end
       end
 
     if map_size(errors) > 0 do
       {:error, :validation_error, errors}
     else
-      {:ok, String.downcase(email), type}
+      {:ok, email, type}
     end
   end
 
-  # Validates switch-context request parameters
   defp validate_switch_context_params(params) do
     business_id = params["business_id"]
 
@@ -886,101 +405,105 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  defp validate_register_params(params) do
+    email = params["email"]
+    full_name = params["full_name"]
+
+    errors = %{}
+
+    errors =
+      cond do
+        is_nil(email) or email == "" ->
+          Map.put(errors, :email, "is required")
+
+        not valid_email_format?(email) ->
+          Map.put(errors, :email, "must be a valid email address")
+
+        true ->
+          errors
+      end
+
+    errors =
+      if is_nil(full_name) or full_name == "" do
+        Map.put(errors, :full_name, "is required")
+      else
+        errors
+      end
+
+    if map_size(errors) > 0 do
+      {:error, :validation_error, errors}
+    else
+      {:ok, email, full_name}
+    end
+  end
+
   defp valid_email_format?(email) when is_binary(email) do
-    Regex.match?(~r/^[^\s]+@[^\s]+$/i, email)
+    String.match?(email, ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
   end
 
   defp valid_email_format?(_email), do: false
 
-  defp format_refresh_error_details(reason) do
-    case extract_reason(reason) do
-      nil -> nil
-      value -> %{reason: value}
-    end
+  defp format_refresh_error_details(reason) when is_map(reason) do
+    %{reason: extract_reason(reason)}
   end
 
-  defp extract_reason(%{message: message}) when not is_nil(message), do: to_string(message)
-  defp extract_reason(%{reason: reason}) when not is_nil(reason), do: to_string(reason)
+  defp format_refresh_error_details(reason), do: %{reason: to_string(reason)}
+
+  defp extract_reason(%{message: message}) when is_binary(message), do: message
+  defp extract_reason(%{reason: reason}) when is_binary(reason), do: reason
   defp extract_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
   defp extract_reason(reason) when is_binary(reason), do: reason
-  defp extract_reason(_reason), do: nil
+  defp extract_reason(_reason), do: "unknown_error"
 
   defp fetch_token_for_feedback(nil), do: nil
 
   defp fetch_token_for_feedback(token_id) do
-    case Ecto.UUID.cast(token_id) do
-      {:ok, uuid} -> Accounts.get_token_by_id(uuid) || Accounts.get_token_by_uuid(uuid)
-      :error -> nil
+    case Accounts.get_verification_token(token_id) do
+      nil -> nil
+      token -> token
     end
   end
 
-  # Maps the API type parameter to internal OTP type
-  defp map_type_to_otp_type("registration"), do: {:ok, "email_verification"}
-  defp map_type_to_otp_type("login"), do: {:ok, "login"}
-  defp map_type_to_otp_type(_), do: {:error, :invalid_type}
+  defp map_type_to_otp_type("registration"), do: "registration"
+  defp map_type_to_otp_type("login"), do: "login"
+  defp map_type_to_otp_type(_), do: "login"
 
-  # Generates OTP based on the type (registration or login)
   defp generate_otp_for_type(email, "registration", otp_type) do
-    # For registration, check if user exists
     case Accounts.get_user_by_email(email) do
       nil ->
-        # User doesn't exist, generate OTP for email verification
-        case Accounts.generate_otp(email, otp_type) do
-          {:ok, token_uuid} ->
-            # Get the token to retrieve id and expires_at
-            token = Accounts.get_token_by_uuid(token_uuid)
-            {:ok, token.id, token.expires_at}
-
-          {:error, :rate_limited, retry_after} ->
-            {:error, :rate_limited, retry_after}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Accounts.generate_otp(email, otp_type)
 
       _user ->
-        # User already exists, return error
-        {:error, :validation_error, %{email: "has already been taken"}}
+        {:error, :email_already_exists,
+         %{
+           email: email,
+           message: "An account with this email already exists. Please login instead."
+         }}
     end
   end
 
   defp generate_otp_for_type(email, "login", otp_type) do
-    # For login, user must exist
     case Accounts.get_user_by_email(email) do
       nil ->
         {:error, :user_not_found}
 
       _user ->
-        case Accounts.generate_otp(email, otp_type) do
-          {:ok, token_uuid} ->
-            # Get the token to retrieve id and expires_at
-            token = Accounts.get_token_by_uuid(token_uuid)
-            {:ok, token.id, token.expires_at}
-
-          {:error, :rate_limited, retry_after} ->
-            {:error, :rate_limited, retry_after}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Accounts.generate_otp(email, otp_type)
     end
   end
 
-  # Renders an API error response
   defp render_error(conn, %ApiError{} = error) do
-    conn = maybe_add_headers(conn, error)
-
     conn
+    |> maybe_add_headers(error)
     |> put_status(error.status)
-    |> json(ApiError.to_json(error))
+    |> json(%{error: ApiError.to_map(error)})
   end
 
-  # Adds headers from ApiError to the connection if present
   defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
 
   defp maybe_add_headers(conn, %ApiError{headers: headers}) do
-    Enum.reduce(headers, conn, fn {key, value}, acc ->
-      put_resp_header(acc, key, value)
+    Enum.reduce(headers, conn, fn {key, value}, conn ->
+      Plug.Conn.put_resp_header(conn, key, value)
     end)
   end
 end

@@ -3,7 +3,7 @@ defmodule EasyWeb.Plugs.AuthenticateToken do
   Plug to authenticate requests using JWT tokens and construct scope.
 
   This plug:
-  1. Extracts the Bearer token from the Authorization header
+  1. Extracts the token from cookie (preferred) or Authorization header (fallback)
   2. Verifies the JWT signature and expiration
   3. Extracts claims from the verified token
   4. Constructs a Scope struct from the claims
@@ -49,11 +49,12 @@ defmodule EasyWeb.Plugs.AuthenticateToken do
   alias Easy.Accounts.Token
   alias Easy.Auth.Scope
   alias Easy.ApiError
+  alias EasyWeb.CookieHelper
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    with {:ok, token} <- extract_bearer_token(conn),
+    with {:ok, token} <- get_token(conn),
          {:ok, claims} <- Token.verify_token(token),
          {:ok, scope} <- Scope.from_claims(claims) do
       # Assign scope to conn for use by controllers and service methods
@@ -80,8 +81,16 @@ defmodule EasyWeb.Plugs.AuthenticateToken do
   # PRIVATE HELPERS
   # ============================================
 
+  # Extracts token from cookie first, then falls back to Authorization header
+  defp get_token(conn) do
+    case CookieHelper.get_access_token_from_cookie(conn) do
+      {:ok, token} -> {:ok, token}
+      {:error, :not_found} -> get_token_from_header(conn)
+    end
+  end
+
   # Extracts Bearer token from Authorization header
-  defp extract_bearer_token(conn) do
+  defp get_token_from_header(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] -> {:ok, token}
       _ -> {:error, :missing_token}

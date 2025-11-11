@@ -257,12 +257,26 @@ JSON Response
 }
 ```
 
-### Request Headers
+### Authentication Methods
+
+The API supports two authentication methods:
+
+**1. Cookie-Based (Recommended)**
+```javascript
+// Tokens stored in HTTP-only cookies
+fetch('/api/businesses/123', {
+  credentials: 'include' // Automatically sends cookies
+})
+```
+
+**2. Token-Based (Legacy)**
 ```
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 Accept: application/json
 ```
+
+**Note**: Cookie-based authentication is more secure (protected from XSS attacks) and requires less client-side code. See [Cookie Authentication](./COOKIE_AUTH.md) for details.
 
 ### Response Formats
 

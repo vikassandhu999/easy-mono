@@ -25,7 +25,7 @@ config :easy, EasyWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  debug_errors: false,
   secret_key_base: "RAAfGUm9emTKfbukUTJcJnM+vcAKFWhNOdfT2ZQG9l7Cctc0NN5f1JBT9p1RoAvY",
   watchers: []
 

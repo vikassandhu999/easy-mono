@@ -1,233 +1,42 @@
 defmodule EasyWeb.FallbackController do
-  @moduledoc """
-  Centralized error handling for API controllers.
-
-  This controller handles errors returned from controller actions via the
-  `action_fallback` mechanism. It provides consistent error responses across
-  all API endpoints.
-
-  ## Supported Error Types
-
-  - `{:error, %Ecto.Changeset{}}` - Validation errors (422)
-  - `{:error, %Easy.ApiError{}}` - Structured API errors
-  - `{:error, atom}` - Common error atoms (404, 401, 403, etc.)
-  - `{:error, string}` - Generic error messages (422)
-
-  ## Error Response Format
-
-  All errors are rendered in a consistent format:
-
-  ```json
-  {
-    "error": {
-      "message": "Human-readable error message",
-      "code": "machine_readable_error_code",
-      "details": {...}
-    }
-  }
-  ```
-  """
-
-  use EasyWeb, :controller
-
-  require Logger
-
-  alias Easy.ApiError
-  alias EasyWeb.ApiHelpers
-
-  # ============================================
-  # STRUCTURED ERROR TYPES
-  # ============================================
+  use Phoenix.Controller, formats: [:json]
 
   @doc """
-  Handles Ecto changeset validation errors.
-
-  Returns a 422 Unprocessable Entity response with field-level error details.
+  Translates standardized application errors into JSON:API-compliant responses.
   """
-  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
-    ApiHelpers.render_validation_error(conn, changeset)
+  # 1. We now have ONE function to handle ALL our application errors.
+  #    It pattern matches specifically on our struct.
+  def call(conn, {:error, %Easy.Error{} = error}) do
+    http_status = Plug.Conn.Status.code(error.status)
+
+    conn
+    |> put_status(error.status)
+    |> put_view(json: EasyWeb.ErrorJSON)
+    |> render(:"#{http_status}", %{app_error: Easy.Error.to_map(error)})
+    |> halt()
   end
 
-  # Handles structured ApiError responses
-  def call(conn, {:error, %ApiError{} = error}) do
-    ApiHelpers.render_api_error(conn, error)
-  end
+  # --- Deprecated Handlers ---
+  # It's good to keep these for a while to catch old code.
+  # They now just convert the old format to the new one.
 
-  # ============================================
-  # COMMON ERROR ATOMS (400-499)
-  # ============================================
-
-  # Handles :bad_request errors (400)
-  def call(conn, {:error, :bad_request}) do
-    error = ApiError.bad_request("Bad request")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles :unauthorized errors (401)
-  def call(conn, {:error, :unauthorized}) do
-    error = ApiError.unauthorized("Authentication required")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles :forbidden errors (403)
-  def call(conn, {:error, :forbidden}) do
-    error = ApiError.forbidden("Access denied")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles :not_found errors (404)
   def call(conn, {:error, :not_found}) do
-    error = ApiError.not_found("Resource")
-    ApiHelpers.render_api_error(conn, error)
+    call(conn, {:error, Easy.Error.not_found()})
   end
 
-  # Handles :unprocessable_entity errors (422)
-  def call(conn, {:error, :unprocessable_entity}) do
-    error = ApiError.unprocessable_entity("Unprocessable entity")
-    ApiHelpers.render_api_error(conn, error)
+  def call(conn, {:error, :unauthorized}) do
+    call(conn, {:error, Easy.Error.unauthorized()})
   end
 
-  # Handles :rate_limited errors (429)
-  def call(conn, {:error, :rate_limited}) do
-    error = ApiError.rate_limited("Too many requests. Please try again later.")
-    ApiHelpers.render_api_error(conn, error)
+  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
+    call(conn, {:error, Easy.Error.unprocessable(changeset)})
   end
 
-  def call(conn, {:error, :rate_limited, retry_after}) when is_integer(retry_after) do
-    error = ApiError.rate_limited(retry_after)
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # ============================================
-  # DOMAIN-SPECIFIC ERROR ATOMS
-  # ============================================
-
-  # Handles token-related errors
-  def call(conn, {:error, :token_not_found}) do
-    error = ApiError.not_found("Token")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  def call(conn, {:error, :token_expired}) do
-    error = ApiError.unprocessable_entity("Token has expired. Please request a new OTP.")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  def call(conn, {:error, :token_already_used}) do
-    error =
-      ApiError.unprocessable_entity("Token has already been used. Please request a new OTP.")
-
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  def call(conn, {:error, :invalid_otp}) do
-    error = ApiError.unauthorized("Invalid OTP code. Please try again.")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles session-related errors
-  def call(conn, {:error, :session_not_found}) do
-    error = ApiError.not_found("Session")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  def call(conn, {:error, :session_expired}) do
-    error = ApiError.unauthorized("Session has expired")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  def call(conn, {:error, :refresh_failed}) do
-    error = ApiError.internal_server_error("Failed to refresh session")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles role/permission-related errors
-  def call(conn, {:error, :role_not_found}) do
-    error = ApiError.forbidden("User does not have the required role")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # ============================================
-  # NUTRITION-SPECIFIC ERROR ATOMS
-  # ============================================
-
-  # Handles ingredient deletion protection
-  def call(conn, {:error, :ingredient_in_use}) do
-    error =
-      ApiError.unprocessable_entity(
-        "Cannot delete ingredient because it is used in one or more recipes or meals"
-      )
-
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles recipe deletion protection
-  def call(conn, {:error, :recipe_in_use}) do
-    error =
-      ApiError.unprocessable_entity(
-        "Cannot delete recipe because it is used in one or more meals"
-      )
-
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles meal not found errors
-  def call(conn, {:error, :meal_not_found}) do
-    error = ApiError.not_found("Meal")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles recipe not found errors
-  def call(conn, {:error, :recipe_not_found}) do
-    error = ApiError.not_found("Recipe")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles ingredient not found errors
-  def call(conn, {:error, :ingredient_not_found}) do
-    error = ApiError.not_found("Ingredient")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles business mismatch errors (cross-business access attempts)
-  def call(conn, {:error, :business_mismatch}) do
-    error =
-      ApiError.unprocessable_entity("Resources must belong to the same business")
-
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # ============================================
-  # GENERIC ERROR HANDLERS
-  # ============================================
-
-  # Handles errors with string messages
-  def call(conn, {:error, message}) when is_binary(message) do
-    error = ApiError.unprocessable_entity(message)
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles unexpected error formats
-  def call(conn, {:error, reason}) do
-    Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
-
-    error = ApiError.internal_server_error("An unexpected error occurred")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Handles nil responses (shouldn't happen but provides safety)
-  def call(conn, nil) do
-    Logger.error("Controller action returned nil")
-
-    error = ApiError.internal_server_error("An unexpected error occurred")
-    ApiHelpers.render_api_error(conn, error)
-  end
-
-  # Catch-all for any other unexpected responses
-  def call(conn, other) do
-    Logger.error("Unexpected response in FallbackController: #{inspect(other)}")
-
-    error = ApiError.internal_server_error("An unexpected error occurred")
-    ApiHelpers.render_api_error(conn, error)
+  def call(conn, {:error, _}) do
+    call(
+      conn,
+      {:error,
+       Easy.Error.new(:internal_error, "An internal error occurred", %{}, :internal_server_error)}
+    )
   end
 end

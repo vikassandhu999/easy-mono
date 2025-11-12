@@ -23,8 +23,6 @@ defmodule EasyWeb.MealController do
   alias Easy.{Nutrition, ApiError}
   alias EasyWeb.Authorization
 
-  action_fallback EasyWeb.FallbackController
-
   # ============================================
   # ACTIONS
   # ============================================

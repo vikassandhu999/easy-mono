@@ -4,8 +4,6 @@ defmodule EasyWeb.CoachController do
   alias Easy.{Coaches, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  action_fallback EasyWeb.FallbackController
-
   @moduledoc """
   Coach controller for managing coach resources.
 

@@ -4,8 +4,6 @@ defmodule EasyWeb.ClientController do
   alias Easy.{Clients, Coaches, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  action_fallback EasyWeb.FallbackController
-
   @moduledoc """
   Client controller for managing client resources and invitations.
 

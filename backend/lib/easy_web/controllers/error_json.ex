@@ -1,67 +1,49 @@
 defmodule EasyWeb.ErrorJSON do
-  @moduledoc """
-  This module is invoked by your endpoint in case of errors on JSON requests.
-  """
-
-  # Renders changeset errors as JSON
-  def render("changeset_error.json", %{changeset: changeset}) do
+  # Handles all app errors.
+  def render(_template, %{app_error: error}) do
     %{
-      code: "validation_error",
-      error: "Validation failed",
-      details: traverse_errors(changeset)
+      error_code: to_string(error.code),
+      error_message: error.message,
+      error_detail: error.detail
     }
   end
 
-  # Renders a generic error as JSON
-  def render("error.json", %{code: code, message: message, details: details}) do
+  # This function is called when a 404 error (like a
+  # Phoenix.Router.NoRouteError) is raised.
+  def render("404.json", _assigns) do
     %{
-      code: code,
-      error: message,
-      details: details
+      error_code: "not_found",
+      error_message: "The requested resource or route was not found."
     }
   end
 
-  def render("error.json", %{code: code, message: message}) do
+  # This function is called for any unhandled exception
+  # or crash in your application (a 500 error).
+  def render("500.json", _assigns) do
     %{
-      code: code,
-      error: message,
-      details: nil
+      error_code: "internal_server_error",
+      error_message: "An internal server error occurred."
     }
   end
 
-  def render("error.json", %{message: message}) do
+  # This is a "catch-all" function. It's not strictly
+  # necessary but is good practice. It handles any other
+  # error status (like 401, 403, 503) that Phoenix
+  # might raise as an exception.
+  def render(template, assigns) do
+    require Logger
+
+    Logger.error(
+      "Rendering error for unexpected template: #{inspect(template)} \n#{inspect(assigns)}"
+    )
+
     %{
-      code: "error",
-      error: message,
-      details: nil
+      error_code: "unknown_error",
+      error_message: Phoenix.Controller.status_message_from_template(template)
     }
-  end
-
-  # Fallback for standard Phoenix error templates (404.json, 500.json, etc.)
-  def render(template, _assigns) do
-    %{
-      code: extract_code_from_template(template),
-      error: Phoenix.Controller.status_message_from_template(template),
-      details: nil
-    }
-  end
-
-  defp extract_code_from_template(template) do
-    case template do
-      "404.json" -> "not_found"
-      "500.json" -> "internal_server_error"
-      "422.json" -> "unprocessable_entity"
-      "401.json" -> "unauthorized"
-      "403.json" -> "forbidden"
-      _ -> "error"
-    end
-  end
-
-  defp traverse_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end)
+  rescue
+    _ ->
+      # Failsafe, just in case the template name was unexpected
+      render("500.json", %{})
   end
 end

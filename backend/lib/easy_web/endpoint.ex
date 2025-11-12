@@ -33,32 +33,6 @@ defmodule EasyWeb.Endpoint do
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :easy
   end
 
-  # Custom error handler for development that returns JSON for API routes
-  if code_reloading? do
-    use Plug.ErrorHandler
-
-    @impl Plug.ErrorHandler
-    def handle_errors(conn, %{kind: kind, reason: reason, stack: stack}) do
-      # Log the error
-      require Logger
-      Logger.error(Exception.format(kind, reason, stack))
-
-      # Return JSON error response for API routes
-      conn
-      |> Plug.Conn.put_resp_content_type("application/json")
-      |> Plug.Conn.send_resp(
-        500,
-        Jason.encode!(%{
-          code: "internal_server_error",
-          error: "An unexpected error occurred",
-          details: %{
-            message: Exception.message(reason)
-          }
-        })
-      )
-    end
-  end
-
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 

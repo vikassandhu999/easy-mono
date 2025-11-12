@@ -1,728 +1,251 @@
 defmodule Easy.Accounts do
-  @moduledoc """
-  Accounts context handles user authentication and session management.
-
-  This is the public API for:
-  - User management (CRUD operations)
-  - OTP generation and verification
-  - Session management
-  - Authentication flows
-  """
-
   import Ecto.Query, warn: false
 
+  alias Easy.Clients.Client
+  alias Easy.Coaches.Coach
+  alias Easy.Organizations.Business
   alias Easy.Repo
   alias Easy.Accounts.{User, OneTimeToken, Session, Token}
 
-  # ============================================
-  # OTP MANAGEMENT
-  # ============================================
-
-  @doc """
-  Generates an OTP token and sends it via email.
-
-  Enforces rate limiting: maximum 3 OTP requests per 15 minutes per email.
-  Implements idempotency: returns existing token if one was created within 60 seconds.
-
-  ## Parameters
-    - email: The email address to send the OTP to
-    - type: The type of OTP ("email_verification", "login", "client_invitation")
-    - metadata: Optional metadata to store with the token (default: %{})
-
-  ## Returns
-    - {:ok, token_uuid} on success
-    - {:error, :rate_limited, retry_after_seconds} if rate limit exceeded
-    - {:error, changeset} on validation failure
-
-  ## Examples
-
-      iex> generate_otp("user@example.com", "email_verification")
-      {:ok, "550e8400-e29b-41d4-a716-446655440000"}
-
-      iex> generate_otp("user@example.com", "client_invitation", %{client_id: 123})
-      {:ok, "550e8400-e29b-41d4-a716-446655440000"}
-  """
-  def generate_otp(email, type, metadata \\ %{}) do
-    # Check for existing valid token within 60 seconds (idempotency)
-    case get_recent_token(email, type, 60) do
-      %OneTimeToken{} = recent_token ->
-        # Return existing token for idempotency
-        {:ok, %{token_id: recent_token.token, expires_at: recent_token.expires_at}}
-
-      nil ->
-        # No recent token found, proceed with generation
-        generate_new_otp(email, type, metadata)
-    end
-  end
-
-  @doc """
-  Gets a recent unused token for the given email and type within the specified time window.
-
-  This function is used for idempotency checks to prevent duplicate token generation
-  from network retries.
-
-  ## Parameters
-    - email: The email address to check
-    - type: The token type to check
-    - within_seconds: The time window in seconds to check for recent tokens (default: 60)
-
-  ## Returns
-    - %OneTimeToken{} if a recent unused token exists
-    - nil if no recent token found
-
-  ## Examples
-
-      iex> get_recent_token("user@example.com", "email_verification", 60)
-      %OneTimeToken{}
-
-      iex> get_recent_token("user@example.com", "login", 60)
-      nil
-  """
-  def get_recent_token(email, type, within_seconds \\ 60) do
-    cutoff_time = DateTime.add(DateTime.utc_now(), -within_seconds, :second)
-
-    from(t in OneTimeToken,
-      where:
-        t.email == ^email and
-          t.type == ^type and
-          is_nil(t.used_at) and
-          t.inserted_at > ^cutoff_time and
-          t.expires_at > ^DateTime.utc_now(),
-      order_by: [desc: t.inserted_at],
-      limit: 1
-    )
-    |> Repo.one()
-  end
-
-  # Private function that actually generates a new OTP token
-  defp generate_new_otp(email, type, metadata) do
-    # Check rate limit
-    case check_rate_limit(email) do
-      {:ok, :allowed} ->
-        # Generate 6-digit OTP code
-        otp_code = generate_otp_code()
-
-        # Generate UUID token for invitation links
-        token_uuid = Ecto.UUID.generate()
-
-        # Set expiration based on type using configuration
-        auth_config = Application.get_env(:easy, :auth, [])
-
-        expires_at =
-          case type do
-            "client_invitation" ->
-              days = Keyword.get(auth_config, :invitation_expiry_days, 7)
-              DateTime.add(DateTime.utc_now(), days * 24 * 60 * 60, :second)
-
-            _ ->
-              minutes = Keyword.get(auth_config, :otp_expiry_minutes, 10)
-              DateTime.add(DateTime.utc_now(), minutes * 60, :second)
-          end
-
-        attrs = %{
-          token: token_uuid,
-          code: otp_code,
-          type: type,
-          email: email,
-          expires_at: expires_at,
-          metadata: metadata
-        }
-
-        case %OneTimeToken{}
-             |> OneTimeToken.changeset(attrs)
-             |> Repo.insert() do
-          {:ok, token} ->
-            # Send email with OTP code
-            send_otp_email(email, otp_code, type)
-            {:ok, %{token_id: token.token, expires_at: token.expires_at}}
-
-          {:error, changeset} ->
-            {:error, changeset}
-        end
-
-      {:error, :rate_limited, retry_after} ->
-        {:error, :rate_limited, retry_after}
-    end
-  end
-
-  @doc """
-  Verifies an OTP code using token_id.
-
-  This is the primary verification method for the new authentication flow where
-  the client receives a token_id after requesting an OTP.
-
-  ## Parameters
-    - token_id: The UUID of the OneTimeToken record
-    - code: The 6-digit OTP code to verify
-    - expected_type: Optional expected token type for validation
-
-  ## Returns
-    - {:ok, token} on successful verification
-    - {:error, :invalid_otp} if code doesn't match
-    - {:error, :token_expired} if token has expired
-    - {:error, :token_used} if token was already used
-    - {:error, :max_attempts} if maximum attempts exceeded
-    - {:error, :token_not_found} if no matching token found
-    - {:error, :invalid_token_type} if token type doesn't match expected type
-
-  ## Examples
-
-      iex> verify_otp("550e8400-e29b-41d4-a716-446655440000", "123456")
-      {:ok, %OneTimeToken{}}
-
-      iex> verify_otp("550e8400-e29b-41d4-a716-446655440000", "wrong")
-      {:error, :invalid_otp}
-
-      iex> verify_otp("550e8400-e29b-41d4-a716-446655440000", "123456", "login")
-      {:error, :invalid_token_type}
-  """
-  def verify_otp(token_id, code, expected_type \\ nil) do
-    token =
-      case Ecto.UUID.cast(token_id) do
-        {:ok, uuid} -> get_token_by_id(uuid) || get_token_by_uuid(uuid)
-        :error -> nil
-      end
-
-    case token do
-      nil ->
-        {:error, :token_not_found}
-
-      token ->
-        cond do
-          # Validate token type matches expected type if provided
-          not is_nil(expected_type) and token.type != expected_type ->
-            {:error, :invalid_token_type}
-
-          OneTimeToken.used?(token) ->
-            {:error, :token_used}
-
-          OneTimeToken.expired?(token) ->
-            {:error, :token_expired}
-
-          token.attempts >= get_max_otp_attempts() ->
-            {:error, :max_attempts}
-
-          OneTimeToken.verify_code(token, code) ->
-            # Mark token as used
-            token
-            |> OneTimeToken.mark_used_changeset()
-            |> Repo.update()
-
-          true ->
-            # Increment attempts
-            token
-            |> OneTimeToken.increment_attempts_changeset()
-            |> Repo.update()
-
-            {:error, :invalid_otp}
-        end
-    end
-  end
-
-  @doc """
-  Verifies an OTP code for a given email and type.
-
-  DEPRECATED: Use verify_otp/3 with token_id instead.
-  This function is kept for backward compatibility during migration.
-
-  ## Parameters
-    - email: The email address associated with the OTP
-    - code: The 6-digit OTP code to verify
-    - type: The type of OTP to verify
-    - expected_type: Optional expected token type for validation (defaults to type parameter)
-
-  ## Returns
-    - {:ok, token} on successful verification
-    - {:error, :invalid_otp} if code doesn't match
-    - {:error, :token_expired} if token has expired
-    - {:error, :token_used} if token was already used
-    - {:error, :max_attempts} if maximum attempts exceeded
-    - {:error, :token_not_found} if no matching token found
-    - {:error, :invalid_token_type} if token type doesn't match expected type
-
-  ## Examples
-
-      iex> verify_otp_by_email("user@example.com", "123456", "email_verification")
-      {:ok, %OneTimeToken{}}
-
-      iex> verify_otp_by_email("user@example.com", "wrong", "email_verification")
-      {:error, :invalid_otp}
-  """
-  def verify_otp_by_email(email, code, type, expected_type \\ nil) do
-    # Default expected_type to type if not provided
-    expected_type = expected_type || type
-
-    # Find the most recent unused token for this email and type
-    token =
-      from(t in OneTimeToken,
-        where: t.email == ^email and t.type == ^type and is_nil(t.used_at),
-        order_by: [desc: t.inserted_at],
-        limit: 1
-      )
-      |> Repo.one()
-
-    case token do
-      nil ->
-        {:error, :token_not_found}
-
-      token ->
-        cond do
-          # Validate token type matches expected type
-          token.type != expected_type ->
-            {:error, :invalid_token_type}
-
-          OneTimeToken.used?(token) ->
-            {:error, :token_used}
-
-          OneTimeToken.expired?(token) ->
-            {:error, :token_expired}
-
-          token.attempts >= get_max_otp_attempts() ->
-            {:error, :max_attempts}
-
-          OneTimeToken.verify_code(token, code) ->
-            # Mark token as used
-            token
-            |> OneTimeToken.mark_used_changeset()
-            |> Repo.update()
-
-          true ->
-            # Increment attempts
-            token
-            |> OneTimeToken.increment_attempts_changeset()
-            |> Repo.update()
-
-            {:error, :invalid_otp}
-        end
-    end
-  end
-
-  @doc """
-  Resends an OTP by invalidating the old one and creating a new one.
-
-  ## Parameters
-    - email: The email address to resend the OTP to
-    - type: The type of OTP to resend
-
-  ## Returns
-    - {:ok, token_uuid} on success
-    - {:error, reason} on failure
-
-  ## Examples
-
-      iex> resend_otp("user@example.com", "email_verification")
-      {:ok, "550e8400-e29b-41d4-a716-446655440000"}
-  """
-  def resend_otp(email, type) do
-    # Invalidate all previous unused tokens for this email and type
-    from(t in OneTimeToken,
-      where: t.email == ^email and t.type == ^type and is_nil(t.used_at)
-    )
-    |> Repo.update_all(set: [used_at: DateTime.utc_now() |> DateTime.truncate(:second)])
-
-    # Generate new OTP
-    generate_otp(email, type)
-  end
-
-  @doc """
-  Gets a token by its ID (primary key).
-  Used to retrieve token details after generation.
-
-  ## Examples
-
-      iex> get_token_by_id("550e8400-e29b-41d4-a716-446655440000")
-      %OneTimeToken{}
-
-      iex> get_token_by_id("invalid-uuid")
-      nil
-  """
-  def get_token_by_id(token_id) do
-    Repo.get(OneTimeToken, token_id)
-  end
-
-  @doc """
-  Gets a token by its token UUID field.
-  Used to retrieve token details after generation.
-
-  ## Examples
-
-      iex> get_token_by_uuid("550e8400-e29b-41d4-a716-446655440000")
-      %OneTimeToken{}
-
-      iex> get_token_by_uuid("invalid-uuid")
-      nil
-  """
-  def get_token_by_uuid(token_uuid) do
-    from(t in OneTimeToken,
-      where: t.token == ^token_uuid
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Gets an invitation token by its UUID.
-  Used for client invitation flow.
-
-  ## Examples
-
-      iex> get_invitation_token("550e8400-e29b-41d4-a716-446655440000")
-      %OneTimeToken{}
-
-      iex> get_invitation_token("invalid-uuid")
-      nil
-  """
-  def get_invitation_token(token_uuid) do
-    from(t in OneTimeToken,
-      where: t.token == ^token_uuid and t.type == "client_invitation" and is_nil(t.used_at)
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Checks if an email has exceeded the OTP request rate limit.
-
-  Rate limit: Maximum 3 OTP requests per 15 minutes per email.
-
-  ## Parameters
-    - email: The email address to check
-
-  ## Returns
-    - {:ok, :allowed} if the request is allowed
-    - {:error, :rate_limited, retry_after_seconds} if rate limit exceeded
-
-  ## Examples
-
-      iex> check_rate_limit("user@example.com")
-      {:ok, :allowed}
-
-      iex> check_rate_limit("spammer@example.com")
-      {:error, :rate_limited, 300}
-  """
-  def check_rate_limit(email) do
-    # Skip rate limiting in development environment
-    if Application.get_env(:easy, :environment) == :dev do
-      require Logger
-      Logger.debug("[RATE LIMIT] Skipped in development for #{email}")
-      {:ok, :allowed}
+  def register(user_attrs, business_attrs) do
+    with {:ok, result} <-
+           Repo.transaction(fn ->
+             with {:ok, user} <- create_user(user_attrs),
+                  {:ok, business} <- create_business(user, business_attrs),
+                  {:ok, _} <- create_coach(user, business),
+                  {:ok, token, code} <- create_otp_token(user, "email_verification") do
+               %{user: user, token: token, code: code}
+             else
+               {:error, reason} -> Repo.rollback(reason)
+             end
+           end) do
+      send_otp_email(result.user.email, result.code, "email_verification")
+      {:ok, result}
     else
-      # Get rate limit configuration
-      auth_config = Application.get_env(:easy, :auth, [])
-      window_minutes = Keyword.get(auth_config, :rate_limit_window_minutes, 15)
-      max_requests = Keyword.get(auth_config, :rate_limit_max_requests, 3)
-
-      window_seconds = window_minutes * 60
-      window_ago = DateTime.add(DateTime.utc_now(), -window_seconds, :second)
-
-      # Count OTP requests in the rate limit window for this email
-      count =
-        from(t in OneTimeToken,
-          where: t.email == ^email and t.inserted_at > ^window_ago,
-          select: count(t.id)
-        )
-        |> Repo.one()
-
-      if count >= max_requests do
-        # Find the oldest token to calculate retry_after
-        oldest_token =
-          from(t in OneTimeToken,
-            where: t.email == ^email and t.inserted_at > ^window_ago,
-            order_by: [asc: t.inserted_at],
-            limit: 1,
-            select: t.inserted_at
-          )
-          |> Repo.one()
-
-        if oldest_token do
-          # Calculate when the rate limit window will reset
-          # Convert NaiveDateTime to DateTime (assuming UTC)
-          oldest_token_dt = DateTime.from_naive!(oldest_token, "Etc/UTC")
-          reset_time = DateTime.add(oldest_token_dt, window_seconds, :second)
-          retry_after = DateTime.diff(reset_time, DateTime.utc_now())
-          {:error, :rate_limited, max(retry_after, 0)}
-        else
-          {:ok, :allowed}
-        end
-      else
-        {:ok, :allowed}
-      end
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  # ============================================
-  # USER MANAGEMENT
-  # ============================================
+  @spec verify_email(any(), any()) :: any()
+  def verify_email(token_id, code, expected_type \\ nil) do
+    with {:ok, token} <- validate_code(token_id, code, expected_type) do
+      Repo.transaction(fn ->
+        case Repo.get(User, token.user_id) do
+          nil ->
+            Repo.rollback(Easy.Error.new("verification_failed", "Could not verify user"))
 
-  @doc """
-  Creates a new user with the given attributes.
+          %User{} = user ->
+            with {:ok, verified_user} <- user |> User.verify_email_changeset() |> Repo.update(),
+                 {:ok, _} <- Repo.delete(token) do
+              verified_user
+            else
+              {:error, _changeset} ->
+                Repo.rollback(Easy.Error.new("verification_failed", "Could not verify user"))
+            end
+        end
+      end)
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-  ## Examples
+  def login(token_id, code) do
+    with {:ok, token} <- validate_code(token_id, code, "login"),
+         %User{} = user <- Repo.get(User, token.user_id),
+         {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
+           create_coach_access_token(user),
+         {:ok, _} <- Repo.delete(token) do
+      {:ok, %{access_token: access_token, refresh_token: refresh_token, user: user}}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-      iex> create_user(%{email: "user@example.com", full_name: "John Doe"})
-      {:ok, %User{}}
+  def create_coach_access_token(user) do
+    with %Coach{} = coach <- get_coach_by_user(user),
+         {:ok, access_token} <-
+           generate_session(user, coach, nil) do
+      {:ok, Map.merge(access_token, %{user: user, coach: coach})}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-      iex> create_user(%{email: "invalid"})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_user(attrs) do
+  def send_login_code(email) do
+    # <-- This is the fixed part
+    with {:ok, user} <- fetch_user_by_email(email),
+         {:ok, token, code} <- create_otp_token(user, "login") do
+      # Assuming send_otp_email is successful or you don't need to check its error
+      send_otp_email(user.email, code, "login")
+
+      {:ok, %{token: token, user: user}}
+    end
+  end
+
+  def refresh_access_token(refresh_token) do
+    with %Session{} = session <- Repo.get_by(Session, refresh_token: refresh_token),
+         %User{} = user <- Repo.get(User, session.user_id),
+         {:ok, access_token} <-
+           Token.generate_access_token(
+             user,
+             session.id,
+             Token.get_token_roles(session),
+             Token.get_token_context(session)
+           ) do
+      {:ok, %{access_token: access_token}}
+    else
+      nil ->
+        {:error, Easy.Error.new("invalid_refresh_token", "Refresh token is invalid")}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp fetch_user_by_email(email) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        # Return an error tuple that 'with' can handle
+        {:error, Easy.Error.new("not_found", "No user found with that email.")}
+
+      user ->
+        # Return an :ok tuple for 'with' to match
+        {:ok, user}
+    end
+  end
+
+  defp generate_session(user, coach, client) do
+    refresh_token = :crypto.strong_rand_bytes(64) |> Base.url_encode64(padding: false)
+
+    base_session_attrs = %{
+      user_id: user.id,
+      refresh_token: refresh_token,
+      expires_at: DateTime.add(DateTime.utc_now(), 30 * 24 * 60 * 60, :second),
+      last_activity_at: DateTime.utc_now()
+    }
+
+    with {:ok, session_attrs, token_roles, token_context} <-
+           determine_session_context(base_session_attrs, coach, client),
+         {:ok, session} <-
+           %Session{}
+           |> Session.changeset(session_attrs)
+           |> Repo.insert(),
+         {:ok, access_token} <-
+           Token.generate_access_token(user, session.id, token_roles, token_context) do
+      {:ok, %{access_token: access_token, refresh_token: refresh_token}}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # Get coach context
+  defp determine_session_context(base_attrs, %Coach{} = coach, nil) do
+    session_attrs =
+      base_attrs
+      |> Map.put(:coach_id, coach.id)
+      |> Map.put(:business_id, coach.business_id)
+
+    token_roles = ["coach"]
+
+    token_context = %{
+      business_id: coach.business_id,
+      coach_id: coach.id,
+      client_id: nil
+    }
+
+    {:ok, session_attrs, token_roles, token_context}
+  end
+
+  # Get client context
+  defp determine_session_context(base_attrs, nil, %Client{} = client) do
+    session_attrs =
+      base_attrs
+      |> Map.put(:client_id, client.id)
+      |> Map.put(:business_id, client.business_id)
+
+    token_roles = ["client"]
+
+    token_context = %{
+      business_id: client.business_id,
+      coach_id: nil,
+      client_id: client.id
+    }
+
+    {:ok, session_attrs, token_roles, token_context}
+  end
+
+  # Case 3: Error (neither or both)
+  defp determine_session_context(_base_attrs, _, _) do
+    {:error, Error.new("invalid_session", "Session must be for either a coach or a client.")}
+  end
+
+  defp create_otp_token(user, type) do
+    code = generate_otp_code()
+    expires_at = DateTime.add(DateTime.utc_now(), 15 * 60, :second)
+
+    case %OneTimeToken{}
+         |> OneTimeToken.changeset(%{
+           email: user.email,
+           code: code,
+           type: type,
+           expires_at: expires_at,
+           user_id: user.id
+         })
+         |> Repo.insert() do
+      {:ok, token} ->
+        {:ok, token, code}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp create_user(user_attrs) do
     %User{}
-    |> User.changeset(attrs)
+    |> User.changeset(user_attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Gets a user by ID with scope-based authorization.
+  defp create_business(user, business_attrs) do
+    attrs = Map.put(business_attrs, :owner_id, user.id)
 
-  Verifies that the requesting user (from scope) has permission to access
-  the requested user. Users can only access their own profile.
+    %Business{}
+    |> Business.create_changeset(attrs)
+    |> Repo.insert()
+  end
 
-  ## Parameters
-    - scope: The scope struct containing the requesting user's context
-    - user_id: The ID of the user to retrieve (UUID string)
+  defp create_coach(user, business) do
+    attrs = %{} |> Map.put(:user_id, user.id) |> Map.put(:business_id, business.id)
 
-  ## Returns
-    - {:ok, user} if authorized and user exists
-    - {:error, :forbidden} if scope.user_id doesn't match requested user_id
-    - {:error, :not_found} if user doesn't exist
+    %Coach{}
+    |> Coach.create_changeset(attrs)
+    |> Repo.insert()
+  end
 
-  ## Examples
+  defp validate_code(token_id, code, expected_type) do
+    case Repo.get(OneTimeToken, token_id) do
+      nil ->
+        {:error, Easy.Error.new("invalid_code", "Invalid code")}
 
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> get_user(scope, "user-123")
-      {:ok, %User{}}
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> get_user(scope, "user-456")
-      {:error, :forbidden}
-  """
-  def get_user(%Easy.Auth.Scope{user_id: scope_user_id}, user_id)
-      when is_binary(user_id) do
-    # Users can only access their own profile
-    if scope_user_id == user_id do
-      case Repo.get(User, user_id) do
-        nil -> {:error, :not_found}
-        user -> {:ok, user}
-      end
-    else
-      {:error, :forbidden}
+      %OneTimeToken{} = token ->
+        with true <- is_nil(expected_type) or token.type == expected_type,
+             true <- OneTimeToken.verify_code?(token, code) do
+          {:ok, token}
+        else
+          _ -> {:error, Easy.Error.new("invalid_code", "Invalid code")}
+        end
     end
   end
 
-  @doc """
-  Gets a user by ID (legacy version without authorization).
-  Returns the user struct or nil if not found.
-
-  DEPRECATED: Use get_user/2 with scope for proper authorization.
-
-  ## Examples
-
-      iex> get_user(123)
-      %User{}
-
-      iex> get_user(999)
-      nil
-  """
-  def get_user(id), do: Repo.get(User, id)
-
-  @doc """
-  Gets a user by email address.
-  Returns the user struct or nil if not found.
-
-  ## Examples
-
-      iex> get_user_by_email("user@example.com")
-      %User{}
-
-      iex> get_user_by_email("nonexistent@example.com")
-      nil
-  """
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: String.downcase(email))
+  defp get_coach_by_user(user) do
+    Repo.one(
+      from c in Coach,
+        where: c.user_id == ^user.id,
+        preload: [:business],
+        limit: 1
+    )
   end
 
-  @doc """
-  Marks a user's email as verified with the current timestamp.
-
-  ## Examples
-
-      iex> mark_email_verified(user)
-      {:ok, %User{email_verified: true}}
-  """
-  def mark_email_verified(%User{} = user) do
-    user
-    |> User.verify_email_changeset()
-    |> Repo.update()
-  end
-
-  @doc """
-  Updates a user with scope-based authorization.
-
-  Verifies that the requesting user (from scope) has permission to update
-  the target user. Users can only update their own profile.
-
-  ## Parameters
-    - scope: The scope struct containing the requesting user's context
-    - user_id: The ID of the user to update (UUID string)
-    - attrs: Map of attributes to update
-
-  ## Returns
-    - {:ok, user} if authorized and update succeeds
-    - {:error, :forbidden} if scope.user_id doesn't match user_id
-    - {:error, :not_found} if user doesn't exist
-    - {:error, changeset} if validation fails
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> update_user(scope, "user-123", %{full_name: "Jane Doe"})
-      {:ok, %User{}}
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> update_user(scope, "user-456", %{full_name: "Jane Doe"})
-      {:error, :forbidden}
-  """
-  def update_user(%Easy.Auth.Scope{user_id: scope_user_id}, user_id, attrs)
-      when is_binary(user_id) do
-    # Users can only update their own profile
-    if scope_user_id == user_id do
-      case Repo.get(User, user_id) do
-        nil ->
-          {:error, :not_found}
-
-        user ->
-          user
-          |> User.changeset(attrs)
-          |> Repo.update()
-      end
-    else
-      {:error, :forbidden}
-    end
-  end
-
-  @doc """
-  Updates a user with the given attributes (legacy version without authorization).
-
-  DEPRECATED: Use update_user/3 with scope for proper authorization.
-
-  ## Examples
-
-      iex> update_user(user, %{full_name: "Jane Doe"})
-      {:ok, %User{}}
-
-      iex> update_user(user, %{email: "invalid"})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_user(%User{} = user, attrs) do
-    user
-    |> User.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Checks if an email address is already taken.
-  Returns true if the email exists, false otherwise.
-
-  ## Examples
-
-      iex> email_taken?("existing@example.com")
-      true
-
-      iex> email_taken?("new@example.com")
-      false
-  """
-  def email_taken?(email) when is_binary(email) do
-    query = from(u in User, where: u.email == ^String.downcase(email))
-    Repo.exists?(query)
-  end
-
-  @doc """
-  Validates that a token type matches the expected type for a flow.
-
-  This function provides clear error messages for token type mismatches
-  to prevent tokens from being used in unintended flows.
-
-  ## Parameters
-    - token: The OneTimeToken struct
-    - expected_type: The expected token type for the current flow
-
-  ## Returns
-    - :ok if token type matches expected type
-    - {:error, :invalid_token_type, message} if types don't match
-
-  ## Examples
-
-      iex> validate_token_type(%OneTimeToken{type: "login"}, "login")
-      :ok
-
-      iex> validate_token_type(%OneTimeToken{type: "email_verification"}, "login")
-      {:error, :invalid_token_type, "Cannot use email verification token for login. Please request a login code."}
-  """
-  def validate_token_type(%OneTimeToken{type: token_type}, expected_type) do
-    if token_type == expected_type do
-      :ok
-    else
-      message = get_token_type_mismatch_message(token_type, expected_type)
-      {:error, :invalid_token_type, message}
-    end
-  end
-
-  @doc """
-  Gets a human-readable error message for token type mismatches.
-
-  ## Parameters
-    - actual_type: The actual token type
-    - expected_type: The expected token type
-
-  ## Returns
-    - A string with a clear error message
-
-  ## Examples
-
-      iex> get_token_type_mismatch_message("email_verification", "login")
-      "Cannot use email verification token for login. Please request a login code."
-  """
-  def get_token_type_mismatch_message(actual_type, expected_type) do
-    case {actual_type, expected_type} do
-      {"email_verification", "login"} ->
-        "Cannot use email verification token for login. Please request a login code."
-
-      {"login", "email_verification"} ->
-        "Cannot use login token for email verification. Please complete the registration process."
-
-      {"client_invitation", "email_verification"} ->
-        "Cannot use client invitation token for email verification. Please use the invitation link provided."
-
-      {"client_invitation", "login"} ->
-        "Cannot use client invitation token for login. Please use the invitation link provided."
-
-      {"email_verification", "client_invitation"} ->
-        "Cannot use email verification token for client invitation. This token is for account verification only."
-
-      {"login", "client_invitation"} ->
-        "Cannot use login token for client invitation. This token is for login only."
-
-      _ ->
-        "Token type mismatch. Expected #{expected_type} but got #{actual_type}."
-    end
-  end
-
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Gets the maximum OTP attempts from configuration
-  defp get_max_otp_attempts do
-    auth_config = Application.get_env(:easy, :auth, [])
-    Keyword.get(auth_config, :otp_max_attempts, 3)
-  end
-
-  # Generates a random 6-digit OTP code
-  defp generate_otp_code do
-    :rand.uniform(999_999)
-    |> Integer.to_string()
-    |> String.pad_leading(6, "0")
-  end
-
-  # Sends OTP email based on type
   defp send_otp_email(email, code, type, metadata \\ %{}) do
     IO.inspect(%{email: email, code: code})
 
@@ -741,1118 +264,9 @@ defmodule Easy.Accounts do
     :ok
   end
 
-  # ============================================
-  # SESSION MANAGEMENT
-  # ============================================
-
-  @doc """
-  Creates a session for a user with an explicit business context.
-
-  This function validates that the user has access to the specified business_id
-  and creates a session with that business context.
-
-  ## Parameters
-    - user: The user struct
-    - business_id: The UUID string of the business to use for the session
-
-  ## Returns
-    - {:ok, %{user: user_data, session: session_data}} on success
-    - {:error, :forbidden} if user doesn't have access to the business
-    - {:error, changeset} on other failures
-
-  ## Examples
-
-      iex> create_session(user, "550e8400-...")
-      {:ok, %{user: %{...}, session: %{...}}}
-
-      iex> create_session(user, "invalid-business-id")
-      {:error, :forbidden}
-  """
-  def create_session(%User{} = user, business_id) when is_binary(business_id) do
-    # Get all available contexts for the user
-    available_contexts = get_user_business_contexts(user)
-
-    # Find the context matching the requested business_id
-    context =
-      Enum.find(available_contexts, fn ctx ->
-        ctx.business_id == business_id
-      end)
-
-    case context do
-      nil ->
-        {:error, :forbidden}
-
-      context ->
-        # Build business context map for token generation
-        business_context = %{
-          business_id: context.business_id,
-          coach_id: context.coach_id,
-          client_id: context.client_id,
-          roles: context.roles
-        }
-
-        # Create session with the specified business context
-        do_create_session(user, business_context)
-    end
-  end
-
-  @doc """
-  Creates a session for a user and generates JWT tokens with business context.
-
-  This function:
-  1. Preloads coach and client associations
-  2. Determines the user's roles (coach, client, or both)
-  3. Automatically detects business context (if user has single business)
-  4. Generates access and refresh JWT tokens with business context
-  5. Creates a session record in the database with business_id
-  6. Returns the session with tokens and complete user profile including roles and profiles
-
-  ## Parameters
-    - user: The user struct (will be preloaded with coach and client associations)
-
-  ## Returns
-    - {:ok, %{user: user_data, session: session_data}} where:
-      - user_data includes id, email, full_name, email_verified, roles, and coach_profile/client_profile if applicable
-      - session_data includes session struct, access_token, refresh_token, and expires_in
-    - {:error, changeset} on failure
-
-  ## Examples
-
-      iex> create_session(user)
-      {:ok, %{
-        user: %{
-          id: "...",
-          email: "user@example.com",
-          full_name: "John Doe",
-          email_verified: true,
-          roles: ["coach"],
-          coach_profile: %{...}
-        },
-        session: %{
-          session: %Session{},
-          access_token: "eyJhbGc...",
-          refresh_token: "eyJhbGc...",
-          expires_in: 604800
-        }
-      }}
-  """
-  def create_session(%User{} = user) do
-    # Determine business context (auto-select if single context)
-    business_context = determine_business_context(user)
-
-    # Create session with the determined business context
-    do_create_session(user, business_context)
-  end
-
-  @doc """
-  Verifies OTP by token_id and creates a session with complete user profile.
-
-  This function:
-  1. Verifies the OTP code against the token_id
-  2. Validates token type matches expected flow
-  3. Marks the user's email as verified (for email_verification type)
-  4. Creates a session with JWT tokens
-  5. Returns complete user profile with roles and coach/client profiles
-  6. Includes business context in session response if user has a single business
-  7. Includes available contexts if user has multiple businesses
-
-  ## Parameters
-    - token_id: The UUID of the OneTimeToken record
-    - code: The 6-digit OTP code to verify
-    - expected_type: Optional expected token type for validation
-
-  ## Returns
-    - {:ok, %{user: user_data, session: session_data, context: context, available_contexts: contexts}} on success
-    - {:error, reason} on failure
-
-  ## Examples
-
-      iex> verify_otp_and_create_session("550e8400-...", "123456")
-      {:ok, %{
-        user: %{
-          id: "...",
-          email: "user@example.com",
-          full_name: "John Doe",
-          email_verified: true,
-          roles: ["coach"],
-          coach_profile: %{...}
-        },
-        session: %{
-          access_token: "eyJhbGc...",
-          refresh_token: "eyJhbGc...",
-          expires_at: "2024-01-08T12:00:00Z",
-          expires_in: 604800,
-          context: %{
-            business_id: "550e8400-...",
-            coach_id: "660e8400-...",
-            client_id: nil,
-            roles: ["coach"]
-          }
-        },
-        available_contexts: []
-      }}
-  """
-  def verify_otp_and_create_session(token_id, code, expected_type \\ nil) do
-    with {:ok, token} <- verify_otp(token_id, code, expected_type),
-         %User{} = user <- get_user_by_email(token.email) do
-      # Mark email verified if not verifid.
-      user =
-        if not user.email_verified do
-          case mark_email_verified(user) do
-            {:ok, verified_user} -> verified_user
-            {:error, _} -> user
-          end
-        else
-          user
-        end
-
-      # Get all available business contexts for the user
-      available_contexts = get_user_business_contexts(user)
-
-      # Determine business context (auto-select if single context)
-      business_context = determine_business_context(user)
-
-      # Create session (which now includes user data with roles and profiles)
-      case create_session(user) do
-        {:ok, %{user: user_data, session: session_data}} ->
-          # Format session response for API with business context
-          session_response = %{
-            session_id: to_string(session_data.session.id),
-            access_token: session_data.access_token,
-            refresh_token: session_data.refresh_token,
-            expires_at: DateTime.to_iso8601(session_data.session.expires_at),
-            expires_in: session_data.expires_in
-          }
-
-          # Add context to session response if present
-          session_response =
-            if business_context do
-              Map.put(session_response, :context, business_context)
-            else
-              session_response
-            end
-
-          # Build response with available contexts
-          response = %{
-            user: user_data,
-            session: session_response
-          }
-
-          # Include available_contexts if user has multiple businesses
-          response =
-            if length(available_contexts) > 1 do
-              Map.put(response, :available_contexts, available_contexts)
-            else
-              response
-            end
-
-          {:ok, response}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      nil -> {:error, :user_not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Refreshes a session using a refresh token.
-
-  Validates the refresh token, checks if the session is still valid,
-  preserves business context from the refresh token, and generates a new access token
-  with updated coach_id and client_id based on current user profiles.
-
-  ## Parameters
-    - refresh_token: The refresh token string
-
-  ## Returns
-    - {:ok, %{access_token: token, expires_in: seconds, context: business_context}} on success
-    - {:error, reason} on failure
-    - {:error, :invalid_context} if business context is no longer valid
-
-  ## Examples
-
-      iex> refresh_session("eyJhbGc...")
-      {:ok, %{access_token: "eyJhbGc...", expires_in: 604800, context: %{...}}}
-  """
-  def refresh_session(refresh_token) do
-    with {:ok, claims} <- Token.verify_token(refresh_token),
-         true <- claims["type"] == "refresh",
-         session_id <- Token.get_session_id(claims),
-         %Session{} = session <- get_session_by_id(session_id),
-         true <- Session.valid?(session),
-         %User{} = user <- get_user(session.user_id) do
-      # Extract business_id from refresh token claims
-      business_id = Map.get(claims, "business_id")
-
-      # Regenerate business context based on current user profiles
-      case regenerate_business_context(user, business_id) do
-        {:ok, business_context, roles} ->
-          # Generate new access token with updated business context
-          case Token.generate_access_token(user, session.id, roles, business_context) do
-            {:ok, access_token} ->
-              # Update last activity
-              session
-              |> Session.update_activity_changeset()
-              |> Repo.update()
-
-              jwt_config = Application.get_env(:easy, :jwt, [])
-              access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
-
-              {:ok,
-               %{
-                 access_token: access_token,
-                 # days in seconds
-                 expires_in: access_token_ttl_days * 24 * 60 * 60,
-                 context: business_context,
-                 user: user
-               }}
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      false -> {:error, :invalid_token}
-      nil -> {:error, :session_not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Revokes a session with scope-based authorization.
-
-  Verifies that the requesting user (from scope) owns the session being revoked.
-  Users can only revoke their own sessions.
-
-  ## Parameters
-    - scope: The scope struct containing the requesting user's context
-    - session_id: The session ID to revoke (UUID string or integer)
-
-  ## Returns
-    - {:ok, session} on success
-    - {:error, :forbidden} if session doesn't belong to scope.user_id
-    - {:error, :not_found} if session doesn't exist
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> revoke_session(scope, "session-456")
-      {:ok, %Session{revoked_at: ~U[2024-01-01 00:00:00Z]}}
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> revoke_session(scope, "other-user-session")
-      {:error, :forbidden}
-  """
-  def revoke_session(%Easy.Auth.Scope{user_id: scope_user_id}, session_id) do
-    case get_session_by_id(session_id) do
-      nil ->
-        {:error, :not_found}
-
-      %Session{user_id: session_user_id} = session ->
-        # Verify the session belongs to the requesting user
-        if to_string(session_user_id) == scope_user_id do
-          session
-          |> Session.revoke_changeset()
-          |> Repo.update()
-        else
-          {:error, :forbidden}
-        end
-    end
-  end
-
-  @doc """
-  Revokes a session by marking it as revoked (legacy version without authorization).
-
-  DEPRECATED: Use revoke_session/2 with scope for proper authorization.
-
-  ## Parameters
-    - token: The access token or session ID
-
-  ## Returns
-    - {:ok, session} on success
-    - {:error, :session_not_found} if session doesn't exist
-
-  ## Examples
-
-      iex> revoke_session("eyJhbGc...")
-      {:ok, %Session{revoked_at: ~U[2024-01-01 00:00:00Z]}}
-  """
-  def revoke_session(token) when is_binary(token) do
-    case Token.verify_token(token) do
-      {:ok, claims} ->
-        session_id = Token.get_session_id(claims)
-        revoke_session_by_id(session_id)
-
-      {:error, _reason} ->
-        {:error, :invalid_token}
-    end
-  end
-
-  def revoke_session(session_id) when is_integer(session_id) do
-    revoke_session_by_id(session_id)
-  end
-
-  @doc """
-  Revokes all sessions for a user with scope-based authorization.
-
-  Verifies that the requesting user (from scope) has permission to revoke
-  all sessions for the target user. Users can only revoke their own sessions.
-
-  ## Parameters
-    - scope: The scope struct containing the requesting user's context
-    - user_id: The user ID whose sessions should be revoked (UUID string)
-
-  ## Returns
-    - {:ok, count} where count is the number of sessions revoked
-    - {:error, :forbidden} if scope.user_id doesn't match user_id
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> revoke_all_user_sessions(scope, "user-123")
-      {:ok, 3}
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> revoke_all_user_sessions(scope, "user-456")
-      {:error, :forbidden}
-  """
-  def revoke_all_user_sessions(%Easy.Auth.Scope{user_id: scope_user_id}, user_id)
-      when is_binary(user_id) do
-    # Users can only revoke their own sessions
-    if scope_user_id == user_id do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-      {count, _} =
-        from(s in Session,
-          where: s.user_id == ^user_id and is_nil(s.revoked_at)
-        )
-        |> Repo.update_all(set: [revoked_at: now])
-
-      {:ok, count}
-    else
-      {:error, :forbidden}
-    end
-  end
-
-  @doc """
-  Revokes all sessions for a user (legacy version without authorization).
-
-  DEPRECATED: Use revoke_all_user_sessions/2 with scope for proper authorization.
-
-  ## Parameters
-    - user_id: The user ID
-
-  ## Returns
-    - {:ok, count} where count is the number of sessions revoked
-
-  ## Examples
-
-      iex> revoke_all_user_sessions(123)
-      {:ok, 3}
-  """
-  def revoke_all_user_sessions(user_id) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    {count, _} =
-      from(s in Session,
-        where: s.user_id == ^user_id and is_nil(s.revoked_at)
-      )
-      |> Repo.update_all(set: [revoked_at: now])
-
-    {:ok, count}
-  end
-
-  @doc """
-  Gets a session by its ID.
-
-  ## Examples
-
-      iex> get_session_by_id(123)
-      %Session{}
-
-      iex> get_session_by_id(999)
-      nil
-  """
-  def get_session_by_id(id), do: Repo.get(Session, id)
-
-  @doc """
-  Gets a session by its token (JWT).
-
-  ## Examples
-
-      iex> get_session_by_token("eyJhbGc...")
-      %Session{}
-  """
-  def get_session_by_token(token) do
-    case Token.verify_token(token) do
-      {:ok, claims} ->
-        session_id = Token.get_session_id(claims)
-        get_session_by_id(session_id)
-
-      {:error, _reason} ->
-        nil
-    end
-  end
-
-  @doc """
-  Cleans up expired sessions.
-
-  This should be run periodically as a background job.
-  Deletes sessions that expired more than the configured cleanup threshold.
-
-  ## Returns
-    - {:ok, count} where count is the number of sessions deleted
-
-  ## Examples
-
-      iex> cleanup_expired_sessions()
-      {:ok, 42}
-  """
-  def cleanup_expired_sessions do
-    require Logger
-
-    auth_config = Application.get_env(:easy, :auth, [])
-    cleanup_days = Keyword.get(auth_config, :cleanup_old_sessions_older_than_days, 90)
-    cleanup_threshold = DateTime.add(DateTime.utc_now(), -cleanup_days * 24 * 60 * 60, :second)
-
-    Logger.info(
-      "Starting session cleanup: deleting sessions expired before #{DateTime.to_iso8601(cleanup_threshold)}"
-    )
-
-    {count, _} =
-      from(s in Session,
-        where: s.expires_at < ^cleanup_threshold
-      )
-      |> Repo.delete_all()
-
-    Logger.info("Session cleanup completed: deleted #{count} expired sessions")
-
-    {:ok, count}
-  end
-
-  @doc """
-  Cleans up expired one-time tokens.
-
-  This should be run periodically as a background job.
-  Deletes tokens that expired more than the configured cleanup threshold.
-
-  ## Returns
-    - {:ok, count} where count is the number of tokens deleted
-
-  ## Examples
-
-      iex> cleanup_expired_tokens()
-      {:ok, 15}
-  """
-  def cleanup_expired_tokens do
-    require Logger
-
-    auth_config = Application.get_env(:easy, :auth, [])
-    cleanup_days = Keyword.get(auth_config, :cleanup_expired_tokens_older_than_days, 7)
-    cleanup_threshold = DateTime.add(DateTime.utc_now(), -cleanup_days * 24 * 60 * 60, :second)
-
-    Logger.info(
-      "Starting token cleanup: deleting tokens expired before #{DateTime.to_iso8601(cleanup_threshold)}"
-    )
-
-    {count, _} =
-      from(t in OneTimeToken,
-        where: t.expires_at < ^cleanup_threshold
-      )
-      |> Repo.delete_all()
-
-    Logger.info("Token cleanup completed: deleted #{count} expired tokens")
-
-    {:ok, count}
-  end
-
-  # ============================================
-  # AUTHENTICATION FLOWS
-  # ============================================
-
-  @doc """
-  Registers a new user and sends verification OTP.
-
-  This is the first step in the coach signup flow.
-
-  ## Parameters
-    - email: User's email address
-    - full_name: User's full name
-
-  ## Returns
-    - {:ok, %{user: user, token_uuid: uuid}} on success
-    - {:error, changeset} on validation failure
-    - {:error, :rate_limited, retry_after} if rate limit exceeded
-
-  ## Examples
-
-      iex> register_user("coach@example.com", "John Coach")
-      {:ok, %{user: %User{}, token_uuid: "550e8400-..."}}
-  """
-  def register_user(email, full_name) do
-    case create_user(%{email: email, full_name: full_name}) do
-      {:ok, user} ->
-        case generate_otp(email, "email_verification") do
-          {:ok, token_uuid} ->
-            {:ok, %{user: user, token_uuid: token_uuid}}
-
-          {:error, :rate_limited, retry_after} ->
-            {:error, :rate_limited, retry_after}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  @doc """
-  Verifies OTP and creates a session (login).
-
-  This completes the registration or login flow.
-
-  ## Parameters
-    - email: User's email address
-    - code: The 6-digit OTP code
-
-  ## Returns
-    - {:ok, %{user: user_data, session: session_data}} where user_data includes roles and profiles
-    - {:error, reason} on failure
-
-  ## Examples
-
-      iex> verify_and_login("user@example.com", "123456")
-      {:ok, %{user: %{...}, session: %{...}}}
-  """
-  def verify_and_login(email, code) do
-    with {:ok, _token} <-
-           verify_otp_by_email(email, code, "email_verification", "email_verification"),
-         %User{} = user <- get_user_by_email(email),
-         {:ok, user} <- mark_email_verified(user),
-         {:ok, result} <- create_session(user) do
-      {:ok, result}
-    else
-      nil -> {:error, :user_not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Requests a login OTP for an existing user.
-
-  ## Parameters
-    - email: User's email address
-
-  ## Returns
-    - {:ok, token_uuid} on success
-    - {:error, :user_not_found} if user doesn't exist
-    - {:error, reason} on other failures
-
-  ## Examples
-
-      iex> request_login_otp("user@example.com")
-      {:ok, "550e8400-..."}
-  """
-  def request_login_otp(email) do
-    case get_user_by_email(email) do
-      nil ->
-        {:error, :user_not_found}
-
-      _user ->
-        generate_otp(email, "login")
-    end
-  end
-
-  @doc """
-  Logs in a user with OTP and creates a session.
-
-  ## Parameters
-    - email: User's email address
-    - code: The 6-digit OTP code
-
-  ## Returns
-    - {:ok, %{user: user_data, session: session_data}} where user_data includes roles and profiles
-    - {:error, reason} on failure
-
-  ## Examples
-
-      iex> login_with_otp("user@example.com", "123456")
-      {:ok, %{user: %{...}, session: %{...}}}
-  """
-  def login_with_otp(email, code) do
-    with {:ok, _token} <- verify_otp_by_email(email, code, "login", "login"),
-         %User{} = user <- get_user_by_email(email),
-         {:ok, result} <- create_session(user) do
-      {:ok, result}
-    else
-      nil -> {:error, :user_not_found}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Determines the business context for a user automatically.
-
-  Implements auto-selection logic:
-  - If user has exactly one business context → returns that context
-  - If user has multiple business contexts → returns nil (requires explicit selection)
-  - If user has no business contexts → returns nil
-
-  ## Parameters
-    - user: The user struct (can be preloaded or not)
-
-  ## Returns
-    - Business context map with business_id, coach_id, client_id, roles if single context
-    - nil if user has no contexts or multiple contexts
-
-  ## Examples
-
-      iex> determine_business_context(user_with_one_business)
-      %{
-        business_id: "550e8400-...",
-        coach_id: "660e8400-...",
-        client_id: nil,
-        roles: ["coach"]
-      }
-
-      iex> determine_business_context(user_with_multiple_businesses)
-      nil
-
-      iex> determine_business_context(new_user)
-      nil
-  """
-  def determine_business_context(%User{} = user) do
-    contexts = get_user_business_contexts(user)
-
-    case contexts do
-      # Single context - auto-select it
-      [context] ->
-        %{
-          business_id: context.business_id,
-          coach_id: context.coach_id,
-          client_id: context.client_id,
-          roles: context.roles
-        }
-
-      # No contexts or multiple contexts - return nil
-      _ ->
-        nil
-    end
-  end
-
-  @doc """
-  Switches the user's business context by creating a new session with the specified business_id.
-
-  This function validates that the user has access to the requested business_id
-  (via coach or client profile) and creates a new session with that business context.
-
-  ## Parameters
-    - scope: The scope struct containing the current user's context
-    - business_id: The UUID string of the business to switch to
-
-  ## Returns
-    - {:ok, %{session: session_data, context: business_context}} on success
-    - {:error, :forbidden} if user doesn't have access to the business
-    - {:error, :not_found} if business doesn't exist
-    - {:error, changeset} on other failures
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> switch_business_context(scope, "550e8400-...")
-      {:ok, %{
-        session: %{
-          access_token: "eyJhbGc...",
-          refresh_token: "eyJhbGc...",
-          expires_at: "2024-01-08T12:00:00Z",
-          expires_in: 604800
-        },
-        context: %{
-          business_id: "550e8400-...",
-          coach_id: "660e8400-...",
-          client_id: nil,
-          roles: ["coach"]
-        }
-      }}
-
-      iex> scope = %Scope{user_id: "user-123"}
-      iex> switch_business_context(scope, "invalid-business-id")
-      {:error, :forbidden}
-  """
-  def switch_business_context(%Easy.Auth.Scope{user_id: user_id}, business_id)
-      when is_binary(business_id) do
-    # Get the user
-    case get_user(user_id) do
-      nil ->
-        {:error, :not_found}
-
-      user ->
-        # Get all available contexts for the user
-        available_contexts = get_user_business_contexts(user)
-
-        # Find the context matching the requested business_id
-        context =
-          Enum.find(available_contexts, fn ctx ->
-            ctx.business_id == business_id
-          end)
-
-        case context do
-          nil ->
-            {:error, :forbidden}
-
-          context ->
-            # Create new session with the specified business context
-            case create_session(user, business_id) do
-              {:ok, %{session: session_data}} ->
-                # Format the business context for response
-                business_context = %{
-                  business_id: context.business_id,
-                  coach_id: context.coach_id,
-                  client_id: context.client_id,
-                  roles: context.roles
-                }
-
-                # Format session response
-                session_response = %{
-                  access_token: session_data.access_token,
-                  refresh_token: session_data.refresh_token,
-                  expires_at: session_data.session.expires_at,
-                  expires_in: session_data.expires_in
-                }
-
-                {:ok, %{session: session_response, context: business_context}}
-
-              {:error, reason} ->
-                {:error, reason}
-            end
-        end
-    end
-  end
-
-  @doc """
-  Gets all available business contexts for a user.
-
-  Queries the user's coach and client profiles across all businesses
-  and returns a list of available contexts with roles and IDs.
-
-  ## Parameters
-    - user: The user struct (can be preloaded or not)
-
-  ## Returns
-    - List of business context maps, each containing:
-      - business_id: UUID string of the business
-      - business_name: Name of the business
-      - roles: List of roles in this business (["coach"], ["client"], or both)
-      - coach_id: UUID string if user is a coach in this business (nil otherwise)
-      - client_id: UUID string if user is a client in this business (nil otherwise)
-
-  ## Examples
-
-      iex> get_user_business_contexts(user)
-      [
-        %{
-          business_id: "550e8400-...",
-          business_name: "Acme Coaching",
-          roles: ["coach"],
-          coach_id: "660e8400-...",
-          client_id: nil
-        },
-        %{
-          business_id: "770e8400-...",
-          business_name: "Beta Wellness",
-          roles: ["coach", "client"],
-          coach_id: "880e8400-...",
-          client_id: "990e8400-..."
-        }
-      ]
-  """
-  def get_user_business_contexts(%User{} = user) do
-    # Query all coach profiles for this user with business preloaded
-    coach_profiles =
-      from(c in Easy.Coaches.Coach,
-        where: c.user_id == ^user.id,
-        preload: [:business]
-      )
-      |> Repo.all()
-
-    # Query all client profiles for this user with business preloaded
-    client_profiles =
-      from(c in Easy.Clients.Client,
-        where: c.user_id == ^user.id,
-        preload: [:business]
-      )
-      |> Repo.all()
-
-    # Build a map of business_id -> context data
-    contexts_map =
-      Enum.reduce(coach_profiles, %{}, fn coach, acc ->
-        business_id = to_string(coach.business_id)
-
-        context =
-          Map.get(acc, business_id, %{
-            business_id: business_id,
-            business_name: coach.business.name,
-            roles: [],
-            coach_id: nil,
-            client_id: nil
-          })
-
-        updated_context =
-          context
-          |> Map.update!(:roles, fn roles -> ["coach" | roles] end)
-          |> Map.put(:coach_id, to_string(coach.id))
-
-        Map.put(acc, business_id, updated_context)
-      end)
-
-    # Add client profiles to the contexts map
-    contexts_map =
-      Enum.reduce(client_profiles, contexts_map, fn client, acc ->
-        business_id = to_string(client.business_id)
-
-        context =
-          Map.get(acc, business_id, %{
-            business_id: business_id,
-            business_name: client.business.name,
-            roles: [],
-            coach_id: nil,
-            client_id: nil
-          })
-
-        updated_context =
-          context
-          |> Map.update!(:roles, fn roles -> ["client" | roles] end)
-          |> Map.put(:client_id, to_string(client.id))
-
-        Map.put(acc, business_id, updated_context)
-      end)
-
-    # Convert map to list and return
-    Map.values(contexts_map)
-  end
-
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Regenerates business context for token refresh
-  # Validates that the business context is still valid and updates coach_id/client_id
-  # based on current user profiles
-  defp regenerate_business_context(user, nil) do
-    # No business context in refresh token - user has no business profiles
-    # Preload associations to determine current roles
-    user = Repo.preload(user, [:coach, :client])
-    roles = determine_user_roles(user)
-
-    {:ok, %{}, roles}
-  end
-
-  defp regenerate_business_context(user, business_id) when is_binary(business_id) do
-    # Get all current business contexts for the user
-    contexts = get_user_business_contexts(user)
-
-    # Find the context matching the business_id from the refresh token
-    context =
-      Enum.find(contexts, fn ctx ->
-        ctx.business_id == business_id
-      end)
-
-    case context do
-      nil ->
-        # Business context no longer valid - user's profiles in this business were deleted
-        {:error, :invalid_context}
-
-      context ->
-        # Build updated business context with current coach_id and client_id
-        business_context = %{
-          business_id: context.business_id,
-          coach_id: context.coach_id,
-          client_id: context.client_id
-        }
-
-        {:ok, business_context, context.roles}
-    end
-  end
-
-  # Creates a session with the given business context
-  defp do_create_session(%User{} = user, business_context) do
-    # Preload associations to determine roles
-    user = Repo.preload(user, [:coach, :client])
-
-    # Determine user roles based on associations
-    roles = determine_user_roles(user)
-
-    # Extract business_id for session record (convert to binary_id if present)
-    business_id =
-      case business_context do
-        %{business_id: id} when is_binary(id) ->
-          case Ecto.UUID.cast(id) do
-            {:ok, uuid} -> uuid
-            :error -> nil
-          end
-
-        _ ->
-          nil
-      end
-
-    # Create a temporary session record to get an ID for the JWT
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-    auth_config = Application.get_env(:easy, :auth, [])
-    session_expiry_days = Keyword.get(auth_config, :session_expiry_days, 7)
-    expires_at = DateTime.add(now, session_expiry_days * 24 * 60 * 60, :second)
-
-    # Use unique temporary values to avoid unique constraint violations
-    temp_token = "temp_#{Ecto.UUID.generate()}"
-    temp_refresh = "temp_#{Ecto.UUID.generate()}"
-
-    session_attrs = %{
-      # Will be replaced with actual JWT
-      token: temp_token,
-      # Will be replaced with actual JWT
-      refresh_token: temp_refresh,
-      expires_at: expires_at,
-      last_activity_at: now,
-      user_id: user.id,
-      business_id: business_id
-    }
-
-    case %Session{}
-         |> Session.changeset(session_attrs)
-         |> Repo.insert() do
-      {:ok, session} ->
-        # Generate JWT tokens with the session ID and business context
-        with {:ok, access_token} <-
-               Token.generate_access_token(user, session.id, roles, business_context || %{}),
-             {:ok, refresh_token} <-
-               Token.generate_refresh_token(user, session.id, business_context || %{}) do
-          # Update session with actual tokens
-          session
-          |> Session.changeset(%{
-            token: access_token,
-            refresh_token: refresh_token
-          })
-          |> Repo.update()
-          |> case do
-            {:ok, updated_session} ->
-              jwt_config = Application.get_env(:easy, :jwt, [])
-              access_token_ttl_days = Keyword.get(jwt_config, :access_token_ttl_days, 7)
-
-              # Build complete user response with roles and profiles
-              user_response = build_user_response(user)
-
-              # Build session response
-              session_response = %{
-                session: updated_session,
-                access_token: access_token,
-                refresh_token: refresh_token,
-                # days in seconds
-                expires_in: access_token_ttl_days * 24 * 60 * 60
-              }
-
-              {:ok,
-               %{
-                 user: user_response,
-                 session: session_response
-               }}
-
-            {:error, changeset} ->
-              # Clean up the temporary session
-              Repo.delete(session)
-              {:error, changeset}
-          end
-        else
-          {:error, reason} ->
-            # Clean up the temporary session
-            Repo.delete(session)
-            {:error, reason}
-        end
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  # Determines user roles based on associations
-  defp determine_user_roles(user) do
-    roles = []
-
-    # Check if user has a coach profile
-    # Note: coach and client associations will be nil until those schemas are created
-    roles = if Map.get(user, :coach), do: ["coach" | roles], else: roles
-
-    # Check if user has a client profile
-    roles = if Map.get(user, :client), do: ["client" | roles], else: roles
-
-    # Default to empty list if no roles (will be populated when coach/client schemas exist)
-    roles
-  end
-
-  # Builds a complete user response with roles and profiles
-  def build_user_response(user) do
-    roles = determine_user_roles(user)
-
-    base_response = %{
-      id: to_string(user.id),
-      email: user.email,
-      full_name: user.full_name,
-      email_verified: user.email_verified,
-      roles: roles
-    }
-
-    # Add coach profile if user has coach role
-    base_response =
-      if user.coach do
-        coach_profile = %{
-          id: to_string(user.coach.id),
-          business_id: to_string(user.coach.business_id),
-          status: user.coach.status,
-          bio: user.coach.bio,
-          specialties: user.coach.specialties || [],
-          credentials: user.coach.credentials || %{}
-        }
-
-        Map.put(base_response, :coach_profile, coach_profile)
-      else
-        base_response
-      end
-
-    # Add client profile if user has client role
-    base_response =
-      if user.client do
-        client_profile = %{
-          id: to_string(user.client.id),
-          business_id: to_string(user.client.business_id),
-          status: user.client.status,
-          phone: user.client.phone,
-          notes: user.client.notes
-        }
-
-        Map.put(base_response, :client_profile, client_profile)
-      else
-        base_response
-      end
-
-    base_response
-  end
-
-  # Revokes a session by ID
-  defp revoke_session_by_id(session_id) do
-    case get_session_by_id(session_id) do
-      nil ->
-        {:error, :session_not_found}
-
-      session ->
-        session
-        |> Session.revoke_changeset()
-        |> Repo.update()
-    end
+  defp generate_otp_code do
+    :rand.uniform(999_999)
+    |> Integer.to_string()
+    |> String.pad_leading(6, "0")
   end
 end

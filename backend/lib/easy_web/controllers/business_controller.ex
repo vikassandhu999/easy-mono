@@ -4,8 +4,6 @@ defmodule EasyWeb.BusinessController do
   alias Easy.{Organizations, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  action_fallback EasyWeb.FallbackController
-
   @moduledoc """
   Business controller for managing business resources.
 

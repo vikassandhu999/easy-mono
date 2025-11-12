@@ -4,8 +4,6 @@ defmodule EasyWeb.OnboardingController do
   alias Easy.{Organizations, Coaches, Repo, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  action_fallback EasyWeb.FallbackController
-
   @moduledoc """
   Onboarding controller for authenticated users to complete their setup.
 

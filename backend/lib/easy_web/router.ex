@@ -17,23 +17,21 @@ defmodule EasyWeb.Router do
     plug EasyWeb.Plugs.AuthenticateToken
   end
 
-  # HEALTH CHECK
-
   scope "/api", EasyWeb do
     pipe_through :api
 
     get "/health", HealthController, :index
+    get "/test/error", ErrorTestController, :trigger_error
   end
-
-  # PUBLIC AUTHENTICATION ENDPOINTS
 
   scope "/api/auth", EasyWeb do
     pipe_through :api
 
     post "/register", AuthController, :register
-    post "/send-otp", AuthController, :send_otp
-    post "/verify-otp", AuthController, :verify_otp
-    post "/refresh", AuthController, :refresh
+    post "/verify", AuthController, :verify
+    post "/send-login-code", AuthController, :send_login_code
+    post "/login", AuthController, :login
+    post "/refresh-token", AuthController, :refresh_token
   end
 
   # AUTHENTICATED AUTH ENDPOINTS

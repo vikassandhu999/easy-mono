@@ -12,8 +12,6 @@ defmodule EasyWeb.MealPlanController do
   alias Easy.MealPlans.MealPlanMeal
   alias EasyWeb.Authorization
 
-  action_fallback EasyWeb.FallbackController
-
   def index(conn, params) do
     scope = conn.assigns.scope
 

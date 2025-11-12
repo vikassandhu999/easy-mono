@@ -37,9 +37,13 @@ defmodule EasyWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, formats: [:html, :json]
+      use Phoenix.Controller, formats: [:json]
 
       import Plug.Conn
+
+      alias Easy.Error
+
+      action_fallback EasyWeb.FallbackController
 
       unquote(verified_routes())
     end

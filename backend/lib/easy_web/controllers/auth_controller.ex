@@ -4,6 +4,10 @@ defmodule EasyWeb.AuthController do
   alias EasyWeb.Registration
   alias Easy.{Accounts}
 
+  @spec register(
+          any(),
+          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
+        ) :: {:error, any()} | Plug.Conn.t()
   def register(conn, params) do
     changeset = Registration.changeset(%Registration{}, params)
 
@@ -49,7 +53,7 @@ defmodule EasyWeb.AuthController do
   end
 
   def verify(_conn, _params) do
-    {:error, Error.new("invalid_params", "token_id and code are required")}
+    {:error, Error.unprocessable("token_id and code are required")}
   end
 
   def send_login_code(conn, %{"email" => email}) do
@@ -72,10 +76,10 @@ defmodule EasyWeb.AuthController do
   end
 
   def send_login_code(_conn, _params) do
-    {:error, Error.new("invalid_params", "email is required")}
+    {:error, Error.unprocessable("email is required")}
   end
 
-  def login(conn, %{"token_id" => token_id, "code" => code}) do
+  def token(conn, %{"token_id" => token_id, "code" => code}) do
     with {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
            Accounts.login(token_id, code) do
       conn
@@ -91,11 +95,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def login(_conn, _params) do
-    {:error, Error.new("invalid_params", "token_id and code are required")}
-  end
-
-  def refresh_token(conn, %{"refresh_token" => refresh_token}) do
+  def token(conn, %{"refresh_token" => refresh_token}) do
     with {:ok, %{access_token: access_token, refresh_token: new_refresh_token}} <-
            Accounts.refresh_access_token(refresh_token) do
       conn
@@ -108,7 +108,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def refresh_token(_conn, _params) do
-    {:error, Error.new("invalid_params", "refresh_token is required")}
+  def token(_conn, _params) do
+    {:error, Error.unprocessable("code or refresh_token is required")}
   end
 end

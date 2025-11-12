@@ -84,21 +84,51 @@ defmodule Easy.Accounts do
 
   def refresh_access_token(refresh_token) do
     with %Session{} = session <- Repo.get_by(Session, refresh_token: refresh_token),
+         true <- Session.valid?(session),
          %User{} = user <- Repo.get(User, session.user_id),
+         {:ok, token_roles, token_context} <- get_session_roles_and_context(user, session),
+         {:ok, _updated_session} <-
+           session |> Session.update_activity_changeset() |> Repo.update(),
          {:ok, access_token} <-
-           Token.generate_access_token(
-             user,
-             session.id,
-             Token.get_token_roles(session),
-             Token.get_token_context(session)
-           ) do
-      {:ok, %{access_token: access_token}}
+           Token.generate_access_token(user, session.id, token_roles, token_context) do
+      {:ok, %{access_token: access_token, refresh_token: refresh_token}}
     else
       nil ->
         {:error, Easy.Error.new("invalid_refresh_token", "Refresh token is invalid")}
 
+      false ->
+        {:error,
+         Easy.Error.new("invalid_refresh_token", "Refresh token has expired or been revoked")}
+
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp get_session_roles_and_context(user, session) do
+    coach =
+      Repo.one(
+        from c in Coach,
+          where: c.user_id == ^user.id and c.business_id == ^session.business_id,
+          limit: 1
+      )
+
+    client =
+      Repo.one(
+        from c in Client,
+          where: c.user_id == ^user.id and c.business_id == ^session.business_id,
+          limit: 1
+      )
+
+    case {coach, client} do
+      {%Coach{} = coach, nil} ->
+        {:ok, ["coach"], %{business_id: coach.business_id, coach_id: coach.id, client_id: nil}}
+
+      {nil, %Client{} = client} ->
+        {:ok, ["client"], %{business_id: client.business_id, coach_id: nil, client_id: client.id}}
+
+      _ ->
+        {:error, Easy.Error.new("invalid_session", "Could not determine user role")}
     end
   end
 
@@ -176,7 +206,7 @@ defmodule Easy.Accounts do
 
   # Case 3: Error (neither or both)
   defp determine_session_context(_base_attrs, _, _) do
-    {:error, Error.new("invalid_session", "Session must be for either a coach or a client.")}
+    {:error, Easy.Error.new("invalid_session", "Session must be for either a coach or a client.")}
   end
 
   defp create_otp_token(user, type) do

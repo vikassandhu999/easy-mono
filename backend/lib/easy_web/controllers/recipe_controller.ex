@@ -1,71 +1,10 @@
 defmodule EasyWeb.RecipeController do
-  @moduledoc """
-  Controller for managing recipes within a business context.
-
-  All endpoints require authentication and validate that the coach
-  belongs to the business they're operating on.
-
-  ## Endpoints
-
-  - GET /api/recipes - List recipes
-  - POST /api/recipes - Create recipe
-  - GET /api/recipes/:id - Show recipe
-  - PATCH /api/recipes/:id - Update recipe
-  - DELETE /api/recipes/:id - Delete recipe
-  """
-
   use EasyWeb, :controller
 
   alias Easy.{Nutrition, ApiError}
   alias EasyWeb.Authorization
 
-  # ============================================
-  # ACTIONS
-  # ============================================
-
   @spec index(any(), map()) :: {:error, :forbidden} | Plug.Conn.t()
-  @doc """
-  GET /api/recipes
-
-  Lists all recipes for a business.
-
-  ## Query Parameters
-  - limit: Number of items per page (default: 50, max: 100)
-  - offset: Number of items to skip (default: 0)
-  - status: Filter by status (default: "active")
-  - search: Search by recipe name (optional)
-
-  ## Response (200)
-  ```json
-  {
-    "recipes": [
-      {
-        "id": "uuid",
-        "name": "Grilled Chicken",
-        "description": "Healthy grilled chicken breast",
-        "instructions": "Season and grill for 6-8 minutes per side",
-        "prep_time_minutes": 30,
-        "servings": 4,
-        "total_calories": "660.00",
-        "total_protein": "124.00",
-        "total_carbohydrates": "0.00",
-        "total_fats": "14.40",
-        "total_fiber": "0.00",
-        "status": "active",
-        "business_id": "uuid",
-        "created_by_id": "uuid",
-        "inserted_at": "2024-01-01T12:00:00Z",
-        "updated_at": "2024-01-01T12:00:00Z"
-      }
-    ],
-    "meta": {
-      "limit": 50,
-      "offset": 0,
-      "total": 1
-    }
-  }
-  ```
-  """
   def index(conn, params) do
     scope = conn.assigns.scope
 
@@ -289,11 +228,6 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Extracts business_id from scope
   defp extract_business_id(%Easy.Auth.Scope{business_id: business_id})
        when not is_nil(business_id) do
     {:ok, business_id}
@@ -304,7 +238,6 @@ defmodule EasyWeb.RecipeController do
      ApiError.forbidden("You must have an active business context to access this resource")}
   end
 
-  # Extracts coach_id from scope
   defp extract_coach_id(%Easy.Auth.Scope{coach_id: coach_id}) when not is_nil(coach_id) do
     {:ok, coach_id}
   end
@@ -313,7 +246,6 @@ defmodule EasyWeb.RecipeController do
     {:error, ApiError.forbidden("You must be a coach to access this resource")}
   end
 
-  # Gets the coach profile for the current user
   defp get_coach_for_user(user) do
     case user.coach do
       nil -> {:error, :forbidden}
@@ -321,7 +253,6 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  # Fetches a recipe by ID with optional preloading
   defp fetch_recipe(id, preload \\ []) do
     case Nutrition.get_recipe(id, preload) do
       nil -> {:error, :not_found}
@@ -329,7 +260,6 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  # Extracts recipe attributes from request params
   defp extract_recipe_attrs(params) do
     %{}
     |> put_if_present(params, "name", :name)

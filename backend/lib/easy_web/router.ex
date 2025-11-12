@@ -7,14 +7,10 @@ defmodule EasyWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :authenticated do
-    plug EasyWeb.Plugs.EnsureAuthenticated
-    plug EasyWeb.Plugs.LoadCurrentUser
-  end
-
   pipeline :api_authenticated do
     plug :accepts, ["json"]
-    plug EasyWeb.Plugs.AuthenticateToken
+
+    plug EasyWeb.Plugs.Authenticate
   end
 
   scope "/api", EasyWeb do
@@ -30,21 +26,8 @@ defmodule EasyWeb.Router do
     post "/register", AuthController, :register
     post "/verify", AuthController, :verify
     post "/send-login-code", AuthController, :send_login_code
-    post "/login", AuthController, :login
-    post "/refresh-token", AuthController, :refresh_token
+    post "/token", AuthController, :token
   end
-
-  # AUTHENTICATED AUTH ENDPOINTS
-
-  scope "/api/auth", EasyWeb do
-    pipe_through :api_authenticated
-
-    post "/logout", AuthController, :logout
-    post "/switch-context", AuthController, :switch_context
-    get "/contexts", AuthController, :list_contexts
-  end
-
-  # PUBLIC INVITATION ENDPOINTS
 
   scope "/api/invitations", EasyWeb do
     pipe_through :api
@@ -53,15 +36,11 @@ defmodule EasyWeb.Router do
     post "/:token_id/accept", ClientController, :accept_invitation
   end
 
-  # AUTHENTICATED ONBOARDING ENDPOINTS
-
   scope "/api/onboarding", EasyWeb do
     pipe_through :api_authenticated
 
     post "/business", OnboardingController, :create_business
   end
-
-  # AUTHENTICATED BUSINESS ENDPOINTS
 
   scope "/api/businesses", EasyWeb do
     pipe_through :api_authenticated

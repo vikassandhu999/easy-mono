@@ -6,16 +6,12 @@ defmodule EasyWeb.RecipeController do
 
   @spec index(any(), map()) :: {:error, :forbidden} | Plug.Conn.t()
   def index(conn, params) do
-    scope = conn.assigns.scope
-
-    with {:ok, business_id} <- extract_business_id(scope),
-         {:ok, _coach_id} <- extract_coach_id(scope) do
-      # Parse query parameters
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"] do
       limit = min(parse_int(params["limit"], 50), 100)
       offset = parse_int(params["offset"], 0)
       status = params["status"] || "active"
 
-      # Handle search if provided
       recipes =
         case params["search"] do
           nil ->
@@ -41,45 +37,10 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  @doc """
-  POST /api/recipes
-
-  Creates a new recipe in the business.
-
-  ## Request Body
-  ```json
-  {
-    "name": "Grilled Chicken",
-    "description": "Healthy grilled chicken breast",
-    "instructions": "Season and grill for 6-8 minutes per side",
-    "prep_time_minutes": 30,
-    "servings": 4,
-    "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
-    "total_calories": 350,
-    "total_protein": 45,
-    "total_carbohydrates": 5,
-    "total_fats": 15,
-    "total_fiber": 1
-  }
-  ```
-
-  ## Response (201)
-  ```json
-  {
-    "recipe": {
-      "id": "uuid",
-      "name": "Grilled Chicken",
-      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
-      ...
-    }
-  }
-  ```
-  """
   def create(conn, params) do
-    scope = conn.assigns.scope
-
-    with {:ok, business_id} <- extract_business_id(scope),
-         {:ok, coach_id} <- extract_coach_id(scope) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         coach_id <- claims["coach_id"] do
       attrs = extract_recipe_attrs(params)
 
       case Nutrition.create_recipe(business_id, coach_id, attrs) do
@@ -97,25 +58,6 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  @doc """
-  GET /api/recipes/:id
-
-  Shows a single recipe with embedded ingredients.
-
-  ## Response (200)
-  ```json
-  {
-    "recipe": {
-      "id": "uuid",
-      "name": "Grilled Chicken",
-      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
-      "total_calories": "350.00",
-      "total_protein": "45.00",
-      ...
-    }
-  }
-  ```
-  """
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -226,24 +168,6 @@ defmodule EasyWeb.RecipeController do
           {:error, reason}
       end
     end
-  end
-
-  defp extract_business_id(%Easy.Auth.Scope{business_id: business_id})
-       when not is_nil(business_id) do
-    {:ok, business_id}
-  end
-
-  defp extract_business_id(_) do
-    {:error,
-     ApiError.forbidden("You must have an active business context to access this resource")}
-  end
-
-  defp extract_coach_id(%Easy.Auth.Scope{coach_id: coach_id}) when not is_nil(coach_id) do
-    {:ok, coach_id}
-  end
-
-  defp extract_coach_id(_) do
-    {:error, ApiError.forbidden("You must be a coach to access this resource")}
   end
 
   defp get_coach_for_user(user) do

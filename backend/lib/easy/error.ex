@@ -25,21 +25,21 @@ defmodule Easy.Error do
   # --- Public-Facing Error Helpers ---
 
   @doc "404 Not Found"
-  def not_found(detail_map \\ %{}) do
+  def not_found(message \\ "The requested resource was not found.", detail_map \\ %{}) do
     new(
       :not_found,
-      "The requested resource was not found.",
+      message,
       detail_map,
       :not_found
     )
   end
 
   @doc "403 Forbidden"
-  def unauthorized(detail_map \\ %{}) do
+  def unauthorized(message \\ "Insufficient permissions to perform this action.") do
     new(
       :unauthorized,
-      "You are not authorized to perform this action.",
-      detail_map,
+      message,
+      %{},
       :forbidden
     )
   end

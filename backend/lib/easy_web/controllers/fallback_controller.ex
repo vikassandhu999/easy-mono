@@ -39,4 +39,15 @@ defmodule EasyWeb.FallbackController do
        Easy.Error.new(:internal_error, "An internal error occurred", %{}, :internal_server_error)}
     )
   end
+
+  def send_unauthorized_response(
+        conn,
+        message \\ "Insufficient permissions to perform this action."
+      ) do
+    call(conn, {:error, Easy.Error.unauthorized(message)})
+  end
+
+  def not_found_response(conn, message \\ "The requested resource was not found.") do
+    call(conn, {:error, Easy.Error.not_found(message)})
+  end
 end

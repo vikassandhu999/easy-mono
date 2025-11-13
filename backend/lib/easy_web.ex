@@ -37,7 +37,7 @@ defmodule EasyWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, formats: [:json]
+      use Phoenix.Controller, formats: [:json], renderer: EasyWeb.AppJSON
 
       import Plug.Conn
 

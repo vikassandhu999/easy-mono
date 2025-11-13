@@ -11,10 +11,7 @@ defmodule EasyWeb.Plugs.Authenticate do
       assign(conn, :token_claims, claims)
     else
       _ ->
-        FallbackController.call(
-          conn,
-          {:error, Easy.Error.unauthorized("Invalid or missing token.")}
-        )
+        FallbackController.send_unauthorized_response(conn)
     end
   end
 end

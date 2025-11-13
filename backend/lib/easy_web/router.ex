@@ -27,6 +27,13 @@ defmodule EasyWeb.Router do
     post "/verify", AuthController, :verify
     post "/send-login-code", AuthController, :send_login_code
     post "/token", AuthController, :token
+    post "/me", AuthController, :me
+  end
+
+  scope "/api/auth", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/me", AuthController, :me
   end
 
   scope "/api/invitations", EasyWeb do

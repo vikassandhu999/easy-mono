@@ -109,15 +109,13 @@ defmodule Easy.Accounts do
     coach =
       Repo.one(
         from c in Coach,
-          where: c.user_id == ^user.id and c.business_id == ^session.business_id,
-          limit: 1
+          where: c.user_id == ^user.id and c.business_id == ^session.business_id
       )
 
     client =
       Repo.one(
         from c in Client,
-          where: c.user_id == ^user.id and c.business_id == ^session.business_id,
-          limit: 1
+          where: c.user_id == ^user.id and c.business_id == ^session.business_id
       )
 
     case {coach, client} do
@@ -267,7 +265,7 @@ defmodule Easy.Accounts do
     end
   end
 
-  defp get_coach_by_user(user) do
+  def get_coach_by_user(user) do
     Repo.one(
       from c in Coach,
         where: c.user_id == ^user.id,

@@ -1,4 +1,6 @@
 defmodule EasyWeb.AuthController do
+  alias Easy.Coaches
+  alias Easy.Repo
   use EasyWeb, :controller
 
   alias EasyWeb.Registration
@@ -110,5 +112,39 @@ defmodule EasyWeb.AuthController do
 
   def token(_conn, _params) do
     {:error, Error.unprocessable("code or refresh_token is required")}
+  end
+
+  def me(conn, _params) do
+    with claims <- conn.assigns.token_claims,
+         user_id <- claims["sub"],
+         %Accounts.User{} = user <- Repo.get(Accounts.User, user_id),
+         %Coaches.Coach{} = coach <-
+           Accounts.get_coach_by_user(user) do
+      response = %{
+        user: %{
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name
+        }
+      }
+
+      response =
+        if coach.business_id do
+          Map.merge(response, %{
+            coach: %{
+              id: coach.id,
+              business_id: coach.business_id
+            }
+          })
+        else
+          response
+        end
+
+      conn
+      |> put_status(:ok)
+      |> json(response)
+      |> halt()
+    end
   end
 end

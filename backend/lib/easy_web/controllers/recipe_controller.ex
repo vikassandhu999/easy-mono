@@ -1,33 +1,42 @@
 defmodule EasyWeb.RecipeController do
+  import Ecto.Query, warn: false
+
+  alias Easy.Nutrition.Recipe
+  alias Easy.Repo
+  alias EasyWeb.FallbackController
   use EasyWeb, :controller
 
-  alias Easy.{Nutrition, ApiError}
-  alias EasyWeb.Authorization
+  plug :authorize_resource when action in [:show, :update, :delete]
 
-  @spec index(any(), map()) :: {:error, :forbidden} | Plug.Conn.t()
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"] do
-      limit = min(parse_int(params["limit"], 50), 100)
-      offset = parse_int(params["offset"], 0)
+      limit = String.to_integer(params["limit"] || "50") |> min(100)
+      offset = String.to_integer(params["offset"] || "0")
       status = params["status"] || "active"
+      search_query = params["search"]
+
+      query =
+        from r in Recipe,
+          where: r.business_id == ^business_id and r.status == ^status
+
+      query =
+        if search_query do
+          from r in query, where: ilike(r.name, ^"%#{search_query}%")
+        else
+          query
+        end
 
       recipes =
-        case params["search"] do
-          nil ->
-            Nutrition.list_recipes(business_id, limit: limit, offset: offset, status: status)
-
-          search_query when is_binary(search_query) and search_query != "" ->
-            Nutrition.search_recipes(business_id, search_query)
-
-          _ ->
-            Nutrition.list_recipes(business_id, limit: limit, offset: offset, status: status)
-        end
+        query
+        |> offset(^offset)
+        |> limit(^limit)
+        |> Repo.all()
 
       conn
       |> put_status(:ok)
-      |> json(%{
-        recipes: Enum.map(recipes, &format_recipe/1),
+      |> render(:index, %{
+        recipes: recipes,
         meta: %{
           limit: limit,
           offset: offset,
@@ -37,259 +46,57 @@ defmodule EasyWeb.RecipeController do
     end
   end
 
-  def create(conn, params) do
+  def create(conn, _params) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
-         coach_id <- claims["coach_id"] do
-      attrs = extract_recipe_attrs(params)
-
-      case Nutrition.create_recipe(business_id, coach_id, attrs) do
-        {:ok, recipe} ->
-          conn
-          |> put_status(:created)
-          |> json(%{recipe: format_recipe(recipe)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+         coach_id <- claims["coach_id"],
+         attrs_with_ids =
+           conn.body_params
+           |> Map.put("business_id", business_id)
+           |> Map.put("created_by_id", coach_id),
+         {:ok, recipe} <-
+           %Recipe{}
+           |> Recipe.create_changeset(attrs_with_ids)
+           |> Repo.insert() do
+      conn
+      |> put_status(:created)
+      |> render(:create, %{recipe: recipe})
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    current_user = conn.assigns.current_user
+  def show(conn, _params) do
+    conn
+    |> put_status(:ok)
+    |> render(:update, %{recipe: conn.assigns.recipe})
+  end
 
-    with {:ok, _coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
+  def update(conn, _params) do
+    with {:ok, updated_recipe} <-
+           conn.assigns.recipe |> Recipe.update_changeset(conn.body_params) |> Repo.update() do
       conn
       |> put_status(:ok)
-      |> json(%{recipe: format_recipe(recipe)})
+      |> render(:update, %{recipe: updated_recipe})
     end
   end
 
-  @doc """
-  PATCH /api/recipes/:id
+  def delete(conn, _params) do
+    recipe = conn.assigns.recipe
 
-  Updates a recipe.
-
-  ## Request Body
-  ```json
-  {
-    "name": "Updated Recipe Name",
-    "servings": 6,
-    "ingredients": ["Chicken Breast", "Olive Oil", "Garlic"]
-  }
-  ```
-
-  ## Response (200)
-  ```json
-  {
-    "recipe": {
-      "id": "uuid",
-      "name": "Updated Recipe Name",
-      "ingredients": ["Chicken Breast", "Olive Oil", "Garlic"],
-      ...
-    }
-  }
-  ```
-  """
-  def update(conn, %{"id" => id} = params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
-      attrs = extract_recipe_attrs(params)
-
-      case Nutrition.update_recipe(recipe, coach.id, attrs) do
-        {:ok, updated_recipe} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{recipe: format_recipe(updated_recipe)})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:error, changeset}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+    with {:ok, _deleted_recipe} <-
+           recipe |> Repo.delete() do
+      send_resp(conn, :no_content, "")
     end
   end
 
-  @doc """
-  DELETE /api/recipes/:id
-
-  Deletes a recipe.
-
-  Prevents deletion if the recipe is used in any meals.
-
-  ## Response (200)
-  ```json
-  {
-    "message": "Recipe deleted successfully"
-  }
-  ```
-
-  ## Error Response (422)
-  ```json
-  {
-    "error": {
-      "message": "Cannot delete recipe that is used in meals",
-      "code": "RECIPE_IN_USE"
-    }
-  }
-  ```
-  """
-  def delete(conn, %{"id" => id}) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, coach} <- get_coach_for_user(current_user),
-         {:ok, recipe} <- fetch_recipe(id),
-         :ok <- Authorization.user_is_coach_in_business?(current_user, recipe.business_id) do
-      case Nutrition.delete_recipe(recipe, coach.id) do
-        {:ok, _deleted_recipe} ->
-          conn
-          |> put_status(:ok)
-          |> json(%{message: "Recipe deleted successfully"})
-
-        {:error, :recipe_in_use} ->
-          error =
-            ApiError.unprocessable_entity(
-              "Cannot delete recipe that is used in meals",
-              %{code: "RECIPE_IN_USE"}
-            )
-
-          {:error, error}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  defp get_coach_for_user(user) do
-    case user.coach do
-      nil -> {:error, :forbidden}
-      coach -> {:ok, coach}
-    end
-  end
-
-  defp fetch_recipe(id, preload \\ []) do
-    case Nutrition.get_recipe(id, preload) do
-      nil -> {:error, :not_found}
-      recipe -> {:ok, recipe}
-    end
-  end
-
-  defp extract_recipe_attrs(params) do
-    %{}
-    |> put_if_present(params, "name", :name)
-    |> put_if_present(params, "description", :description)
-    |> put_if_present(params, "instructions", :instructions)
-    |> put_int_if_present(params, "prep_time_minutes", :prep_time_minutes)
-    |> put_int_if_present(params, "servings", :servings)
-    |> put_array_if_present(params, "ingredients", :ingredients)
-    |> put_decimal_if_present(params, "total_calories", :total_calories)
-    |> put_decimal_if_present(params, "total_protein", :total_protein)
-    |> put_decimal_if_present(params, "total_carbohydrates", :total_carbohydrates)
-    |> put_decimal_if_present(params, "total_fats", :total_fats)
-    |> put_decimal_if_present(params, "total_fiber", :total_fiber)
-    |> put_if_present(params, "status", :status)
-  end
-
-  # Puts a value in the map if it's present in params
-  defp put_if_present(map, params, key, atom_key) do
-    case Map.get(params, key) do
-      nil -> map
-      value -> Map.put(map, atom_key, value)
-    end
-  end
-
-  # Puts an integer value in the map if it's present in params
-  defp put_int_if_present(map, params, key, atom_key) do
-    case Map.get(params, key) do
-      nil ->
-        map
-
-      value when is_integer(value) ->
-        Map.put(map, atom_key, value)
-
-      value when is_binary(value) ->
-        case Integer.parse(value) do
-          {int, _} -> Map.put(map, atom_key, int)
-          :error -> map
-        end
-
+  defp authorize_resource(conn, _opts) do
+    with %{"id" => id} <- conn.params,
+         %{"business_id" => business_id} <- conn.assigns.token_claims,
+         %Recipe{} = recipe <-
+           Repo.one(from(r in Recipe, where: r.id == ^id and r.business_id == ^business_id)) do
+      assign(conn, :recipe, recipe)
+    else
       _ ->
-        map
+        FallbackController.not_found_response(conn, "Recipe not found.")
     end
-  end
-
-  # Puts a decimal value in the map if it's present in params
-  defp put_decimal_if_present(map, params, key, atom_key) do
-    case Map.get(params, key) do
-      nil ->
-        map
-
-      value when is_number(value) ->
-        Map.put(map, atom_key, Decimal.new(to_string(value)))
-
-      value when is_binary(value) ->
-        case Decimal.parse(value) do
-          {decimal, _} -> Map.put(map, atom_key, decimal)
-          :error -> map
-        end
-
-      _ ->
-        map
-    end
-  end
-
-  # Puts an array value in the map if it's present in params
-  defp put_array_if_present(map, params, key, atom_key) do
-    case Map.get(params, key) do
-      nil -> map
-      value when is_list(value) -> Map.put(map, atom_key, value)
-      _ -> map
-    end
-  end
-
-  # Parses an integer from a string or returns default
-  defp parse_int(nil, default), do: default
-  defp parse_int(value, _default) when is_integer(value), do: value
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, _} -> int
-      :error -> default
-    end
-  end
-
-  defp parse_int(_, default), do: default
-
-  # Formats a recipe for JSON response
-  defp format_recipe(recipe) do
-    %{
-      id: recipe.id,
-      name: recipe.name,
-      description: recipe.description,
-      instructions: recipe.instructions,
-      prep_time_minutes: recipe.prep_time_minutes,
-      servings: recipe.servings,
-      ingredients: recipe.ingredients || [],
-      total_calories: recipe.total_calories,
-      total_protein: recipe.total_protein,
-      total_carbohydrates: recipe.total_carbohydrates,
-      total_fats: recipe.total_fats,
-      total_fiber: recipe.total_fiber,
-      status: recipe.status,
-      business_id: recipe.business_id,
-      created_by_id: recipe.created_by_id,
-      inserted_at: recipe.inserted_at,
-      updated_at: recipe.updated_at
-    }
   end
 end

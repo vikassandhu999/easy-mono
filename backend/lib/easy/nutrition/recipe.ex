@@ -1,50 +1,4 @@
 defmodule Easy.Nutrition.Recipe do
-  @moduledoc """
-  Recipe schema representing a reusable collection of ingredients with preparation instructions.
-
-  ## Overview
-
-  Recipes are reusable across meals within a business context. Each recipe contains:
-  - Basic information (name, description, instructions)
-  - Embedded ingredient names as a PostgreSQL text array
-  - Manually entered nutritional totals
-  - Serving information and preparation time
-
-  ## Embedded Ingredients
-
-  Ingredients are stored as a simple text array (`TEXT[]` in PostgreSQL) containing
-  ingredient names only. This eliminates the need for separate ingredient tables
-  and join tables.
-
-  Example:
-  ```elixir
-  %Recipe{
-    name: "Grilled Chicken",
-    ingredients: ["Chicken Breast", "Olive Oil", "Garlic", "Salt", "Pepper"],
-    servings: 4
-  }
-  ```
-
-  ## Ingredient Validation
-
-  The system validates that:
-  - Each ingredient is a non-empty string
-  - Each ingredient name is maximum 255 characters
-  - Whitespace is automatically trimmed from ingredient names
-  - Duplicate ingredient names are allowed
-
-  ## Manual Nutrition Entry
-
-  Nutritional values (calories, protein, carbohydrates, fats, fiber) are manually
-  entered by coaches when creating or updating recipes. The system does not perform
-  automatic calculations based on ingredients.
-
-  ## Status
-
-  Recipes can be:
-  - `"active"` - Available for use in meals (default)
-  - `"archived"` - Hidden from normal listings but preserved for historical data
-  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -58,10 +12,8 @@ defmodule Easy.Nutrition.Recipe do
     field :prep_time_minutes, :integer
     field :servings, :integer, default: 1
 
-    # Embedded ingredients as text array
     field :ingredients, {:array, :string}, default: []
 
-    # Manually entered nutritional totals
     field :total_calories, :decimal
     field :total_protein, :decimal
     field :total_carbohydrates, :decimal
@@ -82,56 +34,6 @@ defmodule Easy.Nutrition.Recipe do
 
   @valid_statuses ~w(active archived)
 
-  @doc """
-  Changeset for creating a new recipe.
-
-  ## Required Fields
-  - business_id: UUID of the business
-  - created_by_id: UUID of the coach creating the recipe
-  - name: Recipe name (1-255 characters)
-
-  ## Optional Fields
-  - description: Recipe description
-  - instructions: Preparation instructions
-  - prep_time_minutes: Preparation time (non-negative integer)
-  - servings: Number of servings (positive integer, default: 1)
-  - ingredients: Array of ingredient names (list of strings)
-  - total_calories: Manual calorie entry (non-negative decimal)
-  - total_protein: Manual protein entry (non-negative decimal)
-  - total_carbohydrates: Manual carbs entry (non-negative decimal)
-  - total_fats: Manual fats entry (non-negative decimal)
-  - total_fiber: Manual fiber entry (non-negative decimal)
-  - status: Recipe status ("active" or "archived", default: "active")
-
-  ## Validations
-  - Servings must be a positive integer
-  - Prep time must be a non-negative integer
-  - Ingredients must be a list of non-empty strings (max 255 chars each)
-  - Nutritional values must be non-negative decimals
-  - Status must be "active" or "archived"
-
-  ## Examples
-
-      # Create with embedded ingredients
-      iex> create_changeset(%Recipe{}, %{
-      ...>   business_id: business_id,
-      ...>   created_by_id: coach_id,
-      ...>   name: "Grilled Chicken",
-      ...>   ingredients: ["Chicken Breast", "Olive Oil", "Garlic"],
-      ...>   servings: 4,
-      ...>   total_calories: Decimal.new("350")
-      ...> })
-      %Ecto.Changeset{valid?: true}
-
-      # Invalid: empty ingredient name
-      iex> create_changeset(%Recipe{}, %{
-      ...>   business_id: business_id,
-      ...>   created_by_id: coach_id,
-      ...>   name: "Recipe",
-      ...>   ingredients: ["Valid", ""]
-      ...> })
-      %Ecto.Changeset{valid?: false, errors: [ingredients: {"must contain non-empty strings...", []}]}
-  """
   def create_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, [
@@ -162,45 +64,6 @@ defmodule Easy.Nutrition.Recipe do
     |> foreign_key_constraint(:created_by_id)
   end
 
-  @doc """
-  Changeset for updating a recipe.
-
-  Allows updating all fields except business_id and created_by_id.
-  When updating ingredients, the entire array is replaced.
-
-  ## Updatable Fields
-  - name: Recipe name
-  - description: Recipe description
-  - instructions: Preparation instructions
-  - prep_time_minutes: Preparation time
-  - servings: Number of servings
-  - ingredients: Array of ingredient names (replaces entire array)
-  - total_calories: Manual calorie entry
-  - total_protein: Manual protein entry
-  - total_carbohydrates: Manual carbs entry
-  - total_fats: Manual fats entry
-  - total_fiber: Manual fiber entry
-  - status: Recipe status
-
-  ## Examples
-
-      # Update ingredients (replaces entire array)
-      iex> update_changeset(recipe, %{
-      ...>   ingredients: ["New Ingredient 1", "New Ingredient 2"]
-      ...> })
-      %Ecto.Changeset{valid?: true}
-
-      # Update nutritional values
-      iex> update_changeset(recipe, %{
-      ...>   total_calories: Decimal.new("400"),
-      ...>   total_protein: Decimal.new("50")
-      ...> })
-      %Ecto.Changeset{valid?: true}
-
-      # Invalid: negative servings
-      iex> update_changeset(recipe, %{servings: -1})
-      %Ecto.Changeset{valid?: false, errors: [servings: {"must be a positive integer", []}]}
-  """
   def update_changeset(recipe, attrs) do
     recipe
     |> cast(attrs, [

@@ -6,28 +6,28 @@ defmodule Easy.Nutrition.Recipe do
   @foreign_key_type :binary_id
 
   schema "recipes" do
-    field :name, :string
-    field :description, :string
-    field :instructions, :string
-    field :prep_time_minutes, :integer
-    field :servings, :integer, default: 1
+    field(:name, :string)
+    field(:description, :string)
+    field(:instructions, :string)
+    field(:prep_time_minutes, :integer)
+    field(:servings, :integer, default: 1)
 
-    field :ingredients, {:array, :string}, default: []
+    field(:ingredients, {:array, :map}, default: [])
 
-    field :total_calories, :decimal
-    field :total_protein, :decimal
-    field :total_carbohydrates, :decimal
-    field :total_fats, :decimal
-    field :total_fiber, :decimal
+    field(:total_calories, :decimal)
+    field(:total_protein, :decimal)
+    field(:total_carbohydrates, :decimal)
+    field(:total_fats, :decimal)
+    field(:total_fiber, :decimal)
 
     # Metadata
-    field :status, :string, default: "active"
+    field(:status, :string, default: "active")
 
-    belongs_to :business, Easy.Organizations.Business
-    belongs_to :created_by, Easy.Coaches.Coach
+    belongs_to(:business, Easy.Organizations.Business)
+    belongs_to(:created_by, Easy.Coaches.Coach)
 
     # Relationships
-    has_many :meal_recipes, Easy.Nutrition.MealRecipe
+    has_many(:meal_recipes, Easy.Nutrition.MealRecipe)
 
     timestamps()
   end
@@ -119,32 +119,71 @@ defmodule Easy.Nutrition.Recipe do
         changeset
 
       ingredients when is_list(ingredients) ->
-        # Trim whitespace from all ingredient names
-        cleaned =
+        # Validate each ingredient is a map with required fields
+        validated =
           Enum.map(ingredients, fn
-            name when is_binary(name) -> String.trim(name)
-            _ -> nil
+            %{"name" => name, "quantity" => quantity, "unit" => unit} = _ingredient
+            when is_binary(name) and (is_number(quantity) or is_binary(quantity)) and
+                   is_binary(unit) ->
+              %{
+                "name" => String.trim(name),
+                "quantity" => normalize_quantity(quantity),
+                "unit" => String.trim(unit)
+              }
+
+            %{name: name, quantity: quantity, unit: unit} = _ingredient
+            when is_binary(name) and (is_number(quantity) or is_binary(quantity)) and
+                   is_binary(unit) ->
+              %{
+                "name" => String.trim(name),
+                "quantity" => normalize_quantity(quantity),
+                "unit" => String.trim(unit)
+              }
+
+            _ ->
+              nil
           end)
 
-        # Check for invalid ingredients (non-strings, empty, or too long)
-        errors =
-          Enum.filter(cleaned, fn
-            nil -> true
-            name -> String.length(name) == 0 or String.length(name) > 255
-          end)
-
-        if Enum.empty?(errors) do
-          put_change(changeset, :ingredients, cleaned)
-        else
+        # Check for invalid ingredients
+        if Enum.any?(validated, &is_nil/1) do
           add_error(
             changeset,
             :ingredients,
-            "must contain non-empty strings with maximum length of 255 characters"
+            "must be a list of maps with name, quantity, and unit fields"
           )
+        else
+          # Validate all ingredients have non-empty values
+          invalid =
+            Enum.any?(validated, fn ingredient ->
+              ingredient["name"] == "" or
+                ingredient["quantity"] < 0 or
+                ingredient["unit"] == "" or
+                String.length(ingredient["name"]) > 255 or
+                String.length(ingredient["unit"]) > 50
+            end)
+
+          if invalid do
+            add_error(
+              changeset,
+              :ingredients,
+              "ingredients must have non-empty name and unit, quantity >= 0, name <= 255 chars, unit <= 50 chars"
+            )
+          else
+            put_change(changeset, :ingredients, validated)
+          end
         end
 
       _ ->
-        add_error(changeset, :ingredients, "must be a list of strings")
+        add_error(changeset, :ingredients, "must be a list of ingredient maps")
+    end
+  end
+
+  defp normalize_quantity(quantity) when is_number(quantity), do: quantity
+
+  defp normalize_quantity(quantity) when is_binary(quantity) do
+    case Float.parse(quantity) do
+      {num, _} -> num
+      :error -> 0
     end
   end
 

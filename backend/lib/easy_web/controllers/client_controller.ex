@@ -4,88 +4,6 @@ defmodule EasyWeb.ClientController do
   alias Easy.{Clients, Coaches, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  @moduledoc """
-  Client controller for managing client resources and invitations.
-
-  Handles:
-  - POST /api/clients/invite - Create client invitation (coach authorization)
-  - GET /api/invitations/:token - Validate invitation token (public)
-  - POST /api/invitations/:token/accept - Accept invitation and send OTP (public)
-  """
-
-  @doc """
-  POST /api/clients/invite
-
-  Creates a client invitation. The coach invites a client to join their business.
-
-  ## Authorization
-  User must be a coach in a business.
-
-  ## Parameters
-  - email: Client's email address (required)
-  - full_name: Client's full name (required)
-  - phone: Client's phone number (optional)
-  - notes: Notes about the client (optional)
-
-  ## Response
-
-  Success (201):
-  ```json
-  {
-    "client": {
-      "id": "202",
-      "email": "client@example.com",
-      "full_name": "Jane Client",
-      "phone": "+1234567890",
-      "status": "pending",
-      "business_id": "456"
-    },
-    "invitation": {
-      "token_id": "550e8400-e29b-41d4-a716-446655440000",
-      "invitation_url": "https://app.example.com/invite/550e8400-...",
-      "expires_at": "2024-01-08T12:00:00Z"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (422):
-  ```json
-  {
-    "error": {
-      "message": "Validation failed",
-      "code": "validation_error",
-      "details": {
-        "email": ["has already been taken"]
-      }
-    }
-  }
-  ```
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "You must be a coach to invite clients",
-      "code": "forbidden"
-    }
-  }
-  ```
-
-  Rate limit (429):
-  ```json
-  {
-    "error": {
-      "message": "Too many invitation requests. Please try again later.",
-      "code": "rate_limit_exceeded",
-      "details": {
-        "retry_after": 300
-      }
-    }
-  }
-  ```
-  """
   def invite(conn, params) do
     scope = conn.assigns[:scope]
 
@@ -134,71 +52,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  GET /api/invitations/:token_id
-
-  Validates an invitation token and returns invitation details.
-  This is a public endpoint (no authentication required).
-
-  ## Parameters
-  - token_id: The invitation token UUID (in URL path)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "invitation": {
-      "token_id": "550e8400-e29b-41d4-a716-446655440000",
-      "status": "valid",
-      "expires_at": "2024-01-08T12:00:00Z"
-    },
-    "client": {
-      "email": "client@example.com",
-      "full_name": "Jane Client"
-    },
-    "business": {
-      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-      "name": "Coaching Pro"
-    },
-    "inviting_coach": {
-      "full_name": "John Coach"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Invalid token (404):
-  ```json
-  {
-    "error": {
-      "message": "Invitation not found or invalid",
-      "code": "not_found"
-    }
-  }
-  ```
-
-  Token expired (410):
-  ```json
-  {
-    "error": {
-      "message": "This invitation has expired",
-      "code": "invitation_expired"
-    }
-  }
-  ```
-
-  Token used (410):
-  ```json
-  {
-    "error": {
-      "message": "This invitation has already been used",
-      "code": "invitation_used"
-    }
-  }
-  ```
-  """
   def show_invitation(conn, %{"token_id" => token_id}) do
     case Clients.get_invitation(token_id) do
       {:ok, %{token: token, client: client}} ->
@@ -246,86 +99,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  POST /api/invitations/:token_id/accept
-
-  Accepts an invitation and completes client registration with OTP verification.
-  This combines the previous "accept" and "complete" steps into a single endpoint.
-  This is a public endpoint (no authentication required).
-
-  ## Parameters
-  - token_id: The invitation token UUID (in URL path)
-  - code: The 6-digit OTP code sent to the client's email (in request body)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "user": {
-      "id": "b8c9d0e1-f2a3-4567-1234-567890123456",
-      "email": "client@example.com",
-      "full_name": "Jane Client",
-      "email_verified": true,
-      "roles": ["client"],
-      "client_profile": {
-        "id": "f6a7b8c9-d0e1-2345-f012-345678901234",
-        "business_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-        "status": "active",
-        "assigned_coaches": [
-          {
-            "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-            "user": {
-              "full_name": "John Coach"
-            }
-          }
-        ]
-      }
-    },
-    "session": {
-      "access_token": "eyJhbGc...",
-      "refresh_token": "eyJhbGc...",
-      "expires_at": "2024-01-08T12:00:00Z",
-      "expires_in": 604800
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Invalid token (404):
-  ```json
-  {
-    "error": {
-      "message": "Invitation not found or invalid",
-      "code": "not_found"
-    }
-  }
-  ```
-
-  Token expired (410):
-  ```json
-  {
-    "error": {
-      "message": "This invitation has expired",
-      "code": "invitation_expired"
-    }
-  }
-  ```
-
-  Invalid OTP (400):
-  ```json
-  {
-    "error": {
-      "message": "The provided code is invalid or has expired",
-      "code": "invalid_otp",
-      "details": {
-        "attempts_remaining": 2
-      }
-    }
-  }
-  ```
-  """
   def accept_invitation(conn, %{"token_id" => token_id, "code" => code}) do
     case Clients.complete_client_registration(token_id, code) do
       {:ok, %{user: user, client: client, session: session_data}} ->
@@ -454,54 +227,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  GET /api/clients/:id
-
-  Retrieves client details.
-
-  ## Authorization
-  User must be a coach in the same business as the client, or the client themselves.
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "client": {
-      "id": "202",
-      "email": "client@example.com",
-      "full_name": "Jane Client",
-      "phone": "+1234567890",
-      "status": "active",
-      "business_id": "456",
-      "notes": "Some notes",
-      "user_id": "303"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Not found (404):
-  ```json
-  {
-    "error": {
-      "message": "Client not found",
-      "code": "not_found"
-    }
-  }
-  ```
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "You do not have permission to access this client",
-      "code": "forbidden"
-    }
-  }
-  ```
-  """
   def show(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
 
@@ -520,61 +245,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  PATCH /api/clients/:id
-
-  Updates client information.
-
-  ## Authorization
-  User must be a coach in the same business as the client.
-
-  ## Parameters
-  - full_name: Client's full name (optional)
-  - phone: Client's phone number (optional)
-  - notes: Notes about the client (optional)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "client": {
-      "id": "202",
-      "email": "client@example.com",
-      "full_name": "Updated Name",
-      "phone": "+1234567890",
-      "status": "active",
-      "business_id": "456",
-      "notes": "Updated notes"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "You do not have permission to update this client",
-      "code": "forbidden"
-    }
-  }
-  ```
-
-  Validation error (422):
-  ```json
-  {
-    "error": {
-      "message": "Validation failed",
-      "code": "validation_error",
-      "details": {
-        "phone": ["is invalid"]
-      }
-    }
-  }
-  ```
-  """
   def update(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
 
@@ -606,55 +276,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  GET /api/clients
-
-  Lists clients with pagination and filtering.
-
-  ## Authorization
-  User must be a coach. Returns clients from the coach's business.
-
-  ## Query Parameters
-  - limit: Number of results per page (default: 50, max: 100)
-  - offset: Number of results to skip (default: 0)
-  - status: Filter by client status (optional)
-  - business_id: Filter by business ID (optional, defaults to user's first coach business)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "clients": [
-      {
-        "id": "202",
-        "email": "client@example.com",
-        "full_name": "Jane Client",
-        "phone": "+1234567890",
-        "status": "active",
-        "business_id": "456"
-      }
-    ],
-    "pagination": {
-      "limit": 50,
-      "offset": 0,
-      "total": 150
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "You must be a coach to list clients",
-      "code": "forbidden"
-    }
-  }
-  ```
-  """
   def index(conn, params) do
     scope = conn.assigns[:scope]
 
@@ -691,37 +312,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  GET /api/clients/:id/coaches
-
-  Lists all coaches assigned to a client.
-
-  ## Authorization
-  User must be a coach in the same business as the client, or the client themselves.
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "coaches": [
-      {
-        "id": "789",
-        "user_id": "123",
-        "business_id": "456",
-        "status": "active",
-        "bio": "Experienced coach",
-        "specialties": ["life coaching"],
-        "user": {
-          "id": "123",
-          "email": "coach@example.com",
-          "full_name": "John Coach"
-        }
-      }
-    ]
-  }
-  ```
-  """
   def list_coaches(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
 
@@ -746,47 +336,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  @doc """
-  PATCH /api/clients/:id/status
-
-  Updates a client's status.
-
-  ## Authorization
-  User must be a coach in the same business as the client.
-
-  ## Parameters
-  - status: The new status ("pending", "active", "inactive", "archived")
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "client": {
-      "id": "202",
-      "email": "client@example.com",
-      "full_name": "Jane Client",
-      "status": "inactive",
-      "business_id": "456"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Validation error (422):
-  ```json
-  {
-    "error": {
-      "message": "Validation failed",
-      "code": "validation_error",
-      "details": {
-        "status": ["is invalid"]
-      }
-    }
-  }
-  ```
-  """
   def update_status(conn, %{"id" => id, "status" => status}) do
     scope = conn.assigns[:scope]
 
@@ -840,7 +389,6 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  # Builds the invitation URL
   defp build_invitation_url(conn, token_uuid) do
     # For now, we'll use a placeholder URL
     # In production, this should use the actual frontend URL from config
@@ -848,13 +396,11 @@ defmodule EasyWeb.ClientController do
     "#{base_url}/invite/#{token_uuid}"
   end
 
-  # Gets the base URL for the application
   defp get_base_url(conn) do
     scheme = conn.scheme |> to_string()
     host = conn.host
     port = conn.port
 
-    # Don't include port for standard ports
     port_string =
       case {scheme, port} do
         {"http", 80} -> ""
@@ -865,7 +411,6 @@ defmodule EasyWeb.ClientController do
     "#{scheme}://#{host}#{port_string}"
   end
 
-  # Parses limit parameter with validation
   defp parse_limit(nil), do: 50
 
   defp parse_limit(limit) when is_binary(limit) do
@@ -878,7 +423,6 @@ defmodule EasyWeb.ClientController do
   defp parse_limit(limit) when is_integer(limit) and limit > 0 and limit <= 100, do: limit
   defp parse_limit(_), do: 50
 
-  # Parses offset parameter with validation
   defp parse_offset(nil), do: 0
 
   defp parse_offset(offset) when is_binary(offset) do
@@ -891,13 +435,10 @@ defmodule EasyWeb.ClientController do
   defp parse_offset(offset) when is_integer(offset) and offset >= 0, do: offset
   defp parse_offset(_), do: 0
 
-  # Formats client for JSON response
   defp format_client(client), do: ResponseHelpers.format_client(client)
 
-  # Formats coach for JSON response
   defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
 
-  # Renders an API error response
   defp render_error(conn, %ApiError{} = error) do
     conn = maybe_add_headers(conn, error)
 
@@ -906,7 +447,6 @@ defmodule EasyWeb.ClientController do
     |> json(ApiError.to_json(error))
   end
 
-  # Adds headers from ApiError to the connection if present
   defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
 
   defp maybe_add_headers(conn, %ApiError{headers: headers}) do

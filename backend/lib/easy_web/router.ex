@@ -59,8 +59,6 @@ defmodule EasyWeb.Router do
     get "/:id/subscription", BusinessController, :show_subscription
   end
 
-  # AUTHENTICATED COACH ENDPOINTS
-
   scope "/api/coaches", EasyWeb do
     pipe_through :api_authenticated
 
@@ -70,8 +68,6 @@ defmodule EasyWeb.Router do
     post "/:id/clients/:client_id/assign", CoachController, :assign_client
     delete "/:id/clients/:client_id/unassign", CoachController, :unassign_client
   end
-
-  # AUTHENTICATED CLIENT ENDPOINTS
 
   scope "/api/clients", EasyWeb do
     pipe_through :api_authenticated
@@ -84,8 +80,6 @@ defmodule EasyWeb.Router do
     patch "/:id/status", ClientController, :update_status
   end
 
-  # AUTHENTICATED NUTRITION ENDPOINTS
-
   scope "/api/recipes", EasyWeb do
     pipe_through :api_authenticated
 
@@ -94,40 +88,5 @@ defmodule EasyWeb.Router do
     get "/:id", RecipeController, :show
     patch "/:id", RecipeController, :update
     delete "/:id", RecipeController, :delete
-  end
-
-  scope "/api/meals", EasyWeb do
-    pipe_through :api_authenticated
-
-    get "/", MealController, :index
-    post "/", MealController, :create
-    get "/:id", MealController, :show
-    patch "/:id", MealController, :update
-    delete "/:id", MealController, :delete
-    post "/:id/duplicate", MealController, :duplicate
-
-    # Meal recipe endpoints
-    post "/:meal_id/recipes", MealController, :add_recipe
-    patch "/:meal_id/recipes/:recipe_id", MealController, :update_recipe
-    delete "/:meal_id/recipes/:recipe_id", MealController, :remove_recipe
-  end
-
-  scope "/api/meal-plans", EasyWeb do
-    pipe_through :api_authenticated
-
-    get "/", MealPlanController, :index
-    post "/", MealPlanController, :create
-    get "/:id", MealPlanController, :show
-    patch "/:id", MealPlanController, :update
-    delete "/:id", MealPlanController, :delete
-    post "/:id/duplicate", MealPlanController, :duplicate
-    post "/:id/publish", MealPlanController, :publish
-    post "/:id/archive", MealPlanController, :archive
-    post "/:id/assign", MealPlanController, :assign_to_client
-
-    # Meal plan meals endpoints
-    post "/:meal_plan_id/meals", MealPlanController, :add_meal
-    patch "/:meal_plan_id/meals/:meal_id", MealPlanController, :update_meal
-    delete "/:meal_plan_id/meals/:meal_id", MealPlanController, :remove_meal
   end
 end

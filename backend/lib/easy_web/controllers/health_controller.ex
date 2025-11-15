@@ -1,10 +1,6 @@
 defmodule EasyWeb.HealthController do
   use EasyWeb, :controller
 
-  @moduledoc """
-  Health check endpoint for monitoring and load balancers.
-  """
-
   def index(conn, _params) do
     conn
     |> put_status(:ok)

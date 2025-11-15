@@ -26,7 +26,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @spec verify_email(any(), any()) :: any()
   def verify_email(token_id, code, expected_type \\ nil) do
     with {:ok, token} <- validate_code(token_id, code, expected_type) do
       Repo.transaction(fn ->
@@ -202,7 +201,6 @@ defmodule Easy.Accounts do
     {:ok, session_attrs, token_roles, token_context}
   end
 
-  # Case 3: Error (neither or both)
   defp determine_session_context(_base_attrs, _, _) do
     {:error, Easy.Error.new("invalid_session", "Session must be for either a coach or a client.")}
   end

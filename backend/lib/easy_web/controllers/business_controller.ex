@@ -4,63 +4,6 @@ defmodule EasyWeb.BusinessController do
   alias Easy.{Organizations, ApiError}
   alias EasyWeb.ResponseHelpers
 
-  @moduledoc """
-  Business controller for managing business resources.
-
-  Handles:
-  - GET /api/businesses/:id - Get business details
-  - PATCH /api/businesses/:id - Update business (owner only)
-  - GET /api/businesses/:id/coaches - List business coaches
-  - GET /api/businesses/:id/clients - List business clients with pagination
-  - GET /api/businesses/:id/subscription - Get business subscription
-  """
-
-  @doc """
-  GET /api/businesses/:id
-
-  Retrieves business details for the authenticated user.
-
-  ## Authorization
-  User must belong to the business (as owner or coach).
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "business": {
-      "id": "456",
-      "name": "Coaching Pro",
-      "slug": "coaching-pro",
-      "description": "Professional coaching services",
-      "owner_id": "123",
-      "status": "active"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Not found (404):
-  ```json
-  {
-    "error": {
-      "message": "Business not found",
-      "code": "not_found"
-    }
-  }
-  ```
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "You do not have permission to access this business",
-      "code": "forbidden"
-    }
-  }
-  ```
-  """
   def show(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
 
@@ -79,59 +22,6 @@ defmodule EasyWeb.BusinessController do
     end
   end
 
-  @doc """
-  PATCH /api/businesses/:id
-
-  Updates business information.
-
-  ## Authorization
-  User must be the business owner.
-
-  ## Parameters
-  - name: Business name (optional)
-  - description: Business description (optional)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "business": {
-      "id": "456",
-      "name": "Updated Name",
-      "slug": "coaching-pro",
-      "description": "Updated description",
-      "owner_id": "123",
-      "status": "active"
-    }
-  }
-  ```
-
-  ## Error Responses
-
-  Forbidden (403):
-  ```json
-  {
-    "error": {
-      "message": "Only the business owner can update business information",
-      "code": "forbidden"
-    }
-  }
-  ```
-
-  Validation error (422):
-  ```json
-  {
-    "error": {
-      "message": "Validation failed",
-      "code": "validation_error",
-      "details": {
-        "name": ["can't be blank"]
-      }
-    }
-  }
-  ```
-  """
   def update(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
 
@@ -163,33 +53,6 @@ defmodule EasyWeb.BusinessController do
     end
   end
 
-  @doc """
-  GET /api/businesses/:id/coaches
-
-  Lists all coaches in the business.
-
-  ## Authorization
-  User must belong to the business.
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "coaches": [
-      {
-        "id": "789",
-        "user_id": "123",
-        "business_id": "456",
-        "status": "active",
-        "bio": "Experienced coach",
-        "specialties": ["life coaching", "career coaching"],
-        "credentials": {}
-      }
-    ]
-  }
-  ```
-  """
   def list_coaches(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
 
@@ -214,42 +77,6 @@ defmodule EasyWeb.BusinessController do
     end
   end
 
-  @doc """
-  GET /api/businesses/:id/clients
-
-  Lists all clients in the business with pagination.
-
-  ## Authorization
-  User must belong to the business.
-
-  ## Query Parameters
-  - limit: Number of results per page (default: 50, max: 100)
-  - offset: Number of results to skip (default: 0)
-  - status: Filter by client status (optional)
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "clients": [
-      {
-        "id": "202",
-        "email": "client@example.com",
-        "full_name": "Jane Client",
-        "phone": "+1234567890",
-        "status": "active",
-        "business_id": "456"
-      }
-    ],
-    "pagination": {
-      "limit": 50,
-      "offset": 0,
-      "total": 150
-    }
-  }
-  ```
-  """
   def list_clients(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
 
@@ -286,48 +113,6 @@ defmodule EasyWeb.BusinessController do
     end
   end
 
-  @doc """
-  GET /api/businesses/:id/subscription
-
-  Retrieves the active subscription for the business.
-
-  ## Authorization
-  User must belong to the business.
-
-  ## Response
-
-  Success (200):
-  ```json
-  {
-    "subscription": {
-      "id": "101",
-      "business_id": "456",
-      "plan_id": "1",
-      "status": "active",
-      "started_at": "2024-01-01T00:00:00Z",
-      "current_period_start": "2024-01-01T00:00:00Z",
-      "current_period_end": "2024-02-01T00:00:00Z",
-      "plan": {
-        "id": "1",
-        "name": "Free",
-        "slug": "free",
-        "price_cents": 0,
-        "billing_interval": "month"
-      }
-    }
-  }
-  ```
-
-  Not found (404):
-  ```json
-  {
-    "error": {
-      "message": "No active subscription found",
-      "code": "not_found"
-    }
-  }
-  ```
-  """
   def show_subscription(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
 
@@ -359,11 +144,6 @@ defmodule EasyWeb.BusinessController do
     end
   end
 
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Parses limit parameter with validation
   defp parse_limit(nil), do: 50
 
   defp parse_limit(limit) when is_binary(limit) do
@@ -376,7 +156,6 @@ defmodule EasyWeb.BusinessController do
   defp parse_limit(limit) when is_integer(limit) and limit > 0 and limit <= 100, do: limit
   defp parse_limit(_), do: 50
 
-  # Parses offset parameter with validation
   defp parse_offset(nil), do: 0
 
   defp parse_offset(offset) when is_binary(offset) do

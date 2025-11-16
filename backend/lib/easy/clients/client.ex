@@ -15,9 +15,6 @@ defmodule Easy.Clients.Client do
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
 
-    many_to_many :coaches, Easy.Organizations.Coach,
-      join_through: Easy.Clients.CoachClientAssignment
-
     timestamps()
   end
 

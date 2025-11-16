@@ -1,5 +1,5 @@
 defmodule Easy.Clients do
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Easy.Repo
   alias Easy.Clients.Client
@@ -237,48 +237,39 @@ defmodule Easy.Clients do
 
   # Generate invitation token without sending email
   defp generate_invitation_token(email, metadata) do
-    # Check rate limit
-    case Accounts.check_rate_limit(email) do
-      {:ok, :allowed} ->
-        # Generate 6-digit OTP code (for later verification)
-        otp_code = generate_otp_code()
+    # Generate 6-digit OTP code (for later verification)
+    otp_code = generate_otp_code()
 
-        # Generate UUID token for invitation links
-        token_uuid = Ecto.UUID.generate()
+    # Generate UUID token for invitation links
+    token_uuid = Ecto.UUID.generate()
 
-        # Set expiration to 7 days for invitations
-        expires_at = DateTime.add(DateTime.utc_now(), 7 * 24 * 60 * 60, :second)
+    # Set expiration to 7 days for invitations
+    expires_at = DateTime.add(DateTime.utc_now(), 7 * 24 * 60 * 60, :second)
 
-        attrs = %{
-          token: token_uuid,
-          code: otp_code,
-          type: "client_invitation",
-          email: email,
-          expires_at: expires_at,
-          metadata: metadata
-        }
+    attrs = %{
+      token: token_uuid,
+      code: otp_code,
+      type: "client_invitation",
+      email: email,
+      expires_at: expires_at,
+      metadata: metadata
+    }
 
-        case %Easy.Accounts.OneTimeToken{}
-             |> Easy.Accounts.OneTimeToken.changeset(attrs)
-             |> Repo.insert() do
-          {:ok, _token} ->
-            {:ok, token_uuid, expires_at}
+    case %Easy.Accounts.OneTimeToken{}
+         |> Easy.Accounts.OneTimeToken.changeset(attrs)
+         |> Repo.insert() do
+      {:ok, _token} ->
+        {:ok, token_uuid, expires_at}
 
-          {:error, changeset} ->
-            {:error, changeset}
-        end
-
-      {:error, :rate_limited, retry_after} ->
-        {:error, :rate_limited, retry_after}
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
-  # Send invitation email with proper template
   defp send_invitation_email(email, token_uuid, coach_name, business_name) do
     email_struct =
       Easy.Emails.client_invitation_email(email, token_uuid, coach_name, business_name)
 
-    # Send email asynchronously with error handling
     Easy.MailerDelivery.deliver_async(email_struct,
       metadata: %{
         type: "client_invitation",
@@ -299,7 +290,11 @@ defmodule Easy.Clients do
   end
 
   def get_invitation(token_uuid) do
-    case Accounts.get_invitation_token(token_uuid) do
+    query =
+      from t in OneTimeToken,
+        where: t.token == ^token_uuid and t.type == "client_invitation" and is_nil(t.used_at)
+
+    case Repo.one(query) do
       nil ->
         {:error, :invalid_token}
 

@@ -8,7 +8,7 @@ defmodule Easy.Nutrition.Recipe do
   schema "recipes" do
     field :name, :string
     field :description, :string
-    field :instructions, :string
+    embeds_one :instructions, Easy.Nutrition.RecipeInstructions
     field :prep_time_minutes, :integer
     field :cook_time_minutes, :integer
     field :servings, :integer, default: 1
@@ -20,6 +20,8 @@ defmodule Easy.Nutrition.Recipe do
     field :total_fiber, :decimal
 
     field :status, :string, default: "active"
+
+    # embeds_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient
 
     belongs_to :business, Easy.Organizations.Business
     belongs_to :creator, Easy.Organizations.Coach

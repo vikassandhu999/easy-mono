@@ -4,6 +4,7 @@ defmodule EasyWeb.RecipeController do
   alias Easy.Nutrition.Recipe
   alias Easy.Repo
   alias EasyWeb.FallbackController
+  alias Easy.Utils
   use EasyWeb, :controller
 
   plug :authorize_resource when action in [:show, :update, :delete]
@@ -11,10 +12,10 @@ defmodule EasyWeb.RecipeController do
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"] do
-      limit = String.to_integer(params["limit"] || "50") |> min(100)
-      offset = String.to_integer(params["offset"] || "0")
-      status = params["status"] || "active"
-      search_query = params["search"]
+      limit = Utils.safe_int(params["limit"] || "50")
+      offset = Utils.safe_int(params["offset"] || "0")
+      status = params["status"]
+      search_query = Utils.parse_search(params["search"])
 
       query =
         from r in Recipe,

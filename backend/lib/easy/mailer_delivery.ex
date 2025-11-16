@@ -1,37 +1,7 @@
 defmodule Easy.MailerDelivery do
-  @moduledoc """
-  Handles asynchronous email delivery with error handling and logging.
-
-  This module provides functions to send emails asynchronously using Task.Supervisor,
-  with proper error handling and logging for production environments.
-  """
-
   require Logger
   alias Easy.Mailer
 
-  @doc """
-  Delivers an email asynchronously.
-
-  This function sends the email in a background task and logs any errors that occur.
-  It returns immediately without waiting for the email to be sent.
-
-  ## Parameters
-
-    - email: A Swoosh.Email struct to be delivered
-    - opts: Optional keyword list of options
-      - :on_error - Function to call if delivery fails (receives error as argument)
-      - :metadata - Map of metadata to include in logs
-
-  ## Examples
-
-      iex> email = Easy.Emails.otp_verification_email("user@example.com", "123456")
-      iex> Easy.MailerDelivery.deliver_async(email)
-      :ok
-
-      iex> email = Easy.Emails.login_otp_email("user@example.com", "123456")
-      iex> Easy.MailerDelivery.deliver_async(email, metadata: %{user_id: 123})
-      :ok
-  """
   def deliver_async(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
     on_error = Keyword.get(opts, :on_error)
@@ -43,29 +13,6 @@ defmodule Easy.MailerDelivery do
     :ok
   end
 
-  @doc """
-  Delivers an email synchronously with error handling.
-
-  This function sends the email immediately and returns the result.
-  Use this when you need to know if the email was sent successfully.
-
-  ## Parameters
-
-    - email: A Swoosh.Email struct to be delivered
-    - opts: Optional keyword list of options
-      - :metadata - Map of metadata to include in logs
-
-  ## Returns
-
-    - `{:ok, response}` if the email was sent successfully
-    - `{:error, reason}` if the email failed to send
-
-  ## Examples
-
-      iex> email = Easy.Emails.otp_verification_email("user@example.com", "123456")
-      iex> Easy.MailerDelivery.deliver_sync(email)
-      {:ok, %{id: "..."}}
-  """
   def deliver_sync(email, opts \\ []) do
     metadata = Keyword.get(opts, :metadata, %{})
 
@@ -79,8 +26,6 @@ defmodule Easy.MailerDelivery do
         error
     end
   end
-
-  # Private functions
 
   defp deliver_with_error_handling(email, metadata, on_error) do
     case Mailer.deliver(email) do

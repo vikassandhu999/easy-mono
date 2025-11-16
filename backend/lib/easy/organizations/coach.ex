@@ -13,7 +13,6 @@ defmodule Easy.Organizations.Coach do
 
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
-    many_to_many :clients, Easy.Clients.Client, join_through: Easy.Clients.CoachClientAssignment
 
     timestamps()
   end

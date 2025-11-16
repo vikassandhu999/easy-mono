@@ -42,30 +42,10 @@ defmodule EasyWeb.Router do
     post "/:token_id/accept", ClientController, :accept_invitation
   end
 
-  scope "/api/onboarding", EasyWeb do
+  scope "/api/current-business", EasyWeb do
     pipe_through :api_authenticated
 
-    post "/business", OnboardingController, :create_business
-  end
-
-  scope "/api/businesses", EasyWeb do
-    pipe_through :api_authenticated
-
-    get "/:id", BusinessController, :show
-    patch "/:id", BusinessController, :update
-    get "/:id/coaches", BusinessController, :list_coaches
-    get "/:id/clients", BusinessController, :list_clients
-    get "/:id/subscription", BusinessController, :show_subscription
-  end
-
-  scope "/api/coaches", EasyWeb do
-    pipe_through :api_authenticated
-
-    get "/:id", CoachController, :show
-    patch "/:id", CoachController, :update
-    get "/:id/clients", CoachController, :list_clients
-    post "/:id/clients/:client_id/assign", CoachController, :assign_client
-    delete "/:id/clients/:client_id/unassign", CoachController, :unassign_client
+    get "/", BusinessController, :show
   end
 
   scope "/api/clients", EasyWeb do
@@ -75,7 +55,6 @@ defmodule EasyWeb.Router do
     post "/invite", ClientController, :invite
     get "/:id", ClientController, :show
     patch "/:id", ClientController, :update
-    get "/:id/coaches", ClientController, :list_coaches
     patch "/:id/status", ClientController, :update_status
   end
 

@@ -1,9 +1,4 @@
 defmodule Easy.Organizations.Subscription do
-  @moduledoc """
-  Subscription schema linking businesses to plans.
-
-  Tracks subscription status, billing periods, and cancellation.
-  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -23,9 +18,6 @@ defmodule Easy.Organizations.Subscription do
     timestamps()
   end
 
-  @doc """
-  Changeset for creating or updating a subscription.
-  """
   def changeset(subscription, attrs) do
     subscription
     |> cast(attrs, [
@@ -50,10 +42,6 @@ defmodule Easy.Organizations.Subscription do
     |> foreign_key_constraint(:plan_id)
   end
 
-  @doc """
-  Changeset for creating a new subscription.
-  Sets default values for a new subscription.
-  """
   def create_changeset(subscription, business_id, plan_id) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     period_end = DateTime.add(now, 30 * 24 * 60 * 60, :second)

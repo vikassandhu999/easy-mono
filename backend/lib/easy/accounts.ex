@@ -3,16 +3,15 @@ defmodule Easy.Accounts do
 
   alias Easy.Clients.Client
   alias Easy.Organizations.Coach
-  alias Easy.Organizations.Business
   alias Easy.Repo
   alias Easy.Accounts.{User, OneTimeToken, Session, Token}
+  alias Easy.Organizations
 
   def register(user_attrs, business_attrs) do
     with {:ok, result} <-
            Repo.transaction(fn ->
              with {:ok, user} <- create_user(user_attrs),
-                  {:ok, business} <- create_business(user, business_attrs),
-                  {:ok, _} <- create_coach(user, business),
+                  {:ok, _} <- Organizations.create_business_with_owner(user, business_attrs),
                   {:ok, token, code} <- create_otp_token(user, "email_verification") do
                %{user: user, token: token, code: code}
              else
@@ -229,22 +228,6 @@ defmodule Easy.Accounts do
   defp create_user(user_attrs) do
     %User{}
     |> User.changeset(user_attrs)
-    |> Repo.insert()
-  end
-
-  defp create_business(user, business_attrs) do
-    attrs = Map.put(business_attrs, :owner_id, user.id)
-
-    %Business{}
-    |> Business.create_changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp create_coach(user, business) do
-    attrs = %{} |> Map.put(:user_id, user.id) |> Map.put(:business_id, business.id)
-
-    %Coach{}
-    |> Coach.create_changeset(attrs)
     |> Repo.insert()
   end
 

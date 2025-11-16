@@ -114,7 +114,7 @@ defmodule EasyWeb.AuthController do
     with claims <- conn.assigns.token_claims,
          user_id <- claims["sub"],
          %Accounts.User{} = user <- Repo.get(Accounts.User, user_id),
-         %Coaches.Coach{} = coach <-
+         %Organizations.Coach{} = coach <-
            Accounts.get_coach_by_user(user) do
       response = %{
         user: %{

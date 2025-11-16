@@ -15,7 +15,7 @@ defmodule Easy.MealPlans do
 
   alias Easy.Repo
   alias Easy.MealPlans.{Plan, MealPlanMeal}
-  alias Easy.Coaches.Coach
+  alias Easy.Organizations.Coach
 
   # ============================================
   # MEAL PLAN MANAGEMENT

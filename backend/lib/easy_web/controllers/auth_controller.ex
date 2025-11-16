@@ -1,15 +1,11 @@
 defmodule EasyWeb.AuthController do
-  alias Easy.Coaches
+  alias Easy.Organizations
   alias Easy.Repo
   use EasyWeb, :controller
 
   alias EasyWeb.Registration
   alias Easy.{Accounts}
 
-  @spec register(
-          any(),
-          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
-        ) :: {:error, any()} | Plug.Conn.t()
   def register(conn, params) do
     changeset = Registration.changeset(%Registration{}, params)
 

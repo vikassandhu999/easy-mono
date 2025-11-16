@@ -10,7 +10,8 @@ defmodule EasyWeb.BusinessController do
     case Organizations.get_business(scope, id) do
       {:ok, business} ->
         conn
-        |> json(%{business: format_business(business)})
+        |> put_status(:ok)
+        |> render(:show, business: business)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Business")
@@ -24,14 +25,13 @@ defmodule EasyWeb.BusinessController do
 
   def update(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
-
-    # Extract update attributes
     attrs = Map.take(params, ["name", "description"])
 
     case Organizations.update_business(scope, id, attrs) do
       {:ok, updated_business} ->
         conn
-        |> json(%{business: format_business(updated_business)})
+        |> put_status(:ok)
+        |> render(:update, business: updated_business)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Business")
@@ -59,7 +59,8 @@ defmodule EasyWeb.BusinessController do
     case Organizations.list_business_coaches(scope, id) do
       {:ok, coaches} ->
         conn
-        |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
+        |> put_status(:ok)
+        |> render(:list_coaches, coaches: coaches)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Business")
@@ -79,23 +80,21 @@ defmodule EasyWeb.BusinessController do
 
   def list_clients(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
-
-    # Parse pagination parameters
     limit = parse_limit(params["limit"])
     offset = parse_offset(params["offset"])
     status = params["status"]
 
-    # Build options
     opts = [limit: limit, offset: offset]
     opts = if status, do: Keyword.put(opts, :status, status), else: opts
 
     case Organizations.list_business_clients(scope, id, opts) do
       {:ok, clients, total} ->
         conn
-        |> json(%{
-          clients: Enum.map(clients, &format_client/1),
+        |> put_status(:ok)
+        |> render(:list_clients,
+          clients: clients,
           pagination: ResponseHelpers.format_pagination(limit, offset, total)
-        })
+        )
 
       {:error, :not_found} ->
         error = ApiError.not_found("Business")
@@ -119,7 +118,8 @@ defmodule EasyWeb.BusinessController do
     case Organizations.get_business_subscription(scope, id) do
       {:ok, subscription} ->
         conn
-        |> json(%{subscription: format_subscription(subscription)})
+        |> put_status(:ok)
+        |> render(:show_subscription, subscription: subscription)
 
       {:error, :business_not_found} ->
         error = ApiError.not_found("Business")
@@ -168,19 +168,6 @@ defmodule EasyWeb.BusinessController do
   defp parse_offset(offset) when is_integer(offset) and offset >= 0, do: offset
   defp parse_offset(_), do: 0
 
-  # Formats business for JSON response
-  defp format_business(business), do: ResponseHelpers.format_business(business)
-
-  # Formats coach for JSON response
-  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
-
-  # Formats client for JSON response
-  defp format_client(client), do: ResponseHelpers.format_client(client)
-
-  # Formats subscription with plan for JSON response
-  defp format_subscription(subscription), do: ResponseHelpers.format_subscription(subscription)
-
-  # Renders an API error response
   defp render_error(conn, %ApiError{} = error) do
     conn = maybe_add_headers(conn, error)
 
@@ -189,7 +176,6 @@ defmodule EasyWeb.BusinessController do
     |> json(ApiError.to_json(error))
   end
 
-  # Adds headers from ApiError to the connection if present
   defp maybe_add_headers(conn, %ApiError{headers: nil}), do: conn
 
   defp maybe_add_headers(conn, %ApiError{headers: headers}) do

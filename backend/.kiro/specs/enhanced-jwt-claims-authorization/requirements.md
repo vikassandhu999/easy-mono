@@ -15,7 +15,7 @@ This document outlines the requirements for enhancing the JWT claims structure a
 - **Access Token**: Short-lived JWT used for API authentication
 - **Refresh Token**: Long-lived JWT used to obtain new access tokens
 - **Authorization System**: The module responsible for verifying permissions and access control
-- **Service Layer**: Business logic layer that processes requests (e.g., Easy.Accounts, Easy.Coaches, Easy.Clients)
+- **Service Layer**: Business logic layer that processes requests (e.g., Easy.Accounts, Easy.Organizations, Easy.Clients)
 
 ## Requirements
 
@@ -61,7 +61,7 @@ This document outlines the requirements for enhancing the JWT claims structure a
 
 #### Acceptance Criteria
 
-1. THE System SHALL update all service methods in Easy.Accounts, Easy.Coaches, Easy.Clients, and Easy.Organizations to accept scope as the first parameter
+1. THE System SHALL update all service methods in Easy.Accounts, Easy.Organizations, Easy.Clients, and Easy.Organizations to accept scope as the first parameter
 2. WHEN a service method requires authorization, THE service method SHALL use the scope parameter to make authorization decisions
 3. WHEN a service method creates or queries data, THE service method SHALL automatically scope queries to the business_id from the scope WHERE applicable
 4. WHEN a service method is called without proper scope, THE service method SHALL return an error indicating missing authorization context

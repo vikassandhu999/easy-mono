@@ -2,7 +2,7 @@ defmodule Easy.Accounts do
   import Ecto.Query, warn: false
 
   alias Easy.Clients.Client
-  alias Easy.Coaches.Coach
+  alias Easy.Organizations.Coach
   alias Easy.Organizations.Business
   alias Easy.Repo
   alias Easy.Accounts.{User, OneTimeToken, Session, Token}

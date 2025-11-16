@@ -17,7 +17,6 @@ defmodule EasyWeb.Router do
     pipe_through :api
 
     get "/health", HealthController, :index
-    get "/test/error", ErrorTestController, :trigger_error
   end
 
   scope "/api/auth", EasyWeb do

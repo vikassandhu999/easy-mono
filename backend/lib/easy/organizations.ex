@@ -18,7 +18,7 @@ defmodule Easy.Organizations do
     # Get businesses where user is a coach
     coach_businesses =
       from(b in Business,
-        join: c in Easy.Coaches.Coach,
+        join: c in Easy.Organizations.Coach,
         on: c.business_id == b.id,
         where: c.user_id == ^user_id,
         order_by: [desc: b.inserted_at]
@@ -107,7 +107,7 @@ defmodule Easy.Organizations do
   end
 
   def list_business_coaches(business_id) do
-    Easy.Coaches.list_business_coaches(business_id)
+    Easy.Organizations.list_business_coaches(business_id)
   end
 
   def list_business_clients(business_id) do
@@ -121,7 +121,7 @@ defmodule Easy.Organizations do
   # Private helper to check if user has a coach or client profile in a business
   defp user_has_profile_in_business?(user_id, business_id) do
     coach_exists =
-      from(c in Easy.Coaches.Coach,
+      from(c in Easy.Organizations.Coach,
         where: c.user_id == ^user_id and c.business_id == ^business_id
       )
       |> Repo.exists?()

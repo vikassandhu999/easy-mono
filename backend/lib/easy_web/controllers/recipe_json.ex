@@ -26,11 +26,11 @@ defmodule EasyWeb.RecipeJSON do
       ingredients: recipe.ingredients || [],
       total_calories: recipe.total_calories,
       total_protein: recipe.total_protein,
-      total_carbohydrates: recipe.total_carbohydrates,
+      total_carbs: recipe.total_carbs,
       total_fats: recipe.total_fats,
       total_fiber: recipe.total_fiber,
       status: recipe.status,
-      created_by_id: recipe.created_by_id,
+      creator_id: recipe.creator_id,
       inserted_at: recipe.inserted_at,
       updated_at: recipe.updated_at
     }

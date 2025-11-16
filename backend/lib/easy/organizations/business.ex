@@ -17,7 +17,7 @@ defmodule Easy.Organizations.Business do
     field :status, :string, default: "active"
 
     belongs_to :owner, Easy.Accounts.User
-    has_many :coaches, Easy.Coaches.Coach
+    has_many :coaches, Easy.Organizations.Coach
     has_many :clients, Easy.Clients.Client
     has_one :subscription, Easy.Organizations.Subscription
 

@@ -2,7 +2,7 @@ defmodule Easy.Nutrition do
   import Ecto.Query, warn: false
 
   alias Easy.Repo
-  alias Easy.Coaches.Coach
+  alias Easy.Organizations.Coach
 
   alias Easy.Nutrition.Recipe
 
@@ -14,7 +14,7 @@ defmodule Easy.Nutrition do
         |> Map.put(:created_by_id, coach_id)
 
       %Recipe{}
-      |> Recipe.create_changeset(attrs_with_ids)
+      |> Recipe.changeset(attrs_with_ids)
       |> Repo.insert()
     end
   end
@@ -45,7 +45,7 @@ defmodule Easy.Nutrition do
   def update_recipe(%Recipe{} = recipe, coach_id, attrs) do
     with {:ok, _coach} <- validate_coach_in_business(coach_id, recipe.business_id) do
       recipe
-      |> Recipe.update_changeset(attrs)
+      |> Recipe.changeset(attrs)
       |> Repo.update()
     end
   end
@@ -151,7 +151,7 @@ defmodule Easy.Nutrition do
   end
 
   alias Easy.Nutrition.Meal
-  alias Easy.Nutrition.MealRecipe
+  alias Easy.Nutrition.MealItem
 
   def create_meal(business_id, coach_id, attrs) do
     with {:ok, _coach} <- validate_coach_in_business(coach_id, business_id) do
@@ -224,8 +224,8 @@ defmodule Easy.Nutrition do
         servings: servings
       }
 
-      %MealRecipe{}
-      |> MealRecipe.create_changeset(attrs)
+      %MealItem{}
+      |> MealItem.create_changeset(attrs)
       |> Repo.insert()
     end
   end
@@ -234,7 +234,7 @@ defmodule Easy.Nutrition do
     with {:ok, meal} <- fetch_meal(meal_id),
          :ok <- maybe_validate_coach(coach_id, meal.business_id) do
       query =
-        from mr in MealRecipe,
+        from mr in MealItem,
           where: mr.meal_id == ^meal_id and mr.recipe_id == ^recipe_id
 
       case Repo.one(query) do
@@ -248,7 +248,7 @@ defmodule Easy.Nutrition do
     with {:ok, meal} <- fetch_meal(meal_id),
          :ok <- maybe_validate_coach(coach_id, meal.business_id) do
       query =
-        from mr in MealRecipe,
+        from mr in MealItem,
           where: mr.meal_id == ^meal_id and mr.recipe_id == ^recipe_id
 
       case Repo.one(query) do
@@ -257,7 +257,7 @@ defmodule Easy.Nutrition do
 
         meal_recipe ->
           meal_recipe
-          |> MealRecipe.update_changeset(attrs)
+          |> MealItem.update_changeset(attrs)
           |> Repo.update()
       end
     end
@@ -310,8 +310,8 @@ defmodule Easy.Nutrition do
                 notes: meal_recipe.notes
               }
 
-              %MealRecipe{}
-              |> MealRecipe.create_changeset(meal_recipe_attrs)
+              %MealItem{}
+              |> MealItem.create_changeset(meal_recipe_attrs)
               |> Repo.insert!()
             end)
 

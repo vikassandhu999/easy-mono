@@ -2,7 +2,6 @@ defmodule EasyWeb.CoachController do
   use EasyWeb, :controller
 
   alias Easy.{Coaches, ApiError}
-  alias EasyWeb.ResponseHelpers
 
   def show(conn, %{"id" => id}) do
     scope = conn.assigns[:scope]
@@ -10,7 +9,8 @@ defmodule EasyWeb.CoachController do
     case Coaches.get_coach(scope, id) do
       {:ok, coach} ->
         conn
-        |> json(%{coach: format_coach(coach)})
+        |> put_status(:ok)
+        |> render(:show, coach: coach)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Coach")
@@ -24,14 +24,13 @@ defmodule EasyWeb.CoachController do
 
   def update(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
-
-    # Extract update attributes
     attrs = Map.take(params, ["bio", "specialties", "credentials"])
 
     case Coaches.update_coach(scope, id, attrs) do
       {:ok, updated_coach} ->
         conn
-        |> json(%{coach: format_coach(updated_coach)})
+        |> put_status(:ok)
+        |> render(:update, coach: updated_coach)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Coach")
@@ -53,7 +52,8 @@ defmodule EasyWeb.CoachController do
     case Coaches.list_coach_clients(scope, id) do
       {:ok, clients} ->
         conn
-        |> json(%{clients: Enum.map(clients, &format_client/1)})
+        |> put_status(:ok)
+        |> render(:list_clients, clients: clients)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Coach")
@@ -78,9 +78,7 @@ defmodule EasyWeb.CoachController do
       {:ok, assignment} ->
         conn
         |> put_status(:created)
-        |> json(%{
-          assignment: format_assignment(assignment)
-        })
+        |> render(:assign_client, assignment: assignment)
 
       {:error, :coach_not_found} ->
         error = ApiError.not_found("Coach")
@@ -101,7 +99,6 @@ defmodule EasyWeb.CoachController do
         render_error(conn, error)
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        # Check if it's a unique constraint violation
         if has_unique_constraint_error?(changeset) do
           error = ApiError.from_code(:already_assigned, nil, nil)
           render_error(conn, error)
@@ -124,9 +121,8 @@ defmodule EasyWeb.CoachController do
     case Coaches.unassign_client(scope, coach_id, client_id) do
       {:ok, _assignment} ->
         conn
-        |> json(%{
-          message: "Client successfully unassigned from coach"
-        })
+        |> put_status(:ok)
+        |> render(:unassign_client, message: "Client successfully unassigned from coach")
 
       {:error, :coach_not_found} ->
         error = ApiError.not_found("Coach")
@@ -160,12 +156,6 @@ defmodule EasyWeb.CoachController do
       Keyword.get(opts, :constraint) == :unique
     end)
   end
-
-  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
-
-  defp format_client(client), do: ResponseHelpers.format_client(client)
-
-  defp format_assignment(assignment), do: ResponseHelpers.format_assignment(assignment)
 
   defp render_error(conn, %ApiError{} = error) do
     conn = maybe_add_headers(conn, error)

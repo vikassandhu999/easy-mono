@@ -1,62 +1,8 @@
 defmodule EasyWeb.Authorization do
-  @moduledoc """
-  Authorization helpers for verifying user permissions across the application.
-
-  This module provides centralized authorization logic for:
-  - Business access control
-  - Coach access control
-  - Client access control
-
-  ## Scope-Based Authorization
-
-  The new scope-based functions accept an `Easy.Auth.Scope` struct as the first
-  parameter and use the embedded context (business_id, coach_id, client_id) for
-  authorization decisions. This eliminates most database queries for authorization.
-
-  ## Legacy User-Based Authorization
-
-  The older user-based functions are maintained for backward compatibility but
-  will be deprecated in future versions. New code should use scope-based functions.
-
-  All functions return `:ok` on success or `{:error, reason}` on failure.
-  """
-
   import Ecto.Query
   alias Easy.Repo
   alias Easy.Auth.Scope
 
-  # ============================================
-  # SCOPE-BASED BUSINESS AUTHORIZATION
-  # ============================================
-
-  @doc """
-  Verifies that the scope has access to a specific business.
-
-  This checks if the scope's business_id matches the requested business_id.
-  No database query is required.
-
-  ## Parameters
-  - scope: The scope struct containing business context
-  - business_id: The business ID to verify access to (UUID string)
-
-  ## Returns
-  - `:ok` if scope.business_id matches the requested business_id
-  - `{:error, :forbidden}` if business_id doesn't match or scope has no business context
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "uuid", business_id: "business-123"}
-      iex> authorize_business_access(scope, "business-123")
-      :ok
-
-      iex> scope = %Scope{user_id: "uuid", business_id: "business-123"}
-      iex> authorize_business_access(scope, "business-456")
-      {:error, :forbidden}
-
-      iex> scope = %Scope{user_id: "uuid", business_id: nil}
-      iex> authorize_business_access(scope, "business-123")
-      {:error, :forbidden}
-  """
   def authorize_business_access(%Scope{business_id: business_id}, requested_business_id)
       when is_binary(requested_business_id) do
     if business_id == requested_business_id do
@@ -68,30 +14,6 @@ defmodule EasyWeb.Authorization do
 
   def authorize_business_access(%Scope{}, _), do: {:error, :forbidden}
 
-  @doc """
-  Verifies that the scope's user is the owner of a specific business.
-
-  This requires a database query to check the business owner_id.
-
-  ## Parameters
-  - scope: The scope struct containing user_id
-  - business_id: The business ID to verify ownership of (UUID string)
-
-  ## Returns
-  - `:ok` if scope.user_id matches the business owner_id
-  - `{:error, :forbidden}` if user is not the owner
-  - `{:error, :not_found}` if business doesn't exist
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "owner-uuid"}
-      iex> authorize_business_owner(scope, "business-123")
-      :ok
-
-      iex> scope = %Scope{user_id: "other-uuid"}
-      iex> authorize_business_owner(scope, "business-123")
-      {:error, :forbidden}
-  """
   def authorize_business_owner(%Scope{user_id: user_id}, business_id)
       when is_binary(business_id) do
     case Repo.get(Easy.Organizations.Business, business_id) do
@@ -107,35 +29,10 @@ defmodule EasyWeb.Authorization do
     end
   end
 
-  # ============================================
-  # LEGACY BUSINESS AUTHORIZATION
-  # ============================================
-
-  @doc """
-  Verifies that a user belongs to a business (as owner or coach).
-
-  ## Parameters
-  - user: The user struct
-  - business: The business struct or business_id
-
-  ## Returns
-  - `:ok` if user belongs to the business
-  - `{:error, :forbidden}` if user does not belong to the business
-
-  ## Examples
-
-      iex> user_belongs_to_business?(user, business)
-      :ok
-
-      iex> user_belongs_to_business?(user, other_business)
-      {:error, :forbidden}
-  """
   def user_belongs_to_business?(user, %{id: business_id, owner_id: owner_id}) do
-    # User is owner
     if owner_id == user.id do
       :ok
     else
-      # User is a coach in the business
       user_is_coach_in_business?(user.id, business_id)
     end
   end
@@ -148,25 +45,6 @@ defmodule EasyWeb.Authorization do
     end
   end
 
-  @doc """
-  Verifies that a user is the owner of a business.
-
-  ## Parameters
-  - user: The user struct
-  - business: The business struct or business_id
-
-  ## Returns
-  - `:ok` if user is the business owner
-  - `{:error, :forbidden}` if user is not the business owner
-
-  ## Examples
-
-      iex> user_is_business_owner?(owner_user, business)
-      :ok
-
-      iex> user_is_business_owner?(coach_user, business)
-      {:error, :forbidden}
-  """
   def user_is_business_owner?(user, %{owner_id: owner_id}) do
     if owner_id == user.id do
       :ok
@@ -182,38 +60,6 @@ defmodule EasyWeb.Authorization do
     end
   end
 
-  # ============================================
-  # SCOPE-BASED COACH AUTHORIZATION
-  # ============================================
-
-  @doc """
-  Verifies that the scope has access to a specific coach profile.
-
-  This checks if the scope's coach_id matches the requested coach_id.
-  No database query is required.
-
-  ## Parameters
-  - scope: The scope struct containing coach context
-  - coach_id: The coach ID to verify access to (UUID string)
-
-  ## Returns
-  - `:ok` if scope.coach_id matches the requested coach_id
-  - `{:error, :forbidden}` if coach_id doesn't match or scope has no coach context
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "uuid", coach_id: "coach-123"}
-      iex> authorize_coach_access(scope, "coach-123")
-      :ok
-
-      iex> scope = %Scope{user_id: "uuid", coach_id: "coach-123"}
-      iex> authorize_coach_access(scope, "coach-456")
-      {:error, :forbidden}
-
-      iex> scope = %Scope{user_id: "uuid", coach_id: nil}
-      iex> authorize_coach_access(scope, "coach-123")
-      {:error, :forbidden}
-  """
   def authorize_coach_access(%Scope{coach_id: coach_id}, requested_coach_id)
       when is_binary(requested_coach_id) do
     if coach_id == requested_coach_id do
@@ -225,33 +71,6 @@ defmodule EasyWeb.Authorization do
 
   def authorize_coach_access(%Scope{}, _), do: {:error, :forbidden}
 
-  @doc """
-  Verifies that the scope has an active coach profile in a business.
-
-  This checks if the scope has both a business_id and a coach_id set.
-  No database query is required.
-
-  ## Parameters
-  - scope: The scope struct containing business and coach context
-
-  ## Returns
-  - `:ok` if scope has both business_id and coach_id
-  - `{:error, :forbidden}` if scope is missing business or coach context
-
-  ## Examples
-
-      iex> scope = %Scope{user_id: "uuid", business_id: "biz-123", coach_id: "coach-123"}
-      iex> authorize_coach_in_business(scope)
-      :ok
-
-      iex> scope = %Scope{user_id: "uuid", business_id: "biz-123", coach_id: nil}
-      iex> authorize_coach_in_business(scope)
-      {:error, :forbidden}
-
-      iex> scope = %Scope{user_id: "uuid", business_id: nil, coach_id: "coach-123"}
-      iex> authorize_coach_in_business(scope)
-      {:error, :forbidden}
-  """
   def authorize_coach_in_business(%Scope{business_id: business_id, coach_id: coach_id})
       when not is_nil(business_id) and not is_nil(coach_id) do
     :ok
@@ -259,29 +78,6 @@ defmodule EasyWeb.Authorization do
 
   def authorize_coach_in_business(%Scope{}), do: {:error, :forbidden}
 
-  # ============================================
-  # LEGACY COACH AUTHORIZATION
-  # ============================================
-
-  @doc """
-  Verifies that a user is a coach in a specific business.
-
-  ## Parameters
-  - user: The user struct or user_id
-  - business_id: The business ID
-
-  ## Returns
-  - `:ok` if user is a coach in the business
-  - `{:error, :forbidden}` if user is not a coach in the business
-
-  ## Examples
-
-      iex> user_is_coach_in_business?(coach_user, business_id)
-      :ok
-
-      iex> user_is_coach_in_business?(other_user, business_id)
-      {:error, :forbidden}
-  """
   def user_is_coach_in_business?(%{id: user_id}, business_id) do
     user_is_coach_in_business?(user_id, business_id)
   end
@@ -289,7 +85,7 @@ defmodule EasyWeb.Authorization do
   def user_is_coach_in_business?(user_id, business_id)
       when is_integer(user_id) and is_integer(business_id) do
     query =
-      from c in Easy.Coaches.Coach,
+      from c in Easy.Organizations.Coach,
         where: c.user_id == ^user_id and c.business_id == ^business_id,
         limit: 1
 

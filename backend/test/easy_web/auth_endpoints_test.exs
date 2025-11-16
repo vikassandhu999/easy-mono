@@ -667,7 +667,7 @@ defmodule EasyWeb.AuthEndpointsTest do
         })
 
       {:ok, coach} =
-        Easy.Coaches.create_coach_legacy(user.id, business.id, %{
+        Easy.Organizations.create_coach_legacy(user.id, business.id, %{
           status: "active"
         })
 
@@ -678,7 +678,7 @@ defmodule EasyWeb.AuthEndpointsTest do
         })
 
       {:ok, coach2} =
-        Easy.Coaches.create_coach_legacy(user.id, business2.id, %{
+        Easy.Organizations.create_coach_legacy(user.id, business2.id, %{
           status: "active"
         })
 

@@ -265,7 +265,7 @@ defp user_belongs_to_business?(user, business) do
   if business.owner_id == user.id do
     true
   else
-    query = from c in Easy.Coaches.Coach,
+    query = from c in Easy.Organizations.Coach,
       where: c.user_id == ^user.id and c.business_id == ^business.id,
       limit: 1
     

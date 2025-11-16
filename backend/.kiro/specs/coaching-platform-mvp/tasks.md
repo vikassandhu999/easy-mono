@@ -85,7 +85,7 @@ This document outlines the implementation tasks for the coaching platform MVP. E
     - Implement get_business/1, update_business/2, get_subscription/1
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 15.1, 15.2, 15.5_
 
-- [x] 7. Easy.Coaches context
+- [x] 7. Easy.Organizations context
   - [x] 7.1 Create Coach schema
     - Define Coach schema with bio, specialties, credentials, status fields
     - Add changeset validations and unique constraint on user_id + business_id

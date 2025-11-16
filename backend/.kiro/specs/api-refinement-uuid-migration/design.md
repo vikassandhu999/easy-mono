@@ -227,7 +227,7 @@ defmodule Easy.Accounts.User do
     field :full_name, :string
     # ... other fields
 
-    has_one :coach, Easy.Coaches.Coach
+    has_one :coach, Easy.Organizations.Coach
     has_one :client, Easy.Clients.Client
     has_many :sessions, Easy.Accounts.Session
 

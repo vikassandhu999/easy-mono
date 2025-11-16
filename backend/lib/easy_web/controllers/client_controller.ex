@@ -7,7 +7,6 @@ defmodule EasyWeb.ClientController do
   def invite(conn, params) do
     scope = conn.assigns[:scope]
 
-    # Extract invitation attributes
     attrs = %{
       "email" => params["email"],
       "full_name" => params["full_name"],
@@ -17,16 +16,15 @@ defmodule EasyWeb.ClientController do
 
     case Clients.invite_client(scope, attrs) do
       {:ok, %{client: client, invitation_token: token_uuid, expires_at: expires_at}} ->
-        # Build invitation URL
         invitation_url = build_invitation_url(conn, token_uuid)
 
         conn
         |> put_status(:created)
-        |> json(%{
-          client: format_client(client),
+        |> render(:invite,
+          client: client,
           invitation:
             ResponseHelpers.format_invitation_response(token_uuid, invitation_url, expires_at)
-        })
+        )
 
       {:error, :forbidden} ->
         error = ApiError.forbidden("You must be a coach to invite clients")
@@ -55,14 +53,12 @@ defmodule EasyWeb.ClientController do
   def show_invitation(conn, %{"token_id" => token_id}) do
     case Clients.get_invitation(token_id) do
       {:ok, %{token: token, client: client}} ->
-        # Preload business and get inviting coach info
         client = Easy.Repo.preload(client, [:business])
-
-        # Get inviting coach from token metadata
         inviting_coach = get_inviting_coach(token_id)
 
         conn
-        |> json(%{
+        |> put_status(:ok)
+        |> render(:show_invitation,
           invitation: %{
             token_id: token_id,
             status: "valid",
@@ -78,7 +74,7 @@ defmodule EasyWeb.ClientController do
           },
           inviting_coach:
             if(inviting_coach, do: %{full_name: inviting_coach.user.full_name}, else: nil)
-        })
+        )
 
       {:error, :invalid_token} ->
         error = ApiError.not_found("Invitation")
@@ -102,10 +98,8 @@ defmodule EasyWeb.ClientController do
   def accept_invitation(conn, %{"token_id" => token_id, "code" => code}) do
     case Clients.complete_client_registration(token_id, code) do
       {:ok, %{user: user, client: client, session: session_data}} ->
-        # Preload assigned coaches for the response
         client = Easy.Repo.preload(client, coaches: [:user])
 
-        # Build user response with client profile
         user_response = %{
           id: to_string(user.id),
           email: user.email,
@@ -128,7 +122,6 @@ defmodule EasyWeb.ClientController do
           }
         }
 
-        # Build session response
         session_section =
           cond do
             is_map(session_data[:session]) -> session_data[:session]
@@ -191,10 +184,8 @@ defmodule EasyWeb.ClientController do
         }
 
         conn
-        |> json(%{
-          user: user_response,
-          session: session_response
-        })
+        |> put_status(:ok)
+        |> render(:accept_invitation, user: user_response, session: session_response)
 
       {:error, :invalid_token} ->
         error = ApiError.not_found("Invitation")
@@ -233,7 +224,8 @@ defmodule EasyWeb.ClientController do
     case Clients.get_client(scope, id) do
       {:ok, client} ->
         conn
-        |> json(%{client: format_client(client)})
+        |> put_status(:ok)
+        |> render(:show, client: client)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Client")
@@ -247,14 +239,13 @@ defmodule EasyWeb.ClientController do
 
   def update(conn, %{"id" => id} = params) do
     scope = conn.assigns[:scope]
-
-    # Extract update attributes (email cannot be updated)
     attrs = Map.take(params, ["full_name", "phone", "notes"])
 
     case Clients.update_client(scope, id, attrs) do
       {:ok, updated_client} ->
         conn
-        |> json(%{client: format_client(updated_client)})
+        |> put_status(:ok)
+        |> render(:update, client: updated_client)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Client")
@@ -278,27 +269,21 @@ defmodule EasyWeb.ClientController do
 
   def index(conn, params) do
     scope = conn.assigns[:scope]
-
-    # Parse pagination parameters
     limit = parse_limit(params["limit"])
     offset = parse_offset(params["offset"])
     status = params["status"]
 
-    # Build options
     opts = [limit: limit, offset: offset]
     opts = if status, do: Keyword.put(opts, :status, status), else: opts
 
     case Clients.list_clients(scope, opts) do
       {:ok, clients, total} ->
         conn
-        |> json(%{
-          clients: Enum.map(clients, &format_client/1),
-          pagination: %{
-            limit: limit,
-            offset: offset,
-            total: total
-          }
-        })
+        |> put_status(:ok)
+        |> render(:index,
+          clients: clients,
+          pagination: ResponseHelpers.format_pagination(limit, offset, total)
+        )
 
       {:error, :forbidden} ->
         error = ApiError.forbidden("You must be a coach to list clients")
@@ -318,7 +303,8 @@ defmodule EasyWeb.ClientController do
     case Clients.list_client_coaches(scope, id) do
       {:ok, coaches} ->
         conn
-        |> json(%{coaches: Enum.map(coaches, &format_coach/1)})
+        |> put_status(:ok)
+        |> render(:list_coaches, coaches: coaches)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Client")
@@ -342,7 +328,8 @@ defmodule EasyWeb.ClientController do
     case Clients.update_client_status(scope, id, status) do
       {:ok, updated_client} ->
         conn
-        |> json(%{client: format_client(updated_client)})
+        |> put_status(:ok)
+        |> render(:update_status, client: updated_client)
 
       {:error, :not_found} ->
         error = ApiError.not_found("Client")
@@ -366,15 +353,9 @@ defmodule EasyWeb.ClientController do
     end
   end
 
-  # ============================================
-  # PRIVATE HELPERS
-  # ============================================
-
-  # Gets the inviting coach from the invitation token
   defp get_inviting_coach(token_uuid) do
     import Ecto.Query
 
-    # Get the token to access metadata
     token =
       from(t in Easy.Accounts.OneTimeToken,
         where: t.token == ^token_uuid,
@@ -390,8 +371,6 @@ defmodule EasyWeb.ClientController do
   end
 
   defp build_invitation_url(conn, token_uuid) do
-    # For now, we'll use a placeholder URL
-    # In production, this should use the actual frontend URL from config
     base_url = get_base_url(conn)
     "#{base_url}/invite/#{token_uuid}"
   end
@@ -434,10 +413,6 @@ defmodule EasyWeb.ClientController do
 
   defp parse_offset(offset) when is_integer(offset) and offset >= 0, do: offset
   defp parse_offset(_), do: 0
-
-  defp format_client(client), do: ResponseHelpers.format_client(client)
-
-  defp format_coach(coach), do: ResponseHelpers.format_coach(coach)
 
   defp render_error(conn, %ApiError{} = error) do
     conn = maybe_add_headers(conn, error)

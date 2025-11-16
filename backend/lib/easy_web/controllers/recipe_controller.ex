@@ -53,10 +53,10 @@ defmodule EasyWeb.RecipeController do
          attrs_with_ids =
            conn.body_params
            |> Map.put("business_id", business_id)
-           |> Map.put("created_by_id", coach_id),
+           |> Map.put("creator_id", coach_id),
          {:ok, recipe} <-
            %Recipe{}
-           |> Recipe.create_changeset(attrs_with_ids)
+           |> Recipe.changeset(attrs_with_ids)
            |> Repo.insert() do
       conn
       |> put_status(:created)
@@ -72,7 +72,7 @@ defmodule EasyWeb.RecipeController do
 
   def update(conn, _params) do
     with {:ok, updated_recipe} <-
-           conn.assigns.recipe |> Recipe.update_changeset(conn.body_params) |> Repo.update() do
+           conn.assigns.recipe |> Recipe.changeset(conn.body_params) |> Repo.update() do
       conn
       |> put_status(:ok)
       |> render(:update, %{recipe: updated_recipe})

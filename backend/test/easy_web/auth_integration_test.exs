@@ -392,7 +392,7 @@ defmodule EasyWeb.AuthIntegrationTest do
         })
 
       {:ok, _coach1} =
-        Easy.Coaches.create_coach_legacy(user.id, business1.id, %{
+        Easy.Organizations.create_coach_legacy(user.id, business1.id, %{
           status: "active"
         })
 
@@ -403,7 +403,7 @@ defmodule EasyWeb.AuthIntegrationTest do
         })
 
       {:ok, _coach2} =
-        Easy.Coaches.create_coach_legacy(user.id, business2.id, %{
+        Easy.Organizations.create_coach_legacy(user.id, business2.id, %{
           status: "active"
         })
 

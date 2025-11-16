@@ -4,7 +4,7 @@ defmodule Easy.Clients do
   alias Easy.Repo
   alias Easy.Clients.Client
   alias Easy.Accounts
-  alias Easy.Coaches.Coach
+  alias Easy.Organizations.Coach
   alias Easy.Auth.Scope
   alias Easy.QueryHelpers
   alias EasyWeb.Authorization
@@ -345,7 +345,7 @@ defmodule Easy.Clients do
 
       true ->
         # Validate that inviting coach exists
-        case Easy.Coaches.get_coach_legacy(metadata["inviting_coach_id"]) do
+        case Easy.Organizations.get_coach_legacy(metadata["inviting_coach_id"]) do
           nil ->
             {:error, "Inviting coach not found"}
 
@@ -404,7 +404,7 @@ defmodule Easy.Clients do
               |> Ecto.Multi.run(:assignment, fn _repo, %{client: updated_client} ->
                 # Create coach-client assignment to inviting coach
                 if inviting_coach_id do
-                  case Easy.Coaches.assign_client(inviting_coach_id, updated_client.id) do
+                  case Easy.Organizations.assign_client(inviting_coach_id, updated_client.id) do
                     {:ok, assignment} -> {:ok, assignment}
                     {:error, changeset} -> {:error, changeset}
                   end

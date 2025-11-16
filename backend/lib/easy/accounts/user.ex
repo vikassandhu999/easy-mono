@@ -12,7 +12,7 @@ defmodule Easy.Accounts.User do
     field :email_verified, :boolean, default: false
     field :email_verified_at, :utc_datetime
 
-    has_one :coach, Easy.Coaches.Coach
+    has_one :coach, Easy.Organizations.Coach
     has_one :client, Easy.Clients.Client
     has_many :sessions, Easy.Accounts.Session
     has_many :one_time_tokens, Easy.Accounts.OneTimeToken

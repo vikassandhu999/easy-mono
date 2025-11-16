@@ -1,0 +1,304 @@
+{
+    "recipe": {
+        "id": "string",
+        "name": "string",
+        "description": "string",
+        "ingredients": [
+            {
+                "text": "string",
+                "group": "string",
+                "id": "string"
+            }
+        ],
+        "instructions": {
+            "steps": [
+                {
+                    "text": "string",
+                    "group": "string",
+                    "image": {
+                        "url": "string",
+                        "width": "int32",
+                        "height": "int32",
+                        "selection": {
+                            "x": "int32",
+                            "y": "int32",
+                            "width": "int32",
+                            "height": "int32"
+                        }
+                    },
+                    "analysis": {
+                        "intents": [
+                            {
+                                "device": {
+                                    "name": {
+                                        "name": "string",
+                                        "displayName": "string"
+                                    },
+                                    "imageUrl": "string"
+                                },
+                                "mode": {
+                                    "name": "string",
+                                    "displayName": "string"
+                                },
+                                "attributes": [
+                                    {
+                                        "type": "enum",
+                                        "valueType": "enum",
+                                        "name": {
+                                            "name": "string",
+                                            "displayName": "string"
+                                        },
+                                        "valueFormat": "string",
+                                        "intValue": {
+                                            "value": "int32",
+                                            "unit": {
+                                                "name": "string",
+                                                "displayName": "string"
+                                            }
+                                        },
+                                        "doubleValue": {
+                                            "value": "double",
+                                            "unit": {
+                                                "name": "string",
+                                                "displayName": "string"
+                                            }
+                                        },
+                                        "stringValue": {
+                                            "value": {
+                                                "name": "string",
+                                                "displayName": "string"
+                                            },
+                                            "unit": {
+                                                "name": "string",
+                                                "displayName": "string"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "intentId": "string"
+                            }
+                        ],
+                        "ingredientIds": [
+                            "string"
+                        ]
+                    }
+                }
+            ]
+        },
+        "images": [
+            {
+                "original": {
+                    "url": "string"
+                },
+                "responsive": {
+                    "url": "string",
+                    "width": "int32",
+                    "height": "int32",
+                    "selection": {
+                        "x": "int32",
+                        "y": "int32",
+                        "width": "int32",
+                        "height": "int32"
+                    }
+                }
+            }
+        ],
+        "servings": "int32",
+        "durations": {
+            "cookTime": "int32",
+            "prepTime": "int32"
+        },
+        "normalizedIngredients": [
+            {
+                "id": "string",
+                "rawId": "string",
+                "analysis": {
+                    "product": {
+                        "canonicalName": "string",
+                        "originalName": "string"
+                    },
+                    "brand": {
+                        "canonicalName": "string",
+                        "brandedProduct": {
+                            "id": "string",
+                            "name": "string",
+                            "canonicalName": "string",
+                            "description": "string",
+                            "brand": {
+                                "id": "string",
+                                "name": "string",
+                                "description": "string"
+                            },
+                            "imageUrl": "string",
+                            "rating": {
+                                "rating": "int32",
+                                "reviewCount": "int32"
+                            },
+                            "storeUrl": "string"
+                        }
+                    },
+                    "category": {
+                        "canonicalName": "string"
+                    },
+                    "quantity": "double",
+                    "unit": "string",
+                    "multiplier": "double",
+                    "comment": "string",
+                    "imageUrl": "string",
+                    "alternativeAmounts": [
+                        {
+                            "quantity": "double",
+                            "unit": "string",
+                            "multiplier": "double"
+                        }
+                    ],
+                    "alternativeMeasurements": [
+                        {
+                            "measurementSystem": "enum",
+                            "amount": {
+                                "quantity": "double",
+                                "unit": "string",
+                                "multiplier": "double"
+                            }
+                        }
+                    ]
+                },
+                "sourceText": "string",
+                "group": "string",
+                "nutrition": {
+                    "components": [
+                        {
+                            "code": {
+                                "name": "string",
+                                "displayName": "string"
+                            },
+                            "value": "double",
+                            "unit": {
+                                "name": "string",
+                                "displayName": "string"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "nutrition": {
+            "status": "enum",
+            "components": [
+                {
+                    "code": {
+                        "name": "string",
+                        "displayName": "string"
+                    },
+                    "value": "double",
+                    "unit": {
+                        "name": "string",
+                        "displayName": "string"
+                    }
+                }
+            ],
+            "healthScore": {
+                "value": "double",
+                "nutrientsInfluence": [
+                    {
+                        "code": {
+                            "name": "string",
+                            "displayName": "string"
+                        },
+                        "influence": "double",
+                        "comment": "string"
+                    }
+                ]
+            },
+            "glycemicIndex": {
+                "value": "double"
+            },
+            "glycemicLoad": {
+                "value": "double"
+            }
+        },
+        "servingsScaled": "int32",
+        "user": {
+            "collections": [
+                {
+                    "id": "string"
+                }
+            ],
+            "value": "bool",
+            "owner": "bool",
+            "type": "enum"
+        },
+        "isFlagged": "bool",
+        "labels": {
+            "mealType": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "cuisine": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "category": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "technique": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "holiday": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "seasonality": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ],
+            "device": [
+                {
+                    "name": "string",
+                    "displayName": "string"
+                }
+            ]
+        },
+        "updatedAt": "int64",
+        "videos": [
+            {
+                "youtubeVideo": {
+                    "originalLink": "string",
+                    "normalizedLink": "string",
+                    "videoId": "string"
+                },
+                "tiktokVideo": {
+                    "originalLink": "string",
+                    "normalizedLink": "string",
+                    "videoId": "string"
+                }
+            }
+        ],
+        "constraints": {
+            "supports": {
+                "diets": [
+                    {
+                        "name": {
+                            "name": "string",
+                            "displayName": "string"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

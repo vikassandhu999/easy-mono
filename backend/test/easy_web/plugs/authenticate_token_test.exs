@@ -173,7 +173,7 @@ defmodule EasyWeb.Plugs.AuthenticateTokenTest do
         })
 
       {:ok, _coach} =
-        Easy.Coaches.create_coach_legacy(user.id, business.id, %{
+        Easy.Organizations.create_coach_legacy(user.id, business.id, %{
           status: "active"
         })
 

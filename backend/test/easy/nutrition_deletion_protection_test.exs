@@ -3,7 +3,7 @@ defmodule Easy.NutritionDeletionProtectionTest do
 
   alias Easy.Nutrition
   alias Easy.Organizations
-  alias Easy.Coaches
+  alias Easy.Organizations
   alias Easy.Accounts
 
   describe "ingredient deletion protection" do

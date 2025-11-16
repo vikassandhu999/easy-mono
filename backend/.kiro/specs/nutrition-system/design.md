@@ -51,7 +51,7 @@ lib/easy_web/controllers/
 
 The Nutrition context will interact with:
 - **Easy.Organizations**: For business scoping
-- **Easy.Coaches**: For coach validation and permissions
+- **Easy.Organizations**: For coach validation and permissions
 - **Easy.Clients**: For client assignment validation
 
 ## Data Models
@@ -81,7 +81,7 @@ defmodule Easy.Nutrition.Ingredient do
     field :status, :string, default: "active"
     
     belongs_to :business, Easy.Organizations.Business
-    belongs_to :created_by, Easy.Coaches.Coach
+    belongs_to :created_by, Easy.Organizations.Coach
     
     # Relationships
     has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient
@@ -124,7 +124,7 @@ defmodule Easy.Nutrition.Recipe do
     field :status, :string, default: "active"
     
     belongs_to :business, Easy.Organizations.Business
-    belongs_to :created_by, Easy.Coaches.Coach
+    belongs_to :created_by, Easy.Organizations.Coach
     
     # Relationships
     has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient
@@ -193,7 +193,7 @@ defmodule Easy.Nutrition.Meal do
     field :total_fiber, :decimal
     
     belongs_to :business, Easy.Organizations.Business
-    belongs_to :created_by, Easy.Coaches.Coach
+    belongs_to :created_by, Easy.Organizations.Coach
     
     # Relationships
     has_many :meal_recipes, Easy.Nutrition.MealRecipe

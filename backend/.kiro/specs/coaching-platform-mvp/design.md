@@ -33,7 +33,7 @@ graph TB
     subgraph "Context Layer"
         Accounts[Easy.Accounts]
         Orgs[Easy.Organizations]
-        Coaches[Easy.Coaches]
+        Coaches[Easy.Organizations]
         Clients[Easy.Clients]
     end
     
@@ -87,7 +87,7 @@ graph TB
 - Owns: Business, Plan, Subscription schemas
 - Responsibilities: Business CRUD, subscription management, plan management
 
-**Easy.Coaches** - Coach profile management
+**Easy.Organizations** - Coach profile management
 - Owns: Coach schema
 - Responsibilities: Coach CRUD, coach-client assignments, coach queries
 
@@ -108,7 +108,7 @@ defmodule Easy.Accounts.User do
     field :email_verified, :boolean, default: false
     field :email_verified_at, :utc_datetime
     
-    has_one :coach, Easy.Coaches.Coach
+    has_one :coach, Easy.Organizations.Coach
     has_one :client, Easy.Clients.Client
     has_many :sessions, Easy.Accounts.Session
     has_many :one_time_tokens, Easy.Accounts.OneTimeToken
@@ -226,7 +226,7 @@ defmodule Easy.Organizations.Business do
     field :status, :string, default: "active"
     
     belongs_to :owner, Easy.Accounts.User
-    has_many :coaches, Easy.Coaches.Coach
+    has_many :coaches, Easy.Organizations.Coach
     has_many :clients, Easy.Clients.Client
     has_one :subscription, Easy.Organizations.Subscription
     
@@ -283,11 +283,11 @@ end
 - `create_subscription(business, plan)` - Create subscription
 - `get_subscription(business_id)` - Get active subscription
 
-### 3. Easy.Coaches Context
+### 3. Easy.Organizations Context
 
 **Schema: Coach**
 ```elixir
-defmodule Easy.Coaches.Coach do
+defmodule Easy.Organizations.Coach do
   schema "coaches" do
     field :bio, :string
     field :specialties, {:array, :string}
@@ -326,7 +326,7 @@ defmodule Easy.Clients.Client do
     
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
-    many_to_many :coaches, Easy.Coaches.Coach,
+    many_to_many :coaches, Easy.Organizations.Coach,
       join_through: Easy.Clients.CoachClientAssignment
     
     timestamps()
@@ -341,7 +341,7 @@ defmodule Easy.Clients.CoachClientAssignment do
     field :assigned_at, :utc_datetime
     field :assigned_by_id, :id  # User who created assignment
     
-    belongs_to :coach, Easy.Coaches.Coach
+    belongs_to :coach, Easy.Organizations.Coach
     belongs_to :client, Easy.Clients.Client
     
     timestamps()
@@ -600,7 +600,7 @@ Non-OAuth endpoints return errors in this format:
 - `Easy.Accounts` - User creation, email validation
 - `Easy.Auth` - OTP generation/verification, JWT creation, rate limiting
 - `Easy.Organizations` - Business creation, subscription management
-- `Easy.Coaches` - Coach CRUD, assignments
+- `Easy.Organizations` - Coach CRUD, assignments
 - `Easy.Clients` - Client CRUD, invitations, assignments
 
 **Schema Tests** - Test validations and constraints

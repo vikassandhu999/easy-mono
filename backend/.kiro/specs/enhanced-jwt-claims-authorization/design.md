@@ -93,7 +93,7 @@ Response
 ┌─────────────────────────────────────────────────────────────┐
 │                      Service Layer                           │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │  Easy.Accounts, Easy.Coaches, Easy.Clients, etc.    │  │
+│  │  Easy.Accounts, Easy.Organizations, Easy.Clients, etc.    │  │
 │  │  - Accept scope as first parameter                   │  │
 │  │  - Use scope for authorization decisions             │  │
 │  │  - Apply business_id filters to queries              │  │
@@ -378,7 +378,7 @@ end
 **Affected Modules:**
 
 - `Easy.Accounts` - User management functions
-- `Easy.Coaches` - Coach management functions
+- `Easy.Organizations` - Coach management functions
 - `Easy.Clients` - Client management functions
 - `Easy.Organizations` - Business management functions
 - `Easy.Nutrition` - Nutrition-related functions (if they need business scoping)
@@ -690,7 +690,7 @@ Controllers handle these errors and convert them to appropriate HTTP responses.
 ### Phase 3: Service Layer Refactoring
 
 1. Update `Easy.Accounts` functions to accept scope
-2. Update `Easy.Coaches` functions to accept scope
+2. Update `Easy.Organizations` functions to accept scope
 3. Update `Easy.Clients` functions to accept scope
 4. Update `Easy.Organizations` functions to accept scope
 5. Add query scoping helpers

@@ -151,7 +151,7 @@ defmodule Easy.Accounts do
     }
 
     with {:ok, session_attrs, token_roles, token_context} <-
-           determine_session_context(base_session_attrs, coach, client),
+           build_session_context(base_session_attrs, coach, client),
          {:ok, session} <-
            %Session{}
            |> Session.changeset(session_attrs)
@@ -165,7 +165,7 @@ defmodule Easy.Accounts do
   end
 
   # Get coach context
-  defp determine_session_context(base_attrs, %Coach{} = coach, nil) do
+  defp build_session_context(base_attrs, %Coach{} = coach, nil) do
     session_attrs =
       base_attrs
       |> Map.put(:coach_id, coach.id)
@@ -183,7 +183,7 @@ defmodule Easy.Accounts do
   end
 
   # Get client context
-  defp determine_session_context(base_attrs, nil, %Client{} = client) do
+  defp build_session_context(base_attrs, nil, %Client{} = client) do
     session_attrs =
       base_attrs
       |> Map.put(:client_id, client.id)
@@ -200,7 +200,7 @@ defmodule Easy.Accounts do
     {:ok, session_attrs, token_roles, token_context}
   end
 
-  defp determine_session_context(_base_attrs, _, _) do
+  defp build_session_context(_base_attrs, _, _) do
     {:error, Easy.Error.new("invalid_session", "Session must be for either a coach or a client.")}
   end
 

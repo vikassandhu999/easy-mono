@@ -14,7 +14,6 @@ defmodule Easy.Nutrition.Recipe do
 
     field :prep_time_minutes, :integer
     field :cook_time_minutes, :integer
-    field :total_time_minutes, :integer
     field :servings, :integer, default: 1
 
     field :total_calories, :decimal
@@ -28,11 +27,9 @@ defmodule Easy.Nutrition.Recipe do
     belongs_to :business, Easy.Organizations.Business, type: :binary_id
     belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
 
-    has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient, on_delete: :delete_all
-
-    many_to_many :ingredients, Easy.Nutrition.Ingredient,
-      join_through: Easy.Nutrition.RecipeIngredient,
-      on_delete: :delete_all
+    has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient,
+      on_delete: :delete_all,
+      on_replace: :delete
 
     timestamps()
   end
@@ -50,7 +47,6 @@ defmodule Easy.Nutrition.Recipe do
       :instructions_as_text,
       :prep_time_minutes,
       :cook_time_minutes,
-      :total_time_minutes,
       :servings,
       :status,
       :total_calories,

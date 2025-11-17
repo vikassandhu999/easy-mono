@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.WeightUnit do
+defmodule Easy.Nutrition.MeasurementUnit do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -7,7 +7,7 @@ defmodule Easy.Nutrition.WeightUnit do
 
   @systems ~w(imperial metric other)
 
-  schema "weight_units" do
+  schema "measurement_units" do
     field :name, :string
     field :abbreviation, :string
     # imperial or metric or other

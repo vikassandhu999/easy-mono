@@ -13,7 +13,7 @@ defmodule Easy.Repo.Migrations.CreateRecipeIngredients do
       add :ingredient_id, references(:ingredients, on_delete: :delete_all, type: :binary_id),
         null: false
 
-      add :unit_id, references(:weight_units, on_delete: :nilify_all, type: :binary_id)
+      add :unit_id, references(:measurement_units, on_delete: :nilify_all, type: :binary_id)
 
       timestamps()
     end

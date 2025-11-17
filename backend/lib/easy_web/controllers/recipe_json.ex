@@ -1,5 +1,6 @@
 defmodule EasyWeb.RecipeJSON do
   alias Easy.Nutrition.Recipe
+  alias Ecto.Association.NotLoaded
 
   def index(%{recipes: recipes, meta: meta}) do
     %{
@@ -22,8 +23,8 @@ defmodule EasyWeb.RecipeJSON do
       description: recipe.description,
       instructions: recipe.instructions,
       prep_time_minutes: recipe.prep_time_minutes,
+      cook_time_minutes: recipe.cook_time_minutes,
       servings: recipe.servings,
-      ingredients: recipe.ingredients || [],
       total_calories: recipe.total_calories,
       total_protein: recipe.total_protein,
       total_carbs: recipe.total_carbs,
@@ -32,7 +33,49 @@ defmodule EasyWeb.RecipeJSON do
       status: recipe.status,
       creator_id: recipe.creator_id,
       inserted_at: recipe.inserted_at,
-      updated_at: recipe.updated_at
+      updated_at: recipe.updated_at,
+      recipe_ingredients: render_recipe_ingredients(recipe.recipe_ingredients)
+    }
+  end
+
+  defp render_recipe_ingredients(%NotLoaded{}), do: []
+  defp render_recipe_ingredients(nil), do: []
+
+  defp render_recipe_ingredients(ingredients) do
+    Enum.map(ingredients, &render_recipe_ingredient/1)
+  end
+
+  defp render_recipe_ingredient(ingredient) do
+    %{
+      id: ingredient.id,
+      order: ingredient.order,
+      quantity: ingredient.quantity,
+      quantity_as_text: ingredient.quantity_as_text,
+      ingredient_id: ingredient.ingredient_id,
+      unit_id: ingredient.unit_id,
+      ingredient: render_nested_ingredient(ingredient.ingredient),
+      unit: render_nested_unit(ingredient.unit)
+    }
+  end
+
+  defp render_nested_ingredient(%NotLoaded{}), do: nil
+  defp render_nested_ingredient(nil), do: nil
+
+  defp render_nested_ingredient(ingredient) do
+    %{
+      id: ingredient.id,
+      name: ingredient.name
+    }
+  end
+
+  defp render_nested_unit(%NotLoaded{}), do: nil
+  defp render_nested_unit(nil), do: nil
+
+  defp render_nested_unit(unit) do
+    %{
+      id: unit.id,
+      name: unit.name,
+      abbreviation: unit.abbreviation
     }
   end
 end

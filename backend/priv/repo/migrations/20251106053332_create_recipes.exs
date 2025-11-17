@@ -10,7 +10,6 @@ defmodule Easy.Repo.Migrations.CreateRecipes do
       add :instructions_as_text, :text
       add :prep_time_minutes, :integer
       add :cook_time_minutes, :integer
-      add :total_time_minutes, :integer
       add :servings, :integer, default: 1
       add :total_calories, :decimal
       add :total_protein, :decimal

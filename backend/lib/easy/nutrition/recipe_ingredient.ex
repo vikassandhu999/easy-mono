@@ -14,7 +14,7 @@ defmodule Easy.Nutrition.RecipeIngredient do
     belongs_to :recipe, Easy.Nutrition.Recipe, on_replace: :delete, type: :binary_id
     belongs_to :ingredient, Easy.Nutrition.Ingredient, type: :binary_id
 
-    belongs_to :unit, Easy.Nutrition.WeightUnit, type: :binary_id
+    belongs_to :unit, Easy.Nutrition.MeasurementUnit, type: :binary_id
 
     timestamps()
   end
@@ -33,14 +33,14 @@ defmodule Easy.Nutrition.RecipeIngredient do
       :ingredient_id,
       :unit_id
     ])
-    |> validate_required([:order, :recipe_id, :ingredient_id])
+    |> validate_required([:order, :ingredient_id])
     |> validate_at_least_one([:quantity, :quantity_as_text])
-    |> validate_number(:quantity, greater_than: 0, allow_nil: true)
+    |> validate_number(:quantity, greater_than_or_equal_to: 0)
     |> validate_number(:order, greater_than_or_equal_to: 0)
   end
 
   defp validate_at_least_one(changeset, fields) do
-    if Enum.any?(fields, fn field -> get_change(changeset, field) end) do
+    if Enum.any?(fields, fn field -> get_field(changeset, field) end) do
       changeset
     else
       add_error(

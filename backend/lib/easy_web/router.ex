@@ -58,6 +58,16 @@ defmodule EasyWeb.Router do
     patch "/:id/status", ClientController, :update_status
   end
 
+  scope "/api/ingredients", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", IngredientController, :index
+    post "/", IngredientController, :create
+    get "/:id", IngredientController, :show
+    patch "/:id", IngredientController, :update
+    delete "/:id", IngredientController, :delete
+  end
+
   scope "/api/recipes", EasyWeb do
     pipe_through :api_authenticated
 

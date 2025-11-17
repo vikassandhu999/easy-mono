@@ -1,6 +1,7 @@
 defmodule EasyWeb.RecipeController do
   import Ecto.Query, warn: false
 
+  alias Easy.Nutrition
   alias Easy.Nutrition.Recipe
   alias Easy.Repo
   alias EasyWeb.FallbackController
@@ -19,7 +20,14 @@ defmodule EasyWeb.RecipeController do
 
       query =
         from r in Recipe,
-          where: r.business_id == ^business_id and r.status == ^status
+          where: r.business_id == ^business_id
+
+      query =
+        if status do
+          from r in query, where: r.status == ^status
+        else
+          query
+        end
 
       query =
         if search_query do
@@ -55,10 +63,7 @@ defmodule EasyWeb.RecipeController do
            conn.body_params
            |> Map.put("business_id", business_id)
            |> Map.put("creator_id", coach_id),
-         {:ok, recipe} <-
-           %Recipe{}
-           |> Recipe.changeset(attrs_with_ids)
-           |> Repo.insert() do
+         {:ok, recipe} <- Nutrition.create_recipe(attrs_with_ids) do
       conn
       |> put_status(:created)
       |> render(:create, %{recipe: recipe})
@@ -72,8 +77,7 @@ defmodule EasyWeb.RecipeController do
   end
 
   def update(conn, _params) do
-    with {:ok, updated_recipe} <-
-           conn.assigns.recipe |> Recipe.changeset(conn.body_params) |> Repo.update() do
+    with {:ok, updated_recipe} <- Nutrition.update_recipe(conn.assigns.recipe, conn.body_params) do
       conn
       |> put_status(:ok)
       |> render(:update, %{recipe: updated_recipe})
@@ -93,7 +97,15 @@ defmodule EasyWeb.RecipeController do
     with %{"id" => id} <- conn.params,
          %{"business_id" => business_id} <- conn.assigns.token_claims,
          %Recipe{} = recipe <-
-           Repo.one(from(r in Recipe, where: r.id == ^id and r.business_id == ^business_id)) do
+           Repo.one(
+             from r in Recipe,
+               where: r.id == ^id and r.business_id == ^business_id,
+               preload: [
+                 :business,
+                 :creator,
+                 recipe_ingredients: [:ingredient, :unit]
+               ]
+           ) do
       assign(conn, :recipe, recipe)
     else
       _ ->

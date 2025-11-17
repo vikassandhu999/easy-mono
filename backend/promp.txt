@@ -1,0 +1,39 @@
+- Hi, I am building platform name "CoachEasy"
+Q. What coacheasy does ?
+A. Coacheasy is a platform for helping coaches ( for now health coaches since they are approachable) to manage their clients.
+Q. What are the actors of the product
+A. 1. User - Just think of like an email. Without being a coach or busines or client it does not mean anything to our system like it just a user account
+   2. Business - Business is can be a group of people that manages their coaching business. ( For now only on coach can create his business)
+   3. Coach - Business will have coaches. Only admin coach who registered the business can come directly to the platform and register. Otherwise someone has to invite him
+   4. Client - Client is invited by coach.
+
+   ** Since everyone is isloated in theier environment so user can be busines - coach - client and the same time to different tenants
+
+Q. What is the core of the product
+  1. Meal Plan - A week base plan ( can be upto 4 weeks)
+
+    - There are two types of plan
+        - Workout Plan
+        - Nutrition Plan
+
+        *** Workout Plan
+         A workout plan will consist workout days ()
+           Then workout days will have a workouts consisting the exericses
+
+        ** Exercise
+        An exercise is consist of an activity
+
+        *** Nutrition Plan
+         Same as workout it will contains meal_days
+         then a specifc recipe in the day
+            - We are treat a recipe as an ingrident or as an something that which requires instuction to cook with this way we can simply this
+
+** What is your job  ?
+Your job is to find out what is how can I structure all the core of my product and keep track of loggings of the client
+Keep in mind importantly that we don't have to make  something very complex . We are just starting so yeah! Just of this something between an MVP
+and a full product.
+
+** TECH STACK
+Backend - Elixir/Phoenix
+DB - Postgres
+Frontend - React and Typescript and Mantine

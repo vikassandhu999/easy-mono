@@ -2,6 +2,21 @@ defmodule Easy.Utils do
   import Ecto.Query, only: [from: 2]
   require Logger
 
+  @doc """
+  Parses a string (from query params) into a boolean atom (true, false, or nil).
+  """
+  def parse_boolean(nil), do: nil
+
+  def parse_boolean(bool_string) when is_binary(bool_string) do
+    case String.downcase(bool_string) do
+      "true" -> true
+      "false" -> false
+      _ -> nil
+    end
+  end
+
+  def parse_boolean(_), do: nil
+
   def utc_yesterday() do
     utc_days_ago(1)
   end

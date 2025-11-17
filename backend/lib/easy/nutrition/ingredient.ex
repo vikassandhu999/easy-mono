@@ -1,15 +1,16 @@
 defmodule Easy.Nutrition.Ingredient do
   use Ecto.Schema
-  alias Easy.Organizations.Business
-  alias Easy.Organizations.Coach
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   schema "ingredients" do
     field :name, :string
     field :image_url, :string
-    field :thumbnail_url, :string
+    field :meta_info, :map, default: %{}
 
-    belongs_to :business, Business
-    belongs_to :creator, Coach
+    belongs_to :business, Easy.Organizations.Business, type: :binary_id
+    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
 
     timestamps()
   end
@@ -19,25 +20,17 @@ defmodule Easy.Nutrition.Ingredient do
     ingredient
     |> Ecto.Changeset.cast(attrs, [
       :name,
-      :image_url,
-      :thumbnail_url,
-      :business_id,
-      :creator_id,
-      :default_serving_unit_id
+      :image_url
     ])
     |> Ecto.Changeset.validate_required([:name, :business_id, :creator_id])
-    |> Ecto.Changeset.cast_assoc(:allowed_serving_units)
   end
 
   def changeset_system(ingredient, attrs) do
     ingredient
     |> Ecto.Changeset.cast(attrs, [
       :name,
-      :image_url,
-      :thumbnail_url,
-      :default_serving_unit_id
+      :image_url
     ])
     |> Ecto.Changeset.validate_required([:name])
-    |> Ecto.Changeset.cast_assoc(:allowed_serving_units)
   end
 end

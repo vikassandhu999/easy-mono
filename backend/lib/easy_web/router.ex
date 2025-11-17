@@ -67,4 +67,14 @@ defmodule EasyWeb.Router do
     patch "/:id", RecipeController, :update
     delete "/:id", RecipeController, :delete
   end
+
+  scope "/api/nutrition_plans", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", NutritionPlanController, :index
+    post "/", NutritionPlanController, :create
+    get "/:id", NutritionPlanController, :show
+    patch "/:id", NutritionPlanController, :update
+    delete "/:id", NutritionPlanController, :delete
+  end
 end

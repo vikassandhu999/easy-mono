@@ -9,30 +9,45 @@ defmodule Easy.Nutrition.RecipeIngredient do
     field :order, :integer
     field :quantity, :decimal
 
-    belongs_to :recipe, Easy.Nutrition.Recipe, on_replace: :delete
-    belongs_to :ingredient, Easy.Nutrition.Ingredient
-    has_one :weight_unit, Easy.Nutrition.WeightUnit
+    field :quantity_as_text, :string
+
+    belongs_to :recipe, Easy.Nutrition.Recipe, on_replace: :delete, type: :binary_id
+    belongs_to :ingredient, Easy.Nutrition.Ingredient, type: :binary_id
+
+    belongs_to :unit, Easy.Nutrition.WeightUnit, type: :binary_id
 
     timestamps()
   end
 
-  @spec changeset(
-          {map(),
-           %{
-             optional(atom()) =>
-               atom()
-               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try,
-                  any()}
-           }}
-          | %{
-              :__struct__ => atom() | %{:__changeset__ => any(), optional(any()) => any()},
-              optional(atom()) => any()
-            },
-          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
-        ) :: Ecto.Changeset.t()
+  @doc """
+  Changeset for RecipeIngredient.
+  Used for casting and validating the quantity and units of an ingredient within a recipe.
+  """
   def changeset(recipe_ingredient, attrs) do
     recipe_ingredient
-    |> cast(attrs, [:order, :quantity, :weight_unit, :recipe_id, :ingredient_id])
-    |> validate_required([:order, :quantity, :weight_unit, :recipe_id, :ingredient_id])
+    |> cast(attrs, [
+      :order,
+      :quantity,
+      :quantity_as_text,
+      :recipe_id,
+      :ingredient_id,
+      :unit_id
+    ])
+    |> validate_required([:order, :recipe_id, :ingredient_id])
+    |> validate_at_least_one([:quantity, :quantity_as_text])
+    |> validate_number(:quantity, greater_than: 0, allow_nil: true)
+    |> validate_number(:order, greater_than_or_equal_to: 0)
+  end
+
+  defp validate_at_least_one(changeset, fields) do
+    if Enum.any?(fields, fn field -> get_change(changeset, field) end) do
+      changeset
+    else
+      add_error(
+        changeset,
+        List.first(fields),
+        "either quantity or quantity_as_text must be provided"
+      )
+    end
   end
 end

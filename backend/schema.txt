@@ -1,0 +1,224 @@
+defmodule(Easy.Nutrition.NutritionPlan) do
+  use Ecto.Schema
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "nutrition_plans" do
+    field :name, :string
+    field :description, :string
+    field :thumbnail_url, :string
+
+    field :is_template, :boolean
+
+    field :status, Ecto.Enum, values: [:active, :draft, :archieved], default: :active
+
+    field :duration_weeks, :integer
+    field :start_date, :date
+
+    field :tags, {:array, :string}
+
+    # if not null then it is not template
+    belongs_to :client, Easy.Clients.Client, type: :binary_id
+
+    # ownership
+    belongs_to :business, Easy.Organizations.Business, type: :binary_id
+    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
+
+    timestamps()
+  end
+end
+
+
+defmodule(Easy.Nutrition.NutritionPlanDay) do
+  use Ecto.Schema
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "nutrition_plan_days" do
+    field :day_number, :integer
+    field :label, :string
+
+    belongs_to(:nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary)
+
+    timestamps()
+  end
+end
+
+
+defmodule Easy.Nutrition.NutritionPlanDayItem do
+  use Ecto.Schema
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "nutrtion_plan_day_items" do
+    belongs_to :meal_day, Easy.Nutrition.NutritionPlanMeal, type: :binary_id
+    belongs_to :recipe, Easy.Nutrition.Recipe, type: :binary_id
+
+    field :meal_time, :string
+    field :sort_order, :integer, default: 0
+
+    field :daytime, Ecto.Enum,
+      values: [
+        :early_morning,
+        :breakfast,
+        :lunch,
+        :dinner,
+        :preworkout,
+        :postworkout
+      ]
+
+    field :time, :time
+
+    field :notes, :string
+
+    timestamps()
+  end
+end
+
+
+defmodule Easy.Nutrition.Recipe do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "recipes" do
+    field :name, :string
+    field :description, :string
+    embeds_one :instructions, Easy.Nutrition.RecipeInstructions
+    field :prep_time_minutes, :integer
+    field :cook_time_minutes, :integer
+    field :servings, :integer, default: 1
+
+    field :total_calories, :decimal
+    field :total_protein, :decimal
+    field :total_carbs, :decimal
+    field :total_fats, :decimal
+    field :total_fiber, :decimal
+
+    field :status, :string, default: "active"
+
+    belongs_to :business, Easy.Organizations.Business
+    belongs_to :creator, Easy.Organizations.Coach
+
+    has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient, on_delete: :delete_all
+
+    many_to_many :ingredients, Easy.Nutrition.Ingredient,
+      join_through: Easy.Nutrition.RecipeIngredient,
+      on_delete: :delete_all
+
+    timestamps()
+  end
+
+  @valid_statuses ~w(active archived)
+
+  @doc false
+  def changeset(recipe, attrs) do
+    recipe
+    |> cast(attrs, [
+      :name,
+      :description,
+      :instructions,
+      :prep_time_minutes,
+      :cook_time_minutes,
+      :servings,
+      :status,
+      :business_id,
+      :creator_id
+    ])
+    |> validate_required([:name, :status, :business_id, :creator_id])
+    |> validate_inclusion(:status, @valid_statuses)
+    |> validate_number(:prep_time_minutes, greater_than_or_equal_to: 0)
+    |> validate_number(:cook_time_minutes, greater_than_or_equal_to: 0)
+    |> validate_number(:servings, greater_than: 0)
+  end
+end
+
+
+defmodule Easy.Nutrition.RecipeIngredient do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "recipe_ingredients" do
+    field :order, :integer
+    field :quantity, :decimal
+
+    field :quantity_as_text, :string
+
+    belongs_to :recipe, Easy.Nutrition.Recipe, on_replace: :delete
+    belongs_to :ingredient, Easy.Nutrition.Ingredient
+    has_one :weight_unit, Easy.Nutrition.WeightUnit
+
+    timestamps()
+  end
+
+  @spec changeset(
+          {map(),
+           %{
+             optional(atom()) =>
+               atom()
+               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try,
+                  any()}
+           }}
+          | %{
+              :__struct__ => atom() | %{:__changeset__ => any(), optional(any()) => any()},
+              optional(atom()) => any()
+            },
+          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
+        ) :: Ecto.Changeset.t()
+  def changeset(recipe_ingredient, attrs) do
+    recipe_ingredient
+    |> cast(attrs, [:order, :quantity, :weight_unit, :recipe_id, :ingredient_id])
+    |> validate_required([:order, :quantity, :weight_unit, :recipe_id, :ingredient_id])
+  end
+end
+
+
+defmodule Easy.Nutrition.Ingredient do
+  use Ecto.Schema
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "ingredients" do
+    field :name, :string
+    field :image_url, :string
+    field :meta_info, :map, default: %{}
+
+    belongs_to :business, Easy.Organizations.Business, type: :binary_id
+    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
+
+    timestamps()
+  end
+
+  @doc false
+  def changeset(ingredient, attrs) do
+    ingredient
+    |> Ecto.Changeset.cast(attrs, [
+      :name,
+      :image_url,
+      :default_serving_unit_id
+    ])
+    |> Ecto.Changeset.validate_required([:name, :business_id, :creator_id])
+    |> Ecto.Changeset.cast_assoc(:allowed_serving_units)
+  end
+
+  def changeset_system(ingredient, attrs) do
+    ingredient
+    |> Ecto.Changeset.cast(attrs, [
+      :name,
+      :image_url,
+      :thumbnail_url,
+      :default_serving_unit_id
+    ])
+    |> Ecto.Changeset.validate_required([:name])
+    |> Ecto.Changeset.cast_assoc(:allowed_serving_units)
+  end
+end

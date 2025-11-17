@@ -83,104 +83,11 @@
     "steps": [
       {
         "text": "Carefully slice the chicken breast almost in half horizontally, not quite cutting through to the other edge. Keep that edge intact and open up the breast like you are opening up a book. This will make the meat a uniform thickness to ensure quick and even cooking. Heat large saucepan, rub the chicken with a little oil and season with a bit of salt and pepper, 1 tbsp of Italian seasoning and smoked paprika. Then fry for 3–5 minutes on each side. Set aside to rest for 5 minutes before slicing into bite-sized pieces.",
-        "analysis": {
-          "intents": [
-            {
-              "device": {
-                "name": {
-                  "name": "knife",
-                  "displayName": "Knife"
-                },
-                "imageUrl": "https://image-cdn.whisk.com/image/upload/v1630864965/custom_upload/Knife.png"
-              },
-              "intentId": "107a622b4e1fe76416cad7a5c904e013549.80bd6814:0.0",
-              "attributes": []
-            }
-          ],
-          "ingredientIds": [
-            "91e60219f1da4a214e683626d63150433ac6da0c:0:0",
-            "e83e549033cc3b68433efd3008ee698bcfd6b8a8:1:0",
-            "f357fbdf3a30628519518063b0b8ef88c8e02cfe:7:0",
-            "f357fbdf3a30628519518063b0b8ef88c8e02cfe:7:1",
-            "6cdefd6c6dc365f30858e12ef885821ba069e2b5:8:0",
-            "032e89163f29b2a0ed4cb30a536bfe5c3d5bdc4d:9:0"
-          ]
-        },
-        "group": ""
+        "group": "Bioling"
       },
       {
         "text": "In the same large saucepan over a medium–low heat. Add the olive oil to the pan. Once warm, add the garlic and chilli flakes and cook for 2 minutes, then stir in the tomato purée and cook for 2 more minutes. Add the canned tomatoes and stock to the pan, season with Italian seasoning, paprika and pepper, stir to mix well and reduce the heat to a gentle simmer. Leave to simmer gently while you prepare the rest of the dish.",
-        "analysis": {
-          "intents": [
-            {
-              "device": {
-                "name": {
-                  "name": "cooktop",
-                  "displayName": "Cooktop"
-                },
-                "imageUrl": "https://image-cdn.whisk.com/image/upload/v1630864679/custom_upload/cooktop.png"
-              },
-              "mode": {
-                "name": "heat",
-                "displayName": "Heat"
-              },
-              "attributes": [
-                {
-                  "type": 4,
-                  "value": {
-                    "oneof": "stringValue",
-                    "value": {
-                      "value": {
-                        "name": "Med",
-                        "displayName": "Med"
-                      },
-                      "unit": {
-                        "name": "Level",
-                        "displayName": "Heat Level"
-                      }
-                    }
-                  },
-                  "name": {
-                    "name": "COOKING_INTENT_ATTRIBUTE_TYPE_HEAT_LEVEL.default",
-                    "displayName": "Heat Level"
-                  },
-                  "valueType": 3,
-                  "valueFormat": "%value"
-                },
-                {
-                  "type": 2,
-                  "value": {
-                    "oneof": "intValue",
-                    "value": {
-                      "value": 240,
-                      "unit": {
-                        "name": "Second",
-                        "displayName": "sec"
-                      }
-                    }
-                  },
-                  "name": {
-                    "name": "COOKING_INTENT_ATTRIBUTE_TYPE_DURATION.default",
-                    "displayName": "Duration"
-                  },
-                  "valueType": 1,
-                  "valueFormat": "%value%unit"
-                }
-              ],
-              "intentId": "107a622b4e1fe76416cad7a5c904e013549.e4534b30:1.0"
-            }
-          ],
-          "ingredientIds": [
-            "e83e549033cc3b68433efd3008ee698bcfd6b8a8:1:0",
-            "16b862f2537423c1575ac2abf4709fe91df072dd:2:0",
-            "ec8934e19fa9fe685cd99882ea97dd6e7292067e:4:0",
-            "e992d0b76b9ce174c95a4cd07a91d246e964c3d9:5:0",
-            "f357fbdf3a30628519518063b0b8ef88c8e02cfe:7:0",
-            "f357fbdf3a30628519518063b0b8ef88c8e02cfe:7:1",
-            "6cdefd6c6dc365f30858e12ef885821ba069e2b5:8:0"
-          ]
-        },
-        "group": ""
+        "group": "Bioling"
       },
       {
         "text": "Bring a large saucepan of salted water to the boil, add the pasta and cook according to the packet instructions. Add the broccoli 3 minutes before the end of cooking. Drain thoroughly.",

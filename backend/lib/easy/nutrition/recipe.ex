@@ -8,9 +8,13 @@ defmodule Easy.Nutrition.Recipe do
   schema "recipes" do
     field :name, :string
     field :description, :string
-    embeds_one :instructions, Easy.Nutrition.RecipeInstructions
+
+    field :instructions, {:array, :string}, default: []
+    field :instructions_as_text, :string
+
     field :prep_time_minutes, :integer
     field :cook_time_minutes, :integer
+    field :total_time_minutes, :integer
     field :servings, :integer, default: 1
 
     field :total_calories, :decimal
@@ -19,12 +23,10 @@ defmodule Easy.Nutrition.Recipe do
     field :total_fats, :decimal
     field :total_fiber, :decimal
 
-    field :status, :string, default: "active"
+    field :status, Ecto.Enum, values: [:active, :draft, :archived], default: :active
 
-    # embeds_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient
-
-    belongs_to :business, Easy.Organizations.Business
-    belongs_to :creator, Easy.Organizations.Coach
+    belongs_to :business, Easy.Organizations.Business, type: :binary_id
+    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
 
     has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient, on_delete: :delete_all
 
@@ -35,7 +37,8 @@ defmodule Easy.Nutrition.Recipe do
     timestamps()
   end
 
-  @valid_statuses ~w(active archived)
+  # Changed to atom list for Ecto.Enum validation
+  @valid_statuses [:active, :draft, :archived]
 
   @doc false
   def changeset(recipe, attrs) do
@@ -44,10 +47,17 @@ defmodule Easy.Nutrition.Recipe do
       :name,
       :description,
       :instructions,
+      :instructions_as_text,
       :prep_time_minutes,
       :cook_time_minutes,
+      :total_time_minutes,
       :servings,
       :status,
+      :total_calories,
+      :total_protein,
+      :total_carbs,
+      :total_fats,
+      :total_fiber,
       :business_id,
       :creator_id
     ])
@@ -56,5 +66,6 @@ defmodule Easy.Nutrition.Recipe do
     |> validate_number(:prep_time_minutes, greater_than_or_equal_to: 0)
     |> validate_number(:cook_time_minutes, greater_than_or_equal_to: 0)
     |> validate_number(:servings, greater_than: 0)
+    |> cast_assoc(:recipe_ingredients, with: &Easy.Nutrition.RecipeIngredient.changeset/2)
   end
 end

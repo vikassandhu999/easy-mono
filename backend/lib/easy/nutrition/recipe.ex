@@ -18,7 +18,7 @@ defmodule Easy.Nutrition.Recipe do
 
     field :total_calories, :decimal
     field :total_protein, :decimal
-    field :total_carbs, :decimal
+    field :total_carbohydrates, :decimal
     field :total_fats, :decimal
     field :total_fiber, :decimal
 
@@ -51,7 +51,7 @@ defmodule Easy.Nutrition.Recipe do
       :status,
       :total_calories,
       :total_protein,
-      :total_carbs,
+      :total_carbohydrates,
       :total_fats,
       :total_fiber,
       :business_id,

@@ -68,12 +68,15 @@ defmodule Easy.Nutrition do
   end
 
   def create_recipe(business_id, coach_id, attrs) when is_binary(business_id) do
-    attrs =
+    attrs_with_business_and_creator =
       attrs
       |> Map.put("business_id", business_id)
       |> Map.put("creator_id", coach_id)
 
-    create_recipe(attrs)
+    import Logger
+
+    Logger.debug("Creating recipe with attrs: #{inspect(attrs_with_business_and_creator)}")
+    create_recipe(attrs_with_business_and_creator)
   end
 
   def create_recipe(attrs) when is_map(attrs) do

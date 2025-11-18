@@ -13,7 +13,7 @@ defmodule Easy.Repo.Migrations.CreateRecipes do
       add :servings, :integer, default: 1
       add :total_calories, :decimal
       add :total_protein, :decimal
-      add :total_carbs, :decimal
+      add :total_carbohydrates, :decimal
       add :total_fats, :decimal
       add :total_fiber, :decimal
       add :status, :string, null: false, default: "active"

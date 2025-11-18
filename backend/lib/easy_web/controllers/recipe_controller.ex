@@ -63,7 +63,8 @@ defmodule EasyWeb.RecipeController do
            conn.body_params
            |> Map.put("business_id", business_id)
            |> Map.put("creator_id", coach_id),
-         {:ok, recipe} <- Nutrition.create_recipe(attrs_with_ids) do
+         {:ok, recipe} <-
+           Nutrition.create_recipe(attrs_with_ids) do
       conn
       |> put_status(:created)
       |> render(:create, %{recipe: recipe})

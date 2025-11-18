@@ -27,22 +27,22 @@ defmodule EasyWeb.RecipeJSON do
       servings: recipe.servings,
       total_calories: recipe.total_calories,
       total_protein: recipe.total_protein,
-      total_carbs: recipe.total_carbs,
+      total_carbohydrates: recipe.total_carbohydrates,
       total_fats: recipe.total_fats,
       total_fiber: recipe.total_fiber,
       status: recipe.status,
       creator_id: recipe.creator_id,
       inserted_at: recipe.inserted_at,
-      updated_at: recipe.updated_at,
-      recipe_ingredients: render_recipe_ingredients(recipe.recipe_ingredients)
+      updated_at: recipe.updated_at
     }
+    |> render_recipe_ingredients(recipe.recipe_ingredients)
   end
 
-  defp render_recipe_ingredients(%NotLoaded{}), do: []
-  defp render_recipe_ingredients(nil), do: []
+  defp render_recipe_ingredients(output, %NotLoaded{}), do: output
+  defp render_recipe_ingredients(output, nil), do: output
 
-  defp render_recipe_ingredients(ingredients) do
-    Enum.map(ingredients, &render_recipe_ingredient/1)
+  defp render_recipe_ingredients(output, ingredients) do
+    output |> Map.put(:recipe_ingredients, Enum.map(ingredients, &render_recipe_ingredient/1))
   end
 
   defp render_recipe_ingredient(ingredient) do

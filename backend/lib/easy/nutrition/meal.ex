@@ -26,7 +26,6 @@ defmodule Easy.Nutrition.Meal do
     belongs_to :nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary_id
 
     has_many :meal_items, Easy.Nutrition.MealItem,
-      # The FK on the MealItem table
       foreign_key: :meal_id,
       on_delete: :delete_all
 

@@ -3,15 +3,13 @@ defmodule EasyWeb.IngredientJSON do
 
   def index(%{ingredients: ingredients, meta: meta}) do
     %{
-      ingredients: Enum.map(ingredients, &render_ingredient/1),
-      meta: normalize_meta(meta, length(ingredients))
+      data: Enum.map(ingredients, &render_ingredient/1),
+      meta: meta
     }
   end
 
   def show(%{ingredient: ingredient}) do
-    %{
-      ingredient: render_ingredient(ingredient)
-    }
+    %{data: render_ingredient(ingredient)}
   end
 
   def create(assigns), do: show(assigns)
@@ -35,14 +33,5 @@ defmodule EasyWeb.IngredientJSON do
       inserted_at: ingredient.inserted_at,
       updated_at: ingredient.updated_at
     }
-  end
-
-  defp normalize_meta(meta, total) when is_map(meta) do
-    meta
-    |> Map.put_new(:total, total)
-  end
-
-  defp normalize_meta(_meta, total) do
-    %{total: total}
   end
 end

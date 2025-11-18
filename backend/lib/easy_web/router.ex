@@ -86,5 +86,7 @@ defmodule EasyWeb.Router do
     get "/:id", NutritionPlanController, :show
     patch "/:id", NutritionPlanController, :update
     delete "/:id", NutritionPlanController, :delete
+
+    resources "/meals", MealController, only: [:create, :update, :delete]
   end
 end

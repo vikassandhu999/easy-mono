@@ -3,10 +3,97 @@ defmodule Easy.Nutrition do
 
   alias Easy.Repo
   alias Easy.Utils
-  alias Easy.Nutrition.{Ingredient, Recipe}
+  alias Easy.Nutrition.{Ingredient, NutritionPlan, Recipe, Meal}
 
   @default_limit 50
   @max_limit 100
+  @nutrition_plan_statuses Ecto.Enum.values(NutritionPlan, :status)
+
+  def list_nutrition_plans(business_id, params \\ %{}) do
+    limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
+    offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
+    status = params |> fetch_param(:status) |> parse_plan_status()
+    is_template = params |> fetch_param(:is_template) |> parse_boolean_param()
+    search = params |> fetch_param(:search) |> parse_search()
+
+    base_query =
+      from np in NutritionPlan,
+        where: np.business_id == ^business_id,
+        order_by: [desc: np.inserted_at]
+
+    query =
+      if status do
+        from np in base_query, where: np.status == ^status
+      else
+        base_query
+      end
+
+    query =
+      case is_template do
+        true -> from np in query, where: np.is_template == true and is_nil(np.client_id)
+        false -> from np in query, where: np.is_template == false and not is_nil(np.client_id)
+        _ -> query
+      end
+
+    query =
+      if search do
+        from np in query, where: ilike(np.name, ^"%#{search}%")
+      else
+        query
+      end
+
+    total = Repo.aggregate(query, :count)
+
+    query =
+      from np in query,
+        offset: ^offset,
+        limit: ^limit
+
+    plans =
+      query
+      |> Repo.all()
+      |> Repo.preload(nutrition_plan_preloads())
+
+    {plans, %{limit: limit, offset: offset, total: total}}
+  end
+
+  def fetch_nutrition_plan(business_id, plan_id) do
+    case Repo.one(
+           from np in NutritionPlan,
+             where: np.id == ^plan_id and np.business_id == ^business_id,
+             preload: ^nutrition_plan_preloads()
+         ) do
+      nil -> {:error, :not_found}
+      plan -> {:ok, plan}
+    end
+  end
+
+  def create_nutrition_plan(business_id, coach_id, attrs) do
+    attrs =
+      attrs
+      |> Map.put("business_id", business_id)
+      |> Map.put("creator_id", coach_id)
+
+    %NutritionPlan{}
+    |> NutritionPlan.changeset(attrs)
+    |> Repo.insert()
+    |> handle_nutrition_plan_result()
+  end
+
+  def update_nutrition_plan(%NutritionPlan{} = plan, attrs) do
+    plan
+    |> NutritionPlan.changeset(attrs)
+    |> Repo.update()
+    |> handle_nutrition_plan_result()
+  end
+
+  def delete_nutrition_plan(%NutritionPlan{} = plan) do
+    Repo.delete(plan)
+  end
+
+  def change_nutrition_plan(%NutritionPlan{} = plan, attrs \\ %{}) do
+    NutritionPlan.changeset(plan, attrs)
+  end
 
   def list_ingredients(business_id, params \\ %{}) do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
@@ -73,9 +160,6 @@ defmodule Easy.Nutrition do
       |> Map.put("business_id", business_id)
       |> Map.put("creator_id", coach_id)
 
-    import Logger
-
-    Logger.debug("Creating recipe with attrs: #{inspect(attrs_with_business_and_creator)}")
     create_recipe(attrs_with_business_and_creator)
   end
 
@@ -100,6 +184,35 @@ defmodule Easy.Nutrition do
 
   def change_recipe(%Recipe{} = recipe, attrs \\ %{}) do
     Recipe.changeset(recipe, attrs)
+  end
+
+  def get_meal(meal_id) do
+    case Repo.get(Meal, meal_id) do
+      nil -> {:error, :not_found}
+      meal -> {:ok, meal}
+    end
+  end
+
+  def create_meal(%NutritionPlan{} = nutrition_plan, attrs) do
+    attrs = Map.put(attrs, "nutrition_plan_id", nutrition_plan.id)
+
+    %Meal{}
+    |> Meal.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_meal(%Meal{} = meal, attrs) do
+    meal
+    |> Meal.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_meal(%Meal{} = meal) do
+    Repo.delete(meal)
+  end
+
+  def change_meal(%Meal{} = meal, attrs \\ %{}) do
+    Meal.changeset(meal, attrs)
   end
 
   defp handle_recipe_result({:ok, recipe}), do: {:ok, repo_preload_recipe(recipe)}
@@ -163,8 +276,45 @@ defmodule Easy.Nutrition do
     ])
   end
 
+  defp nutrition_plan_preloads do
+    [meals: [meal_items: [:recipe]]]
+  end
+
+  defp handle_nutrition_plan_result({:ok, plan}) do
+    {:ok, Repo.preload(plan, nutrition_plan_preloads())}
+  end
+
+  defp handle_nutrition_plan_result({:error, changeset}), do: {:error, changeset}
+
   defp fetch_param(params, key) when is_atom(key) do
     Map.get(params, key) || Map.get(params, Atom.to_string(key))
+  end
+
+  defp parse_plan_status(status) when is_atom(status) do
+    if status in @nutrition_plan_statuses, do: status, else: nil
+  end
+
+  defp parse_plan_status(status) when is_binary(status) do
+    status
+    |> String.trim()
+    |> String.downcase()
+    |> case do
+      "" ->
+        nil
+
+      value ->
+        Enum.find(@nutrition_plan_statuses, fn allowed -> Atom.to_string(allowed) == value end)
+    end
+  end
+
+  defp parse_plan_status(_), do: nil
+
+  defp parse_boolean_param(value) do
+    case Utils.parse_boolean(value) do
+      true -> true
+      false -> false
+      _ -> nil
+    end
   end
 
   defp parse_integer(value) when is_integer(value), do: value

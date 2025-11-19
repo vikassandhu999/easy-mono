@@ -1,7 +1,7 @@
 import {type BaseQueryApi, type BaseQueryFn, createApi} from '@reduxjs/toolkit/query/react';
 import axios, {AxiosError, AxiosRequestConfig} from 'axios';
 
-import {tokenRefreshManager} from './auth/tokenRefreshManager';
+import {tokenStorage} from '@/slices/authSlice';
 
 const resolveBaseUrl = (): string => {
     let baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -24,8 +24,8 @@ const axiosInstance = axios.create({
  */
 function clearAuthState() {
     if (typeof window !== 'undefined') {
+        tokenStorage.clearTokens();
         localStorage.removeItem('user');
-        // Additional state clearing can be added here if needed
     }
 }
 
@@ -45,6 +45,34 @@ function redirectToLogin() {
     }
 }
 
+// Track if we're currently refreshing to prevent multiple refresh calls
+let isRefreshing = false;
+let failedQueue: Array<{resolve: (value?: unknown) => void; reject: (reason?: any) => void}> = [];
+
+const processQueue = (error: any = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve();
+        }
+    });
+
+    failedQueue = [];
+};
+
+// Add request interceptor to attach access token
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const accessToken = tokenStorage.getAccessToken();
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error),
+);
+
 // Add response interceptor for error handling
 axiosInstance.interceptors.response.use(
     (response) => response,
@@ -59,15 +87,15 @@ axiosInstance.interceptors.response.use(
         // Don't retry if:
         // 1. Already retried this request
         // 2. This IS the refresh endpoint
-        // 3. This is an auth endpoint (send-otp, verify-otp)
+        // 3. This is an auth endpoint (token, send-login-code, verify, etc.)
         if (
             originalRequest._retry ||
-            originalRequest.url?.includes('/api/auth/refresh') ||
-            originalRequest.url?.includes('/api/auth/verify-otp') ||
-            originalRequest.url?.includes('/api/auth/send-otp')
+            originalRequest.url?.includes('/api/auth/token') ||
+            originalRequest.url?.includes('/api/auth/send-login-code') ||
+            originalRequest.url?.includes('/api/auth/verify') ||
+            originalRequest.url?.includes('/api/auth/register')
         ) {
             // Clear auth state and redirect to login
-            tokenRefreshManager.reset();
             clearAuthState();
             redirectToLogin();
             return Promise.reject(error);
@@ -76,20 +104,47 @@ axiosInstance.interceptors.response.use(
         // Mark this request as retried to prevent infinite loops
         originalRequest._retry = true;
 
+        // If already refreshing, queue this request
+        if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+                failedQueue.push({resolve, reject});
+            })
+                .then(() => axiosInstance(originalRequest))
+                .catch((err) => Promise.reject(err));
+        }
+
+        isRefreshing = true;
+
         try {
-            // Use TokenRefreshManager to ensure single refresh across concurrent requests
-            await tokenRefreshManager.refresh(async () => {
-                await axiosInstance.post('/api/auth/refresh', {});
+            const refreshToken = tokenStorage.getRefreshToken();
+
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
+            }
+
+            // Call refresh endpoint
+            const response = await axiosInstance.post('/api/auth/token', {
+                refresh_token: refreshToken,
             });
 
-            // Retry the original request with new token (from cookie)
+            const {access_token, refresh_token: new_refresh_token} = response.data;
+
+            // Save new tokens
+            tokenStorage.setTokens(access_token, new_refresh_token);
+
+            // Process queued requests
+            processQueue(null);
+
+            // Retry the original request with new token
             return axiosInstance(originalRequest);
         } catch (refreshError) {
             // Refresh failed - clear state and redirect
-            tokenRefreshManager.reset();
+            processQueue(refreshError);
             clearAuthState();
             redirectToLogin();
             return Promise.reject(refreshError);
+        } finally {
+            isRefreshing = false;
         }
     },
 );
@@ -113,6 +168,13 @@ const axiosBaseQuery = (): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQue
         try {
             const requestHeaders: Record<string, string | undefined> = {};
 
+            // Add authorization header with access token
+            const accessToken = tokenStorage.getAccessToken();
+            if (accessToken) {
+                requestHeaders.Authorization = `Bearer ${accessToken}`;
+            }
+
+            // Merge with any custom headers
             if (headers && typeof headers === 'object') {
                 Object.assign(requestHeaders, headers as Record<string, string | undefined>);
             }
@@ -155,6 +217,8 @@ export const baseAPISlice = createApi({
         'PlanSessions',
         'Coach', // Coach profile management
         'Business', // Business preferences management
+        'Recipes', // Recipe management
+        'Ingredients', // Ingredient management
     ],
     endpoints: () => ({}),
 });

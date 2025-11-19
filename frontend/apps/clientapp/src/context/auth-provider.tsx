@@ -4,7 +4,6 @@ import {FC, useCallback, useEffect, useMemo} from 'react';
 import {AccessToken, AuthAPI, setTokenForAuthedClient} from '@/api/auth';
 
 import {useApp} from './app-provider';
-
 type AuthContextValue = {
     isAuthenticated: boolean;
     error?: string;

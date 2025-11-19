@@ -1,59 +1,55 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Divider, Stack, Text, TextInput} from '@mantine/core';
-import {notifications} from '@mantine/notifications';
-import {IconArrowRight, IconMail} from '@tabler/icons-react';
+import {Button, Stack, Text, TextInput} from '@mantine/core';
+import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {RegisterRequest, RegisterRequest_zod, useRegisterMutation} from '@/services/auth';
-import {useSignUpMutation} from '@/services/users';
-import {handleApiError} from '@/utils/error';
+import {Register_zod, RegisterRequest, useRegisterMutation} from '@/services/auth';
+import APIErrorParser from '@/utils/error_parser';
+import {notifyError, notifySuccess} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
 const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
-    const [, {isLoading}] = useSignUpMutation();
+    const [, {isLoading: reqLoading}] = useRegisterMutation();
 
     const form = useForm<RegisterRequest>({
         defaultValues: {
             email: '',
-            full_name: '',
+            first_name: '',
+            business_handle: '',
+            last_name: '',
         },
-        resolver: zodResolver(RegisterRequest_zod),
+        resolver: zodResolver(Register_zod),
     });
 
     const [registerMutation] = useRegisterMutation();
 
     const onSubmit = async (values: RegisterRequest) => {
         try {
-            const resp = await registerMutation({
-                email: values.email,
-                full_name: values.full_name,
-            }).unwrap();
+            const resp = await registerMutation(values).unwrap();
 
-            notifications.show({
-                title: 'Success',
-                message: 'Please check your email for verification code',
-                color: 'green',
-            });
+            notifySuccess('A verification code has been sent to your email.');
 
-            // Navigate to verify OTP page
             const params = new URLSearchParams([
-                ['token_id', resp.token_id],
+                ['token_id', resp.token.token_id],
                 ['email', values.email],
             ]);
-            navigate('/verify?' + params.toString());
+            navigate('/register/verify?' + params.toString());
         } catch (err) {
-            handleApiError(err);
+            const errMessage = new APIErrorParser(err).humanize();
+            notifyError(errMessage);
         }
     };
+
+    const isLoading = reqLoading || form.formState.isSubmitting;
 
     return (
         <AuthLayout
             subtitle="Manage your clients effortlessly with smart tools built for coaches"
-            title="Let's Get Started"
+            title="New Account"
         >
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Stack gap="md">
@@ -63,13 +59,27 @@ const RegisterPage: React.FC = () => {
                                 fw={500}
                                 size="md"
                             >
-                                Full Name
+                                First Name
                             </Text>
                         }
-                        placeholder="Awesome Coach"
+                        placeholder="Jame"
                         size="lg"
-                        {...form.register('full_name')}
-                        error={form.formState?.errors?.full_name?.message}
+                        {...form.register('first_name')}
+                        error={form.formState?.errors?.first_name?.message}
+                    />
+                    <TextInput
+                        label={
+                            <Text
+                                fw={500}
+                                size="md"
+                            >
+                                Last Name
+                            </Text>
+                        }
+                        placeholder="Smith"
+                        size="lg"
+                        {...form.register('last_name')}
+                        error={form.formState?.errors?.last_name?.message}
                     />
                     <TextInput
                         label={
@@ -80,17 +90,58 @@ const RegisterPage: React.FC = () => {
                                 Email Address
                             </Text>
                         }
-                        leftSection={<IconMail size={16} />}
-                        placeholder="you@example.com"
+                        placeholder="jame@ce.com"
                         size="lg"
                         {...form.register('email')}
                         error={form.formState?.errors?.email?.message}
                     />
 
+                    <TextInput
+                        label={
+                            <Text
+                                fw={500}
+                                size="md"
+                            >
+                                Business Name
+                            </Text>
+                        }
+                        placeholder="Elite Fitness Coaching"
+                        size="lg"
+                        {...form.register('business_name')}
+                        error={form.formState?.errors?.business_name?.message}
+                    />
+
+                    <TextInput
+                        description={
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                Your unique username for your business profile URL (e.g., coacheasy.com/your-handle)
+                            </Text>
+                        }
+                        label={
+                            <Text
+                                fw={500}
+                                size="md"
+                            >
+                                Business Handle
+                            </Text>
+                        }
+                        placeholder="elite_fitness"
+                        size="lg"
+                        {...form.register('business_handle')}
+                        error={form.formState?.errors?.business_handle?.message}
+                    />
+
                     <Button
+                        disabled={isLoading}
                         fullWidth
+                        loaderProps={{
+                            type: 'bars',
+                        }}
                         loading={isLoading}
-                        rightSection={<IconArrowRight size={16} />}
+                        rightSection={<IconArrowRight />}
                         size="lg"
                         type="submit"
                     >
@@ -103,12 +154,31 @@ const RegisterPage: React.FC = () => {
                     >
                         <Text
                             c="dimmed"
+                            fs="italic"
                             size="xs"
-                            ta="left"
+                            ta="center"
                         >
-                            By signing up, you agree to our Terms of Service and Privacy Policy
+                            By continuing, you agree to our{' '}
+                            <Text
+                                c="blue"
+                                component="a"
+                                href="/terms"
+                                span={true}
+                                style={{textDecoration: 'underline'}}
+                            >
+                                Terms of Service
+                            </Text>{' '}
+                            and{' '}
+                            <Text
+                                c="blue"
+                                component="a"
+                                href="/privacy"
+                                span={true}
+                                style={{textDecoration: 'underline'}}
+                            >
+                                Privacy Policy
+                            </Text>
                         </Text>
-                        <Divider />
 
                         <Text
                             c="dimmed"
@@ -122,7 +192,7 @@ const RegisterPage: React.FC = () => {
                                 span={true}
                                 style={{cursor: 'pointer'}}
                             >
-                                Sign in
+                                Login
                             </Text>
                         </Text>
                     </Stack>

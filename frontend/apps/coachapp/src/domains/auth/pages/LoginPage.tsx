@@ -1,52 +1,52 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Stack, Text, TextInput} from '@mantine/core';
-import {notifications} from '@mantine/notifications';
-import {IconArrowRight, IconMail} from '@tabler/icons-react';
+import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {SendOTPRequest, SendOTPRequest_zod, useSendOTPMutation} from '@/services/auth';
-import {handleApiError} from '@/utils/error';
+import {SendLoginCode_zod, SendLoginCodeRequest, useSendLoginCodeMutation} from '@/services/auth';
+import APIErrorParser from '@/utils/error_parser';
+import {notifyError, notifySuccess} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const [sendOTP, {isLoading}] = useSendOTPMutation();
+    const [sendOTP, {isLoading: reqLoading}] = useSendLoginCodeMutation();
 
-    const form = useForm<SendOTPRequest>({
+    const form = useForm<SendLoginCodeRequest>({
         defaultValues: {
             email: '',
-            type: 'login',
         },
-        resolver: zodResolver(SendOTPRequest_zod),
+        resolver: zodResolver(SendLoginCode_zod),
+        mode: 'onBlur',
     });
 
-    const onSubmit = async (values: SendOTPRequest) => {
+    const onSubmit = async (values: SendLoginCodeRequest) => {
         try {
             const response = await sendOTP(values).unwrap();
 
-            notifications.show({
-                title: 'Success',
-                message: 'Please check your email for verification code',
-                color: 'green',
-            });
+            notifySuccess(`We've sent you a verification code to sign in`);
 
             const params = new URLSearchParams([
-                ['token_id', response.token_id],
-                ['email', values.email],
+                ['token_id', response.token.token_id],
+                ['email', response.user.email],
             ]);
-            navigate('/verify?' + params.toString());
+            navigate('/login/verify?' + params.toString());
         } catch (err) {
-            handleApiError(err);
+            const err_msg = new APIErrorParser(err).humanize();
+
+            notifyError(err_msg);
         }
     };
 
+    const isLoading = reqLoading || form.formState.isSubmitting;
+
     return (
         <AuthLayout
-            subtitle="Login to access your coaching program"
-            title="Welcome back"
+            subtitle="Login to manage your coaching business"
+            title="Welcome Back"
         >
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Stack gap="md">
@@ -56,11 +56,10 @@ const LoginPage: React.FC = () => {
                                 fw={500}
                                 size="md"
                             >
-                                Email Address
+                                Email address
                             </Text>
                         }
-                        leftSection={<IconMail size={16} />}
-                        placeholder="you@example.com"
+                        placeholder="Enter your email"
                         size="lg"
                         type="email"
                         {...form.register('email')}
@@ -68,13 +67,17 @@ const LoginPage: React.FC = () => {
                     />
 
                     <Button
+                        disabled={isLoading}
                         fullWidth
+                        loaderProps={{
+                            type: 'bars',
+                        }}
                         loading={isLoading}
-                        rightSection={<IconArrowRight size={16} />}
+                        rightSection={<IconArrowRight />}
                         size="lg"
                         type="submit"
                     >
-                        Send verification code
+                        Continue
                     </Button>
 
                     <Stack
@@ -86,14 +89,14 @@ const LoginPage: React.FC = () => {
                             size="md"
                             ta="center"
                         >
-                            Don't have an account?{' '}
+                            New to CoachEasy?{' '}
                             <Text
                                 c="blue"
                                 onClick={() => navigate('/register')}
                                 span={true}
                                 style={{cursor: 'pointer'}}
                             >
-                                Sign up
+                                Create an account
                             </Text>
                         </Text>
                     </Stack>

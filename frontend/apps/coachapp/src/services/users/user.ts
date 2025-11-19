@@ -61,9 +61,9 @@ export const usersApi = baseAPISlice.injectEndpoints({
                 skipAuth: true,
             }),
         }),
-        signUp: build.mutation<TokenID, SignUpProps>({
+        register: build.mutation<TokenID, SignUpProps>({
             query: (body) => ({
-                url: '/v1/auth/signup',
+                url: '/v1/auth/register',
                 method: 'post',
                 data: body,
                 skipAuth: true,
@@ -87,6 +87,6 @@ export const {
     useResendVerifyMutation,
     useResetPasswordMutation,
     useResetPasswordConfirmMutation,
-    useSignUpMutation,
+    useRegisterMutation,
     useVerifySignupMutation,
 } = usersApi;

@@ -4,12 +4,14 @@ import {type TypedUseSelectorHook, useDispatch, useSelector} from 'react-redux';
 import {FLUSH, PAUSE, PERSIST, persistStore, PURGE, REGISTER, REHYDRATE} from 'redux-persist';
 
 import {baseAPISlice} from '@/services/baseAPISlice';
+import {authReducerPersisted} from '@/slices/authSlice';
 import {planLabelsReducerPersisted} from '@/slices/planLabelsSlice';
 
 /* Redux store configuration */
 export const store = configureStore({
     reducer: {
         [baseAPISlice.reducerPath]: baseAPISlice.reducer,
+        auth: authReducerPersisted,
         planLabels: planLabelsReducerPersisted,
     },
     middleware: (getDefaultMiddleware) =>

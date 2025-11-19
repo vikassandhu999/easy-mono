@@ -27,7 +27,7 @@ export default function HeadingContainer({
             ref={ref}
             style={{
                 borderBottom: withBorder ? `1px solid ${theme.colors.gray[2]}` : undefined,
-                position: sticky ? 'fixed' : 'sticky',
+                position: sticky ? 'sticky' : 'relative',
                 top: 0,
                 width: '100%',
                 zIndex: 100,

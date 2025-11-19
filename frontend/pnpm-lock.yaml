@@ -319,8 +319,8 @@ importers:
         specifier: ^2.9.0
         version: 2.9.0(react-redux@9.2.0(@types/react@18.3.24)(react@19.1.1)(redux@5.0.1))(react@19.1.1)
       '@tabler/icons-react':
-        specifier: 3.17.0
-        version: 3.17.0(react@19.1.1)
+        specifier: 3.35.0
+        version: 3.35.0(react@19.1.1)
       '@tanstack/react-query':
         specifier: ^5.75.5
         version: 5.87.1(react@19.1.1)
@@ -3651,8 +3651,16 @@ packages:
     peerDependencies:
       react: '>= 16'
 
+  '@tabler/icons-react@3.35.0':
+    resolution: {integrity: sha512-XG7t2DYf3DyHT5jxFNp5xyLVbL4hMJYJhiSdHADzAjLRYfL7AnjlRfiHDHeXxkb2N103rEIvTsBRazxXtAUz2g==}
+    peerDependencies:
+      react: '>= 16'
+
   '@tabler/icons@3.17.0':
     resolution: {integrity: sha512-sCSfAQ0w93KSnSL7tS08n73CdIKpuHP8foeLMWgDKiZaCs8ZE//N3ytazCk651ZtruTtByI3b+ZDj7nRf+hHvA==}
+
+  '@tabler/icons@3.35.0':
+    resolution: {integrity: sha512-yYXe+gJ56xlZFiXwV9zVoe3FWCGuZ/D7/G4ZIlDtGxSx5CGQK110wrnT29gUj52kEZoxqF7oURTk97GQxELOFQ==}
 
   '@tailwindcss/node@4.1.13':
     resolution: {integrity: sha512-eq3ouolC1oEFOAvOMOBAmfCIqZBJuvWvvYWh5h5iOYfe1HFC6+GZ6EIL0JdM3/niGRJmnrOc+8gl9/HGUaaptw==}
@@ -12021,7 +12029,14 @@ snapshots:
       '@tabler/icons': 3.17.0
       react: 19.1.1
 
+  '@tabler/icons-react@3.35.0(react@19.1.1)':
+    dependencies:
+      '@tabler/icons': 3.35.0
+      react: 19.1.1
+
   '@tabler/icons@3.17.0': {}
+
+  '@tabler/icons@3.35.0': {}
 
   '@tailwindcss/node@4.1.13':
     dependencies:

@@ -23,8 +23,8 @@ export default function AuthLayout({
 }: AuthLayoutProps) {
     const {screen, isTab} = useScreenSize();
 
-    const titleSize = screen === 'mobile' ? 'h4' : 'h3';
-    const subtitleSize = screen === 'mobile' ? 'sm' : 'md';
+    const titleSize = screen === 'mobile' ? 'h3' : 'h3';
+    const subtitleSize = screen === 'mobile' ? 'md' : 'lg';
 
     return (
         <Grid
@@ -37,6 +37,8 @@ export default function AuthLayout({
                 span={{md: 6, xs: 12}}
                 style={{
                     alignItems: 'center',
+                    background:
+                        'linear-gradient(135deg, var(--mantine-color-blue-0) 0%, var(--mantine-color-pink-0) 100%)',
                     display: 'flex',
                     justifyContent: 'center',
                     minHeight: '100vh',
@@ -53,8 +55,9 @@ export default function AuthLayout({
                     }}
                 >
                     <Stack
-                        gap="xxl"
-                        my={54}
+                        gap="xl"
+                        pb="xl"
+                        pt={80}
                         style={{
                             width: '100%',
                         }}
@@ -73,11 +76,10 @@ export default function AuthLayout({
                             />
                         </Box>
 
-                        {/* Form Header */}
                         {(title || subtitle) && (
                             <Stack
-                                gap="xs"
-                                ta="left"
+                                gap="sm"
+                                ta="center"
                             >
                                 {title && (
                                     <Title
@@ -111,7 +113,6 @@ export default function AuthLayout({
                 </Container>
             </Grid.Col>
 
-            {/* Illustration Section - Hidden on mobile */}
             {!isTab && (
                 <Grid.Col
                     span={6}

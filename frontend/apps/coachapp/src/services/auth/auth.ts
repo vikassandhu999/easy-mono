@@ -1,37 +1,40 @@
 import {
-    type AccessToken,
-    type RefreshResponse,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
     type RegisterRequest,
     type RegisterResponse,
-    type RegisterWithPhoneRequest,
-    type ResendVerifyRequest,
-    type SendOTPRequest,
-    type SendOTPResponse,
-    type SendPasscodeRequest,
-    type SendPhoneLoginOTPRequest,
-    type SignInCodeRequest,
-    type SignInRequest,
-    type TokenValidation,
-    type VerifyOTPRequest,
-    type VerifyOTPResponse,
-    type VerifyPhoneLoginOTPRequest,
+    SendLoginCodeRequest,
+    SendLoginCodeResponse,
+    UserProfileResponse,
+    VerifyLoginRequest,
+    VerifyLoginResponse,
+    VerifyRegisterationRequest,
+    VerifyRegisterationResponse,
 } from '@/services/auth';
 
 import {baseAPISlice} from '../baseAPISlice';
 
 export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-        logout: build.mutation<{status: string}, void>({
-            query: () => ({
-                url: '/api/auth/logout',
+        sendLoginCode: build.mutation<SendLoginCodeResponse, SendLoginCodeRequest>({
+            query: (body) => ({
+                url: '/api/auth/send-login-code',
                 method: 'post',
+                data: body,
             }),
         }),
-        refreshToken: build.mutation<RefreshResponse, void>({
-            query: () => ({
-                url: '/api/auth/refresh',
+        verifyLogin: build.mutation<VerifyLoginResponse, VerifyLoginRequest>({
+            query: (body) => ({
+                url: '/api/auth/token',
                 method: 'post',
-                data: {},
+                data: body,
+            }),
+        }),
+        refreshToken: build.mutation<RefreshTokenResponse, RefreshTokenRequest>({
+            query: (body) => ({
+                url: '/api/auth/token',
+                method: 'post',
+                data: body,
             }),
         }),
         register: build.mutation<RegisterResponse, RegisterRequest>({
@@ -41,72 +44,23 @@ export const authApi = baseAPISlice.injectEndpoints({
                 data: body,
             }),
         }),
-        registerWithPhone: build.mutation<AccessToken, RegisterWithPhoneRequest>({
+        verifyRegiration: build.mutation<VerifyRegisterationResponse, VerifyRegisterationRequest>({
             query: (body) => ({
-                url: '/v1/coach/auth/register-with-phone',
+                url: '/api/auth/verify',
                 method: 'post',
                 data: body,
             }),
         }),
-        resendVerifyCode: build.mutation<TokenValidation, ResendVerifyRequest>({
-            query: (body) => ({
-                url: '/v1/auth/verify-resend',
-                method: 'post',
-                data: body,
+        profile: build.query<UserProfileResponse, void>({
+            query: () => ({
+                url: '/api/auth/me',
+                method: 'get',
             }),
         }),
-        sendOTP: build.mutation<SendOTPResponse, SendOTPRequest>({
-            query: (body) => ({
-                url: '/api/auth/send-otp',
+        logout: build.mutation<{status: string}, void>({
+            query: () => ({
+                url: '/api/auth/logout',
                 method: 'post',
-                data: body,
-            }),
-        }),
-        sendPasscode: build.mutation<TokenValidation, SendPasscodeRequest>({
-            query: (body) => ({
-                url: '/v1/auth/send-passcode',
-                method: 'post',
-                data: body,
-            }),
-        }),
-        sendPhoneLoginOTP: build.mutation<TokenValidation, SendPhoneLoginOTPRequest>({
-            query: (body) => ({
-                url: '/v1/coach/auth/send-phone-login-otp',
-                method: 'post',
-                data: body,
-            }),
-        }),
-        signIn: build.mutation<TokenValidation, SignInRequest>({
-            query: (body) => ({
-                url: '/v1/auth/send-passcode',
-                method: 'post',
-                data: body,
-            }),
-        }),
-        signInCode: build.mutation<AccessToken, SignInCodeRequest>({
-            query: (body) => ({
-                url: '/v1/auth/token',
-                method: 'post',
-                data: {
-                    email: body.email,
-                    grant_type: 'passcode',
-                    passcode: body.passcode,
-                    token_id: body.token_id,
-                },
-            }),
-        }),
-        verifyOTP: build.mutation<VerifyOTPResponse, VerifyOTPRequest>({
-            query: (body) => ({
-                url: '/api/auth/verify-otp',
-                method: 'post',
-                data: body,
-            }),
-        }),
-        verifyPhoneLoginOTP: build.mutation<AccessToken, VerifyPhoneLoginOTPRequest>({
-            query: (body) => ({
-                url: '/v1/coach/auth/verify-phone-login-otp',
-                method: 'post',
-                data: body,
             }),
         }),
     }),
@@ -117,13 +71,8 @@ export const {
     useLogoutMutation,
     useRefreshTokenMutation,
     useRegisterMutation,
-    useRegisterWithPhoneMutation,
-    useResendVerifyCodeMutation,
-    useSendOTPMutation,
-    useSendPasscodeMutation,
-    useSendPhoneLoginOTPMutation,
-    useSignInMutation,
-    useSignInCodeMutation,
-    useVerifyOTPMutation,
-    useVerifyPhoneLoginOTPMutation,
+    useVerifyRegirationMutation,
+    useSendLoginCodeMutation,
+    useVerifyLoginMutation,
+    useProfileQuery,
 } = authApi;

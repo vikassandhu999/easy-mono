@@ -2,33 +2,44 @@ import {createBrowserRouter, RouterProvider} from 'react-router';
 
 import LoginPage from '@/domains/auth/pages/LoginPage';
 import RegisterPage from '@/domains/auth/pages/RegisterPage';
-import VerificationPage from '@/domains/auth/pages/VerificationPage';
-import OnboardBusinessPage from '@/domains/business/OnboardBusinessPage';
-import HomePage from '@/domains/dashboard/HomePage';
-import CoachProfilePage from '@/domains/profile/pages/CoachProfilePage';
-import {PrivateRoute} from '@/utils';
+import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
+import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPage';
+import HomePage from '@/domains/dashboard/pages/HomePage';
+import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
+import LibaryListPageDrawers from '@/domains/library/drawers/LibraryListPageDrawers';
+import LibraryListPage from '@/domains/library/pages/LibraryListPage';
+import MainProfilePage from '@/domains/profile/pages/MainProfilePage';
+import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
 
 const router = createBrowserRouter([
-    // Authentication routes
     {
-        element: <RegisterPage />,
-        path: '/register',
+        path: '*',
+        element: <NotFoundPage />,
     },
     {
-        element: <LoginPage />,
-        path: '/login',
+        element: <GuestGaurd />, // For routes that require being logged out
+        children: [
+            {
+                element: <RegisterPage />,
+                path: '/register',
+            },
+            {
+                element: <VerifyRegisterationPage />,
+                path: '/register/verify',
+            },
+            {
+                element: <LoginPage />,
+                path: '/login',
+            },
+            {
+                element: <VerifyLoginPage />,
+                path: '/login/verify',
+            },
+        ],
     },
     {
-        element: <VerificationPage />,
-        path: '/verify',
-    },
-    {
-        element: <OnboardBusinessPage />,
-        path: '/ob',
-    },
-    {
-        element: <PrivateRoute />,
+        element: <PrivateGaurd />, // For routes that require authentication
         children: [
             {
                 element: <ProtectedRouteLayout />,
@@ -43,6 +54,10 @@ const router = createBrowserRouter([
                         element: <HomePage />,
                         path: '/',
                     },
+                    {
+                        element: <MainProfilePage />,
+                        path: '/profile',
+                    },
                     // {
                     //     element: <ClientsListPage />,
                     //     path: '/clients',
@@ -52,10 +67,11 @@ const router = createBrowserRouter([
                     //     path: '/clients/:id',
                     // },
 
-                    // {
-                    //     element: <LibraryPage />,
-                    //     path: '/library',
-                    // },
+                    {
+                        element: <LibraryListPage />,
+                        path: '/library',
+                        children: [{index: true, element: <LibaryListPageDrawers />}],
+                    },
                     // {
                     //     element: <PlansListPage />,
                     //     path: '/plans',
@@ -77,10 +93,6 @@ const router = createBrowserRouter([
                     //         },
                     //     ],
                     // },
-                    {
-                        element: <CoachProfilePage />,
-                        path: '/profile',
-                    },
                 ],
             },
         ],

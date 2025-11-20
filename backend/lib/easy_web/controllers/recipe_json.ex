@@ -22,6 +22,7 @@ defmodule EasyWeb.RecipeJSON do
       name: recipe.name,
       description: recipe.description,
       instructions: recipe.instructions,
+      instructions_as_text: recipe.instructions_as_text,
       prep_time_minutes: recipe.prep_time_minutes,
       cook_time_minutes: recipe.cook_time_minutes,
       servings: recipe.servings,

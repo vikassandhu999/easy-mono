@@ -6,30 +6,31 @@ defmodule Easy.Nutrition.Recipe do
   @foreign_key_type :binary_id
 
   schema "recipes" do
-    field :name, :string
-    field :description, :string
+    field(:name, :string)
+    field(:description, :string)
 
-    field :instructions, {:array, :string}, default: []
-    field :instructions_as_text, :string
+    field(:instructions, {:array, :string}, default: [])
+    field(:instructions_as_text, :string)
 
-    field :prep_time_minutes, :integer
-    field :cook_time_minutes, :integer
-    field :servings, :integer, default: 1
+    field(:prep_time_minutes, :integer)
+    field(:cook_time_minutes, :integer)
+    field(:servings, :integer, default: 1)
 
-    field :total_calories, :decimal
-    field :total_protein, :decimal
-    field :total_carbohydrates, :decimal
-    field :total_fats, :decimal
-    field :total_fiber, :decimal
+    field(:total_calories, :decimal)
+    field(:total_protein, :decimal)
+    field(:total_carbohydrates, :decimal)
+    field(:total_fats, :decimal)
+    field(:total_fiber, :decimal)
 
-    field :status, Ecto.Enum, values: [:active, :draft, :archived], default: :active
+    field(:status, Ecto.Enum, values: [:active, :draft, :archived], default: :active)
 
-    belongs_to :business, Easy.Organizations.Business, type: :binary_id
-    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
+    belongs_to(:business, Easy.Organizations.Business, type: :binary_id)
+    belongs_to(:creator, Easy.Organizations.Coach, type: :binary_id)
 
-    has_many :recipe_ingredients, Easy.Nutrition.RecipeIngredient,
+    has_many(:recipe_ingredients, Easy.Nutrition.RecipeIngredient,
       on_delete: :delete_all,
       on_replace: :delete
+    )
 
     timestamps()
   end

@@ -6,15 +6,15 @@ defmodule Easy.Nutrition.RecipeIngredient do
   @foreign_key_type :binary_id
 
   schema "recipe_ingredients" do
-    field :order, :integer
-    field :quantity, :decimal
+    field(:order, :integer)
+    field(:quantity, :decimal)
 
-    field :quantity_as_text, :string
+    field(:quantity_as_text, :string)
 
-    belongs_to :recipe, Easy.Nutrition.Recipe, on_replace: :delete, type: :binary_id
-    belongs_to :ingredient, Easy.Nutrition.Ingredient, type: :binary_id
+    belongs_to(:recipe, Easy.Nutrition.Recipe, on_replace: :delete, type: :binary_id)
+    belongs_to(:ingredient, Easy.Nutrition.Ingredient, type: :binary_id)
 
-    belongs_to :unit, Easy.Nutrition.MeasurementUnit, type: :binary_id
+    belongs_to(:unit, Easy.Nutrition.MeasurementUnit, type: :binary_id)
 
     timestamps()
   end

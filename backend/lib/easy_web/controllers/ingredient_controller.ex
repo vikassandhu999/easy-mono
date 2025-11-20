@@ -52,8 +52,7 @@ defmodule EasyWeb.IngredientController do
   def delete(conn, _params) do
     ingredient = conn.assigns.ingredient
 
-    with {:ok, _deleted_ingredient} <-
-           ingredient |> Repo.delete() do
+    with {:ok, _deleted_ingredient} <- Nutrition.delete_ingredient(ingredient) do
       send_resp(conn, :no_content, "")
     end
   end

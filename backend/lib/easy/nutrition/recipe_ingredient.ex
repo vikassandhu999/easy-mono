@@ -19,10 +19,6 @@ defmodule Easy.Nutrition.RecipeIngredient do
     timestamps()
   end
 
-  @doc """
-  Changeset for RecipeIngredient.
-  Used for casting and validating the quantity and units of an ingredient within a recipe.
-  """
   def changeset(recipe_ingredient, attrs) do
     recipe_ingredient
     |> cast(attrs, [
@@ -37,6 +33,9 @@ defmodule Easy.Nutrition.RecipeIngredient do
     |> validate_at_least_one([:quantity, :quantity_as_text])
     |> validate_number(:quantity, greater_than_or_equal_to: 0)
     |> validate_number(:order, greater_than_or_equal_to: 0)
+    |> foreign_key_constraint(:recipe_id)
+    |> foreign_key_constraint(:ingredient_id)
+    |> foreign_key_constraint(:unit_id)
   end
 
   defp validate_at_least_one(changeset, fields) do

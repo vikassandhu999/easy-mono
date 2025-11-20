@@ -86,5 +86,33 @@ defmodule EasyWeb.Router do
     get "/:id", NutritionPlanController, :show
     patch "/:id", NutritionPlanController, :update
     delete "/:id", NutritionPlanController, :delete
+
+    post "/:id/duplicate", NutritionPlanController, :duplicate
+    post "/:id/copy-day", NutritionPlanController, :copy_day
+    get "/:id/shopping-list", NutritionPlanController, :shopping_list
+    post "/:id/reorder-meals", NutritionPlanController, :reorder_meals
+    post "/:id/bulk-create-meals", NutritionPlanController, :bulk_create_meals
+    get "/:id/macros", NutritionPlanController, :macros
+  end
+
+  scope "/api/meals", EasyWeb do
+    pipe_through :api_authenticated
+
+    post "/", MealController, :create
+    get "/:id", MealController, :show
+    patch "/:id", MealController, :update
+    delete "/:id", MealController, :delete
+
+    # Items nested under meals for creation/listing
+    post "/:meal_id/items", MealItemController, :create
+    get "/:meal_id/items", MealItemController, :index
+    post "/:meal_id/reorder-items", MealItemController, :reorder
+  end
+
+  scope "/api/meal_items", EasyWeb do
+    pipe_through :api_authenticated
+
+    patch "/:id", MealItemController, :update
+    delete "/:id", MealItemController, :delete
   end
 end

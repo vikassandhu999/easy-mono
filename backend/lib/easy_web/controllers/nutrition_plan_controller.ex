@@ -5,7 +5,18 @@ defmodule EasyWeb.NutritionPlanController do
   alias Easy.Nutrition.NutritionPlan
   alias EasyWeb.FallbackController
 
-  plug :authorize_resource when action in [:show, :update, :delete]
+  plug :authorize_resource
+       when action in [
+              :show,
+              :update,
+              :delete,
+              :duplicate,
+              :copy_day,
+              :shopping_list,
+              :reorder_meals,
+              :bulk_create_meals,
+              :macros
+            ]
 
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
@@ -51,6 +62,79 @@ defmodule EasyWeb.NutritionPlanController do
   def delete(conn, _params) do
     with {:ok, _deleted_plan} <- Nutrition.delete_nutrition_plan(conn.assigns.nutrition_plan) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  def duplicate(conn, %{"target_client_id" => target_client_id}) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         {:ok, new_plan} <-
+           Nutrition.duplicate_nutrition_plan(
+             business_id,
+             conn.assigns.nutrition_plan.id,
+             target_client_id
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, %{nutrition_plan: new_plan})
+    end
+  end
+
+  def copy_day(conn, %{"source_day" => source_day, "target_day" => target_day}) do
+    with {:ok, _} <-
+           Nutrition.copy_day(conn.assigns.nutrition_plan.id, source_day, target_day),
+         {:ok, updated_plan} <-
+           Nutrition.fetch_nutrition_plan(
+             conn.assigns.token_claims["business_id"],
+             conn.assigns.nutrition_plan.id
+           ) do
+      conn
+      |> put_status(:ok)
+      |> render(:show, %{nutrition_plan: updated_plan})
+    end
+  end
+
+  def shopping_list(conn, _params) do
+    plan = conn.assigns.nutrition_plan
+
+    with {:ok, items} <- Nutrition.generate_shopping_list(plan.id) do
+      json(conn, %{data: items})
+    end
+  end
+
+  def reorder_meals(conn, %{"day_number" => day_number, "meal_ids" => meal_ids}) do
+    plan = conn.assigns.nutrition_plan
+
+    with :ok <- Nutrition.reorder_meals(plan.id, day_number, meal_ids) do
+      send_resp(conn, :no_content, "")
+    end
+  end
+
+  def bulk_create_meals(conn, params) do
+    plan = conn.assigns.nutrition_plan
+
+    with {:ok, _result} <- Nutrition.bulk_create_meals(plan, params),
+         {:ok, updated_plan} <-
+           Nutrition.fetch_nutrition_plan(
+             conn.assigns.token_claims["business_id"],
+             plan.id
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, %{nutrition_plan: updated_plan})
+    end
+  end
+
+  def macros(conn, params) do
+    plan = conn.assigns.nutrition_plan
+
+    opts = %{
+      day_number: params["day_number"] && String.to_integer(params["day_number"]),
+      aggregate: params["aggregate"] && String.to_existing_atom(params["aggregate"])
+    }
+
+    with {:ok, macros} <- Nutrition.calculate_plan_macros(plan.id, opts) do
+      json(conn, %{data: macros})
     end
   end
 

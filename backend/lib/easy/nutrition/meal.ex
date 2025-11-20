@@ -23,18 +23,29 @@ defmodule Easy.Nutrition.Meal do
     field :time, :time
     field :notes, :string
 
+    field :sort_order, :integer, default: 0
+    # cached_macros removed
+
     belongs_to :nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary_id
 
     has_many :meal_items, Easy.Nutrition.MealItem,
-      foreign_key: :meal_id,
-      on_delete: :delete_all
+      on_delete: :delete_all,
+      preload_order: [asc: :sort_order]
 
     timestamps()
   end
 
   def changeset(meal, attrs) do
     meal
-    |> cast(attrs, [:daytime, :day_number, :label, :time, :notes, :nutrition_plan_id])
+    |> cast(attrs, [
+      :daytime,
+      :day_number,
+      :label,
+      :time,
+      :notes,
+      :nutrition_plan_id,
+      :sort_order
+    ])
     |> validate_required([:daytime, :day_number])
     |> cast_assoc(:meal_items, with: &Easy.Nutrition.MealItem.changeset/2)
   end

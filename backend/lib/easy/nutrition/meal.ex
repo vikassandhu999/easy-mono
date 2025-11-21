@@ -6,31 +6,33 @@ defmodule Easy.Nutrition.Meal do
   @foreign_key_type :binary_id
 
   schema "meals" do
-    field :daytime, Ecto.Enum,
+    field(:daytime, Ecto.Enum,
       values: [
         :early_morning,
         :breakfast,
         :lunch,
         :dinner,
-        :preworkout,
-        :postworkout,
+        :pre_workout,
+        :post_workout,
         :snack
       ]
+    )
 
-    field :day_number, :integer
-    field :label, :string
+    field(:day_number, :integer)
+    field(:label, :string)
 
-    field :time, :time
-    field :notes, :string
+    field(:time, :time)
+    field(:notes, :string)
 
-    field :sort_order, :integer, default: 0
+    field(:sort_order, :integer, default: 0)
     # cached_macros removed
 
-    belongs_to :nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary_id
+    belongs_to(:nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary_id)
 
-    has_many :meal_items, Easy.Nutrition.MealItem,
+    has_many(:meal_items, Easy.Nutrition.MealItem,
       on_delete: :delete_all,
       preload_order: [asc: :sort_order]
+    )
 
     timestamps()
   end

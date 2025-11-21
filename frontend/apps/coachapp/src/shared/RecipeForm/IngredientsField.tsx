@@ -1,7 +1,7 @@
 import {ActionIcon, Badge, Button, Group, Loader, Stack, Text, TextInput, Title, useMantineTheme} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconPlus, IconTrash} from '@tabler/icons-react';
-import {FC, useCallback, useEffect, useMemo, useState} from 'react';
+import {FC, useCallback, useMemo, useState} from 'react';
 import {UseFormReturn, useWatch} from 'react-hook-form';
 
 import {useCreateIngredient, useListIngredients} from '@/services/ingredients';
@@ -160,6 +160,7 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                             size="sm"
                             style={{minWidth: '120px'}}
                         >
+                            {/* @ts-expect-error -- types mistmatch */}
                             {ingredient?.ingredient?.name || ingredient?.name}
                         </Text>
                         <TextInput

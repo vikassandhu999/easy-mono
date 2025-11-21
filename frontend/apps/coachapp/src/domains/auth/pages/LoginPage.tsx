@@ -28,13 +28,15 @@ const LoginPage: React.FC = () => {
             const response = await sendOTP(values).unwrap();
 
             notifySuccess(`We've sent you a verification code to sign in`);
-
+          
             const params = new URLSearchParams([
                 ['token_id', response.token.token_id],
                 ['email', response.user.email],
             ]);
+          
             navigate('/login/verify?' + params.toString());
         } catch (err) {
+           
             const err_msg = new APIErrorParser(err).humanize();
 
             notifyError(err_msg);

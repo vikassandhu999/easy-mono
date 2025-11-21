@@ -94,12 +94,7 @@ const RecipeList = ({onRecipeClick, search}: RecipeListProps) => {
 
     return (
         <RecordsList
-            emptyState={
-                <EmptyState
-                    description="Start building your recipe library by creating your first recipe"
-                    title="No recipes yet"
-                />
-            }
+            emptyState={<Text>No Recipe Found</Text>}
             fetchNextPage={fetchNextPage}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}

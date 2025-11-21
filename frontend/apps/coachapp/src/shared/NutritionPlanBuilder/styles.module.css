@@ -1,0 +1,30 @@
+/* Custom scrollbar for DaySelector */
+.dayScrollbar {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.dayScrollbar::-webkit-scrollbar {
+  height: 3px !important;
+}
+
+.dayScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.dayScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.dayScrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* IE and old Edge */
+.dayScrollbar {
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}

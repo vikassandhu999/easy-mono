@@ -219,6 +219,9 @@ export const baseAPISlice = createApi({
         'Business', // Business preferences management
         'Recipes', // Recipe management
         'Ingredients', // Ingredient management
+        'NutritionPlans', // Nutrition Plan management
+        'Meals', // Meal management
+        'MealItems', // Meal Items management
     ],
     endpoints: () => ({}),
 });

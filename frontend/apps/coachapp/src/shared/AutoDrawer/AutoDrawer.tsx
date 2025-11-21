@@ -5,7 +5,7 @@
 
 */
 
-import {ActionIcon, Box, Drawer, Group, Modal, ScrollArea, Stack, Title} from '@mantine/core';
+import {ActionIcon, Box, Group, Modal, Title} from '@mantine/core';
 import {IconArrowLeft} from '@tabler/icons-react';
 import React from 'react';
 
@@ -15,6 +15,7 @@ type AutoDrawerProps = {
     title: React.ReactNode | string;
     content: React.ReactNode;
     actions?: React.ReactNode;
+    fullScreen?: boolean;
     onClose: () => void;
 };
 
@@ -87,43 +88,48 @@ const AutoDrawer = (props: AutoDrawerProps) => {
     const isMobileOrTab = isMobile || isTab;
 
     const finalContent = (
-        <Stack mah="100vh">
+        <Box w={'100%'}>
             <Header {...props} />
-            <ScrollArea.Autosize
-                offsetScrollbars
-                type="never"
+            <Box
+                mah="100vh"
+                maw={'100%'}
+                w={'100%'}
             >
                 <Box p="md">{content}</Box>
-            </ScrollArea.Autosize>
-        </Stack>
+            </Box>
+        </Box>
     );
 
     if (isMobileOrTab) {
         return (
-            <Drawer
+            <Modal
+                centered
+                fullScreen
                 onClose={onClose}
                 opened={true}
-                position="bottom"
-                radius={0}
-                scrollAreaComponent={ScrollArea.Autosize}
-                size="auto"
+                radius="lg"
                 style={{
                     position: 'relative',
+                }}
+                styles={{
+                    body: {
+                        padding: 0,
+                    },
                 }}
                 withCloseButton={false}
             >
                 {finalContent}
-            </Drawer>
+            </Modal>
         );
     }
 
     return (
         <Modal
             centered
+            fullScreen={props.fullScreen}
             onClose={onClose}
             opened={true}
             radius="lg"
-            scrollAreaComponent={ScrollArea.Autosize}
             size="lg"
             style={{
                 position: 'relative',

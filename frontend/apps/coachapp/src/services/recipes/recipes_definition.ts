@@ -8,11 +8,18 @@ export type MeasurementUnit = {
     system: 'imperial' | 'metric';
 };
 
+export type Ingredient = {
+    id: string;
+    name: string;
+};
+
 export type RecipeIngredient = {
+    id: string;
     order: number | string;
     quantity?: number;
     quantity_as_text?: string;
     ingredient_id: string;
+    ingredient?: Ingredient;
     unit_id?: string;
     unit?: MeasurementUnit;
 };
@@ -22,7 +29,7 @@ export type Recipe = {
     name: string;
     description: null | string;
     instructions?: null | string[];
-    instructions_as_text: string;
+    instructions_as_text: null | string;
 
     prep_time_minutes: null | number;
     cook_time_minutes: null | number;
@@ -36,7 +43,7 @@ export type Recipe = {
     total_fats: null | string;
     total_fiber: null | string;
     status: RecipeStatus;
-    created_by_id: null | string;
+    creator_id: null | string;
 
     inserted_at: string;
     updated_at: string;

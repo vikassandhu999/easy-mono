@@ -1,43 +1,7 @@
 import {baseAPISlice} from '../baseAPISlice';
 import {CreateRecipe, Recipe, RecipesList, RecipesListOpts, UpdateRecipe} from './recipes_definition';
 
-const DEFAULT_LIMIT = 50;
-
-const buildListParams = (opts: RecipesListOpts, pageParam: number) => {
-    const limit = opts.per_page ?? DEFAULT_LIMIT;
-    const offset = pageParam;
-
-    const params: Record<string, unknown> = {
-        ...opts,
-        limit,
-        offset,
-    };
-
-    // Remove per_page as we're using limit/offset
-    delete params.per_page;
-    delete params.page;
-
-    return params;
-};
-
-const getNextRecipePage = (lastPage: RecipesList) => {
-    const {offset, limit, total} = lastPage.meta;
-
-    // If no total or no records, no next page
-    if (!total || total <= 0) {
-        return undefined;
-    }
-
-    // Calculate next offset
-    const nextOffset = offset + limit;
-
-    // If next offset is beyond total, no next page
-    if (nextOffset >= total) {
-        return undefined;
-    }
-
-    return nextOffset;
-};
+import {buildListParams, getNextPage} from '../paginationUtils';
 
 export const recipesApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
@@ -114,7 +78,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
             },
             infiniteQueryOptions: {
                 initialPageParam: 0,
-                getNextPageParam: (lastPage) => getNextRecipePage(lastPage),
+                getNextPageParam: (lastPage) => getNextPage(lastPage),
             },
         }),
 

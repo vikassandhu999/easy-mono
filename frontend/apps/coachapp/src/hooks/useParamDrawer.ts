@@ -1,5 +1,7 @@
 import {useSearchParams} from 'react-router';
 
+import {DRAWER_CONFIG} from '@/configs';
+
 export type DrawerConfig = {
     id: string;
     key: string;
@@ -11,10 +13,10 @@ export type DrawerConfig = {
 export type DrawerParams = Record<string, string>;
 
 type UseParamsDrawerProps = {
-    drawer_config: DrawerConfig[];
+    drawer_config?: DrawerConfig[];
 };
 
-const useParamsDrawer = ({drawer_config}: UseParamsDrawerProps) => {
+const useParamsDrawer = ({drawer_config = DRAWER_CONFIG}: UseParamsDrawerProps) => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Get the configuration for a drawer by key

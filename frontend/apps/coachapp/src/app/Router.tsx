@@ -6,7 +6,6 @@ import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
 import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPage';
 import HomePage from '@/domains/dashboard/pages/HomePage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
-import LibaryListPageDrawers from '@/domains/library/drawers/LibraryListPageDrawers';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
 import MainProfilePage from '@/domains/profile/pages/MainProfilePage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
@@ -18,7 +17,7 @@ const router = createBrowserRouter([
         element: <NotFoundPage />,
     },
     {
-        element: <GuestGaurd />, // For routes that require being logged out
+        element: <GuestGaurd />,
         children: [
             {
                 element: <RegisterPage />,
@@ -44,12 +43,7 @@ const router = createBrowserRouter([
             {
                 element: <ProtectedRouteLayout />,
                 children: [
-                    // {
-                    //     element: <ChatViewPage />,
-                    //     path: '/chats/:chatId',
-                    // },
-
-                    // Routes with layout
+                    // Drawers which will open based on params
                     {
                         element: <HomePage />,
                         path: '/',
@@ -58,41 +52,10 @@ const router = createBrowserRouter([
                         element: <MainProfilePage />,
                         path: '/profile',
                     },
-                    // {
-                    //     element: <ClientsListPage />,
-                    //     path: '/clients',
-                    // },
-                    // {
-                    //     element: <ClientDetailPage />,
-                    //     path: '/clients/:id',
-                    // },
-
                     {
                         element: <LibraryListPage />,
                         path: '/library',
-                        children: [{index: true, element: <LibaryListPageDrawers />}],
                     },
-                    // {
-                    //     element: <PlansListPage />,
-                    //     path: '/plans',
-                    //     children: [
-                    //         {
-                    //             index: true,
-                    //             element: <PlanListPageDrawers />,
-                    //         },
-                    //     ],
-                    // },
-
-                    // {
-                    //     element: <PlanEditor />,
-                    //     path: '/plans/:planId/editor',
-                    //     children: [
-                    //         {
-                    //             index: true,
-                    //             element: <PlanEditorDrawers />,
-                    //         },
-                    //     ],
-                    // },
                 ],
             },
         ],

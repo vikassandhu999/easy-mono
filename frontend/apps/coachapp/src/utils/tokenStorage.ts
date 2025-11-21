@@ -18,14 +18,14 @@ export const tokenStorage = {
     /**
      * Get access token
      */
-    getAccessToken(): string | null {
+    getAccessToken(): null | string {
         return localStorage.getItem(ACCESS_TOKEN_KEY);
     },
 
     /**
      * Get refresh token
      */
-    getRefreshToken(): string | null {
+    getRefreshToken(): null | string {
         return localStorage.getItem(REFRESH_TOKEN_KEY);
     },
 

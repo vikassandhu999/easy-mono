@@ -16,7 +16,7 @@ import {IconMinus, IconPlus} from '@tabler/icons-react';
 import {useEffect, useImperativeHandle, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
-import {CreateRecipe_zod, CreateRecipeForm, useGetRecipe} from '@/services/recipes';
+import {CreateRecipe_zod, CreateRecipeForm, UpdateRecipe, useGetRecipe} from '@/services/recipes';
 import APIErrorParser from '@/utils/error_parser';
 import {notifyError} from '@/utils/notification';
 
@@ -24,18 +24,36 @@ import {containsNutrition, getDefaultValues, populateRecipe} from './helper';
 import IngrdeintsField from './IngredientsField';
 import InstructionsField from './InstructionsField';
 
-export interface RecipeFormHandle {
-    getValues: () => CreateRecipeForm;
-    reset: () => void;
-    submit: () => Promise<void>;
+// Discriminated union for form handle based on mode
+export type RecipeFormHandle<TMode extends 'create' | 'update' = 'create'> = TMode extends 'update'
+    ? {
+          getValues: () => CreateRecipeForm;
+          reset: () => void;
+          submit: () => Promise<void>;
+      }
+    : {
+          getValues: () => CreateRecipeForm;
+          reset: () => void;
+          submit: () => Promise<void>;
+      };
+
+// Base props shared by both modes
+interface RecipeFormPropsBase {
+    initialValues?: Partial<CreateRecipeForm>;
 }
 
-export interface RecipeFormProps {
-    initialValues?: Partial<CreateRecipeForm>;
-    onSubmit?: (values: CreateRecipeForm) => Promise<void> | void;
-    recipeId?: string;
-    ref?: React.Ref<RecipeFormHandle>;
-}
+// Discriminated union for props based on whether recipeId exists
+export type RecipeFormProps =
+    | (RecipeFormPropsBase & {
+          recipeId: string;
+          onSubmit?: (values: UpdateRecipe) => Promise<void> | void;
+          ref?: React.Ref<RecipeFormHandle<'update'>>;
+      })
+    | (RecipeFormPropsBase & {
+          recipeId?: never;
+          onSubmit?: (values: CreateRecipeForm) => Promise<void> | void;
+          ref?: React.Ref<RecipeFormHandle<'create'>>;
+      });
 
 const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) => {
     const [nutritionCollapse, setNutritionCollapse] = useState(false);
@@ -70,7 +88,6 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
     // Populate form when recipe data is loaded
     useEffect(() => {
         if (recipe && recipeId) {
-            // @ts-expect-error - Type mismatch: Form requires 'name' field (populated in UI), API doesn't provide it
             reset(populateRecipe(recipe));
 
             if (containsNutrition(recipe)) {
@@ -94,7 +111,15 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
     const onSubmitForm = async (values: CreateRecipeForm) => {
         try {
             if (onSubmit) {
-                await onSubmit(values);
+                // If recipeId exists, we're in update mode and need to include the id
+                if (recipeId) {
+                    await (onSubmit as (values: UpdateRecipe) => Promise<void> | void)({
+                        ...values,
+                        id: recipeId,
+                    });
+                } else {
+                    await (onSubmit as (values: CreateRecipeForm) => Promise<void> | void)(values);
+                }
             }
         } catch (error) {
             const err_msg = new APIErrorParser(error).humanize();

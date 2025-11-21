@@ -22,7 +22,12 @@ export const populateRecipe = (recipe: Recipe) => ({
     instructions: recipe.instructions || [],
     instructions_as_text: recipe.instructions_as_text || '',
 
-    recipe_ingredients: recipe.recipe_ingredients,
+    recipe_ingredients: recipe.recipe_ingredients?.map((ingredient) => ({
+        name: ingredient.ingredient?.name, // Use nested ingredient name from API
+        order: typeof ingredient.order === 'string' ? parseInt(ingredient.order, 10) : ingredient.order,
+        ingredient_id: ingredient.ingredient_id,
+        quantity_as_text: ingredient.quantity_as_text || '',
+    })),
 
     prep_time_minutes: recipe.prep_time_minutes || undefined,
     servings: recipe.servings || undefined,

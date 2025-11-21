@@ -78,8 +78,6 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
         setSearchInput(event.currentTarget.value);
     };
 
-    const toggleFilter = () => setFilterOpen(!filterOpen);
-
     const activeDiscipline = CONTENT_DISCIPLINE.find((ob) => ob.value === content.discipline) ?? CONTENT_DISCIPLINE[0];
 
     return (
@@ -124,15 +122,6 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
                         );
                     })}
 
-                    <ActionIcon
-                        color="gray"
-                        onClick={toggleFilter}
-                        radius="xl"
-                        variant="light"
-                    >
-                        <IconFilter2 />
-                    </ActionIcon>
-
                     <TextInput
                         flex={isDesktop || isTab ? 'auto' : 1}
                         leftSection={<IconSearch size={16} />}
@@ -153,36 +142,6 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
                     />
                 </Group>
             </Chip.Group>
-
-            <Collapse in={filterOpen}>
-                <Card
-                    bg="gray.1"
-                    radius="lg"
-                    withBorder
-                >
-                    <Stack>
-                        <Title order={5}>Filters</Title>
-                    </Stack>
-                    <Group justify="end">
-                        <Button
-                            color="red"
-                            radius="xl"
-                            size="compact-sm"
-                            variant="light"
-                        >
-                            Clear All
-                        </Button>
-                        <Button
-                            color="red"
-                            radius="xl"
-                            size="compact-sm"
-                            variant="solid"
-                        >
-                            Apply
-                        </Button>
-                    </Group>
-                </Card>
-            </Collapse>
         </Stack>
     );
 };

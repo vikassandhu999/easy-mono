@@ -18,10 +18,9 @@ import {useDebouncedCallback} from '@mantine/hooks';
 import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
 import {useEffect, useMemo, useState} from 'react';
 
-import {Content} from '@/services/contents';
+import {Content, useListContentsInfiniteQuery} from '@/services/contents';
 import {CONTENT_TYPE_CONFIG} from '@/shared/Configs.tsx';
 import {FixedBottom} from '@/shared/containers/FixedBottom';
-import {useListContentsInfiniteQuery} from '@/services/contents';
 
 import RecordsList from '../layouts/RecordsList';
 

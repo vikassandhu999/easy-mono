@@ -81,25 +81,32 @@ export const LIBRARY_DRAWER_CONFIG: DrawerConfig[] = [
     },
     // Meal plan drawers
     {
-        id: 'meal-view',
-        key: 'meal_view',
+        id: 'nutrition-plan-view',
+        key: 'nutrition_plan_view',
         type: 'view',
         prev_key: null,
-        values: ['meal_id'],
+        values: ['nutrition_plan_id'],
     },
     {
-        id: 'meal-create',
-        key: 'meal_create',
+        id: 'nutrition-plan-create',
+        key: 'nutrition_plan_create',
         type: 'create',
         prev_key: 'content_create',
         values: [],
     },
     {
-        id: 'meal-edit',
-        key: 'meal_edit',
+        id: 'nutrition-plan-edit',
+        key: 'nutrition_plan_edit',
         type: 'edit',
-        prev_key: 'meal_view',
-        values: ['meal_id'],
+        prev_key: 'nutrition_plan_view',
+        values: ['nutrition_plan_id'],
+    },
+    {
+        id: 'nutrition-plan-builder',
+        key: 'nutrition_plan_builder',
+        type: 'builder',
+        prev_key: 'content_create',
+        values: ['nutrition_plan_id'],
     },
 ];
 
@@ -125,10 +132,11 @@ export const DRAWER_KEYS = {
     WORKOUT_CREATE: 'workout_create',
     WORKOUT_EDIT: 'workout_edit',
 
-    // Meal
-    MEAL_VIEW: 'meal_view',
-    MEAL_CREATE: 'meal_create',
-    MEAL_EDIT: 'meal_edit',
+    // NutritionPlan
+    NUTRITION_PLAN_VIEW: 'nutrition_plan_view',
+    NUTRITION_PLAN_CREATE: 'nutrition_plan_create',
+    NUTRITION_PLAN_EDIT: 'nutrition_plan_edit',
+    NUTRITION_PLAN_BUILDER: 'nutrition_plan_builder',
 } as const;
 
 export type DrawerKey = (typeof DRAWER_KEYS)[keyof typeof DRAWER_KEYS];

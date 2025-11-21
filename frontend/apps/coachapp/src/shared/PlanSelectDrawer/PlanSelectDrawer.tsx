@@ -19,8 +19,8 @@ import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
 import {IconApple, IconBarbell, IconCalendar, IconX} from '@tabler/icons-react';
 import {useMemo, useState} from 'react';
 
-import RecordsList from '@/shared/layouts/RecordsList';
 import {Plan, PlanDiscipline, useListPlans} from '@/services/plans';
+import RecordsList from '@/shared/layouts/RecordsList';
 
 import {FixedBottomBar} from '../containers/FixedBottomBar';
 

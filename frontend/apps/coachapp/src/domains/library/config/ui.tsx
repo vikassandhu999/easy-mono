@@ -19,9 +19,9 @@ export const CONTENT_DISCIPLINE = [
         ],
     },
     {
-        id: 'cd-meals',
-        label: 'Meal',
-        value: 'meal',
+        id: 'cd-nutrition',
+        label: 'Nutrition',
+        value: 'nutrition',
         options: [
             {
                 id: 'cdt-plan',

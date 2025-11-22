@@ -2,8 +2,7 @@ defmodule EasyWeb.IngredientController do
   import Ecto.Query, warn: false
 
   alias Easy.Nutrition
-  alias Easy.Nutrition.Ingredient
-  alias Easy.Repo
+
   alias EasyWeb.FallbackController
   use EasyWeb, :controller
 
@@ -11,9 +10,8 @@ defmodule EasyWeb.IngredientController do
 
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
-         business_id <- claims["business_id"] do
-      {ingredients, meta} = Nutrition.list_ingredients(business_id, params)
-
+         business_id <- claims["business_id"],
+         {:ok, {ingredients, meta}} <- Nutrition.list_ingredients(business_id, params) do
       conn
       |> put_status(:ok)
       |> render(:index, %{
@@ -60,11 +58,7 @@ defmodule EasyWeb.IngredientController do
   defp authorize_resource(conn, _opts) do
     with %{"id" => id} <- conn.params,
          %{"business_id" => business_id} <- conn.assigns.token_claims,
-         %Ingredient{} = ingredient <-
-           Repo.one(
-             from i in Ingredient,
-               where: i.id == ^id and i.business_id == ^business_id
-           ) do
+         {:ok, ingredient} <- Nutrition.fetch_ingredient(business_id, id) do
       assign(conn, :ingredient, ingredient)
     else
       _ ->

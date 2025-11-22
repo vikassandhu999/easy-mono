@@ -20,9 +20,8 @@ defmodule EasyWeb.NutritionPlanController do
 
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
-         business_id <- claims["business_id"] do
-      {nutrition_plans, meta} = Nutrition.list_nutrition_plans(business_id, params)
-
+         business_id <- claims["business_id"],
+         {:ok, {nutrition_plans, meta}} <- Nutrition.list_nutrition_plans(business_id, params) do
       conn
       |> put_status(:ok)
       |> render(:index, %{
@@ -96,8 +95,9 @@ defmodule EasyWeb.NutritionPlanController do
 
   def shopping_list(conn, _params) do
     plan = conn.assigns.nutrition_plan
+    business_id = conn.assigns.token_claims["business_id"]
 
-    with {:ok, items} <- Nutrition.generate_shopping_list(plan.id) do
+    with {:ok, items} <- Nutrition.generate_shopping_list(business_id, plan.id) do
       json(conn, %{data: items})
     end
   end
@@ -105,7 +105,7 @@ defmodule EasyWeb.NutritionPlanController do
   def reorder_meals(conn, %{"day_number" => day_number, "meal_ids" => meal_ids}) do
     plan = conn.assigns.nutrition_plan
 
-    with :ok <- Nutrition.reorder_meals(plan.id, day_number, meal_ids) do
+    with {:ok, :ok} <- Nutrition.reorder_meals(plan.id, day_number, meal_ids) do
       send_resp(conn, :no_content, "")
     end
   end

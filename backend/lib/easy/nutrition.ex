@@ -3,13 +3,14 @@ defmodule Easy.Nutrition do
 
   alias Easy.Repo
   alias Easy.Utils
-  alias Easy.Nutrition.{Ingredient, NutritionPlan, Recipe, Meal}
+  alias Easy.Nutrition.{Ingredient, NutritionPlan, Recipe, Meal, MealItem, RecipeIngredient}
 
   @default_limit 50
   @max_limit 100
   @nutrition_plan_statuses Ecto.Enum.values(NutritionPlan, :status)
   @recipe_statuses Ecto.Enum.values(Recipe, :status)
-
+  @spec list_nutrition_plans(String.t(), map()) ::
+          {:ok, {list(NutritionPlan.t()), map()}}
   def list_nutrition_plans(business_id, params \\ %{}) do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
     offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
@@ -29,9 +30,11 @@ defmodule Easy.Nutrition do
       |> Repo.all()
       |> Repo.preload(nutrition_plan_preloads())
 
-    {plans, %{limit: limit, offset: offset, total: total}}
+    {:ok, {plans, %{limit: limit, offset: offset, total: total}}}
   end
 
+  @spec fetch_nutrition_plan(String.t(), String.t()) ::
+          {:ok, NutritionPlan.t()} | {:error, :not_found}
   def fetch_nutrition_plan(business_id, plan_id) do
     case Repo.one(
            from np in NutritionPlan,
@@ -43,6 +46,8 @@ defmodule Easy.Nutrition do
     end
   end
 
+  @spec create_nutrition_plan(String.t(), String.t(), map()) ::
+          {:ok, NutritionPlan.t()} | {:error, Ecto.Changeset.t()}
   def create_nutrition_plan(business_id, coach_id, attrs) do
     attrs =
       attrs
@@ -55,6 +60,8 @@ defmodule Easy.Nutrition do
     |> handle_nutrition_plan_result()
   end
 
+  @spec update_nutrition_plan(NutritionPlan.t(), map()) ::
+          {:ok, NutritionPlan.t()} | {:error, Ecto.Changeset.t()}
   def update_nutrition_plan(%NutritionPlan{} = plan, attrs) do
     plan
     |> NutritionPlan.changeset(attrs)
@@ -62,14 +69,19 @@ defmodule Easy.Nutrition do
     |> handle_nutrition_plan_result()
   end
 
+  @spec delete_nutrition_plan(NutritionPlan.t()) ::
+          {:ok, NutritionPlan.t()} | {:error, Ecto.Changeset.t()}
   def delete_nutrition_plan(%NutritionPlan{} = plan) do
     Repo.delete(plan)
   end
 
+  @spec change_nutrition_plan(NutritionPlan.t(), map()) :: Ecto.Changeset.t()
   def change_nutrition_plan(%NutritionPlan{} = plan, attrs \\ %{}) do
     NutritionPlan.changeset(plan, attrs)
   end
 
+  @spec duplicate_nutrition_plan(String.t(), String.t(), String.t()) ::
+          {:ok, NutritionPlan.t()} | {:error, any()}
   def duplicate_nutrition_plan(business_id, plan_id, target_client_id) do
     with {:ok, original_plan} <- fetch_nutrition_plan(business_id, plan_id) do
       Repo.transaction(fn ->
@@ -80,22 +92,28 @@ defmodule Easy.Nutrition do
     end
   end
 
+  @spec copy_day(String.t(), integer(), integer()) ::
+          {:ok, :ok} | {:error, :not_found | :invalid_day_number | any()}
   def copy_day(plan_id, source_day, target_day) do
     with {:ok, plan} <- get_plan(plan_id),
          :ok <- validate_day_number(plan, source_day),
          :ok <- validate_day_number(plan, target_day) do
-      Repo.transaction(fn ->
-        delete_meals_for_day!(plan_id, target_day)
+      case Repo.transaction(fn ->
+             delete_meals_for_day!(plan_id, target_day)
 
-        plan_id
-        |> list_meals_for_day(source_day)
-        |> Enum.each(fn source_meal ->
-          copy_meal!(source_meal, %{day_number: target_day, nutrition_plan_id: plan_id})
-        end)
-      end)
+             plan_id
+             |> list_meals_for_day(source_day)
+             |> Enum.each(fn source_meal ->
+               copy_meal!(source_meal, %{day_number: target_day, nutrition_plan_id: plan_id})
+             end)
+           end) do
+        {:ok, _} -> {:ok, :ok}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
+  @spec list_ingredients(String.t(), map()) :: {:ok, {list(Ingredient.t()), map()}}
   def list_ingredients(business_id, params \\ %{}) do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
     offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
@@ -114,9 +132,11 @@ defmodule Easy.Nutrition do
       |> offset(^offset)
       |> Repo.all()
 
-    {ingredients, %{limit: limit, offset: offset, total: total}}
+    {:ok, {ingredients, %{limit: limit, offset: offset, total: total}}}
   end
 
+  @spec fetch_ingredient(String.t(), String.t()) ::
+          {:ok, Ingredient.t()} | {:error, :not_found}
   def fetch_ingredient(business_id, ingredient_id) do
     case Repo.get_by(Ingredient, id: ingredient_id, business_id: business_id) do
       nil -> {:error, :not_found}
@@ -124,6 +144,8 @@ defmodule Easy.Nutrition do
     end
   end
 
+  @spec create_ingredient(String.t(), String.t(), map()) ::
+          {:ok, Ingredient.t()} | {:error, Ecto.Changeset.t()}
   def create_ingredient(business_id, coach_id, attrs) do
     attrs =
       attrs
@@ -135,24 +157,31 @@ defmodule Easy.Nutrition do
     |> Repo.insert()
   end
 
+  @spec update_ingredient(Ingredient.t(), map()) ::
+          {:ok, Ingredient.t()} | {:error, Ecto.Changeset.t()}
   def update_ingredient(%Ingredient{} = ingredient, attrs) do
     ingredient
     |> Ingredient.changeset(attrs)
     |> Repo.update()
   end
 
+  @spec delete_ingredient(Ingredient.t()) ::
+          {:ok, Ingredient.t()} | {:error, Ecto.Changeset.t()}
   def delete_ingredient(%Ingredient{} = ingredient) do
     Repo.delete(ingredient)
   end
 
+  @spec change_ingredient(Ingredient.t(), map()) :: Ecto.Changeset.t()
   def change_ingredient(%Ingredient{} = ingredient, attrs \\ %{}) do
     Ingredient.changeset(ingredient, attrs)
   end
 
+  @spec list_measurement_units() :: {:ok, list(Easy.Nutrition.MeasurementUnit.t())}
   def list_measurement_units do
-    Repo.all(Easy.Nutrition.MeasurementUnit)
+    {:ok, Repo.all(Easy.Nutrition.MeasurementUnit)}
   end
 
+  @spec list_recipes(String.t(), map()) :: {:ok, {list(Recipe.t()), map()}}
   def list_recipes(business_id, params \\ %{}) do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
     offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
@@ -172,9 +201,10 @@ defmodule Easy.Nutrition do
       |> Repo.all()
       |> Repo.preload([:creator, recipe_ingredients: [:ingredient, :unit]])
 
-    {recipes, %{limit: limit, offset: offset, total: total}}
+    {:ok, {recipes, %{limit: limit, offset: offset, total: total}}}
   end
 
+  @spec fetch_recipe(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
   def fetch_recipe(business_id, recipe_id) do
     case Repo.one(
            from r in Recipe,
@@ -186,6 +216,8 @@ defmodule Easy.Nutrition do
     end
   end
 
+  @spec create_recipe(String.t(), String.t(), map()) ::
+          {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def create_recipe(business_id, coach_id, attrs) when is_binary(business_id) do
     attrs_with_business_and_creator =
       attrs
@@ -204,6 +236,7 @@ defmodule Easy.Nutrition do
     |> handle_recipe_result()
   end
 
+  @spec update_recipe(Recipe.t(), map()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def update_recipe(%Recipe{} = recipe, attrs) do
     attrs = normalize_ingredient_orders(attrs)
 
@@ -214,14 +247,17 @@ defmodule Easy.Nutrition do
     |> handle_recipe_result()
   end
 
+  @spec change_recipe(Recipe.t(), map()) :: Ecto.Changeset.t()
   def change_recipe(%Recipe{} = recipe, attrs \\ %{}) do
     Recipe.changeset(recipe, attrs)
   end
 
+  @spec delete_recipe(Recipe.t()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def delete_recipe(%Recipe{} = recipe) do
     Repo.delete(recipe)
   end
 
+  @spec fetch_meal(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
   def fetch_meal(business_id, meal_id) do
     Meal
     |> join(:inner, [m], np in assoc(m, :nutrition_plan))
@@ -234,13 +270,8 @@ defmodule Easy.Nutrition do
     end
   end
 
-  def get_meal(meal_id) do
-    case Repo.get(Meal, meal_id) do
-      nil -> {:error, :not_found}
-      meal -> {:ok, meal}
-    end
-  end
-
+  @spec create_meal(NutritionPlan.t(), map()) ::
+          {:ok, Meal.t()} | {:error, Ecto.Changeset.t()}
   def create_meal(%NutritionPlan{} = nutrition_plan, attrs) do
     attrs = Map.put(attrs, "nutrition_plan_id", nutrition_plan.id)
 
@@ -249,16 +280,19 @@ defmodule Easy.Nutrition do
     |> Repo.insert()
   end
 
+  @spec update_meal(Meal.t(), map()) :: {:ok, Meal.t()} | {:error, Ecto.Changeset.t()}
   def update_meal(%Meal{} = meal, attrs) do
     meal
     |> Meal.changeset(attrs)
     |> Repo.update()
   end
 
+  @spec delete_meal(Meal.t()) :: {:ok, Meal.t()} | {:error, Ecto.Changeset.t()}
   def delete_meal(%Meal{} = meal) do
     Repo.delete(meal)
   end
 
+  @spec change_meal(Meal.t(), map()) :: Ecto.Changeset.t()
   def change_meal(%Meal{} = meal, attrs \\ %{}) do
     Meal.changeset(meal, attrs)
   end
@@ -377,8 +411,8 @@ defmodule Easy.Nutrition do
         "meal_id" => new_meal_id
       }
 
-      %Easy.Nutrition.MealItem{}
-      |> Easy.Nutrition.MealItem.changeset(item_attrs)
+      %MealItem{}
+      |> MealItem.changeset(item_attrs)
       |> Repo.insert!()
     end)
   end
@@ -458,7 +492,7 @@ defmodule Easy.Nutrition do
   end
 
   defp meal_items_ordered_query do
-    from(mi in Easy.Nutrition.MealItem, order_by: [asc: mi.sort_order])
+    from(mi in MealItem, order_by: [asc: mi.sort_order])
   end
 
   defp nutrition_plan_preloads do
@@ -547,25 +581,33 @@ defmodule Easy.Nutrition do
     end
   end
 
+  @spec create_meal_item(Meal.t(), map()) ::
+          {:ok, MealItem.t()} | {:error, Ecto.Changeset.t()}
   def create_meal_item(%Meal{} = meal, attrs) do
     attrs = Map.put(attrs, "meal_id", meal.id)
 
-    %Easy.Nutrition.MealItem{}
-    |> Easy.Nutrition.MealItem.changeset(attrs)
+    %MealItem{}
+    |> MealItem.changeset(attrs)
     |> Repo.insert()
   end
 
+  @spec list_meal_items(Meal.t()) :: {:ok, list(MealItem.t())}
   def list_meal_items(%Meal{} = meal) do
-    Repo.all(
-      from mi in meal_items_ordered_query(),
-        where: mi.meal_id == ^meal.id,
-        preload: [:recipe]
-    )
+    items =
+      Repo.all(
+        from mi in meal_items_ordered_query(),
+          where: mi.meal_id == ^meal.id,
+          preload: [:recipe]
+      )
+
+    {:ok, items}
   end
 
+  @spec fetch_meal_item(String.t(), String.t()) ::
+          {:ok, MealItem.t()} | {:error, :not_found}
   def fetch_meal_item(business_id, item_id) do
     query =
-      from mi in Easy.Nutrition.MealItem,
+      from mi in MealItem,
         join: m in assoc(mi, :meal),
         join: p in assoc(m, :nutrition_plan),
         where: mi.id == ^item_id and p.business_id == ^business_id,
@@ -577,32 +619,55 @@ defmodule Easy.Nutrition do
     end
   end
 
-  def update_meal_item(%Easy.Nutrition.MealItem{} = item, attrs) do
+  @spec update_meal_item(MealItem.t(), map()) ::
+          {:ok, MealItem.t()} | {:error, Ecto.Changeset.t()}
+  def update_meal_item(%MealItem{} = item, attrs) do
     item
-    |> Easy.Nutrition.MealItem.changeset(attrs)
+    |> MealItem.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_meal_item(%Easy.Nutrition.MealItem{} = item) do
+  @spec delete_meal_item(MealItem.t()) ::
+          {:ok, MealItem.t()} | {:error, Ecto.Changeset.t()}
+  def delete_meal_item(%MealItem{} = item) do
     Repo.delete(item)
   end
 
-  def reorder_meal_items(%Meal{} = meal, item_ids) do
-    Repo.transaction(fn ->
-      Enum.with_index(item_ids)
-      |> Enum.each(fn {id, index} ->
-        from(mi in Easy.Nutrition.MealItem, where: mi.id == ^id and mi.meal_id == ^meal.id)
-        |> Repo.update_all(set: [sort_order: index])
-      end)
-    end)
+  @spec reorder_meal_items(Meal.t(), list(String.t())) ::
+          {:ok, :ok} | {:error, :invalid_item_ids | any()}
+  def reorder_meal_items(%Meal{} = meal, item_ids) when is_list(item_ids) do
+    result =
+      Repo.transaction(fn ->
+        # Validate all items belong to this meal
+        existing_count =
+          from(mi in MealItem, where: mi.id in ^item_ids and mi.meal_id == ^meal.id)
+          |> Repo.aggregate(:count)
 
-    :ok
+        if existing_count != length(item_ids) do
+          Repo.rollback(:invalid_item_ids)
+        end
+
+        Enum.with_index(item_ids)
+        |> Enum.each(fn {id, index} ->
+          from(mi in MealItem, where: mi.id == ^id and mi.meal_id == ^meal.id)
+          |> Repo.update_all(set: [sort_order: index])
+        end)
+      end)
+
+    case result do
+      {:ok, _} -> {:ok, :ok}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
+  @spec copy_meal_to_day(Meal.t(), integer()) :: {:ok, Meal.t()} | {:error, any()}
   def copy_meal_to_day(%Meal{} = meal, target_day) do
-    Repo.transaction(fn ->
-      copy_meal!(meal, %{day_number: target_day})
-    end)
+    case Repo.transaction(fn ->
+           copy_meal!(meal, %{day_number: target_day})
+         end) do
+      {:ok, new_meal} -> {:ok, new_meal}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp get_plan(plan_id) do
@@ -623,76 +688,88 @@ defmodule Easy.Nutrition do
   end
 
   # Phase 1 Features
+  @spec generate_shopping_list(String.t(), String.t()) ::
+          {:ok, list(map())} | {:error, :not_found}
+  def generate_shopping_list(business_id, plan_id) do
+    # First verify the plan exists and belongs to the business
+    with {:ok, _plan} <- fetch_nutrition_plan(business_id, plan_id) do
+      query =
+        from mi in MealItem,
+          join: m in assoc(mi, :meal),
+          join: r in assoc(mi, :recipe),
+          join: ri in RecipeIngredient,
+          on: ri.recipe_id == r.id,
+          join: ing in assoc(ri, :ingredient),
+          left_join: u in assoc(ri, :unit),
+          where: m.nutrition_plan_id == ^plan_id and not is_nil(ri.quantity),
+          group_by: [ing.id, ing.name, u.id, u.name],
+          select: %{
+            ingredient_id: ing.id,
+            ingredient_name: ing.name,
+            total_quantity:
+              sum(
+                fragment(
+                  "COALESCE(?, 0) * COALESCE(?, 0) / COALESCE(NULLIF(?, 0), 1)",
+                  ri.quantity,
+                  mi.servings,
+                  r.servings
+                )
+              ),
+            unit_id: u.id,
+            unit_name: u.name
+          },
+          order_by: ing.name
 
-  @doc """
-  Generates a shopping list by aggregating all ingredients across all meals in a nutrition plan.
-  Returns a list of ingredients with total quantities needed.
-  """
-  def generate_shopping_list(plan_id) do
-    query =
-      from mi in Easy.Nutrition.MealItem,
-        join: m in assoc(mi, :meal),
-        join: r in assoc(mi, :recipe),
-        join: ri in Easy.Nutrition.RecipeIngredient,
-        on: ri.recipe_id == r.id,
-        join: ing in assoc(ri, :ingredient),
-        left_join: u in assoc(ri, :unit),
-        where: m.nutrition_plan_id == ^plan_id and not is_nil(ri.quantity),
-        group_by: [ing.id, ing.name, u.id, u.name],
-        select: %{
-          ingredient_id: ing.id,
-          ingredient_name: ing.name,
-          total_quantity:
-            sum(
-              fragment(
-                "COALESCE(?, 0) * COALESCE(?, 0) / COALESCE(NULLIF(?, 0), 1)",
-                ri.quantity,
-                mi.servings,
-                r.servings
-              )
-            ),
-          unit_id: u.id,
-          unit_name: u.name
-        },
-        order_by: ing.name
+      items = Repo.all(query)
 
-    items = Repo.all(query)
-
-    {:ok,
-     Enum.map(items, fn item ->
-       %{
-         ingredient_id: item.ingredient_id,
-         ingredient_name: item.ingredient_name,
-         total_quantity: Decimal.to_float(item.total_quantity || Decimal.new(0)),
-         unit: item.unit_name || "unit"
-       }
-     end)}
+      {:ok,
+       Enum.map(items, fn item ->
+         %{
+           ingredient_id: item.ingredient_id,
+           ingredient_name: item.ingredient_name,
+           total_quantity: Decimal.to_float(item.total_quantity || Decimal.new(0)),
+           unit: item.unit_name || "unit"
+         }
+       end)}
+    end
   end
 
-  @doc """
-  Reorders meals within a specific day of a nutrition plan.
-  Updates sort_order for each meal in the specified day.
-  """
+  @spec reorder_meals(String.t(), integer(), list(String.t())) ::
+          {:ok, :ok} | {:error, :invalid_meal_ids | any()}
   def reorder_meals(plan_id, day_number, meal_ids) when is_list(meal_ids) do
-    Repo.transaction(fn ->
-      Enum.with_index(meal_ids)
-      |> Enum.each(fn {meal_id, index} ->
-        from(m in Meal,
-          where:
-            m.id == ^meal_id and m.nutrition_plan_id == ^plan_id and
-              m.day_number == ^day_number
-        )
-        |> Repo.update_all(set: [sort_order: index])
-      end)
-    end)
+    result =
+      Repo.transaction(fn ->
+        # Validate all meals belong to this plan and day
+        existing_count =
+          from(m in Meal,
+            where:
+              m.id in ^meal_ids and m.nutrition_plan_id == ^plan_id and
+                m.day_number == ^day_number
+          )
+          |> Repo.aggregate(:count)
 
-    :ok
+        if existing_count != length(meal_ids) do
+          Repo.rollback(:invalid_meal_ids)
+        end
+
+        Enum.with_index(meal_ids)
+        |> Enum.each(fn {meal_id, index} ->
+          from(m in Meal,
+            where:
+              m.id == ^meal_id and m.nutrition_plan_id == ^plan_id and
+                m.day_number == ^day_number
+          )
+          |> Repo.update_all(set: [sort_order: index])
+        end)
+      end)
+
+    case result do
+      {:ok, _} -> {:ok, :ok}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  @doc """
-  Creates multiple meals in bulk based on a template.
-  Templates define the structure (breakfast, lunch, dinner, snack).
-  """
+  @spec bulk_create_meals(NutritionPlan.t(), map()) :: {:ok, :ok} | {:error, any()}
   def bulk_create_meals(plan, params) do
     template = params["template"] || "standard"
     days = params["days"] || []
@@ -709,7 +786,7 @@ defmodule Easy.Nutrition do
         }
 
         case create_meal(plan, attrs) do
-          {:ok, _meal} -> :ok
+          {:ok, _meal} -> {:ok, :ok}
           error -> Repo.rollback(error)
         end
       end
@@ -735,11 +812,7 @@ defmodule Easy.Nutrition do
   end
 
   defp get_meal_template(_), do: get_meal_template("standard")
-
-  @doc """
-  Calculates macro totals for a nutrition plan.
-  Can filter by specific day or aggregate across all days.
-  """
+  @spec calculate_plan_macros(String.t(), map()) :: {:ok, list(map()) | map()}
   def calculate_plan_macros(plan_id, opts \\ %{}) do
     day_number = opts[:day_number]
     aggregate = opts[:aggregate] || :daily

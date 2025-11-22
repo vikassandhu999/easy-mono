@@ -2,55 +2,20 @@ defmodule EasyWeb.RecipeController do
   import Ecto.Query, warn: false
 
   alias Easy.Nutrition
-  alias Easy.Nutrition.Recipe
-  alias Easy.Repo
   alias EasyWeb.FallbackController
-  alias Easy.Utils
   use EasyWeb, :controller
 
   plug :authorize_resource when action in [:show, :update, :delete]
 
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
-         business_id <- claims["business_id"] do
-      limit = Utils.safe_int(params["limit"] || "50")
-      offset = Utils.safe_int(params["offset"] || "0")
-      status = params["status"]
-      search_query = Utils.parse_search(params["search"])
-
-      query =
-        from r in Recipe,
-          where: r.business_id == ^business_id
-
-      query =
-        if status do
-          from r in query, where: r.status == ^status
-        else
-          query
-        end
-
-      query =
-        if search_query do
-          from r in query, where: ilike(r.name, ^"%#{search_query}%")
-        else
-          query
-        end
-
-      recipes =
-        query
-        |> offset(^offset)
-        |> limit(^limit)
-        |> Repo.all()
-
+         business_id <- claims["business_id"],
+         {:ok, {recipes, meta}} <- Nutrition.list_recipes(business_id, params) do
       conn
       |> put_status(:ok)
       |> render(:index, %{
         recipes: recipes,
-        meta: %{
-          limit: limit,
-          offset: offset,
-          total: length(recipes)
-        }
+        meta: meta
       })
     end
   end
@@ -86,10 +51,7 @@ defmodule EasyWeb.RecipeController do
   end
 
   def delete(conn, _params) do
-    recipe = conn.assigns.recipe
-
-    with {:ok, _deleted_recipe} <-
-           recipe |> Repo.delete() do
+    with {:ok, _deleted_recipe} <- Nutrition.delete_recipe(conn.assigns.recipe) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -97,16 +59,7 @@ defmodule EasyWeb.RecipeController do
   defp authorize_resource(conn, _opts) do
     with %{"id" => id} <- conn.params,
          %{"business_id" => business_id} <- conn.assigns.token_claims,
-         %Recipe{} = recipe <-
-           Repo.one(
-             from r in Recipe,
-               where: r.id == ^id and r.business_id == ^business_id,
-               preload: [
-                 :business,
-                 :creator,
-                 recipe_ingredients: [:ingredient, :unit]
-               ]
-           ) do
+         {:ok, recipe} <- Nutrition.fetch_recipe(business_id, id) do
       assign(conn, :recipe, recipe)
     else
       _ ->

@@ -17,8 +17,8 @@ defmodule EasyWeb.MealItemController do
   def index(conn, %{"meal_id" => meal_id}) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
-         {:ok, meal} <- Nutrition.fetch_meal(business_id, meal_id) do
-      items = Nutrition.list_meal_items(meal)
+         {:ok, meal} <- Nutrition.fetch_meal(business_id, meal_id),
+         {:ok, items} <- Nutrition.list_meal_items(meal) do
       render(conn, :index, %{meal_items: items})
     end
   end
@@ -45,8 +45,8 @@ defmodule EasyWeb.MealItemController do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
          {:ok, meal} <- Nutrition.fetch_meal(business_id, meal_id),
-         :ok <- Nutrition.reorder_meal_items(meal, item_ids) do
-      items = Nutrition.list_meal_items(meal)
+         {:ok, :ok} <- Nutrition.reorder_meal_items(meal, item_ids),
+         {:ok, items} <- Nutrition.list_meal_items(meal) do
       render(conn, :index, %{meal_items: items})
     end
   end

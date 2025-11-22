@@ -86,7 +86,6 @@ export default function NutritionPlanBuildDrawer() {
                     />
                 }
                 content={<NutritionPlanBuilder />}
-                fullScreen
                 onClose={closeDrawer}
                 title={planNameTitle}
             />

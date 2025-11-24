@@ -10,15 +10,16 @@ defmodule Easy.Nutrition.Ingredient do
     field :description, :string
     field :image_url, :string
     field :source, :string
-    field :calories, :decimal
-    field :protein, :decimal
-    field :carbohydrates, :decimal
-    field :fats, :decimal
-    field :fiber, :decimal
+    field :calories_per_100g, :decimal
+    field :protein_per_100g, :decimal
+    field :carbohydrates_per_100g, :decimal
+    field :fats_per_100g, :decimal
+    field :fiber_per_100g, :decimal
     field :meta_info, :map, default: %{}
 
     belongs_to :business, Easy.Organizations.Business, type: :binary_id
     belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
+    has_many :serving_sizes, Easy.Nutrition.ServingSize
 
     timestamps()
   end
@@ -28,11 +29,11 @@ defmodule Easy.Nutrition.Ingredient do
     :description,
     :image_url,
     :source,
-    :calories,
-    :protein,
-    :carbohydrates,
-    :fats,
-    :fiber,
+    :calories_per_100g,
+    :protein_per_100g,
+    :carbohydrates_per_100g,
+    :fats_per_100g,
+    :fiber_per_100g,
     :meta_info
   ]
 
@@ -40,13 +41,14 @@ defmodule Easy.Nutrition.Ingredient do
     ingredient
     |> cast(attrs, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
-    |> validate_number(:calories, greater_than_or_equal_to: 0)
-    |> validate_number(:protein, greater_than_or_equal_to: 0)
-    |> validate_number(:carbohydrates, greater_than_or_equal_to: 0)
-    |> validate_number(:fats, greater_than_or_equal_to: 0)
-    |> validate_number(:fiber, greater_than_or_equal_to: 0)
+    |> validate_number(:calories_per_100g, greater_than_or_equal_to: 0)
+    |> validate_number(:protein_per_100g, greater_than_or_equal_to: 0)
+    |> validate_number(:carbohydrates_per_100g, greater_than_or_equal_to: 0)
+    |> validate_number(:fats_per_100g, greater_than_or_equal_to: 0)
+    |> validate_number(:fiber_per_100g, greater_than_or_equal_to: 0)
     |> assoc_constraint(:business)
     |> assoc_constraint(:creator)
+    |> cast_assoc(:serving_sizes)
   end
 
   def changeset_system(ingredient, attrs) do

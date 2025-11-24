@@ -94,21 +94,21 @@ defmodule EasyWeb.NutritionEndpointsTest do
       {:ok, ingredient1} =
         Nutrition.create_ingredient(context.business.id, context.coach.id, %{
           name: "Chicken Breast",
-          calories: Decimal.new("165"),
-          protein: Decimal.new("31"),
-          carbohydrates: Decimal.new("0"),
-          fats: Decimal.new("3.6"),
-          fiber: Decimal.new("0")
+          calories_per_100g: Decimal.new("165"),
+          protein_per_100g: Decimal.new("31"),
+          carbohydrates_per_100g: Decimal.new("0"),
+          fats_per_100g: Decimal.new("3.6"),
+          fiber_per_100g: Decimal.new("0")
         })
 
       {:ok, ingredient2} =
         Nutrition.create_ingredient(context.business.id, context.coach.id, %{
           name: "Brown Rice",
-          calories: Decimal.new("112"),
-          protein: Decimal.new("2.6"),
-          carbohydrates: Decimal.new("24"),
-          fats: Decimal.new("0.9"),
-          fiber: Decimal.new("1.8")
+          calories_per_100g: Decimal.new("112"),
+          protein_per_100g: Decimal.new("2.6"),
+          carbohydrates_per_100g: Decimal.new("24"),
+          fats_per_100g: Decimal.new("0.9"),
+          fiber_per_100g: Decimal.new("1.8")
         })
 
       Map.merge(context, %{token: token, ingredient1: ingredient1, ingredient2: ingredient2})
@@ -230,11 +230,11 @@ defmodule EasyWeb.NutritionEndpointsTest do
       ingredient_params = %{
         "name" => "Salmon Fillet",
         "description" => "Fresh Atlantic salmon",
-        "calories" => 206,
-        "protein" => 22,
-        "carbohydrates" => 0,
-        "fats" => 13,
-        "fiber" => 0,
+        "calories_per_100g" => 206,
+        "protein_per_100g" => 22,
+        "carbohydrates_per_100g" => 0,
+        "fats_per_100g" => 13,
+        "fiber_per_100g" => 0,
         "source" => "USDA"
       }
 
@@ -246,7 +246,7 @@ defmodule EasyWeb.NutritionEndpointsTest do
       assert %{"ingredient" => ingredient} = json_response(conn, 201)
       assert ingredient["name"] == "Salmon Fillet"
       assert ingredient["business_id"] == business.id
-      assert Decimal.equal?(Decimal.new(ingredient["calories"]), Decimal.new("206"))
+      assert Decimal.equal?(Decimal.new(ingredient["calories_per_100g"]), Decimal.new("206"))
     end
 
     test "returns validation error for missing required fields", %{conn: conn, token: token} do

@@ -87,8 +87,7 @@ defmodule Easy.Clients do
   defp verify_client_update_access(_scope, _client_id, _business_id), do: {:error, :forbidden}
 
   def delete_client(%Scope{} = scope, client_id) when is_binary(client_id) do
-    with {:ok, client} <- get_client(scope, client_id),
-         :ok <- Authorization.authorize_business_owner(scope, client.business_id) do
+    with {:ok, client} <- get_client(scope, client_id) do
       Repo.delete(client)
     end
   end

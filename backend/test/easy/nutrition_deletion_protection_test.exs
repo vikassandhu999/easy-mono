@@ -30,11 +30,11 @@ defmodule Easy.NutritionDeletionProtectionTest do
       {:ok, ingredient} =
         Nutrition.create_ingredient(business.id, coach.id, %{
           name: "Unused Ingredient",
-          calories: Decimal.new("100"),
-          protein: Decimal.new("10"),
-          carbohydrates: Decimal.new("20"),
-          fats: Decimal.new("5"),
-          fiber: Decimal.new("2")
+          calories_per_100g: Decimal.new("100"),
+          protein_per_100g: Decimal.new("10"),
+          carbohydrates_per_100g: Decimal.new("20"),
+          fats_per_100g: Decimal.new("5"),
+          fiber_per_100g: Decimal.new("2")
         })
 
       # Should be able to delete it
@@ -49,11 +49,11 @@ defmodule Easy.NutritionDeletionProtectionTest do
       {:ok, ingredient} =
         Nutrition.create_ingredient(business.id, coach.id, %{
           name: "Chicken Breast",
-          calories: Decimal.new("165"),
-          protein: Decimal.new("31"),
-          carbohydrates: Decimal.new("0"),
-          fats: Decimal.new("3.6"),
-          fiber: Decimal.new("0")
+          calories_per_100g: Decimal.new("165"),
+          protein_per_100g: Decimal.new("31"),
+          carbohydrates_per_100g: Decimal.new("0"),
+          fats_per_100g: Decimal.new("3.6"),
+          fiber_per_100g: Decimal.new("0")
         })
 
       # Create a recipe
@@ -85,11 +85,11 @@ defmodule Easy.NutritionDeletionProtectionTest do
       {:ok, ingredient} =
         Nutrition.create_ingredient(business.id, coach.id, %{
           name: "Banana",
-          calories: Decimal.new("89"),
-          protein: Decimal.new("1.1"),
-          carbohydrates: Decimal.new("23"),
-          fats: Decimal.new("0.3"),
-          fiber: Decimal.new("2.6")
+          calories_per_100g: Decimal.new("89"),
+          protein_per_100g: Decimal.new("1.1"),
+          carbohydrates_per_100g: Decimal.new("23"),
+          fats_per_100g: Decimal.new("0.3"),
+          fiber_per_100g: Decimal.new("2.6")
         })
 
       # Create a meal
@@ -121,11 +121,11 @@ defmodule Easy.NutritionDeletionProtectionTest do
       {:ok, ingredient} =
         Nutrition.create_ingredient(business.id, coach.id, %{
           name: "Oats",
-          calories: Decimal.new("389"),
-          protein: Decimal.new("17"),
-          carbohydrates: Decimal.new("66"),
-          fats: Decimal.new("7"),
-          fiber: Decimal.new("11")
+          calories_per_100g: Decimal.new("389"),
+          protein_per_100g: Decimal.new("17"),
+          carbohydrates_per_100g: Decimal.new("66"),
+          fats_per_100g: Decimal.new("7"),
+          fiber_per_100g: Decimal.new("11")
         })
 
       # Create a recipe and add ingredient
@@ -298,11 +298,11 @@ defmodule Easy.NutritionDeletionProtectionTest do
       {:ok, ingredient} =
         Nutrition.create_ingredient(business.id, coach.id, %{
           name: "Test Ingredient",
-          calories: Decimal.new("100"),
-          protein: Decimal.new("10"),
-          carbohydrates: Decimal.new("20"),
-          fats: Decimal.new("5"),
-          fiber: Decimal.new("2")
+          calories_per_100g: Decimal.new("100"),
+          protein_per_100g: Decimal.new("10"),
+          carbohydrates_per_100g: Decimal.new("20"),
+          fats_per_100g: Decimal.new("5"),
+          fiber_per_100g: Decimal.new("2")
         })
 
       {:ok, recipe} =

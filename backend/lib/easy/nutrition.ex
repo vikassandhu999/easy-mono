@@ -131,6 +131,7 @@ defmodule Easy.Nutrition do
       |> limit(^limit)
       |> offset(^offset)
       |> Repo.all()
+      |> Repo.preload(:serving_sizes)
 
     {:ok, {ingredients, %{limit: limit, offset: offset, total: total}}}
   end
@@ -140,7 +141,7 @@ defmodule Easy.Nutrition do
   def fetch_ingredient(business_id, ingredient_id) do
     case Repo.get_by(Ingredient, id: ingredient_id, business_id: business_id) do
       nil -> {:error, :not_found}
-      ingredient -> {:ok, ingredient}
+      ingredient -> {:ok, Repo.preload(ingredient, :serving_sizes)}
     end
   end
 

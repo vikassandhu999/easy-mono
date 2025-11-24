@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {Button} from '@mantine/core';
 import {useRef} from 'react';
 
@@ -6,7 +7,6 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useCreateNutritionPlan} from '@/services/nutrition_plans';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import NutritionPlanForm, {NutritionPlanFormHandle} from '@/shared/NutritionPlanForm';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 const NutritionPlanCreateDrawer = () => {
@@ -46,8 +46,8 @@ const NutritionPlanCreateDrawer = () => {
                                 nutrition_plan_id: plan.id,
                             });
                         } catch (error) {
-                            const err_message = new APIErrorParser(error).humanize();
-                            notifyError(err_message);
+                            const errMsg = humanizeError(error);
+                            notifyError(errMsg);
                         }
                     }}
                     ref={nutritionPlanFormRef}

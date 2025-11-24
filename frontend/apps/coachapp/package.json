@@ -17,6 +17,7 @@
     "@dnd-kit/sortable": "^7.0.2",
     "@dnd-kit/utilities": "^3.2.2",
     "@easy/chat": "workspace:^",
+    "@easy/error-parser": "workspace:^",
     "@easy/hooks": "workspace:^",
     "@easy/ui": "workspace:^",
     "@easy/utils": "workspace:^",

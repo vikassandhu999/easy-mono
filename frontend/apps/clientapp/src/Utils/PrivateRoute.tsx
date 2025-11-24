@@ -1,17 +1,21 @@
-import { Navigate, Outlet } from "react-router";
-import { Loader, Center } from "@mantine/core";
-import { useAuth } from "@/providers/AuthProvider";
+import {Center, LoadingOverlay} from '@mantine/core';
+import {Navigate, Outlet} from 'react-router';
+
+import {selectIsAuthenticated, selectIsAuthenticating} from '@/slices/authSlice';
+import {useAppSelector} from '@/store';
 
 const PrivateRoute = () => {
-  const { isAuthenticated, isAuthenticating } = useAuth();
-  if (isAuthenticating) {
-    return (
-      <Center h="100vh">
-        <Loader size="lg" />
-      </Center>
-    );
-  }
-  return isAuthenticated ? <Outlet /> : <Navigate to="/signin" />;
+    const isAuthenticating = useAppSelector(selectIsAuthenticating);
+    const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+    if (isAuthenticating) {
+        return (
+            <Center h="100vh">
+                <LoadingOverlay loaderProps={{size: 'lg', type: 'bars'}} />
+            </Center>
+        );
+    }
+    return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default PrivateRoute;

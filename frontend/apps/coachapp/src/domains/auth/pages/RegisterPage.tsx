@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Stack, Text, TextInput} from '@mantine/core';
 import {IconArrowRight} from '@tabler/icons-react';
@@ -6,7 +7,6 @@ import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
 import {Register_zod, RegisterRequest, useRegisterMutation} from '@/services/auth';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
@@ -39,8 +39,8 @@ const RegisterPage: React.FC = () => {
             ]);
             navigate('/register/verify?' + params.toString());
         } catch (err) {
-            const errMessage = new APIErrorParser(err).humanize();
-            notifyError(errMessage);
+            const errMsg = humanizeError(err);
+            notifyError(errMsg);
         }
     };
 

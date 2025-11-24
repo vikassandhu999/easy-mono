@@ -207,6 +207,9 @@ importers:
       '@easy/chat':
         specifier: workspace:^
         version: link:../../packages/chat
+      '@easy/error-parser':
+        specifier: workspace:^
+        version: link:../../packages/error-parser
       '@easy/hooks':
         specifier: workspace:^
         version: link:../../packages/hooks
@@ -644,6 +647,24 @@ importers:
       tailwind-merge:
         specifier: ^2.5.5
         version: 2.6.0
+    devDependencies:
+      '@easy/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@types/react':
+        specifier: ~18.3.12
+        version: 18.3.24
+      typescript:
+        specifier: ~5.6.2
+        version: 5.6.3
+      vite:
+        specifier: ^5.4.10
+        version: 5.4.19(@types/node@20.19.13)(lightningcss@1.30.1)(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.0)
+      vite-plugin-dts:
+        specifier: ^4.3.0
+        version: 4.5.4(@types/node@20.19.13)(rollup@4.50.0)(typescript@5.6.3)(vite@5.4.19(@types/node@20.19.13)(lightningcss@1.30.1)(sugarss@5.0.1(postcss@8.5.6))(terser@5.44.0))
+
+  packages/error-parser:
     devDependencies:
       '@easy/eslint-config':
         specifier: workspace:^

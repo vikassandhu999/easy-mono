@@ -1,9 +1,10 @@
+import {humanizeError} from '@easy/error-parser';
+import {error} from 'console';
 import {useMemo, useState} from 'react';
 
 import {useCreateMealItem, useDeleteMealItem} from '@/services/meal_items';
 import {useCreateMeal} from '@/services/meals';
-import {Meal, MealDaytime} from '@/services/nutrition_plans';
-import APIErrorParser from '@/utils/error_parser';
+import {Meal} from '@/services/nutrition_plans';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 export type UseDayMealsArgs = {
@@ -52,9 +53,8 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
             });
             notifySuccess('Recipe deleted');
         } catch (e) {
-            console.log(e);
-            const err_msg = new APIErrorParser(e).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
         } finally {
             setLocalLoading(false);
         }
@@ -94,9 +94,8 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
                 openRecipeDrawer(result.data.id);
             }
         } catch (e) {
-            console.log(e);
-            const err_msg = new APIErrorParser(e).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
         } finally {
             setLocalLoading(false);
         }
@@ -118,9 +117,8 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
             notifySuccess('Recipe added successfully');
             closeRecipeDrawer();
         } catch (e) {
-            console.log(e);
-            const err_msg = new APIErrorParser(e).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
         } finally {
             setLocalLoading(false);
         }

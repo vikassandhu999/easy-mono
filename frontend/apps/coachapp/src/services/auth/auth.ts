@@ -57,10 +57,10 @@ export const authApi = baseAPISlice.injectEndpoints({
                 method: 'get',
             }),
         }),
-        logout: build.mutation<{status: string}, void>({
+        logout: build.query<{status: string}, void>({
             query: () => ({
                 url: '/api/auth/logout',
-                method: 'post',
+                method: 'get',
             }),
         }),
     }),
@@ -68,7 +68,8 @@ export const authApi = baseAPISlice.injectEndpoints({
 });
 
 export const {
-    useLogoutMutation,
+    useLogoutQuery,
+    useLazyLogoutQuery,
     useRefreshTokenMutation,
     useRegisterMutation,
     useVerifyRegirationMutation,

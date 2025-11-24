@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {Button, Group} from '@mantine/core';
 import {useRef} from 'react';
 
@@ -5,7 +6,6 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useCreateRecipe} from '@/services/recipes';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import {RecipeForm, RecipeFormHandle} from '@/shared/RecipeForm';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 type RecipeCreateDrawerProps = {
@@ -28,8 +28,8 @@ const RecipeCreateDrawer = ({onClose: onCloseProp, onSuccess}: RecipeCreateDrawe
             await recipeFormRef.current?.submit();
             // Form submission happens in onSubmit below
         } catch (error) {
-            const err_message = new APIErrorParser(error).humanize();
-            notifyError(err_message);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
         }
     };
 
@@ -48,8 +48,8 @@ const RecipeCreateDrawer = ({onClose: onCloseProp, onSuccess}: RecipeCreateDrawe
                 handleClose();
             }
         } catch (error) {
-            const err_message = new APIErrorParser(error).humanize();
-            notifyError(err_message);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
             throw error; // Re-throw to prevent closing drawer on error
         }
     };

@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Stack, Text, TextInput} from '@mantine/core';
 import {IconArrowRight} from '@tabler/icons-react';
@@ -6,7 +7,6 @@ import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
 import {SendLoginCode_zod, SendLoginCodeRequest, useSendLoginCodeMutation} from '@/services/auth';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
@@ -28,18 +28,17 @@ const LoginPage: React.FC = () => {
             const response = await sendOTP(values).unwrap();
 
             notifySuccess(`We've sent you a verification code to sign in`);
-          
+
             const params = new URLSearchParams([
                 ['token_id', response.token.token_id],
                 ['email', response.user.email],
             ]);
-          
+
             navigate('/login/verify?' + params.toString());
         } catch (err) {
-           
-            const err_msg = new APIErrorParser(err).humanize();
+            const errMsg = humanizeError(err);
 
-            notifyError(err_msg);
+            notifyError(errMsg);
         }
     };
 

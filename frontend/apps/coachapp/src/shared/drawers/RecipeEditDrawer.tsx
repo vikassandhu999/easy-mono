@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {Button} from '@mantine/core';
 import {useRef} from 'react';
 
@@ -5,7 +6,6 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useUpdateRecipe} from '@/services/recipes';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import {RecipeForm, RecipeFormHandle} from '@/shared/RecipeForm';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 const RecipeEditDrawer = () => {
@@ -49,8 +49,8 @@ const RecipeEditDrawer = () => {
 
                             closeDrawer();
                         } catch (error) {
-                            const err_message = new APIErrorParser(error).humanize();
-                            notifyError(err_message);
+                            const errMsg = humanizeError(error);
+                            notifyError(errMsg);
                         }
                     }}
                     recipeId={recipeId}

@@ -1,12 +1,13 @@
+import {humanizeError} from '@easy/error-parser';
 import {ActionIcon, Badge, Button, Group, Loader, Stack, Text, TextInput, Title, useMantineTheme} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconPlus, IconTrash} from '@tabler/icons-react';
+import {error} from 'console';
 import {FC, useCallback, useMemo, useState} from 'react';
 import {UseFormReturn, useWatch} from 'react-hook-form';
 
 import {useCreateIngredient, useListIngredients} from '@/services/ingredients';
 import {CreateRecipeForm} from '@/services/recipes';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
 
 type IngredientsFieldProps = {
@@ -47,8 +48,8 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
             addIngredient(id, name);
             notifySuccess(`Ingredient ${name} created.`);
         } catch (err) {
-            const err_msg = new APIErrorParser(err).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(err);
+            notifyError(errMsg);
         }
     };
 

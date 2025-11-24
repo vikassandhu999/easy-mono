@@ -1,8 +1,8 @@
+import {humanizeError} from '@easy/error-parser';
 import {Button, Group} from '@mantine/core';
 import {ReactNode} from 'react';
 
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 export interface FormHandle {
@@ -43,8 +43,8 @@ export function DrawerFormWrapper<T extends FormHandle>({
                 onClose();
             }
         } catch (error) {
-            const err_message = new APIErrorParser(error).humanize();
-            notifyError(err_message);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
         }
     };
 

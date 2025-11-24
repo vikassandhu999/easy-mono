@@ -1,0 +1,28 @@
+{
+  "name": "@easy/error-parser",
+  "version": "1.0.0",
+  "description": "API error parser for Easy coaching platform",
+  "keywords": [
+    "error",
+    "parser",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc && vite build",
+    "lint": "eslint . --fix"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2",
+    "vite": "^5.4.10",
+    "vite-plugin-dts": "^4.3.0",
+    "@easy/eslint-config": "workspace:^",
+    "@types/react": "~18.3.12"
+  },
+  "dependencies": {},
+  "peerDependencies": {}
+}

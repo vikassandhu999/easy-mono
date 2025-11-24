@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {ActionIcon, Menu, Modal} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
 import {IconCopy, IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
@@ -10,7 +11,6 @@ import useScreenSize from '@/hooks/useScreenSize';
 import {useDeleteNutritionPlan, useGetNutritionPlan} from '@/services/nutrition_plans';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import NutritionPlanBuilder from '@/shared/NutritionPlanBuilder/NutritionPlanBuilder';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 type ActionMenuProps = {
@@ -55,8 +55,8 @@ export default function NutritionPlanBuildDrawer() {
             closeDeleteModal();
             closeDrawer();
         } catch (error) {
-            const err_message = new APIErrorParser(error).humanize();
-            notifyError(err_message);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
         }
     };
 

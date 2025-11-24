@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {
     Button,
@@ -17,7 +18,6 @@ import {useEffect, useImperativeHandle, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
 import {CreateRecipe_zod, CreateRecipeForm, UpdateRecipe, useGetRecipe} from '@/services/recipes';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError} from '@/utils/notification';
 
 import {containsNutrition, getDefaultValues, populateRecipe} from './helper';
@@ -122,8 +122,8 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                 }
             }
         } catch (error) {
-            const err_msg = new APIErrorParser(error).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
         }
     };
 

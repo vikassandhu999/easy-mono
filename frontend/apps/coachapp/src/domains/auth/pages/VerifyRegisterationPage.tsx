@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Center, PinInput, Stack, Text} from '@mantine/core';
 import {IconArrowLeft, IconArrowRight} from '@tabler/icons-react';
@@ -7,7 +8,6 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuthActions} from '@/hooks/useAuthActions';
 import {useVerifyRegirationMutation, VerifyRegisteration_zod, VerifyRegisterationRequest} from '@/services/auth';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
@@ -45,9 +45,8 @@ const VerifyRegisterationPage: React.FC = () => {
 
             navigate('/');
         } catch (err) {
-            const messageErr = new APIErrorParser(err).humanize();
-
-            notifyError(messageErr);
+            const errMsg = humanizeError(err);
+            notifyError(errMsg);
         }
     };
 

@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Loader, NumberInput, Stack, TagsInput, Text, Textarea, TextInput, Title} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
@@ -9,7 +10,6 @@ import {
     UpdateNutritionPlan,
     useGetNutritionPlan,
 } from '@/services/nutrition_plans';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError} from '@/utils/notification';
 
 import {getDefaultValues, populateNutritionPlan} from './helper';
@@ -104,8 +104,8 @@ const NutritionPlanForm = ({initialValues, onSubmit, ref, planId}: NutritionPlan
                 }
             }
         } catch (error) {
-            const err_msg = new APIErrorParser(error).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
         }
     };
 

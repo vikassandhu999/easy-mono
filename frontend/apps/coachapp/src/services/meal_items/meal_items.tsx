@@ -40,9 +40,10 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
                 },
             }),
             transformResponse: (response: {data: MealItem}) => response.data,
-            invalidatesTags: (result) => [
+            invalidatesTags: (result, _error, {nutrition_plan_id}) => [
                 {type: 'MealItems', id: result?.id},
                 result ? {type: 'Meals', id: result.meal_id} : {type: 'Meals', id: 'LIST'},
+                ...(nutrition_plan_id ? [{type: 'NutritionPlans' as const, id: nutrition_plan_id}] : []),
             ],
         }),
 

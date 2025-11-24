@@ -3,11 +3,13 @@ import {z} from 'zod';
 import {MealDaytime} from '../meals';
 import {Recipe} from '../recipes/recipes_definition';
 
+export type {MealDaytime};
 export type NutritionPlanStatus = 'active' | 'archived' | 'draft';
 
 export type MealItem = {
     id: string;
     sort_order: number;
+    servings: number | string;
     recipe_id: string;
     recipe?: Recipe;
     meal_id: string;

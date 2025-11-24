@@ -29,6 +29,7 @@ const NutritionPlanBuilder = () => {
         }
         // Reset flag after sync
         isUserInteraction.current = false;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
     // Update URL when day changes

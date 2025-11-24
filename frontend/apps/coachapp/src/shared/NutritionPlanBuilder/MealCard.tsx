@@ -13,9 +13,10 @@ type MealCardProps = {
     meal: Meal | undefined;
     onAddRecipe: (mealId: string | undefined, daytime: MealDaytime, label: string) => void;
     onDeleteRecipe: (itemId: string, mealId: string) => void;
+    nutritionPlanId: string;
 };
 
-export const MealCard = ({mealType, meal, onAddRecipe, onDeleteRecipe}: MealCardProps) => {
+export const MealCard = ({mealType, meal, onAddRecipe, onDeleteRecipe, nutritionPlanId}: MealCardProps) => {
     const hasRecipes = !!meal && meal.meal_items.length > 0;
 
     return (
@@ -48,24 +49,13 @@ export const MealCard = ({mealType, meal, onAddRecipe, onDeleteRecipe}: MealCard
                             <MealRecipeItem
                                 item={item}
                                 key={item.id}
+                                nutritionPlanId={nutritionPlanId}
                                 onDelete={() => {
                                     onDeleteRecipe(item.id, meal!.id);
                                 }}
                             />
                         ))}
                     </Stack>
-                )}
-
-                {/* Empty State */}
-                {!hasRecipes && (
-                    <Text
-                        c="dimmed"
-                        py="md"
-                        size="sm"
-                        ta="center"
-                    >
-                        No recipes added yet
-                    </Text>
                 )}
             </Stack>
         </Card>

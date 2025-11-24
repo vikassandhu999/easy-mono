@@ -47,6 +47,7 @@ const DayMealsView = ({currentDay, planId, meals}: DayMealsViewProps) => {
                         <MealCard
                             meal={meal}
                             mealType={mealType}
+                            nutritionPlanId={effectivePlanId}
                             onAddRecipe={handleAddRecipe}
                             onDeleteRecipe={deleteMealItem}
                         />

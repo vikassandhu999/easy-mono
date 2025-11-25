@@ -23,6 +23,10 @@ defmodule Easy.Accounts.OneTimeToken do
     field :code, :string
     field :type, :string
     field :expires_at, :utc_datetime
+    field :token, :binary_id
+    field :metadata, :map, default: %{}
+    field :attempts, :integer, default: 0
+    field :used_at, :utc_datetime
 
     belongs_to :user, Easy.Accounts.User
 
@@ -36,13 +40,31 @@ defmodule Easy.Accounts.OneTimeToken do
       :code,
       :type,
       :expires_at,
-      :user_id
+      :user_id,
+      :token,
+      :metadata,
+      :attempts,
+      :used_at
     ])
-    |> validate_required([:code, :type, :expires_at, :user_id])
-    |> validate_inclusion(:type, ["email_verification", "login"])
+    |> validate_required([:code, :type, :expires_at])
+    |> validate_inclusion(:type, ["email_verification", "login", "client_invitation"])
     |> hash_code()
     |> unique_constraint(:code)
     |> foreign_key_constraint(:user_id)
+  end
+
+  def increment_attempts_changeset(token) do
+    current_attempts = token.attempts || 0
+
+    token
+    |> change()
+    |> put_change(:attempts, current_attempts + 1)
+  end
+
+  def mark_used_changeset(token) do
+    token
+    |> change()
+    |> put_change(:used_at, DateTime.utc_now() |> DateTime.truncate(:second))
   end
 
   # Hashes the OTP code using bcrypt before storing.

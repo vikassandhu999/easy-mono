@@ -11,6 +11,7 @@ defmodule EasyWeb.Router do
     plug :accepts, ["json"]
 
     plug EasyWeb.Plugs.Authenticate
+    plug EasyWeb.Plugs.PopulateScope
   end
 
   scope "/api", EasyWeb do
@@ -38,16 +39,28 @@ defmodule EasyWeb.Router do
   scope "/api/invitations", EasyWeb do
     pipe_through :api
 
-    get "/:token_id", ClientController, :show_invitation
-    post "/:token_id/accept", ClientController, :accept_invitation
+    get "/:token_id", InvitationController, :show
+    post "/:token_id/accept", InvitationController, :accept
   end
 
-  scope "/api/current-business", EasyWeb do
+  # Organization management
+  scope "/api/organization", EasyWeb do
     pipe_through :api_authenticated
 
     get "/", BusinessController, :show
+    get "/subscription", BusinessController, :get_subscription
+    get "/coaches", BusinessController, :list_coaches
   end
 
+  # Client self-service (authenticated client)
+  scope "/api/me", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/profile", ProfileController, :show
+    patch "/profile", ProfileController, :update
+  end
+
+  # Client management (coach actions)
   scope "/api/clients", EasyWeb do
     pipe_through :api_authenticated
 
@@ -56,6 +69,8 @@ defmodule EasyWeb.Router do
     get "/:id", ClientController, :show
     patch "/:id", ClientController, :update
     patch "/:id/status", ClientController, :update_status
+    post "/:id/resend-invitation", ClientController, :resend_invitation
+    delete "/:id", ClientController, :delete
   end
 
   scope "/api/ingredients", EasyWeb do

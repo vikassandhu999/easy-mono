@@ -1,7 +1,8 @@
 defmodule EasyWeb.ClientInvitationFlowTest do
   use Easy.ConnCase, async: true
 
-  alias Easy.{Accounts, Repo, Coaches, Organizations}
+  alias Easy.{Accounts, Repo, Organizations}
+  alias Easy.Organizations.Plan
 
   @moduledoc """
   Integration test for the complete client invitation flow.
@@ -16,6 +17,18 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
   describe "complete client invitation flow" do
     setup do
+      # Create a default plan for testing
+      {:ok, _plan} =
+        %Plan{}
+        |> Plan.changeset(%{
+          name: "Free Trial",
+          slug: "free-trial-#{System.unique_integer([:positive])}",
+          price_cents: 0,
+          billing_interval: "month",
+          is_default: true
+        })
+        |> Repo.insert()
+
       # Create a coach user and business for testing
       coach_email = "coach#{System.unique_integer([:positive])}@example.com"
 
@@ -28,17 +41,15 @@ defmodule EasyWeb.ClientInvitationFlowTest do
         })
 
       {:ok, business} =
-        Organizations.create_business(coach_user, %{
-          name: "Test Business #{System.unique_integer([:positive])}"
+        Organizations.create_business_with_owner(coach_user, %{
+          name: "Test Business #{System.unique_integer([:positive])}",
+          handle: "test-biz-#{System.unique_integer([:positive])}"
         })
 
-      {:ok, coach} =
-        Coaches.create_coach(coach_user.id, business.id, %{
-          status: "active"
-        })
+      coach = Accounts.get_coach_by_user(coach_user)
 
       # Create session for coach
-      {:ok, %{session: session_data}} = Accounts.create_session(coach_user)
+      {:ok, session_data} = Accounts.create_session(coach_user)
 
       %{
         coach: coach,
@@ -151,13 +162,13 @@ defmodule EasyWeb.ClientInvitationFlowTest do
                "full_name" => coach_full_name
              } = coach_info
 
-      assert coach_full_name == coach_user.full_name
+      assert coach_full_name == Easy.Accounts.User.full_name(coach_user)
 
       # ============================================
       # STEP 3: Client Accepts Invitation with OTP
       # ============================================
       # Get the invitation token to extract the OTP code for testing
-      invitation_token = Accounts.get_token_by_uuid(token_id)
+      invitation_token = Repo.get(Easy.Accounts.OneTimeToken, token_id)
       assert invitation_token != nil
 
       # For testing, we need to get the actual OTP code
@@ -279,8 +290,7 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
       response = json_response(conn1, 404)
 
-      assert %{"error" => %{"code" => code, "message" => message}} = response
-      assert String.downcase(code) == "not_found"
+      assert %{"error_code" => "not_found", "error_message" => message} = response
       assert message == "Invitation not found or invalid"
     end
 
@@ -302,7 +312,7 @@ defmodule EasyWeb.ClientInvitationFlowTest do
       %{"invitation" => %{"token_id" => token_id}} = json_response(conn1, 201)
 
       # Manually expire the token
-      invitation_token = Accounts.get_token_by_uuid(token_id)
+      invitation_token = Repo.get(Easy.Accounts.OneTimeToken, token_id)
 
       expired_at =
         DateTime.utc_now()
@@ -317,10 +327,8 @@ defmodule EasyWeb.ClientInvitationFlowTest do
       conn2 = get(conn, "/api/invitations/#{token_id}")
 
       assert %{
-               "error" => %{
-                 "code" => code,
-                 "message" => _message
-               }
+               "error_code" => code,
+               "error_message" => _message
              } = json_response(conn2, 410)
 
       assert String.downcase(code) == "invitation_expired"
@@ -351,7 +359,7 @@ defmodule EasyWeb.ClientInvitationFlowTest do
 
       response = json_response(conn2, 400)
 
-      assert %{"error" => %{"code" => code}} = response
+      assert %{"error_code" => code} = response
       assert String.downcase(code) == "invalid_otp"
     end
   end

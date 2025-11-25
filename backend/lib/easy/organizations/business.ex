@@ -56,7 +56,7 @@ defmodule Easy.Organizations.Business do
     changeset
     |> validate_format(:handle, ~r/^[a-zA-Z0-9_-]{2,32}$/)
     |> validate_exclusion(:handle, reserved_words, message: "is reserved")
-    |> unsafe_validate_unique(:handle, Algora.Repo)
+    |> unsafe_validate_unique(:handle, Easy.Repo)
     |> unique_constraint(:handle)
   end
 end

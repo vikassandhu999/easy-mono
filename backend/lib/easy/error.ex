@@ -3,10 +3,22 @@ defmodule Easy.Error do
 
   # 1. Define the error struct.
   #    We can add default values for safety.
-  defstruct code: :internal_error,
-            message: "An internal error occurred",
-            detail: %{},
-            status: :bad_request
+  defexception [:code, :message, :detail, :status]
+
+  @impl true
+  def exception(opts) do
+    code = Keyword.get(opts, :code, :internal_error)
+    message = Keyword.get(opts, :message, "An internal error occurred")
+    detail = Keyword.get(opts, :detail, %{})
+    status = Keyword.get(opts, :status, :bad_request)
+
+    %__MODULE__{
+      code: code,
+      message: message,
+      detail: detail,
+      status: status
+    }
+  end
 
   # 2. Alias the struct for convenience within this module
   # alias __MODULE__

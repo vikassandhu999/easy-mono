@@ -50,4 +50,11 @@ defmodule Easy.Accounts.User do
     |> validate_length(:email, max: 255)
     |> update_change(:email, &String.downcase/1)
   end
+
+  def full_name(%__MODULE__{first_name: first, last_name: last}) do
+    [first, last]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+    |> String.trim()
+  end
 end

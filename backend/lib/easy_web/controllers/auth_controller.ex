@@ -113,9 +113,7 @@ defmodule EasyWeb.AuthController do
   def me(conn, _params) do
     with claims <- conn.assigns.token_claims,
          user_id <- claims["sub"],
-         %Accounts.User{} = user <- Repo.get(Accounts.User, user_id),
-         %Organizations.Coach{} = coach <-
-           Accounts.get_coach_by_user(user) do
+         %Accounts.User{} = user <- Repo.get(Accounts.User, user_id) do
       response = %{
         user: %{
           id: user.id,
@@ -126,16 +124,35 @@ defmodule EasyWeb.AuthController do
         }
       }
 
+      # Check for coach profile
       response =
-        if coach.business_id do
-          Map.merge(response, %{
-            coach: %{
-              id: coach.id,
-              business_id: coach.business_id
-            }
-          })
-        else
-          response
+        case Accounts.get_coach_by_user(user) do
+          %Organizations.Coach{} = coach ->
+            Map.merge(response, %{
+              coach: %{
+                id: coach.id,
+                business_id: coach.business_id
+              }
+            })
+
+          nil ->
+            response
+        end
+
+      # Check for client profile
+      response =
+        case Accounts.get_client_by_user(user) do
+          %Easy.Clients.Client{} = client ->
+            Map.merge(response, %{
+              client_profile: %{
+                id: client.id,
+                business_id: client.business_id,
+                status: client.status
+              }
+            })
+
+          nil ->
+            response
         end
 
       conn

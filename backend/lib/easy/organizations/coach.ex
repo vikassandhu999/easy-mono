@@ -2,6 +2,8 @@ defmodule Easy.Organizations.Coach do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Easy.Clients.CoachClientAssignment
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
@@ -13,6 +15,8 @@ defmodule Easy.Organizations.Coach do
 
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
+
+    many_to_many :clients, Easy.Clients.Client, join_through: CoachClientAssignment
 
     timestamps()
   end

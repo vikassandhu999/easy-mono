@@ -50,15 +50,26 @@ defmodule Easy.Accounts do
   def login(token_id, code) do
     with {:ok, token} <- validate_code(token_id, code, "login"),
          %User{} = user <- Repo.get(User, token.user_id),
-         {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
-           create_coach_access_token(user),
+         {:ok, session_data} <- create_session(user),
          {:ok, _} <- Repo.delete(token) do
-      {:ok, %{access_token: access_token, refresh_token: refresh_token, user: user}}
+      {:ok,
+       %{
+         access_token: session_data.access_token,
+         refresh_token: session_data.refresh_token,
+         expires_at: session_data.expires_at,
+         expires_in: session_data.expires_in,
+         user: user
+       }}
     else
+      nil -> {:error, Easy.Error.new("not_found", "User not found")}
       {:error, reason} -> {:error, reason}
     end
   end
 
+  @doc """
+  Creates an access token for a coach user.
+  Used during coach registration flow.
+  """
   def create_coach_access_token(user) do
     with %Coach{} = coach <- get_coach_by_user(user),
          {:ok, access_token} <-
@@ -140,6 +151,19 @@ defmodule Easy.Accounts do
     end
   end
 
+  def create_session(user) do
+    # Create a session for the user (defaulting to no specific context initially, or we can infer)
+    # For a new client, context is their client profile.
+    client = get_client_by_user(user)
+    coach = get_coach_by_user(user)
+
+    cond do
+      coach -> generate_session(user, coach, nil)
+      client -> generate_session(user, nil, client)
+      true -> {:error, Easy.Error.new("invalid_session", "User has no active profile")}
+    end
+  end
+
   defp generate_session(user, coach, client) do
     refresh_token = :crypto.strong_rand_bytes(64) |> Base.url_encode64(padding: false)
 
@@ -158,7 +182,16 @@ defmodule Easy.Accounts do
            |> Repo.insert(),
          {:ok, access_token} <-
            Token.generate_access_token(user, session.id, token_roles, token_context) do
-      {:ok, %{access_token: access_token, refresh_token: refresh_token}}
+      # Calculate expires_in (time until session expires in seconds)
+      expires_in = DateTime.diff(session.expires_at, DateTime.utc_now(), :second)
+
+      {:ok,
+       %{
+         access_token: access_token,
+         refresh_token: refresh_token,
+         expires_at: session.expires_at,
+         expires_in: expires_in
+       }}
     else
       {:error, reason} -> {:error, reason}
     end
@@ -225,7 +258,7 @@ defmodule Easy.Accounts do
     end
   end
 
-  defp create_user(user_attrs) do
+  def create_user(user_attrs) do
     %User{}
     |> User.changeset(user_attrs)
     |> Repo.insert()
@@ -249,6 +282,15 @@ defmodule Easy.Accounts do
   def get_coach_by_user(user) do
     Repo.one(
       from c in Coach,
+        where: c.user_id == ^user.id,
+        preload: [:business],
+        limit: 1
+    )
+  end
+
+  def get_client_by_user(user) do
+    Repo.one(
+      from c in Client,
         where: c.user_id == ^user.id,
         preload: [:business],
         limit: 1

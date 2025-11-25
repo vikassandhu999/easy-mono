@@ -1,6 +1,10 @@
 defmodule EasyWeb.ErrorJSON do
+  require Logger
+
   # Handles all app errors.
   def render(_template, %{app_error: error}) do
+    Logger.error("Error: #{inspect(error)}")
+
     %{
       error_code: to_string(error.code),
       error_message: error.message,

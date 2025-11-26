@@ -17,7 +17,7 @@ This guide covers the complete client management system for the frontend, includ
    - [Archive Client](#archive-client)
 5. [Client Invitation Flow](#client-invitation-flow)
    - [View Invitation](#view-invitation)
-   - [Accept Invitation](#accept-invitation)
+   - [Client Signup](#client-signup)
 6. [Client Self-Service](#client-self-service)
    - [Get My Profile](#get-my-profile)
    - [Update My Profile](#update-my-profile)
@@ -35,11 +35,11 @@ The client management system supports two types of users:
 ### Client Lifecycle
 
 ```
-1. Coach invites client → Client created with "pending" status
-2. Client receives email with invitation link
+1. Coach invites client → Client created with "pending" status + invitation_token
+2. Client receives email with invitation link containing the token
 3. Client views invitation details (no auth required)
-4. Client accepts invitation with OTP code
-5. User account created, client status becomes "active"
+4. Client signs up with any email, passing invitation_token to link account
+5. User account created via normal signup flow, client status becomes "active"
 6. Coach can update status to "inactive" or "archived"
 ```
 
@@ -111,14 +111,14 @@ interface Coach {
 }
 
 interface Invitation {
-  token_id: UUID;
+  token: string;
   invitation_url: string;
   expires_at: string; // ISO 8601
 }
 
 interface InvitationDetails {
   invitation: {
-    token_id: UUID;
+    token: string;
     status: "valid";
     expires_at: string;
   };
@@ -193,7 +193,9 @@ interface UpdateProfileRequest {
 }
 
 interface AcceptInvitationRequest {
-  code: string; // 6-digit OTP
+  token_id: string; // OTP token from email verification
+  code: string; // 6-digit OTP code
+  invitation_token: string; // Token from invitation URL
 }
 
 // =============================================================================
@@ -364,8 +366,8 @@ const data: InviteClientResponse = await response.json();
     "updated_at": "2025-11-25T15:00:00Z"
   },
   "invitation": {
-    "token_id": "550e8400-e29b-41d4-a716-446655440004",
-    "invitation_url": "https://app.example.com/invite/550e8400-e29b-41d4-a716-446655440004",
+    "token": "abc123xyz789...",
+    "invitation_url": "https://app.example.com/invite/abc123xyz789...",
     "expires_at": "2025-12-02T15:00:00Z"
   }
 }
@@ -386,7 +388,7 @@ const data: InviteClientResponse = await response.json();
 
 #### Idempotency
 
-If you invite the same email again before the invitation expires, you'll get the existing invitation back (same `token_id`).
+If you invite the same email again before the invitation expires, you'll get the existing client record with the same invitation token.
 
 ---
 
@@ -614,29 +616,30 @@ const data: ClientResponse = await response.json();
 
 ## Client Invitation Flow
 
-These endpoints are **public** (no authentication required) and are used by clients to view and accept invitations.
+These endpoints are used by clients to view invitations and complete signup.
 
-### Complete Flow (3 API Calls)
+### Complete Flow (4 API Calls)
 
 ```
-1. POST /api/clients/invite          → Coach creates invitation (returns token_id)
-2. GET /api/invitations/:token_id    → Client views invitation details
-3. POST /api/invitations/:token_id/accept → Client accepts with OTP code
+1. POST /api/clients/invite              → Coach creates invitation (returns invitation_token)
+2. GET /api/invitations/:token           → Client views invitation details (public)
+3. POST /api/auth/register               → Client registers with any email (returns OTP token_id)
+4. POST /api/auth/client-signup          → Client verifies OTP + links to invitation
 ```
 
 ### View Invitation
 
-View invitation details. Used when client clicks the invitation link.
+View invitation details. Used when client clicks the invitation link. **No authentication required.**
 
 ```http
-GET /api/invitations/:token_id
+GET /api/invitations/:token
 ```
 
 #### Example Request
 
 ```typescript
-const tokenId = "550e8400-e29b-41d4-a716-446655440004";
-const response = await fetch(`/api/invitations/${tokenId}`);
+const token = "abc123xyz789...";
+const response = await fetch(`/api/invitations/${token}`);
 const data: InvitationResponse = await response.json();
 ```
 
@@ -645,7 +648,7 @@ const data: InvitationResponse = await response.json();
 ```json
 {
   "invitation": {
-    "token_id": "550e8400-e29b-41d4-a716-446655440004",
+    "token": "abc123xyz789...",
     "status": "valid",
     "expires_at": "2025-12-02T15:00:00Z"
   },
@@ -681,47 +684,59 @@ const data: InvitationResponse = await response.json();
 }
 ```
 
-**410 Gone** - Already used:
-```json
-{
-  "error_code": "invitation_used",
-  "error_message": "This invitation has already been used"
-}
-```
-
 ---
 
-### Accept Invitation
+### Client Signup
 
-Accept the invitation using the OTP code sent via email. Creates user account and session.
+Complete the client signup by verifying email OTP and linking to the invitation. The client first registers using the normal registration flow (`POST /api/auth/register`), then completes signup with the OTP code and invitation token.
 
 ```http
-POST /api/invitations/:token_id/accept
+POST /api/auth/client-signup
 ```
 
 #### Request Body
 
 ```json
 {
-  "code": "123456"
+  "token_id": "550e8400-e29b-41d4-a716-446655440010",
+  "code": "123456",
+  "invitation_token": "abc123xyz789..."
 }
 ```
+
+- `token_id`: The OTP token ID returned from `/api/auth/register`
+- `code`: The 6-digit OTP code sent to the client's email
+- `invitation_token`: The invitation token from the invitation URL
 
 #### Example Request
 
 ```typescript
-const tokenId = "550e8400-e29b-41d4-a716-446655440004";
-const response = await fetch(`/api/invitations/${tokenId}/accept`, {
+// Step 1: Register with any email
+const registerResponse = await fetch("/api/auth/register", {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    code: "123456",
+    email: "client@example.com",
+    first_name: "John",
+    last_name: "Doe",
+    business_name: null // Not creating a business
+  }),
+});
+const registerData = await registerResponse.json();
+const tokenId = registerData.token.token_id;
+
+// Step 2: Client receives OTP via email, then completes signup
+const signupResponse = await fetch("/api/auth/client-signup", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    token_id: tokenId,
+    code: "123456", // From email
+    invitation_token: invitationToken, // From invitation URL
   }),
 });
 
-const data: AcceptInvitationResponse = await response.json();
+const data: AcceptInvitationResponse = await signupResponse.json();
 
 // Store tokens for authenticated requests
 localStorage.setItem("access_token", data.session.access_token);
@@ -734,8 +749,9 @@ localStorage.setItem("refresh_token", data.session.refresh_token);
 {
   "user": {
     "id": "550e8400-e29b-41d4-a716-446655440005",
-    "email": "new.client@example.com",
-    "full_name": "New Client",
+    "email": "client@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
     "email_verified": true,
     "roles": ["client"],
     "client_profile": {
@@ -757,9 +773,7 @@ localStorage.setItem("refresh_token", data.session.refresh_token);
   },
   "session": {
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
-    "expires_at": "2025-11-25T19:00:00Z",
-    "expires_in": 3600
+    "refresh_token": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
   }
 }
 ```
@@ -771,6 +785,22 @@ localStorage.setItem("refresh_token", data.session.refresh_token);
 {
   "error_code": "invalid_otp",
   "error_message": "Invalid OTP code"
+}
+```
+
+**404 Not Found** - Invalid invitation token:
+```json
+{
+  "error_code": "not_found",
+  "error_message": "Invitation not found or invalid"
+}
+```
+
+**410 Gone** - Expired invitation:
+```json
+{
+  "error_code": "invitation_expired",
+  "error_message": "This invitation has expired"
 }
 ```
 
@@ -994,12 +1024,16 @@ export function useInviteClient() {
   });
 }
 
-export function useAcceptInvitation(tokenId: string) {
+export function useAcceptInvitation(invitationToken: string) {
   return useMutation({
-    mutationFn: (code: string) =>
-      apiRequest<AcceptInvitationResponse>(`/api/invitations/${tokenId}/accept`, {
+    mutationFn: ({ tokenId, code }: { tokenId: string; code: string }) =>
+      apiRequest<AcceptInvitationResponse>("/api/auth/client-signup", {
         method: "POST",
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ 
+          token_id: tokenId, 
+          code,
+          invitation_token: invitationToken 
+        }),
       }),
     onSuccess: (data) => {
       // Store tokens
@@ -1039,29 +1073,51 @@ export function useUpdateProfile() {
 ## Invitation Page Example
 
 ```tsx
-// pages/invite/[tokenId].tsx
+// pages/invite/[token].tsx
 import { useRouter } from "next/router";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 export default function InvitationPage() {
   const router = useRouter();
-  const { tokenId } = router.query as { tokenId: string };
+  const { token: invitationToken } = router.query as { token: string };
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [code, setCode] = useState("");
+  const [tokenId, setTokenId] = useState<string | null>(null);
 
   // Fetch invitation details
   const { data, isLoading, error } = useQuery({
-    queryKey: ["invitation", tokenId],
-    queryFn: () => fetch(`/api/invitations/${tokenId}`).then(r => r.json()),
-    enabled: !!tokenId,
+    queryKey: ["invitation", invitationToken],
+    queryFn: () => fetch(`/api/invitations/${invitationToken}`).then(r => r.json()),
+    enabled: !!invitationToken,
   });
 
-  // Accept invitation mutation
-  const acceptMutation = useMutation({
-    mutationFn: (otpCode: string) =>
-      fetch(`/api/invitations/${tokenId}/accept`, {
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: (userData: { email: string; first_name: string; last_name: string }) =>
+      fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: otpCode }),
+        body: JSON.stringify(userData),
+      }).then(r => r.json()),
+    onSuccess: (data) => {
+      setTokenId(data.token.token_id);
+    },
+  });
+
+  // Complete signup mutation
+  const signupMutation = useMutation({
+    mutationFn: ({ tokenId, code }: { tokenId: string; code: string }) =>
+      fetch("/api/auth/client-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          token_id: tokenId, 
+          code, 
+          invitation_token: invitationToken 
+        }),
       }).then(r => r.json()),
     onSuccess: (data) => {
       localStorage.setItem("access_token", data.session.access_token);
@@ -1082,30 +1138,74 @@ export default function InvitationPage() {
       <p>Coach {data.inviting_coach.full_name} has invited you to join as a client.</p>
       
       <div className="client-info">
-        <p>Email: {data.client.email}</p>
-        <p>Name: {data.client.full_name}</p>
+        <p>Invited as: {data.client.full_name}</p>
+        <p>Original email: {data.client.email}</p>
       </div>
 
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        acceptMutation.mutate(code);
-      }}>
-        <label>Enter the 6-digit code sent to your email:</label>
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          maxLength={6}
-          pattern="\d{6}"
-        />
-        <button type="submit" disabled={acceptMutation.isPending}>
-          {acceptMutation.isPending ? "Verifying..." : "Accept Invitation"}
-        </button>
-      </form>
+      {!tokenId ? (
+        // Step 1: Registration form
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          registerMutation.mutate({ 
+            email, 
+            first_name: firstName, 
+            last_name: lastName 
+          });
+        }}>
+          <h2>Create your account</h2>
+          <p>You can sign up with any email address.</p>
+          
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+          />
+          <input
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="First Name"
+            required
+          />
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Last Name"
+            required
+          />
+          <button type="submit" disabled={registerMutation.isPending}>
+            {registerMutation.isPending ? "Sending code..." : "Continue"}
+          </button>
+        </form>
+      ) : (
+        // Step 2: OTP verification
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          signupMutation.mutate({ tokenId, code });
+        }}>
+          <h2>Verify your email</h2>
+          <p>Enter the 6-digit code sent to {email}</p>
+          
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            maxLength={6}
+            pattern="\d{6}"
+            placeholder="000000"
+          />
+          <button type="submit" disabled={signupMutation.isPending}>
+            {signupMutation.isPending ? "Verifying..." : "Complete Signup"}
+          </button>
+        </form>
+      )}
 
-      {acceptMutation.error && (
+      {(registerMutation.error || signupMutation.error) && (
         <div className="error">
-          {acceptMutation.error.error_message}
+          {registerMutation.error?.error_message || signupMutation.error?.error_message}
         </div>
       )}
     </div>
@@ -1126,7 +1226,8 @@ export default function InvitationPage() {
 | `/api/clients/:id/status`             | PATCH  | Coach         | Update client status           |
 | `/api/clients/:id/resend-invitation`  | POST   | Coach         | Resend invitation email        |
 | `/api/clients/:id`                    | DELETE | Coach         | Archive client                 |
-| `/api/invitations/:token_id`          | GET    | None          | View invitation details        |
-| `/api/invitations/:token_id/accept`   | POST   | None          | Accept invitation with OTP     |
+| `/api/invitations/:token`             | GET    | None          | View invitation details        |
+| `/api/auth/register`                  | POST   | None          | Register new user (get OTP)    |
+| `/api/auth/client-signup`             | POST   | None          | Verify OTP + link invitation   |
 | `/api/me/profile`                     | GET    | Client        | Get own profile                |
 | `/api/me/profile`                     | PATCH  | Client        | Update own profile             |

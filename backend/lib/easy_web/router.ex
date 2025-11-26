@@ -130,4 +130,35 @@ defmodule EasyWeb.Router do
     patch "/:id", MealItemController, :update
     delete "/:id", MealItemController, :delete
   end
+
+  # Training Domain
+  scope "/api/exercises", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", ExerciseController, :index
+    post "/", ExerciseController, :create
+    get "/:id", ExerciseController, :show
+    put "/:id", ExerciseController, :update
+    delete "/:id", ExerciseController, :delete
+  end
+
+  scope "/api/training_plans", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", TrainingPlanController, :index
+    post "/", TrainingPlanController, :create
+    get "/:id", TrainingPlanController, :show
+    put "/:id", TrainingPlanController, :update
+
+    post "/:id/assign", TrainingPlanController, :assign
+  end
+
+  scope "/api/sessions", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", WorkoutSessionController, :index
+    post "/", WorkoutSessionController, :create
+    get "/:id", WorkoutSessionController, :show
+    put "/:id/complete", WorkoutSessionController, :complete
+  end
 end

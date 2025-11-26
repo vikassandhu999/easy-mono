@@ -81,3 +81,7 @@ if measurement_unit_count == 0 do
 else
   IO.puts("✓ Measurement units already seeded")
 end
+
+# Run Training Seeds
+Code.require_file("training_seeds.exs", __DIR__)
+Easy.Repo.TrainingSeeds.run()

@@ -1,20 +1,4 @@
 defmodule Easy.Clients.Client do
-  @moduledoc """
-  Client schema representing a client profile within a business.
-
-  Clients are invited by coaches and belong to a specific business. A client
-  can have an associated user account once they accept the invitation.
-
-  ## Status Lifecycle
-  - `pending` - Initial state after invitation, no user account yet
-  - `active` - Has accepted invitation and has an active user account
-  - `inactive` - Temporarily disabled by coach
-  - `archived` - Soft-deleted, no longer visible in listings
-
-  ## Tenant Isolation
-  All client queries must include `business_id` for proper tenant isolation.
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -31,6 +15,8 @@ defmodule Easy.Clients.Client do
     field :phone, :string
     field :notes, :string
     field :status, :string, default: "pending"
+    field :invitation_token, :string
+    field :invitation_expires_at, :utc_datetime
 
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
@@ -59,22 +45,26 @@ defmodule Easy.Clients.Client do
     |> validate_status()
   end
 
-  @doc """
-  Changeset for creating a new client (via invitation).
-  Sets initial status to pending and requires business_id.
-  """
   def create_changeset(client, attrs) do
+    token = generate_invitation_token()
+
+    expires_at =
+      DateTime.add(DateTime.utc_now(), 7 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
+
     client
     |> cast(attrs, [:email, :full_name, :phone, :notes, :business_id])
     |> validate_required([:email, :full_name, :business_id])
     |> validate_email()
     |> validate_phone()
     |> put_change(:status, "pending")
+    |> put_change(:invitation_token, token)
+    |> put_change(:invitation_expires_at, expires_at)
     |> foreign_key_constraint(:business_id)
     |> unique_constraint([:email, :business_id],
       name: :clients_email_business_index,
       message: "already exists in this business"
     )
+    |> unique_constraint(:invitation_token)
   end
 
   @doc """
@@ -154,25 +144,49 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  # ===========================================================================
-  # Query Helpers
-  # ===========================================================================
+  defp generate_invitation_token do
+    :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+  end
 
-  @doc "Returns true if client status is active"
   @spec active?(t()) :: boolean()
   def active?(%__MODULE__{status: "active"}), do: true
   def active?(%__MODULE__{}), do: false
 
-  @doc "Returns true if client has a linked user account"
   @spec has_user_account?(t()) :: boolean()
   def has_user_account?(%__MODULE__{user_id: nil}), do: false
   def has_user_account?(%__MODULE__{user_id: _}), do: true
 
-  @doc "Returns true if client can be updated (not archived)"
   @spec editable?(t()) :: boolean()
   def editable?(%__MODULE__{status: "archived"}), do: false
   def editable?(%__MODULE__{}), do: true
 
   def pending?(%__MODULE__{status: "pending"}), do: true
   def pending?(%__MODULE__{}), do: false
+
+  def invitation_valid?(%__MODULE__{invitation_token: nil}), do: false
+  def invitation_valid?(%__MODULE__{invitation_expires_at: nil}), do: false
+  def invitation_valid?(%__MODULE__{status: status}) when status != "pending", do: false
+
+  def invitation_valid?(%__MODULE__{invitation_expires_at: expires_at}) do
+    DateTime.compare(expires_at, DateTime.utc_now()) == :gt
+  end
+
+  def regenerate_invitation_changeset(client) do
+    token = generate_invitation_token()
+
+    expires_at =
+      DateTime.add(DateTime.utc_now(), 7 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
+
+    client
+    |> change()
+    |> put_change(:invitation_token, token)
+    |> put_change(:invitation_expires_at, expires_at)
+  end
+
+  def clear_invitation_changeset(client) do
+    client
+    |> change()
+    |> put_change(:invitation_token, nil)
+    |> put_change(:invitation_expires_at, nil)
+  end
 end

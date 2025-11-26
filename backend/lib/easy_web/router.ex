@@ -28,6 +28,7 @@ defmodule EasyWeb.Router do
     post "/send-login-code", AuthController, :send_login_code
     post "/token", AuthController, :token
     post "/me", AuthController, :me
+    post "/client-signup", AuthController, :client_signup
   end
 
   scope "/api/auth", EasyWeb do
@@ -39,8 +40,7 @@ defmodule EasyWeb.Router do
   scope "/api/invitations", EasyWeb do
     pipe_through :api
 
-    get "/:token_id", InvitationController, :show
-    post "/:token_id/accept", InvitationController, :accept
+    get "/:token", InvitationController, :show
   end
 
   # Organization management

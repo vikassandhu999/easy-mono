@@ -1,13 +1,6 @@
 defmodule EasyWeb.ClientJSON do
-  @moduledoc """
-  JSON views for client management endpoints (coach actions).
-  """
-
   alias EasyWeb.ResponseHelpers
 
-  @doc """
-  Renders a list of clients with pagination.
-  """
   def index(%{clients: clients, total: total, opts: opts}) do
     %{
       clients: Enum.map(clients, &format_client/1),
@@ -19,37 +12,27 @@ defmodule EasyWeb.ClientJSON do
     }
   end
 
-  @doc """
-  Renders a single client.
-  """
   def show(%{client: client}) do
     %{
       client: format_client(client)
     }
   end
 
-  @doc """
-  Renders client invitation response.
-  """
   def invite(%{
         client: client,
-        invitation_token: token_id,
+        invitation_token: token,
         invitation_url: url,
         expires_at: expires_at
       }) do
     %{
       client: format_client(client),
       invitation: %{
-        token_id: token_id,
+        token: token,
         invitation_url: url,
         expires_at: ResponseHelpers.format_timestamp(expires_at)
       }
     }
   end
-
-  # ===========================================================================
-  # Private Helpers
-  # ===========================================================================
 
   defp format_client(client) do
     %{

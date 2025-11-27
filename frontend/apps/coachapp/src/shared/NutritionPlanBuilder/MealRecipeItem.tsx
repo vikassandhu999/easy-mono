@@ -1,22 +1,13 @@
-import {
-    ActionIcon,
-    Button,
-    Card,
-    Group,
-    Modal,
-    Stack,
-    Text,
-    TextInput,
-    UnstyledButton,
-    useMantineTheme,
-} from '@mantine/core';
+import {APIErrorParser} from '@easy/error-parser';
+import {ActionIcon, Button, Loader, Modal, Text} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconTrash, IconX} from '@tabler/icons-react';
-import {useState} from 'react';
+import {IconMinus, IconPlus, IconTrash} from '@tabler/icons-react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {useUpdateMealItem} from '@/services/meal_items';
-import APIErrorParser from '@/utils/error_parser';
-import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
+import {notifyError, notifySuccess} from '@/utils/notification';
+
+import classes from './styles.module.css';
 
 type MealRecipeItemProps = {
     item: {
@@ -33,138 +24,219 @@ type MealRecipeItemProps = {
     nutritionPlanId: string;
 };
 
-const MealRecipeSettingsModal = ({
-    item,
-    onClose,
-    opened,
-    onServingSizeChange,
-}: {
-    item: MealRecipeItemProps['item'];
-    onClose: () => void;
-    opened: boolean;
-    onServingSizeChange: (newSize: number) => void;
-}) => {
-    const [servingSize, setServingSize] = useState(() =>
-        typeof item.servings === 'string' ? parseFloat(item.servings) : item.servings,
-    );
+// Quick preset serving sizes
+const SERVING_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3];
 
-    const handleSave = () => {
-        if (servingSize <= 0) {
-            notifyWarning('Serving size must be greater than 0');
+interface ServingModalProps {
+    currentServings: number;
+    onClose: () => void;
+    onDelete: () => void;
+    onSave: (servings: number) => Promise<void>;
+    opened: boolean;
+    recipeName: string;
+}
+
+const ServingModal = ({opened, onClose, recipeName, currentServings, onSave, onDelete}: ServingModalProps) => {
+    const [servings, setServings] = useState(currentServings);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Reset servings when modal opens
+    useEffect(() => {
+        if (opened) {
+            setServings(currentServings);
+        }
+    }, [opened, currentServings]);
+
+    const handleSave = async () => {
+        if (servings === currentServings) {
+            onClose();
             return;
         }
-        onServingSizeChange(servingSize);
-        onClose();
+        setIsSaving(true);
+        try {
+            await onSave(servings);
+            onClose();
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    const increment = () => setServings((s) => Math.min(10, s + 0.5));
+    const decrement = () => setServings((s) => Math.max(0.5, s - 0.5));
 
     return (
         <Modal
             centered
             onClose={onClose}
             opened={opened}
-            shadow="md"
-            title={item.recipe.name}
+            padding={0}
+            radius="lg"
+            size="xs"
+            withCloseButton={false}
         >
-            <Stack>
-                <TextInput
-                    label="Serving Size"
-                    onChange={(e) => setServingSize(Number(e.target.value))}
-                    type="number"
-                    value={servingSize}
-                />
-                <Group justify="end">
-                    <Button
-                        color="red"
-                        onClick={onClose}
+            <div className={classes.servingModal}>
+                {/* Header */}
+                <div className={classes.servingModalHeader}>
+                    <Text className={classes.servingModalTitle}>{recipeName}</Text>
+                    <Text className={classes.servingModalSubtitle}>Adjust portion size</Text>
+                </div>
+
+                {/* Stepper Control */}
+                <div className={classes.servingStepperSection}>
+                    <ActionIcon
+                        aria-label="Decrease"
+                        className={classes.servingStepperButton}
+                        disabled={servings <= 0.5 || isSaving}
+                        onClick={decrement}
+                        radius="xl"
+                        size="xl"
                         variant="light"
                     >
-                        Close
+                        <IconMinus size={20} />
+                    </ActionIcon>
+
+                    <div className={classes.servingStepperValue}>
+                        <span className={classes.servingStepperNumber}>{servings}</span>
+                        <span className={classes.servingStepperLabel}>{servings === 1 ? 'serving' : 'servings'}</span>
+                    </div>
+
+                    <ActionIcon
+                        aria-label="Increase"
+                        className={classes.servingStepperButton}
+                        disabled={servings >= 10 || isSaving}
+                        onClick={increment}
+                        radius="xl"
+                        size="xl"
+                        variant="light"
+                    >
+                        <IconPlus size={20} />
+                    </ActionIcon>
+                </div>
+
+                {/* Quick Presets */}
+                <div className={classes.servingPresets}>
+                    {SERVING_PRESETS.map((preset) => (
+                        <button
+                            className={`${classes.servingPresetButton} ${servings === preset ? classes.servingPresetActive : ''}`}
+                            disabled={isSaving}
+                            key={preset}
+                            onClick={() => setServings(preset)}
+                            type="button"
+                        >
+                            {preset}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Actions */}
+                <div className={classes.servingModalActions}>
+                    <Button
+                        className={classes.servingModalRemove}
+                        color="red"
+                        disabled={isSaving}
+                        onClick={() => {
+                            onDelete();
+                            onClose();
+                        }}
+                        size="md"
+                        variant="subtle"
+                    >
+                        <IconTrash size={16} />
+                        Remove
                     </Button>
-                    <Button onClick={handleSave}>Save</Button>
-                </Group>
-            </Stack>
+
+                    <Button
+                        color="brand"
+                        disabled={isSaving}
+                        onClick={handleSave}
+                        radius="lg"
+                        size="md"
+                    >
+                        {isSaving ? (
+                            <Loader
+                                color="white"
+                                size="xs"
+                            />
+                        ) : (
+                            'Done'
+                        )}
+                    </Button>
+                </div>
+            </div>
         </Modal>
     );
 };
 
 export const MealRecipeItem = ({item, onDelete, nutritionPlanId}: MealRecipeItemProps) => {
-    const theme = useMantineTheme();
-
     const recipeName = item.recipe?.name || 'Unknown Recipe';
+    const servings = typeof item.servings === 'string' ? parseFloat(item.servings) : item.servings;
     const [opened, {open, close}] = useDisclosure(false);
 
     const [updateMealItem] = useUpdateMealItem();
 
-    const handleServingChange = async (value: number) => {
-        try {
-            await updateMealItem({
-                id: item.id,
-                servings: value,
-                nutrition_plan_id: nutritionPlanId,
-            }).unwrap();
-            notifySuccess('Serving size updated successfully');
-        } catch (e) {
-            console.log(e);
-            const err_msg = new APIErrorParser(e).humanize();
-            notifyError(err_msg);
-        }
-    };
+    const handleSave = useCallback(
+        async (newServings: number) => {
+            try {
+                await updateMealItem({
+                    id: item.id,
+                    servings: newServings,
+                    nutrition_plan_id: nutritionPlanId,
+                }).unwrap();
+                notifySuccess('Portion updated');
+            } catch (e) {
+                const err_msg = new APIErrorParser(e).humanize();
+                notifyError(err_msg);
+                throw e; // Re-throw to let modal know save failed
+            }
+        },
+        [item.id, nutritionPlanId, updateMealItem],
+    );
 
     return (
-        <Group pl={'sm'}>
-            <MealRecipeSettingsModal
-                item={item}
+        <>
+            <ServingModal
+                currentServings={servings}
                 onClose={close}
-                onServingSizeChange={handleServingChange}
+                onDelete={onDelete}
+                onSave={handleSave}
                 opened={opened}
+                recipeName={recipeName}
             />
-            <UnstyledButton
-                color={'white'}
-                fw={700}
-                onClick={open}
-                size={'xs'}
-                style={{
-                    border: `1px dotted ${theme.colors.gray[4]}`,
-                    padding: theme.spacing.xs,
-                    borderRadius: theme.radius.sm,
-                }}
-                variant={'default'}
-            >
-                {item.servings}
-            </UnstyledButton>
-            <IconX size={12} />
-            <Card
-                bg="gray.1"
-                flex={1}
-                p={'sm'}
-                radius="lg"
-            >
-                <Group
-                    justify="space-between"
-                    px="sm"
-                    py="xs"
-                    wrap="nowrap"
-                >
-                    <Group>
-                        <Text
-                            fw={700}
-                            size="md"
-                        >
-                            {recipeName}
-                        </Text>
-                    </Group>
 
-                    <ActionIcon
-                        color="red"
-                        onClick={onDelete}
-                        size="xs"
-                        variant="subtle"
-                    >
-                        <IconTrash size={16} />
-                    </ActionIcon>
-                </Group>
-            </Card>
-        </Group>
+            <div
+                className={classes.recipeItem}
+                onClick={open}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        open();
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+            >
+                <div className={classes.recipeItemInfo}>
+                    <Text className={classes.recipeName}>{recipeName}</Text>
+                    <Text className={classes.recipeServings}>
+                        {servings} {servings === 1 ? 'serving' : 'servings'}
+                    </Text>
+                </div>
+
+                <ActionIcon
+                    aria-label={`Remove ${recipeName}`}
+                    className={classes.deleteButton}
+                    color="red"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                    }}
+                    size="sm"
+                    variant="subtle"
+                >
+                    <IconTrash size={14} />
+                </ActionIcon>
+            </div>
+        </>
     );
 };
 

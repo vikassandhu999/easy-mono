@@ -1,0 +1,280 @@
+/**
+ * LibraryListViewSelector Styles
+ * 
+ * Mobile-first, space-efficient library filter/selector following the CoachEasy design system.
+ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    background: var(--surface-primary);
+}
+
+/* ============================================
+   DISCIPLINE TABS (Segmented Control)
+   ============================================ */
+
+.disciplineTabs {
+    display: flex;
+    background: var(--mantine-color-gray-1);
+    border-radius: var(--radius-full);
+    padding: 3px;
+    gap: 2px;
+}
+
+.disciplineTab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--mantine-color-gray-6);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-in-out);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.disciplineTab:hover {
+    color: var(--mantine-color-gray-8);
+}
+
+.disciplineTabActive {
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ============================================
+   FILTERS ROW
+   ============================================ */
+
+.filtersRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+/* On mobile, search goes full width on second row */
+@media (max-width: 767px) {
+    .filtersRow {
+        flex-wrap: wrap-reverse;
+    }
+}
+
+/* ============================================
+   TYPE CHIPS
+   ============================================ */
+
+.typeChips {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.typeChip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--mantine-color-gray-6);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-in-out);
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+}
+
+.typeChip:hover {
+    background: var(--mantine-color-gray-1);
+    border-color: var(--mantine-color-gray-4);
+}
+
+/* Active state with color variations */
+.typeChipActive {
+    font-weight: var(--font-semibold);
+}
+
+.typeChipBlue {
+    background: var(--mantine-color-blue-0);
+    border-color: var(--mantine-color-blue-3);
+    color: var(--mantine-color-blue-7);
+}
+
+.typeChipBlue:hover {
+    background: var(--mantine-color-blue-1);
+}
+
+.typeChipGreen {
+    background: var(--mantine-color-green-0);
+    border-color: var(--mantine-color-green-3);
+    color: var(--mantine-color-green-7);
+}
+
+.typeChipGreen:hover {
+    background: var(--mantine-color-green-1);
+}
+
+.typeChipCyan {
+    background: var(--mantine-color-cyan-0);
+    border-color: var(--mantine-color-cyan-3);
+    color: var(--mantine-color-cyan-7);
+}
+
+.typeChipCyan:hover {
+    background: var(--mantine-color-cyan-1);
+}
+
+.typeChipOrange {
+    background: var(--mantine-color-orange-0);
+    border-color: var(--mantine-color-orange-3);
+    color: var(--mantine-color-orange-7);
+}
+
+.typeChipOrange:hover {
+    background: var(--mantine-color-orange-1);
+}
+
+/* Dot indicator for chips */
+.chipDot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+    opacity: 0.6;
+}
+
+.typeChipActive .chipDot {
+    opacity: 1;
+}
+
+/* ============================================
+   SEARCH INPUT
+   ============================================ */
+
+.searchWrapper {
+    flex: 1;
+    min-width: 150px;
+    position: relative;
+}
+
+@media (max-width: 767px) {
+    .searchWrapper {
+        flex-basis: 100%;
+        order: -1;
+    }
+}
+
+.searchInput {
+    width: 100%;
+    height: var(--input-height-sm);
+    padding: 0 var(--space-3);
+    padding-left: 36px;
+    padding-right: 36px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.searchInput::placeholder {
+    color: var(--mantine-color-gray-5);
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--mantine-color-blue-4);
+    box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
+}
+
+.searchIcon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mantine-color-gray-5);
+    pointer-events: none;
+}
+
+.clearButton {
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: var(--mantine-color-gray-2);
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--mantine-color-gray-6);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.clearButton:hover {
+    background: var(--mantine-color-gray-3);
+    color: var(--mantine-color-gray-7);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (min-width: 768px) {
+    .container {
+        gap: var(--space-3);
+    }
+
+    .disciplineTab {
+        padding: var(--space-2) var(--space-4);
+        font-size: var(--text-base);
+    }
+
+    .typeChip {
+        padding: var(--space-2) var(--space-4);
+    }
+
+    .searchWrapper {
+        max-width: 280px;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .disciplineTab,
+    .typeChip,
+    .searchInput,
+    .clearButton {
+        transition: none;
+    }
+}

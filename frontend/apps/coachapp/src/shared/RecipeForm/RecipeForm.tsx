@@ -1,19 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {
-    Button,
-    Collapse,
-    Group,
-    Loader,
-    NumberInput,
-    SimpleGrid,
-    Stack,
-    Text,
-    Textarea,
-    TextInput,
-    Title,
-} from '@mantine/core';
-import {IconMinus, IconPlus} from '@tabler/icons-react';
+import {Button, Collapse, Loader, NumberInput, Text, Textarea, TextInput} from '@mantine/core';
+import {IconChevronDown, IconChevronUp} from '@tabler/icons-react';
 import {useEffect, useImperativeHandle, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -23,6 +11,7 @@ import {notifyError} from '@/utils/notification';
 import {containsNutrition, getDefaultValues, populateRecipe} from './helper';
 import IngrdeintsField from './IngredientsField';
 import InstructionsField from './InstructionsField';
+import classes from './styles.module.css';
 
 // Discriminated union for form handle based on mode
 export type RecipeFormHandle<TMode extends 'create' | 'update' = 'create'> = TMode extends 'update'
@@ -130,44 +119,27 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
     // Loading state
     if (recipeLoading && recipeId) {
         return (
-            <Stack
-                align="center"
-                gap="md"
-                p="xl"
-            >
-                <Loader size="lg" />
-                <Text c="dimmed">Loading recipe...</Text>
-            </Stack>
+            <div className={classes.loadingContainer}>
+                <Loader size="md" />
+                <Text className={classes.loadingText}>Loading recipe...</Text>
+            </div>
         );
     }
 
     // Error state
     if (recipeError && recipeId) {
         return (
-            <Stack
-                align="center"
-                gap="md"
-                p="xl"
-            >
-                <Text
-                    c="red"
-                    size="lg"
-                >
-                    Failed to load recipe
-                </Text>
-                <Text
-                    c="dimmed"
-                    size="sm"
-                >
-                    Please try again or contact support.
-                </Text>
-            </Stack>
+            <div className={classes.errorContainer}>
+                <Text className={classes.errorTitle}>Failed to load recipe</Text>
+                <Text className={classes.errorMessage}>Please try again or contact support.</Text>
+            </div>
         );
     }
 
     return (
         <form onSubmit={handleSubmit(onSubmitForm)}>
-            <Stack gap="xl">
+            <div className={classes.formContainer}>
+                {/* Recipe Name */}
                 <Controller
                     control={control}
                     name="name"
@@ -175,18 +147,14 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                         <TextInput
                             {...field}
                             error={errors.name?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Title
-                                </Title>
-                            }
+                            label={<span className={classes.fieldLabel}>Recipe Name</span>}
                             placeholder="Give your recipe a name"
+                            size="md"
                         />
                     )}
                 />
+
+                {/* Description */}
                 <Controller
                     control={control}
                     name="description"
@@ -194,17 +162,10 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                         <Textarea
                             {...field}
                             error={errors.description?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Description
-                                </Title>
-                            }
-                            minRows={5}
-                            placeholder="Introduce you recipe, add notes, cooking tips, serving suggestions, etc."
-                            rows={4}
+                            label={<span className={classes.fieldLabel}>Description</span>}
+                            minRows={3}
+                            placeholder="Add notes, cooking tips, serving suggestions..."
+                            size="md"
                             value={field.value || ''}
                         />
                     )}
@@ -212,137 +173,107 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
 
                 {/* Instructions */}
                 <InstructionsField form={form} />
-                {/* Ingredients  */}
+
+                {/* Ingredients */}
                 <IngrdeintsField form={form} />
 
-                {/* Prep time , Cook Time, Servings */}
+                {/* Time & Servings */}
+                <div className={classes.section}>
+                    <div className={classes.sectionHeader}>
+                        <span className={classes.sectionTitle}>Time & Servings</span>
+                    </div>
+                    <div className={classes.metaGrid}>
+                        <Controller
+                            control={control}
+                            name="prep_time_minutes"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    error={errors.prep_time_minutes?.message}
+                                    hideControls
+                                    label="Prep Time"
+                                    min={1}
+                                    placeholder="15"
+                                    size="md"
+                                    suffix=" min"
+                                    value={field.value || undefined}
+                                />
+                            )}
+                        />
+                        <Controller
+                            control={control}
+                            name="cook_time_minutes"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    error={errors.prep_time_minutes?.message}
+                                    hideControls
+                                    label="Cook Time"
+                                    min={1}
+                                    placeholder="30"
+                                    size="md"
+                                    suffix=" min"
+                                    value={field.value || undefined}
+                                />
+                            )}
+                        />
+                        <Controller
+                            control={control}
+                            name="servings"
+                            render={({field}) => (
+                                <NumberInput
+                                    {...field}
+                                    error={errors.servings?.message}
+                                    hideControls
+                                    label="Servings"
+                                    min={1}
+                                    placeholder="4"
+                                    size="md"
+                                    value={field.value || undefined}
+                                />
+                            )}
+                        />
+                    </div>
+                </div>
 
-                <SimpleGrid cols={2}>
-                    <Controller
-                        control={control}
-                        name="prep_time_minutes"
-                        render={({field}) => (
-                            <NumberInput
-                                {...field}
-                                description="How long does it take to prepare this recipe?"
-                                error={errors.prep_time_minutes?.message}
-                                hideControls
-                                label={
-                                    <Title
-                                        fw="bold"
-                                        order={5}
-                                    >
-                                        Prep Time
-                                    </Title>
-                                }
-                                min={1}
-                                placeholder="25"
-                                suffix=" min"
-                                value={field.value || undefined}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="cook_time_minutes"
-                        render={({field}) => (
-                            <NumberInput
-                                {...field}
-                                description="How long does it take to cook this recipe?"
-                                error={errors.prep_time_minutes?.message}
-                                hideControls
-                                label={
-                                    <Title
-                                        fw="bold"
-                                        order={5}
-                                    >
-                                        Cook Time
-                                    </Title>
-                                }
-                                min={1}
-                                placeholder="25"
-                                suffix=" min"
-                                value={field.value || undefined}
-                            />
-                        )}
-                    />
-                </SimpleGrid>
-                <Group
-                    grow
-                    justify="start"
-                    wrap="nowrap"
-                >
-                    <Controller
-                        control={control}
-                        name="servings"
-                        render={({field}) => (
-                            <NumberInput
-                                {...field}
-                                description="How many portions does this recipe make?"
-                                error={errors.servings?.message}
-                                hideControls
-                                label={
-                                    <Title
-                                        fw="bold"
-                                        order={5}
-                                    >
-                                        Servings
-                                    </Title>
-                                }
-                                min={1}
-                                placeholder="2"
-                                value={field.value || undefined}
-                            />
-                        )}
-                    />
-                </Group>
-                {/* Ingredients Section */}
-                <Stack gap="md">
-                    <Group>
-                        <Title
-                            fw="bold"
-                            order={6}
-                        >
-                            Nutrition Information (per serving)
-                        </Title>
-
+                {/* Nutrition Information */}
+                <div className={classes.section}>
+                    <div className={classes.sectionHeader}>
+                        <span className={classes.sectionTitle}>Nutrition (per serving)</span>
                         <Button
-                            color="cyan"
+                            color="gray"
                             onClick={toggleNutritionCollapse}
-                            radius="lg"
-                            rightSection={!nutritionCollapse ? <IconPlus size={14} /> : <IconMinus size={14} />}
-                            size="compact-sm"
-                            variant="light"
+                            rightSection={
+                                nutritionCollapse ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />
+                            }
+                            size="compact-xs"
+                            variant="subtle"
                         >
-                            Add Info
+                            {nutritionCollapse ? 'Hide' : 'Add'}
                         </Button>
-                    </Group>
+                    </div>
 
                     <Collapse in={nutritionCollapse}>
-                        <Stack gap="md">
+                        <div className={classes.nutritionContent}>
                             <Controller
                                 control={control}
                                 name="total_calories"
                                 render={({field}) => (
                                     <NumberInput
                                         {...field}
-                                        description="Total calories per serving"
+                                        className={classes.nutritionGridFull}
                                         error={errors.total_calories?.message}
                                         hideControls
                                         label="Calories"
                                         min={0}
                                         placeholder="450"
+                                        size="sm"
                                         suffix=" kcal"
                                         value={field.value || undefined}
                                     />
                                 )}
                             />
-
-                            <Group
-                                grow
-                                wrap="nowrap"
-                            >
+                            <div className={classes.nutritionGrid}>
                                 <Controller
                                     control={control}
                                     name="total_protein"
@@ -354,7 +285,8 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                             hideControls
                                             label="Protein"
                                             min={0}
-                                            placeholder="42"
+                                            placeholder="25"
+                                            size="sm"
                                             suffix=" g"
                                             value={field.value || undefined}
                                         />
@@ -371,18 +303,13 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                             hideControls
                                             label="Carbs"
                                             min={0}
-                                            placeholder="8"
+                                            placeholder="35"
+                                            size="sm"
                                             suffix=" g"
                                             value={field.value || undefined}
                                         />
                                     )}
                                 />
-                            </Group>
-
-                            <Group
-                                grow
-                                wrap="nowrap"
-                            >
                                 <Controller
                                     control={control}
                                     name="total_fats"
@@ -394,7 +321,8 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                             hideControls
                                             label="Fats"
                                             min={0}
-                                            placeholder="28"
+                                            placeholder="18"
+                                            size="sm"
                                             suffix=" g"
                                             value={field.value || undefined}
                                         />
@@ -411,17 +339,18 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                             hideControls
                                             label="Fiber"
                                             min={0}
-                                            placeholder="2"
+                                            placeholder="5"
+                                            size="sm"
                                             suffix=" g"
                                             value={field.value || undefined}
                                         />
                                     )}
                                 />
-                            </Group>
-                        </Stack>
+                            </div>
+                        </div>
                     </Collapse>
-                </Stack>
-            </Stack>
+                </div>
+            </div>
         </form>
     );
 };

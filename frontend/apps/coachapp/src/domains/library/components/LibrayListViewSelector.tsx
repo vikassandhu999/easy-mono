@@ -1,23 +1,9 @@
-import {
-    ActionIcon,
-    Button,
-    Card,
-    Chip,
-    CloseButton,
-    Collapse,
-    Group,
-    SegmentedControl,
-    Stack,
-    TextInput,
-    Title,
-} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconFilter2, IconPoint, IconSearch} from '@tabler/icons-react';
+import {IconSearch, IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 
-import useScreenSize from '@/hooks/useScreenSize';
-
 import {CONTENT_DISCIPLINE} from '../config';
+import classes from './styles.module.css';
 
 export type ContentState = {
     discipline: string;
@@ -31,10 +17,8 @@ type LibraryListViewSelectorProps = {
 };
 
 const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorProps) => {
-    const {isDesktop, isTab, isMobile} = useScreenSize();
     const [searchInput, setSearchInput] = useState(content.search);
     const [debouncedSearch] = useDebouncedValue(searchInput, 300);
-    const [filterOpen, setFilterOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (debouncedSearch !== content.search) {
@@ -65,7 +49,7 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
         });
     };
 
-    const handleTypeChange = (value: null | string) => {
+    const handleTypeChange = (value: string) => {
         if (!value) return;
 
         setContent({
@@ -78,71 +62,88 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
         setSearchInput(event.currentTarget.value);
     };
 
+    const handleClearSearch = () => {
+        setSearchInput('');
+    };
+
     const activeDiscipline = CONTENT_DISCIPLINE.find((ob) => ob.value === content.discipline) ?? CONTENT_DISCIPLINE[0];
 
-    return (
-        <Stack
-            py="sm"
-            style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 99,
-                background: 'white',
-            }}
-        >
-            <SegmentedControl
-                data={CONTENT_DISCIPLINE}
-                fullWidth
-                onChange={handleDisciplineChange}
-                radius="xl"
-                size="md"
-                value={content.discipline}
-            />
+    // Map color names to CSS class names
+    const getColorClass = (color: string, isActive: boolean) => {
+        if (!isActive) return '';
+        const colorMap: Record<string, string> = {
+            blue: classes.typeChipBlue,
+            green: classes.typeChipGreen,
+            cyan: classes.typeChipCyan,
+            orange: classes.typeChipOrange,
+        };
+        return colorMap[color] || '';
+    };
 
-            <Chip.Group
-                onChange={handleTypeChange}
-                value={content.type}
-            >
-                <Group
-                    justify={!isMobile ? 'center' : 'left'}
-                    wrap={!isMobile ? 'nowrap' : 'wrap-reverse'}
-                >
+    return (
+        <div className={classes.container}>
+            {/* Discipline Tabs */}
+            <div className={classes.disciplineTabs}>
+                {CONTENT_DISCIPLINE.map((discipline) => (
+                    <button
+                        className={`${classes.disciplineTab} ${
+                            content.discipline === discipline.value ? classes.disciplineTabActive : ''
+                        }`}
+                        key={discipline.id}
+                        onClick={() => handleDisciplineChange(discipline.value)}
+                        type="button"
+                    >
+                        {discipline.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Filters Row: Type Chips + Search */}
+            <div className={classes.filtersRow}>
+                {/* Type Chips */}
+                <div className={classes.typeChips}>
                     {activeDiscipline.options.map(({id, label, value, color}) => {
+                        const isActive = content.type === value;
                         return (
-                            <Chip
-                                color={color}
-                                icon={<IconPoint />}
+                            <button
+                                className={`${classes.typeChip} ${isActive ? classes.typeChipActive : ''} ${getColorClass(color, isActive)}`}
                                 key={id}
-                                size="lg"
-                                value={value}
-                                variant="light"
+                                onClick={() => handleTypeChange(value)}
+                                type="button"
                             >
+                                <span className={classes.chipDot} />
                                 {label}
-                            </Chip>
+                            </button>
                         );
                     })}
+                </div>
 
-                    <TextInput
-                        flex={isDesktop || isTab ? 'auto' : 1}
-                        leftSection={<IconSearch size={16} />}
+                {/* Search Input */}
+                <div className={classes.searchWrapper}>
+                    <IconSearch
+                        className={classes.searchIcon}
+                        size={16}
+                    />
+                    <input
+                        className={classes.searchInput}
                         onChange={handleSearchChange}
-                        placeholder="Search here.."
-                        radius="xl"
-                        rightSection={
-                            searchInput && (
-                                <CloseButton
-                                    aria-label="Clear search"
-                                    onClick={() => setSearchInput('')}
-                                    size="sm"
-                                />
-                            )
-                        }
-                        size="sm"
+                        placeholder="Search..."
+                        type="text"
                         value={searchInput}
                     />
-                </Group>
-            </Chip.Group>
-        </Stack>
+                    {searchInput && (
+                        <button
+                            aria-label="Clear search"
+                            className={classes.clearButton}
+                            onClick={handleClearSearch}
+                            type="button"
+                        >
+                            <IconX size={14} />
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

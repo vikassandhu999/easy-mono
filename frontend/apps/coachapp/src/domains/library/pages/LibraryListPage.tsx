@@ -1,20 +1,16 @@
-import {Button, Stack, useMantineTheme} from '@mantine/core';
 import {IconPlus} from '@tabler/icons-react';
 import {useState} from 'react';
 
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import HeadingContainer from '@/shared/containers/HeaderContainer';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import Header from '@/shared/layouts/Header';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
 
 import LibraryListViewSelector, {ContentState} from '../components/LibrayListViewSelector';
 import {DRAWER_KEYS} from '../config';
+import classes from './styles.module.css';
 
 const LibraryListPage = () => {
-    const theme = useMantineTheme();
     const {openDrawer} = useParamsDrawer({});
 
     const [content, setContent] = useState<ContentState>({
@@ -41,47 +37,49 @@ const LibraryListPage = () => {
 
     return (
         <PagePaper bottomGutter>
-            <HeadingContainer>
-                <Header
-                    actions={
-                        <Button
+            <div className={classes.pageContainer}>
+                {/* Header */}
+                <div className={classes.headerSection}>
+                    <div className={classes.headerRow}>
+                        <div className={classes.headerContent}>
+                            <h1 className={classes.pageTitle}>Library</h1>
+                            <p className={classes.pageDescription}>
+                                Store and manage your reusable content like Exercises, Recipes, and Workouts
+                            </p>
+                        </div>
+                        <button
+                            className={classes.createButton}
                             onClick={handleContentCreate}
-                            radius="xl"
-                            rightSection={<IconPlus size="18" />}
-                            size="sm"
+                            type="button"
                         >
+                            <IconPlus size={16} />
                             Create
-                        </Button>
-                    }
-                    description="Here you can store and manage your reusable content like Exercises, Recipes, and Workouts"
-                    title="Library"
-                />
-            </HeadingContainer>
+                        </button>
+                    </div>
+                </div>
 
-            <PaddingContainer
-                style={{
-                    paddingBottom: theme.spacing.xl,
-                }}
-            >
-                <Stack>
-                    <LibraryListViewSelector
-                        content={content}
-                        setContent={setContent}
-                    />
-                    {content.type === 'recipe' && (
-                        <RecipeList
-                            onRecipeClick={handleRecipeView}
-                            search={content.search}
+                {/* Content */}
+                <div className={classes.contentSection}>
+                    <div className={classes.contentList}>
+                        <LibraryListViewSelector
+                            content={content}
+                            setContent={setContent}
                         />
-                    )}
-                    {content.type === 'plan' && (
-                        <NutritionPlanList
-                            onPlanClick={handleNutritionPlanView}
-                            search={content.search}
-                        />
-                    )}
-                </Stack>
-            </PaddingContainer>
+                        {content.type === 'recipe' && (
+                            <RecipeList
+                                onRecipeClick={handleRecipeView}
+                                search={content.search}
+                            />
+                        )}
+                        {content.type === 'plan' && (
+                            <NutritionPlanList
+                                onPlanClick={handleNutritionPlanView}
+                                search={content.search}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
         </PagePaper>
     );
 };

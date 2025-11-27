@@ -1,26 +1,31 @@
 import {humanizeError} from '@easy/error-parser';
-import {ActionIcon, Badge, Button, Group, Loader, Stack, Text, TextInput, Title, useMantineTheme} from '@mantine/core';
+import {ActionIcon, Loader, Text, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconPlus, IconTrash} from '@tabler/icons-react';
-import {error} from 'console';
-import {FC, useCallback, useMemo, useState} from 'react';
+import {IconGripVertical, IconPlus, IconSearch, IconTrash} from '@tabler/icons-react';
+import {FC, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {UseFormReturn, useWatch} from 'react-hook-form';
 
 import {useCreateIngredient, useListIngredients} from '@/services/ingredients';
 import {CreateRecipeForm} from '@/services/recipes';
 import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
 
+import classes from './styles.module.css';
+
 type IngredientsFieldProps = {
     form: UseFormReturn<CreateRecipeForm, any, CreateRecipeForm>;
 };
 
 const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
-    const theme = useMantineTheme();
-
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const quantityRefs = useRef<Map<string, HTMLInputElement>>(new Map());
     const {watch, setValue} = form;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
+    const [focusedResultIndex, setFocusedResultIndex] = useState(0);
+    const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     const {data, isLoading} = useListIngredients(
         {
@@ -37,6 +42,46 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
 
     const handleSearchTerm: React.ChangeEventHandler<HTMLInputElement> = (e) => {
         setSearchTerm(e.currentTarget.value);
+    };
+
+    // Reset focused result when search results change
+    useEffect(() => {
+        setFocusedResultIndex(0);
+    }, [fetchedIngredients]);
+
+    // Auto-focus quantity input when ingredient is added
+    useEffect(() => {
+        if (lastAddedId) {
+            const timer = setTimeout(() => {
+                const input = quantityRefs.current.get(lastAddedId);
+                input?.focus();
+                setLastAddedId(null);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [lastAddedId]);
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Add focused result if available
+            if (fetchedIngredients.length > 0 && focusedResultIndex < fetchedIngredients.length) {
+                addIngredient(fetchedIngredients[focusedResultIndex].id, fetchedIngredients[focusedResultIndex].name);
+            } else if (searchTerm && !isLoading && fetchedIngredients.length === 0) {
+                // Create new ingredient if no results
+                createIngredient();
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setFocusedResultIndex((prev) => Math.min(prev + 1, fetchedIngredients.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setFocusedResultIndex((prev) => Math.max(prev - 1, 0));
+        } else if (e.key === 'Escape') {
+            setSearchTerm('');
+            setFocusedResultIndex(0);
+            searchInputRef.current?.blur();
+        }
     };
 
     const createIngredient = async () => {
@@ -56,12 +101,12 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     const addIngredient = useCallback(
         (id: string, name: string) => {
             const prev = watch('recipe_ingredients') || [];
-            console.log(prev);
 
             const isDuplicate = prev.some((ig) => ig.ingredient_id === id);
 
             if (isDuplicate) {
                 notifyWarning('Same ingredient already exists');
+                setSearchTerm('');
                 return;
             }
 
@@ -81,6 +126,9 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
             });
 
             setSearchTerm('');
+            setFocusedResultIndex(0);
+            // Track the last added ingredient to auto-focus its quantity input
+            setLastAddedId(id);
         },
         [watch, setValue],
     );
@@ -100,6 +148,52 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
         },
         [watch, setValue],
     );
+
+    const reorderIngredients = useCallback(
+        (fromIndex: number, toIndex: number) => {
+            const prev = watch('recipe_ingredients') || [];
+            if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+                return;
+            }
+            const newValue = [...prev];
+            const [removed] = newValue.splice(fromIndex, 1);
+            newValue.splice(toIndex, 0, removed);
+            // Update order values
+            const reordered = newValue.map((item, idx) => ({...item, order: idx}));
+            setValue('recipe_ingredients', reordered, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
+        },
+        [watch, setValue],
+    );
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedIndex !== null && draggedIndex !== index) {
+            setDragOverIndex(index);
+        }
+    };
+
+    const handleDragEnd = () => {
+        if (draggedIndex !== null && dragOverIndex !== null) {
+            reorderIngredients(draggedIndex, dragOverIndex);
+        }
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
+        if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+            e.preventDefault();
+            // Focus search input to add more ingredients
+            searchInputRef.current?.focus();
+        }
+    };
 
     const updateIngredientQuntity = useCallback(
         (id: string, value: string) => {
@@ -126,149 +220,130 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     });
 
     return (
-        <Stack gap="md">
-            {/* Header */}
-            <Group justify="space-between">
-                <Title
-                    fw="bold"
-                    order={6}
-                >
-                    Ingredients
-                </Title>
-
-                <Text
-                    c="dimmed"
-                    size="xs"
-                >
-                    {currentIngredients.length} Selected
-                </Text>
-            </Group>
-
-            <Stack gap="xs">
-                {currentIngredients.map((ingredient, idx) => (
-                    <Group
-                        gap="xs"
-                        key={ingredient.ingredient_id}
-                        wrap="nowrap"
-                    >
-                        <Badge
-                            color="orange"
-                            variant="light"
-                        >
-                            {idx + 1}
-                        </Badge>
-                        <Text
-                            size="sm"
-                            style={{minWidth: '120px'}}
-                        >
-                            {/* @ts-expect-error -- types mistmatch */}
-                            {ingredient?.ingredient?.name || ingredient?.name}
+        <div className={classes.section}>
+            <div className={classes.sectionHeader}>
+                <div className={classes.sectionTitleRow}>
+                    <span className={classes.sectionTitle}>Ingredients</span>
+                    {currentIngredients.length > 0 && (
+                        <Text c="dimmed" size="xs">
+                            {currentIngredients.length} added
                         </Text>
-                        <TextInput
-                            onChange={(e) => {
-                                updateIngredientQuntity(ingredient.ingredient_id, e.currentTarget.value);
-                            }}
-                            placeholder="e.g. 200g, 1 cup"
-                            size="xs"
-                            style={{flex: 1}}
-                            value={ingredient.quantity_as_text || ''}
-                        />
-                        <ActionIcon
-                            aria-label={`Remove ${ingredient.name}`}
-                            color="red"
-                            onClick={() => {
-                                removeIngredient(ingredient.ingredient_id);
-                            }}
-                            size="sm"
-                            variant="light"
-                        >
-                            <IconTrash size={16} />
-                        </ActionIcon>
-                    </Group>
-                ))}
-            </Stack>
-
-            {/* Search Input */}
-            <TextInput
-                onChange={handleSearchTerm}
-                placeholder="Search ingredients (e.g. Chicken, Butter, Garlic)"
-                value={searchTerm}
-            />
-
-            {searchTerm && (
-                <Stack gap="xs">
-                    {isLoading && (
-                        <Group justify="center">
-                            <Loader
-                                color="orange"
-                                size="sm"
-                            />
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                Searching...
-                            </Text>
-                        </Group>
                     )}
+                </div>
+            </div>
 
-                    {!isLoading && fetchedIngredients.length === 0 && (
-                        <Stack>
-                            <Text
-                                c="dimmed"
-                                fs="italic"
-                                size="sm"
-                                ta="left"
-                            >
-                                Nothing found for {searchTerm}.
-                            </Text>
-                            <Button
+            <div className={classes.sectionContent}>
+                {/* Search Input - Always visible at top */}
+                <div className={classes.searchInputWrapper}>
+                    <TextInput
+                        ref={searchInputRef}
+                        leftSection={<IconSearch size={16} />}
+                        onChange={handleSearchTerm}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder="Search and add ingredients..."
+                        rightSection={
+                            isLoading ? (
+                                <Loader color="orange" size="xs" />
+                            ) : null
+                        }
+                        size="sm"
+                        value={searchTerm}
+                    />
+                </div>
+
+                {/* Search Results - Inline dropdown */}
+                {searchTerm && (
+                    <div className={classes.searchResults}>
+                        {!isLoading && fetchedIngredients.length === 0 && (
+                            <button
+                                className={classes.createIngredientButton}
                                 onClick={createIngredient}
-                                radius="md"
-                                rightSection={<IconPlus size={14} />}
-                                size="compact-sm"
-                                variant="light"
-                                w="max-content"
+                                type="button"
                             >
-                                Create {searchTerm}
-                            </Button>
-                        </Stack>
-                    )}
+                                <IconPlus size={14} />
+                                <span>Create "{searchTerm}"</span>
+                            </button>
+                        )}
 
-                    {!isLoading && fetchedIngredients.length > 0 && (
-                        <Group gap="xs">
-                            {fetchedIngredients.map((ingredient) => {
-                                return (
-                                    <Group
-                                        gap="xs"
+                        {!isLoading && fetchedIngredients.length > 0 && (
+                            <div className={classes.searchResultsList}>
+                                {fetchedIngredients.map((ingredient, idx) => (
+                                    <button
+                                        className={`${classes.searchResultItem} ${idx === focusedResultIndex ? classes.searchResultItemFocused : ''}`}
                                         key={ingredient.id}
-                                        onClick={() => {
-                                            addIngredient(ingredient.id, ingredient.name);
-                                        }}
-                                        style={{
-                                            border: `1px dashed ${theme.colors.gray[2]}`,
-                                            borderRadius: '8px',
-                                            padding: '4px 8px',
-                                            cursor: 'pointer',
-                                            opacity: 1,
-                                        }}
+                                        onClick={() => addIngredient(ingredient.id, ingredient.name)}
+                                        onMouseEnter={() => setFocusedResultIndex(idx)}
+                                        type="button"
                                     >
                                         <Text size="sm">{ingredient?.name}</Text>
-                                        <ActionIcon
-                                            color="orange"
-                                            size="xs"
-                                            variant="light"
-                                        >
-                                            <IconPlus size={14} />
-                                        </ActionIcon>
-                                    </Group>
-                                );
-                            })}
-                        </Group>
-                    )}
-                </Stack>
-            )}
-        </Stack>
+                                        <IconPlus size={14} />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <Text c="dimmed" className={classes.keyboardHint} size="xs">
+                            ↑↓ Navigate • Enter to add{fetchedIngredients.length === 0 && searchTerm ? ' new' : ''}
+                        </Text>
+                    </div>
+                )}
+
+                {/* Selected ingredients list */}
+                {currentIngredients.length > 0 && (
+                    <div className={classes.ingredientsList}>
+                        {currentIngredients.map((ingredient, idx) => (
+                            <div
+                                className={`${classes.ingredientItem} ${draggedIndex === idx ? classes.ingredientItemDragging : ''} ${dragOverIndex === idx ? classes.ingredientItemDragOver : ''}`}
+                                draggable
+                                key={ingredient.ingredient_id}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={(e) => handleDragOver(e, idx)}
+                                onDragStart={() => handleDragStart(idx)}
+                            >
+                                <span className={classes.dragHandle}>
+                                    <IconGripVertical size={14} />
+                                </span>
+                                <span className={classes.ingredientName}>
+                                    {/* @ts-expect-error -- types mistmatch */}
+                                    {ingredient?.ingredient?.name || ingredient?.name}
+                                </span>
+                                <TextInput
+                                    ref={(el) => {
+                                        if (el) quantityRefs.current.set(ingredient.ingredient_id, el);
+                                    }}
+                                    className={classes.ingredientQuantity}
+                                    onChange={(e) => {
+                                        updateIngredientQuntity(ingredient.ingredient_id, e.currentTarget.value);
+                                    }}
+                                    onKeyDown={(e) => handleQuantityKeyDown(e, idx)}
+                                    placeholder="e.g. 200g, 1 cup"
+                                    size="xs"
+                                    value={ingredient.quantity_as_text || ''}
+                                />
+                                <ActionIcon
+                                    aria-label={`Remove ${ingredient.name}`}
+                                    className={classes.ingredientDelete}
+                                    color="gray"
+                                    onClick={() => removeIngredient(ingredient.ingredient_id)}
+                                    size="sm"
+                                    variant="subtle"
+                                >
+                                    <IconTrash size={14} />
+                                </ActionIcon>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Empty state */}
+                {currentIngredients.length === 0 && !searchTerm && (
+                    <div className={classes.emptyState}>
+                        <Text c="dimmed" size="xs">
+                            Start typing to search and add ingredients
+                        </Text>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

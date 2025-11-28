@@ -7,6 +7,7 @@ export const ROUTES_WITH_NAVIGATION = [
     '/',
     '/plans',
     '/programs', // Program list page
+    '/flows', // Program list page
     '/clients', // clients list page
     '/content', // Content list page
     '/chats', // chats list page

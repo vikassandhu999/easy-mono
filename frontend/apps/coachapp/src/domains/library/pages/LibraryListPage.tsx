@@ -1,22 +1,23 @@
 import {IconPlus} from '@tabler/icons-react';
 import {useState} from 'react';
 
+import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import PagePaper from '@/shared/containers/PagePaper';
+import {ExerciseList} from '@/shared/ExerciseList';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
 import {TrainingPlanList} from '@/shared/TrainingPlanList';
 
 import LibraryListViewSelector, {ContentState} from '../components/LibrayListViewSelector';
-import {DRAWER_KEYS} from '../config';
 import classes from './styles.module.css';
 
 const LibraryListPage = () => {
     const {openDrawer} = useParamsDrawer({});
 
     const [content, setContent] = useState<ContentState>({
-        discipline: 'workout',
-        type: 'workout',
+        discipline: 'training',
+        type: 'training_plan',
         search: '',
     });
 
@@ -36,15 +37,15 @@ const LibraryListPage = () => {
         });
     };
 
-    const handleWorkoutView = (workoutId: string) => {
-        openDrawer(DRAWER_KEYS.WORKOUT_EDIT, {
-            workout_id: workoutId,
-        });
-    };
-
     const handleExerciseView = (exerciseId: string) => {
         openDrawer(DRAWER_KEYS.EXERCISE_VIEW, {
             exercise_id: exerciseId,
+        });
+    };
+
+    const handleTrainingPlanView = (trainingPlanId: string) => {
+        openDrawer(DRAWER_KEYS.TRAINING_PLAN_BUILDER, {
+            training_plan_id: trainingPlanId,
         });
     };
 
@@ -57,7 +58,7 @@ const LibraryListPage = () => {
                         <div className={classes.headerContent}>
                             <h1 className={classes.pageTitle}>Library</h1>
                             <p className={classes.pageDescription}>
-                                Store and manage your reusable content like Exercises, Recipes, and Workouts
+                                Store and manage your reusable content like Exercises, Recipes, and Training Plans
                             </p>
                         </div>
                         <button
@@ -87,6 +88,18 @@ const LibraryListPage = () => {
                         {content.type === 'plan' && (
                             <NutritionPlanList
                                 onPlanClick={handleNutritionPlanView}
+                                search={content.search}
+                            />
+                        )}
+                        {content.type === 'exercise' && (
+                            <ExerciseList
+                                onExerciseClick={handleExerciseView}
+                                search={content.search}
+                            />
+                        )}
+                        {content.type === 'training_plan' && (
+                            <TrainingPlanList
+                                onPlanClick={handleTrainingPlanView}
                                 search={content.search}
                             />
                         )}

@@ -149,7 +149,7 @@ const RecipeList = ({onRecipeClick, search}: RecipeListProps) => {
                 />
                 <span className={classes.emptyText}>{search ? 'No recipes match your search' : 'No recipes yet'}</span>
                 <span className={classes.emptyHint}>
-                    {search ? 'Try a different search term' : 'Create your first recipe to get started'}
+                    {search ? 'Try a different search term' : 'To Create your first recipe click on + Create button'}
                 </span>
             </div>
         );

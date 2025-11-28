@@ -1,5 +1,8 @@
 import {DRAWER_CONFIG, DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
+import AssignNutritionPlanDrawer from '@/shared/drawers/AssignNutritionPlanDrawer';
+import AssignPlanDrawer from '@/shared/drawers/AssignPlanDrawer';
+import AssignTrainingPlanDrawer from '@/shared/drawers/AssignTrainingPlanDrawer';
 import ContentCreateDrawer from '@/shared/drawers/ContentCreateDrawer';
 import ExerciseCreateDrawer from '@/shared/drawers/ExerciseCreateDrawer';
 import ExerciseEditDrawer from '@/shared/drawers/ExerciseEditDrawer';
@@ -10,6 +13,10 @@ import NutritionPlanEditDrawer from '@/shared/drawers/NutritionPlanEditDrawer';
 import RecipeCreateDrawer from '@/shared/drawers/RecipeCreateDrawer';
 import RecipeEditDrawer from '@/shared/drawers/RecipeEditDrawer';
 import RecipeViewDrawer from '@/shared/drawers/RecipeViewDrawer';
+import TrainingPlanBuildDrawer from '@/shared/drawers/TrainingPlanBuildDrawer';
+import TrainingPlanCreateDrawer from '@/shared/drawers/TrainingPlanCreateDrawer';
+import TrainingPlanEditDrawer from '@/shared/drawers/TrainingPlanEditDrawer';
+import TrainingPlanViewDrawer from '@/shared/drawers/TrainingPlanViewDrawer';
 
 const InAppDrawersPage = () => {
     const {activeDrawerKey} = useParamsDrawer({
@@ -37,6 +44,20 @@ const InAppDrawersPage = () => {
             return <ExerciseViewDrawer />;
         case DRAWER_KEYS.EXERCISE_EDIT:
             return <ExerciseEditDrawer />;
+        case DRAWER_KEYS.ASSIGN_PLAN:
+            return <AssignPlanDrawer />;
+        case DRAWER_KEYS.ASSIGN_NUTRITION_PLAN:
+            return <AssignNutritionPlanDrawer />;
+        case DRAWER_KEYS.ASSIGN_TRAINING_PLAN:
+            return <AssignTrainingPlanDrawer />;
+        case DRAWER_KEYS.TRAINING_PLAN_VIEW:
+            return <TrainingPlanViewDrawer />;
+        case DRAWER_KEYS.TRAINING_PLAN_CREATE:
+            return <TrainingPlanCreateDrawer />;
+        case DRAWER_KEYS.TRAINING_PLAN_EDIT:
+            return <TrainingPlanEditDrawer />;
+        case DRAWER_KEYS.TRAINING_PLAN_BUILDER:
+            return <TrainingPlanBuildDrawer />;
 
         default:
             return null;

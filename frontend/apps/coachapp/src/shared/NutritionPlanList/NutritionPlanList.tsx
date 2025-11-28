@@ -36,17 +36,13 @@ const NutritionPlanListItem = ({plan, onClick}: NutritionPlanListItemProps) => {
                     className={classes.image}
                     src={plan.thumbnail_url || PlanSampleImage}
                 />
-                {plan.is_template && (
-                    <span className={classes.templateBadge}>Template</span>
-                )}
+                {plan.is_template && <span className={classes.templateBadge}>Template</span>}
             </div>
 
             {/* Plan Content */}
             <div className={classes.content}>
                 <span className={classes.name}>{plan.name}</span>
-                {plan.description && (
-                    <span className={classes.description}>{plan.description}</span>
-                )}
+                {plan.description && <span className={classes.description}>{plan.description}</span>}
                 <div className={classes.metaTags}>
                     {plan.duration_weeks && (
                         <span className={`${classes.metaTag} ${classes.metaTagDuration}`}>
@@ -108,7 +104,7 @@ export interface NutritionPlanListProps {
     search?: string;
 }
 
-const NutritionPlanList = ({onPlanClick, search}: NutritionPlanListProps) => {
+const NutritionPlanList = ({onPlanClick, search, clientId}: NutritionPlanListProps) => {
     const lastCallTimeRef = useRef(0);
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListNutritionPlans({
         search: search || undefined,

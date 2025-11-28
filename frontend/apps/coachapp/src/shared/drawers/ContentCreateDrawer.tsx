@@ -5,7 +5,7 @@ import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 
-type ContentType = 'exercise' | 'meal' | 'recipe' | 'workout';
+type ContentType = 'exercise' | 'meal' | 'recipe' | 'training_plan';
 
 const CONTENT_CONFIG = [
     {
@@ -18,13 +18,13 @@ const CONTENT_CONFIG = [
         drawerKey: DRAWER_KEYS.EXERCISE_CREATE,
     },
     {
-        id: 'workout',
-        label: 'Create Workout',
-        value: 'workout' as ContentType,
-        description: 'A collection of exercises for a training session',
+        id: 'training-plan',
+        label: 'Create Training Plan',
+        value: 'training_plan' as ContentType,
+        description: 'A structured training program with phases and workouts',
         icon: IconRun,
         color: 'grape',
-        drawerKey: DRAWER_KEYS.WORKOUT_CREATE,
+        drawerKey: DRAWER_KEYS.TRAINING_PLAN_CREATE,
     },
     {
         id: 'nutrition-plan',

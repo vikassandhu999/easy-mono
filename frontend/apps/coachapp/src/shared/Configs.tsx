@@ -1,4 +1,4 @@
-import {Icon, IconBowlChopsticks, IconTreadmill} from '@tabler/icons-react';
+import {Icon, IconBarbell, IconBowlChopsticks, IconSalad, IconTreadmill} from '@tabler/icons-react';
 
 // Plan Disciplines - matches backend PlanDiscipline enum (workout, nutrition)
 export const PLAN_DISCIPLINES: Record<
@@ -55,3 +55,36 @@ export const PLAN_STATUS = {
         label: 'Active',
     },
 };
+
+// Content Type Configuration - for content cards and UI elements
+const CONTENT_TYPE_CONFIG: Record<
+    string,
+    {
+        badgeColor: string;
+        icon: Icon;
+        label: string;
+    }
+> = {
+    exercise: {
+        badgeColor: 'green',
+        icon: IconBarbell,
+        label: 'Exercise',
+    },
+    recipe: {
+        badgeColor: 'orange',
+        icon: IconSalad,
+        label: 'Recipe',
+    },
+    training_plan: {
+        badgeColor: 'blue',
+        icon: IconTreadmill,
+        label: 'Training Plan',
+    },
+    nutrition_plan: {
+        badgeColor: 'lime',
+        icon: IconBowlChopsticks,
+        label: 'Nutrition Plan',
+    },
+};
+
+export default CONTENT_TYPE_CONFIG;

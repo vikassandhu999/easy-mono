@@ -56,25 +56,32 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         values: ['exercise_id'],
     },
     {
-        id: 'workout-view',
-        key: 'workout_view',
+        id: 'training-plan-view',
+        key: 'training_plan_view',
         type: 'view',
         prev_key: null,
-        values: ['workout_id'],
+        values: ['training_plan_id'],
     },
     {
-        id: 'workout-create',
-        key: 'workout_create',
+        id: 'training-plan-create',
+        key: 'training_plan_create',
         type: 'create',
         prev_key: 'content_create',
         values: [],
     },
     {
-        id: 'workout-edit',
-        key: 'workout_edit',
+        id: 'training-plan-edit',
+        key: 'training_plan_edit',
         type: 'edit',
-        prev_key: 'workout_view',
-        values: ['workout_id'],
+        prev_key: 'training_plan_builder',
+        values: ['training_plan_id'],
+    },
+    {
+        id: 'training-plan-builder',
+        key: 'training_plan_builder',
+        type: 'builder',
+        prev_key: null,
+        values: ['training_plan_id'],
     },
     {
         id: 'nutrition-plan-view',
@@ -111,6 +118,35 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         prev_key: null,
         values: [],
     },
+    {
+        id: 'client-edit',
+        key: 'client_edit',
+        type: 'edit',
+        prev_key: null,
+        values: ['client_id'],
+    },
+    // Assign Plan drawers
+    {
+        id: 'assign-plan',
+        key: 'assign_plan',
+        type: 'select',
+        prev_key: null,
+        values: ['client_id'],
+    },
+    {
+        id: 'assign-nutrition-plan',
+        key: 'assign_nutrition_plan',
+        type: 'select',
+        prev_key: 'assign_plan',
+        values: ['client_id'],
+    },
+    {
+        id: 'assign-training-plan',
+        key: 'assign_training_plan',
+        type: 'select',
+        prev_key: 'assign_plan',
+        values: ['client_id'],
+    },
 ];
 
 /**
@@ -130,10 +166,11 @@ export const DRAWER_KEYS = {
     EXERCISE_CREATE: 'exercise_create',
     EXERCISE_EDIT: 'exercise_edit',
 
-    // Workout
-    WORKOUT_VIEW: 'workout_view',
-    WORKOUT_CREATE: 'workout_create',
-    WORKOUT_EDIT: 'workout_edit',
+    // Training Plan
+    TRAINING_PLAN_VIEW: 'training_plan_view',
+    TRAINING_PLAN_CREATE: 'training_plan_create',
+    TRAINING_PLAN_EDIT: 'training_plan_edit',
+    TRAINING_PLAN_BUILDER: 'training_plan_builder',
 
     // NutritionPlan
     NUTRITION_PLAN_VIEW: 'nutrition_plan_view',
@@ -143,6 +180,12 @@ export const DRAWER_KEYS = {
 
     // Client
     CLIENT_INVITE: 'client_invite',
+    CLIENT_EDIT: 'client_edit',
+
+    // Assign Plan
+    ASSIGN_PLAN: 'assign_plan',
+    ASSIGN_NUTRITION_PLAN: 'assign_nutrition_plan',
+    ASSIGN_TRAINING_PLAN: 'assign_training_plan',
 } as const;
 
 export type DrawerKey = (typeof DRAWER_KEYS)[keyof typeof DRAWER_KEYS];

@@ -1,4 +1,4 @@
-import {Icon, IconBuilding, IconCards, IconChalkboard, IconHeadphones} from '@tabler/icons-react';
+import {Icon, IconBuilding, IconChalkboard} from '@tabler/icons-react';
 
 export type LegalLink = {
     id: string;
@@ -10,6 +10,7 @@ export type ActionGridItem = {
     id: string;
     label: string;
     icon: Icon;
+    color?: string;
 };
 
 export type ActionGridConfig = ActionGridItem[];
@@ -49,8 +50,6 @@ export const LEGAL_LINKS: LegalLink[] = [
 ];
 
 export const ACTION_GRID_CONFIG: ActionGridConfig = [
-    {id: 'coach_profile', label: 'Profile', icon: IconChalkboard},
-    {id: 'business', label: 'Business', icon: IconBuilding},
-    {id: 'subscription', label: 'Subscription', icon: IconCards},
-    {id: 'help_center', label: 'Help Center', icon: IconHeadphones},
+    {id: 'coach_profile', label: 'Profile', icon: IconChalkboard, color: 'blue'},
+    {id: 'business', label: 'Business', icon: IconBuilding, color: 'green'},
 ];

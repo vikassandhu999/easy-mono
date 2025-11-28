@@ -1,4 +1,5 @@
 import {
+    ActionIcon,
     Alert,
     Avatar,
     Box,
@@ -13,17 +14,21 @@ import {
     Title,
     useMantineTheme,
 } from '@mantine/core';
-import {IconChevronRight} from '@tabler/icons-react';
+import {IconBell, IconCalendar, IconChevronRight, IconUsers} from '@tabler/icons-react';
+import {useMemo} from 'react';
 import {useNavigate} from 'react-router';
 
 import {useProfileQuery} from '@/services/auth';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 
-import {DASHBOARD_STATS, DashboardStat, QUICK_ACTIONS, QuickActionConfig} from '../config';
+import {QUICK_ACTIONS, QuickActionConfig} from '../config';
 
 interface StatCardProps {
-    stat: DashboardStat;
+    color: string;
+    icon: React.ComponentType<{size?: number | string}>;
+    label: string;
+    value: number | string;
 }
 
 interface QuickActionItemProps {
@@ -41,6 +46,24 @@ export default function HomePage() {
     const coachNameInitial = coachFirstName[0];
     const isLoading = profileLoading;
     const isError = profileErr;
+
+    const stats = useMemo(() => {
+        const coachStats = profile?.coach?.stats;
+        return [
+            {
+                color: 'blue',
+                icon: IconCalendar,
+                label: 'Total Plans',
+                value: coachStats?.total_plans ?? 0,
+            },
+            {
+                color: 'green',
+                icon: IconUsers,
+                label: 'Total Clients',
+                value: coachStats?.total_clients ?? 0,
+            },
+        ];
+    }, [profile?.coach?.stats]);
 
     return (
         <PagePaper>
@@ -76,41 +99,55 @@ export default function HomePage() {
                 <Stack gap="lg">
                     <Group
                         gap="md"
+                        justify="space-between"
                         mt="md"
                         wrap="nowrap"
                     >
-                        <Avatar
-                            color="blue"
-                            radius="xl"
-                            size="lg"
+                        <Group>
+                            <Avatar
+                                color="blue"
+                                radius="xl"
+                                size="lg"
+                                variant="outline"
+                            >
+                                {coachNameInitial}
+                            </Avatar>
+                            <Stack gap={4}>
+                                <Title
+                                    order={2}
+                                    size="h5"
+                                >
+                                    Hello, {coachFirstName}
+                                </Title>
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                >
+                                    Welcome back
+                                </Text>
+                            </Stack>
+                        </Group>
+
+                        <ActionIcon
+                            color="cyan"
+                            size="xl"
                             variant="light"
                         >
-                            {coachNameInitial}
-                        </Avatar>
-                        <Stack gap={4}>
-                            <Title
-                                order={2}
-                                size="h5"
-                            >
-                                Hello, {coachFirstName}
-                            </Title>
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                Welcome back
-                            </Text>
-                        </Stack>
+                            <IconBell />
+                        </ActionIcon>
                     </Group>
 
                     <SimpleGrid
                         cols={{base: 2, md: 2, sm: 2}}
                         spacing="md"
                     >
-                        {DASHBOARD_STATS.map((stat) => (
+                        {stats.map((stat) => (
                             <StatCard
+                                color={stat.color}
+                                icon={stat.icon}
                                 key={stat.label}
-                                stat={stat}
+                                label={stat.label}
+                                value={stat.value}
                             />
                         ))}
                     </SimpleGrid>
@@ -143,35 +180,34 @@ export default function HomePage() {
     );
 }
 
-function StatCard({stat}: StatCardProps) {
+function StatCard({color, icon: Icon, label, value}: StatCardProps) {
     return (
         <Card
-            bg="gray.1"
             p="lg"
             radius="lg"
         >
             <Stack gap="xs">
                 <ThemeIcon
-                    color={stat.color}
+                    color={color}
                     radius="md"
                     size="lg"
                     variant="light"
                 >
-                    <stat.icon size={20} />
+                    <Icon size={20} />
                 </ThemeIcon>
                 <div>
                     <Text
                         fw={700}
                         size="xl"
                     >
-                        {stat.value}
+                        {value}
                     </Text>
                     <Text
                         c="dimmed"
                         mt={4}
                         size="sm"
                     >
-                        {stat.label}
+                        {label}
                     </Text>
                 </div>
             </Stack>

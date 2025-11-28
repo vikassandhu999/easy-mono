@@ -1,18 +1,5 @@
-import {
-    Alert,
-    Avatar,
-    Badge,
-    Button,
-    Card,
-    Group,
-    LoadingOverlay,
-    Paper,
-    SimpleGrid,
-    Stack,
-    Text,
-    useMantineTheme,
-} from '@mantine/core';
-import {IconChevronRight, IconHeart, IconLogs, IconNotification, IconShield, IconWorldWww} from '@tabler/icons-react';
+import {Avatar, Badge, Button, Divider, Group, Stack, Text, ThemeIcon} from '@mantine/core';
+import {IconChevronRight, IconLogs, IconNotification, IconShield, IconWorldWww} from '@tabler/icons-react';
 import {FC} from 'react';
 import {Link} from 'react-router';
 
@@ -20,44 +7,75 @@ import {useAuthActions} from '@/hooks/useAuthActions';
 import {useProfileQuery, UserProfileResponse} from '@/services/auth';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
+import {notifyInfo} from '@/utils/notification';
 
 import {ACTION_GRID_CONFIG, ActionGridConfig, LEGAL_LINKS, LegalLink} from '../config/ui';
+import classes from './styles.module.css';
+
+const ACTION_LIST_ITEMS = [
+    {
+        id: 'my_website',
+        label: 'Website Manager',
+        icon: IconWorldWww,
+        link: '',
+        badge: 'Coming Soon',
+        color: 'gray',
+    },
+
+    {
+        id: 'recent_activities',
+        label: 'Recent Activities',
+        icon: IconLogs,
+        link: '',
+        badge: 'Coming Soon',
+        color: 'gray',
+    },
+    {
+        id: 'account_privacy',
+        label: 'Account & Privacy',
+        icon: IconShield,
+        link: '',
+        color: 'gray',
+    },
+];
 
 export default function MainProfilePage() {
     const {logout} = useAuthActions();
-
     const {data: profile, isLoading: profileLoading} = useProfileQuery();
-    const loading = profileLoading;
+
+    if (profileLoading) {
+        return (
+            <PagePaper>
+                <PaddingContainer>
+                    <div className={classes.loadingState}>
+                        <Text c="dimmed">Loading profile...</Text>
+                    </div>
+                </PaddingContainer>
+            </PagePaper>
+        );
+    }
 
     return (
         <PagePaper>
-            <LoadingOverlay visible={loading} />
             <PaddingContainer>
                 <Stack gap="xl">
                     {profile && <Header profile={profile} />}
 
                     <ActionGrid configs={ACTION_GRID_CONFIG} />
                     <ActionList />
-
-                    <Alert
-                        color="pink"
-                        icon={<IconHeart />}
-                        title="Help us improving"
-                    >
-                        <Text fs="italic">
-                            We are in beta phase. So please help improving. Report any bug you encounter or you can ask
-                            for feature that you think can be of some value.
-                        </Text>
-                    </Alert>
-                    <LegalLinks links={LEGAL_LINKS} />
+                    <Divider />
 
                     <Button
+                        className={classes.logoutButton}
                         color="red"
                         onClick={() => logout()}
-                        variant="outline"
+                        radius="sm"
+                        variant="light"
                     >
                         Logout
                     </Button>
+                    <Divider />
+                    <LegalLinks links={LEGAL_LINKS} />
                 </Stack>
             </PaddingContainer>
         </PagePaper>
@@ -89,180 +107,147 @@ const Header: FC<HeaderProps> = ({profile}) => {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     };
 
+    const fullName = `${profile.user.first_name} ${profile.user.last_name}`;
+
     return (
-        <Paper
-            py="sm"
-            radius="md"
-        >
-            <Stack gap="md">
-                {/* Header section with Avatar and name */}
-                <Group
-                    align="flex-start"
-                    gap="md"
-                    justify="space-between"
-                    w="100%"
+        <div className={classes.profileCard}>
+            <Avatar
+                color="blue"
+                name={fullName}
+                radius="xl"
+                size="xl"
+            >
+                {getInitials(profile.user.first_name)}
+            </Avatar>
+            <div className={classes.profileInfo}>
+                <Text
+                    className={classes.profileName}
+                    fw={600}
+                    size="xl"
                 >
-                    <Group>
-                        <Avatar
-                            color="blue"
-                            radius="xl"
-                            size="lg"
-                        >
-                            {getInitials(profile.user.first_name)}
-                        </Avatar>
-                        <Stack gap={4}>
-                            <Text
-                                fw={600}
-                                size="xl"
-                            >
-                                {profile.user.first_name + ' ' + profile.user.last_name}
-                            </Text>
-                            <Text
-                                c="dimmed"
-                                size="xs"
-                            >
-                                {profile.user.email}
-                                {profile.user.email_verified ? (
-                                    <Badge
-                                        color="green"
-                                        size="sm"
-                                        variant="light"
-                                    >
-                                        Verified
-                                    </Badge>
-                                ) : (
-                                    <Badge
-                                        color="gray"
-                                        size="sm"
-                                        variant="light"
-                                    >
-                                        Not Verified
-                                    </Badge>
-                                )}
-                            </Text>
-                        </Stack>
-                    </Group>
+                    {fullName}
+                </Text>
+                <Group gap="xs">
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                    >
+                        {profile.user.email}
+                    </Text>
+                    <Badge
+                        color={profile.user.email_verified ? 'green' : 'gray'}
+                        size="xs"
+                        variant="light"
+                    >
+                        {profile.user.email_verified ? 'Verified' : 'Not Verified'}
+                    </Badge>
                 </Group>
-            </Stack>
-        </Paper>
+            </div>
+        </div>
     );
 };
 
 const ActionGrid: FC<ActionGridProps> = ({configs}) => {
     return (
-        <SimpleGrid cols={2}>
-            {configs.map(({id, label, icon: Icon}) => {
-                return (
-                    <Card
-                        key={id}
-                        withBorder
+        <div className={classes.actionGrid}>
+            {configs.map(({id, label, icon: Icon, color}) => (
+                <button
+                    className={classes.actionGridCard}
+                    key={id}
+                    type="button"
+                >
+                    <ThemeIcon
+                        color={color || 'blue'}
+                        radius="md"
+                        size="lg"
+                        variant="light"
                     >
-                        <Group>
-                            <Icon />
-                            <Text>{label}</Text>
-                        </Group>
-                    </Card>
-                );
-            })}
-        </SimpleGrid>
+                        <Icon size={20} />
+                    </ThemeIcon>
+                    <Text
+                        fw={500}
+                        size="sm"
+                    >
+                        {label}
+                    </Text>
+                </button>
+            ))}
+        </div>
     );
 };
 
 const ActionList = () => {
-    const theme = useMantineTheme();
+    const handleItemClick = (badge?: string) => {
+        if (badge === 'Coming Soon') {
+            notifyInfo('This feature will be available in upcoming versions. We are working on it!', {
+                title: 'Coming Soon',
+            });
+        }
+    };
 
     return (
-        <Stack>
+        <div className={classes.actionList}>
             <Text
                 c="dimmed"
-                fw="bold"
-                size="sm"
+                className={classes.sectionTitle}
+                fw={600}
+                size="xs"
+                tt="uppercase"
             >
-                OTHER ACTIONS
+                Other Actions
             </Text>
-            {[
-                {
-                    id: 'my_website',
-                    label: 'Website Manager',
-                    icon: IconWorldWww,
-                    link: '',
-                    badge: 'Comming Soon',
-                },
-                {
-                    id: 'notifications',
-                    label: 'Notifications',
-                    icon: IconNotification,
-                    link: '',
-                    badge: 'Comming Soon',
-                },
-                {
-                    id: 'recent_activities',
-                    label: 'Recent Activites',
-                    icon: IconLogs,
-                    link: '',
-                    badge: 'Comming Soon',
-                },
-                {
-                    id: 'account_privacy',
-                    label: 'Account & Privacy',
-                    icon: IconShield,
-                    link: '',
-                },
-            ].map(({id, label, icon, badge}) => {
-                const IconElem = icon;
-                return (
-                    <Group
-                        align="center"
-                        justify="space-between"
+
+            <div className={classes.actionList}>
+                {ACTION_LIST_ITEMS.map(({id, label, icon: Icon, badge, color}) => (
+                    <button
+                        className={classes.actionListItem}
                         key={id}
-                        py="sm"
-                        style={{
-                            borderBottom: `1px solid ${theme.colors.gray[4]}`,
-                        }}
+                        onClick={() => handleItemClick(badge)}
+                        type="button"
                     >
-                        <Group>
-                            <IconElem color={theme.colors.gray[5]} />
-                            <Text>
-                                {label}
-
-                                {badge && (
-                                    <Badge
-                                        color="yellow"
-                                        size="xs"
-                                        variant="light"
-                                    >
-                                        {badge}
-                                    </Badge>
-                                )}
-                            </Text>
-                        </Group>
-
-                        <IconChevronRight color={theme.colors.gray[6]} />
-                    </Group>
-                );
-            })}
-        </Stack>
+                        <div className={classes.actionListLeft}>
+                            <ThemeIcon
+                                color={color || 'gray'}
+                                radius="md"
+                                size="md"
+                                variant="light"
+                            >
+                                <Icon size={16} />
+                            </ThemeIcon>
+                            <Text size="sm">{label}</Text>
+                            {badge && (
+                                <Badge
+                                    color="yellow"
+                                    size="xs"
+                                    variant="light"
+                                >
+                                    {badge}
+                                </Badge>
+                            )}
+                        </div>
+                        <IconChevronRight
+                            className={classes.chevron}
+                            size={18}
+                        />
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 };
 
 const LegalLinks: FC<LegalLinksProps> = ({links}) => {
     return (
-        <Stack>
-            {links.map(({id, label, link}) => {
-                return (
-                    <Text
-                        c="dimmed"
-                        component={Link}
-                        fw="500"
-                        key={id}
-                        size="xs"
-                        to={link}
-                        tt="uppercase"
-                    >
-                        {label}
-                    </Text>
-                );
-            })}
-        </Stack>
+        <div className={classes.legalLinks}>
+            {links.map(({id, label, link}) => (
+                <Link
+                    className={classes.legalLink}
+                    key={id}
+                    to={link}
+                >
+                    {label}
+                </Link>
+            ))}
+        </div>
     );
 };

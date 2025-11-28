@@ -8,6 +8,7 @@ import ClientListPage from '@/domains/client/pages/ClientListPage';
 import ClientViewPage from '@/domains/client/pages/ClientViewPage';
 import HomePage from '@/domains/dashboard/pages/HomePage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
+import FlowsListPage from '@/domains/flows/pages/FlowsListPage';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
 import MainProfilePage from '@/domains/profile/pages/MainProfilePage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
                     {
                         element: <LibraryListPage />,
                         path: '/library',
+                    },
+                    {
+                        element: <FlowsListPage />,
+                        path: '/flows',
                     },
 
                     {

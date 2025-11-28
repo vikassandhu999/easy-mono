@@ -1,403 +1,501 @@
-import {
-    ActionIcon,
-    Avatar,
-    Badge,
-    Box,
-    Card,
-    Center,
-    Checkbox,
-    Group,
-    Loader,
-    Paper,
-    Stack,
-    Text,
-    TextInput,
-    Title,
-} from '@mantine/core';
-import {useDebouncedCallback} from '@mantine/hooks';
+import {Loader, Menu, Text, TextInput} from '@mantine/core';
+import {useDebouncedCallback, useIntersection, useLocalStorage} from '@mantine/hooks';
 import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
-import {useEffect, useMemo, useState} from 'react';
+import {IconBarbell, IconChevronDown, IconHistory, IconPlus} from '@tabler/icons-react';
+import {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 
-import {Content, useListContentsInfiniteQuery} from '@/services/contents';
-import {CONTENT_TYPE_CONFIG} from '@/shared/Configs.tsx';
-import {FixedBottom} from '@/shared/containers/FixedBottom';
+import {Exercise, useListExercises} from '@/services/exercises';
+import {Muscle, useListMuscles} from '@/services/muscles';
 
-import RecordsList from '../layouts/RecordsList';
+import classes from './styles.module.css';
 
 interface ExerciseCardProps {
-    exercise: Content;
+    exercise: Exercise;
+    focused: boolean;
     isSelected: boolean;
-    multiple: boolean;
-    onToggleSelect: (id: string) => void;
+    onSelect: () => void;
 }
 
-/**
- * ExerciseCard - Individual exercise item card
- * Follows best practices:
- * - Clear visual feedback for selection state
- * - Accessible with keyboard navigation
- * - Smooth hover transitions
- * - Descriptive ARIA labels
- * - Single-select: No checkbox, immediate selection on click
- * - Multi-select: Checkbox for explicit selection
- */
-const ExerciseCard = ({exercise, isSelected, multiple, onToggleSelect}: ExerciseCardProps) => {
-    const typeConfig = CONTENT_TYPE_CONFIG.exercise;
-    const IconComponent = typeConfig.icon;
-    const definition = exercise.exercise_definition;
+const ExerciseCard = ({exercise, isSelected, onSelect, focused}: ExerciseCardProps) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    // Scroll into view when focused
+    useEffect(() => {
+        if (focused && cardRef.current) {
+            cardRef.current.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+    }, [focused]);
 
     return (
-        <Card
-            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${exercise.name}: ${exercise.description || ''}`}
-            onClick={() => onToggleSelect(exercise.id)}
-            p="sm"
-            role="button"
-            style={{
-                backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'white',
-                borderColor: isSelected ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
-                borderWidth: isSelected ? 2 : 1,
-                borderRadius: 8,
-                boxShadow: isSelected ? '0 2px 12px rgba(59, 130, 246, 0.2)' : 'none',
-                cursor: 'pointer',
-                transform: 'scale(1)',
-                transition: 'all 200ms ease',
+        <div
+            aria-selected={isSelected}
+            className={`${classes.exerciseCard} ${isSelected ? classes.selected : ''} ${focused ? classes.focused : ''}`}
+            onClick={onSelect}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect();
+                }
             }}
-            styles={{
-                root: {
-                    '&:hover': {
-                        backgroundColor: multiple
-                            ? isSelected
-                                ? 'var(--mantine-color-blue-1)'
-                                : 'var(--mantine-color-gray-0)'
-                            : 'var(--mantine-color-blue-0)',
-                        borderColor: 'var(--mantine-color-blue-5)',
-                        boxShadow: '0 4px 16px rgba(59, 130, 246, 0.25)',
-                        transform: 'scale(1.01)',
-                    },
-                    '&:active': {
-                        transform: 'scale(0.99)',
-                    },
-                },
-            }}
+            ref={cardRef}
+            role="option"
             tabIndex={0}
-            withBorder
         >
-            <Group
-                align="flex-start"
-                gap="sm"
-                wrap="nowrap"
-            >
-                {/* Selection Checkbox - Only in multi-select mode */}
-                {multiple && (
-                    <Checkbox
-                        checked={isSelected}
-                        color="blue"
-                        onChange={() => onToggleSelect(exercise.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onToggleSelect(exercise.id);
-                            }
-                        }}
-                        size="md"
-                        styles={{
-                            input: {
-                                cursor: 'pointer',
-                            },
-                        }}
-                        tabIndex={0}
+            {/* Exercise Icon */}
+            <div className={classes.exerciseIcon}>
+                <IconBarbell size={24} />
+            </div>
+
+            {/* Exercise Info */}
+            <div className={classes.exerciseInfo}>
+                <span className={classes.exerciseName}>{exercise.name}</span>
+                <div className={classes.exerciseMeta}>
+                    {exercise.muscles && exercise.muscles.length > 0 && (
+                        <span className={classes.muscleTag}>{exercise.muscles.map((m) => m.name).join(', ')}</span>
+                    )}
+                    {exercise.equipment && exercise.equipment.length > 0 && (
+                        <span className={classes.equipmentText}>
+                            {exercise.equipment.map((e) => e.name).join(', ')}
+                        </span>
+                    )}
+                </div>
+                {exercise.description && <span className={classes.exerciseDescription}>{exercise.description}</span>}
+            </div>
+
+            {/* Selection Indicator */}
+            <div className={classes.selectionIndicator}>
+                {isSelected && (
+                    <CheckIcon
+                        size={14}
+                        weight="bold"
                     />
                 )}
-
-                {/* Exercise Icon */}
-                <Avatar
-                    color={typeConfig.badgeColor}
-                    radius="xl"
-                    size="lg"
-                    styles={{
-                        root: {
-                            flexShrink: 0,
-                        },
-                    }}
-                >
-                    <IconComponent
-                        size={24}
-                        stroke={1.5}
-                    />
-                </Avatar>
-
-                {/* Exercise Details */}
-                <Stack
-                    gap="xs"
-                    style={{flex: 1, minWidth: 0}}
-                >
-                    <Text
-                        fw={600}
-                        lineClamp={1}
-                        size="sm"
-                    >
-                        {exercise.name}
-                    </Text>
-
-                    {/* Definition Metadata */}
-                    {definition && (
-                        <Group gap="xs">
-                            {definition.primary_muscle && definition.primary_muscle.length > 0 && (
-                                <Badge
-                                    color="gray"
-                                    size="xs"
-                                    variant="light"
-                                >
-                                    {definition.primary_muscle.join(', ')}
-                                </Badge>
-                            )}
-                            {definition.equipment && definition.equipment.length > 0 && (
-                                <Text
-                                    c="dimmed"
-                                    lineClamp={1}
-                                    size="xs"
-                                >
-                                    Equipment: {definition.equipment.join(', ')}
-                                </Text>
-                            )}
-                        </Group>
-                    )}
-
-                    {/* Instructions/Description */}
-                    {exercise.description && (
-                        <Text
-                            c="dimmed"
-                            lineClamp={2}
-                            size="xs"
-                        >
-                            {exercise.description}
-                        </Text>
-                    )}
-                </Stack>
-
-                {/* Selection Indicator - Only in single-select mode */}
-                {!multiple && isSelected && (
-                    <ActionIcon
-                        color="blue"
-                        radius="xl"
-                        size="lg"
-                        variant="filled"
-                    >
-                        <CheckIcon
-                            size={18}
-                            weight="bold"
-                        />
-                    </ActionIcon>
-                )}
-            </Group>
-        </Card>
+            </div>
+        </div>
     );
 };
 
-interface ExerciseSelectProps {
-    multiple?: boolean;
-    onComplete?: (selectedIds: string[], selectedExercises?: Content[]) => void;
+export interface ExerciseSelectHandle {
+    handleSave: () => void;
 }
 
-/**
- * ExerciseSelect - Main modal content for selecting exercises
- *
- * Best practices implemented:
- * - Sticky header with search and selection count
- * - Fixed bottom CTA with clear actions
- * - Infinite scroll for performance
- * - Accessible keyboard navigation
- * - Clear visual feedback for all interactions
- * - Single-select: Immediate selection, no save button needed
- * - Multi-select: Explicit save action with selection count
- */
-export default function ExerciseSelect(props: ExerciseSelectProps) {
-    const {multiple = true, onComplete} = props;
+interface ExerciseSelectProps {
+    multiple?: boolean;
+    onComplete?: (selectedIds: string[], selectedExercises?: Exercise[]) => void;
+    ref?: React.Ref<ExerciseSelectHandle>;
+    search?: string;
+}
 
-    const [search, setSearch] = useState('');
+export default function ExerciseSelect(props: ExerciseSelectProps) {
+    const {multiple = true, onComplete, search: initialSearch = '', ref} = props;
+
+    const [search, setSearch] = useState(initialSearch);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [contentsMap, setContentsMap] = useState<Record<string, Content>>({});
+    const [exercisesMap, setExercisesMap] = useState<Record<string, Exercise>>({});
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
+    const [recentExerciseIds, setRecentExerciseIds] = useLocalStorage<string[]>({
+        key: 'recent-exercise-ids',
+        defaultValue: [],
+    });
+
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const onSearchChangeDebounced = useDebouncedCallback(setSearch, 300);
 
-    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListContentsInfiniteQuery({
-        scope: 'all',
-        content_type: 'exercise',
-        page_size: 20,
+    // Fetch muscles for the filter dropdown
+    const {data: musclesData} = useListMuscles({});
+    const muscles: Muscle[] = useMemo(() => musclesData?.data || [], [musclesData?.data]);
+
+    // Fetch exercises with filters
+    const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListExercises({
+        per_page: 20,
         search: search || undefined,
+        muscle_ids: selectedMuscleIds.length > 0 ? selectedMuscleIds : undefined,
     });
+
+    // Infinite scroll trigger
+    const {ref: loadMoreRef, entry} = useIntersection({
+        root: listRef.current,
+        threshold: 0.5,
+    });
+
+    useEffect(() => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [entry?.isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const exercises = useMemo(() => {
         if (!data?.pages) return [];
         return data.pages.flatMap((page) => page.records);
     }, [data?.pages]);
 
-    // Update contents map when exercises change
+    // Get recent exercises from the loaded data
+    const recentExercises = useMemo(() => {
+        if (!recentExerciseIds.length) return [];
+        return recentExerciseIds
+            .slice(0, 3)
+            .map((id) => exercisesMap[id])
+            .filter(Boolean);
+    }, [recentExerciseIds, exercisesMap]);
+
+    // Update exercises map when exercises change
     useEffect(() => {
-        const newMap = {...contentsMap};
-        exercises.forEach((exercise) => {
-            newMap[exercise.id] = exercise;
+        setExercisesMap((prev) => {
+            const newMap = {...prev};
+            exercises.forEach((exercise) => {
+                newMap[exercise.id] = exercise;
+            });
+            return newMap;
         });
-        setContentsMap(newMap);
-    }, [exercises, contentsMap]);
+    }, [exercises]);
 
-    const handleToggleSelect = (id: string) => {
-        // For single-select mode, immediately call onComplete and return
-        if (!multiple) {
-            const selectedExercise = contentsMap[id];
-            onComplete?.([id], selectedExercise ? [selectedExercise] : undefined);
-            return;
-        }
+    // Reset focus when search changes
+    useEffect(() => {
+        setFocusedIndex(-1);
+    }, [search, selectedMuscleIds]);
 
-        // For multi-select mode, toggle the selection
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]));
-    };
+    const handleSelect = useCallback(
+        (id: string) => {
+            // Update recent exercises
+            setRecentExerciseIds((prev) => {
+                const filtered = prev.filter((prevId) => prevId !== id);
+                return [id, ...filtered].slice(0, 10);
+            });
 
-    const handleSave = () => {
-        const selectedExercises = selectedIds.map((id) => contentsMap[id]).filter(Boolean);
+            // For single-select mode, immediately call onComplete
+            if (!multiple) {
+                const selectedExercise = exercisesMap[id];
+                onComplete?.([id], selectedExercise ? [selectedExercise] : undefined);
+                return;
+            }
+
+            // For multi-select mode, toggle the selection
+            setSelectedIds((prev) =>
+                prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id],
+            );
+        },
+        [multiple, onComplete, exercisesMap, setRecentExerciseIds],
+    );
+
+    const handleSave = useCallback(() => {
+        const selectedExercises = selectedIds.map((id) => exercisesMap[id]).filter(Boolean);
         onComplete?.(selectedIds, selectedExercises);
+    }, [selectedIds, exercisesMap, onComplete]);
+
+    useImperativeHandle(ref, () => ({
+        handleSave,
+    }));
+
+    const handleToggleMuscle = (muscleId: string) => {
+        setSelectedMuscleIds((prev) =>
+            prev.includes(muscleId) ? prev.filter((id) => id !== muscleId) : [...prev, muscleId],
+        );
     };
+
+    const handleClearMuscleFilters = () => {
+        setSelectedMuscleIds([]);
+    };
+
+    // Keyboard navigation
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (exercises.length === 0) return;
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setFocusedIndex((prev) => Math.min(prev + 1, exercises.length - 1));
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setFocusedIndex((prev) => Math.max(prev - 1, 0));
+                    break;
+                case 'Enter':
+                    if (focusedIndex >= 0 && focusedIndex < exercises.length) {
+                        e.preventDefault();
+                        handleSelect(exercises[focusedIndex].id);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    setFocusedIndex(-1);
+                    searchInputRef.current?.focus();
+                    break;
+            }
+        },
+        [exercises, focusedIndex, handleSelect],
+    );
+
+    const handleSearchKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'ArrowDown' && exercises.length > 0) {
+                e.preventDefault();
+                setFocusedIndex(0);
+            } else if (e.key === 'Enter' && exercises.length > 0 && focusedIndex === -1) {
+                e.preventDefault();
+                handleSelect(exercises[0].id);
+            } else if (e.key === 'Escape') {
+                setSearch('');
+                onSearchChangeDebounced('');
+            }
+        },
+        [exercises, focusedIndex, handleSelect, onSearchChangeDebounced],
+    );
+
+    // Group muscles by muscle group for the dropdown
+    const musclesByGroup = useMemo(() => {
+        const grouped: Record<string, Muscle[]> = {};
+        muscles.forEach((muscle) => {
+            const group = muscle.group || 'Other';
+            if (!grouped[group]) {
+                grouped[group] = [];
+            }
+            grouped[group].push(muscle);
+        });
+        return grouped;
+    }, [muscles]);
 
     return (
-        <Box
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-            }}
-        >
-            {/* Sticky Header */}
-            <Paper
-                p="md"
-                shadow="xs"
-                style={{
-                    borderBottom: '1px solid var(--mantine-color-gray-2)',
-                    flexShrink: 0,
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10,
-                }}
+        <>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div
+                className={classes.container}
+                onKeyDown={handleKeyDown}
             >
-                <Stack gap="md">
-                    <Group
-                        align="center"
-                        justify="space-between"
-                    >
-                        <Title order={4}>Select Exercise{multiple ? 's' : ''}</Title>
-                        {multiple && selectedIds.length > 0 && (
-                            <Badge
-                                color="blue"
-                                size="lg"
-                                variant="filled"
-                            >
-                                {selectedIds.length} selected
-                            </Badge>
-                        )}
-                    </Group>
-
-                    <TextInput
-                        leftSection={<MagnifyingGlassIcon size={18} />}
-                        onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
-                        placeholder="Search exercises..."
-                        rightSection={
-                            search ? (
-                                <ActionIcon
-                                    onClick={() => {
-                                        setSearch('');
-                                        onSearchChangeDebounced('');
-                                    }}
-                                    size="sm"
-                                    variant="subtle"
-                                >
-                                    <XIcon size={16} />
-                                </ActionIcon>
-                            ) : null
-                        }
-                        size="md"
-                    />
-                </Stack>
-            </Paper>
-
-            {/* Scrollable Exercise List */}
-            <Box style={{flex: 1, overflow: 'auto'}}>
-                <Box p="md">
-                    {isLoading ? (
-                        <Center py="xl">
-                            <Loader size="lg" />
-                        </Center>
-                    ) : exercises.length === 0 ? (
-                        <Paper
-                            p="xl"
-                            style={{textAlign: 'center'}}
-                        >
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                No exercises found
-                            </Text>
-                        </Paper>
-                    ) : (
-                        <RecordsList
-                            emptyState={
-                                <Paper
-                                    p="xl"
-                                    style={{textAlign: 'center'}}
-                                >
-                                    <Text
-                                        c="dimmed"
-                                        size="sm"
+                {/* Search Section */}
+                <div className={classes.searchSection}>
+                    <div className={classes.searchInputWrapper}>
+                        <TextInput
+                            onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
+                            onKeyDown={handleSearchKeyDown}
+                            placeholder="Search exercises..."
+                            ref={searchInputRef}
+                            rightSection={
+                                isLoading ? (
+                                    <Loader
+                                        color="blue"
+                                        size="xs"
+                                    />
+                                ) : search ? (
+                                    <button
+                                        aria-label="Clear search"
+                                        onClick={() => {
+                                            setSearch('');
+                                            onSearchChangeDebounced('');
+                                            searchInputRef.current?.focus();
+                                        }}
+                                        style={{background: 'none', border: 'none', cursor: 'pointer', padding: 4}}
+                                        type="button"
                                     >
-                                        No exercises found
-                                    </Text>
-                                </Paper>
+                                        <XIcon size={16} />
+                                    </button>
+                                ) : null
                             }
-                            fetchNextPage={fetchNextPage}
-                            hasNextPage={hasNextPage}
-                            isFetchingNextPage={isFetchingNextPage}
-                            isLoading={isLoading}
-                            records={exercises}
-                            renderItem={(exercise: Content) => (
-                                <ExerciseCard
-                                    exercise={exercise}
-                                    isSelected={selectedIds.includes(exercise.id)}
-                                    key={exercise.id}
-                                    multiple={multiple}
-                                    onToggleSelect={handleToggleSelect}
-                                />
-                            )}
+                            size="md"
                         />
-                    )}
-                </Box>
-            </Box>
+                    </div>
 
-            {/* Fixed Bottom CTA - Only in multi-select mode */}
-            {multiple && (
-                <Box
-                    style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        padding: 'var(--mantine-spacing-md)',
-                        backgroundColor: 'white',
-                        borderTop: '1px solid var(--mantine-color-gray-3)',
-                        zIndex: 100,
-                    }}
-                >
-                    <FixedBottom
-                        isSubmitting={false}
-                        label={
-                            selectedIds.length === 0
-                                ? 'Select at least one'
-                                : `Add ${selectedIds.length} Exercise${selectedIds.length === 1 ? '' : 's'}`
-                        }
-                        onSubmit={handleSave}
-                    />
-                </Box>
-            )}
-        </Box>
+                    {/* Quick Filters */}
+                    <div className={classes.quickFilters}>
+                        {/* Muscle Filter Dropdown */}
+                        <Menu
+                            closeOnItemClick={false}
+                            position="bottom-start"
+                            shadow="md"
+                            width={220}
+                        >
+                            <Menu.Target>
+                                <button
+                                    className={`${classes.muscleFilterButton} ${selectedMuscleIds.length > 0 ? classes.muscleFilterButtonActive : ''}`}
+                                    type="button"
+                                >
+                                    <IconBarbell size={14} />
+                                    <span>Muscles</span>
+                                    {selectedMuscleIds.length > 0 && (
+                                        <span className={classes.muscleCount}>{selectedMuscleIds.length}</span>
+                                    )}
+                                    <IconChevronDown size={14} />
+                                </button>
+                            </Menu.Target>
+
+                            <Menu.Dropdown>
+                                {selectedMuscleIds.length > 0 && (
+                                    <>
+                                        <Menu.Item
+                                            color="red"
+                                            onClick={handleClearMuscleFilters}
+                                        >
+                                            Clear all filters
+                                        </Menu.Item>
+                                        <Menu.Divider />
+                                    </>
+                                )}
+                                {Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
+                                    <div key={group}>
+                                        <Menu.Label>{group}</Menu.Label>
+                                        {groupMuscles.map((muscle) => (
+                                            <Menu.Item
+                                                key={muscle.id}
+                                                leftSection={
+                                                    selectedMuscleIds.includes(muscle.id) ? (
+                                                        <CheckIcon
+                                                            size={14}
+                                                            weight="bold"
+                                                        />
+                                                    ) : (
+                                                        <span style={{width: 14}} />
+                                                    )
+                                                }
+                                                onClick={() => handleToggleMuscle(muscle.id)}
+                                            >
+                                                {muscle.name}
+                                            </Menu.Item>
+                                        ))}
+                                    </div>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
+
+                        <button
+                            className={classes.createButton}
+                            onClick={() => {
+                                // TODO: Open create exercise drawer
+                            }}
+                            type="button"
+                        >
+                            <IconPlus size={14} />
+                            <span>New</span>
+                        </button>
+
+                        {multiple && selectedIds.length > 0 && (
+                            <div className={classes.selectionBadge}>
+                                <CheckIcon
+                                    size={12}
+                                    weight="bold"
+                                />
+                                <span>{selectedIds.length}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Exercises Section */}
+                {!search && selectedMuscleIds.length === 0 && recentExercises.length > 0 && (
+                    <div className={classes.recentSection}>
+                        <div className={classes.sectionHeader}>
+                            <IconHistory size={14} />
+                            <span>Recent</span>
+                        </div>
+                        <div className={classes.recentList}>
+                            {recentExercises.map((exercise) => (
+                                <button
+                                    className={`${classes.recentChip} ${selectedIds.includes(exercise.id) ? classes.recentChipSelected : ''}`}
+                                    key={exercise.id}
+                                    onClick={() => handleSelect(exercise.id)}
+                                    type="button"
+                                >
+                                    <span className={classes.recentChipName}>{exercise.name}</span>
+                                    {exercise.muscles && exercise.muscles.length > 0 && (
+                                        <span className={classes.recentChipMeta}>{exercise.muscles[0].name}</span>
+                                    )}
+                                    {selectedIds.includes(exercise.id) && (
+                                        <CheckIcon
+                                            size={12}
+                                            weight="bold"
+                                        />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Exercise List */}
+                {isLoading && exercises.length === 0 ? (
+                    <div className={classes.loadingContainer}>
+                        <Loader
+                            color="blue"
+                            size="md"
+                        />
+                        <span className={classes.loadingText}>Loading exercises...</span>
+                    </div>
+                ) : exercises.length === 0 ? (
+                    <div className={classes.emptyState}>
+                        <Text className={classes.emptyStateText}>
+                            {search
+                                ? `No exercises found for "${search}"`
+                                : selectedMuscleIds.length > 0
+                                  ? 'No exercises found for selected muscles'
+                                  : 'No exercises yet'}
+                        </Text>
+                        {selectedMuscleIds.length > 0 && (
+                            <button
+                                className={classes.clearFilterButton}
+                                onClick={handleClearMuscleFilters}
+                                type="button"
+                            >
+                                Clear filters
+                            </button>
+                        )}
+                        <button
+                            className={`${classes.createButton} ${classes.emptyStateAction}`}
+                            onClick={() => {
+                                // TODO: Open create exercise drawer
+                            }}
+                            type="button"
+                        >
+                            <IconPlus size={16} />
+                            <span>Create your first exercise</span>
+                        </button>
+                    </div>
+                ) : (
+                    <div
+                        aria-label="Exercise list"
+                        className={classes.exerciseList}
+                        ref={listRef}
+                        role="listbox"
+                    >
+                        {exercises.map((exercise, idx) => (
+                            <ExerciseCard
+                                exercise={exercise}
+                                focused={focusedIndex === idx}
+                                isSelected={selectedIds.includes(exercise.id)}
+                                key={exercise.id}
+                                onSelect={() => handleSelect(exercise.id)}
+                            />
+                        ))}
+
+                        {/* Infinite scroll trigger */}
+                        {hasNextPage && (
+                            <div
+                                className={classes.loadMoreTrigger}
+                                ref={loadMoreRef}
+                            >
+                                {isFetchingNextPage && (
+                                    <Loader
+                                        color="blue"
+                                        size="sm"
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Keyboard hint - only show when actively navigating */}
+                {exercises.length > 0 && focusedIndex >= 0 && (
+                    <Text
+                        c="dimmed"
+                        className={classes.searchHint}
+                        size="xs"
+                    >
+                        ↑↓ navigate • Enter select • Esc cancel
+                    </Text>
+                )}
+            </div>
+        </>
     );
 }

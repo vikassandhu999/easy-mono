@@ -1,1 +1,0 @@
-export {ContentTypeFilter} from './ContentTypeFilter';

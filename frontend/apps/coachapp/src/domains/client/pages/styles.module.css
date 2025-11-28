@@ -1,0 +1,307 @@
+/**
+ * Client Pages Styles
+ *
+ * Mobile-first, space-efficient client filter/selector following the CoachEasy design system.
+ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  background: var(--surface-primary);
+}
+
+/* ============================================
+   STATUS TABS (Segmented Control)
+   ============================================ */
+
+.statusTabs {
+  display: flex;
+  background: var(--mantine-color-gray-1);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.statusTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.statusTab:hover {
+  color: var(--mantine-color-gray-8);
+}
+
+.statusTabActive {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================
+   SEARCH INPUT
+   ============================================ */
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  height: var(--input-height-sm);
+  padding: 0 var(--space-3);
+  padding-left: 36px;
+  padding-right: 36px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.searchInput::placeholder {
+  color: var(--mantine-color-gray-5);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--mantine-color-blue-4);
+  box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mantine-color-gray-5);
+  pointer-events: none;
+}
+
+.clearButton {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--mantine-color-gray-2);
+  border: none;
+  border-radius: var(--radius-full);
+  color: var(--mantine-color-gray-6);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.clearButton:hover {
+  background: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (min-width: 768px) {
+  .container {
+    gap: var(--space-3);
+  }
+
+  .statusTab {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-base);
+  }
+
+  .searchWrapper {
+    max-width: 320px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .statusTab,
+  .searchInput,
+  .clearButton,
+  .chip {
+    transition: none;
+  }
+}
+
+/* ============================================
+   CHIPS (for ClientViewPage)
+   ============================================ */
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.chipsMobile {
+  gap: var(--space-1);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-6);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-4);
+}
+
+/* Active state */
+.chipActive {
+  font-weight: var(--font-semibold);
+}
+
+/* Color variations for active chips */
+.chipBlue {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-3);
+  color: var(--mantine-color-blue-7);
+}
+
+.chipBlue:hover {
+  background: var(--mantine-color-blue-1);
+}
+
+.chipGreen {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-3);
+  color: var(--mantine-color-green-7);
+}
+
+.chipGreen:hover {
+  background: var(--mantine-color-green-1);
+}
+
+.chipCyan {
+  background: var(--mantine-color-cyan-0);
+  border-color: var(--mantine-color-cyan-3);
+  color: var(--mantine-color-cyan-7);
+}
+
+.chipCyan:hover {
+  background: var(--mantine-color-cyan-1);
+}
+
+.chipOrange {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-3);
+  color: var(--mantine-color-orange-7);
+}
+
+.chipOrange:hover {
+  background: var(--mantine-color-orange-1);
+}
+
+/* Dot indicator for chips */
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.chipActive .chipDot {
+  opacity: 1;
+}
+
+/* Responsive adjustments for chips */
+@media (min-width: 768px) {
+  .chip {
+    padding: var(--space-2) var(--space-4);
+  }
+}
+
+/* ============================================
+   PLAN TABS (for PlansTab in ClientViewPage)
+   ============================================ */
+
+.planTabs {
+  display: flex;
+  background: var(--mantine-color-gray-1);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.planTab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planTab:hover {
+  color: var(--mantine-color-gray-8);
+}
+
+.planTabActive {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planTab {
+    transition: none;
+  }
+}

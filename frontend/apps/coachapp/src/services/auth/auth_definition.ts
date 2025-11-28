@@ -91,10 +91,16 @@ export interface RefreshTokenResponse {
 
 // ------ User Profile
 
+export interface CoachStats {
+    total_clients: number;
+    total_plans: number;
+}
+
 export interface UserProfileResponse {
     coach: {
         id: string;
         business_id: string;
+        stats: CoachStats;
     };
     user: {
         id: string;

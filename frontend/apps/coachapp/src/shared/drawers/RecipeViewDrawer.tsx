@@ -1,5 +1,5 @@
-import {Badge, Box, Button, Divider, Group, Paper, Stack, Table, Text, Title} from '@mantine/core';
-import {IconClock, IconPencil, IconUsers} from '@tabler/icons-react';
+import {Loader} from '@mantine/core';
+import {IconAlertCircle, IconClock, IconPencil, IconUsers} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -8,7 +8,7 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useGetRecipe} from '@/services/recipes';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 
-import {DrawerErrorState, DrawerLoadingState} from './shared';
+import classes from './RecipeViewDrawer.module.css';
 
 dayjs.extend(relativeTime);
 
@@ -41,7 +41,12 @@ const RecipeViewDrawer = () => {
     const renderLoading = () => (
         <AutoDrawer
             actions={null}
-            content={<DrawerLoadingState message="Loading recipe..." />}
+            content={
+                <div className={classes.loadingContainer}>
+                    <Loader size="md" />
+                    <span className={classes.loadingText}>Loading recipe...</span>
+                </div>
+            }
             onClose={handleClose}
             title="Loading..."
         />
@@ -52,11 +57,23 @@ const RecipeViewDrawer = () => {
         <AutoDrawer
             actions={null}
             content={
-                <DrawerErrorState
-                    message={error ? 'An error occurred while loading the recipe.' : 'Recipe not found.'}
-                    onRetry={refetch}
-                    title="Failed to load recipe"
-                />
+                <div className={classes.errorContainer}>
+                    <IconAlertCircle
+                        className={classes.errorIcon}
+                        size={48}
+                    />
+                    <h3 className={classes.errorTitle}>Failed to load recipe</h3>
+                    <p className={classes.errorMessage}>
+                        {error ? 'An error occurred while loading the recipe.' : 'Recipe not found.'}
+                    </p>
+                    <button
+                        className={classes.retryButton}
+                        onClick={() => refetch()}
+                        type="button"
+                    >
+                        Try Again
+                    </button>
+                </div>
             }
             onClose={handleClose}
             title="Error"
@@ -74,284 +91,163 @@ const RecipeViewDrawer = () => {
             recipe.total_fats ||
             recipe.total_fiber;
 
+        const getStatusClass = () => {
+            switch (recipe.status) {
+                case 'active':
+                    return classes.statusActive;
+                case 'draft':
+                    return classes.statusDraft;
+                default:
+                    return classes.statusArchived;
+            }
+        };
+
         return (
             <AutoDrawer
                 actions={
-                    <Group>
-                        <Button
-                            leftSection={<IconPencil size={12} />}
-                            onClick={handleEdit}
-                            radius="xl"
-                            size="xs"
-                            variant="light"
-                        >
-                            Edit
-                        </Button>
-                    </Group>
+                    <button
+                        className={classes.editButton}
+                        onClick={handleEdit}
+                        type="button"
+                    >
+                        <IconPencil size={14} />
+                        Edit
+                    </button>
                 }
                 content={
-                    <Stack gap="lg">
-                        {/* Header */}
-                        <Box>
-                            <Badge
-                                color={
-                                    recipe.status === 'active' ? 'green' : recipe.status === 'draft' ? 'gray' : 'red'
-                                }
-                                variant="light"
-                            >
-                                {recipe.status}
-                            </Badge>
-                            <Group
-                                gap="xs"
-                                mb="xs"
-                            >
-                                <Title order={2}>{recipe.name}</Title>
-                            </Group>
-
-                            {recipe.description && (
-                                <Text
-                                    c="dimmed"
-                                    size="sm"
-                                >
-                                    {recipe.description}
-                                </Text>
-                            )}
+                    <div className={classes.container}>
+                        {/* Header Section */}
+                        <div className={classes.headerSection}>
+                            <span className={`${classes.statusBadge} ${getStatusClass()}`}>{recipe.status}</span>
+                            <h1 className={classes.recipeName}>{recipe.name}</h1>
+                            {recipe.description && <p className={classes.recipeDescription}>{recipe.description}</p>}
 
                             {/* Meta info */}
-                            <Group
-                                gap="lg"
-                                mt="md"
-                            >
+                            <div className={classes.metaRow}>
                                 {recipe.prep_time_minutes && (
-                                    <Group gap="xs">
-                                        <IconClock size={18} />
-                                        <Text size="sm">{recipe.prep_time_minutes} min</Text>
-                                    </Group>
+                                    <div className={classes.metaItem}>
+                                        <IconClock size={16} />
+                                        <span>{recipe.prep_time_minutes} min</span>
+                                    </div>
                                 )}
                                 {recipe.servings && (
-                                    <Group gap="xs">
-                                        <IconUsers size={18} />
-                                        <Text size="sm">{recipe.servings} servings</Text>
-                                    </Group>
+                                    <div className={classes.metaItem}>
+                                        <IconUsers size={16} />
+                                        <span>{recipe.servings} servings</span>
+                                    </div>
                                 )}
-                            </Group>
-                        </Box>
+                            </div>
+                        </div>
 
-                        <Divider />
+                        <div className={classes.divider} />
 
-                        <Box>
-                            <Title
-                                mb="sm"
-                                order={4}
-                            >
-                                Ingredients
-                            </Title>
-                            {/* Ingredients */}
+                        {/* Ingredients Section */}
+                        <div className={classes.section}>
+                            <div className={classes.sectionHeader}>
+                                <h2 className={classes.sectionTitle}>Ingredients</h2>
+                            </div>
                             {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
-                                <Table
-                                    highlightOnHover
-                                    striped
-                                    withColumnBorders
-                                    withTableBorder
-                                >
-                                    <Table.Thead>
-                                        <Table.Tr>
-                                            <Table.Th>Ingredient</Table.Th>
-                                            <Table.Th>Quantity</Table.Th>
-                                        </Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
-                                        {recipe.recipe_ingredients.map((ingredient, index) => (
-                                            <Table.Tr key={index}>
-                                                <Table.Td>
-                                                    <Text size="sm">{ingredient?.ingredient?.name || 'Unknown'}</Text>
-                                                </Table.Td>
-                                                <Table.Td>
-                                                    <Text
-                                                        fw={500}
-                                                        size="sm"
-                                                    >
-                                                        {ingredient.quantity_as_text || '-'}
-                                                    </Text>
-                                                </Table.Td>
-                                            </Table.Tr>
-                                        ))}
-                                    </Table.Tbody>
-                                </Table>
+                                <div className={classes.ingredientsList}>
+                                    {recipe.recipe_ingredients.map((ingredient, index) => (
+                                        <div
+                                            className={classes.ingredientRow}
+                                            key={index}
+                                        >
+                                            <span className={classes.ingredientName}>
+                                                {ingredient?.ingredient?.name || 'Unknown'}
+                                            </span>
+                                            <span className={classes.ingredientQuantity}>
+                                                {ingredient.quantity_as_text || '-'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             ) : (
-                                <Text
-                                    fs="italic"
-                                    size="sm"
-                                >
-                                    Not added yet. You can add by clicking on edit.
-                                </Text>
+                                <div className={classes.emptyState}>
+                                    No ingredients added yet. Click Edit to add some.
+                                </div>
                             )}
-                        </Box>
+                        </div>
 
-                        {/* Nutrition */}
-                        <Divider />
-                        <Box>
-                            <Title
-                                mb="sm"
-                                order={4}
-                            >
-                                Nutrition Information
-                            </Title>
+                        <div className={classes.divider} />
+
+                        {/* Nutrition Section */}
+                        <div className={classes.section}>
+                            <div className={classes.sectionHeader}>
+                                <h2 className={classes.sectionTitle}>Nutrition</h2>
+                            </div>
                             {hasNutrition ? (
-                                <Paper
-                                    p="md"
-                                    radius="md"
-                                    style={{backgroundColor: '#f8f9fa'}}
-                                    withBorder
-                                >
-                                    <Group
-                                        gap="xl"
-                                        wrap="wrap"
-                                    >
-                                        {recipe.total_calories && (
-                                            <Box>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="xs"
-                                                >
-                                                    Calories
-                                                </Text>
-                                                <Text
-                                                    fw={600}
-                                                    size="lg"
-                                                >
-                                                    {recipe.total_calories}
-                                                </Text>
-                                            </Box>
-                                        )}
-                                        {recipe.total_protein && (
-                                            <Box>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="xs"
-                                                >
-                                                    Protein
-                                                </Text>
-                                                <Text
-                                                    fw={600}
-                                                    size="lg"
-                                                >
-                                                    {recipe.total_protein}g
-                                                </Text>
-                                            </Box>
-                                        )}
-                                        {recipe.total_carbohydrates && (
-                                            <Box>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="xs"
-                                                >
-                                                    Carbs
-                                                </Text>
-                                                <Text
-                                                    fw={600}
-                                                    size="lg"
-                                                >
-                                                    {recipe.total_carbohydrates}g
-                                                </Text>
-                                            </Box>
-                                        )}
-                                        {recipe.total_fats && (
-                                            <Box>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="xs"
-                                                >
-                                                    Fats
-                                                </Text>
-                                                <Text
-                                                    fw={600}
-                                                    size="lg"
-                                                >
-                                                    {recipe.total_fats}g
-                                                </Text>
-                                            </Box>
-                                        )}
-                                        {recipe.total_fiber && (
-                                            <Box>
-                                                <Text
-                                                    c="dimmed"
-                                                    size="xs"
-                                                >
-                                                    Fiber
-                                                </Text>
-                                                <Text
-                                                    fw={600}
-                                                    size="lg"
-                                                >
-                                                    {recipe.total_fiber}g
-                                                </Text>
-                                            </Box>
-                                        )}
-                                    </Group>
-                                </Paper>
+                                <div className={classes.nutritionGrid}>
+                                    {recipe.total_calories && (
+                                        <div className={`${classes.nutritionCard} ${classes.nutritionCardCalories}`}>
+                                            <span className={classes.nutritionLabel}>Calories</span>
+                                            <span className={classes.nutritionValue}>{recipe.total_calories}</span>
+                                        </div>
+                                    )}
+                                    {recipe.total_protein && (
+                                        <div className={classes.nutritionCard}>
+                                            <span className={classes.nutritionLabel}>Protein</span>
+                                            <span className={classes.nutritionValue}>{recipe.total_protein}g</span>
+                                        </div>
+                                    )}
+                                    {recipe.total_carbohydrates && (
+                                        <div className={classes.nutritionCard}>
+                                            <span className={classes.nutritionLabel}>Carbs</span>
+                                            <span className={classes.nutritionValue}>
+                                                {recipe.total_carbohydrates}g
+                                            </span>
+                                        </div>
+                                    )}
+                                    {recipe.total_fats && (
+                                        <div className={classes.nutritionCard}>
+                                            <span className={classes.nutritionLabel}>Fats</span>
+                                            <span className={classes.nutritionValue}>{recipe.total_fats}g</span>
+                                        </div>
+                                    )}
+                                    {recipe.total_fiber && (
+                                        <div className={classes.nutritionCard}>
+                                            <span className={classes.nutritionLabel}>Fiber</span>
+                                            <span className={classes.nutritionValue}>{recipe.total_fiber}g</span>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
-                                <Text
-                                    fs="italic"
-                                    size="sm"
-                                >
-                                    Not added yet. You can add by clicking on edit.
-                                </Text>
+                                <div className={classes.emptyState}>
+                                    No nutrition info added yet. Click Edit to add some.
+                                </div>
                             )}
-                        </Box>
+                        </div>
 
-                        {/* Instructions */}
-                        <Divider />
+                        <div className={classes.divider} />
 
-                        <Box>
-                            <Title
-                                mb="sm"
-                                order={4}
-                            >
-                                Instructions
-                            </Title>
+                        {/* Instructions Section */}
+                        <div className={classes.section}>
+                            <div className={classes.sectionHeader}>
+                                <h2 className={classes.sectionTitle}>Instructions</h2>
+                            </div>
                             {recipe.instructions &&
                             Array.isArray(recipe.instructions) &&
                             recipe.instructions.length > 0 ? (
-                                <Stack gap="xs">
+                                <div className={classes.instructionsList}>
                                     {recipe.instructions.map((instruction, index) => (
-                                        <Group
-                                            gap="xs"
+                                        <div
+                                            className={classes.instructionItem}
                                             key={index}
-                                            wrap="nowrap"
                                         >
-                                            <Badge
-                                                color="orange"
-                                                variant="light"
-                                            >
-                                                {index + 1}
-                                            </Badge>
-                                            <Text
-                                                size="sm"
-                                                style={{whiteSpace: 'pre-wrap'}}
-                                            >
-                                                {instruction}
-                                            </Text>
-                                        </Group>
+                                            <span className={classes.instructionNumber}>{index + 1}</span>
+                                            <span className={classes.instructionText}>{instruction}</span>
+                                        </div>
                                     ))}
-                                </Stack>
+                                </div>
                             ) : recipe.instructions_as_text ? (
-                                <Text
-                                    size="sm"
-                                    style={{whiteSpace: 'pre-wrap'}}
-                                >
-                                    {recipe.instructions_as_text}
-                                </Text>
+                                <p className={classes.instructionsPlainText}>{recipe.instructions_as_text}</p>
                             ) : (
-                                <Text
-                                    fs="italic"
-                                    size="sm"
-                                >
-                                    Not added yet. You can add by clicking on edit.
-                                </Text>
+                                <div className={classes.emptyState}>
+                                    No instructions added yet. Click Edit to add some.
+                                </div>
                             )}
-                        </Box>
-                    </Stack>
+                        </div>
+                    </div>
                 }
                 onClose={handleClose}
                 title={recipe.name || 'Recipe Details'}

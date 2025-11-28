@@ -1,16 +1,28 @@
 /**
- * CSS Modules Theme Implementation
+ * CoachEasy Design System
  *
- * This file provides a CSS modules-based approach to theming Mantine components,
- * replacing the previous inline styles approach for better maintainability.
+ * A production-ready, mobile-first Mantine theme for coaching/fitness applications.
  *
- * Following UX/UI Guidelines:
- * - Single brand color principle
- * - Accessible contrast ratios (WCAG 2.1 AA)
- * - Consistent spacing system (8pt grid)
- * - Mobile-first responsive design
- * - Minimal cognitive load
+ * Key Features:
+ * - Mobile-first responsive design with 44px minimum touch targets
+ * - WCAG 2.1 AA accessible color contrast ratios
+ * - 4px/8px spacing grid for visual consistency
+ * - Performance-optimized CSS custom properties
+ * - Comprehensive component styling for Mantine v7
+ *
+ * Usage:
+ * ```tsx
+ * import { MantineProvider } from '@mantine/core';
+ * import { theme } from './theme';
+ *
+ * function App() {
+ *   return (
+ *     <MantineProvider theme={theme}>
+ *       <YourApp />
+ *     </MantineProvider>
+ *   );
+ * }
+ * ```
  */
 
-// Export the theme that uses CSS modules
 export {theme} from './theme-with-css-modules';

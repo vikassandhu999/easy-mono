@@ -1,10 +1,11 @@
-import {Divider, LoadingOverlay} from '@mantine/core';
+import {LoadingOverlay} from '@mantine/core';
 
 import {Meal} from '@/services/nutrition_plans';
 import RecipeSelectDrawer from '@/shared/RecipeSelect/RecipeSelectDrawer';
 
 import MealCard from './MealCard';
 import {MEAL_TYPES} from './mealTypes.config';
+import classes from './styles.module.css';
 import useDayMeals from './useDayMeals';
 
 type DayMealsViewProps = {
@@ -28,7 +29,7 @@ const DayMealsView = ({currentDay, planId, meals}: DayMealsViewProps) => {
     if (!effectivePlanId) return null;
 
     return (
-        <>
+        <div className={classes.loadingContainer}>
             <LoadingOverlay visible={isLoading} />
             {isRecipeDrawerOpen && (
                 <RecipeSelectDrawer
@@ -39,23 +40,23 @@ const DayMealsView = ({currentDay, planId, meals}: DayMealsViewProps) => {
                     }}
                 />
             )}
-            {MEAL_TYPES.map((mealType, idx) => {
-                const meal = mealsByDaytime[mealType.value];
+            <div className={classes.mealsContainer}>
+                {MEAL_TYPES.map((mealType) => {
+                    const meal = mealsByDaytime[mealType.value];
 
-                return (
-                    <div key={mealType.value}>
+                    return (
                         <MealCard
+                            key={mealType.value}
                             meal={meal}
                             mealType={mealType}
                             nutritionPlanId={effectivePlanId}
                             onAddRecipe={handleAddRecipe}
                             onDeleteRecipe={deleteMealItem}
                         />
-                        {idx < MEAL_TYPES.length - 1 && <Divider />}
-                    </div>
-                );
-            })}
-        </>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 

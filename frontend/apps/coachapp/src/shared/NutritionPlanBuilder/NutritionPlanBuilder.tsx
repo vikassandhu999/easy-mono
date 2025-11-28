@@ -1,4 +1,4 @@
-import {LoadingOverlay, Stack} from '@mantine/core';
+import {LoadingOverlay} from '@mantine/core';
 import {useEffect, useRef, useState} from 'react';
 import {useSearchParams} from 'react-router';
 
@@ -9,7 +9,7 @@ import DaySelector from './DaySelector';
 
 const NutritionPlanBuilder = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const isUserInteraction = useRef(false); // Track if change is from user click
+    const isUserInteraction = useRef(false);
 
     // Read day from params, default to 1
     const dayFromParams = parseInt(searchParams.get('day_number') || '1', 10);
@@ -21,20 +21,19 @@ const NutritionPlanBuilder = () => {
         skip: !planId,
     });
 
-    // Sync currentDay with URL params ONLY when changed externally (browser nav, etc.)
+    // Sync currentDay with URL params when changed externally
     useEffect(() => {
         const paramDay = parseInt(searchParams.get('day_number') || '1', 10);
         if (paramDay !== currentDay && !isUserInteraction.current) {
             setCurrentDay(paramDay);
         }
-        // Reset flag after sync
         isUserInteraction.current = false;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
     // Update URL when day changes
     const handleDayChange = (day: number) => {
-        isUserInteraction.current = true; // Mark as user interaction
+        isUserInteraction.current = true;
         setCurrentDay(day);
         setSearchParams((prev) => {
             const newParams = new URLSearchParams(prev);
@@ -44,7 +43,17 @@ const NutritionPlanBuilder = () => {
     };
 
     return (
-        <Stack style={{width: '100%', overflow: 'hidden', position: 'relative'}}>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden',
+                position: 'relative',
+                background: 'var(--surface-secondary)',
+            }}
+        >
             <LoadingOverlay visible={queryLoading} />
             <DaySelector
                 currentDay={currentDay}
@@ -52,12 +61,20 @@ const NutritionPlanBuilder = () => {
                 shouldAutoScroll={!isUserInteraction.current}
                 weeks={plan?.duration_weeks ?? 3}
             />
-            <DayMealsView
-                currentDay={currentDay}
-                meals={plan?.meals || []}
-                planId={plan?.id ?? null}
-            />
-        </Stack>
+            <div
+                style={{
+                    flex: 1,
+                    overflow: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                }}
+            >
+                <DayMealsView
+                    currentDay={currentDay}
+                    meals={plan?.meals || []}
+                    planId={plan?.id ?? null}
+                />
+            </div>
+        </div>
     );
 };
 

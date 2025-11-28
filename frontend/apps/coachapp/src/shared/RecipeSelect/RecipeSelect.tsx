@@ -1,170 +1,100 @@
-import {
-    ActionIcon,
-    Badge,
-    Box,
-    Button,
-    Card,
-    Center,
-    Group,
-    Loader,
-    Paper,
-    Stack,
-    Text,
-    TextInput,
-} from '@mantine/core';
-import {useDebouncedCallback} from '@mantine/hooks';
+import {Loader, Text, TextInput} from '@mantine/core';
+import {useDebouncedCallback, useIntersection, useLocalStorage} from '@mantine/hooks';
 import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
-import {IconPlus} from '@tabler/icons-react';
-import {useEffect, useImperativeHandle, useMemo, useState} from 'react';
+import {IconBolt, IconClock, IconFlame, IconHistory, IconLeaf, IconPlus, IconUsers} from '@tabler/icons-react';
+import {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 
 import RecipeSampleImage from '@/../public/recipe_sample.jpg';
 import {Recipe, useListRecipes} from '@/services/recipes';
 import RecipeCreateDrawer from '@/shared/drawers/RecipeCreateDrawer';
 
-import RecordsList from '../layouts/RecordsList';
+import classes from './styles.module.css';
+
+// Quick filter definitions
+type QuickFilter = 'highProtein' | 'lowCal' | 'quick' | null;
+
+const QUICK_FILTERS: {id: QuickFilter; label: string; icon: React.ReactNode}[] = [
+    {id: 'quick', label: 'Quick', icon: <IconBolt size={14} />},
+    {id: 'lowCal', label: 'Low cal', icon: <IconLeaf size={14} />},
+    {id: 'highProtein', label: 'High protein', icon: <IconFlame size={14} />},
+];
 
 interface RecipeCardProps {
+    focused: boolean;
     isSelected: boolean;
-    multiple: boolean;
-    onToggleSelect: (id: string) => void;
+    onSelect: () => void;
     recipe: Recipe;
 }
 
-const RecipeCard = ({recipe, isSelected, multiple, onToggleSelect}: RecipeCardProps) => {
+const RecipeCard = ({recipe, isSelected, onSelect, focused}: RecipeCardProps) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    // Scroll into view when focused
+    useEffect(() => {
+        if (focused && cardRef.current) {
+            cardRef.current.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+    }, [focused]);
+
     return (
-        <Card
-            aria-label={`${isSelected ? 'Deselect' : 'Select'} ${recipe.name}: ${recipe.description || ''}`}
-            onClick={() => onToggleSelect(recipe.id)}
-            p="sm"
-            role="button"
-            style={{
-                backgroundColor: isSelected ? 'var(--mantine-color-blue-0)' : 'white',
-                borderColor: isSelected ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
-                borderWidth: isSelected ? 2 : 1,
-                borderRadius: 8,
-                boxShadow: isSelected ? '0 2px 12px rgba(59, 130, 246, 0.2)' : 'none',
-                cursor: 'pointer',
-                transform: 'scale(1)',
-                transition: 'all 200ms ease',
+        <div
+            aria-selected={isSelected}
+            className={`${classes.recipeCard} ${isSelected ? classes.selected : ''} ${focused ? classes.focused : ''}`}
+            onClick={onSelect}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect();
+                }
             }}
-            styles={{
-                root: {
-                    '&:hover': {
-                        backgroundColor: multiple
-                            ? isSelected
-                                ? 'var(--mantine-color-blue-1)'
-                                : 'var(--mantine-color-gray-0)'
-                            : 'var(--mantine-color-blue-0)',
-                        borderColor: 'var(--mantine-color-blue-5)',
-                        boxShadow: '0 4px 16px rgba(59, 130, 246, 0.25)',
-                        transform: 'scale(1.01)',
-                    },
-                    '&:active': {
-                        transform: 'scale(0.99)',
-                    },
-                },
-            }}
+            ref={cardRef}
+            role="option"
             tabIndex={0}
-            withBorder
         >
-            <Group
-                align="flex-start"
-                gap="sm"
-                wrap="nowrap"
-            >
-                {/* Recipe Image */}
-                <Box
-                    style={{
-                        flexShrink: 0,
-                        width: 80,
-                        height: 80,
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <img
-                        alt={recipe.name}
-                        src={RecipeSampleImage}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                        }}
-                    />
-                </Box>
+            {/* Recipe Image */}
+            <div className={classes.recipeImage}>
+                <img
+                    alt=""
+                    src={RecipeSampleImage}
+                />
+            </div>
 
-                {/* Recipe Details */}
-                <Stack
-                    gap="xs"
-                    style={{flex: 1, minWidth: 0}}
-                >
-                    <Text
-                        fw={600}
-                        lineClamp={1}
-                        size="sm"
-                    >
-                        {recipe.name}
-                    </Text>
-
-                    {/* Recipe Metadata */}
-                    {recipe.description && (
-                        <Text
-                            c="dimmed"
-                            lineClamp={2}
-                            size="xs"
-                        >
-                            {recipe.description}
-                        </Text>
+            {/* Recipe Info */}
+            <div className={classes.recipeInfo}>
+                <span className={classes.recipeName}>{recipe.name}</span>
+                <div className={classes.recipeMeta}>
+                    {recipe.total_calories && (
+                        <span>
+                            <IconFlame size={12} />
+                            {parseFloat(recipe.total_calories).toFixed(0)} cal
+                        </span>
                     )}
+                    {recipe.prep_time_minutes && (
+                        <span>
+                            <IconClock size={12} />
+                            {recipe.prep_time_minutes}m
+                        </span>
+                    )}
+                    {recipe.servings && (
+                        <span>
+                            <IconUsers size={12} />
+                            {recipe.servings}
+                        </span>
+                    )}
+                </div>
+                {recipe.description && <span className={classes.recipeDescription}>{recipe.description}</span>}
+            </div>
 
-                    {/* Nutritional and Prep Badges */}
-                    <Group gap="xs">
-                        {recipe.total_calories && (
-                            <Badge
-                                color="blue"
-                                size="xs"
-                                variant="light"
-                            >
-                                {parseFloat(recipe.total_calories).toFixed(0)} cal
-                            </Badge>
-                        )}
-                        {recipe.prep_time_minutes && (
-                            <Badge
-                                color="grape"
-                                size="xs"
-                                variant="light"
-                            >
-                                {recipe.prep_time_minutes} min
-                            </Badge>
-                        )}
-                        {recipe.servings && (
-                            <Badge
-                                color="green"
-                                size="xs"
-                                variant="light"
-                            >
-                                {recipe.servings} servings
-                            </Badge>
-                        )}
-                    </Group>
-                </Stack>
-
-                {/* Selection Indicator - Only in single-select mode */}
-                {!multiple && isSelected && (
-                    <ActionIcon
-                        color="blue"
-                        radius="xl"
-                        size="lg"
-                        variant="filled"
-                    >
-                        <CheckIcon
-                            size={18}
-                            weight="bold"
-                        />
-                    </ActionIcon>
+            {/* Selection Indicator */}
+            <div className={classes.selectionIndicator}>
+                {isSelected && (
+                    <CheckIcon
+                        size={14}
+                        weight="bold"
+                    />
                 )}
-            </Group>
-        </Card>
+            </div>
+        </div>
     );
 };
 
@@ -186,6 +116,15 @@ export default function RecipeSelect(props: RecipeSelectProps) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [recipesMap, setRecipesMap] = useState<Record<string, Recipe>>({});
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [activeFilter, setActiveFilter] = useState<QuickFilter>(null);
+    const [recentRecipeIds, setRecentRecipeIds] = useLocalStorage<string[]>({
+        key: 'recent-recipe-ids',
+        defaultValue: [],
+    });
+
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const onSearchChangeDebounced = useDebouncedCallback(setSearch, 300);
 
@@ -194,156 +133,355 @@ export default function RecipeSelect(props: RecipeSelectProps) {
         search: search || undefined,
     });
 
+    // Infinite scroll trigger
+    const {ref: loadMoreRef, entry} = useIntersection({
+        root: listRef.current,
+        threshold: 0.5,
+    });
+
+    useEffect(() => {
+        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [entry?.isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
     const recipes = useMemo(() => {
         if (!data?.pages) return [];
-        return data.pages.flatMap((page) => page.records);
-    }, [data?.pages]);
+        let allRecipes = data.pages.flatMap((page) => page.records);
+
+        // Apply quick filters client-side
+        if (activeFilter) {
+            allRecipes = allRecipes.filter((recipe) => {
+                switch (activeFilter) {
+                    case 'quick':
+                        return recipe.prep_time_minutes && recipe.prep_time_minutes <= 15;
+                    case 'lowCal':
+                        return recipe.total_calories && parseFloat(recipe.total_calories) <= 400;
+                    case 'highProtein':
+                        return recipe.total_protein && parseFloat(recipe.total_protein) >= 25;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        return allRecipes;
+    }, [data?.pages, activeFilter]);
+
+    // Get recent recipes from the loaded data
+    const recentRecipes = useMemo(() => {
+        if (!recentRecipeIds.length) return [];
+        return recentRecipeIds
+            .slice(0, 3)
+            .map((id) => recipesMap[id])
+            .filter(Boolean);
+    }, [recentRecipeIds, recipesMap]);
 
     // Update recipes map when recipes change
     useEffect(() => {
-        const newMap = {...recipesMap};
-        recipes.forEach((recipe) => {
-            newMap[recipe.id] = recipe;
+        setRecipesMap((prev) => {
+            const newMap = {...prev};
+            recipes.forEach((recipe) => {
+                newMap[recipe.id] = recipe;
+            });
+            return newMap;
         });
-        setRecipesMap(newMap);
-    }, [recipes, recipesMap]);
+    }, [recipes]);
 
-    const handleToggleSelect = (id: string) => {
-        // For single-select mode, immediately call onComplete and return
-        if (!multiple) {
-            const selectedRecipe = recipesMap[id];
-            onComplete?.([id], selectedRecipe ? [selectedRecipe] : undefined);
-            return;
-        }
+    // Reset focus when search changes
+    useEffect(() => {
+        setFocusedIndex(-1);
+    }, [search]);
 
-        // For multi-select mode, toggle the selection
-        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id]));
-    };
+    const handleSelect = useCallback(
+        (id: string) => {
+            // Update recent recipes
+            setRecentRecipeIds((prev) => {
+                const filtered = prev.filter((prevId) => prevId !== id);
+                return [id, ...filtered].slice(0, 10);
+            });
 
-    const handleSave = () => {
+            // For single-select mode, immediately call onComplete
+            if (!multiple) {
+                const selectedRecipe = recipesMap[id];
+                onComplete?.([id], selectedRecipe ? [selectedRecipe] : undefined);
+                return;
+            }
+
+            // For multi-select mode, toggle the selection
+            setSelectedIds((prev) =>
+                prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id],
+            );
+        },
+        [multiple, onComplete, recipesMap, setRecentRecipeIds],
+    );
+
+    const handleSave = useCallback(() => {
         const selectedRecipes = selectedIds.map((id) => recipesMap[id]).filter(Boolean);
         onComplete?.(selectedIds, selectedRecipes);
-    };
+    }, [selectedIds, recipesMap, onComplete]);
 
     useImperativeHandle(ref, () => ({
         handleSave,
     }));
+
+    // Keyboard navigation
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (recipes.length === 0) return;
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setFocusedIndex((prev) => Math.min(prev + 1, recipes.length - 1));
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setFocusedIndex((prev) => Math.max(prev - 1, 0));
+                    break;
+                case 'Enter':
+                    if (focusedIndex >= 0 && focusedIndex < recipes.length) {
+                        e.preventDefault();
+                        handleSelect(recipes[focusedIndex].id);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    setFocusedIndex(-1);
+                    searchInputRef.current?.focus();
+                    break;
+            }
+        },
+        [recipes, focusedIndex, handleSelect],
+    );
+
+    const handleSearchKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'ArrowDown' && recipes.length > 0) {
+                e.preventDefault();
+                setFocusedIndex(0);
+            } else if (e.key === 'Enter' && recipes.length > 0 && focusedIndex === -1) {
+                e.preventDefault();
+                // Select first recipe on Enter if nothing focused
+                handleSelect(recipes[0].id);
+            } else if (e.key === 'Escape') {
+                setSearch('');
+                onSearchChangeDebounced('');
+            }
+        },
+        [recipes, focusedIndex, handleSelect, onSearchChangeDebounced],
+    );
+
+    const handleRecipeCreated = useCallback(
+        (recipeId: string) => {
+            setIsCreateDrawerOpen(false);
+            if (!multiple) {
+                onComplete?.([recipeId]);
+            } else {
+                setSelectedIds((prev) => [...prev, recipeId]);
+            }
+        },
+        [multiple, onComplete],
+    );
 
     return (
         <>
             {isCreateDrawerOpen && (
                 <RecipeCreateDrawer
                     onClose={() => setIsCreateDrawerOpen(false)}
-                    onSuccess={(recipeId: string) => {
-                        setIsCreateDrawerOpen(false);
-                        // Optionally auto-select the newly created recipe
-                        if (!multiple) {
-                            // For single select, immediately complete with new recipe
-                            onComplete?.([recipeId]);
-                        } else {
-                            // For multi-select, add to selection
-                            setSelectedIds((prev) => [...prev, recipeId]);
-                        }
-                    }}
+                    onSuccess={handleRecipeCreated}
                 />
             )}
 
-            <Stack>
-                <Group justify="space-between">
-                    <Button
-                        color="orange"
-                        fullWidth
-                        onClick={() => setIsCreateDrawerOpen(true)}
-                        radius="lg"
-                        rightSection={<IconPlus size="18" />}
-                        variant="light"
-                    >
-                        Create New Recipe
-                    </Button>
-                    {multiple && (
-                        <Badge
-                            color="blue"
-                            size="lg"
-                            variant="dot"
-                        >
-                            {selectedIds.length} selected
-                        </Badge>
-                    )}
-                </Group>
-
-                <TextInput
-                    leftSection={<MagnifyingGlassIcon size={18} />}
-                    onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
-                    placeholder="Search recipes..."
-                    rightSection={
-                        search ? (
-                            <ActionIcon
-                                onClick={() => {
-                                    setSearch('');
-                                    onSearchChangeDebounced('');
-                                }}
-                                size="sm"
-                                variant="subtle"
-                            >
-                                <XIcon size={16} />
-                            </ActionIcon>
-                        ) : null
-                    }
-                    size="md"
-                />
-
-                <Box style={{flex: 1, overflow: 'auto'}}>
-                    <Box>
-                        {isLoading ? (
-                            <Center py="xl">
-                                <Loader size="lg" />
-                            </Center>
-                        ) : recipes.length === 0 ? (
-                            <Paper
-                                p="xl"
-                                style={{textAlign: 'center'}}
-                            >
-                                <Text
-                                    c="dimmed"
-                                    size="sm"
-                                >
-                                    No recipes found
-                                </Text>
-                            </Paper>
-                        ) : (
-                            <RecordsList
-                                emptyState={
-                                    <Paper
-                                        p="xl"
-                                        style={{textAlign: 'center'}}
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div
+                className={classes.container}
+                onKeyDown={handleKeyDown}
+            >
+                {/* Search Section */}
+                <div className={classes.searchSection}>
+                    <div className={classes.searchInputWrapper}>
+                        <TextInput
+                            leftSection={<MagnifyingGlassIcon size={18} />}
+                            onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
+                            onKeyDown={handleSearchKeyDown}
+                            placeholder="Search recipes..."
+                            ref={searchInputRef}
+                            rightSection={
+                                isLoading ? (
+                                    <Loader
+                                        color="orange"
+                                        size="xs"
+                                    />
+                                ) : search ? (
+                                    <button
+                                        aria-label="Clear search"
+                                        onClick={() => {
+                                            setSearch('');
+                                            onSearchChangeDebounced('');
+                                            searchInputRef.current?.focus();
+                                        }}
+                                        style={{background: 'none', border: 'none', cursor: 'pointer', padding: 4}}
+                                        type="button"
                                     >
-                                        <Text
-                                            c="dimmed"
-                                            size="sm"
-                                        >
-                                            No recipes found
-                                        </Text>
-                                    </Paper>
-                                }
-                                fetchNextPage={fetchNextPage}
-                                hasNextPage={hasNextPage}
-                                isFetchingNextPage={isFetchingNextPage}
-                                isLoading={isLoading}
-                                records={recipes}
-                                renderItem={(recipe: Recipe) => (
-                                    <RecipeCard
-                                        isSelected={selectedIds.includes(recipe.id)}
-                                        key={recipe.id}
-                                        multiple={multiple}
-                                        onToggleSelect={handleToggleSelect}
-                                        recipe={recipe}
+                                        <XIcon size={16} />
+                                    </button>
+                                ) : null
+                            }
+                            size="md"
+                        />
+                    </div>
+
+                    {/* Quick Filters */}
+                    <div className={classes.quickFilters}>
+                        {QUICK_FILTERS.map((filter) => (
+                            <button
+                                aria-pressed={activeFilter === filter.id}
+                                className={`${classes.filterChip} ${activeFilter === filter.id ? classes.filterChipActive : ''}`}
+                                key={filter.id}
+                                onClick={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)}
+                                type="button"
+                            >
+                                {filter.icon}
+                                <span>{filter.label}</span>
+                            </button>
+                        ))}
+
+                        <button
+                            className={classes.createButton}
+                            onClick={() => setIsCreateDrawerOpen(true)}
+                            type="button"
+                        >
+                            <IconPlus size={14} />
+                            <span>New</span>
+                        </button>
+
+                        {multiple && selectedIds.length > 0 && (
+                            <div className={classes.selectionBadge}>
+                                <CheckIcon
+                                    size={12}
+                                    weight="bold"
+                                />
+                                <span>{selectedIds.length}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Recipes Section */}
+                {!search && !activeFilter && recentRecipes.length > 0 && (
+                    <div className={classes.recentSection}>
+                        <div className={classes.sectionHeader}>
+                            <IconHistory size={14} />
+                            <span>Recent</span>
+                        </div>
+                        <div className={classes.recentList}>
+                            {recentRecipes.map((recipe) => (
+                                <button
+                                    className={`${classes.recentChip} ${selectedIds.includes(recipe.id) ? classes.recentChipSelected : ''}`}
+                                    key={recipe.id}
+                                    onClick={() => handleSelect(recipe.id)}
+                                    type="button"
+                                >
+                                    <span className={classes.recentChipName}>{recipe.name}</span>
+                                    {recipe.total_calories && (
+                                        <span className={classes.recentChipMeta}>
+                                            {parseFloat(recipe.total_calories).toFixed(0)} cal
+                                        </span>
+                                    )}
+                                    {selectedIds.includes(recipe.id) && (
+                                        <CheckIcon
+                                            size={12}
+                                            weight="bold"
+                                        />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Recipe List */}
+                {isLoading && recipes.length === 0 ? (
+                    <div className={classes.loadingContainer}>
+                        <Loader
+                            color="orange"
+                            size="md"
+                        />
+                        <span className={classes.loadingText}>Loading recipes...</span>
+                    </div>
+                ) : recipes.length === 0 ? (
+                    <div className={classes.emptyState}>
+                        <Text className={classes.emptyStateText}>
+                            {search
+                                ? `No recipes found for "${search}"`
+                                : activeFilter
+                                  ? `No ${activeFilter === 'quick' ? 'quick' : activeFilter === 'lowCal' ? 'low calorie' : 'high protein'} recipes found`
+                                  : 'No recipes yet'}
+                        </Text>
+                        {activeFilter && (
+                            <button
+                                className={classes.clearFilterButton}
+                                onClick={() => setActiveFilter(null)}
+                                type="button"
+                            >
+                                Clear filter
+                            </button>
+                        )}
+                        <button
+                            className={`${classes.createButton} ${classes.emptyStateAction}`}
+                            onClick={() => setIsCreateDrawerOpen(true)}
+                            type="button"
+                        >
+                            <IconPlus size={16} />
+                            <span>Create your first recipe</span>
+                        </button>
+                    </div>
+                ) : (
+                    <div
+                        aria-label="Recipe list"
+                        className={classes.recipeList}
+                        ref={listRef}
+                        role="listbox"
+                    >
+                        {recipes.map((recipe, idx) => (
+                            <RecipeCard
+                                focused={focusedIndex === idx}
+                                isSelected={selectedIds.includes(recipe.id)}
+                                key={recipe.id}
+                                onSelect={() => handleSelect(recipe.id)}
+                                recipe={recipe}
+                            />
+                        ))}
+
+                        {/* Infinite scroll trigger */}
+                        {hasNextPage && (
+                            <div
+                                className={classes.loadMoreTrigger}
+                                ref={loadMoreRef}
+                            >
+                                {isFetchingNextPage && (
+                                    <Loader
+                                        color="orange"
+                                        size="sm"
                                     />
                                 )}
-                            />
+                            </div>
                         )}
-                    </Box>
-                </Box>
-            </Stack>
+                    </div>
+                )}
+
+                {/* Keyboard hint - only show when actively navigating */}
+                {recipes.length > 0 && focusedIndex >= 0 && (
+                    <Text
+                        c="dimmed"
+                        className={classes.searchHint}
+                        size="xs"
+                    >
+                        ↑↓ navigate • Enter select • Esc cancel
+                    </Text>
+                )}
+            </div>
         </>
     );
 }

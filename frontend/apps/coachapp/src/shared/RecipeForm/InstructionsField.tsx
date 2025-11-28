@@ -1,191 +1,188 @@
-import {
-    ActionIcon,
-    Badge,
-    Button,
-    Flex,
-    Group,
-    Stack,
-    Switch,
-    Text,
-    Textarea,
-    TextInput,
-    Title,
-    useMantineTheme,
-} from '@mantine/core';
-import {IconPlus, IconTrash} from '@tabler/icons-react';
-import {FC, useEffect, useState} from 'react';
+import {ActionIcon, Text, TextInput} from '@mantine/core';
+import {IconGripVertical, IconPlus, IconTrash} from '@tabler/icons-react';
+import {FC, useCallback, useEffect, useRef, useState} from 'react';
 import {useFieldArray, UseFormReturn} from 'react-hook-form';
 
 import {CreateRecipeForm} from '@/services/recipes';
 
-type InstrcutionsFieldProps = {
+import classes from './styles.module.css';
+
+type InstructionsFieldProps = {
     form: UseFormReturn<CreateRecipeForm, any, CreateRecipeForm>;
 };
 
-const textToSteps = (text: string) => {
-    return text
-        .split('\n')
-        .map((step) => step.trim())
-        .filter((step) => step.length > 0);
-};
-
-const stepsToText = (steps: string[]) => {
-    return steps
-        .map((step) => step.trim())
-        .filter((step) => step.length > 0)
-        .join('\n');
-};
-
-const InstructionsField: FC<InstrcutionsFieldProps> = ({form}) => {
-    const theme = useMantineTheme();
+const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [draggedIndex, setDraggedIndex] = useState<null | number>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<null | number>(null);
     const {
-        watch,
-        setValue,
         register,
         control,
         formState: {errors},
     } = form;
 
     // TypeScript incorrectly infers only 'ingredients' as valid field name for useFieldArray
-    const {fields, append, remove, replace} = useFieldArray({
+    const {fields, append, remove, move} = useFieldArray({
         control,
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         name: 'instructions',
     });
 
-    const instructions = watch('instructions') || [];
-    const instructionsAsText = watch('instructions_as_text') || '';
-
-    const [stepMode, setStepMode] = useState<boolean>(() => {
-        const initialInstructions = watch('instructions');
-        const initialText = watch('instructions_as_text');
-        return (initialInstructions && initialInstructions.length > 0) || !initialText;
-    });
-    const handleModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const newStepMode = event.currentTarget.checked;
-        setStepMode(newStepMode);
-
-        if (newStepMode) {
-            const steps = textToSteps(instructionsAsText);
-            // @ts-expect-error - Type inference issue with replace accepting string[]
-            replace(steps.length > 0 ? steps : ['']);
-            setValue('instructions_as_text', '');
-        } else {
-            const newText = stepsToText(instructions);
-            setValue('instructions_as_text', newText);
-            replace([]);
-        }
-    };
-
+    // Auto-add first empty step if none exist
     useEffect(() => {
-        if (stepMode && fields.length === 0) {
+        if (fields.length === 0) {
             // @ts-expect-error - Type inference issue with append accepting string
             append('');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Focus the last input when a new step is added
+    useEffect(() => {
+        if (fields.length > 0) {
+            const lastInput = inputRefs.current[fields.length - 1];
+            if (lastInput && document.activeElement?.tagName !== 'INPUT') {
+                // Only auto-focus if user isn't already typing
+            }
+        }
+    }, [fields.length]);
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // @ts-expect-error - Type inference issue with append accepting string
+                append('');
+                // Focus will happen via the effect after state updates
+                setTimeout(() => {
+                    inputRefs.current[idx + 1]?.focus();
+                }, 50);
+            } else if (e.key === 'Backspace' && e.currentTarget.value === '' && fields.length > 1) {
+                e.preventDefault();
+                remove(idx);
+                // Focus previous input
+                setTimeout(() => {
+                    inputRefs.current[Math.max(0, idx - 1)]?.focus();
+                }, 50);
+            } else if (e.key === 'ArrowUp' && e.altKey && idx > 0) {
+                // Alt+ArrowUp to move step up
+                e.preventDefault();
+                move(idx, idx - 1);
+                setTimeout(() => {
+                    inputRefs.current[idx - 1]?.focus();
+                }, 50);
+            } else if (e.key === 'ArrowDown' && e.altKey && idx < fields.length - 1) {
+                // Alt+ArrowDown to move step down
+                e.preventDefault();
+                move(idx, idx + 1);
+                setTimeout(() => {
+                    inputRefs.current[idx + 1]?.focus();
+                }, 50);
+            }
+        },
+        [append, remove, move, fields.length],
+    );
+
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedIndex !== null && draggedIndex !== index) {
+            setDragOverIndex(index);
+        }
+    };
+
+    const handleDragEnd = () => {
+        if (draggedIndex !== null && dragOverIndex !== null) {
+            move(draggedIndex, dragOverIndex);
+        }
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
     return (
-        <Stack
-            p="xs"
-            style={{
-                borderRadius: theme.radius.md,
-            }}
-        >
-            <Group justify="space-between">
-                <Stack gap="xs">
-                    <Title
-                        fw="bold"
-                        order={6}
+        <div className={classes.section}>
+            <div className={classes.sectionHeader}>
+                <div className={classes.sectionTitleRow}>
+                    <span className={classes.sectionTitle}>Instructions</span>
+                    {fields.length > 0 && (
+                        <Text
+                            c="dimmed"
+                            size="xs"
+                        >
+                            {fields.length} {fields.length === 1 ? 'step' : 'steps'}
+                        </Text>
+                    )}
+                </div>
+            </div>
+
+            <div className={classes.instructionsList}>
+                {fields.map((field, idx) => (
+                    <div
+                        className={`${classes.instructionStep} ${draggedIndex === idx ? classes.instructionStepDragging : ''} ${dragOverIndex === idx ? classes.instructionStepDragOver : ''}`}
+                        draggable
+                        key={field.id}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDragStart={() => handleDragStart(idx)}
                     >
-                        Instructions
-                    </Title>
-
-                    <Switch
-                        checked={stepMode}
-                        color="orange"
-                        label={
-                            <Text
-                                fs="italic"
-                                size="sm"
-                            >
-                                Step by Step Instructions
-                            </Text>
-                        }
-                        labelPosition="right"
-                        onChange={handleModeChange}
-                        withThumbIndicator={false}
-                    />
-                </Stack>
-            </Group>
-
-            {stepMode ? (
-                <>
-                    {fields.map((field, idx) => (
-                        <Group
-                            key={field.id}
-                            wrap="nowrap"
-                        >
-                            <Badge variant="light">{idx + 1}</Badge>
-                            <TextInput
-                                {...register(`instructions.${idx}`)}
-                                placeholder={`write instruction`}
-                                size="xs"
-                                style={{flex: 1}}
-                            />
+                        <span className={classes.dragHandle}>
+                            <IconGripVertical size={14} />
+                        </span>
+                        <span className={classes.stepNumber}>{idx + 1}</span>
+                        <TextInput
+                            {...register(`instructions.${idx}`)}
+                            className={classes.stepInput}
+                            onKeyDown={(e) => handleKeyDown(e, idx)}
+                            placeholder={idx === 0 ? 'e.g. Preheat oven to 180°C' : 'Next step...'}
+                            ref={(el) => {
+                                inputRefs.current[idx] = el;
+                            }}
+                            size="sm"
+                        />
+                        {fields.length > 1 && (
                             <ActionIcon
-                                aria-label="Remove Instruction"
-                                color="red"
+                                aria-label="Remove step"
+                                className={classes.stepDelete}
+                                color="gray"
                                 onClick={() => remove(idx)}
-                                size="xs"
-                                variant="light"
+                                size="sm"
+                                variant="subtle"
                             >
-                                <IconTrash />
+                                <IconTrash size={14} />
                             </ActionIcon>
-                        </Group>
-                    ))}
-                    <Flex justify="end">
-                        <Button
-                            color="orange"
-                            // @ts-expect-error - Type inference issue with append accepting string
-                            onClick={() => append('')}
-                            radius="lg"
-                            rightSection={<IconPlus size={18} />}
-                            size="compact-xs"
-                            variant="light"
-                            w="max-content"
-                        >
-                            Add Step
-                        </Button>
-                    </Flex>
-                    {errors.instructions?.message && (
-                        <Text
-                            c="red"
-                            size="sm"
-                        >
-                            {errors.instructions.message as string}
-                        </Text>
-                    )}
-                </>
-            ) : (
-                <>
-                    <Textarea
-                        {...register('instructions_as_text')}
-                        minRows={4}
-                        placeholder="Write your instructions here."
-                    />
-                    {errors.instructions_as_text?.message && (
-                        <Text
-                            c="red"
-                            size="sm"
-                        >
-                            {errors.instructions_as_text.message as string}
-                        </Text>
-                    )}
-                </>
-            )}
-        </Stack>
+                        )}
+                    </div>
+                ))}
+                <button
+                    className={classes.addStepButton}
+                    // @ts-expect-error - Type inference issue with append accepting string
+                    onClick={() => append('')}
+                    type="button"
+                >
+                    <IconPlus size={14} />
+                    <span>Add step</span>
+                </button>
+                {errors.instructions?.message && (
+                    <Text
+                        c="red"
+                        size="xs"
+                    >
+                        {errors.instructions.message as string}
+                    </Text>
+                )}
+                <Text
+                    c="dimmed"
+                    className={classes.keyboardHint}
+                    size="xs"
+                >
+                    Enter: new step • Backspace: delete empty • Alt+↑↓: reorder
+                </Text>
+            </div>
+        </div>
     );
 };
 

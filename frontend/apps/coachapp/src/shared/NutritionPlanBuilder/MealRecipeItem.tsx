@@ -1,3 +1,4 @@
+import {humanizeError} from '@easy/error-parser';
 import {
     ActionIcon,
     Button,
@@ -15,7 +16,6 @@ import {IconTrash, IconX} from '@tabler/icons-react';
 import {useState} from 'react';
 
 import {useUpdateMealItem} from '@/services/meal_items';
-import APIErrorParser from '@/utils/error_parser';
 import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
 
 type MealRecipeItemProps = {
@@ -104,9 +104,8 @@ export const MealRecipeItem = ({item, onDelete, nutritionPlanId}: MealRecipeItem
             }).unwrap();
             notifySuccess('Serving size updated successfully');
         } catch (e) {
-            console.log(e);
-            const err_msg = new APIErrorParser(e).humanize();
-            notifyError(err_msg);
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
         }
     };
 

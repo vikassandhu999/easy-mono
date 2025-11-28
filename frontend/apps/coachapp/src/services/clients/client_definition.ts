@@ -1,79 +1,91 @@
 import {z} from 'zod';
 
-// Membership status enum to match backend
-export const MembershipStatus = {
+// Client status enum to match backend
+export const ClientStatus = {
+    PENDING: 'pending',
     ACTIVE: 'active',
-    CANCELLED: 'cancelled',
     INACTIVE: 'inactive',
-    PAUSED: 'paused',
+    ARCHIVED: 'archived',
 } as const;
 
-export type MembershipStatusType = (typeof MembershipStatus)[keyof typeof MembershipStatus];
+export type ClientStatusType = (typeof ClientStatus)[keyof typeof ClientStatus];
 
-export const CreateClient_zod = z
-    .object({
-        assigned_coach_id: z.string().uuid().optional(),
-        invitation_email: z.string().email().optional(),
-        invitation_phone: z.string().min(10).max(15).optional(),
-        membership_status: z.enum(['active', 'inactive', 'paused', 'cancelled']).optional(),
-        name: z.string().min(1).max(200),
-        notes: z.string().max(1000).optional(),
-    })
-    .refine((data) => data.invitation_email || data.invitation_phone, {
-        message: 'Either invitation_email or invitation_phone must be provided',
-        path: ['invitation_email'],
-    });
+// Invitation status
+export const InvitationStatus = {
+    PENDING: 'pending',
+    ACCEPTED: 'accepted',
+    EXPIRED: 'expired',
+} as const;
 
-export const UpdateClient_zod = z.object({
-    assigned_coach_id: z.string().uuid().optional(),
-    invitation_email: z.string().email().optional(),
-    invitation_phone: z.string().min(10).max(15).optional(),
-    membership_status: z.enum(['active', 'inactive', 'paused', 'cancelled']).optional(),
-    name: z.string().min(1).max(200).optional(),
+export type InvitationStatusType = (typeof InvitationStatus)[keyof typeof InvitationStatus];
+
+// Invite client schema
+export const InviteClient_zod = z.object({
+    email: z.string().email(),
+    full_name: z.string().min(1).max(200),
+    phone: z.string().optional(),
     notes: z.string().max(1000).optional(),
 });
 
-export const ListClients_zod = z.object({
-    active_only: z.boolean().optional(),
-    assigned_coach_id: z.string().uuid().optional(),
-    created_after: z.string().optional(), // YYYY-MM-DD format
-    created_before: z.string().optional(), // YYYY-MM-DD format
-    include_coach: z.boolean().optional(),
-    membership_status: z.enum(['active', 'inactive', 'paused', 'cancelled']).optional(),
-    page: z.number().min(1).optional().default(1),
-    page_size: z.number().min(1).max(100).optional().default(20),
-    search: z.string().optional(),
-    sort_by: z.enum(['name', 'created_at', 'updated_at', 'membership_start_date']).optional(),
-    sort_order: z.enum(['asc', 'desc']).optional(),
+// Update client schema
+export const UpdateClient_zod = z.object({
+    full_name: z.string().min(1).max(200).optional(),
+    phone: z.string().optional(),
+    notes: z.string().max(1000).optional(),
 });
 
+// List clients schema
+export const ListClients_zod = z.object({
+    status: z.enum(['pending', 'active', 'inactive', 'archived']).optional(),
+    search: z.string().optional(),
+    per_page: z.number().min(1).max(100).optional(),
+    page: z.number().min(1).optional(),
+});
+
+// Update client status schema
+export const UpdateClientStatus_zod = z.object({
+    status: z.enum(['pending', 'active', 'inactive', 'archived']),
+});
+
+// Client interface
 export interface Client {
-    assigned_coach?: {
-        id: string;
-        name: string;
-    };
-    assigned_coach_id?: string;
+    business_id: string;
     created_at: string;
+    email: string;
+    full_name: string;
     id: string;
-    invitation_email: string;
-    invitation_phone: string;
-    membership_end_date?: string;
-
-    membership_start_date: string;
-    // Membership fields
-    membership_status: MembershipStatusType;
-    name: string;
-    notes: string;
+    notes?: string;
+    phone?: string;
+    status: ClientStatusType;
     updated_at: string;
+    user_id?: string;
 }
-export type CreateClientProps = z.infer<typeof CreateClient_zod>;
-export type ListClientsProps = z.infer<typeof ListClients_zod>;
 
-export interface ListClientsResult {
-    page?: number;
-    page_size?: number;
+// Invitation interface
+export interface Invitation {
+    expires_at: string;
+    invitation_url: string;
+    token_id: string;
+}
+
+// Invite client response
+export interface InviteClientResponse {
+    client: Client;
+    invitation: Invitation;
+}
+
+// List clients response
+export interface ClientsList {
+    meta: {
+        offset: number;
+        limit: number;
+        total: number;
+    };
     records: Client[];
-    total: number;
 }
 
+// Type exports
+export type InviteClientProps = z.infer<typeof InviteClient_zod>;
 export type UpdateClientProps = z.infer<typeof UpdateClient_zod>;
+export type ClientsListOpts = z.infer<typeof ListClients_zod>;
+export type UpdateClientStatusProps = z.infer<typeof UpdateClientStatus_zod>;

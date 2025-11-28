@@ -104,6 +104,13 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         prev_key: null,
         values: ['nutrition_plan_id'],
     },
+    {
+        id: 'client-invite',
+        key: 'client_invite',
+        type: 'create',
+        prev_key: null,
+        values: [],
+    },
 ];
 
 /**
@@ -133,6 +140,9 @@ export const DRAWER_KEYS = {
     NUTRITION_PLAN_CREATE: 'nutrition_plan_create',
     NUTRITION_PLAN_EDIT: 'nutrition_plan_edit',
     NUTRITION_PLAN_BUILDER: 'nutrition_plan_builder',
+
+    // Client
+    CLIENT_INVITE: 'client_invite',
 } as const;
 
 export type DrawerKey = (typeof DRAWER_KEYS)[keyof typeof DRAWER_KEYS];

@@ -3,7 +3,6 @@ import {useMemo} from 'react';
 
 import RecipeSampleImage from '@/../public/recipe_sample.jpg';
 import {Recipe, useListRecipes} from '@/services/recipes';
-import {EmptyState} from '@/shared/layouts/EmptyState';
 import RecordsList from '@/shared/layouts/RecordsList';
 
 interface RecipeListItemProps {

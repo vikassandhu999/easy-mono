@@ -1,18 +1,6 @@
-import {
-    ActionIcon,
-    Button,
-    Card,
-    Chip,
-    CloseButton,
-    Collapse,
-    Group,
-    SegmentedControl,
-    Stack,
-    TextInput,
-    Title,
-} from '@mantine/core';
+import {Chip, CloseButton, Group, SegmentedControl, Stack, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconFilter2, IconPoint, IconSearch} from '@tabler/icons-react';
+import {IconPoint, IconSearch} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 
 import useScreenSize from '@/hooks/useScreenSize';
@@ -34,7 +22,6 @@ const LibraryListViewSelector = ({content, setContent}: LibraryListViewSelectorP
     const {isDesktop, isTab, isMobile} = useScreenSize();
     const [searchInput, setSearchInput] = useState(content.search);
     const [debouncedSearch] = useDebouncedValue(searchInput, 300);
-    const [filterOpen, setFilterOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (debouncedSearch !== content.search) {

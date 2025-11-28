@@ -72,14 +72,16 @@ const NutritionPlanListItem = ({plan, onClick}: NutritionPlanListItemProps) => {
 };
 
 export interface NutritionPlanListProps {
+    clientId?: string;
     onPlanClick?: (id: string) => void;
     search?: string;
 }
 
-const NutritionPlanList = ({onPlanClick, search}: NutritionPlanListProps) => {
+const NutritionPlanList = ({onPlanClick, search, clientId}: NutritionPlanListProps) => {
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListNutritionPlans({
         search: search || undefined,
-        is_template: true,
+        is_template: clientId ? undefined : true,
+        client_id: clientId,
     });
 
     const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);

@@ -1,74 +1,35 @@
 import {baseAPISlice} from '../baseAPISlice';
+import {buildListParams, getNextPage} from '../paginationUtils';
 import {
     type Client,
-    type CreateClientProps,
-    type ListClientsProps,
-    type ListClientsResult,
-    type MembershipStatusType,
+    type ClientsList,
+    type ClientsListOpts,
+    type InviteClientProps,
+    type InviteClientResponse,
     type UpdateClientProps,
+    type UpdateClientStatusProps,
 } from './client_definition';
-
-type BulkOperationResponse = {
-    updated_count: number;
-};
-
-type ListClientsQueryParams = Omit<ListClientsProps, 'page'> | undefined;
-
-const DEFAULT_PAGE_SIZE = 20;
-
-const buildClientListParams = (queryArg: ListClientsQueryParams, pageParam: number) => {
-    const params: Record<string, unknown> = {
-        ...(queryArg ?? {}),
-        page: pageParam,
-    };
-
-    if (!('page_size' in params) || typeof params.page_size !== 'number') {
-        params.page_size = DEFAULT_PAGE_SIZE;
-    }
-
-    return params;
-};
-
-const getNextClientPage = (lastPage: ListClientsResult, lastPageParam: number, queryArg: ListClientsQueryParams) => {
-    const currentPage = lastPage.page ?? lastPageParam;
-    const pageSize = lastPage.page_size ?? queryArg?.page_size ?? DEFAULT_PAGE_SIZE;
-
-    if (!pageSize || pageSize <= 0) {
-        return undefined;
-    }
-
-    if (typeof lastPage.total === 'number') {
-        if (lastPage.total <= 0) {
-            return undefined;
-        }
-
-        const totalPages = Math.ceil(lastPage.total / pageSize);
-
-        if (currentPage >= totalPages) {
-            return undefined;
-        }
-
-        return currentPage + 1;
-    }
-
-    if (lastPage.records.length < pageSize) {
-        return undefined;
-    }
-
-    return currentPage + 1;
-};
 
 export const clientsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-        listClients: build.infiniteQuery<ListClientsResult, ListClientsQueryParams, number>({
-            query: ({queryArg, pageParam = 1}) => ({
-                url: '/v1/coach/clients',
+        // GET /api/clients - List clients with filters and pagination
+        listClients: build.infiniteQuery<ClientsList, ClientsListOpts, number>({
+            query: ({queryArg, pageParam = 0}) => ({
+                url: '/api/clients',
                 method: 'get',
-                params: buildClientListParams(queryArg, pageParam),
+                params: buildListParams(queryArg, pageParam),
             }),
-            serializeQueryArgs: ({queryArgs, endpointName}) => {
-                return `${endpointName}-${JSON.stringify(queryArgs ?? {})}`;
-            },
+            transformResponse: (response: {
+                clients: Client[];
+                pagination: {total: number; limit: number; offset: number};
+            }) => ({
+                records: response.clients,
+                meta: {
+                    offset: response.pagination.offset,
+                    limit: response.pagination.limit,
+                    total: response.pagination.total,
+                },
+            }),
             providesTags: (result) => {
                 const baseTag = [{type: 'Clients' as const, id: 'LIST'}];
 
@@ -85,97 +46,82 @@ export const clientsApi = baseAPISlice.injectEndpoints({
                 return [...records.map((client) => ({type: 'Clients' as const, id: client.id})), ...baseTag];
             },
             infiniteQueryOptions: {
-                initialPageParam: 1,
-                getNextPageParam: (lastPage, _allPages, lastPageParam, _allPageParams, queryArg) =>
-                    getNextClientPage(lastPage, lastPageParam, queryArg),
+                initialPageParam: 0,
+                getNextPageParam: (lastPage) => getNextPage(lastPage),
             },
         }),
+
+        // GET /api/clients/:id - Get client details
         getClient: build.query<Client, string>({
             query: (clientId) => ({
-                url: `/v1/coach/clients/${clientId}`,
+                url: `/api/clients/${clientId}`,
                 method: 'get',
             }),
+            transformResponse: (response: {client: Client}) => response.client,
             providesTags: (_result, _error, clientId) => [{type: 'Clients', id: clientId}],
         }),
-        getMembershipStats: build.query<Record<string, number>, void>({
-            query: () => ({
-                url: '/v1/coach/clients/membership-stats',
-                method: 'get',
-            }),
-            providesTags: [{type: 'MembershipStats', id: 'LIST'}],
-        }),
-        createClient: build.mutation<Client, CreateClientProps>({
+
+        // POST /api/clients/invite - Invite a new client
+        inviteClient: build.mutation<InviteClientResponse, InviteClientProps>({
             query: (body) => ({
-                url: '/v1/coach/clients',
+                url: '/api/clients/invite',
                 method: 'post',
                 data: body,
             }),
-            invalidatesTags: [
-                {type: 'Clients', id: 'LIST'},
-                {type: 'MembershipStats', id: 'LIST'},
-            ],
+            invalidatesTags: [{type: 'Clients', id: 'LIST'}],
         }),
+
+        // PATCH /api/clients/:id - Update client details
         updateClient: build.mutation<Client, {clientId: string; data: UpdateClientProps}>({
             query: ({clientId, data}) => ({
-                url: `/v1/coach/clients/${clientId}`,
+                url: `/api/clients/${clientId}`,
                 method: 'patch',
                 data,
             }),
+            transformResponse: (response: {client: Client}) => response.client,
             invalidatesTags: (_result, _error, arg) => [
                 {type: 'Clients', id: arg.clientId},
                 {type: 'Clients', id: 'LIST'},
-                {type: 'MembershipStats', id: 'LIST'},
             ],
         }),
-        updateMembershipStatus: build.mutation<Client, {clientId: string; status: MembershipStatusType}>({
+
+        // PATCH /api/clients/:id/status - Update client status
+        updateClientStatus: build.mutation<Client, UpdateClientStatusProps & {clientId: string}>({
             query: ({clientId, status}) => ({
-                url: `/v1/coach/clients/${clientId}/membership-status`,
+                url: `/api/clients/${clientId}/status`,
                 method: 'patch',
                 data: {status},
             }),
-            invalidatesTags: (_result, _error, arg) => [
-                {type: 'Clients', id: arg.clientId},
-                {type: 'Clients', id: 'LIST'},
-                {type: 'MembershipStats', id: 'LIST'},
-            ],
-        }),
-        assignCoach: build.mutation<Client, {clientId: string; coachId: string}>({
-            query: ({clientId, coachId}) => ({
-                url: `/v1/coach/clients/${clientId}/assign-coach`,
-                method: 'patch',
-                data: {coach_id: coachId},
-            }),
+            transformResponse: (response: {client: Client}) => response.client,
             invalidatesTags: (_result, _error, arg) => [
                 {type: 'Clients', id: arg.clientId},
                 {type: 'Clients', id: 'LIST'},
             ],
         }),
-        bulkAssignCoach: build.mutation<BulkOperationResponse, {clientIds: string[]; coachId: string}>({
-            query: ({clientIds, coachId}) => ({
-                url: '/v1/coach/clients/bulk-assign-coach',
+
+        // POST /api/clients/:id/resend-invitation - Resend invitation email
+        resendInvitation: build.mutation<Client, string>({
+            query: (clientId) => ({
+                url: `/api/clients/${clientId}/resend-invitation`,
                 method: 'post',
-                data: {
-                    client_ids: clientIds,
-                    coach_id: coachId,
-                },
             }),
-            invalidatesTags: [{type: 'Clients', id: 'LIST'}],
-        }),
-        bulkUpdateMembershipStatus: build.mutation<
-            BulkOperationResponse,
-            {clientIds: string[]; status: MembershipStatusType}
-        >({
-            query: ({clientIds, status}) => ({
-                url: '/v1/coach/clients/bulk-update-status',
-                method: 'post',
-                data: {
-                    client_ids: clientIds,
-                    status,
-                },
-            }),
-            invalidatesTags: [
+            transformResponse: (response: {client: Client}) => response.client,
+            invalidatesTags: (_result, _error, clientId) => [
+                {type: 'Clients', id: clientId},
                 {type: 'Clients', id: 'LIST'},
-                {type: 'MembershipStats', id: 'LIST'},
+            ],
+        }),
+
+        // DELETE /api/clients/:id - Archive client
+        archiveClient: build.mutation<Client, string>({
+            query: (clientId) => ({
+                url: `/api/clients/${clientId}`,
+                method: 'delete',
+            }),
+            transformResponse: (response: {client: Client}) => response.client,
+            invalidatesTags: (_result, _error, clientId) => [
+                {type: 'Clients', id: clientId},
+                {type: 'Clients', id: 'LIST'},
             ],
         }),
     }),
@@ -183,13 +129,11 @@ export const clientsApi = baseAPISlice.injectEndpoints({
 });
 
 export const {
-    useListClientsInfiniteQuery,
-    useGetClientQuery,
-    useGetMembershipStatsQuery,
-    useCreateClientMutation,
-    useUpdateClientMutation,
-    useUpdateMembershipStatusMutation,
-    useAssignCoachMutation,
-    useBulkAssignCoachMutation,
-    useBulkUpdateMembershipStatusMutation,
+    useListClientsInfiniteQuery: useListClients,
+    useGetClientQuery: useGetClient,
+    useInviteClientMutation: useInviteClient,
+    useUpdateClientMutation: useUpdateClient,
+    useUpdateClientStatusMutation: useUpdateClientStatus,
+    useResendInvitationMutation: useResendInvitation,
+    useArchiveClientMutation: useArchiveClient,
 } = clientsApi;

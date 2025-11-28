@@ -4,6 +4,8 @@ import LoginPage from '@/domains/auth/pages/LoginPage';
 import RegisterPage from '@/domains/auth/pages/RegisterPage';
 import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
 import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPage';
+import ClientListPage from '@/domains/client/pages/ClientListPage';
+import ClientViewPage from '@/domains/client/pages/ClientViewPage';
 import HomePage from '@/domains/dashboard/pages/HomePage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
@@ -49,12 +51,21 @@ const router = createBrowserRouter([
                         path: '/',
                     },
                     {
-                        element: <MainProfilePage />,
-                        path: '/profile',
+                        element: <ClientListPage />,
+                        path: '/clients',
+                    },
+                    {
+                        element: <ClientViewPage />,
+                        path: '/clients/:id',
                     },
                     {
                         element: <LibraryListPage />,
                         path: '/library',
+                    },
+
+                    {
+                        element: <MainProfilePage />,
+                        path: '/profile',
                     },
                 ],
             },

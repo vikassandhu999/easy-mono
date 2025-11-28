@@ -50,6 +50,7 @@ export type NutritionPlansListOpts = {
     search?: string;
     status?: NutritionPlanStatus;
     is_template?: boolean;
+    client_id?: string;
 };
 
 export interface NutritionPlansList {

@@ -6,9 +6,11 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
+import {ExerciseList} from '@/shared/ExerciseList';
 import Header from '@/shared/layouts/Header';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
+import {TrainingPlanList} from '@/shared/TrainingPlanList';
 
 import LibraryListViewSelector, {ContentState} from '../components/LibrayListViewSelector';
 import {DRAWER_KEYS} from '../config';
@@ -36,6 +38,18 @@ const LibraryListPage = () => {
     const handleNutritionPlanView = (nutritionPlanId: string) => {
         openDrawer(DRAWER_KEYS.NUTRITION_PLAN_BUILDER, {
             nutrition_plan_id: nutritionPlanId,
+        });
+    };
+
+    const handleWorkoutView = (workoutId: string) => {
+        openDrawer(DRAWER_KEYS.WORKOUT_EDIT, {
+            workout_id: workoutId,
+        });
+    };
+
+    const handleExerciseView = (exerciseId: string) => {
+        openDrawer(DRAWER_KEYS.EXERCISE_VIEW, {
+            exercise_id: exerciseId,
         });
     };
 
@@ -77,6 +91,18 @@ const LibraryListPage = () => {
                     {content.type === 'plan' && (
                         <NutritionPlanList
                             onPlanClick={handleNutritionPlanView}
+                            search={content.search}
+                        />
+                    )}
+                    {content.type === 'workout' && (
+                        <TrainingPlanList
+                            onPlanClick={handleWorkoutView}
+                            search={content.search}
+                        />
+                    )}
+                    {content.type === 'exercise' && (
+                        <ExerciseList
+                            onExerciseClick={handleExerciseView}
                             search={content.search}
                         />
                     )}

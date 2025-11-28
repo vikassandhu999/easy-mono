@@ -222,6 +222,11 @@ export const baseAPISlice = createApi({
         'NutritionPlans', // Nutrition Plan management
         'Meals', // Meal management
         'MealItems', // Meal Items management
+        'TrainingPlans', // Training Plan management
+        'TrainingPlans', // Training Plan management
+        'Exercises', // Exercise management
+        'Muscles', // Muscle management
+        'Equipment', // Equipment management
     ],
     endpoints: () => ({}),
 });

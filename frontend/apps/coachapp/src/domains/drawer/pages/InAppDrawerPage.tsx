@@ -1,6 +1,9 @@
 import {DRAWER_CONFIG, DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ContentCreateDrawer from '@/shared/drawers/ContentCreateDrawer';
+import ExerciseCreateDrawer from '@/shared/drawers/ExerciseCreateDrawer';
+import ExerciseEditDrawer from '@/shared/drawers/ExerciseEditDrawer';
+import ExerciseViewDrawer from '@/shared/drawers/ExerciseViewDrawer';
 import NutritionPlanBuildDrawer from '@/shared/drawers/NutritionPlanBuildDrawer';
 import NutritionPlanCreateDrawer from '@/shared/drawers/NutritionPlanCreateDrawer';
 import NutritionPlanEditDrawer from '@/shared/drawers/NutritionPlanEditDrawer';
@@ -28,6 +31,12 @@ const InAppDrawersPage = () => {
             return <NutritionPlanBuildDrawer />;
         case DRAWER_KEYS.NUTRITION_PLAN_EDIT:
             return <NutritionPlanEditDrawer />;
+        case DRAWER_KEYS.EXERCISE_CREATE:
+            return <ExerciseCreateDrawer />;
+        case DRAWER_KEYS.EXERCISE_VIEW:
+            return <ExerciseViewDrawer />;
+        case DRAWER_KEYS.EXERCISE_EDIT:
+            return <ExerciseEditDrawer />;
 
         default:
             return null;

@@ -1,14 +1,14 @@
 defmodule Easy.Training.Programming.PlannedWorkout do
   use Easy.Training.Schema
 
-  alias Easy.Training.Programming.{Phase, WorkoutElement}
+  alias Easy.Training.Programming.{TrainingPlan, WorkoutElement}
 
   schema "planned_workouts" do
     field :name, :string
     field :notes, :string
-    field :day_of_week, :integer
+    field :day_number, :integer
 
-    belongs_to :phase, Phase
+    belongs_to :training_plan, TrainingPlan
 
     has_many :workout_elements, WorkoutElement,
       preload_order: [asc: :position],
@@ -20,12 +20,12 @@ defmodule Easy.Training.Programming.PlannedWorkout do
   @doc false
   def changeset(planned_workout, attrs) do
     planned_workout
-    |> cast(attrs, [:name, :notes, :day_of_week, :phase_id])
-    |> validate_required([:name, :day_of_week, :phase_id])
-    |> validate_number(:day_of_week, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
-    |> unique_constraint([:phase_id, :day_of_week],
-      name: :planned_workouts_phase_id_day_of_week_index
+    |> cast(attrs, [:name, :notes, :day_number, :training_plan_id])
+    |> validate_required([:name, :day_number, :training_plan_id])
+    |> validate_number(:day_number, greater_than_or_equal_to: 1)
+    |> unique_constraint([:training_plan_id, :day_number],
+      name: :planned_workouts_training_plan_id_day_number_index
     )
-    |> foreign_key_constraint(:phase_id)
+    |> foreign_key_constraint(:training_plan_id)
   end
 end

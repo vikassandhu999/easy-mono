@@ -1,7 +1,7 @@
 defmodule Easy.Training.Library.Exercise do
   use Easy.Training.Schema
+  import Ecto.Query, warn: false
 
-  alias Easy.Training.Library.{Muscle, Equipment}
   alias Easy.Organizations.Business
 
   schema "exercises" do
@@ -15,13 +15,11 @@ defmodule Easy.Training.Library.Exercise do
     # Hybrid scope: null for system exercises, UUID for business-specific
     belongs_to :business, Business
 
-    many_to_many :muscles, Muscle,
-      join_through: "exercise_muscles",
-      on_replace: :delete
+    has_many :exercise_muscles, Easy.Training.Library.ExerciseMuscle, on_replace: :delete
+    has_many :muscles, through: [:exercise_muscles, :muscle]
 
-    many_to_many :equipment, Equipment,
-      join_through: "exercise_equipment",
-      on_replace: :delete
+    has_many :exercise_equipment, Easy.Training.Library.ExerciseEquipment, on_replace: :delete
+    has_many :equipment, through: [:exercise_equipment, :equipment]
 
     timestamps()
   end
@@ -30,11 +28,55 @@ defmodule Easy.Training.Library.Exercise do
   def changeset(exercise, attrs) do
     exercise
     |> cast(attrs, [:name, :description, :instructions, :slug, :mechanics, :force, :business_id])
-    |> validate_required([:name, :mechanics, :force])
+    |> validate_required([:name])
     |> generate_slug()
+    |> put_muscle_ids(attrs)
+    |> put_equipment_ids(attrs)
     |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
     |> foreign_key_constraint(:business_id)
   end
+
+  defp put_muscle_ids(changeset, %{"muscle_ids" => muscle_ids}) when is_list(muscle_ids) do
+    exercise_muscles =
+      Enum.map(muscle_ids, fn muscle_id ->
+        %{muscle_id: muscle_id, role: "primary"}
+      end)
+
+    put_assoc(changeset, :exercise_muscles, exercise_muscles)
+  end
+
+  defp put_muscle_ids(changeset, %{muscle_ids: muscle_ids}) when is_list(muscle_ids) do
+    exercise_muscles =
+      Enum.map(muscle_ids, fn muscle_id ->
+        %{muscle_id: muscle_id, role: "primary"}
+      end)
+
+    put_assoc(changeset, :exercise_muscles, exercise_muscles)
+  end
+
+  defp put_muscle_ids(changeset, _), do: changeset
+
+  defp put_equipment_ids(changeset, %{"equipment_ids" => equipment_ids})
+       when is_list(equipment_ids) do
+    exercise_equipment =
+      Enum.map(equipment_ids, fn equipment_id ->
+        %{equipment_id: equipment_id}
+      end)
+
+    put_assoc(changeset, :exercise_equipment, exercise_equipment)
+  end
+
+  defp put_equipment_ids(changeset, %{equipment_ids: equipment_ids})
+       when is_list(equipment_ids) do
+    exercise_equipment =
+      Enum.map(equipment_ids, fn equipment_id ->
+        %{equipment_id: equipment_id}
+      end)
+
+    put_assoc(changeset, :exercise_equipment, exercise_equipment)
+  end
+
+  defp put_equipment_ids(changeset, _), do: changeset
 
   defp generate_slug(changeset) do
     case get_change(changeset, :name) do

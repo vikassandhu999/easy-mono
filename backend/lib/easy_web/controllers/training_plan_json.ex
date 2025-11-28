@@ -1,7 +1,6 @@
 defmodule EasyWeb.TrainingPlanJSON do
   alias Easy.Training.Programming.{
     TrainingPlan,
-    Phase,
     PlannedWorkout,
     WorkoutElement,
     PlannedSet
@@ -10,8 +9,8 @@ defmodule EasyWeb.TrainingPlanJSON do
   @doc """
   Renders a list of training plans.
   """
-  def index(%{training_plans: training_plans}) do
-    %{data: for(plan <- training_plans, do: data(plan))}
+  def index(%{training_plans: training_plans, meta: meta}) do
+    %{data: for(plan <- training_plans, do: data(plan)), meta: meta}
   end
 
   @doc """
@@ -32,25 +31,7 @@ defmodule EasyWeb.TrainingPlanJSON do
       author_id: plan.author_id,
       client_id: plan.client_id,
       original_template_id: plan.original_template_id,
-      phases: phases_data(plan.phases),
-      assignments: assignments_data(plan.phase_assignments)
-    }
-  end
-
-  defp phases_data(phases) when is_list(phases) do
-    for phase <- phases, do: phase_data(phase)
-  end
-
-  defp phases_data(_), do: []
-
-  defp phase_data(%Phase{} = phase) do
-    %{
-      id: phase.id,
-      name: phase.name,
-      description: phase.description,
-      goal: phase.goal,
-      position: phase.position,
-      workouts: workouts_data(phase.planned_workouts)
+      workouts: workouts_data(plan.planned_workouts)
     }
   end
 
@@ -65,7 +46,7 @@ defmodule EasyWeb.TrainingPlanJSON do
       id: workout.id,
       name: workout.name,
       notes: workout.notes,
-      day_of_week: workout.day_of_week,
+      day_number: workout.day_number,
       elements: elements_data(workout.workout_elements)
     }
   end
@@ -83,7 +64,18 @@ defmodule EasyWeb.TrainingPlanJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
+      exercise: exercise_data(element.exercise),
       sets: sets_data(element.planned_sets)
+    }
+  end
+
+  defp exercise_data(nil), do: nil
+
+  defp exercise_data(exercise) do
+    %{
+      id: exercise.id,
+      name: exercise.name,
+      description: exercise.description
     }
   end
 
@@ -104,17 +96,4 @@ defmodule EasyWeb.TrainingPlanJSON do
       rest_seconds: set.rest_seconds
     }
   end
-
-  defp assignments_data(assignments) when is_list(assignments) do
-    for assignment <- assignments do
-      %{
-        id: assignment.id,
-        start_week: assignment.start_week,
-        end_week: assignment.end_week,
-        phase_id: assignment.phase_id
-      }
-    end
-  end
-
-  defp assignments_data(_), do: []
 end

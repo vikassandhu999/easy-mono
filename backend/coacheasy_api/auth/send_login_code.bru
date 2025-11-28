@@ -1,0 +1,22 @@
+meta {
+  name: send_login_code
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseURL}}/auth/send-login-code
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email" : "asyncnavi@gmail.com"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

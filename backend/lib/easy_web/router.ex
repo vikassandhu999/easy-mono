@@ -102,6 +102,7 @@ defmodule EasyWeb.Router do
     patch "/:id", NutritionPlanController, :update
     delete "/:id", NutritionPlanController, :delete
 
+    post "/:id/assign", NutritionPlanController, :assign
     post "/:id/duplicate", NutritionPlanController, :duplicate
     post "/:id/copy-day", NutritionPlanController, :copy_day
     get "/:id/shopping-list", NutritionPlanController, :shopping_list
@@ -140,6 +141,19 @@ defmodule EasyWeb.Router do
     get "/:id", ExerciseController, :show
     put "/:id", ExerciseController, :update
     delete "/:id", ExerciseController, :delete
+    post "/:id/duplicate", ExerciseController, :duplicate
+  end
+
+  scope "/api/muscles", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", MuscleController, :index
+  end
+
+  scope "/api/equipment", EasyWeb do
+    pipe_through :api_authenticated
+
+    get "/", EquipmentController, :index
   end
 
   scope "/api/training_plans", EasyWeb do
@@ -151,6 +165,26 @@ defmodule EasyWeb.Router do
     put "/:id", TrainingPlanController, :update
 
     post "/:id/assign", TrainingPlanController, :assign
+    post "/:id/duplicate", TrainingPlanController, :duplicate
+    delete "/:id", TrainingPlanController, :delete
+  end
+
+  scope "/api/planned_workouts", EasyWeb do
+    pipe_through :api_authenticated
+
+    post "/", PlannedWorkoutController, :create
+    get "/:id", PlannedWorkoutController, :show
+    put "/:id", PlannedWorkoutController, :update
+    delete "/:id", PlannedWorkoutController, :delete
+  end
+
+  scope "/api/workout_elements", EasyWeb do
+    pipe_through :api_authenticated
+
+    post "/", WorkoutElementController, :create
+    get "/:id", WorkoutElementController, :show
+    put "/:id", WorkoutElementController, :update
+    delete "/:id", WorkoutElementController, :delete
   end
 
   scope "/api/sessions", EasyWeb do

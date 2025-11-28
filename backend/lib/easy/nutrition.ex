@@ -75,6 +75,15 @@ defmodule Easy.Nutrition do
     Repo.delete(plan)
   end
 
+  @doc """
+  Returns the count of nutrition plans for a business.
+  """
+  @spec count_nutrition_plans(String.t()) :: integer()
+  def count_nutrition_plans(business_id) do
+    from(p in NutritionPlan, where: p.business_id == ^business_id)
+    |> Repo.aggregate(:count)
+  end
+
   @spec change_nutrition_plan(NutritionPlan.t(), map()) :: Ecto.Changeset.t()
   def change_nutrition_plan(%NutritionPlan{} = plan, attrs \\ %{}) do
     NutritionPlan.changeset(plan, attrs)
@@ -89,6 +98,23 @@ defmodule Easy.Nutrition do
         copy_meals!(original_plan.meals, new_plan.id)
         Repo.preload(new_plan, nutrition_plan_preloads())
       end)
+    end
+  end
+
+  @doc """
+  Assigns a nutrition plan template to a client by creating a deep copy.
+  """
+  def assign_nutrition_plan_to_client(business_id, template_id, client_id) do
+    with {:ok, template} <- fetch_nutrition_plan(business_id, template_id),
+         true <- template.is_template || {:error, :not_a_template} do
+      Repo.transaction(fn ->
+        new_plan = create_plan_copy!(template, business_id, client_id)
+        copy_meals!(template.meals, new_plan.id)
+        Repo.preload(new_plan, nutrition_plan_preloads())
+      end)
+    else
+      {:error, :not_a_template} -> {:error, :not_a_template}
+      error -> error
     end
   end
 
@@ -304,7 +330,15 @@ defmodule Easy.Nutrition do
     query
     |> filter_plan_status(params)
     |> filter_plan_template(params)
+    |> filter_plan_client(params)
     |> search_plans(params)
+  end
+
+  defp filter_plan_client(query, params) do
+    case params |> fetch_param(:client_id) do
+      nil -> query
+      client_id -> where(query, [np], np.client_id == ^client_id)
+    end
   end
 
   defp filter_plan_status(query, params) do

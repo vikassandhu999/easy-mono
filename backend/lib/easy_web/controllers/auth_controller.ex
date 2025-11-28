@@ -4,7 +4,8 @@ defmodule EasyWeb.AuthController do
   use EasyWeb, :controller
 
   alias EasyWeb.Registration
-  alias Easy.{Accounts}
+  alias Easy.{Accounts, Clients, Nutrition}
+  alias Easy.Training.Programming
 
   def register(conn, params) do
     changeset = Registration.changeset(%Registration{}, params)
@@ -195,10 +196,19 @@ defmodule EasyWeb.AuthController do
       response =
         case Accounts.get_coach_by_user(user) do
           %Organizations.Coach{} = coach ->
+            # Get stats for the coach's business
+            total_clients = Clients.count_clients_for_business(coach.business_id)
+            total_nutrition_plans = Nutrition.count_nutrition_plans(coach.business_id)
+            total_training_plans = Programming.count_training_plans(coach.business_id)
+
             Map.merge(response, %{
               coach: %{
                 id: coach.id,
-                business_id: coach.business_id
+                business_id: coach.business_id,
+                stats: %{
+                  total_clients: total_clients,
+                  total_plans: total_nutrition_plans + total_training_plans
+                }
               }
             })
 

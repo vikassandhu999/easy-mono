@@ -2,10 +2,13 @@ defmodule EasyWeb.ExerciseJSON do
   alias Easy.Training.Library.Exercise
 
   @doc """
-  Renders a list of exercises.
+  Renders a list of exercises with metadata.
   """
-  def index(%{exercises: exercises}) do
-    %{data: for(exercise <- exercises, do: data(exercise))}
+  def index(%{exercises: exercises, meta: meta}) do
+    %{
+      data: Enum.map(exercises, &data/1),
+      meta: meta
+    }
   end
 
   @doc """
@@ -14,6 +17,9 @@ defmodule EasyWeb.ExerciseJSON do
   def show(%{exercise: exercise}) do
     %{data: data(exercise)}
   end
+
+  def create(%{exercise: exercise}), do: show(%{exercise: exercise})
+  def update(%{exercise: exercise}), do: show(%{exercise: exercise})
 
   defp data(%Exercise{} = exercise) do
     %{

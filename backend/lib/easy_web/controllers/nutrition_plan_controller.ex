@@ -10,6 +10,7 @@ defmodule EasyWeb.NutritionPlanController do
               :show,
               :update,
               :delete,
+              :assign,
               :duplicate,
               :copy_day,
               :shopping_list,
@@ -61,6 +62,21 @@ defmodule EasyWeb.NutritionPlanController do
   def delete(conn, _params) do
     with {:ok, _deleted_plan} <- Nutrition.delete_nutrition_plan(conn.assigns.nutrition_plan) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  def assign(conn, %{"client_id" => client_id}) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         {:ok, new_plan} <-
+           Nutrition.assign_nutrition_plan_to_client(
+             business_id,
+             conn.assigns.nutrition_plan.id,
+             client_id
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, %{nutrition_plan: new_plan})
     end
   end
 

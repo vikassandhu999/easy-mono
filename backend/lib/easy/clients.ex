@@ -47,6 +47,15 @@ defmodule Easy.Clients do
     end
   end
 
+  @doc """
+  Counts total clients for a business (regardless of status).
+  """
+  @spec count_clients_for_business(String.t()) :: integer()
+  def count_clients_for_business(business_id) do
+    from(c in Client, where: c.business_id == ^business_id)
+    |> Repo.aggregate(:count)
+  end
+
   @spec get_client(Scope.t(), String.t()) :: {:ok, Client.t()} | {:error, atom()}
   def get_client(%Scope{} = scope, client_id) when is_binary(client_id) do
     case Repo.get(Client, client_id) do

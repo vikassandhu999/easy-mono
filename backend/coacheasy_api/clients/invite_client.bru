@@ -1,0 +1,25 @@
+meta {
+  name: invite_client
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseURL}}/clients/invite
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "vikas@ce.com",
+    "full_name": "Vikas Sandhu",
+    "phone": "+917696078183",
+    "notes": "No Note"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -41,4 +41,8 @@ defmodule EasyWeb.FallbackController do
   def not_found_response(conn, message \\ "The requested resource was not found.") do
     call(conn, {:error, Easy.Error.not_found(message)})
   end
+
+  def forbidden_response(conn, message \\ "You do not have permission to perform this action.") do
+    call(conn, {:error, Easy.Error.unauthorized(message)})
+  end
 end

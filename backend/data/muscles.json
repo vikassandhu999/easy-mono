@@ -1,0 +1,210 @@
+[
+  {
+    "id": "0ef95c16-3d6c-48ad-86d4-b8063344b38b",
+    "name": "Pectoralis Major",
+    "description": "Large chest muscle",
+    "muscle_group_id": "afe18d86-a64c-4300-b58b-6159169cf4b9",
+    "inserted_at": "2025-11-26 15:26:30.467052",
+    "updated_at": "2025-11-26 15:26:30.467052"
+  },
+  {
+    "id": "1dd6bce5-672e-4ae4-9164-8c304a0030b9",
+    "name": "Pectoralis Minor",
+    "description": "Small chest muscle under the major",
+    "muscle_group_id": "afe18d86-a64c-4300-b58b-6159169cf4b9",
+    "inserted_at": "2025-11-26 15:26:30.471833",
+    "updated_at": "2025-11-26 15:26:30.471833"
+  },
+  {
+    "id": "e501cd37-4ffe-4f99-92e6-528137a7c782",
+    "name": "Serratus Anterior",
+    "description": "Muscle on the side of the chest",
+    "muscle_group_id": "afe18d86-a64c-4300-b58b-6159169cf4b9",
+    "inserted_at": "2025-11-26 15:26:30.474277",
+    "updated_at": "2025-11-26 15:26:30.474277"
+  },
+  {
+    "id": "baab029e-d855-4d66-b444-994dd6162a1b",
+    "name": "Latissimus Dorsi",
+    "description": "Large back muscle (lats)",
+    "muscle_group_id": "826b96b0-bdb4-46da-93fd-4ebcee8cdcdf",
+    "inserted_at": "2025-11-26 15:26:30.477442",
+    "updated_at": "2025-11-26 15:26:30.477442"
+  },
+  {
+    "id": "919f60cf-30b1-4953-a4a0-df5eddc62f1c",
+    "name": "Trapezius",
+    "description": "Upper back and neck muscle (traps)",
+    "muscle_group_id": "826b96b0-bdb4-46da-93fd-4ebcee8cdcdf",
+    "inserted_at": "2025-11-26 15:26:30.478795",
+    "updated_at": "2025-11-26 15:26:30.478795"
+  },
+  {
+    "id": "9b4891cf-b3bf-478a-883c-e9eb7393ba2c",
+    "name": "Rhomboids",
+    "description": "Middle back muscles",
+    "muscle_group_id": "826b96b0-bdb4-46da-93fd-4ebcee8cdcdf",
+    "inserted_at": "2025-11-26 15:26:30.479420",
+    "updated_at": "2025-11-26 15:26:30.479420"
+  },
+  {
+    "id": "dcd6419b-4bb3-4a3d-b697-774a443c8c34",
+    "name": "Erector Spinae",
+    "description": "Lower back muscles",
+    "muscle_group_id": "826b96b0-bdb4-46da-93fd-4ebcee8cdcdf",
+    "inserted_at": "2025-11-26 15:26:30.480013",
+    "updated_at": "2025-11-26 15:26:30.480013"
+  },
+  {
+    "id": "a5daf871-162c-4541-aa89-e2337d7475ca",
+    "name": "Teres Major",
+    "description": "Muscle above the lats",
+    "muscle_group_id": "826b96b0-bdb4-46da-93fd-4ebcee8cdcdf",
+    "inserted_at": "2025-11-26 15:26:30.480891",
+    "updated_at": "2025-11-26 15:26:30.480891"
+  },
+  {
+    "id": "852ed240-96ad-4964-89a6-c8011adb3af0",
+    "name": "Anterior Deltoid",
+    "description": "Front shoulder",
+    "muscle_group_id": "64ccf81a-347f-41fb-9fea-0cd584c344c4",
+    "inserted_at": "2025-11-26 15:26:30.482912",
+    "updated_at": "2025-11-26 15:26:30.482912"
+  },
+  {
+    "id": "3986adea-b849-475c-8652-cbb3c03b66a6",
+    "name": "Lateral Deltoid",
+    "description": "Side shoulder",
+    "muscle_group_id": "64ccf81a-347f-41fb-9fea-0cd584c344c4",
+    "inserted_at": "2025-11-26 15:26:30.483531",
+    "updated_at": "2025-11-26 15:26:30.483531"
+  },
+  {
+    "id": "396749b1-b349-4862-9626-403a595546c0",
+    "name": "Posterior Deltoid",
+    "description": "Rear shoulder",
+    "muscle_group_id": "64ccf81a-347f-41fb-9fea-0cd584c344c4",
+    "inserted_at": "2025-11-26 15:26:30.484144",
+    "updated_at": "2025-11-26 15:26:30.484144"
+  },
+  {
+    "id": "38d2a5fc-f0b8-4f75-a385-55a38963e972",
+    "name": "Rotator Cuff",
+    "description": "Stabilizing shoulder muscles",
+    "muscle_group_id": "64ccf81a-347f-41fb-9fea-0cd584c344c4",
+    "inserted_at": "2025-11-26 15:26:30.484757",
+    "updated_at": "2025-11-26 15:26:30.484757"
+  },
+  {
+    "id": "83878142-4bc8-4f0d-9a56-d70aa7025788",
+    "name": "Biceps Brachii",
+    "description": "Front of upper arm",
+    "muscle_group_id": "89fcc278-fd7b-4d4d-8f60-c5d92c1192ca",
+    "inserted_at": "2025-11-26 15:26:30.485896",
+    "updated_at": "2025-11-26 15:26:30.485896"
+  },
+  {
+    "id": "fd37d32f-d0e9-43af-8847-2a828fa6f471",
+    "name": "Brachialis",
+    "description": "Muscle under the biceps",
+    "muscle_group_id": "89fcc278-fd7b-4d4d-8f60-c5d92c1192ca",
+    "inserted_at": "2025-11-26 15:26:30.486441",
+    "updated_at": "2025-11-26 15:26:30.486441"
+  },
+  {
+    "id": "70790e67-2a71-4676-9de0-a0cf02f6ed47",
+    "name": "Triceps Brachii",
+    "description": "Back of upper arm",
+    "muscle_group_id": "89fcc278-fd7b-4d4d-8f60-c5d92c1192ca",
+    "inserted_at": "2025-11-26 15:26:30.487000",
+    "updated_at": "2025-11-26 15:26:30.487000"
+  },
+  {
+    "id": "532e025c-8348-4c70-8bca-38d49fc3ace6",
+    "name": "Forearms",
+    "description": "Lower arm muscles",
+    "muscle_group_id": "89fcc278-fd7b-4d4d-8f60-c5d92c1192ca",
+    "inserted_at": "2025-11-26 15:26:30.487657",
+    "updated_at": "2025-11-26 15:26:30.487657"
+  },
+  {
+    "id": "2bb76454-2189-48b8-ac9b-6d239166682a",
+    "name": "Quadriceps",
+    "description": "Front thigh muscles",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.488922",
+    "updated_at": "2025-11-26 15:26:30.488922"
+  },
+  {
+    "id": "b031aee3-c257-4cfb-a6eb-861b65e1736f",
+    "name": "Hamstrings",
+    "description": "Back thigh muscles",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.489487",
+    "updated_at": "2025-11-26 15:26:30.489487"
+  },
+  {
+    "id": "8570e6cd-fad0-4378-a6da-8c3ef5eda234",
+    "name": "Gluteus Maximus",
+    "description": "Main buttock muscle",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.490147",
+    "updated_at": "2025-11-26 15:26:30.490147"
+  },
+  {
+    "id": "9a641ba5-7011-4a6f-96b9-75e704ee1378",
+    "name": "Gluteus Medius",
+    "description": "Side hip muscle",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.490745",
+    "updated_at": "2025-11-26 15:26:30.490745"
+  },
+  {
+    "id": "8ba45efe-22d0-46bd-9661-671063c79565",
+    "name": "Calves",
+    "description": "Lower leg muscles (Gastrocnemius & Soleus)",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.491300",
+    "updated_at": "2025-11-26 15:26:30.491300"
+  },
+  {
+    "id": "ffdd2761-a024-424d-9de3-f3a411de013d",
+    "name": "Adductors",
+    "description": "Inner thigh muscles",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.491855",
+    "updated_at": "2025-11-26 15:26:30.491855"
+  },
+  {
+    "id": "e4440e5b-e395-410e-8880-bb29ad740e04",
+    "name": "Abductors",
+    "description": "Outer hip muscles",
+    "muscle_group_id": "881353d1-dd50-478b-815c-295e4563fa66",
+    "inserted_at": "2025-11-26 15:26:30.492428",
+    "updated_at": "2025-11-26 15:26:30.492428"
+  },
+  {
+    "id": "c12c3726-2ca4-4c92-8cab-99730daa9df8",
+    "name": "Rectus Abdominis",
+    "description": "Six-pack muscle",
+    "muscle_group_id": "9646418d-8bd5-4e9a-b6dd-06a6d9af8731",
+    "inserted_at": "2025-11-26 15:26:30.494596",
+    "updated_at": "2025-11-26 15:26:30.494596"
+  },
+  {
+    "id": "f470f324-b62b-4b1b-8b4a-a2d7d28c07ed",
+    "name": "Obliques",
+    "description": "Side abdominal muscles",
+    "muscle_group_id": "9646418d-8bd5-4e9a-b6dd-06a6d9af8731",
+    "inserted_at": "2025-11-26 15:26:30.495334",
+    "updated_at": "2025-11-26 15:26:30.495334"
+  },
+  {
+    "id": "378600e1-53a6-44c8-9573-af586c196f38",
+    "name": "Transverse Abdominis",
+    "description": "Deep core muscle",
+    "muscle_group_id": "9646418d-8bd5-4e9a-b6dd-06a6d9af8731",
+    "inserted_at": "2025-11-26 15:26:30.495909",
+    "updated_at": "2025-11-26 15:26:30.495909"
+  }
+]

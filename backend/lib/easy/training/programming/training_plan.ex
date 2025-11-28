@@ -3,7 +3,7 @@ defmodule Easy.Training.Programming.TrainingPlan do
 
   alias Easy.Organizations.{Business, Coach}
   alias Easy.Clients.Client
-  alias Easy.Training.Programming.{Phase, PhaseAssignment}
+  alias Easy.Training.Programming.PlannedWorkout
 
   schema "training_plans" do
     field :name, :string
@@ -16,8 +16,7 @@ defmodule Easy.Training.Programming.TrainingPlan do
     belongs_to :client, Client
     belongs_to :original_template, __MODULE__
 
-    has_many :phases, Phase
-    has_many :phase_assignments, PhaseAssignment
+    has_many :planned_workouts, PlannedWorkout, preload_order: [asc: :day_number]
 
     timestamps()
   end

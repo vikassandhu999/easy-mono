@@ -1,6 +1,6 @@
 import {useCallback} from 'react';
 
-import {useLazyLogoutQuery, useRefreshTokenMutation} from '@/services/auth';
+import {useLogoutMutation, useRefreshTokenMutation} from '@/services/auth';
 import {
     logout as logoutAction,
     selectAuth,
@@ -27,7 +27,7 @@ export const useAuthActions = () => {
     const isAuthenticating = useAppSelector(selectIsAuthenticating);
 
     const [refreshTokenMutation] = useRefreshTokenMutation();
-    const [logoutQuery] = useLazyLogoutQuery();
+    const [logoutMutation] = useLogoutMutation();
 
     /**
      * Save auth tokens and user data after login/register
@@ -105,7 +105,7 @@ export const useAuthActions = () => {
         async (showNotification = true) => {
             try {
                 // Call backend logout endpoint
-                await logoutQuery().unwrap();
+                await logoutMutation().unwrap();
 
                 // Clear Redux state and localStorage
                 dispatch(logoutAction());
@@ -124,7 +124,7 @@ export const useAuthActions = () => {
                 }
             }
         },
-        [dispatch, logoutQuery],
+        [dispatch, logoutMutation],
     );
 
     /**

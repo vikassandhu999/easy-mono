@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {ActionIcon, Loader, Text, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconGripVertical, IconPlus, IconSearch, IconTrash} from '@tabler/icons-react';
+import {IconGripVertical, IconPlus, IconTrash} from '@tabler/icons-react';
 import {FC, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {UseFormReturn, useWatch} from 'react-hook-form';
 
@@ -23,9 +23,9 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
     const [focusedResultIndex, setFocusedResultIndex] = useState(0);
-    const [lastAddedId, setLastAddedId] = useState<string | null>(null);
-    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [lastAddedId, setLastAddedId] = useState<null | string>(null);
+    const [draggedIndex, setDraggedIndex] = useState<null | number>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<null | number>(null);
 
     const {data, isLoading} = useListIngredients(
         {
@@ -152,7 +152,13 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     const reorderIngredients = useCallback(
         (fromIndex: number, toIndex: number) => {
             const prev = watch('recipe_ingredients') || [];
-            if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+            if (
+                fromIndex === toIndex ||
+                fromIndex < 0 ||
+                toIndex < 0 ||
+                fromIndex >= prev.length ||
+                toIndex >= prev.length
+            ) {
                 return;
             }
             const newValue = [...prev];
@@ -225,7 +231,10 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                 <div className={classes.sectionTitleRow}>
                     <span className={classes.sectionTitle}>Ingredients</span>
                     {currentIngredients.length > 0 && (
-                        <Text c="dimmed" size="xs">
+                        <Text
+                            c="dimmed"
+                            size="xs"
+                        >
                             {currentIngredients.length} added
                         </Text>
                     )}
@@ -236,14 +245,16 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                 {/* Search Input - Always visible at top */}
                 <div className={classes.searchInputWrapper}>
                     <TextInput
-                        ref={searchInputRef}
-                        leftSection={<IconSearch size={16} />}
                         onChange={handleSearchTerm}
                         onKeyDown={handleSearchKeyDown}
                         placeholder="Search and add ingredients..."
+                        ref={searchInputRef}
                         rightSection={
                             isLoading ? (
-                                <Loader color="orange" size="xs" />
+                                <Loader
+                                    color="orange"
+                                    size="xs"
+                                />
                             ) : null
                         }
                         size="sm"
@@ -281,7 +292,11 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                                 ))}
                             </div>
                         )}
-                        <Text c="dimmed" className={classes.keyboardHint} size="xs">
+                        <Text
+                            c="dimmed"
+                            className={classes.keyboardHint}
+                            size="xs"
+                        >
                             ↑↓ Navigate • Enter to add{fetchedIngredients.length === 0 && searchTerm ? ' new' : ''}
                         </Text>
                     </div>
@@ -307,15 +322,15 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                                     {ingredient?.ingredient?.name || ingredient?.name}
                                 </span>
                                 <TextInput
-                                    ref={(el) => {
-                                        if (el) quantityRefs.current.set(ingredient.ingredient_id, el);
-                                    }}
                                     className={classes.ingredientQuantity}
                                     onChange={(e) => {
                                         updateIngredientQuntity(ingredient.ingredient_id, e.currentTarget.value);
                                     }}
                                     onKeyDown={(e) => handleQuantityKeyDown(e, idx)}
                                     placeholder="e.g. 200g, 1 cup"
+                                    ref={(el) => {
+                                        if (el) quantityRefs.current.set(ingredient.ingredient_id, el);
+                                    }}
                                     size="xs"
                                     value={ingredient.quantity_as_text || ''}
                                 />
@@ -337,7 +352,10 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                 {/* Empty state */}
                 {currentIngredients.length === 0 && !searchTerm && (
                     <div className={classes.emptyState}>
-                        <Text c="dimmed" size="xs">
+                        <Text
+                            c="dimmed"
+                            size="xs"
+                        >
                             Start typing to search and add ingredients
                         </Text>
                     </div>

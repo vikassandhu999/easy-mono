@@ -1,8 +1,13 @@
-import {Badge, Card, Group, Stack, Text, useMantineTheme} from '@mantine/core';
-import {useMemo} from 'react';
+import {Badge, Button, Card, Checkbox, Group, Modal, Stack, Text, useMantineTheme} from '@mantine/core';
+import {useDisclosure} from '@mantine/hooks';
+import {IconBarbell, IconChevronDown, IconX} from '@tabler/icons-react';
+import {useMemo, useState} from 'react';
 
-import {Exercise, isSystemExercise, useListExercises} from '@/services/exercises';
+import {Exercise, isSystemExercise, Muscle, useListExercises} from '@/services/exercises';
+import {useListMuscles} from '@/services/muscles';
 import RecordsList from '@/shared/layouts/RecordsList';
+
+import classes from './styles.module.css';
 
 interface ExerciseListItemProps {
     exercise: Exercise;
@@ -87,27 +92,179 @@ export interface ExerciseListProps {
 }
 
 const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
+    const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
+    const [tempSelectedMuscleIds, setTempSelectedMuscleIds] = useState<string[]>([]);
+    const [modalOpened, {open: openModal, close: closeModal}] = useDisclosure(false);
+
+    // Fetch muscles for filter
+    const {data: musclesData} = useListMuscles({});
+    const muscles = musclesData?.data ?? [];
+
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListExercises({
         search: search || undefined,
+        muscle_ids: selectedMuscleIds.length > 0 ? selectedMuscleIds : undefined,
     });
 
     const exercises = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
+    // Group muscles by their group
+    const musclesByGroup = useMemo(() => {
+        const grouped: Record<string, Muscle[]> = {};
+        muscles.forEach((muscle) => {
+            const group = muscle.group || 'Other';
+            if (!grouped[group]) {
+                grouped[group] = [];
+            }
+            grouped[group].push(muscle);
+        });
+        return grouped;
+    }, [muscles]);
+
+    const handleToggleMuscle = (muscleId: string) => {
+        setTempSelectedMuscleIds((prev) =>
+            prev.includes(muscleId) ? prev.filter((id) => id !== muscleId) : [...prev, muscleId],
+        );
+    };
+
+    const handleClearMuscleFilters = () => {
+        setSelectedMuscleIds([]);
+        setTempSelectedMuscleIds([]);
+    };
+
+    const handleOpenModal = () => {
+        setTempSelectedMuscleIds(selectedMuscleIds);
+        openModal();
+    };
+
+    const handleApplyFilters = () => {
+        setSelectedMuscleIds(tempSelectedMuscleIds);
+        closeModal();
+    };
+
+    const handleRemoveMuscle = (muscleId: string) => {
+        setSelectedMuscleIds((prev) => prev.filter((id) => id !== muscleId));
+    };
+
     return (
-        <RecordsList
-            emptyState={<Text>No Exercise Found</Text>}
-            fetchNextPage={fetchNextPage}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            isLoading={isLoading}
-            records={exercises}
-            renderItem={(exercise) => (
-                <ExerciseListItem
-                    exercise={exercise}
-                    onClick={onExerciseClick}
-                />
-            )}
-        />
+        <div className={classes.container}>
+            {/* Muscle Filter */}
+            <div className={classes.filterRow}>
+                <button
+                    className={`${classes.muscleFilterButton} ${selectedMuscleIds.length > 0 ? classes.muscleFilterButtonActive : ''}`}
+                    onClick={handleOpenModal}
+                    type="button"
+                >
+                    <IconBarbell size={14} />
+                    <span>Muscles</span>
+                    {selectedMuscleIds.length > 0 && (
+                        <span className={classes.muscleCount}>{selectedMuscleIds.length}</span>
+                    )}
+                    <IconChevronDown size={14} />
+                </button>
+
+                {/* Selected muscle chips */}
+                {selectedMuscleIds.length > 0 && (
+                    <div className={classes.selectedChips}>
+                        {selectedMuscleIds.map((muscleId) => {
+                            const muscle = muscles.find((m) => m.id === muscleId);
+                            if (!muscle) return null;
+                            return (
+                                <button
+                                    className={classes.selectedChip}
+                                    key={muscleId}
+                                    onClick={() => handleRemoveMuscle(muscleId)}
+                                    type="button"
+                                >
+                                    {muscle.name}
+                                    <IconX size={12} />
+                                </button>
+                            );
+                        })}
+                        <button
+                            className={classes.clearAllButton}
+                            onClick={handleClearMuscleFilters}
+                            type="button"
+                        >
+                            Clear all
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Muscle Filter Modal */}
+            <Modal
+                centered
+                onClose={closeModal}
+                opened={modalOpened}
+                size="sm"
+                title="Filter by Muscles"
+            >
+                <Stack gap="md">
+                    {Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
+                        <div key={group}>
+                            <Text
+                                c="dimmed"
+                                fw={600}
+                                mb="xs"
+                                size="xs"
+                                tt="uppercase"
+                            >
+                                {group}
+                            </Text>
+                            <Stack gap="xs">
+                                {groupMuscles.map((muscle) => (
+                                    <Checkbox
+                                        checked={tempSelectedMuscleIds.includes(muscle.id)}
+                                        key={muscle.id}
+                                        label={muscle.name}
+                                        onChange={() => handleToggleMuscle(muscle.id)}
+                                    />
+                                ))}
+                            </Stack>
+                        </div>
+                    ))}
+
+                    <Group
+                        gap="sm"
+                        justify="flex-end"
+                        mt="md"
+                    >
+                        {tempSelectedMuscleIds.length > 0 && (
+                            <Button
+                                color="gray"
+                                onClick={() => setTempSelectedMuscleIds([])}
+                                size="sm"
+                                variant="subtle"
+                            >
+                                Clear
+                            </Button>
+                        )}
+                        <Button
+                            onClick={handleApplyFilters}
+                            radius="xl"
+                            size="sm"
+                        >
+                            Apply Filters
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+            <RecordsList
+                emptyState={<Text>No Exercise Found</Text>}
+                fetchNextPage={fetchNextPage}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                isLoading={isLoading}
+                records={exercises}
+                renderItem={(exercise) => (
+                    <ExerciseListItem
+                        exercise={exercise}
+                        onClick={onExerciseClick}
+                    />
+                )}
+            />
+        </div>
     );
 };
 

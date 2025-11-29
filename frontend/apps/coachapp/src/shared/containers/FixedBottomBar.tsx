@@ -21,8 +21,6 @@ export const FixedBottomBar: React.FC<FixedBottomBarProps> = ({children, maxWidt
             document.body.style.setProperty('--ce-appbar-height', `calc(${height}px)`);
         }
 
-        console.log();
-
         return () => {
             document.body.style.removeProperty('--ce-appbar-height');
         };

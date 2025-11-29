@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {ActionIcon, Menu, Modal} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconCopy, IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
+import {IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
 import {FC} from 'react';
 import {useSearchParams} from 'react-router';
 
@@ -173,13 +173,15 @@ const ActionMenu: FC<ActionMenuProps> = ({trainingPlanId, isTemplate, onEdit, on
                 >
                     Edit Basic Info
                 </Menu.Item>
+                {isTemplate && (
+                    <Menu.Item
+                        leftSection={<IconCopyPlus size={14} />}
+                        onClick={onDuplicate}
+                    >
+                        Duplicate
+                    </Menu.Item>
+                )}
 
-                <Menu.Item
-                    leftSection={<IconCopyPlus size={14} />}
-                    onClick={onDuplicate}
-                >
-                    Duplicate
-                </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item
                     color="red"

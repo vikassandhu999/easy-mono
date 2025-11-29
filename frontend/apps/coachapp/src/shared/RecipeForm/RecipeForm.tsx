@@ -9,6 +9,7 @@ import {CreateRecipe_zod, CreateRecipeForm, UpdateRecipe, useGetRecipe} from '@/
 import {notifyError} from '@/utils/notification';
 
 import {containsNutrition, getDefaultValues, populateRecipe} from './helper';
+import ImagePicker from './ImagePicker';
 import IngrdeintsField from './IngredientsField';
 import InstructionsField from './InstructionsField';
 import classes from './styles.module.css';
@@ -139,6 +140,9 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
     return (
         <form onSubmit={handleSubmit(onSubmitForm)}>
             <div className={classes.formContainer}>
+                {/* Recipe Image */}
+                <ImagePicker form={form} />
+
                 {/* Recipe Name */}
                 <Controller
                     control={control}

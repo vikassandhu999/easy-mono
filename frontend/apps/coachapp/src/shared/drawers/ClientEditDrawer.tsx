@@ -1,34 +1,88 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Group, Stack, Textarea, TextInput} from '@mantine/core';
+import {Button, Group, Loader, Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {useEffect} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import {Client, UpdateClient_zod, UpdateClientProps, useUpdateClient} from '@/services/clients';
+import {UpdateClient_zod, UpdateClientProps, useGetClient, useUpdateClient} from '@/services/clients';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
-interface ClientEditDrawerProps {
-    client: Client;
-}
+const ClientEditDrawer = () => {
+    const {closeDrawer, getDrawerParams} = useParamsDrawer({});
+    const {client_id} = getDrawerParams();
 
-const ClientEditDrawer = ({client}: ClientEditDrawerProps) => {
-    const {closeDrawer} = useParamsDrawer({});
+    const {data: client, isLoading: isLoadingClient} = useGetClient(client_id || '', {
+        skip: !client_id,
+    });
+
     const [updateClient, {isLoading}] = useUpdateClient();
 
-    const {control, handleSubmit} = useForm<UpdateClientProps>({
+    const {control, handleSubmit, reset} = useForm<UpdateClientProps>({
         defaultValues: {
-            full_name: client.full_name,
-            phone: client.phone || undefined,
-            notes: client.notes || undefined,
+            full_name: '',
+            phone: undefined,
+            notes: undefined,
         },
         resolver: zodResolver(UpdateClient_zod),
     });
 
+    useEffect(() => {
+        if (client) {
+            reset({
+                full_name: client.full_name,
+                phone: client.phone || undefined,
+                notes: client.notes || undefined,
+            });
+        }
+    }, [client, reset]);
+
+    if (isLoadingClient) {
+        return (
+            <AutoDrawer
+                content={
+                    <Stack
+                        align="center"
+                        justify="center"
+                        py="xl"
+                    >
+                        <Loader size="sm" />
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                        >
+                            Loading client...
+                        </Text>
+                    </Stack>
+                }
+                onClose={closeDrawer}
+                title="Edit Client Profile"
+            />
+        );
+    }
+
+    if (!client) {
+        return (
+            <AutoDrawer
+                content={
+                    <Text
+                        c="red"
+                        size="sm"
+                    >
+                        Client not found
+                    </Text>
+                }
+                onClose={closeDrawer}
+                title="Edit Client Profile"
+            />
+        );
+    }
+
     const handleFormSubmit = async (values: UpdateClientProps) => {
         try {
             await updateClient({
-                clientId: client.id,
+                clientId: client_id!,
                 data: values,
             }).unwrap();
             notifySuccess('Client profile updated successfully');

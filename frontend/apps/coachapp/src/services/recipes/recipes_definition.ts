@@ -30,6 +30,7 @@ export type Recipe = {
     description: null | string;
     instructions?: null | string[];
     instructions_as_text: null | string;
+    image_url: null | string;
 
     prep_time_minutes: null | number;
     cook_time_minutes: null | number;
@@ -72,12 +73,25 @@ export type CreateRecipeForm = CreateRecipe;
 
 export type UpdateRecipe = Partial<CreateRecipe> & {id: string};
 
+export type DuplicateRecipe = {
+    id: string;
+};
+
 export const IngredientItem_zod = z.object({
     name: z.string().optional(), // will not be sent to api this is for fe and will be filtered
     order: z.number(),
     ingredient_id: z.string(),
     quantity_as_text: z.string().min(0, 'Please Enter quanity.'),
 });
+
+// Predefined recipe images available for selection
+export const RECIPE_IMAGE_OPTIONS = [
+    {id: '1', url: '/recipes/1.png', label: 'Recipe Image 1'},
+    {id: '2', url: '/recipes/2.png', label: 'Recipe Image 2'},
+    {id: '3', url: '/recipes/3.png', label: 'Recipe Image 3'},
+    {id: '4', url: '/recipes/4.png', label: 'Recipe Image 4'},
+    {id: '5', url: '/recipes/5.png', label: 'Recipe Image 5'},
+];
 
 export const CreateRecipe_zod = z.object({
     name: z
@@ -87,6 +101,7 @@ export const CreateRecipe_zod = z.object({
     description: z.string().optional(),
     instructions: z.array(z.string()).optional(),
     instructions_as_text: z.string().optional(),
+    image_url: z.string().optional(),
     prep_time_minutes: z.number().int().min(1, 'Prep time must be at least 1 minute').optional(),
     cook_time_minutes: z.number().int().min(1, 'Cook time must be at least 1 minute').optional(),
     servings: z.number().int().min(1, 'Servings must be at least 1').optional(),

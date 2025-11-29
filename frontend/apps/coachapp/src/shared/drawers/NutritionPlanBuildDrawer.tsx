@@ -1,24 +1,24 @@
 import {humanizeError} from '@easy/error-parser';
 import {ActionIcon, Menu, Modal} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconCopy, IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
+import {IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
 import {FC} from 'react';
 import {useSearchParams} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import useScreenSize from '@/hooks/useScreenSize';
-import {useDeleteNutritionPlan, useGetNutritionPlan} from '@/services/nutrition_plans';
+import {useDeleteNutritionPlan, useDuplicateNutritionPlan, useGetNutritionPlan} from '@/services/nutrition_plans';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import NutritionPlanBuilder from '@/shared/NutritionPlanBuilder/NutritionPlanBuilder';
 import {notifyError, notifySuccess} from '@/utils/notification';
 
 type ActionMenuProps = {
     nutritionPlanId: string;
+    isTemplate: boolean;
     onEdit: () => void;
     onDelete: () => void;
     onDuplicate: () => void;
-    onAssign: () => void;
 };
 
 export default function NutritionPlanBuildDrawer() {
@@ -27,6 +27,7 @@ export default function NutritionPlanBuildDrawer() {
     const {isMobile} = useScreenSize();
     const [deleteModalOpened, {open: openDeleteModal, close: closeDeleteModal}] = useDisclosure(false);
     const [deleteNutritionPlan, {isLoading: isDeleting}] = useDeleteNutritionPlan();
+    const [duplicateNutritionPlan, {isLoading: isDuplicating}] = useDuplicateNutritionPlan();
 
     const nutritionPlanId = searchParams.get('nutrition_plan_id') ?? '';
 
@@ -60,17 +61,21 @@ export default function NutritionPlanBuildDrawer() {
         }
     };
 
-    const handleDuplicate = () => {
-        // TODO: Implement duplicate functionality
-        // This should create a copy of the nutrition plan
-        console.log('Duplicate nutrition plan:', nutritionPlanId);
-        notifyError('Duplicate functionality coming soon!');
-    };
+    const handleDuplicate = async () => {
+        if (!nutritionPlanId || isDuplicating) return;
 
-    const handleAssign = () => {
-        // TODO: Implement assign to client functionality
-        console.log('Assign nutrition plan to client:', nutritionPlanId);
-        notifyError('Assign to client functionality coming soon!');
+        try {
+            const duplicatedPlan = await duplicateNutritionPlan({id: nutritionPlanId}).unwrap();
+            notifySuccess('Nutrition plan duplicated successfully');
+
+            // Open the duplicated plan in the builder
+            openDrawer(DRAWER_KEYS.NUTRITION_PLAN_BUILDER, {
+                nutrition_plan_id: duplicatedPlan.id,
+            });
+        } catch (error) {
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
+        }
     };
 
     return (
@@ -78,8 +83,8 @@ export default function NutritionPlanBuildDrawer() {
             <AutoDrawer
                 actions={
                     <ActionMenu
+                        isTemplate={plan?.is_template ?? true}
                         nutritionPlanId={nutritionPlanId}
-                        onAssign={handleAssign}
                         onDelete={openDeleteModal}
                         onDuplicate={handleDuplicate}
                         onEdit={handleEdit}
@@ -137,7 +142,7 @@ export default function NutritionPlanBuildDrawer() {
     );
 }
 
-const ActionMenu: FC<ActionMenuProps> = ({nutritionPlanId, onEdit, onDelete, onDuplicate, onAssign}) => {
+const ActionMenu: FC<ActionMenuProps> = ({nutritionPlanId, isTemplate, onEdit, onDelete, onDuplicate}) => {
     if (!nutritionPlanId) return null;
 
     return (
@@ -162,18 +167,14 @@ const ActionMenu: FC<ActionMenuProps> = ({nutritionPlanId, onEdit, onDelete, onD
                 >
                     Edit Basic Info
                 </Menu.Item>
-                <Menu.Item
-                    leftSection={<IconCopy size={14} />}
-                    onClick={onAssign}
-                >
-                    Assign to a client
-                </Menu.Item>
-                <Menu.Item
-                    leftSection={<IconCopyPlus size={14} />}
-                    onClick={onDuplicate}
-                >
-                    Duplicate
-                </Menu.Item>
+                {isTemplate && (
+                    <Menu.Item
+                        leftSection={<IconCopyPlus size={14} />}
+                        onClick={onDuplicate}
+                    >
+                        Duplicate
+                    </Menu.Item>
+                )}
                 <Menu.Divider />
                 <Menu.Item
                     color="red"

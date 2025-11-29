@@ -100,11 +100,11 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
             ],
         }),
 
-        assignTrainingPlan: build.mutation<TrainingPlan, {id: string; client_id: string}>({
-            query: ({id, client_id}) => ({
+        assignTrainingPlan: build.mutation<TrainingPlan, {id: string; client_id: string; start_date?: string}>({
+            query: ({id, client_id, start_date}) => ({
                 url: `/api/training_plans/${id}/assign`,
                 method: 'post',
-                data: {client_id},
+                data: {client_id, start_date},
             }),
             transformResponse: (response: {data: TrainingPlan}) => response.data,
             invalidatesTags: ['TrainingPlans'],

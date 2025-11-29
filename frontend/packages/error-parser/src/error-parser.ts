@@ -12,11 +12,35 @@ export interface WrappedError {
     data: APIError;
 }
 
+const DEFAULT_ERROR: APIError = {
+    error_code: 'internal_error',
+    error_detail: null,
+    error_message: 'An unexpected error occurred.',
+    status: 'bad_request',
+};
+
 class APIErrorParser {
     private err: APIError;
 
-    constructor(err: WrappedError) {
-        this.err = err.data;
+    constructor(err: unknown | WrappedError) {
+        // Handle various error formats gracefully
+        if (err && typeof err === 'object' && 'data' in err && err.data && typeof err.data === 'object') {
+            const data = err.data as Record<string, unknown>;
+            // Check if it looks like our API error format
+            if ('error_code' in data || 'error_message' in data) {
+                this.err = err.data as APIError;
+            } else {
+                this.err = DEFAULT_ERROR;
+            }
+        } else if (err && typeof err === 'object' && 'message' in err) {
+            // Handle standard Error objects or axios errors without proper data
+            this.err = {
+                ...DEFAULT_ERROR,
+                error_message: (err as {message: string}).message,
+            };
+        } else {
+            this.err = DEFAULT_ERROR;
+        }
     }
 
     /**
@@ -224,24 +248,24 @@ class APIErrorParser {
 }
 
 // Factory function - use this instead of `new APIErrorParser()`
-export const parseError = (err: WrappedError): APIErrorParser => {
+export const parseError = (err: unknown | WrappedError): APIErrorParser => {
     return new APIErrorParser(err);
 };
 
 // Convenience functions for quick access
-export const humanizeError = (err: WrappedError): string => {
+export const humanizeError = (err: unknown | WrappedError): string => {
     return parseError(err).humanize();
 };
 
-export const getFieldErrors = (err: WrappedError): null | Record<string, string[]> => {
+export const getFieldErrors = (err: unknown | WrappedError): null | Record<string, string[]> => {
     return parseError(err).getFieldErrors();
 };
 
-export const getFieldError = (err: WrappedError, fieldName: string): null | string => {
+export const getFieldError = (err: unknown | WrappedError, fieldName: string): null | string => {
     return parseError(err).getFieldError(fieldName);
 };
 
-export const isValidationError = (err: WrappedError): boolean => {
+export const isValidationError = (err: unknown | WrappedError): boolean => {
     return parseError(err).isValidationError();
 };
 

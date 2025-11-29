@@ -93,7 +93,12 @@ export const CreateNutritionPlan_zod = z.object({
 export type CreateNutritionPlan = z.infer<typeof CreateNutritionPlan_zod>;
 export type UpdateNutritionPlan = Partial<CreateNutritionPlan> & {id: string};
 
+export type DuplicateNutritionPlan = {
+    id: string;
+};
+
 export type AssignNutritionPlan = {
     id: string;
     client_id: string;
+    start_date?: string;
 };

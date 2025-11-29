@@ -1,0 +1,171 @@
+/**
+ * ExerciseList Styles
+ *
+ * Mobile-first styles for exercise list with muscle filter.
+ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ============================================
+   FILTER ROW
+   ============================================ */
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   MUSCLE FILTER BUTTON
+   ============================================ */
+
+.muscleFilterButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-6);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.muscleFilterButton:hover {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-4);
+}
+
+.muscleFilterButtonActive {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-3);
+  color: var(--mantine-color-blue-7);
+}
+
+.muscleFilterButtonActive:hover {
+  background: var(--mantine-color-blue-1);
+}
+
+/* ============================================
+   MUSCLE COUNT BADGE
+   ============================================ */
+
+.muscleCount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  background: var(--mantine-color-blue-6);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  color: white;
+}
+
+/* ============================================
+   SELECTED MUSCLE CHIPS
+   ============================================ */
+
+.selectedChips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.selectedChip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-blue-7);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.selectedChip:hover {
+  background: var(--mantine-color-blue-1);
+  border-color: var(--mantine-color-blue-3);
+}
+
+.selectedChip svg {
+  opacity: 0.7;
+}
+
+.selectedChip:hover svg {
+  opacity: 1;
+}
+
+/* ============================================
+   CLEAR ALL BUTTON
+   ============================================ */
+
+.clearAllButton {
+  display: flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-red-6);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clearAllButton:hover {
+  background: var(--mantine-color-red-0);
+  color: var(--mantine-color-red-7);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (min-width: 768px) {
+  .muscleFilterButton {
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .selectedChip {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .muscleFilterButton,
+  .selectedChip,
+  .clearAllButton {
+    transition: none;
+  }
+}

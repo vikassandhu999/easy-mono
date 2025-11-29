@@ -3,6 +3,7 @@ import {buildListParams, getNextPage} from '../paginationUtils';
 import {
     AssignNutritionPlan,
     CreateNutritionPlan,
+    DuplicateNutritionPlan,
     NutritionPlan,
     NutritionPlansList,
     NutritionPlansListOpts,
@@ -100,10 +101,22 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
         }),
 
         assignNutritionPlan: build.mutation<NutritionPlan, AssignNutritionPlan>({
-            query: ({id, client_id}) => ({
+            query: ({id, client_id, start_date}) => ({
                 url: `/api/nutrition_plans/${id}/assign`,
                 method: 'post',
-                data: {client_id},
+                data: {client_id, start_date},
+            }),
+            transformResponse: (response: {data: NutritionPlan}) => response.data,
+            invalidatesTags: (result) => [
+                {type: 'NutritionPlans', id: result?.id},
+                {type: 'NutritionPlans', id: 'LIST'},
+            ],
+        }),
+
+        duplicateNutritionPlan: build.mutation<NutritionPlan, DuplicateNutritionPlan>({
+            query: ({id}) => ({
+                url: `/api/nutrition_plans/${id}/duplicate`,
+                method: 'post',
             }),
             transformResponse: (response: {data: NutritionPlan}) => response.data,
             invalidatesTags: (result) => [
@@ -122,4 +135,5 @@ export const {
     useListNutritionPlansInfiniteQuery: useListNutritionPlans,
     useDeleteNutritionPlanMutation: useDeleteNutritionPlan,
     useAssignNutritionPlanMutation: useAssignNutritionPlan,
+    useDuplicateNutritionPlanMutation: useDuplicateNutritionPlan,
 } = nutritionPlansApi;

@@ -47,7 +47,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
         updateExercise: build.mutation<Exercise, UpdateExercise>({
             query: (body) => ({
                 url: `/api/exercises/${body.id}`,
-                method: 'put',
+                method: 'patch',
                 data: {
                     ...body,
                     id: undefined,

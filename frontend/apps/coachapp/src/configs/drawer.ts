@@ -125,6 +125,21 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         prev_key: null,
         values: ['client_id'],
     },
+    // Profile drawers
+    {
+        id: 'business-edit',
+        key: 'business_edit',
+        type: 'edit',
+        prev_key: null,
+        values: [],
+    },
+    {
+        id: 'coach-profile-edit',
+        key: 'coach_profile_edit',
+        type: 'edit',
+        prev_key: null,
+        values: [],
+    },
     // Assign Plan drawers
     {
         id: 'assign-plan',
@@ -181,6 +196,10 @@ export const DRAWER_KEYS = {
     // Client
     CLIENT_INVITE: 'client_invite',
     CLIENT_EDIT: 'client_edit',
+
+    // Profile
+    BUSINESS_EDIT: 'business_edit',
+    COACH_PROFILE_EDIT: 'coach_profile_edit',
 
     // Assign Plan
     ASSIGN_PLAN: 'assign_plan',

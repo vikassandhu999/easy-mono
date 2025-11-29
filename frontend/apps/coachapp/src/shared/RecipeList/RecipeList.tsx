@@ -14,6 +14,8 @@ interface RecipeListItemProps {
 }
 
 const RecipeListItem = ({recipe, onClick}: RecipeListItemProps) => {
+    const imageUrl = recipe.image_url || RecipeSampleImage;
+
     return (
         <div
             className={classes.recipeCard}
@@ -32,7 +34,7 @@ const RecipeListItem = ({recipe, onClick}: RecipeListItemProps) => {
                 <img
                     alt={recipe.name}
                     className={classes.image}
-                    src={RecipeSampleImage}
+                    src={imageUrl}
                 />
             </div>
 

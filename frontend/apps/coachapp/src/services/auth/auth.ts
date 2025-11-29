@@ -1,3 +1,4 @@
+import {baseAPISlice} from '../baseAPISlice';
 import {
     RefreshTokenRequest,
     RefreshTokenResponse,
@@ -5,14 +6,14 @@ import {
     type RegisterResponse,
     SendLoginCodeRequest,
     SendLoginCodeResponse,
+    UpdateCoachProfileRequest,
+    UpdateCoachProfileResponse,
     UserProfileResponse,
     VerifyLoginRequest,
     VerifyLoginResponse,
     VerifyRegisterationRequest,
     VerifyRegisterationResponse,
-} from '@/services/auth';
-
-import {baseAPISlice} from '../baseAPISlice';
+} from './auth_definition';
 
 export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
@@ -57,23 +58,31 @@ export const authApi = baseAPISlice.injectEndpoints({
                 method: 'get',
             }),
         }),
-        logout: build.query<{status: string}, void>({
+        logout: build.mutation<{status: string}, void>({
             query: () => ({
                 url: '/api/auth/logout',
-                method: 'get',
+                method: 'post',
             }),
+        }),
+        updateCoachProfile: build.mutation<UpdateCoachProfileResponse, UpdateCoachProfileRequest>({
+            query: (body) => ({
+                url: '/api/auth/profile',
+                method: 'patch',
+                data: body,
+            }),
+            invalidatesTags: ['Coach'],
         }),
     }),
     overrideExisting: false,
 });
 
 export const {
-    useLogoutQuery,
-    useLazyLogoutQuery,
+    useLogoutMutation,
     useRefreshTokenMutation,
     useRegisterMutation,
     useVerifyRegirationMutation,
     useSendLoginCodeMutation,
     useVerifyLoginMutation,
     useProfileQuery,
+    useUpdateCoachProfileMutation,
 } = authApi;

@@ -3,10 +3,16 @@ import {notifications} from '@mantine/notifications';
 import {skipToken} from '@reduxjs/toolkit/query';
 import {useCallback, useState} from 'react';
 
-import {Session, SessionType} from '@/services/session';
+import {
+    Session,
+    SessionType,
+    useCreateSessionMutation,
+    useGetSessionQuery,
+    useUpdateSessionMutation,
+} from '@/services/session';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import {useCreateSessionMutation, useGetSessionQuery, useUpdateSessionMutation} from '@/services/session';
+import {logger} from '@/utils/logger';
 
 import SessionCreateForm from './SessionCreateForm';
 import {DefinitionBuildError, SessionFormValues} from './sessionForm';
@@ -41,7 +47,7 @@ export default function SessionBuilder({
     const handleDetailsSubmit = useCallback(
         async (values: SessionFormValues, action: 'close' | 'continue' = 'close') => {
             try {
-                console.log('Submitting values:', values);
+                logger.debug('Submitting session values', values);
                 if (!currentSessionId) {
                     const created = await createSession(values).unwrap();
                     setCurrentSessionId(created.id);

@@ -3,6 +3,10 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import AssignNutritionPlanDrawer from '@/shared/drawers/AssignNutritionPlanDrawer';
 import AssignPlanDrawer from '@/shared/drawers/AssignPlanDrawer';
 import AssignTrainingPlanDrawer from '@/shared/drawers/AssignTrainingPlanDrawer';
+import BusinessEditDrawer from '@/shared/drawers/BusinessEditDrawer';
+import ClientEditDrawer from '@/shared/drawers/ClientEditDrawer';
+import ClientInviteDrawer from '@/shared/drawers/ClientInviteDrawer';
+import CoachProfileEditDrawer from '@/shared/drawers/CoachProfileEditDrawer';
 import ContentCreateDrawer from '@/shared/drawers/ContentCreateDrawer';
 import ExerciseCreateDrawer from '@/shared/drawers/ExerciseCreateDrawer';
 import ExerciseEditDrawer from '@/shared/drawers/ExerciseEditDrawer';
@@ -58,6 +62,14 @@ const InAppDrawersPage = () => {
             return <TrainingPlanEditDrawer />;
         case DRAWER_KEYS.TRAINING_PLAN_BUILDER:
             return <TrainingPlanBuildDrawer />;
+        case DRAWER_KEYS.CLIENT_EDIT:
+            return <ClientEditDrawer />;
+        case DRAWER_KEYS.CLIENT_INVITE:
+            return <ClientInviteDrawer />;
+        case DRAWER_KEYS.BUSINESS_EDIT:
+            return <BusinessEditDrawer />;
+        case DRAWER_KEYS.COACH_PROFILE_EDIT:
+            return <CoachProfileEditDrawer />;
 
         default:
             return null;

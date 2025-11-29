@@ -1,6 +1,8 @@
 import {AuthToken, WebSocketClient} from '@easy/websocket';
 import React, {createContext, PropsWithChildren, useCallback, useMemo, useRef} from 'react';
 
+import {logger} from '@/utils/logger';
+
 interface AppContextValue {
     initSocket: (connectionUrl: string, token: AuthToken) => void;
     socket: WebSocketClient;
@@ -14,7 +16,7 @@ export const AppContext = createContext<AppContextValue>({
 const socket = new WebSocketClient();
 
 socket.addCloseListener((error) => {
-    console.log('Websocket error', error);
+    logger.warn('Websocket error', error);
 });
 
 export const AppProvider: React.FC<PropsWithChildren> = ({children}) => {

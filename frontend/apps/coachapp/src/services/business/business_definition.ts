@@ -26,13 +26,44 @@ export const CreateBusinessRequest_zod = z.object({
 export type CreateBusinessRequest = z.infer<typeof CreateBusinessRequest_zod>;
 
 export interface Business {
+    // Address fields
+    address: null | string;
+    city: null | string;
+    country: null | string;
     description: null | string;
+    // Contact fields
+    email: null | string;
+    handle: string;
     id: string;
+    // Timestamps
+    inserted_at: string;
+    // Branding & settings
+    logo_url: null | string;
     name: string;
-    owner_id: string;
-    slug: string;
+    phone: null | string;
+    postal_code: null | string;
+    state: null | string;
     status: string;
+    timezone: null | string;
+    updated_at: string;
+    website: null | string;
 }
+
+export const UpdateBusiness_zod = z.object({
+    name: z.string().min(1, 'Business name is required').max(255),
+    description: z.string().max(1000).optional().nullable(),
+    email: z.string().email('Invalid email').optional().nullable().or(z.literal('')),
+    phone: z.string().max(20).optional().nullable(),
+    website: z.string().url('Invalid URL').optional().nullable().or(z.literal('')),
+    address: z.string().max(255).optional().nullable(),
+    city: z.string().max(100).optional().nullable(),
+    state: z.string().max(100).optional().nullable(),
+    country: z.string().max(100).optional().nullable(),
+    postal_code: z.string().max(20).optional().nullable(),
+    timezone: z.string().optional().nullable(),
+});
+
+export type UpdateBusinessProps = z.infer<typeof UpdateBusiness_zod>;
 
 export interface CoachProfile {
     bio: null | string;

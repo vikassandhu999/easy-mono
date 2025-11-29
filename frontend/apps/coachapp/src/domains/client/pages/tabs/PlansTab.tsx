@@ -25,6 +25,12 @@ const PlansTab = ({clientId, onAddPlan}: PlansTabProps) => {
     const {openDrawer} = useParamsDrawer({});
     const [activePlanTab, setActivePlanTab] = useState<PlanTabValue>('nutrition');
 
+    const handleNutritionPlanView = (nutritionPlanId: string) => {
+        openDrawer(DRAWER_KEYS.NUTRITION_PLAN_BUILDER, {
+            nutrition_plan_id: nutritionPlanId,
+        });
+    };
+
     const handleTrainingPlanView = (trainingPlanId: string) => {
         openDrawer(DRAWER_KEYS.TRAINING_PLAN_BUILDER, {
             training_plan_id: trainingPlanId,
@@ -59,7 +65,12 @@ const PlansTab = ({clientId, onAddPlan}: PlansTabProps) => {
                 </Button>
             </Group>
 
-            {activePlanTab === 'nutrition' && <NutritionPlanList clientId={clientId} />}
+            {activePlanTab === 'nutrition' && (
+                <NutritionPlanList
+                    clientId={clientId}
+                    onPlanClick={handleNutritionPlanView}
+                />
+            )}
             {activePlanTab === 'training' && (
                 <TrainingPlanList
                     clientId={clientId}

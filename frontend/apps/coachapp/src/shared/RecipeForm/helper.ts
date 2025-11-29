@@ -5,6 +5,7 @@ export const getDefaultValues = () => ({
     description: '',
     instructions: [],
     instructions_as_text: '',
+    image_url: undefined,
     prep_time_minutes: undefined,
     servings: undefined,
     recipe_ingredients: undefined,
@@ -21,6 +22,7 @@ export const populateRecipe = (recipe: Recipe) => ({
     description: recipe.description || '',
     instructions: recipe.instructions || [],
     instructions_as_text: recipe.instructions_as_text || '',
+    image_url: recipe.image_url || undefined,
 
     recipe_ingredients: recipe.recipe_ingredients?.map((ingredient) => ({
         name: ingredient.ingredient?.name, // Use nested ingredient name from API

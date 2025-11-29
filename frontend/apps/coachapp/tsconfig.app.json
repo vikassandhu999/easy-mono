@@ -13,12 +13,22 @@
     "emitDeclarationOnly": true,
     "composite": true,
     "jsx": "react-jsx",
-    /* Linting */
-    "strict": false,
+    /* Linting - Strict mode enabled for production readiness */
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
+    "exactOptionalPropertyTypes": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

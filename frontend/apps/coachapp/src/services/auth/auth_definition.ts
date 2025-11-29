@@ -1,6 +1,8 @@
 import axios from 'axios';
 import {z} from 'zod';
 
+import {logger} from '@/utils/logger';
+
 /* --------- Send Login Code */
 export const SendLoginCode_zod = z.object({
     email: z.string().email('Invalid email format'),
@@ -100,6 +102,8 @@ export interface UserProfileResponse {
     coach: {
         id: string;
         business_id: string;
+        bio: null | string;
+        specialties: string[];
         stats: CoachStats;
     };
     user: {
@@ -111,10 +115,48 @@ export interface UserProfileResponse {
     };
 }
 
-let baseURL: string = import.meta.env.VITE_API_BASE_URL;
-if (window.origin.startsWith('http://')) {
-    baseURL = window.origin.replace(':2020', ':8080');
+// Update Coach Profile
+export const UpdateCoachProfile_zod = z.object({
+    first_name: z.string().min(1, 'First name is required').max(127),
+    last_name: z.string().min(1, 'Last name is required').max(127),
+    bio: z.string().max(500).optional().nullable(),
+    specialties: z.array(z.string()).optional(),
+});
+
+export type UpdateCoachProfileRequest = z.infer<typeof UpdateCoachProfile_zod>;
+
+export interface UpdateCoachProfileResponse {
+    message: string;
+    status: string;
+    user: {
+        id: string;
+        email: string;
+        first_name: string;
+        last_name: string;
+    };
 }
+
+/**
+ * Resolve the API base URL based on environment
+ */
+const resolveAuthBaseUrl = (): string => {
+    const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    // In development with http://, auto-detect and replace port for local dev
+    if (import.meta.env.DEV && typeof window !== 'undefined' && window.origin.startsWith('http://')) {
+        return window.origin.replace(':2020', ':8080');
+    }
+
+    // Use environment variable (required in production)
+    if (!envBaseUrl) {
+        logger.warn('VITE_API_BASE_URL is not set for auth client, using default');
+        return 'http://localhost:8080';
+    }
+
+    return envBaseUrl;
+};
+
+const baseURL = resolveAuthBaseUrl();
 
 export const client = axios.create({
     baseURL,

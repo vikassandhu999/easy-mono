@@ -1,15 +1,18 @@
 import {Avatar, Badge, Button, Divider, Group, Stack, Text, ThemeIcon} from '@mantine/core';
-import {IconChevronRight, IconLogs, IconNotification, IconShield, IconWorldWww} from '@tabler/icons-react';
+import {modals} from '@mantine/modals';
+import {IconChevronRight, IconLogs, IconShield, IconWorldWww} from '@tabler/icons-react';
 import {FC} from 'react';
 import {Link} from 'react-router';
 
+import {DRAWER_KEYS} from '@/configs';
 import {useAuthActions} from '@/hooks/useAuthActions';
+import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useProfileQuery, UserProfileResponse} from '@/services/auth';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import {notifyInfo} from '@/utils/notification';
 
-import {ACTION_GRID_CONFIG, ActionGridConfig, LEGAL_LINKS, LegalLink} from '../config/ui';
+import {ACTION_GRID_CONFIG, LEGAL_LINKS, LegalLink} from '../config/ui';
 import classes from './styles.module.css';
 
 const ACTION_LIST_ITEMS = [
@@ -43,6 +46,18 @@ export default function MainProfilePage() {
     const {logout} = useAuthActions();
     const {data: profile, isLoading: profileLoading} = useProfileQuery();
 
+    const handleLogout = () => {
+        modals.openConfirmModal({
+            title: 'Logout',
+            children: <Text size="sm">Are you sure you want to logout from your account?</Text>,
+            labels: {confirm: 'Logout', cancel: 'Cancel'},
+            confirmProps: {color: 'red'},
+            cancelProps: {variant: 'light'},
+            centered: true,
+            onConfirm: () => logout(),
+        });
+    };
+
     if (profileLoading) {
         return (
             <PagePaper>
@@ -61,14 +76,14 @@ export default function MainProfilePage() {
                 <Stack gap="xl">
                     {profile && <Header profile={profile} />}
 
-                    <ActionGrid configs={ACTION_GRID_CONFIG} />
+                    <ActionGrid />
                     <ActionList />
                     <Divider />
 
                     <Button
                         className={classes.logoutButton}
                         color="red"
-                        onClick={() => logout()}
+                        onClick={handleLogout}
                         radius="sm"
                         variant="light"
                     >
@@ -88,10 +103,6 @@ export default function MainProfilePage() {
 
 interface HeaderProps {
     profile: UserProfileResponse;
-}
-
-interface ActionGridProps {
-    configs: ActionGridConfig;
 }
 
 interface LegalLinksProps {
@@ -147,13 +158,29 @@ const Header: FC<HeaderProps> = ({profile}) => {
     );
 };
 
-const ActionGrid: FC<ActionGridProps> = ({configs}) => {
+const ActionGrid = () => {
+    const {openDrawer} = useParamsDrawer({});
+
+    const handleItemClick = (id: string) => {
+        switch (id) {
+            case 'business':
+                openDrawer(DRAWER_KEYS.BUSINESS_EDIT);
+                break;
+            case 'coach_profile':
+                openDrawer(DRAWER_KEYS.COACH_PROFILE_EDIT);
+                break;
+            default:
+                notifyInfo('This feature is coming soon!', {title: 'Coming Soon'});
+        }
+    };
+
     return (
         <div className={classes.actionGrid}>
-            {configs.map(({id, label, icon: Icon, color}) => (
+            {ACTION_GRID_CONFIG.map(({id, label, icon: Icon, color}) => (
                 <button
                     className={classes.actionGridCard}
                     key={id}
+                    onClick={() => handleItemClick(id)}
                     type="button"
                 >
                     <ThemeIcon

@@ -1,12 +1,32 @@
-import {Loader} from '@mantine/core';
-import {useIntersection} from '@mantine/hooks';
-import {IconCalendarWeek, IconCaretRight, IconLayoutList, IconSalad} from '@tabler/icons-react';
-import {useCallback, useEffect, useMemo, useRef} from 'react';
+import {Card, Group, Stack, Text, ThemeIcon} from '@mantine/core';
+import {IconCalendar, IconChevronRight, IconSalad} from '@tabler/icons-react';
+import {useMemo} from 'react';
 
-import PlanSampleImage from '@/../public/empty_plan.png';
 import {NutritionPlan, useListNutritionPlans} from '@/services/nutrition_plans';
+import RecordsList from '@/shared/layouts/RecordsList';
 
-import classes from './styles.module.css';
+// Color dots for visual variety
+const DOT_COLORS = [
+    'var(--mantine-color-green-5)',
+    'var(--mantine-color-teal-5)',
+    'var(--mantine-color-lime-5)',
+    'var(--mantine-color-emerald-5)',
+    'var(--mantine-color-cyan-5)',
+    'var(--mantine-color-blue-5)',
+    'var(--mantine-color-violet-5)',
+    'var(--mantine-color-grape-5)',
+];
+
+// Get consistent color for a plan based on its ID
+const getDotColor = (planId: string) => {
+    let hash = 0;
+    for (let i = 0; i < planId.length; i++) {
+        const char = planId.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+    }
+    return DOT_COLORS[Math.abs(hash) % DOT_COLORS.length];
+};
 
 interface NutritionPlanListItemProps {
     onClick?: (id: string) => void;
@@ -14,89 +34,99 @@ interface NutritionPlanListItemProps {
 }
 
 const NutritionPlanListItem = ({plan, onClick}: NutritionPlanListItemProps) => {
+    const dotColor = getDotColor(plan.id);
     const mealsCount = plan.meals?.length ?? 0;
 
     return (
-        <div
-            className={classes.planCard}
+        <Card
             onClick={() => onClick?.(plan.id)}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onClick?.(plan.id);
-                }
+            padding="md"
+            radius="md"
+            style={{
+                cursor: 'pointer',
+                transition: 'box-shadow 0.15s ease, transform 0.15s ease',
+                position: 'relative',
             }}
-            role="button"
-            tabIndex={0}
+            styles={{
+                root: {
+                    '&:hover': {
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        transform: 'translateY(-1px)',
+                    },
+                },
+            }}
+            withBorder={true}
         >
-            {/* Plan Image */}
-            <div className={classes.imageWrapper}>
-                <img
-                    alt={plan.name}
-                    className={classes.image}
-                    src={plan.thumbnail_url || PlanSampleImage}
-                />
-                {plan.is_template && <span className={classes.templateBadge}>Template</span>}
-            </div>
-
-            {/* Plan Content */}
-            <div className={classes.content}>
-                <span className={classes.name}>{plan.name}</span>
-                {plan.description && <span className={classes.description}>{plan.description}</span>}
-                <div className={classes.metaTags}>
-                    {plan.duration_weeks && (
-                        <span className={`${classes.metaTag} ${classes.metaTagDuration}`}>
-                            <IconCalendarWeek size={11} />
-                            {plan.duration_weeks} {plan.duration_weeks === 1 ? 'week' : 'weeks'}
-                        </span>
-                    )}
-                    {mealsCount > 0 && (
-                        <span className={`${classes.metaTag} ${classes.metaTagMeals}`}>
-                            <IconSalad size={11} />
-                            {mealsCount} {mealsCount === 1 ? 'meal' : 'meals'}
-                        </span>
-                    )}
-                    {plan.tags?.slice(0, 2).map((tag) => (
-                        <span
-                            className={`${classes.metaTag} ${classes.customTag}`}
-                            key={tag}
-                        >
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-            </div>
-
-            {/* Arrow indicator */}
-            <IconCaretRight
-                className={classes.arrow}
-                size={18}
+            {/* Color dot at top left */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 12,
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: dotColor,
+                }}
             />
-        </div>
+
+            <Group
+                gap="md"
+                style={{paddingLeft: 16}}
+                wrap="nowrap"
+            >
+                {/* Content */}
+                <Stack
+                    gap={4}
+                    style={{flex: 1, minWidth: 0}}
+                >
+                    <Text
+                        fw={500}
+                        lineClamp={1}
+                        size="sm"
+                    >
+                        {plan.name}
+                    </Text>
+
+                    <Group
+                        c="dimmed"
+                        gap="sm"
+                    >
+                        {plan.duration_weeks && (
+                            <Group gap={4}>
+                                <IconCalendar size={13} />
+                                <Text size="xs">{plan.duration_weeks}w</Text>
+                            </Group>
+                        )}
+                        {mealsCount > 0 && (
+                            <Group gap={4}>
+                                <IconSalad size={13} />
+                                <Text size="xs">
+                                    {mealsCount} {mealsCount === 1 ? 'meal' : 'meals'}
+                                </Text>
+                            </Group>
+                        )}
+                        {!plan.duration_weeks && mealsCount === 0 && plan.description && (
+                            <Text
+                                lineClamp={1}
+                                size="xs"
+                            >
+                                {plan.description}
+                            </Text>
+                        )}
+                    </Group>
+                </Stack>
+
+                {/* Chevron indicator */}
+                <IconChevronRight
+                    color="var(--mantine-color-gray-4)"
+                    size={18}
+                    style={{flexShrink: 0}}
+                />
+            </Group>
+        </Card>
     );
 };
-
-/* Skeleton loader for better perceived performance */
-const NutritionPlanListSkeleton = () => (
-    <>
-        {[1, 2, 3].map((i) => (
-            <div
-                className={classes.skeleton}
-                key={i}
-            >
-                <div className={classes.skeletonImage} />
-                <div className={classes.skeletonContent}>
-                    <div className={classes.skeletonLine} />
-                    <div className={classes.skeletonLine} />
-                    <div className={classes.skeletonTags}>
-                        <div className={classes.skeletonTag} />
-                        <div className={classes.skeletonTag} />
-                    </div>
-                </div>
-            </div>
-        ))}
-    </>
-);
 
 export interface NutritionPlanListProps {
     clientId?: string;
@@ -105,7 +135,6 @@ export interface NutritionPlanListProps {
 }
 
 const NutritionPlanList = ({onPlanClick, search, clientId}: NutritionPlanListProps) => {
-    const lastCallTimeRef = useRef(0);
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListNutritionPlans({
         search: search || undefined,
         is_template: clientId ? undefined : true,
@@ -114,76 +143,46 @@ const NutritionPlanList = ({onPlanClick, search, clientId}: NutritionPlanListPro
 
     const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
-    // Intersection observer for infinite scroll
-    const {entry, ref} = useIntersection({
-        root: null,
-        rootMargin: '100px',
-        threshold: 0.1,
-    });
-
-    // Throttled fetch for infinite scroll
-    const handleFetchNextPage = useCallback(() => {
-        const now = Date.now();
-        if (now - lastCallTimeRef.current > 500 && hasNextPage && !isFetchingNextPage) {
-            lastCallTimeRef.current = now;
-            fetchNextPage();
-        }
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-    useEffect(() => {
-        if (entry?.isIntersecting) {
-            handleFetchNextPage();
-        }
-    }, [entry?.isIntersecting, handleFetchNextPage]);
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <div className={classes.listContainer}>
-                <NutritionPlanListSkeleton />
-            </div>
-        );
-    }
-
-    // Empty state
-    if (plans.length === 0) {
-        return (
-            <div className={classes.emptyState}>
-                <IconLayoutList
-                    className={classes.emptyIcon}
-                    size={48}
-                    stroke={1.5}
-                />
-                <span className={classes.emptyText}>
-                    {search ? 'No plans match your search' : 'No nutrition plans yet'}
-                </span>
-                <span className={classes.emptyHint}>
-                    {search ? 'Try a different search term' : 'Create your first nutrition plan to get started'}
-                </span>
-            </div>
-        );
-    }
-
     return (
-        <div className={classes.listContainer}>
-            {plans.map((plan) => (
+        <RecordsList
+            emptyState={
+                <Stack
+                    align="center"
+                    gap="sm"
+                    py="xl"
+                >
+                    <ThemeIcon
+                        color="gray"
+                        radius="md"
+                        size={40}
+                        variant="light"
+                    >
+                        <IconSalad
+                            size={20}
+                            stroke={1.5}
+                        />
+                    </ThemeIcon>
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                    >
+                        No nutrition plans found
+                    </Text>
+                </Stack>
+            }
+            fetchNextPage={fetchNextPage}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            isLoading={isLoading}
+            records={plans}
+            renderItem={(plan) => (
                 <NutritionPlanListItem
                     key={plan.id}
                     onClick={onPlanClick}
                     plan={plan}
                 />
-            ))}
-
-            {/* Infinite scroll trigger */}
-            {hasNextPage && (
-                <div
-                    className={classes.loadMoreTrigger}
-                    ref={ref}
-                >
-                    {isFetchingNextPage && <Loader size="sm" />}
-                </div>
             )}
-        </div>
+        />
     );
 };
 

@@ -1,12 +1,15 @@
-import {Loader} from '@mantine/core';
-import {IconAlertCircle, IconClock, IconPencil, IconUsers} from '@tabler/icons-react';
+import {humanizeError} from '@easy/error-parser';
+import {ActionIcon, Button, Group, Image, Loader, Text} from '@mantine/core';
+import {modals} from '@mantine/modals';
+import {IconAlertCircle, IconChefHat, IconClock, IconCopy, IconPencil, IconTrash, IconUsers} from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import {useGetRecipe} from '@/services/recipes';
+import {useDeleteRecipe, useDuplicateRecipe, useGetRecipe} from '@/services/recipes';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
+import {notifyError, notifySuccess} from '@/utils/notification';
 
 import classes from './RecipeViewDrawer.module.css';
 
@@ -27,6 +30,9 @@ const RecipeViewDrawer = () => {
         skip: !recipeId,
     });
 
+    const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipe();
+    const [duplicateRecipe, {isLoading: isDuplicating}] = useDuplicateRecipe();
+
     const handleClose = () => {
         closeDrawer();
     };
@@ -35,6 +41,43 @@ const RecipeViewDrawer = () => {
         if (recipeId) {
             openDrawer(DRAWER_KEYS.RECIPE_EDIT, {recipe_id: recipeId});
         }
+    };
+
+    const handleDuplicate = async () => {
+        if (!recipeId) return;
+
+        try {
+            const duplicatedRecipe = await duplicateRecipe({id: recipeId}).unwrap();
+            notifySuccess('Recipe duplicated successfully');
+
+            // Open the duplicated recipe in view mode
+            openDrawer(DRAWER_KEYS.RECIPE_VIEW, {
+                recipe_id: duplicatedRecipe.id,
+            });
+        } catch (error) {
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
+        }
+    };
+
+    const handleDelete = () => {
+        modals.openConfirmModal({
+            title: 'Delete Recipe',
+            children: <Text size="sm">Are you sure you want to delete this recipe? This action cannot be undone.</Text>,
+            labels: {confirm: 'Delete', cancel: 'Cancel'},
+            confirmProps: {color: 'red'},
+            cancelProps: {variant: 'light'},
+            centered: true,
+            onConfirm: async () => {
+                try {
+                    await deleteRecipe(recipeId!).unwrap();
+                    notifySuccess('Recipe deleted');
+                    closeDrawer();
+                } catch (error) {
+                    notifyError('Failed to delete recipe');
+                }
+            },
+        });
     };
 
     // Loading state
@@ -80,6 +123,45 @@ const RecipeViewDrawer = () => {
         />
     );
 
+    // Render actions
+    const renderActions = () => {
+        return (
+            <Group w="100%">
+                <Button
+                    color="blue"
+                    flex={1}
+                    leftSection={<IconPencil size={16} />}
+                    onClick={handleEdit}
+                    radius="xl"
+                    size="sm"
+                    variant="light"
+                >
+                    Edit
+                </Button>
+                <ActionIcon
+                    color="blue"
+                    loading={isDuplicating}
+                    onClick={handleDuplicate}
+                    radius="xl"
+                    size="lg"
+                    variant="light"
+                >
+                    <IconCopy size={18} />
+                </ActionIcon>
+                <ActionIcon
+                    color="red"
+                    loading={isDeleting}
+                    onClick={handleDelete}
+                    radius="xl"
+                    size="lg"
+                    variant="light"
+                >
+                    <IconTrash size={18} />
+                </ActionIcon>
+            </Group>
+        );
+    };
+
     // Main content
     const renderContent = () => {
         if (!recipe) return null;
@@ -104,16 +186,7 @@ const RecipeViewDrawer = () => {
 
         return (
             <AutoDrawer
-                actions={
-                    <button
-                        className={classes.editButton}
-                        onClick={handleEdit}
-                        type="button"
-                    >
-                        <IconPencil size={14} />
-                        Edit
-                    </button>
-                }
+                actions={renderActions()}
                 content={
                     <div className={classes.container}>
                         {/* Header Section */}
@@ -122,12 +195,31 @@ const RecipeViewDrawer = () => {
                             <h1 className={classes.recipeName}>{recipe.name}</h1>
                             {recipe.description && <p className={classes.recipeDescription}>{recipe.description}</p>}
 
+                            {/* Recipe Image */}
+                            {recipe.image_url && (
+                                <div className={classes.imageWrapper}>
+                                    <Image
+                                        alt={recipe.name}
+                                        fit="cover"
+                                        h={180}
+                                        radius="md"
+                                        src={recipe.image_url}
+                                    />
+                                </div>
+                            )}
+
                             {/* Meta info */}
                             <div className={classes.metaRow}>
                                 {recipe.prep_time_minutes && (
                                     <div className={classes.metaItem}>
                                         <IconClock size={16} />
-                                        <span>{recipe.prep_time_minutes} min</span>
+                                        <span>Prep: {recipe.prep_time_minutes} min</span>
+                                    </div>
+                                )}
+                                {recipe.cook_time_minutes && (
+                                    <div className={classes.metaItem}>
+                                        <IconChefHat size={16} />
+                                        <span>Cook: {recipe.cook_time_minutes} min</span>
                                     </div>
                                 )}
                                 {recipe.servings && (

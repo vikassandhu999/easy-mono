@@ -1,27 +1,30 @@
 {
   "name": "@easy/website",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev --port 3000 --host",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro",
-    "lint": "astro check",
-    "format": "prettier --write .",
-    "clean": "rm -rf dist .astro"
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.13",
-    "astro": "^5.13.5",
-    "firebase": "^12.2.1",
-    "tailwindcss": "^4.1.13"
+    "@tabler/icons-react": "^3.35.0",
+    "clsx": "^2.1.1",
+    "next": "16.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20.8.10",
-    "prettier": "^3.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "tailwindcss": "^4",
     "typescript": "^5.5.3"
   }
 }

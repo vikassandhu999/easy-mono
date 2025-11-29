@@ -1,7 +1,6 @@
 import {baseAPISlice} from '../baseAPISlice';
-import {CreateRecipe, Recipe, RecipesList, RecipesListOpts, UpdateRecipe} from './recipes_definition';
-
 import {buildListParams, getNextPage} from '../paginationUtils';
+import {CreateRecipe, DuplicateRecipe, Recipe, RecipesList, RecipesListOpts, UpdateRecipe} from './recipes_definition';
 
 export const recipesApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
@@ -92,6 +91,18 @@ export const recipesApi = baseAPISlice.injectEndpoints({
                 {type: 'Recipes', id: 'LIST'},
             ],
         }),
+
+        duplicateRecipe: build.mutation<Recipe, DuplicateRecipe>({
+            query: ({id}) => ({
+                url: `/api/recipes/${id}/duplicate`,
+                method: 'post',
+            }),
+            transformResponse: (response: {data: Recipe}) => response.data,
+            invalidatesTags: (result) => [
+                {type: 'Recipes', id: result?.id},
+                {type: 'Recipes', id: 'LIST'},
+            ],
+        }),
     }),
     overrideExisting: false,
 });
@@ -102,4 +113,5 @@ export const {
     useGetRecipeQuery: useGetRecipe,
     useListRecipesInfiniteQuery: useListRecipes,
     useDeleteRecipeMutation: useDeleteRecipe,
+    useDuplicateRecipeMutation: useDuplicateRecipe,
 } = recipesApi;

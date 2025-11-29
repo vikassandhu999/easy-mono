@@ -1,3 +1,5 @@
+import {logger} from '@/utils/logger';
+
 // PWA and Performance utilities
 const PWAUtils = {
     // Get First Paint timing
@@ -14,7 +16,7 @@ const PWAUtils = {
                 const observer = new PerformanceObserver((list) => {
                     const entries = list.getEntries();
                     const lastEntry = entries[entries.length - 1];
-                    resolve(lastEntry.startTime);
+                    resolve(lastEntry?.startTime);
                 });
                 observer.observe({entryTypes: ['largest-contentful-paint']});
 
@@ -56,7 +58,7 @@ const PWAUtils = {
                     totalTime: perfData.loadEventEnd - startTime,
                 };
 
-                console.log('Performance Metrics:', metrics);
+                logger.performance('Performance Metrics', metrics);
 
                 // Report to analytics if needed
                 this.reportPerformanceMetrics(metrics);
@@ -97,13 +99,13 @@ const PWAUtils = {
                 left: -9999px !important;
                 z-index: -1 !important;
             }
-            
+
             body.translated-ltr,
             body.translated-rtl {
                 margin-top: 0 !important;
                 top: 0 !important;
             }
-            
+
             /* Prevent blue highlights and native mobile interventions */
             * {
                 -webkit-tap-highlight-color: transparent;
@@ -113,7 +115,7 @@ const PWAUtils = {
                 -ms-user-select: none;
                 user-select: none;
             }
-            
+
             /* Allow text selection for text inputs and content areas */
             input, textarea, [contenteditable], [role="textbox"] {
                 -webkit-user-select: text !important;
@@ -139,7 +141,7 @@ const PWAUtils = {
     },
 
     // Enhanced service worker registration with error handling
-    async registerServiceWorker() {
+    async registerServiceWorker(): Promise<ServiceWorkerRegistration | undefined> {
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -147,7 +149,7 @@ const PWAUtils = {
                     updateViaCache: 'none',
                 });
 
-                console.log('Service Worker registered successfully:', registration);
+                logger.log('Service Worker registered successfully', {scope: registration.scope});
 
                 // Handle service worker updates
                 registration.addEventListener('updatefound', () => {
@@ -165,7 +167,7 @@ const PWAUtils = {
                 // Send message to prevent Chrome nudges
                 const channel = new MessageChannel();
                 channel.port1.onmessage = (event) => {
-                    console.log('Chrome nudges prevention:', event.data.message);
+                    logger.debug('Chrome nudges prevention', {message: event.data.message});
                 };
 
                 if (registration.active) {
@@ -174,16 +176,18 @@ const PWAUtils = {
 
                 return registration;
             } catch (error) {
-                console.error('Service Worker registration failed:', error);
+                logger.error('Service Worker registration failed', error);
+                return undefined;
             }
         }
+        return undefined;
     },
 
     // Report performance metrics (extend as needed)
     reportPerformanceMetrics(metrics: any) {
         // This can be extended to send to analytics services
         if (metrics.totalTime > 3000) {
-            console.warn('Slow page load detected:', metrics.totalTime + 'ms');
+            logger.warn('Slow page load detected', {loadTime: metrics.totalTime + 'ms'});
         }
     },
 
@@ -192,10 +196,10 @@ const PWAUtils = {
         if ('Notification' in window && Notification.permission === 'default') {
             try {
                 const permission = await Notification.requestPermission();
-                console.log('Notification permission:', permission);
+                logger.log('Notification permission', {permission});
                 return permission;
             } catch (error) {
-                console.error('Error requesting notification permission:', error);
+                logger.error('Error requesting notification permission', error);
                 return 'denied';
             }
         }
@@ -209,7 +213,7 @@ const PWAUtils = {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            console.log('Install prompt available');
+            logger.log('Install prompt available');
 
             // Store it globally for custom install button
             (window as any).deferredPrompt = deferredPrompt;
@@ -219,7 +223,7 @@ const PWAUtils = {
         });
 
         window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed successfully');
+            logger.log('PWA was installed successfully');
             deferredPrompt = null;
             (window as any).deferredPrompt = null;
         });
@@ -229,7 +233,7 @@ const PWAUtils = {
     setupNetworkStatus() {
         const updateOnlineStatus = () => {
             const isOnline = navigator.onLine;
-            console.log('Network status:', isOnline ? 'online' : 'offline');
+            logger.log('Network status', {status: isOnline ? 'online' : 'offline'});
 
             document.body.setAttribute('data-network-status', isOnline ? 'online' : 'offline');
 
@@ -253,7 +257,7 @@ const PWAUtils = {
     // Handle PWA-specific behaviors
     setupPWABehaviors() {
         if (this.isPWA()) {
-            console.log('Running as PWA');
+            logger.log('Running as PWA');
             document.body.classList.add('pwa-mode');
 
             // Prevent pull-to-refresh on PWA
@@ -273,7 +277,7 @@ const PWAUtils = {
 
     // Show offline notification
     showOfflineNotification() {
-        console.log('App is now offline - cached content available');
+        logger.log('App is now offline - cached content available');
         // Can be extended to show in-app notification
     },
 
@@ -291,7 +295,7 @@ const PWAUtils = {
             setTimeout(() => notification.close(), 5000);
         } else {
             // Fallback to console or show in-app notification
-            console.log('App update available - restart to get latest version');
+            logger.log('App update available - restart to get latest version');
         }
     },
 };
@@ -319,9 +323,9 @@ async function initializePWA() {
         // This can be triggered later based on user actions
         // await PWAUtils.requestNotificationPermission();
 
-        console.log('PWA initialization complete');
+        logger.log('PWA initialization complete');
     } catch (error) {
-        console.error('PWA initialization error:', error);
+        logger.error('PWA initialization error', error);
     }
 }
 

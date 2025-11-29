@@ -5,18 +5,18 @@ import {Provider} from 'react-redux';
 import './index.css';
 import App from './app/App.tsx';
 import initializePWA from './app/pwa.tsx';
-// import initializePWA from './app/pwa.tsx';
 import {store} from './store';
+import {logger} from './utils/logger';
 
 document.addEventListener('DOMContentLoaded', initializePWA);
 
 // Error boundary for React errors
 window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
+    logger.error('Global error', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
+    logger.error('Unhandled promise rejection', event.reason);
 });
 
 // Initialize React app

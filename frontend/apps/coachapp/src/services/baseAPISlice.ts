@@ -2,17 +2,36 @@ import {type BaseQueryApi, type BaseQueryFn, createApi} from '@reduxjs/toolkit/q
 import axios, {AxiosError, AxiosRequestConfig} from 'axios';
 
 import {tokenStorage} from '@/slices/authSlice';
+import {logger} from '@/utils/logger';
 
+/**
+ * Resolve the API base URL based on environment
+ * - In production: Uses VITE_API_BASE_URL
+ * - In development: Auto-detects local dev server and adjusts port
+ */
 const resolveBaseUrl = (): string => {
-    let baseUrl = import.meta.env.VITE_API_BASE_URL;
-    if (typeof window !== 'undefined' && window.origin.startsWith('http://')) {
-        baseUrl = window.origin.replace(':2020', ':4000');
+    const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    // In development with http://, auto-detect and replace port for local dev
+    if (import.meta.env.DEV && typeof window !== 'undefined' && window.origin.startsWith('http://')) {
+        return window.origin.replace(':2020', ':4000');
     }
-    return baseUrl;
+
+    // Use environment variable (required in production)
+    if (!envBaseUrl) {
+        logger.warn('VITE_API_BASE_URL is not set, using default');
+        return 'http://localhost:4000';
+    }
+
+    return envBaseUrl;
 };
 
+const BASE_URL = resolveBaseUrl();
+
+logger.log('API Base URL configured', {url: BASE_URL, env: import.meta.env.VITE_APP_ENV || 'unknown'});
+
 const axiosInstance = axios.create({
-    baseURL: resolveBaseUrl(),
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -132,6 +151,8 @@ axiosInstance.interceptors.response.use(
             // Save new tokens
             tokenStorage.setTokens(access_token, new_refresh_token);
 
+            logger.debug('Token refreshed successfully');
+
             // Process queued requests
             processQueue(null);
 
@@ -139,6 +160,7 @@ axiosInstance.interceptors.response.use(
             return axiosInstance(originalRequest);
         } catch (refreshError) {
             // Refresh failed - clear state and redirect
+            logger.error('Token refresh failed', refreshError);
             processQueue(refreshError);
             clearAuthState();
             redirectToLogin();
@@ -223,7 +245,6 @@ export const baseAPISlice = createApi({
         'Meals', // Meal management
         'MealItems', // Meal Items management
         'TrainingPlans', // Training Plan management
-        'TrainingPlans', // Training Plan management
         'Exercises', // Exercise management
         'Muscles', // Muscle management
         'Equipment', // Equipment management
@@ -232,4 +253,4 @@ export const baseAPISlice = createApi({
 });
 
 export type BaseAPIQueryAPI = BaseQueryApi;
-export {axiosInstance};
+export {axiosInstance, BASE_URL};

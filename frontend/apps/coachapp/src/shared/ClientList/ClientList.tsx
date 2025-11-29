@@ -27,13 +27,12 @@ const ClientListItem = ({client, onClick}: ClientListItemProps) => {
 
     return (
         <Card
-            bg="gray.1"
             onClick={() => {
                 onClick?.(client.id);
             }}
             radius="xl"
             style={{cursor: 'pointer'}}
-            withBorder={false}
+            withBorder={true}
         >
             <Group
                 align="center"

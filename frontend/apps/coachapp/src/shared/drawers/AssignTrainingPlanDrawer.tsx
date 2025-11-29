@@ -1,7 +1,8 @@
 import {humanizeError} from '@easy/error-parser';
 import {Button, Group, Loader, Stack, Text} from '@mantine/core';
+import {DatePickerInput} from '@mantine/dates';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconSearch, IconX} from '@tabler/icons-react';
+import {IconCalendar, IconSearch, IconX} from '@tabler/icons-react';
 import {useMemo, useState} from 'react';
 
 import useParamsDrawer from '@/hooks/useParamDrawer';
@@ -65,11 +66,27 @@ const TrainingPlanTemplateItem = ({plan, onSelect, isSelected}: TrainingPlanTemp
     );
 };
 
+const formatDateForApi = (date: Date | null): string | undefined => {
+    if (!date) return undefined;
+
+    // Ensure we have a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
+
+    // Check if valid date
+    if (isNaN(dateObj.getTime())) return undefined;
+
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const AssignTrainingPlanDrawer = () => {
     const {closeDrawer, getDrawerParams} = useParamsDrawer({});
     const {client_id} = getDrawerParams();
 
     const [selectedPlan, setSelectedPlan] = useState<null | TrainingPlan>(null);
+    const [startDate, setStartDate] = useState<Date | null>(new Date());
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
@@ -87,12 +104,13 @@ const AssignTrainingPlanDrawer = () => {
     };
 
     const handleAssign = async () => {
-        if (!selectedPlan || !client_id) return;
+        if (!selectedPlan || !client_id || !startDate) return;
 
         try {
             await assignPlan({
                 id: selectedPlan.id,
                 client_id,
+                start_date: formatDateForApi(startDate),
             }).unwrap();
             notifySuccess(`"${selectedPlan.name}" assigned successfully`);
             closeDrawer();
@@ -116,7 +134,7 @@ const AssignTrainingPlanDrawer = () => {
                 <Group w="100%">
                     <Button
                         color="blue"
-                        disabled={!selectedPlan}
+                        disabled={!selectedPlan || !startDate}
                         flex={1}
                         loading={isAssigning}
                         onClick={handleAssign}
@@ -130,12 +148,22 @@ const AssignTrainingPlanDrawer = () => {
             }
             content={
                 <Stack gap="md">
+                    {/* Start Date Picker */}
+                    <DatePickerInput
+                        clearable={false}
+                        description="When should this plan start for the client?"
+                        label="Start Date"
+                        minDate={new Date()}
+                        onChange={setStartDate}
+                        placeholder="Select start date"
+                        required
+                        rightSection={<IconCalendar size={16} />}
+                        rightSectionPointerEvents="none"
+                        value={startDate}
+                    />
+
                     {/* Search Input */}
                     <div className={classes.searchWrapper}>
-                        <IconSearch
-                            className={classes.searchIcon}
-                            size={16}
-                        />
                         <input
                             className={classes.searchInput}
                             onChange={handleSearchChange}

@@ -55,11 +55,12 @@ defmodule EasyWeb.TrainingPlanController do
     end
   end
 
-  def assign(conn, %{"client_id" => client_id}) do
+  def assign(conn, %{"client_id" => client_id} = params) do
     training_plan = conn.assigns.training_plan
+    start_date = parse_start_date(params["start_date"])
 
     with {:ok, %{new_plan: new_plan}} <-
-           Training.assign_training_plan_to_client(training_plan.id, client_id) do
+           Training.assign_training_plan_to_client(training_plan.id, client_id, start_date) do
       # Fetch the full plan with preloads for rendering
       full_plan = Training.get_training_plan!(new_plan.id)
 
@@ -78,6 +79,15 @@ defmodule EasyWeb.TrainingPlanController do
       conn
       |> put_status(:created)
       |> render(:show, %{training_plan: duplicated_plan})
+    end
+  end
+
+  defp parse_start_date(nil), do: Date.utc_today()
+
+  defp parse_start_date(date_string) when is_binary(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} -> date
+      {:error, _} -> Date.utc_today()
     end
   end
 

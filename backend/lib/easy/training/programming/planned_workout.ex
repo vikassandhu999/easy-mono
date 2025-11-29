@@ -23,9 +23,6 @@ defmodule Easy.Training.Programming.PlannedWorkout do
     |> cast(attrs, [:name, :notes, :day_number, :training_plan_id])
     |> validate_required([:name, :day_number, :training_plan_id])
     |> validate_number(:day_number, greater_than_or_equal_to: 1)
-    |> unique_constraint([:training_plan_id, :day_number],
-      name: :planned_workouts_training_plan_id_day_number_index
-    )
     |> foreign_key_constraint(:training_plan_id)
   end
 end

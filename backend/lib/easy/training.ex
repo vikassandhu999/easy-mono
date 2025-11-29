@@ -24,6 +24,9 @@ defmodule Easy.Training do
   defdelegate assign_training_plan_to_client(template_id, client_id),
     to: Easy.Training.Programming
 
+  defdelegate assign_training_plan_to_client(template_id, client_id, start_date),
+    to: Easy.Training.Programming
+
   # Planned Workouts
   defdelegate fetch_planned_workout(business_id, workout_id), to: Easy.Training.Programming
   defdelegate get_planned_workout!(id), to: Easy.Training.Programming

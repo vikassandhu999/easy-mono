@@ -3,6 +3,7 @@ defmodule EasyWeb.BusinessController do
 
   alias Easy.Organizations
   alias Easy.Auth.Scope
+  alias EasyWeb.FallbackController
 
   @doc """
   GET /api/organization
@@ -57,5 +58,42 @@ defmodule EasyWeb.BusinessController do
 
     {:ok, coaches} = Organizations.list_coaches(scope.business_id)
     render(conn, :coaches, coaches: coaches)
+  end
+
+  @doc """
+  PATCH /api/organization
+
+  Updates the current business profile.
+  Only the business owner can update the business.
+  """
+  def update(conn, %{"business" => business_params}) do
+    scope = conn.assigns.scope
+
+    Scope.require_business!(scope)
+    Scope.require_role!(scope, "coach")
+
+    case Organizations.get_business(scope.business_id) do
+      nil ->
+        FallbackController.not_found_response(conn, "Business not found")
+
+      business ->
+        # Check if user is the owner
+        if business.owner_id != scope.user_id do
+          FallbackController.forbidden_response(
+            conn,
+            "Only the business owner can update settings"
+          )
+        else
+          case Organizations.update_business(business, business_params) do
+            {:ok, updated_business} ->
+              # Preload subscription for JSON response
+              updated_business = Easy.Repo.preload(updated_business, subscription: [:plan])
+              render(conn, :show, business: updated_business)
+
+            {:error, changeset} ->
+              {:error, changeset}
+          end
+        end
+    end
   end
 end

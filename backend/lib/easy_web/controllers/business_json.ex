@@ -41,6 +41,19 @@ defmodule EasyWeb.BusinessJSON do
       handle: business.handle,
       description: business.description,
       status: business.status,
+      # Contact fields
+      email: business.email,
+      phone: business.phone,
+      website: business.website,
+      # Address fields
+      address: business.address,
+      city: business.city,
+      state: business.state,
+      country: business.country,
+      postal_code: business.postal_code,
+      # Branding & settings
+      logo_url: business.logo_url,
+      timezone: business.timezone,
       subscription: subscription_summary(business.subscription),
       inserted_at: business.inserted_at,
       updated_at: business.updated_at

@@ -65,14 +65,16 @@ defmodule EasyWeb.NutritionPlanController do
     end
   end
 
-  def assign(conn, %{"client_id" => client_id}) do
+  def assign(conn, %{"client_id" => client_id} = params) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
+         opts = Map.take(params, ["start_date"]),
          {:ok, new_plan} <-
            Nutrition.assign_nutrition_plan_to_client(
              business_id,
              conn.assigns.nutrition_plan.id,
-             client_id
+             client_id,
+             opts
            ) do
       conn
       |> put_status(:created)
@@ -80,6 +82,7 @@ defmodule EasyWeb.NutritionPlanController do
     end
   end
 
+  # Duplicate to a specific client
   def duplicate(conn, %{"target_client_id" => target_client_id}) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
@@ -88,6 +91,23 @@ defmodule EasyWeb.NutritionPlanController do
              business_id,
              conn.assigns.nutrition_plan.id,
              target_client_id
+           ) do
+      conn
+      |> put_status(:created)
+      |> render(:show, %{nutrition_plan: new_plan})
+    end
+  end
+
+  # Duplicate as a new template (no client)
+  def duplicate(conn, _params) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         coach_id <- claims["coach_id"],
+         {:ok, new_plan} <-
+           Nutrition.duplicate_nutrition_plan_as_template(
+             business_id,
+             coach_id,
+             conn.assigns.nutrition_plan
            ) do
       conn
       |> put_status(:created)

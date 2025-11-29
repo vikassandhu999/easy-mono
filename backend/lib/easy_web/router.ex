@@ -35,6 +35,8 @@ defmodule EasyWeb.Router do
     pipe_through :api_authenticated
 
     get "/me", AuthController, :me
+    post "/logout", AuthController, :logout
+    patch "/profile", AuthController, :update_coach_profile
   end
 
   scope "/api/invitations", EasyWeb do
@@ -48,6 +50,7 @@ defmodule EasyWeb.Router do
     pipe_through :api_authenticated
 
     get "/", BusinessController, :show
+    patch "/", BusinessController, :update
     get "/subscription", BusinessController, :get_subscription
     get "/coaches", BusinessController, :list_coaches
   end
@@ -91,6 +94,7 @@ defmodule EasyWeb.Router do
     get "/:id", RecipeController, :show
     patch "/:id", RecipeController, :update
     delete "/:id", RecipeController, :delete
+    post "/:id/duplicate", RecipeController, :duplicate
   end
 
   scope "/api/nutrition_plans", EasyWeb do
@@ -139,7 +143,7 @@ defmodule EasyWeb.Router do
     get "/", ExerciseController, :index
     post "/", ExerciseController, :create
     get "/:id", ExerciseController, :show
-    put "/:id", ExerciseController, :update
+    patch "/:id", ExerciseController, :update
     delete "/:id", ExerciseController, :delete
     post "/:id/duplicate", ExerciseController, :duplicate
   end

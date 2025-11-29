@@ -102,13 +102,30 @@ defmodule Easy.Nutrition do
   end
 
   @doc """
-  Assigns a nutrition plan template to a client by creating a deep copy.
+  Duplicates a nutrition plan as a new template (no client assignment).
+  Creates a copy with a unique name like "Plan Name (Copy)".
   """
-  def assign_nutrition_plan_to_client(business_id, template_id, client_id) do
+  @spec duplicate_nutrition_plan_as_template(String.t(), String.t(), NutritionPlan.t()) ::
+          {:ok, NutritionPlan.t()} | {:error, any()}
+  def duplicate_nutrition_plan_as_template(business_id, coach_id, original_plan) do
+    Repo.transaction(fn ->
+      new_plan = create_template_copy!(original_plan, business_id, coach_id)
+      copy_meals!(original_plan.meals, new_plan.id)
+      Repo.preload(new_plan, nutrition_plan_preloads())
+    end)
+  end
+
+  @doc """
+  Assigns a nutrition plan template to a client by creating a deep copy.
+  Accepts an optional start_date, defaults to today if not provided.
+  """
+  def assign_nutrition_plan_to_client(business_id, template_id, client_id, opts \\ %{}) do
+    start_date = parse_start_date(opts)
+
     with {:ok, template} <- fetch_nutrition_plan(business_id, template_id),
          true <- template.is_template || {:error, :not_a_template} do
       Repo.transaction(fn ->
-        new_plan = create_plan_copy!(template, business_id, client_id)
+        new_plan = create_plan_copy!(template, business_id, client_id, start_date)
         copy_meals!(template.meals, new_plan.id)
         Repo.preload(new_plan, nutrition_plan_preloads())
       end)
@@ -117,6 +134,16 @@ defmodule Easy.Nutrition do
       error -> error
     end
   end
+
+  defp parse_start_date(%{"start_date" => date_string}) when is_binary(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} -> date
+      _ -> Date.utc_today()
+    end
+  end
+
+  defp parse_start_date(%{start_date: %Date{} = date}), do: date
+  defp parse_start_date(_), do: Date.utc_today()
 
   @spec copy_day(String.t(), integer(), integer()) ::
           {:ok, :ok} | {:error, :not_found | :invalid_day_number | any()}
@@ -284,6 +311,75 @@ defmodule Easy.Nutrition do
     Repo.delete(recipe)
   end
 
+  @spec duplicate_recipe(Recipe.t(), String.t(), String.t()) ::
+          {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
+  def duplicate_recipe(%Recipe{} = recipe, business_id, coach_id) do
+    recipe = Repo.preload(recipe, :recipe_ingredients)
+
+    new_name = generate_unique_copy_name(recipe.name, business_id, Recipe)
+
+    recipe_ingredients_attrs =
+      Enum.map(recipe.recipe_ingredients, fn ingredient ->
+        %{
+          "ingredient_id" => ingredient.ingredient_id,
+          "unit_id" => ingredient.unit_id,
+          "quantity" => ingredient.quantity,
+          "quantity_as_text" => ingredient.quantity_as_text,
+          "order" => ingredient.order
+        }
+      end)
+
+    attrs = %{
+      "name" => new_name,
+      "description" => recipe.description,
+      "instructions" => recipe.instructions,
+      "instructions_as_text" => recipe.instructions_as_text,
+      "prep_time_minutes" => recipe.prep_time_minutes,
+      "cook_time_minutes" => recipe.cook_time_minutes,
+      "servings" => recipe.servings,
+      "total_calories" => recipe.total_calories,
+      "total_protein" => recipe.total_protein,
+      "total_carbohydrates" => recipe.total_carbohydrates,
+      "total_fats" => recipe.total_fats,
+      "total_fiber" => recipe.total_fiber,
+      "status" => recipe.status,
+      "business_id" => business_id,
+      "creator_id" => coach_id,
+      "recipe_ingredients" => recipe_ingredients_attrs
+    }
+
+    create_recipe(attrs)
+  end
+
+  defp generate_unique_copy_name(original_name, business_id, schema) do
+    base_name = String.replace(original_name, ~r/ \(Copy( \d+)?\)$/, "")
+    copy_name = "#{base_name} (Copy)"
+
+    existing_names =
+      schema
+      |> where([r], r.business_id == ^business_id)
+      |> where([r], like(r.name, ^"#{base_name} (Copy%"))
+      |> select([r], r.name)
+      |> Repo.all()
+      |> MapSet.new()
+
+    if MapSet.member?(existing_names, copy_name) do
+      find_available_copy_number(base_name, existing_names, 2)
+    else
+      copy_name
+    end
+  end
+
+  defp find_available_copy_number(base_name, existing_names, n) do
+    candidate = "#{base_name} (Copy #{n})"
+
+    if MapSet.member?(existing_names, candidate) do
+      find_available_copy_number(base_name, existing_names, n + 1)
+    else
+      candidate
+    end
+  end
+
   @spec fetch_meal(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
   def fetch_meal(business_id, meal_id) do
     Meal
@@ -385,7 +481,7 @@ defmodule Easy.Nutrition do
 
   # Copy Helpers
 
-  defp create_plan_copy!(original_plan, business_id, target_client_id) do
+  defp create_plan_copy!(original_plan, business_id, target_client_id, start_date \\ nil) do
     new_plan_attrs = %{
       "name" => original_plan.name,
       "description" => original_plan.description,
@@ -393,12 +489,35 @@ defmodule Easy.Nutrition do
       "is_template" => false,
       "status" => :active,
       "duration_weeks" => original_plan.duration_weeks,
-      "start_date" => Date.utc_today(),
+      "start_date" => start_date || Date.utc_today(),
       "tags" => original_plan.tags,
       "client_id" => target_client_id,
       "original_plan_id" => original_plan.id,
       "business_id" => business_id,
       "creator_id" => original_plan.creator_id
+    }
+
+    %NutritionPlan{}
+    |> NutritionPlan.changeset(new_plan_attrs)
+    |> Repo.insert!()
+  end
+
+  defp create_template_copy!(original_plan, business_id, coach_id) do
+    new_name = generate_unique_copy_name(original_plan.name, business_id, NutritionPlan)
+
+    new_plan_attrs = %{
+      "name" => new_name,
+      "description" => original_plan.description,
+      "thumbnail_url" => original_plan.thumbnail_url,
+      "is_template" => true,
+      "status" => :draft,
+      "duration_weeks" => original_plan.duration_weeks,
+      "start_date" => nil,
+      "tags" => original_plan.tags,
+      "client_id" => nil,
+      "original_plan_id" => original_plan.id,
+      "business_id" => business_id,
+      "creator_id" => coach_id
     }
 
     %NutritionPlan{}

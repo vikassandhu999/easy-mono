@@ -5,7 +5,7 @@ defmodule EasyWeb.RecipeController do
   alias EasyWeb.FallbackController
   use EasyWeb, :controller
 
-  plug :authorize_resource when action in [:show, :update, :delete]
+  plug :authorize_resource when action in [:show, :update, :delete, :duplicate]
 
   def index(conn, params) do
     with claims <- conn.assigns.token_claims,
@@ -39,7 +39,7 @@ defmodule EasyWeb.RecipeController do
   def show(conn, _params) do
     conn
     |> put_status(:ok)
-    |> render(:update, %{recipe: conn.assigns.recipe})
+    |> render(:show, %{recipe: conn.assigns.recipe})
   end
 
   def update(conn, _params) do
@@ -53,6 +53,18 @@ defmodule EasyWeb.RecipeController do
   def delete(conn, _params) do
     with {:ok, _deleted_recipe} <- Nutrition.delete_recipe(conn.assigns.recipe) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  def duplicate(conn, _params) do
+    recipe = conn.assigns.recipe
+    business_id = conn.assigns.token_claims["business_id"]
+    coach_id = conn.assigns.token_claims["coach_id"]
+
+    with {:ok, duplicated_recipe} <- Nutrition.duplicate_recipe(recipe, business_id, coach_id) do
+      conn
+      |> put_status(:created)
+      |> render(:duplicate, %{recipe: duplicated_recipe})
     end
   end
 

@@ -6,7 +6,7 @@ defmodule EasyWeb.ExerciseJSON do
   """
   def index(%{exercises: exercises, meta: meta}) do
     %{
-      data: Enum.map(exercises, &data/1),
+      data: Enum.map(exercises, &render_exercise/1),
       meta: meta
     }
   end
@@ -15,13 +15,13 @@ defmodule EasyWeb.ExerciseJSON do
   Renders a single exercise.
   """
   def show(%{exercise: exercise}) do
-    %{data: data(exercise)}
+    %{data: render_exercise(exercise)}
   end
 
   def create(%{exercise: exercise}), do: show(%{exercise: exercise})
   def update(%{exercise: exercise}), do: show(%{exercise: exercise})
 
-  defp data(%Exercise{} = exercise) do
+  defp render_exercise(%Exercise{} = exercise) do
     %{
       id: exercise.id,
       name: exercise.name,

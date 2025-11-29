@@ -5,7 +5,9 @@ defmodule EasyWeb.AuthController do
 
   alias EasyWeb.Registration
   alias Easy.{Accounts, Clients, Nutrition}
+  alias Easy.Accounts.Session
   alias Easy.Training.Programming
+  alias Easy.Auth.Scope
 
   def register(conn, params) do
     changeset = Registration.changeset(%Registration{}, params)
@@ -205,6 +207,8 @@ defmodule EasyWeb.AuthController do
               coach: %{
                 id: coach.id,
                 business_id: coach.business_id,
+                bio: coach.bio,
+                specialties: coach.specialties || [],
                 stats: %{
                   total_clients: total_clients,
                   total_plans: total_nutrition_plans + total_training_plans
@@ -235,6 +239,64 @@ defmodule EasyWeb.AuthController do
       conn
       |> put_status(:ok)
       |> json(response)
+      |> halt()
+    end
+  end
+
+  def logout(conn, _params) do
+    with claims <- conn.assigns.token_claims,
+         session_id <- claims["session_id"],
+         %Session{} = session <- Repo.get(Session, session_id),
+         {:ok, _revoked_session} <- session |> Session.revoke_changeset() |> Repo.update() do
+      conn
+      |> put_status(:ok)
+      |> json(%{status: "ok", message: "Logged out successfully"})
+      |> halt()
+    else
+      nil ->
+        # Session not found, but still return success (already logged out)
+        conn
+        |> put_status(:ok)
+        |> json(%{status: "ok", message: "Logged out successfully"})
+        |> halt()
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{status: "ok", message: "Logged out successfully"})
+        |> halt()
+    end
+  end
+
+  @doc """
+  PATCH /api/auth/profile
+
+  Updates the authenticated coach's profile (user info and coach info).
+  """
+  def update_coach_profile(conn, params) do
+    scope = conn.assigns.scope
+
+    Scope.require_role!(scope, "coach")
+
+    user_attrs = Map.take(params, ["first_name", "last_name"])
+    coach_attrs = Map.take(params, ["bio", "specialties"])
+
+    with %Accounts.User{} = user <- Repo.get(Accounts.User, scope.user_id),
+         {:ok, updated_user} <- Accounts.update_user(user, user_attrs),
+         %Organizations.Coach{} = coach <- Accounts.get_coach_by_user(updated_user),
+         {:ok, _updated_coach} <- Organizations.update_coach(coach, coach_attrs) do
+      conn
+      |> put_status(:ok)
+      |> json(%{
+        status: "ok",
+        message: "Profile updated successfully",
+        user: %{
+          id: updated_user.id,
+          email: updated_user.email,
+          first_name: updated_user.first_name,
+          last_name: updated_user.last_name
+        }
+      })
       |> halt()
     end
   end

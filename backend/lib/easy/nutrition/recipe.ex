@@ -8,6 +8,7 @@ defmodule Easy.Nutrition.Recipe do
   schema "recipes" do
     field(:name, :string)
     field(:description, :string)
+    field(:image_url, :string)
 
     field(:instructions, {:array, :string}, default: [])
     field(:instructions_as_text, :string)
@@ -44,6 +45,7 @@ defmodule Easy.Nutrition.Recipe do
     |> cast(attrs, [
       :name,
       :description,
+      :image_url,
       :instructions,
       :instructions_as_text,
       :prep_time_minutes,

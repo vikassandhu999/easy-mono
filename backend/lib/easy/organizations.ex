@@ -28,6 +28,15 @@ defmodule Easy.Organizations do
   end
 
   @doc """
+  Updates a business profile.
+  """
+  def update_business(%Business{} = business, attrs) do
+    business
+    |> Business.update_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Creates a business with an owner and trial subscription.
   """
   def create_business_with_owner(user, attrs) do
@@ -59,6 +68,15 @@ defmodule Easy.Organizations do
       |> Repo.all()
 
     {:ok, coaches}
+  end
+
+  @doc """
+  Updates a coach profile.
+  """
+  def update_coach(%Coach{} = coach, attrs) do
+    coach
+    |> Coach.update_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

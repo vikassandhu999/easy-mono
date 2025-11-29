@@ -16,6 +16,22 @@ defmodule Easy.Organizations.Business do
     field :handle, :string
     field :status, :string, default: "active"
 
+    # Contact fields
+    field :email, :string
+    field :phone, :string
+    field :website, :string
+
+    # Address fields
+    field :address, :string
+    field :city, :string
+    field :state, :string
+    field :country, :string
+    field :postal_code, :string
+
+    # Branding & settings
+    field :logo_url, :string
+    field :timezone, :string, default: "UTC"
+
     belongs_to :owner, Easy.Accounts.User
     has_many :coaches, Easy.Organizations.Coach
     has_many :clients, Easy.Clients.Client
@@ -24,15 +40,34 @@ defmodule Easy.Organizations.Business do
     timestamps()
   end
 
+  @castable_fields [
+    :name,
+    :description,
+    :handle,
+    :status,
+    :email,
+    :phone,
+    :website,
+    :address,
+    :city,
+    :state,
+    :country,
+    :postal_code,
+    :logo_url,
+    :timezone
+  ]
+
   @doc """
   Changeset for creating or updating a business.
   """
   def changeset(business, attrs) do
     business
-    |> cast(attrs, [:name, :description, :handle, :status])
+    |> cast(attrs, @castable_fields)
     |> validate_required([:name])
     |> validate_length(:name, min: 1, max: 255)
     |> validate_inclusion(:status, ["active", "inactive", "suspended"])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    |> validate_format(:website, ~r/^https?:\/\//, message: "must start with http:// or https://")
   end
 
   @doc """
@@ -41,12 +76,37 @@ defmodule Easy.Organizations.Business do
   """
   def create_changeset(business, attrs) do
     business
-    |> cast(attrs, [:name, :description, :owner_id, :status, :handle])
+    |> cast(attrs, [:name, :description, :owner_id, :status, :handle | @castable_fields])
     |> validate_required([:name, :owner_id, :handle])
     |> validate_length(:name, min: 1, max: 255)
     |> put_change(:status, "active")
     |> unique_constraint(:handle)
     |> foreign_key_constraint(:owner_id)
+  end
+
+  @doc """
+  Changeset for updating business profile/settings.
+  """
+  def update_changeset(business, attrs) do
+    business
+    |> cast(attrs, [
+      :name,
+      :description,
+      :email,
+      :phone,
+      :website,
+      :address,
+      :city,
+      :state,
+      :country,
+      :postal_code,
+      :logo_url,
+      :timezone
+    ])
+    |> validate_required([:name])
+    |> validate_length(:name, min: 1, max: 255)
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    |> validate_format(:website, ~r/^https?:\/\//, message: "must start with http:// or https://")
   end
 
   def validate_handle(changeset) do

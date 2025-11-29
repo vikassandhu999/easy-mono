@@ -91,6 +91,30 @@ defmodule Easy.Accounts do
     end
   end
 
+  @doc """
+  Updates a user's profile information.
+  """
+  def update_user(%User{} = user, attrs) do
+    user
+    |> User.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Logs out a user by revoking their session.
+  """
+  def logout(refresh_token) do
+    case Repo.get_by(Session, refresh_token: refresh_token) do
+      %Session{} = session ->
+        session
+        |> Session.revoke_changeset()
+        |> Repo.update()
+
+      nil ->
+        {:ok, :already_logged_out}
+    end
+  end
+
   def refresh_access_token(refresh_token) do
     with %Session{} = session <- Repo.get_by(Session, refresh_token: refresh_token),
          true <- Session.valid?(session),

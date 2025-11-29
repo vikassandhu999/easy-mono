@@ -15,12 +15,14 @@ defmodule EasyWeb.RecipeJSON do
 
   def create(%{recipe: recipe}), do: show(%{recipe: recipe})
   def update(%{recipe: recipe}), do: show(%{recipe: recipe})
+  def duplicate(%{recipe: recipe}), do: show(%{recipe: recipe})
 
   defp render_recipe(%Recipe{} = recipe) do
     %{
       id: recipe.id,
       name: recipe.name,
       description: recipe.description,
+      image_url: recipe.image_url,
       instructions: recipe.instructions,
       instructions_as_text: recipe.instructions_as_text,
       prep_time_minutes: recipe.prep_time_minutes,

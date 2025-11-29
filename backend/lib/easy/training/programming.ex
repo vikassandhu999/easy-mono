@@ -385,8 +385,11 @@ defmodule Easy.Training.Programming do
 
   @doc """
   Assigns a training plan template to a client by creating a deep copy.
+  The start_date parameter is reserved for future use (e.g., scheduling workout dates).
   """
-  def assign_training_plan_to_client(template_id, client_id, _start_date \\ Date.utc_today()) do
+  def assign_training_plan_to_client(template_id, client_id, start_date \\ nil) do
+    _start_date = start_date || Date.utc_today()
+
     template =
       Repo.get!(TrainingPlan, template_id)
       |> Repo.preload(planned_workouts: [workout_elements: [:exercise, :planned_sets]])

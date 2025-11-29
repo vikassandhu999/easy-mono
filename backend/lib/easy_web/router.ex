@@ -27,8 +27,23 @@ defmodule EasyWeb.Router do
     post "/verify", AuthController, :verify
     post "/send-login-code", AuthController, :send_login_code
     post "/token", AuthController, :token
+  end
+
+  scope "/api/auth", EasyWeb do
+    pipe_through :api_authenticated
     post "/me", AuthController, :me
-    post "/client-signup", AuthController, :client_signup
+  end
+
+  # Client-specific auth endpoints
+  # These validate that the user has a client record before granting access
+  scope "/api/auth/client", EasyWeb do
+    pipe_through :api
+
+    post "/send-login-code", ClientAuthController, :send_login_code
+    post "/send-invitation-code", ClientAuthController, :send_invitation_code
+    post "/send-public-join-code", ClientAuthController, :send_public_join_code
+    post "/token", ClientAuthController, :token
+    post "/register", ClientAuthController, :register
   end
 
   scope "/api/auth", EasyWeb do
@@ -45,6 +60,13 @@ defmodule EasyWeb.Router do
     get "/:token", InvitationController, :show
   end
 
+  # Public join (no auth required)
+  scope "/api/join", EasyWeb do
+    pipe_through :api
+
+    get "/:code", PublicJoinController, :show
+  end
+
   # Organization management
   scope "/api/organization", EasyWeb do
     pipe_through :api_authenticated
@@ -53,6 +75,15 @@ defmodule EasyWeb.Router do
     patch "/", BusinessController, :update
     get "/subscription", BusinessController, :get_subscription
     get "/coaches", BusinessController, :list_coaches
+
+    # Business settings
+    get "/settings", BusinessSettingsController, :show
+    patch "/settings", BusinessSettingsController, :update
+    patch "/settings/public-join", BusinessSettingsController, :update_public_join
+    patch "/settings/branding", BusinessSettingsController, :update_branding
+    post "/settings/regenerate-code", BusinessSettingsController, :regenerate_code
+    post "/settings/enable-public-join", BusinessSettingsController, :enable_public_join
+    post "/settings/disable-public-join", BusinessSettingsController, :disable_public_join
   end
 
   # Client self-service (authenticated client)

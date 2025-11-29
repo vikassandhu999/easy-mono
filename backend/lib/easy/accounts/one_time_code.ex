@@ -47,7 +47,13 @@ defmodule Easy.Accounts.OneTimeToken do
       :used_at
     ])
     |> validate_required([:code, :type, :expires_at])
-    |> validate_inclusion(:type, ["email_verification", "login", "client_invitation"])
+    |> validate_inclusion(:type, [
+      "email_verification",
+      "login",
+      "client_invitation",
+      "client_login",
+      "public_join"
+    ])
     |> hash_code()
     |> unique_constraint(:code)
     |> foreign_key_constraint(:user_id)

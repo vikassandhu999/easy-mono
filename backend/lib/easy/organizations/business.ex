@@ -36,6 +36,7 @@ defmodule Easy.Organizations.Business do
     has_many :coaches, Easy.Organizations.Coach
     has_many :clients, Easy.Clients.Client
     has_one :subscription, Easy.Organizations.Subscription
+    has_one :settings, Easy.Organizations.BusinessSettings
 
     timestamps()
   end

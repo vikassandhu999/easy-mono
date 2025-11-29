@@ -1,11 +1,15 @@
 defmodule EasyWeb.InvitationController do
   use EasyWeb, :controller
 
+  require Logger
+
   alias Easy.Clients
 
   def show(conn, %{"token" => invitation_token}) do
     case Clients.get_invitation_with_coach(invitation_token) do
       {:ok, %{client: client, inviting_coach: coach}} ->
+        Logger.info("Invitation Token: #{invitation_token}")
+
         render(conn, :show,
           invitation_token: invitation_token,
           expires_at: client.invitation_expires_at,

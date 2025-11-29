@@ -47,10 +47,15 @@ defmodule Easy.Accounts do
     end
   end
 
+  @doc """
+  Completes login for coach app.
+  Validates that the user has a coach record.
+  """
   def login(token_id, code) do
     with {:ok, token} <- validate_code(token_id, code, "login"),
          %User{} = user <- Repo.get(User, token.user_id),
-         {:ok, session_data} <- create_session(user),
+         {:ok, _coach} <- validate_user_has_coach(user),
+         {:ok, session_data} <- create_coach_session(user),
          {:ok, _} <- Repo.delete(token) do
       {:ok,
        %{
@@ -59,6 +64,31 @@ defmodule Easy.Accounts do
          expires_at: session_data.expires_at,
          expires_in: session_data.expires_in,
          user: user
+       }}
+    else
+      nil -> {:error, Easy.Error.new("not_found", "User not found")}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Completes login for client app.
+  Validates that the user has a client record.
+  """
+  def client_login(token_id, code) do
+    with {:ok, token} <- validate_code(token_id, code, "client_login"),
+         %User{} = user <- Repo.get(User, token.user_id),
+         {:ok, client} <- validate_user_has_client(user),
+         {:ok, session_data} <- create_client_session(user),
+         {:ok, _} <- Repo.delete(token) do
+      {:ok,
+       %{
+         access_token: session_data.access_token,
+         refresh_token: session_data.refresh_token,
+         expires_at: session_data.expires_at,
+         expires_in: session_data.expires_in,
+         user: user,
+         client: client
        }}
     else
       nil -> {:error, Easy.Error.new("not_found", "User not found")}
@@ -80,14 +110,46 @@ defmodule Easy.Accounts do
     end
   end
 
+  @doc """
+  Sends a login code for coach app.
+  Validates that the user has a coach record before sending the code.
+  """
   def send_login_code(email) do
-    # <-- This is the fixed part
     with {:ok, user} <- fetch_user_by_email(email),
+         {:ok, _coach} <- validate_user_has_coach(user),
          {:ok, token, code} <- create_otp_token(user, "login") do
-      # Assuming send_otp_email is successful or you don't need to check its error
       send_otp_email(user.email, code, "login")
-
       {:ok, %{token: token, user: user}}
+    end
+  end
+
+  @doc """
+  Sends a login code for client app.
+  Validates that the user has a client record before sending the code.
+  """
+  def send_client_login_code(email) do
+    with {:ok, user} <- fetch_user_by_email(email),
+         {:ok, _client} <- validate_user_has_client(user),
+         {:ok, token, code} <- create_otp_token(user, "client_login") do
+      send_otp_email(user.email, code, "login")
+      {:ok, %{token: token, user: user}}
+    end
+  end
+
+  defp validate_user_has_coach(user) do
+    case get_coach_by_user(user) do
+      %Coach{} = coach -> {:ok, coach}
+      nil -> {:error, Easy.Error.new("no_coach_account", "No coach account found for this email")}
+    end
+  end
+
+  defp validate_user_has_client(user) do
+    case get_client_by_user(user) do
+      %Client{} = client ->
+        {:ok, client}
+
+      nil ->
+        {:error, Easy.Error.new("no_client_account", "No client account found for this email")}
     end
   end
 
@@ -163,15 +225,70 @@ defmodule Easy.Accounts do
     end
   end
 
-  defp fetch_user_by_email(email) do
+  @doc """
+  Fetches a user by email address.
+  Returns {:ok, user} or {:error, reason}.
+  """
+  def fetch_user_by_email(email) do
     case Repo.get_by(User, email: email) do
       nil ->
-        # Return an error tuple that 'with' can handle
         {:error, Easy.Error.new("not_found", "No user found with that email.")}
 
       user ->
-        # Return an :ok tuple for 'with' to match
         {:ok, user}
+    end
+  end
+
+  @doc """
+  Creates a login OTP token for a user.
+  This is used when the role validation is done externally (e.g., in the controller).
+  """
+  def create_login_otp(user, type \\ "login") do
+    with {:ok, token, code} <- create_otp_token(user, type) do
+      send_otp_email(user.email, code, "login")
+      {:ok, %{token: token, user: user}}
+    end
+  end
+
+  @doc """
+  Refreshes access token for a client session.
+  Validates that the session belongs to a client (user has client record in the session's business).
+  """
+  def refresh_client_token(refresh_token) do
+    with %Session{} = session <- Repo.get_by(Session, refresh_token: refresh_token),
+         true <- Session.valid?(session),
+         %User{} = user <- Repo.get(User, session.user_id),
+         %Client{} = client <-
+           Repo.one(
+             from c in Client,
+               where: c.user_id == ^user.id and c.business_id == ^session.business_id
+           ),
+         {:ok, _updated_session} <-
+           session |> Session.update_activity_changeset() |> Repo.update(),
+         {:ok, access_token} <-
+           Token.generate_access_token(user, session.id, ["client"], %{
+             business_id: client.business_id,
+             coach_id: nil,
+             client_id: client.id
+           }) do
+      {:ok, %{access_token: access_token, refresh_token: refresh_token}}
+    else
+      nil ->
+        {:error,
+         Easy.Error.new(
+           "invalid_refresh_token",
+           "Refresh token is invalid or not a client session"
+         )}
+
+      false ->
+        {:error,
+         Easy.Error.new(
+           "invalid_refresh_token",
+           "Refresh token has expired or been revoked"
+         )}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -185,6 +302,29 @@ defmodule Easy.Accounts do
       coach -> generate_session(user, coach, nil)
       client -> generate_session(user, nil, client)
       true -> {:error, Easy.Error.new("invalid_session", "User has no active profile")}
+    end
+  end
+
+  @doc """
+  Creates a session specifically for a coach user.
+  """
+  def create_coach_session(user) do
+    case get_coach_by_user(user) do
+      %Coach{} = coach -> generate_session(user, coach, nil)
+      nil -> {:error, Easy.Error.new("no_coach_account", "No coach account found for this user")}
+    end
+  end
+
+  @doc """
+  Creates a session specifically for a client user.
+  """
+  def create_client_session(user) do
+    case get_client_by_user(user) do
+      %Client{} = client ->
+        generate_session(user, nil, client)
+
+      nil ->
+        {:error, Easy.Error.new("no_client_account", "No client account found for this user")}
     end
   end
 
@@ -222,10 +362,11 @@ defmodule Easy.Accounts do
   end
 
   # Get coach context
+  # Note: Session schema only has user_id and business_id, not coach_id/client_id.
+  # The role info is stored in the JWT token via token_context.
   defp build_session_context(base_attrs, %Coach{} = coach, nil) do
     session_attrs =
       base_attrs
-      |> Map.put(:coach_id, coach.id)
       |> Map.put(:business_id, coach.business_id)
 
     token_roles = ["coach"]
@@ -243,7 +384,6 @@ defmodule Easy.Accounts do
   defp build_session_context(base_attrs, nil, %Client{} = client) do
     session_attrs =
       base_attrs
-      |> Map.put(:client_id, client.id)
       |> Map.put(:business_id, client.business_id)
 
     token_roles = ["client"]
@@ -290,9 +430,6 @@ defmodule Easy.Accounts do
 
   defp validate_code(token_id, code, expected_type) do
     case Repo.get(OneTimeToken, token_id) do
-      nil ->
-        {:error, Easy.Error.new("invalid_code", "Invalid code")}
-
       %OneTimeToken{} = token ->
         with true <- is_nil(expected_type) or token.type == expected_type,
              true <- OneTimeToken.verify_code?(token, code) do
@@ -300,6 +437,9 @@ defmodule Easy.Accounts do
         else
           _ -> {:error, Easy.Error.new("invalid_code", "Invalid code")}
         end
+
+      nil ->
+        {:error, Easy.Error.new("invalid_code", "Invalid code")}
     end
   end
 
@@ -322,7 +462,7 @@ defmodule Easy.Accounts do
   end
 
   defp send_otp_email(email, code, type, metadata \\ %{}) do
-    IO.inspect(%{email: email, code: code})
+    IO.inspect(%{email: email, code: code, type: type})
 
     email_struct =
       case type do

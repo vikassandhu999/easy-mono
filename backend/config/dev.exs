@@ -60,3 +60,8 @@ config :cors_plug,
 
 # Cookie configuration for development - disable Secure flag for HTTP
 config :easy, EasyWeb.CookieHelper, secure: false
+
+# Frontend URLs for development
+config :easy,
+  frontend_url: "http://localhost:2020",
+  client_frontend_url: "http://localhost:1313"

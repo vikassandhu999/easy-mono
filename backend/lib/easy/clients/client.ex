@@ -17,6 +17,7 @@ defmodule Easy.Clients.Client do
     field :status, :string, default: "pending"
     field :invitation_token, :string
     field :invitation_expires_at, :utc_datetime
+    field :join_source, :string, default: "email_invite"
 
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
@@ -27,6 +28,7 @@ defmodule Easy.Clients.Client do
   end
 
   @valid_statuses ~w(pending active inactive archived)
+  @valid_join_sources ~w(email_invite public_link manual)
 
   # ===========================================================================
   # Changesets
@@ -45,7 +47,7 @@ defmodule Easy.Clients.Client do
     |> validate_status()
   end
 
-  def create_changeset(client, attrs) do
+  def create_changeset(client, attrs, join_source \\ "email_invite") do
     token = generate_invitation_token()
 
     expires_at =
@@ -59,6 +61,8 @@ defmodule Easy.Clients.Client do
     |> put_change(:status, "pending")
     |> put_change(:invitation_token, token)
     |> put_change(:invitation_expires_at, expires_at)
+    |> put_change(:join_source, join_source)
+    |> validate_join_source()
     |> foreign_key_constraint(:business_id)
     |> unique_constraint([:email, :business_id],
       name: :clients_email_business_index,
@@ -144,6 +148,13 @@ defmodule Easy.Clients.Client do
     )
   end
 
+  defp validate_join_source(changeset) do
+    changeset
+    |> validate_inclusion(:join_source, @valid_join_sources,
+      message: "must be one of: #{Enum.join(@valid_join_sources, ", ")}"
+    )
+  end
+
   defp generate_invitation_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end
@@ -188,5 +199,29 @@ defmodule Easy.Clients.Client do
     |> change()
     |> put_change(:invitation_token, nil)
     |> put_change(:invitation_expires_at, nil)
+  end
+
+  @doc """
+  Changeset for creating a client via public join link.
+  No invitation token is generated - client signs up directly.
+  Status depends on whether approval is required.
+  """
+  def public_join_changeset(client, attrs, approval_required \\ true) do
+    status = if approval_required, do: "pending", else: "active"
+
+    client
+    |> cast(attrs, [:email, :full_name, :phone, :business_id])
+    |> validate_required([:email, :full_name, :business_id])
+    |> validate_email()
+    |> validate_phone()
+    |> put_change(:status, status)
+    |> put_change(:join_source, "public_link")
+    |> put_change(:invitation_token, nil)
+    |> put_change(:invitation_expires_at, nil)
+    |> foreign_key_constraint(:business_id)
+    |> unique_constraint([:email, :business_id],
+      name: :clients_email_business_index,
+      message: "already exists in this business"
+    )
   end
 end

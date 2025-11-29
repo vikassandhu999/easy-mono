@@ -6,7 +6,118 @@ defmodule Easy.Organizations do
   import Ecto.Query, warn: false
 
   alias Easy.Repo
-  alias Easy.Organizations.{Business, Plan, Subscription, Coach}
+  alias Easy.Organizations.{Business, BusinessSettings, Plan, Subscription, Coach}
+
+  ## Business Settings Management
+
+  @doc """
+  Gets the settings for a business.
+  Creates default settings if they don't exist.
+  """
+  def get_business_settings(business_id) do
+    case Repo.get_by(BusinessSettings, business_id: business_id) do
+      nil -> create_business_settings(business_id)
+      settings -> {:ok, settings}
+    end
+  end
+
+  @doc """
+  Gets settings by public join code.
+  Returns error if code doesn't exist or public join is disabled.
+  """
+  def get_settings_by_join_code(code) do
+    case Repo.get_by(BusinessSettings, public_join_code: code) do
+      nil ->
+        {:error, :invalid_code}
+
+      %BusinessSettings{public_join_enabled: false} ->
+        {:error, :join_disabled}
+
+      settings ->
+        {:ok, Repo.preload(settings, business: [:owner])}
+    end
+  end
+
+  @doc """
+  Updates public join settings for a business.
+  """
+  def update_public_join_settings(business_id, attrs) do
+    with {:ok, settings} <- get_business_settings(business_id) do
+      settings
+      |> BusinessSettings.public_join_changeset(attrs)
+      |> Repo.update()
+    end
+  end
+
+  @doc """
+  Updates branding settings for a business.
+  """
+  def update_branding_settings(business_id, attrs) do
+    with {:ok, settings} <- get_business_settings(business_id) do
+      settings
+      |> BusinessSettings.branding_changeset(attrs)
+      |> Repo.update()
+    end
+  end
+
+  @doc """
+  Updates all settings for a business.
+  """
+  def update_business_settings(business_id, attrs) do
+    with {:ok, settings} <- get_business_settings(business_id) do
+      settings
+      |> BusinessSettings.changeset(attrs)
+      |> Repo.update()
+    end
+  end
+
+  @doc """
+  Regenerates the public join code for a business.
+  """
+  def regenerate_join_code(business_id) do
+    with {:ok, settings} <- get_business_settings(business_id) do
+      settings
+      |> BusinessSettings.regenerate_code_changeset()
+      |> Repo.update()
+    end
+  end
+
+  @doc """
+  Enables public join for a business.
+  """
+  def enable_public_join(business_id) do
+    update_public_join_settings(business_id, %{public_join_enabled: true})
+  end
+
+  @doc """
+  Disables public join for a business.
+  """
+  def disable_public_join(business_id) do
+    update_public_join_settings(business_id, %{public_join_enabled: false})
+  end
+
+  @doc """
+  Checks if public join is within client limit.
+  Returns true if no limit set or under limit.
+  """
+  def public_join_within_limit?(business_id) do
+    with {:ok, settings} <- get_business_settings(business_id) do
+      case settings.public_join_client_limit do
+        nil ->
+          true
+
+        limit ->
+          current_count =
+            from(c in Easy.Clients.Client,
+              where: c.business_id == ^business_id and c.status != "archived",
+              select: count(c.id)
+            )
+            |> Repo.one()
+
+          current_count < limit
+      end
+    end
+  end
 
   ## Business Management
 
@@ -43,9 +154,19 @@ defmodule Easy.Organizations do
     with {:ok, business} <- do_create_business(user, attrs),
          {:ok, plan} <- get_default_plan(),
          {:ok, _subscription} <- create_trial_subscription(business.id, plan.id),
-         {:ok, _coach} <- create_coach(business, user, %{}) do
+         {:ok, _coach} <- create_coach(business, user, %{}),
+         {:ok, _settings} <- create_business_settings(business.id) do
       {:ok, business}
     end
+  end
+
+  @doc """
+  Creates business settings for a business.
+  """
+  def create_business_settings(business_id) do
+    %BusinessSettings{}
+    |> BusinessSettings.create_changeset(%{business_id: business_id})
+    |> Repo.insert()
   end
 
   defp do_create_business(user, attrs) do

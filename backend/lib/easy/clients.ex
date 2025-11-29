@@ -56,6 +56,21 @@ defmodule Easy.Clients do
     |> Repo.aggregate(:count)
   end
 
+  @doc """
+  Gets an active client record by user ID.
+  Returns nil if no active client is found.
+  Active means status is "active" or "pending" (not "archived").
+  """
+  @spec get_active_client_by_user_id(String.t()) :: Client.t() | nil
+  def get_active_client_by_user_id(user_id) do
+    Repo.one(
+      from c in Client,
+        where: c.user_id == ^user_id and c.status in ["active", "pending"],
+        preload: [:business],
+        limit: 1
+    )
+  end
+
   @spec get_client(Scope.t(), String.t()) :: {:ok, Client.t()} | {:error, atom()}
   def get_client(%Scope{} = scope, client_id) when is_binary(client_id) do
     case Repo.get(Client, client_id) do

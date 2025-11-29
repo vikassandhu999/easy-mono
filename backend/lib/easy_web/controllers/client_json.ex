@@ -42,6 +42,7 @@ defmodule EasyWeb.ClientJSON do
       phone: client.phone,
       notes: client.notes,
       status: client.status,
+      join_source: client.join_source,
       business_id: ResponseHelpers.format_uuid(client.business_id),
       user_id: ResponseHelpers.format_uuid(client.user_id),
       created_at: ResponseHelpers.format_timestamp(client.inserted_at),

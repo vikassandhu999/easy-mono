@@ -53,6 +53,7 @@ defmodule EasyWeb.Endpoint do
       # Development URLs
       "http://localhost:2020",
       "http://localhost:3000",
+      "http://localhost:1313",
       "http://localhost:3001",
       "http://localhost:5173",
       "http://192.168.1.2:2020",

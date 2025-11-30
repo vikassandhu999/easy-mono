@@ -14,7 +14,7 @@ const resolveBaseUrl = (): string => {
 
     // In development with http://, auto-detect and replace port for local dev
     if (import.meta.env.DEV && typeof window !== 'undefined' && window.origin.startsWith('http://')) {
-        return window.origin.replace(':2020', ':4000');
+        return window.origin.replace(':1313', ':4000').replace(':2020', ':4000');
     }
 
     // Use environment variable (required in production)
@@ -45,6 +45,7 @@ function clearAuthState() {
     if (typeof window !== 'undefined') {
         tokenStorage.clearTokens();
         localStorage.removeItem('user');
+        localStorage.removeItem('client');
     }
 }
 
@@ -55,20 +56,20 @@ function clearAuthState() {
 function redirectToLogin() {
     if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
-        const authPages = ['/login', '/register', '/verify'];
+        const authPages = ['/login', '/signin', '/join', '/invite', '/verify'];
 
         // Don't redirect if already on an auth page
-        if (!authPages.includes(currentPath)) {
-            window.location.href = '/login';
+        if (!authPages.some((page) => currentPath.startsWith(page))) {
+            window.location.href = '/signin';
         }
     }
 }
 
 // Track if we're currently refreshing to prevent multiple refresh calls
 let isRefreshing = false;
-let failedQueue: Array<{resolve: (value?: unknown) => void; reject: (reason?: any) => void}> = [];
+let failedQueue: Array<{resolve: (value?: unknown) => void; reject: (reason?: unknown) => void}> = [];
 
-const processQueue = (error: any = null) => {
+const processQueue = (error: unknown = null) => {
     failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
@@ -106,13 +107,15 @@ axiosInstance.interceptors.response.use(
         // Don't retry if:
         // 1. Already retried this request
         // 2. This IS the refresh endpoint
-        // 3. This is an auth endpoint (token, send-login-code, verify, etc.)
+        // 3. This is an auth endpoint
         if (
             originalRequest._retry ||
-            originalRequest.url?.includes('/api/auth/token') ||
-            originalRequest.url?.includes('/api/auth/send-login-code') ||
+            originalRequest.url?.includes('/api/auth/client/token') ||
+            originalRequest.url?.includes('/api/auth/client/send-login-code') ||
             originalRequest.url?.includes('/api/auth/verify') ||
-            originalRequest.url?.includes('/api/auth/register')
+            originalRequest.url?.includes('/api/auth/client-signup') ||
+            originalRequest.url?.includes('/api/invitations') ||
+            originalRequest.url?.includes('/api/join')
         ) {
             // Clear auth state and redirect to login
             clearAuthState();
@@ -141,8 +144,8 @@ axiosInstance.interceptors.response.use(
                 throw new Error('No refresh token available');
             }
 
-            // Call refresh endpoint
-            const response = await axiosInstance.post('/api/auth/token', {
+            // Call refresh endpoint (client-specific)
+            const response = await axiosInstance.post('/api/auth/client/token', {
                 refresh_token: refreshToken,
             });
 
@@ -226,30 +229,7 @@ const axiosBaseQuery = (): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQue
 export const baseAPISlice = createApi({
     reducerPath: 'api',
     baseQuery: axiosBaseQuery(),
-    tagTypes: [
-        'Clients',
-        'MembershipStats',
-        'Chats',
-        'ChatMessages',
-        'Contents',
-        'Schedules',
-        'ScheduleEntries',
-        'Sessions',
-        'Plans',
-        'PlanSessions',
-        'Coach', // Coach profile management
-        'Business', // Business preferences management
-        'BusinessSettings', // Business settings (public join, branding)
-        'Recipes', // Recipe management
-        'Ingredients', // Ingredient management
-        'NutritionPlans', // Nutrition Plan management
-        'Meals', // Meal management
-        'MealItems', // Meal Items management
-        'TrainingPlans', // Training Plan management
-        'Exercises', // Exercise management
-        'Muscles', // Muscle management
-        'Equipment', // Equipment management
-    ],
+    tagTypes: ['Invitation', 'PublicJoin', 'Profile', 'Schedule', 'Content'],
     endpoints: () => ({}),
 });
 

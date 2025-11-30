@@ -1,5 +1,9 @@
+import {Stack} from '@mantine/core';
+
 import PagePaper from '@/shared/containers/PagePaper';
 
+// import BrandingSettings from '../components/BrandingSettings';
+import PublicJoinSettings from '../components/PublicJoinSettings';
 import classes from './styles.module.css';
 
 const FlowsListPage = () => {
@@ -10,10 +14,9 @@ const FlowsListPage = () => {
                 <div className={classes.headerSection}>
                     <div className={classes.headerRow}>
                         <div className={classes.headerContent}>
-                            <h1 className={classes.pageTitle}>Flows</h1>
+                            <h1 className={classes.pageTitle}>Client Onboarding</h1>
                             <p className={classes.pageDescription}>
-                                Create and manage intake flows to collect information from clients when they join your
-                                business
+                                Configure how clients can join your coaching practice and customize your public page
                             </p>
                         </div>
                     </div>
@@ -21,7 +24,13 @@ const FlowsListPage = () => {
 
                 {/* Content */}
                 <div className={classes.contentSection}>
-                    <div className={classes.contentList}>{/* Flows list will go here */}</div>
+                    <Stack gap="lg">
+                        {/* Public Join Settings */}
+                        <PublicJoinSettings />
+
+                        {/* Branding Settings */}
+                        {/* <BrandingSettings /> */}
+                    </Stack>
                 </div>
             </div>
         </PagePaper>

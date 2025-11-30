@@ -1,0 +1,46 @@
+/**
+ * PublicJoinSettings Component Styles
+ *
+ * Mobile-first styles for the public join settings card.
+ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+  background: var(--surface-primary);
+}
+
+/* ============================================
+   URL INPUT
+   ============================================ */
+
+.urlInput {
+  flex: 1;
+}
+
+.urlInput input {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--text-xs);
+  background: var(--mantine-color-gray-0);
+}
+
+/* ============================================
+   SETTING ICON
+   ============================================ */
+
+.settingIcon {
+  color: var(--mantine-color-gray-6);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 576px) {
+  .urlInput input {
+    font-size: var(--text-xs);
+  }
+}

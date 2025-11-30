@@ -188,34 +188,6 @@ export const notifyAsync = async <T>(
     }
 };
 
-/**
- * Validates form errors and shows appropriate notification
- * @param fieldErrors - Field-level validation errors
- * @param generalMessage - Optional general error message
- */
-export const notifyValidationErrors = (fieldErrors: Record<string, string[]>, generalMessage?: string) => {
-    const fieldCount = Object.keys(fieldErrors).length;
-
-    if (fieldCount === 0) {
-        return;
-    }
-
-    // If there's only one field with errors, show specific message
-    if (fieldCount === 1) {
-        const [fieldName, errors] = Object.entries(fieldErrors)[0];
-        notifyError(`${fieldName}: ${errors[0]}`, {
-            title: 'Validation Error',
-        });
-        return;
-    }
-
-    // Multiple fields have errors
-    const message = generalMessage || `Please correct ${fieldCount} fields and try again.`;
-    notifyError(message, {
-        title: 'Validation Errors',
-    });
-};
-
 // Export a default notification helper object
 export default {
     success: notifySuccess,
@@ -228,5 +200,4 @@ export default {
     clearAll: notifyClearAll,
     custom: notifyCustom,
     async: notifyAsync,
-    validationErrors: notifyValidationErrors,
 };

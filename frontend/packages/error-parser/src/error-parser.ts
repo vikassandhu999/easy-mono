@@ -97,10 +97,8 @@ class APIErrorParser {
                 return this.str_from_invalid_input();
             case 'internal_error':
                 return this.str_from_internal_error();
-            case 'invalid_code':
-                return this.err.error_message;
             default:
-                return 'An unexpected error occurred.';
+                return this.err.error_message ?? 'An unexpected error occurred.';
         }
     }
 

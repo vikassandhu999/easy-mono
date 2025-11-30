@@ -25,3 +25,17 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 easy-*.tar
 
+# Secret files
+.env
+.env.local
+*.secret
+*.key
+*.pem
+*.crt
+
+# SSH keys - should never be committed
+*_droplet
+*_droplet.pub
+id_rsa*
+id_ed25519*
+*.pub

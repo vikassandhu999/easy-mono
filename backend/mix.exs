@@ -56,7 +56,7 @@ defmodule Easy.MixProject do
       {:nimble_totp, "~> 1.0"},
       {:ex_phone_number, "~> 0.4"},
       {:cors_plug, "~> 3.0"},
-       {:resend, "~> 0.4.4"}
+      {:resend, "~> 0.4.4"}
     ]
   end
 
@@ -81,8 +81,7 @@ defmodule Easy.MixProject do
       easy: [
         include_executables_for: [:unix],
         applications: [runtime_tools: :permanent],
-        vm_args: "rel/vm.args.eex",
-        overlays: ["rel/overlays"]
+        vm_args: "rel/vm.args.eex"
       ]
     ]
   end

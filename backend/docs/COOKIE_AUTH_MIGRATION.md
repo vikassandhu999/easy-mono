@@ -684,7 +684,7 @@ export default api;
    ```elixir
    origin: [
      "http://localhost:3000",
-     "https://app.yourdomain.com"
+     "https://app.api.coacheasy.app"
    ]
    ```
 

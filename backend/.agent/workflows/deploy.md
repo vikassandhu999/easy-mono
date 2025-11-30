@@ -27,7 +27,7 @@ Follow these steps to deploy Easy Backend to Digital Ocean.
    ```
 
 4. **Update nginx SSL paths**
-   Edit `nginx/conf.d/default.conf` - replace `yourdomain.com` with your domain.
+   Edit `nginx/conf.d/default.conf` - replace `api.coacheasy.app` with your domain.
 
 // turbo
 5. **Deploy**
@@ -37,7 +37,7 @@ Follow these steps to deploy Easy Backend to Digital Ocean.
 
 6. **Verify**
    ```bash
-   curl https://yourdomain.com/health
+   curl https://api.coacheasy.app/health
    ```
 
 ## Update/Redeploy

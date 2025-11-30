@@ -128,8 +128,8 @@ POSTMARK_API_KEY=your-api-key-here
 
 # Optional
 EMAIL_FROM_NAME="Easy Coaching"
-EMAIL_FROM_ADDRESS=noreply@yourdomain.com
-APP_URL=https://yourdomain.com
+EMAIL_FROM_ADDRESS=noreply@api.coacheasy.app
+APP_URL=https://api.coacheasy.app
 ```
 
 ## Usage Examples

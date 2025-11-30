@@ -64,10 +64,10 @@ defmodule EasyWeb.Endpoint do
       "http://127.0.0.1:3001",
       "http://127.0.0.1:5173",
       # Production URLs (update these for your domains)
-      "https://yourdomain.com",
-      "https://app.yourdomain.com",
-      "https://coach.yourdomain.com",
-      "https://client.yourdomain.com"
+      "https://api.coacheasy.app",
+      "https://app.api.coacheasy.app",
+      "https://coach.api.coacheasy.app",
+      "https://client.api.coacheasy.app"
     ],
     credentials: true,
     max_age: 86400,

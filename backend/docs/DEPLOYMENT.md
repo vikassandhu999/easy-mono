@@ -36,11 +36,11 @@ nano .env
 
 ### 3. Update Nginx SSL Configuration
 
-Edit `nginx/conf.d/default.conf` and replace `yourdomain.com` with your actual domain:
+Edit `nginx/conf.d/default.conf` and replace `api.coacheasy.app` with your actual domain:
 
 ```nginx
-ssl_certificate /etc/nginx/ssl/live/yourdomain.com/fullchain.pem;
-ssl_certificate_key /etc/nginx/ssl/live/yourdomain.com/privkey.pem;
+ssl_certificate /etc/nginx/ssl/live/api.coacheasy.app/fullchain.pem;
+ssl_certificate_key /etc/nginx/ssl/live/api.coacheasy.app/privkey.pem;
 ```
 
 ### 4. Deploy
@@ -66,7 +66,7 @@ docker compose ps
 docker compose logs -f app
 
 # Check health endpoint
-curl https://yourdomain.com/health
+curl https://api.coacheasy.app/health
 ```
 
 ## Updating
@@ -156,7 +156,7 @@ docker compose exec app /app/bin/easy eval "Easy.Release.migrate"
 
 **Verify certificate paths:**
 ```bash
-ls -la /etc/letsencrypt/live/yourdomain.com/
+ls -la /etc/letsencrypt/live/api.coacheasy.app/
 ```
 
 **Renew certificates:**

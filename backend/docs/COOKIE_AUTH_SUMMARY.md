@@ -247,7 +247,7 @@ config :easy, EasyWeb.CookieHelper,
 ```elixir
 # config/config.exs
 config :cors_plug,
-  origin: ["http://localhost:3000", "https://app.yourdomain.com"],
+  origin: ["http://localhost:3000", "https://app.api.coacheasy.app"],
   credentials: true  # Required for cookies
 ```
 

@@ -12,10 +12,10 @@ config :logger, level: :info
 # CORS configuration for production - restrict to specific domains
 config :cors_plug,
   origin: [
-    "https://yourdomain.com",
-    "https://app.yourdomain.com",
-    "https://coach.yourdomain.com",
-    "https://client.yourdomain.com"
+    "https://api.coacheasy.app",
+    "https://app.api.coacheasy.app",
+    "https://coach.api.coacheasy.app",
+    "https://client.api.coacheasy.app"
   ],
   credentials: true
 

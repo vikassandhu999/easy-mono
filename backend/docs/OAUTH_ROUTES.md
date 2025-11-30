@@ -162,10 +162,10 @@ CORS is configured globally in `lib/easy_web/endpoint.ex` using the `CORSPlug` l
 
 **Production:**
 
-- https://yourdomain.com
-- https://app.yourdomain.com
-- https://coach.yourdomain.com
-- https://client.yourdomain.com
+- https://api.coacheasy.app
+- https://app.api.coacheasy.app
+- https://coach.api.coacheasy.app
+- https://client.api.coacheasy.app
 
 ### Allowed Methods
 

@@ -358,10 +358,10 @@ In production, restrict CORS to specific domains:
 # config/prod.exs
 config :cors_plug,
   origin: [
-    "https://yourdomain.com",
-    "https://app.yourdomain.com",
-    "https://coach.yourdomain.com",
-    "https://client.yourdomain.com"
+    "https://api.coacheasy.app",
+    "https://app.api.coacheasy.app",
+    "https://coach.api.coacheasy.app",
+    "https://client.api.coacheasy.app"
   ],
   credentials: true
 ```

@@ -32,7 +32,7 @@ SENDGRID_API_KEY=your-api-key-here
 **Mailgun**:
 ```bash
 MAILGUN_API_KEY=your-api-key-here
-MAILGUN_DOMAIN=mg.yourdomain.com
+MAILGUN_DOMAIN=mg.api.coacheasy.app
 ```
 
 **SMTP**:
@@ -135,7 +135,7 @@ Example log output:
    ```bash
    MAILER_ADAPTER=postmark
    POSTMARK_API_KEY=your-api-key
-   EMAIL_FROM_ADDRESS=noreply@yourdomain.com
+   EMAIL_FROM_ADDRESS=noreply@api.coacheasy.app
    ```
 
 ### Alternative: SendGrid
@@ -147,7 +147,7 @@ Example log output:
    ```bash
    MAILER_ADAPTER=sendgrid
    SENDGRID_API_KEY=your-api-key
-   EMAIL_FROM_ADDRESS=noreply@yourdomain.com
+   EMAIL_FROM_ADDRESS=noreply@api.coacheasy.app
    ```
 
 ## Testing Email Delivery

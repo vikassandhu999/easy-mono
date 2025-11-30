@@ -525,7 +525,7 @@ config :easy, EasyWeb.CookieHelper,
 # config/prod.exs
 config :easy, EasyWeb.CookieHelper,
   secure: true,  # Require HTTPS
-  domain: nil,   # Or set to ".yourdomain.com" for subdomain sharing
+  domain: nil,   # Or set to ".api.coacheasy.app" for subdomain sharing
   path: "/",
   same_site: "Lax"
 
@@ -540,8 +540,8 @@ config :easy_web, EasyWeb.Endpoint,
 - Enforced by most modern browsers
 
 **Production URLs:**
-- Backend: `https://api.yourdomain.com`
-- Frontend: `https://app.yourdomain.com`
+- Backend: `https://api.api.coacheasy.app`
+- Frontend: `https://app.api.coacheasy.app`
 
 ---
 
@@ -571,7 +571,7 @@ config :cors_plug,
   origin: [
     "http://localhost:3000",      # Development frontend
     "http://localhost:5173",      # Vite dev server
-    "https://app.yourdomain.com"  # Production frontend
+    "https://app.api.coacheasy.app"  # Production frontend
   ],
   credentials: true,  # ← REQUIRED for cookies
   max_age: 86400,
@@ -604,13 +604,13 @@ axios.create({
 ### Same-Origin vs Cross-Origin
 
 **Same-Origin (No CORS needed):**
-- Frontend: `https://yourdomain.com`
-- Backend: `https://yourdomain.com/api`
+- Frontend: `https://api.coacheasy.app`
+- Backend: `https://api.coacheasy.app/api`
 - Cookies work automatically
 
 **Cross-Origin (CORS required):**
-- Frontend: `https://app.yourdomain.com`
-- Backend: `https://api.yourdomain.com`
+- Frontend: `https://app.api.coacheasy.app`
+- Backend: `https://api.api.coacheasy.app`
 - Must configure CORS with `credentials: true`
 
 ### Troubleshooting CORS Issues
@@ -636,7 +636,7 @@ config :cors_plug,
 
 # ✅ Do this instead
 config :cors_plug,
-  origin: ["https://app.yourdomain.com"],
+  origin: ["https://app.api.coacheasy.app"],
   credentials: true
 ```
 

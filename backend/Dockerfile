@@ -84,6 +84,10 @@ USER elixir
 ENV MIX_ENV="prod"
 ENV PHX_SERVER="true"
 
+# Erlang VM flags for 1GB memory VMs - CRITICAL for small VMs
+# These prevent the "Cannot allocate 2147483711 bytes" error
+ENV ERL_FLAGS="+P 16384 +Q 4096 +e 1024 +t 500000 +S 1:1 +SDcpu 1:1 +sbwt none +sbwtdcpu none +sbwtdio none +A 4 +MBas aobf +MHas aobf +MBsmbcs 128 +MBlmbcs 256 +MHsmbcs 128 +MHlmbcs 256"
+
 # Expose the port the app runs on
 EXPOSE 4000
 

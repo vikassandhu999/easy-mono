@@ -49,9 +49,11 @@ services:
       PHX_HOST: ${PHX_HOST:-localhost}
       PHX_SERVER: "true"
       PORT: "4000"
-      POOL_SIZE: ${POOL_SIZE:-10}
-      # Erlang VM memory settings
-      ERL_MAX_PORTS: "8192"
+      POOL_SIZE: ${POOL_SIZE:-5}
+      # Erlang VM memory settings - CRITICAL for small VMs
+      ERL_FLAGS: "+P 16384 +Q 4096 +e 1024 +t 500000 +S 1:1 +SDcpu 1:1 +sbwt none +sbwtdcpu none +sbwtdio none +A 4 +MBas aobf +MHas aobf +MBsmbcs 128 +MBlmbcs 256 +MHsmbcs 128 +MHlmbcs 256"
+      ELIXIR_ERL_OPTIONS: "+P 16384 +Q 4096"
+      ERL_MAX_PORTS: "4096"
       # Email configuration
       MAILER_ADAPTER: ${MAILER_ADAPTER:-postmark}
       POSTMARK_API_KEY: ${POSTMARK_API_KEY:-}
@@ -102,8 +104,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       DATABASE_URL: ecto://${POSTGRES_USER:-easy}:${POSTGRES_PASSWORD:-easy_password}@db/${POSTGRES_DB:-easy_prod}
+      # Erlang VM memory settings - CRITICAL for small VMs
+      ERL_FLAGS: "+P 16384 +Q 4096 +e 1024 +t 500000 +S 1:1 +SDcpu 1:1 +sbwt none +sbwtdcpu none +sbwtdio none +A 4 +MBas aobf +MHas aobf +MBsmbcs 128 +MBlmbcs 256 +MHsmbcs 128 +MHlmbcs 256"
+      ELIXIR_ERL_OPTIONS: "+P 16384 +Q 4096"
+      ERL_MAX_PORTS: "4096"
     command: [ "bin/easy", "eval", "Easy.Release.migrate" ]
     networks:
       - easy_network

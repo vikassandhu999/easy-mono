@@ -4,12 +4,10 @@
 # =============================================================================
 # Stage 1: Build Stage
 # =============================================================================
-ARG ELIXIR_VERSION=1.15.8
-ARG OTP_VERSION=26.2.5
-ARG DEBIAN_VERSION=bookworm-20240701-slim
-
-ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+# Use a known working hexpm/elixir image
+# Check available tags at: https://hub.docker.com/r/hexpm/elixir/tags
+ARG BUILDER_IMAGE="hexpm/elixir:1.15.7-erlang-26.2.1-debian-bookworm-20231009-slim"
+ARG RUNNER_IMAGE="debian:bookworm-slim"
 
 FROM ${BUILDER_IMAGE} AS builder
 

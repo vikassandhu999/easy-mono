@@ -5,7 +5,7 @@ services:
   # PostgreSQL Database
   # =============================================================================
   db:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: easy_db
     restart: unless-stopped
     environment:
@@ -37,6 +37,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Memory limits for 1GB VM - leave room for DB and nginx
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     environment:
       DATABASE_URL: ecto://${POSTGRES_USER:-easy}:${POSTGRES_PASSWORD:-easy_password}@db/${POSTGRES_DB:-easy_prod}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
@@ -45,6 +52,8 @@ services:
       PHX_SERVER: "true"
       PORT: "4000"
       POOL_SIZE: ${POOL_SIZE:-10}
+      # Erlang VM memory settings
+      ERL_MAX_PORTS: "8192"
       # Email configuration
       MAILER_ADAPTER: ${MAILER_ADAPTER:-postmark}
       POSTMARK_API_KEY: ${POSTMARK_API_KEY:-}

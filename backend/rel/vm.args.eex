@@ -1,0 +1,64 @@
+## Erlang VM Args for production release
+## Optimized for 1GB RAM VMs
+## More info: https://www.erlang.org/doc/man/erl.html
+
+## Name of the node
+-sname <%= @release.name %>
+
+## Cookie for distributed erlang
+-setcookie <%= @release.cookie %>
+
+## Heartbeat management; auto-hierarchically restart VM if it dies or becomes unresponsive
+-heart
+
+## Enable kernel poll for better I/O performance
++K true
+
+## Enable SMP automatically based on available cores
+-smp auto
+
+## Tweak GC to run more frequently (helps on low memory systems)
+-env ERL_FULLSWEEP_AFTER 10
+
+## === MEMORY OPTIMIZATIONS FOR 1GB VM ===
+
+## Reduce max number of processes (default 262144)
++P 16384
+
+## Reduce max number of ports (default 65536)
++Q 4096
+
+## Reduce max number of ETS tables
++e 1024
+
+## Reduce max number of atoms
++t 500000
+
+## Scheduler settings - limit to available cores
++S 1:1
++SDcpu 1:1
+
+## Memory allocator settings optimized for small VMs
+## Use address order best fit for better memory reuse
++MBas aobf
++MHas aobf
++MBsmbcs 128
++MBlmbcs 256
++MHsmbcs 128
++MHlmbcs 256
++MMscs 32
+
+## Carrier migration - helps reduce memory fragmentation
++MBacul 0
++MHacul 0
+
+## Disable busy wait for schedulers (saves CPU and memory)
++sbwt none
++sbwtdcpu none
++sbwtdio none
+
+## Reduce async thread pool size
++A 4
+
+## Disable scheduler compaction (reduces memory churn)
++scl false

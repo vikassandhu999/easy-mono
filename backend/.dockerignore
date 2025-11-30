@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+_build/
+deps/
+*.ez
+
+# IDE/Editor
+.elixir_ls/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test and dev
+test/
+.formatter.exs
+coveralls.json
+*.coverdata
+
+# Local env files (secrets)
+.env
+.env.*
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Bruno/API testing
+coacheasy_api/
+
+# Kiro/Specstory
+.kiro/
+.specstory/
+
+# Data files (if not needed in production)
+data/
+
+# Crash dumps
+erl_crash.dump
+
+# Release artifacts (we build fresh)
+/rel/artifacts/
+
+# GitHub
+.github/

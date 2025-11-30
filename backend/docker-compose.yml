@@ -1,0 +1,114 @@
+version: "3.8"
+
+services:
+  # =============================================================================
+  # PostgreSQL Database
+  # =============================================================================
+  db:
+    image: postgres:18-alpine
+    container_name: easy_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-easy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-easy_password}
+      POSTGRES_DB: ${POSTGRES_DB:-easy_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-easy} -d ${POSTGRES_DB:-easy_prod}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - easy_network
+
+  # =============================================================================
+  # Elixir/Phoenix Application
+  # =============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: easy_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://${POSTGRES_USER:-easy}:${POSTGRES_PASSWORD:-easy_password}@db/${POSTGRES_DB:-easy_prod}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      PHX_HOST: ${PHX_HOST:-localhost}
+      PHX_SERVER: "true"
+      PORT: "4000"
+      POOL_SIZE: ${POOL_SIZE:-10}
+      # Email configuration
+      MAILER_ADAPTER: ${MAILER_ADAPTER:-postmark}
+      POSTMARK_API_KEY: ${POSTMARK_API_KEY:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      # Frontend URLs
+      APP_URL: ${APP_URL:-https://localhost}
+      FRONTEND_URL: ${FRONTEND_URL:-https://localhost}
+      CLIENT_FRONTEND_URL: ${CLIENT_FRONTEND_URL:-https://localhost}
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - easy_network
+
+  # =============================================================================
+  # Nginx Reverse Proxy
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: easy_nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - easy_network
+
+  # =============================================================================
+  # Database Migrations (one-time run)
+  # =============================================================================
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: easy_migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://${POSTGRES_USER:-easy}:${POSTGRES_PASSWORD:-easy_password}@db/${POSTGRES_DB:-easy_prod}
+    command: [ "bin/easy", "eval", "Easy.Release.migrate" ]
+    networks:
+      - easy_network
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  easy_network:
+    driver: bridge

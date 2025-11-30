@@ -129,24 +129,13 @@ if config_env() == :prod do
   #
   # In production you need to configure the mailer to use a different adapter.
   # Configure Swoosh adapter based on environment variables
-  mailer_adapter = System.get_env("MAILER_ADAPTER") || "postmark"
+  mailer_adapter = System.get_env("MAILER_ADAPTER")
 
   case mailer_adapter do
-    "postmark" ->
+    "resend" ->
       config :easy, Easy.Mailer,
-        adapter: Swoosh.Adapters.Postmark,
-        api_key: System.get_env("POSTMARK_API_KEY")
-
-    "sendgrid" ->
-      config :easy, Easy.Mailer,
-        adapter: Swoosh.Adapters.Sendgrid,
-        api_key: System.get_env("SENDGRID_API_KEY")
-
-    "mailgun" ->
-      config :easy, Easy.Mailer,
-        adapter: Swoosh.Adapters.Mailgun,
-        api_key: System.get_env("MAILGUN_API_KEY"),
-        domain: System.get_env("MAILGUN_DOMAIN")
+        adapter: Resend.Swoosh.Adapter,
+        api_key: System.get_env("RESEND_API_KEY")
 
     "smtp" ->
       config :easy, Easy.Mailer,
@@ -158,10 +147,10 @@ if config_env() == :prod do
         tls: :always
 
     _ ->
-      # Default to Postmark
+      # Default to Resend
       config :easy, Easy.Mailer,
-        adapter: Swoosh.Adapters.Postmark,
-        api_key: System.get_env("POSTMARK_API_KEY")
+        adapter: Resend.Swoosh.Adapter,
+        api_key: System.get_env("RESEND_API_KEY")
   end
 
   # Configure Swoosh API client to use Req (already available in dependencies)

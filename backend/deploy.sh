@@ -24,7 +24,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Check for required commands
-for cmd in docker docker-compose; do
+for cmd in docker docker compose; do
     if ! command -v $cmd &> /dev/null; then
         echo -e "${RED}✗ $cmd is not installed${NC}"
         exit 1
@@ -81,14 +81,14 @@ echo -e "${GREEN}✓ Environment variables validated${NC}"
 
 # Stop existing containers
 echo "Stopping existing containers..."
-docker-compose down 2>/dev/null || true
+docker compose down 2>/dev/null || true
 
 # Build and start services
 echo "Building Docker images..."
-docker-compose build --no-cache
+docker compose build --no-cache
 
 echo "Starting services..."
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to be healthy
 echo "Waiting for services to start..."
@@ -98,7 +98,7 @@ sleep 10
 MAX_RETRIES=30
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker-compose exec -T app curl -f http://localhost:4000/health 2>/dev/null; then
+    if docker compose exec -T app curl -f http://localhost:4000/health 2>/dev/null; then
         echo -e "${GREEN}✓ Application is healthy${NC}"
         break
     fi
@@ -109,7 +109,7 @@ done
 
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     echo -e "${RED}✗ Application failed to start${NC}"
-    echo "Check logs with: docker-compose logs app"
+    echo "Check logs with: docker compose logs app"
     exit 1
 fi
 
@@ -118,12 +118,12 @@ echo ""
 echo "========================================"
 echo "Deployment Complete!"
 echo "========================================"
-docker-compose ps
+docker compose ps
 
 echo ""
 echo -e "${GREEN}✓ Deployment successful${NC}"
 echo ""
 echo "Next steps:"
-echo "  - Check logs: docker-compose logs -f app"
+echo "  - Check logs: docker compose logs -f app"
 echo "  - Visit: https://${PHX_HOST}"
 echo "  - Monitor: docker stats"

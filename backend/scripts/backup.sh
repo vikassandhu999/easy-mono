@@ -21,8 +21,8 @@ source .env
 
 echo "Creating backup: $BACKUP_FILE"
 
-# Create backup using docker-compose
-docker-compose exec -T db pg_dump -U ${POSTGRES_USER:-easy} ${POSTGRES_DB:-easy_prod} | gzip > "${BACKUP_DIR}/${BACKUP_FILE}"
+# Create backup using docker compose
+docker compose exec -T db pg_dump -U ${POSTGRES_USER:-easy} ${POSTGRES_DB:-easy_prod} | gzip > "${BACKUP_DIR}/${BACKUP_FILE}"
 
 if [ $? -eq 0 ]; then
     echo "✓ Backup created successfully"

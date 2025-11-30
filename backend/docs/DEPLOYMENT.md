@@ -60,10 +60,10 @@ The deployment script will:
 
 ```bash
 # Check running containers
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs -f app
+docker compose logs -f app
 
 # Check health endpoint
 curl https://yourdomain.com/health
@@ -97,13 +97,13 @@ sudo crontab -e
 ### View Logs
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Just app
-docker-compose logs -f app
+docker compose logs -f app
 
 # Database
-docker-compose logs -f db
+docker compose logs -f db
 ```
 
 ### Resource Usage
@@ -115,7 +115,7 @@ docker stats
 df -h
 
 # PostgreSQL stats
-docker-compose exec db psql -U easy -d easy_prod -c "SELECT * FROM pg_stat_database WHERE datname = 'easy_prod';"
+docker compose exec db psql -U easy -d easy_prod -c "SELECT * FROM pg_stat_database WHERE datname = 'easy_prod';"
 ```
 
 ## Troubleshooting
@@ -124,7 +124,7 @@ docker-compose exec db psql -U easy -d easy_prod -c "SELECT * FROM pg_stat_datab
 
 **Check logs:**
 ```bash
-docker-compose logs app
+docker compose logs app
 ```
 
 **Common issues:**
@@ -142,14 +142,14 @@ docker stats
 
 **Solutions:**
 - Add swap space (if not already done)
-- Restart services: `docker-compose restart`
-- Reduce Erlang VM settings in docker-compose.yml
+- Restart services: `docker compose restart`
+- Reduce Erlang VM settings in docker compose.yml
 
 ### Database Migration Failed
 
 **Run manually:**
 ```bash
-docker-compose exec app /app/bin/easy eval "Easy.Release.migrate"
+docker compose exec app /app/bin/easy eval "Easy.Release.migrate"
 ```
 
 ### SSL Certificate Issues
@@ -162,7 +162,7 @@ ls -la /etc/letsencrypt/live/yourdomain.com/
 **Renew certificates:**
 ```bash
 sudo certbot renew
-docker-compose restart nginx
+docker compose restart nginx
 ```
 
 ## Maintenance
@@ -170,23 +170,23 @@ docker-compose restart nginx
 ### Restart Services
 ```bash
 # All services
-docker-compose restart
+docker compose restart
 
 # Just app
-docker-compose restart app
+docker compose restart app
 
 # Just database
-docker-compose restart db
+docker compose restart db
 ```
 
 ### Stop Services
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Full Reset (⚠️ Destroys data)
 ```bash
-docker-compose down -v
+docker compose down -v
 sudo ./deploy.sh
 ```
 
@@ -222,13 +222,13 @@ docker volume prune
 If you need more resources:
 
 1. **Resize droplet** in Digital Ocean dashboard
-2. **Update docker-compose memory limits** to utilize new RAM
+2. **Update docker compose memory limits** to utilize new RAM
 3. **Increase POOL_SIZE** for more database connections
-4. **Restart services**: `docker-compose restart`
+4. **Restart services**: `docker compose restart`
 
 ## Support
 
-- Check logs first: `docker-compose logs -f`
+- Check logs first: `docker compose logs -f`
 - Review environment variables: `.env` file
 - Verify SSL certificates are valid
 - Ensure domain DNS is pointing to droplet

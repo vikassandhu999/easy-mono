@@ -19,11 +19,11 @@ echo "Pulling latest code..."
 git pull
 
 echo "Building new Docker images..."
-docker-compose build
+docker compose build
 
 echo "Restarting services with zero-downtime..."
 # Restart app to pick up new code
-docker-compose up -d --no-deps --build app
+docker compose up -d --no-deps --build app
 
 echo "Waiting for application to be healthy..."
 sleep 10
@@ -32,7 +32,7 @@ sleep 10
 MAX_RETRIES=30
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker-compose exec -T app curl -f http://localhost:4000/health 2>/dev/null; then
+    if docker compose exec -T app curl -f http://localhost:4000/health 2>/dev/null; then
         echo -e "${GREEN}✓ Application is healthy${NC}"
         break
     fi
@@ -43,7 +43,7 @@ done
 
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     echo -e "${YELLOW}⚠ Application health check timed out${NC}"
-    echo "Check logs with: docker-compose logs app"
+    echo "Check logs with: docker compose logs app"
     exit 1
 fi
 
@@ -54,4 +54,4 @@ docker image prune -f
 echo ""
 echo -e "${GREEN}✓ Update complete!${NC}"
 echo ""
-echo "Check logs: docker-compose logs -f app"
+echo "Check logs: docker compose logs -f app"

@@ -71,12 +71,12 @@ sudo crontab -e
 
 // turbo
 ```bash
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
 ## Restart Services
 
 // turbo
 ```bash
-docker-compose restart app
+docker compose restart app
 ```

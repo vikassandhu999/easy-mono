@@ -24,12 +24,16 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Check for required commands
-for cmd in docker docker compose; do
-    if ! command -v $cmd &> /dev/null; then
-        echo -e "${RED}✗ $cmd is not installed${NC}"
-        exit 1
-    fi
-done
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}✗ docker is not installed${NC}"
+    exit 1
+fi
+
+if ! docker compose version &> /dev/null; then
+    echo -e "${RED}✗ docker compose is not installed${NC}"
+    echo "  Install Docker Compose v2: https://docs.docker.com/compose/install/"
+    exit 1
+fi
 
 echo -e "${GREEN}✓ Prerequisites check passed${NC}"
 

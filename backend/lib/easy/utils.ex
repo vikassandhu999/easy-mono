@@ -145,8 +145,8 @@ defmodule Easy.Utils do
 
   def parse_ip_mask(string) do
     case String.split(string, "/") do
-      [ip, mask] -> {Hexpm.Utils.parse_ip(ip), String.to_integer(mask)}
-      [ip] -> {Hexpm.Utils.parse_ip(ip), 32}
+      [ip, mask] -> {parse_ip(ip), String.to_integer(mask)}
+      [ip] -> {parse_ip(ip), 32}
     end
   end
 

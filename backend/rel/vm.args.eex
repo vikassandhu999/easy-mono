@@ -5,8 +5,8 @@
 ## Name of the node
 -sname <%= @release.name %>
 
-## Cookie for distributed erlang
--setcookie <%= @release.cookie %>
+## Cookie for distributed erlang (set via RELEASE_COOKIE env var)
+-setcookie ${RELEASE_COOKIE}
 
 ## Heartbeat management; auto-hierarchically restart VM if it dies or becomes unresponsive
 -heart

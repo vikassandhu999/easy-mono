@@ -15,37 +15,43 @@ export type ActionGridItem = {
 
 export type ActionGridConfig = ActionGridItem[];
 
+const WEBSITE_URL = 'https://coacheasyapp.com';
+
 export const LEGAL_LINKS: LegalLink[] = [
     {
         id: 'about_us',
-        label: 'ABOUT US',
-        link: '',
+        label: 'About Us',
+        link: `${WEBSITE_URL}/about`,
     },
     {
         id: 'privacy_policy',
         label: 'Privacy Policy',
-        link: '',
+        link: `${WEBSITE_URL}/privacy`,
     },
     {
         id: 'terms_of_use',
-        label: 'Terms of use',
-        link: '',
+        label: 'Terms of Use',
+        link: `${WEBSITE_URL}/terms`,
     },
     {
-        id: 'faq',
-        label: 'FAQs',
-        link: '',
+        id: 'support',
+        label: 'Contact Support',
+        link: `${WEBSITE_URL}/support`,
     },
-
     {
         id: 'bug_report',
-        label: 'Bug Report',
-        link: '',
+        label: 'Report a Bug',
+        link: 'https://coacheasy.notion.site/29338d91a7b880a7808acdab65799f0a?pvs=105',
     },
     {
         id: 'feature_request',
-        label: 'Feature Request',
-        link: '',
+        label: 'Request Feature',
+        link: 'https://coacheasy.notion.site/29338d91a7b880109e0fef65910b1249?pvs=105',
+    },
+    {
+        id: 'whatsapp',
+        label: 'Join WhatsApp Community',
+        link: 'https://chat.whatsapp.com/J2KRTVSsTS48wNi3gx1nsp',
     },
 ];
 

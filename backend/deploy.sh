@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 # Check if running as root
 if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}✗ This script must be run as root${NC}" 
+   echo -e "${RED}✗ This script must be run as root${NC}"
    echo "  Run: sudo ./deploy.sh"
    exit 1
 fi
@@ -41,7 +41,7 @@ echo -e "${GREEN}✓ Prerequisites check passed${NC}"
 if [ ! -f .env ]; then
     echo -e "${YELLOW}⚠ No .env file found${NC}"
     echo "  Creating from template..."
-    
+
     if [ -f .env.production ]; then
         cp .env.production .env
     elif [ -f .env.example ]; then
@@ -50,7 +50,7 @@ if [ ! -f .env ]; then
         echo -e "${RED}✗ No environment template found${NC}"
         exit 1
     fi
-    
+
     echo -e "${YELLOW}⚠ Please edit .env file with your production values${NC}"
     echo "  Required variables:"
     echo "    - POSTGRES_PASSWORD"
@@ -102,7 +102,7 @@ sleep 10
 MAX_RETRIES=30
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker compose exec -T app curl -f http://localhost:4000/health 2>/dev/null; then
+    if docker compose exec -T app curl -f http://localhost:4000/api/health 2>/dev/null; then
         echo -e "${GREEN}✓ Application is healthy${NC}"
         break
     fi

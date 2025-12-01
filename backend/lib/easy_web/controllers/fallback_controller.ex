@@ -1,5 +1,6 @@
 defmodule EasyWeb.FallbackController do
   use Phoenix.Controller, formats: [:json]
+  require Logger
 
   def call(conn, {:error, %Easy.Error{} = error}) do
     http_status = Plug.Conn.Status.code(error.status)
@@ -23,7 +24,9 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unprocessable(changeset)})
   end
 
-  def call(conn, {:error, _}) do
+  def call(conn, {:error, reason}) do
+    Logger.error("Unhandled error in FallbackController: #{inspect(reason)}")
+
     call(
       conn,
       {:error,

@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {Client, useArchiveClient, useUpdateClientStatus} from '@/services/clients';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -43,7 +43,6 @@ const SettingsTab = ({client}: {client: Client}) => {
                 clientId: client.id,
                 status: checked ? 'inactive' : 'active',
             }).unwrap();
-            notifySuccess(`Client ${checked ? 'set to inactive' : 'activated'} successfully`);
         } catch (error) {
             console.error('Failed to update client status:', error);
             notifyError('Failed to update client status');
@@ -56,7 +55,6 @@ const SettingsTab = ({client}: {client: Client}) => {
                 clientId: client.id,
                 status: checked ? 'archived' : 'active',
             }).unwrap();
-            notifySuccess(`Client ${checked ? 'archived' : 'activated'} successfully`);
         } catch (error) {
             console.error('Failed to update client status:', error);
             notifyError('Failed to update client status');
@@ -66,7 +64,6 @@ const SettingsTab = ({client}: {client: Client}) => {
     const handleDeleteClient = async () => {
         try {
             await archiveClient(client.id).unwrap();
-            notifySuccess('Client deleted successfully');
             closeDeleteModal();
             navigate('/clients');
         } catch (error) {

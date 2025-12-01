@@ -65,6 +65,7 @@ defmodule EasyWeb.Endpoint do
       "http://127.0.0.1:5173",
       # Production URLs (update these for your domains)
       "https://api.coacheasy.app",
+      "https://admin.coacheasy.app",
       "https://app.api.coacheasy.app",
       "https://coach.api.coacheasy.app",
       "https://client.api.coacheasy.app"

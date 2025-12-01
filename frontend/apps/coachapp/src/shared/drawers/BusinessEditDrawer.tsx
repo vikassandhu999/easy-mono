@@ -12,7 +12,7 @@ import {
     useUpdateBusinessMutation,
 } from '@/services/business';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 const BusinessEditDrawer = () => {
     const {closeDrawer} = useParamsDrawer({});
@@ -57,13 +57,11 @@ const BusinessEditDrawer = () => {
 
     const handleFormSubmit = async (values: UpdateBusinessProps) => {
         try {
-            // Clean up empty strings to null
             const cleanedValues = Object.fromEntries(
                 Object.entries(values).map(([key, value]) => [key, value === '' ? null : value]),
             ) as UpdateBusinessProps;
 
             await updateBusiness(cleanedValues).unwrap();
-            notifySuccess('Business profile updated successfully');
             closeDrawer();
         } catch (error) {
             const errMsg = humanizeError(error);

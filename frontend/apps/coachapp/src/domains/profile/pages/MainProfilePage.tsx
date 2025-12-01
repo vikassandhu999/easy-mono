@@ -33,13 +33,7 @@ const ACTION_LIST_ITEMS = [
         badge: 'Coming Soon',
         color: 'gray',
     },
-    // {
-    //     id: 'account_privacy',
-    //     label: 'Account & Privacy',
-    //     icon: IconShield,
-    //     link: '',
-    //     color: 'gray',
-    // },
+
 ];
 
 export default function MainProfilePage() {

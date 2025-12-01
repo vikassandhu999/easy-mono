@@ -14,11 +14,6 @@ const HEADER_LINKS = [
     label: "Feature",
     link: "/#feature",
   },
-  // // {
-  // //   id: "resources",
-  // //   label: "Resources",
-  // //   link: "/",
-  // // },
   {
     id: "faq",
     label: "FAQ",
@@ -30,11 +25,7 @@ const HEADER_LINKS = [
     label: "Support",
     link: "/support",
   },
-  // {
-  //   id: "pricing",
-  //   label: "Pricing",
-  //   link: "/",
-  // },
+
 ];
 const HeaderDrawer = () => {
   const [open, setOpen] = useState<boolean>(false);

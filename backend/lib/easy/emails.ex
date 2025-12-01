@@ -1,6 +1,6 @@
 defmodule Easy.Emails do
   @moduledoc """
-  Email templates for the Easy coaching platform.
+  Email templates for the Coach Easy platform.
   """
 
   import Swoosh.Email
@@ -8,7 +8,7 @@ defmodule Easy.Emails do
   # Get from email from configuration
   defp from_email do
     Application.get_env(:easy, :email)[:from_email] ||
-      {"Easy Coaching", "noreply@coacheasy.app"}
+      {"Coach Easy", "noreply@coacheasy.app"}
   end
 
   @doc """
@@ -20,7 +20,7 @@ defmodule Easy.Emails do
     new()
     |> to(email)
     |> from(from_email())
-    |> subject("Verify your email - Easy Coaching")
+    |> subject("Verify your email - Coach Easy")
     |> text_body(otp_verification_text(code))
     |> html_body(otp_verification_html(code))
   end
@@ -34,7 +34,7 @@ defmodule Easy.Emails do
     new()
     |> to(email)
     |> from(from_email())
-    |> subject("Your login code - Easy Coaching")
+    |> subject("Your login code - Coach Easy")
     |> text_body(login_otp_text(code))
     |> html_body(login_otp_html(code))
   end
@@ -50,7 +50,7 @@ defmodule Easy.Emails do
     new()
     |> to(email)
     |> from(from_email())
-    |> subject("You've been invited to #{business_name} - Easy Coaching")
+    |> subject("You've been invited to #{business_name} - Coach Easy")
     |> text_body(client_invitation_text(coach_name, business_name, invitation_url))
     |> html_body(client_invitation_html(coach_name, business_name, invitation_url))
   end
@@ -59,7 +59,7 @@ defmodule Easy.Emails do
 
   defp otp_verification_text(code) do
     """
-    Welcome to Easy Coaching!
+    Welcome to Coach Easy!
 
     Your verification code is: #{code}
 
@@ -68,7 +68,7 @@ defmodule Easy.Emails do
     If you didn't request this code, please ignore this email.
 
     ---
-    Easy Coaching
+    Coach Easy
     """
   end
 
@@ -83,7 +83,7 @@ defmodule Easy.Emails do
     If you didn't request this code, please ignore this email and ensure your account is secure.
 
     ---
-    Easy Coaching
+    Coach Easy
     """
   end
 
@@ -91,7 +91,7 @@ defmodule Easy.Emails do
     """
     Hello!
 
-    #{coach_name} has invited you to join #{business_name} on Easy Coaching.
+    #{coach_name} has invited you to join #{business_name} on Coach Easy.
 
     To accept this invitation and create your account, please click the link below:
 
@@ -102,7 +102,7 @@ defmodule Easy.Emails do
     If you didn't expect this invitation, you can safely ignore this email.
 
     ---
-    Easy Coaching
+    Coach Easy
     """
   end
 
@@ -119,7 +119,7 @@ defmodule Easy.Emails do
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
-        <h1 style="color: #2563eb; margin-top: 0;">Welcome to Easy Coaching!</h1>
+        <h1 style="color: #2563eb; margin-top: 0;">Welcome to Coach Easy!</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">Thank you for registering. To complete your registration, please use the verification code below:</p>
 
         <div style="background-color: #ffffff; border: 2px solid #2563eb; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
@@ -136,7 +136,7 @@ defmodule Easy.Emails do
       </div>
 
       <div style="text-align: center; color: #999; font-size: 12px; margin-top: 30px;">
-        <p>Easy Coaching</p>
+        <p>Coach Easy</p>
       </div>
     </body>
     </html>
@@ -155,7 +155,7 @@ defmodule Easy.Emails do
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">Your Login Code</h1>
-        <p style="font-size: 16px; margin-bottom: 20px;">Use the code below to log in to your Easy Coaching account:</p>
+        <p style="font-size: 16px; margin-bottom: 20px;">Use the code below to log in to your Coach Easy account:</p>
 
         <div style="background-color: #ffffff; border: 2px solid #2563eb; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
           <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">#{code}</div>
@@ -171,7 +171,7 @@ defmodule Easy.Emails do
       </div>
 
       <div style="text-align: center; color: #999; font-size: 12px; margin-top: 30px;">
-        <p>Easy Coaching</p>
+        <p>Coach Easy</p>
       </div>
     </body>
     </html>
@@ -191,11 +191,11 @@ defmodule Easy.Emails do
       <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
         <h1 style="color: #2563eb; margin-top: 0;">You've Been Invited!</h1>
         <p style="font-size: 16px; margin-bottom: 20px;">
-          <strong>#{coach_name}</strong> has invited you to join <strong>#{business_name}</strong> on Easy Coaching.
+          <strong>#{coach_name}</strong> has invited you to join <strong>#{business_name}</strong> on Coach Easy.
         </p>
 
         <p style="font-size: 16px; margin-bottom: 30px;">
-          Easy Coaching helps you track your progress and stay connected with your coach.
+          Coach Easy helps you track your progress and stay connected with your coach.
         </p>
 
         <div style="text-align: center; margin: 40px 0;">
@@ -219,7 +219,7 @@ defmodule Easy.Emails do
       </div>
 
       <div style="text-align: center; color: #999; font-size: 12px; margin-top: 30px;">
-        <p>Easy Coaching</p>
+        <p>Coach Easy</p>
       </div>
     </body>
     </html>

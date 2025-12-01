@@ -3,6 +3,7 @@ import {useMemo} from 'react';
 
 import {Client, useListClients} from '@/services/clients';
 import RecordsList from '@/shared/layouts/RecordsList';
+import {capitalizeWords} from '@/utils/text';
 
 interface ClientListItemProps {
     client: Client;
@@ -59,7 +60,7 @@ const ClientListItem = ({client, onClick}: ClientListItemProps) => {
                             color={statusColor}
                             variant="light"
                         >
-                            {client.status}
+                            {capitalizeWords(client.status)}
                         </Badge>
                     </Group>
                     <Text

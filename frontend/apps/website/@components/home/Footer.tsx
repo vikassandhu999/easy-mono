@@ -1,56 +1,46 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  IconArrowRight,
-  IconBrandFacebook,
   IconBrandInstagram,
-  IconBrandTwitter,
-  IconBrandYoutube,
 } from "@tabler/icons-react";
 
 const FOOTER_LINKS = {
   features: {
     title: "FEATURES",
     links: [
-      { label: "Client Management", href: "#" },
-      { label: "Workout Plans", href: "#" },
-      { label: "Nutrition Plans", href: "#" },
-      { label: "Progress Tracking", href: "#" },
-      { label: "Payment Processing", href: "#" },
-      { label: "Website Builder", href: "#" },
-      { label: "Mobile App", href: "#" },
+      { label: "Client Management", href: "/features/client-management" },
+      { label: "Training Plans", href: "/features/training-plans" },
+      { label: "Nutrition Plans", href: "/features/nutrition-plans" },
+      { label: "Progress Tracking", href: "/features/progress-tracking" },
+      { label: "Payment Processing", href: "/features/payment-processing" },
+      { label: "Website Builder", href: "/features/website-builder" },
     ],
   },
   resources: {
     title: "RESOURCES & SUPPORT",
     links: [
-      { label: "Help Center", href: "#" },
-      { label: "Learning Resources", href: "#" },
-      { label: "Report a bug", href: "#" },
-      { label: "Request feature", href: "#" },
-      { label: "Contact Support", href: "#" },
-      { label: "Join whatsapp", href: "#" },
+      { label: "Report a Bug", href: "https://coacheasy.notion.site/29338d91a7b880a7808acdab65799f0a?pvs=105" },
+      { label: "Request Feature", href: "https://coacheasy.notion.site/29338d91a7b880109e0fef65910b1249?pvs=105" },
+      { label: "Contact Support", href: "/support" },
+      { label: "Join WhatsApp", href: "https://chat.whatsapp.com/J2KRTVSsTS48wNi3gx1nsp" },
     ],
   },
   company: {
     title: "COMPANY",
     links: [
-      { label: "Who are we?", href: "#" },
-      { label: "Pricing", href: "#" },
+      { label: "Who are we?", href: "/about" },
+      { label: "Pricing", href: "/#pricing" },
     ],
   },
 };
 
 const SOCIAL_LINKS = [
-  { icon: IconBrandFacebook, href: "#", label: "Facebook" },
-  { icon: IconBrandInstagram, href: "#", label: "Instagram" },
-  { icon: IconBrandTwitter, href: "#", label: "Twitter" },
-  { icon: IconBrandYoutube, href: "#", label: "YouTube" },
+  { icon: IconBrandInstagram, href: "https://www.instagram.com/coacheasyapp/", label: "Instagram" },
 ];
 
 const LEGAL_LINKS = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms & Conditions", href: "#" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Use", href: "/terms" },
 ];
 
 const Footer = () => {
@@ -95,32 +85,11 @@ const Footer = () => {
               </ul>
             </div>
           ))}
-
-          {/* Newsletter Subscription */}
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-4">
-              SUBSCRIBE TO OUR NEWSLETTER
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Get the latest updates, tips, and exclusive offers delivered to
-              your inbox.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button className="bg-black text-white p-2 hover:bg-gray-800 transition-all flex-shrink-0">
-                <IconArrowRight size={20} />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Large Brand Text */}
         <div className="relative mb-12 overflow-hidden">
-          <h2 className="font-funnel text-[120px] sm:text-[180px] md:text-[240px] lg:text-[300px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-purple-200 to-blue-300 leading-none select-none">
+          <h2 className="font-funnel text-[48px] xs:text-[72px] sm:text-[120px] md:text-[180px] lg:text-[240px] xl:text-[300px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-purple-200 to-blue-300 leading-none select-none text-center">
             coacheasy
           </h2>
         </div>

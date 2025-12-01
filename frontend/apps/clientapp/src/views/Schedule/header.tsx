@@ -1,24 +1,33 @@
-import HeadingContainer from "@/shared/container/HeaderContainer";
-import { Title, Group, Stack } from "@mantine/core";
+import {Group, Stack, Title} from '@mantine/core';
+
+import HeadingContainer from '@/shared/container/HeaderContainer';
 
 const ScheduleHeader = () => {
-  return (
-    <HeadingContainer
-      withBorder={false}
-      style={{
-        paddingInline: "var(--ce-size-lg)",
-        paddingBlock: "var(--ce-size-sm)",
-      }}
-    >
-      <Stack gap="md">
-        <Group justify="space-between" align="start" wrap="nowrap" w="100%">
-          <Stack gap="0" style={{ flex: 1 }}>
-            <Title order={5}>Schedule</Title>
-          </Stack>
-        </Group>
-      </Stack>
-    </HeadingContainer>
-  );
+    return (
+        <HeadingContainer
+            style={{
+                paddingInline: 'var(--ce-size-lg)',
+                paddingBlock: 'var(--ce-size-sm)',
+            }}
+            withBorder={false}
+        >
+            <Stack gap="md">
+                <Group
+                    align="start"
+                    justify="space-between"
+                    w="100%"
+                    wrap="nowrap"
+                >
+                    <Stack
+                        gap="0"
+                        style={{flex: 1}}
+                    >
+                        <Title order={5}>Schedule</Title>
+                    </Stack>
+                </Group>
+            </Stack>
+        </HeadingContainer>
+    );
 };
 
 export default ScheduleHeader;

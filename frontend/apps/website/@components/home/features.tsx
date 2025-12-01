@@ -1,8 +1,11 @@
 import { IconArrowRight } from "@tabler/icons-react";
+import Link from "next/link";
+
+const APP_LOGIN_URL = "https://admin.coacheasy.app/login";
 
 const Features = () => {
   return (
-    <section className="px-4 md:px-0 w-full min-h-screen mx-auto font-sans py-20 md:py-32">
+    <section id="feature"  className="px-4 md:px-0 w-full min-h-screen mx-auto font-sans py-20 md:py-32">
       <main className="container mx-auto px-4 text-left ">
         <h1 className="font-funnel  text-3xl md:text-4xl lg:text-5xl xl:text-7xl scroll-pl-48 font-normal mt-6 leading-tight">
           The all in one{" "}
@@ -65,10 +68,10 @@ const Features = () => {
           </div>
         </div>
 
-        <button className="flex gap-4 justify-between mx-auto items-center bg-blue-500 py-4 px-8 text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
-          Become a Smart Coach
+        <Link href={APP_LOGIN_URL} className="w-max flex gap-4 justify-between mx-auto items-center bg-blue-500 py-4 px-8 text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
+         Get Started
           <IconArrowRight />
-        </button>
+        </Link>
       </main>
     </section>
   );

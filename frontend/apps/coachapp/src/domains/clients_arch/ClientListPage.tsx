@@ -3,12 +3,12 @@ import React, {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import EmptyClientsImage from '@/../public/empty_plan.png';
+import {Client, useListClientsInfiniteQuery} from '@/services/clients';
 import ClientList from '@/shared/ClientListItem';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import {InviteClientDrawer} from '@/shared/InviteClientDrawer';
 import RecordsList from '@/shared/layouts/RecordsList';
-import {Client, useListClientsInfiniteQuery} from '@/services/clients';
 
 import ClientListHeader from './ClientListHeader';
 
@@ -45,7 +45,7 @@ const ClientsListPage: React.FC = () => {
     };
 
     return (
-        <>
+        <PagePaper>
             <ClientListHeader
                 isLoading={isLoading}
                 onInviteClick={() => stack.open('invite-client')}
@@ -110,7 +110,7 @@ const ClientsListPage: React.FC = () => {
                 </PaddingContainer>
                 <InviteClientDrawer stack={stack} />
             </PagePaper>
-        </>
+        </PagePaper>
     );
 };
 

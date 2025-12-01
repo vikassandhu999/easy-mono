@@ -60,25 +60,19 @@ class C {
     }
   }
   addMessageListener(e) {
-    this.messageListeners.add(e), this.messageListeners.size > 5 && console.warn(
-      `WebSocketClient has ${this.messageListeners.size} message listeners registered`
-    );
+    this.messageListeners.add(e), this.messageListeners.size > 5 && console.warn(`WebSocketClient has ${this.messageListeners.size} message listeners registered`);
   }
   removeMessageListener(e) {
     this.messageListeners.delete(e);
   }
   addFirstConnectListener(e) {
-    this.firstConnectListeners.add(e), this.firstConnectListeners.size > 5 && console.warn(
-      `WebSocketClient has ${this.firstConnectListeners.size} first connect listeners registered`
-    );
+    this.firstConnectListeners.add(e), this.firstConnectListeners.size > 5 && console.warn(`WebSocketClient has ${this.firstConnectListeners.size} first connect listeners registered`);
   }
   removeFirstConnectListener(e) {
     this.firstConnectListeners.delete(e);
   }
   addReconnectListener(e) {
-    this.reconnectListeners.add(e), this.reconnectListeners.size > 5 && console.warn(
-      `WebSocketClient has ${this.reconnectListeners.size} reconnect listeners registered`
-    );
+    this.reconnectListeners.add(e), this.reconnectListeners.size > 5 && console.warn(`WebSocketClient has ${this.reconnectListeners.size} reconnect listeners registered`);
   }
   removeReconnectListener(e) {
     this.reconnectListeners.delete(e);
@@ -113,11 +107,7 @@ class C {
     try {
       this.conn.send(e);
     } catch (s) {
-      console.log(
-        "Exception thrown from WebSocket.send():",
-        s.message || s.data,
-        "Closing connection."
-      ), this.close();
+      console.log("Exception thrown from WebSocket.send():", s.message || s.data, "Closing connection."), this.close();
     }
   }
 }

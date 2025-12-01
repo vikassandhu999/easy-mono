@@ -1,4 +1,7 @@
 "use client";
+
+const APP_LOGIN_URL = "https://admin.coacheasy.app/login";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -9,23 +12,29 @@ const HEADER_LINKS = [
   {
     id: "feautere",
     label: "Feature",
-    link: "/",
+    link: "/#feature",
   },
+  // // {
+  // //   id: "resources",
+  // //   label: "Resources",
+  // //   link: "/",
+  // // },
   {
-    id: "resources",
-    label: "Resources",
-    link: "/",
+    id: "faq",
+    label: "FAQ",
+    link: "/#faq",
   },
+
   {
     id: "support",
     label: "Support",
-    link: "/",
+    link: "/support",
   },
-  {
-    id: "pricing",
-    label: "Pricing",
-    link: "/",
-  },
+  // {
+  //   id: "pricing",
+  //   label: "Pricing",
+  //   link: "/",
+  // },
 ];
 const HeaderDrawer = () => {
   const [open, setOpen] = useState<boolean>(false);
@@ -59,18 +68,20 @@ const HeaderDrawer = () => {
             </Link>
           ))}
           <div className="flex flex-col gap-4 mt-8">
-            <button
-              className="py-2 px-4 border border-gray-300 rounded-2xl hover:bg-gray-50 transition-colors"
+            <Link
+              className="py-2 px-4 border border-gray-300 hover:bg-gray-50 transition-colors text-center"
+              href={APP_LOGIN_URL}
               onClick={toggleDrawer}
             >
               Login
-            </button>
-            <button
-              className="bg-blue-500 py-2 px-4 rounded-2xl text-white hover:bg-blue-600 transition-colors"
+            </Link>
+            <Link
+              className="bg-blue-500 py-2 px-4 text-white hover:bg-blue-600 transition-colors text-center"
+              href={APP_LOGIN_URL}
               onClick={toggleDrawer}
             >
               Get started
-            </button>
+            </Link>
           </div>
         </nav>
       </div>
@@ -87,7 +98,7 @@ const HeaderDrawer = () => {
 
 const Header = () => {
   return (
-    <header className="flex justify-between items-center container mx-auto px-4 py-4 border-b border-gray-200 md:border-none font-sans">
+    <header className="top-0 sticky bg-white z-[999] flex justify-between items-center container mx-auto px-4 py-4 border-b border-gray-200 md:border-none font-sans">
       <Link href="/">
         <Image src="/logo.svg" alt="coacheasy logo" width={140} height={140} />
       </Link>
@@ -101,11 +112,11 @@ const Header = () => {
         })}
       </nav>
       <nav className="flex gap-4 items-center">
-        <button className="hidden md:block">Login</button>
-        <button className="w-full hidden sm:flex gap-4 justify-between items-center bg-blue-500 py-2 px-4  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
+        <Link className="hidden md:block hover:text-blue-500 transition-colors" href={APP_LOGIN_URL}>Login</Link>
+        <Link className="w-full hidden sm:flex gap-4 justify-between items-center bg-blue-500 py-2 px-4  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg" href={APP_LOGIN_URL}>
           Get Started
           <IconArrowRight />
-        </button>
+        </Link>
         <HeaderDrawer />
       </nav>
     </header>

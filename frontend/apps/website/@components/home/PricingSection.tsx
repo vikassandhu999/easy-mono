@@ -1,6 +1,9 @@
 "use client";
 import { IconCheck, IconArrowRight } from "@tabler/icons-react";
+import Link from "next/link";
 import { useState } from "react";
+
+const APP_LOGIN_URL = "https://admin.coacheasy.app/login";
 
 const PRICING_PLANS = [
   {
@@ -103,11 +106,11 @@ const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gradient-to-r from-blue-50 to-purple-50">
+    <section id="pricing" className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gradient-to-r from-blue-50 to-purple-50">
       <main className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h1 className="font-funnel text-3xl md:text-4xl lg:text-5xl xl:text-7xl font-normal leading-tight">
-            Simple, Transparent Pricing
+            Pricing That Makes Sense
           </h1>
           <p className="text-gray-600 text-lg md:text-xl mt-6 max-w-2xl mx-auto">
             Choose the plan that fits your coaching business. Start free and
@@ -228,12 +231,13 @@ const PricingSection = () => {
                   </p>
                 </div>
 
-                <button
+                <Link
+                  href={APP_LOGIN_URL}
                   className={`w-full py-3 px-6 font-semibold transition-all hover:shadow-lg flex items-center justify-center gap-2 mb-8 ${plan.buttonStyle}`}
                 >
                   {plan.buttonText}
                   <IconArrowRight size={20} />
-                </button>
+                </Link>
 
                 {plan.id !== "starter" && plan.id !== "enterprise" && (
                   <p className="text-center text-xs text-gray-500 mb-6">
@@ -265,12 +269,12 @@ const PricingSection = () => {
           </p>
           <p className="text-sm text-gray-500">
             Need a custom plan?{" "}
-            <a
-              href="#"
+            <Link
+              href="/support"
               className="text-blue-500 hover:text-blue-600 font-medium"
             >
-              Contact our sales team
-            </a>
+              Contact Us
+            </Link>
           </p>
         </div>
       </main>

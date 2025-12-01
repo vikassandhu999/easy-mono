@@ -117,7 +117,6 @@ const BusinessEditDrawer = () => {
             actions={
                 <Group w="100%">
                     <Button
-                        color="green"
                         flex={1}
                         loading={isUpdating}
                         onClick={handleSubmit(handleFormSubmit)}
@@ -125,7 +124,7 @@ const BusinessEditDrawer = () => {
                         size="sm"
                         variant="filled"
                     >
-                        Save Changes
+                        Save
                     </Button>
                 </Group>
             }

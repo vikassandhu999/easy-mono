@@ -14,11 +14,13 @@ import {
     Title,
     useMantineTheme,
 } from '@mantine/core';
-import {IconBell, IconCalendar, IconChevronRight, IconUsers} from '@tabler/icons-react';
+import {useDisclosure} from '@mantine/hooks';
+import {IconBell, IconBellOff, IconCalendar, IconChevronRight, IconUsers} from '@tabler/icons-react';
 import {useMemo} from 'react';
 import {useNavigate} from 'react-router';
 
 import {useProfileQuery} from '@/services/auth';
+import AutoDrawer from '@/shared/AutoDrawer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 
@@ -41,6 +43,8 @@ export default function HomePage() {
     const theme = useMantineTheme();
     const navigate = useNavigate();
     const {data: profile, isLoading: profileLoading, isError: profileErr, refetch} = useProfileQuery();
+    const [notificationDrawerOpened, {open: openNotificationDrawer, close: closeNotificationDrawer}] =
+        useDisclosure(false);
 
     const coachFirstName = profile ? profile.user.first_name : 'Coach';
     const coachNameInitial = coachFirstName[0];
@@ -130,6 +134,7 @@ export default function HomePage() {
 
                         <ActionIcon
                             color="cyan"
+                            onClick={openNotificationDrawer}
                             size="xl"
                             variant="light"
                         >
@@ -176,6 +181,45 @@ export default function HomePage() {
                     </Card>
                 </Stack>
             </PaddingContainer>
+
+            {/* Notification Drawer */}
+            {notificationDrawerOpened && (
+                <AutoDrawer
+                    content={
+                        <Stack
+                            align="center"
+                            gap="md"
+                            justify="center"
+                            py="xl"
+                        >
+                            <ThemeIcon
+                                color="gray"
+                                radius="xl"
+                                size={64}
+                                variant="light"
+                            >
+                                <IconBellOff size={32} />
+                            </ThemeIcon>
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                                ta="center"
+                            >
+                                No notifications yet
+                            </Text>
+                            <Text
+                                c="dimmed"
+                                size="xs"
+                                ta="center"
+                            >
+                                We'll notify you when something important happens.
+                            </Text>
+                        </Stack>
+                    }
+                    onClose={closeNotificationDrawer}
+                    title="Notifications"
+                />
+            )}
         </PagePaper>
     );
 }

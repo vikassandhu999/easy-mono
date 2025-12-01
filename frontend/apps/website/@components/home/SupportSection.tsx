@@ -4,6 +4,9 @@ import {
   IconBulb,
   IconHeadset,
 } from "@tabler/icons-react";
+import Link from "next/link";
+
+const APP_LOGIN_URL = "https://admin.coacheasy.app/login";
 
 const SupportSection = () => {
   return (
@@ -30,9 +33,9 @@ const SupportSection = () => {
               Found something that{"'"}s not working right? Let us know and we
               {"'"}ll fix it fast.
             </p>
-            <button className="w-full py-3 px-6 border-2 border-red-500 text-red-500  font-medium hover:bg-red-500 hover:text-white transition-all">
+            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 border-2 border-red-500 text-red-500  font-medium hover:bg-red-500 hover:text-white transition-all block text-center">
               Report Bug
-            </button>
+            </Link>
           </div>
 
           <div className="bg-white border-2 border-gray-200  p-8 hover:border-blue-500 transition-all hover:shadow-lg">
@@ -46,9 +49,9 @@ const SupportSection = () => {
               Have an idea that could make coaching easier? We want to hear it.
               Your input drives our roadmap.
             </p>
-            <button className="w-full py-3 px-6 border-2 border-yellow-500 text-yellow-600  font-medium hover:bg-yellow-500 hover:text-white transition-all">
+            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 border-2 border-yellow-500 text-yellow-600  font-medium hover:bg-yellow-500 hover:text-white transition-all block text-center">
               Request Feature
-            </button>
+            </Link>
           </div>
 
           <div className="bg-white border-2 border-gray-200  p-8 hover:border-blue-500 transition-all hover:shadow-lg">
@@ -62,9 +65,9 @@ const SupportSection = () => {
               Need help? Our support team is ready to assist you every step of
               the way.
             </p>
-            <button className="w-full py-3 px-6 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-all hover:shadow-lg">
+            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-all hover:shadow-lg block text-center">
               Contact Support
-            </button>
+            </Link>
           </div>
         </div>
       </main>

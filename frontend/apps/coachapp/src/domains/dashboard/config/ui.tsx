@@ -33,19 +33,19 @@ export const QUICK_ACTIONS: QuickActionConfig[] = [
     {
         id: 'create-plan',
         icon: IconPlus,
-        label: 'Create new plan',
-        path: '/plans?selected_drawer=create-plan',
+        label: 'Create New Plan',
+        path: '/library',
     },
     {
         id: 'add-client',
         icon: IconUserPlus,
-        label: 'Add a client',
+        label: 'Add a Client',
         path: '/clients',
     },
     {
         id: 'create-content',
         icon: IconTreadmill,
-        label: 'Create new content',
-        path: '/library',
+        label: 'Create New Content',
+        path: '/library?drawer=content_create',
     },
 ];

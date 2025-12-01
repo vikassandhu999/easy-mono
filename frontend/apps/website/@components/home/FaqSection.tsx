@@ -73,7 +73,7 @@ const FaqSection = () => {
   };
 
   return (
-    <section className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gray-50">
+    <section id="faq" className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gray-50">
       <main className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h1 className="font-funnel text-3xl md:text-4xl lg:text-5xl xl:text-7xl font-normal leading-tight">

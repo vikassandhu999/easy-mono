@@ -1,4 +1,3 @@
-import {Button} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconPlus, IconSearch, IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
@@ -7,10 +6,7 @@ import {useNavigate} from 'react-router';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
-import HeadingContainer from '@/shared/containers/HeaderContainer';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import Header from '@/shared/layouts/Header';
 
 import classes from './styles.module.css';
 
@@ -54,73 +50,80 @@ const ClientListPage = () => {
 
     return (
         <PagePaper bottomGutter>
-            <HeadingContainer>
-                <Header
-                    actions={
-                        <Button
+            <div className={classes.pageContainer}>
+                {/* Header */}
+                <div className={classes.headerSection}>
+                    <div className={classes.headerRow}>
+                        <div className={classes.headerContent}>
+                            <h1 className={classes.pageTitle}>Clients</h1>
+                            <p className={classes.pageDescription}>
+                                Manage your client roster, invite new clients, and track their progress
+                            </p>
+                        </div>
+                        <button
+                            className={classes.createButton}
                             onClick={() => openDrawer(DRAWER_KEYS.CLIENT_INVITE)}
-                            radius="xl"
-                            rightSection={<IconPlus size="18" />}
-                            size="sm"
+                            type="button"
                         >
-                            Invite a client
-                        </Button>
-                    }
-                    description="Manage your client roster, invite new clients, and track their progress"
-                    title="Clients"
-                />
-            </HeadingContainer>
-
-            <PaddingContainer>
-                <div className={classes.container}>
-                    {/* Status Tabs */}
-                    <div className={classes.statusTabs}>
-                        {STATUS_TABS.map((tab) => (
-                            <button
-                                className={`${classes.statusTab} ${
-                                    activeTab === tab.value ? classes.statusTabActive : ''
-                                }`}
-                                key={tab.value}
-                                onClick={() => handleTabChange(tab.value)}
-                                type="button"
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Search Input */}
-                    <div className={classes.searchWrapper}>
-                        <IconSearch
-                            className={classes.searchIcon}
-                            size={16}
-                        />
-                        <input
-                            className={classes.searchInput}
-                            onChange={handleSearchChange}
-                            placeholder="Search clients..."
-                            type="text"
-                            value={searchInput}
-                        />
-                        {searchInput && (
-                            <button
-                                aria-label="Clear search"
-                                className={classes.clearButton}
-                                onClick={handleClearSearch}
-                                type="button"
-                            >
-                                <IconX size={14} />
-                            </button>
-                        )}
+                            <IconPlus size={16} />
+                            Invite
+                        </button>
                     </div>
                 </div>
 
-                <ClientList
-                    onClientClick={handleClientClick}
-                    search={search}
-                    status={activeTab === 'all' ? undefined : activeTab}
-                />
-            </PaddingContainer>
+                {/* Content */}
+                <div className={classes.contentSection}>
+                    <div className={classes.container}>
+                        {/* Status Tabs */}
+                        <div className={classes.statusTabs}>
+                            {STATUS_TABS.map((tab) => (
+                                <button
+                                    className={`${classes.statusTab} ${
+                                        activeTab === tab.value ? classes.statusTabActive : ''
+                                    }`}
+                                    key={tab.value}
+                                    onClick={() => handleTabChange(tab.value)}
+                                    type="button"
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search Input */}
+                        <div className={classes.searchWrapper}>
+                            <IconSearch
+                                className={classes.searchIcon}
+                                size={16}
+                            />
+                            <input
+                                className={classes.searchInput}
+                                onChange={handleSearchChange}
+                                placeholder="Search clients..."
+                                type="text"
+                                value={searchInput}
+                            />
+                            {searchInput && (
+                                <button
+                                    aria-label="Clear search"
+                                    className={classes.clearButton}
+                                    onClick={handleClearSearch}
+                                    type="button"
+                                >
+                                    <IconX size={14} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div>
+                        <ClientList
+                            onClientClick={handleClientClick}
+                            search={search}
+                            status={activeTab === 'all' ? undefined : activeTab}
+                        />
+                    </div>
+                </div>
+            </div>
         </PagePaper>
     );
 };

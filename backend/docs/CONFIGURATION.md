@@ -66,7 +66,7 @@ SMTP_PORT=587
 | Variable             | Description                       | Default                    |
 | -------------------- | --------------------------------- | -------------------------- |
 | `EMAIL_FROM_NAME`    | Display name for outgoing emails  | `Easy Coaching`            |
-| `EMAIL_FROM_ADDRESS` | Email address for outgoing emails | `noreply@easycoaching.com` |
+| `EMAIL_FROM_ADDRESS` | Email address for outgoing emails | `noreply@coacheasy.app` |
 | `APP_URL`            | Base URL for invitation links     | `http://localhost:4000`    |
 
 ### Optional Configuration
@@ -135,7 +135,7 @@ Configure email settings in `config/config.exs`:
 ```elixir
 config :easy, :email,
   # From email address for all outgoing emails
-  from_email: {"Easy Coaching", "noreply@easycoaching.com"},
+  from_email: {"Easy Coaching", "noreply@coacheasy.app"},
   # Base URL for invitation links (overridden in runtime.exs)
   app_url: "http://localhost:4000"
 ```

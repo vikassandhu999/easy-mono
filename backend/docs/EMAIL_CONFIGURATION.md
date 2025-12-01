@@ -46,7 +46,7 @@ SMTP_PORT=587
 #### Optional Configuration
 
 - `EMAIL_FROM_NAME` - Sender name (default: "Easy Coaching")
-- `EMAIL_FROM_ADDRESS` - Sender email (default: "noreply@easycoaching.com")
+- `EMAIL_FROM_ADDRESS` - Sender email (default: "noreply@coacheasy.app")
 - `APP_URL` - Base URL for invitation links (default: "http://localhost:4000")
 
 ### Development Environment

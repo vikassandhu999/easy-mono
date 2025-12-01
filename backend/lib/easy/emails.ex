@@ -8,7 +8,7 @@ defmodule Easy.Emails do
   # Get from email from configuration
   defp from_email do
     Application.get_env(:easy, :email)[:from_email] ||
-      {"Easy Coaching", "noreply@easycoaching.com"}
+      {"Easy Coaching", "noreply@coacheasy.app"}
   end
 
   @doc """

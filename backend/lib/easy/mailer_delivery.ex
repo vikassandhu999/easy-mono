@@ -78,25 +78,28 @@ defmodule Easy.MailerDelivery do
     recipient = extract_recipient(email)
     subject = email.subject
 
-    Logger.error("Failed to send email",
-      recipient: recipient,
-      subject: subject,
-      reason: inspect(reason),
-      metadata: metadata
-    )
+    Logger.error("""
+    Failed to send email
+    Recipient: #{recipient}
+    Subject: #{subject}
+    Reason: #{inspect(reason, pretty: true, limit: :infinity)}
+    Metadata: #{inspect(metadata)}
+    """)
   end
 
   defp log_exception(email, error, stacktrace, metadata) do
     recipient = extract_recipient(email)
     subject = email.subject
 
-    Logger.error("Exception while sending email",
-      recipient: recipient,
-      subject: subject,
-      error: inspect(error),
-      stacktrace: Exception.format_stacktrace(stacktrace),
-      metadata: metadata
-    )
+    Logger.error("""
+    Exception while sending email
+    Recipient: #{recipient}
+    Subject: #{subject}
+    Error: #{inspect(error, pretty: true, limit: :infinity)}
+    Stacktrace:
+    #{Exception.format_stacktrace(stacktrace)}
+    Metadata: #{inspect(metadata)}
+    """)
   end
 
   defp extract_recipient(email) do

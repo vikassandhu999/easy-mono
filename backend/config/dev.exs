@@ -42,8 +42,9 @@ config :phoenix, :plug_init_mode, :runtime
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
-# In development, we use the local adapter for email delivery
-config :easy, Easy.Mailer, adapter: Swoosh.Adapters.Local
+config :easy, Easy.Mailer,
+  adapter: Resend.Swoosh.Adapter,
+  api_key: "re_HKFHoitN_AM3vmGGVdwxCSLqTmxQWW8zG"
 
 # Authentication and JWT configuration for development
 config :easy, :jwt_secret, "dev-secret-key-minimum-32-characters-long-for-hs256"

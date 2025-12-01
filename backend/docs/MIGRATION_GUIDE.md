@@ -772,7 +772,7 @@ If you encounter issues during migration:
    - Verify you're passing `token_id` correctly
 
 3. **Contact Support:**
-   - Email: support@easycoaching.com
+   - Email: support@coacheasy.app
    - Include error messages and request/response examples
    - Mention you're migrating from OAuth to new auth API
 

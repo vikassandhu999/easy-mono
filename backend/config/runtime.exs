@@ -18,8 +18,8 @@ config :easy,
 # Email configuration for all environments
 config :easy, :email,
   from_email: {
-    System.get_env("EMAIL_FROM_NAME") || "Easy Coaching",
-    System.get_env("EMAIL_FROM_ADDRESS") || "noreply@easycoaching.com"
+    System.get_env("EMAIL_FROM_NAME"),
+    System.get_env("EMAIL_FROM_ADDRESS")
   },
   app_url: System.get_env("APP_URL") || "http://localhost:4000"
 

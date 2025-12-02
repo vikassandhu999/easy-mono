@@ -31,11 +31,17 @@ defmodule EasyWeb.WorkoutElementJSON do
     %{
       id: set.id,
       position: set.position,
-      reps_min: set.reps_min,
-      reps_max: set.reps_max,
+      target_reps: set.target_reps,
       load_value: set.load_value,
       load_type: set.load_type,
-      rest_seconds: set.rest_seconds
+      intensity_target: set.intensity_target,
+      tempo: set.tempo,
+      rest_seconds: set.rest_seconds,
+      duration_seconds: set.duration_seconds,
+      distance_value: set.distance_value,
+      distance_unit: set.distance_unit,
+      set_type: set.set_type,
+      notes: set.notes
     }
   end
 end

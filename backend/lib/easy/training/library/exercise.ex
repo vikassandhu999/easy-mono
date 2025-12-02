@@ -8,9 +8,9 @@ defmodule Easy.Training.Library.Exercise do
     field :name, :string
     field :description, :string
     field :instructions, :string
-    field :slug, :string
     field :mechanics, Ecto.Enum, values: [:compound, :isolation, :isometric]
     field :force, Ecto.Enum, values: [:push, :pull, :static]
+    field :images, {:array, :string}, default: []
 
     # Hybrid scope: null for system exercises, UUID for business-specific
     belongs_to :business, Business
@@ -27,9 +27,11 @@ defmodule Easy.Training.Library.Exercise do
   @doc false
   def changeset(exercise, attrs) do
     exercise
-    |> cast(attrs, [:name, :description, :instructions, :slug, :mechanics, :force, :business_id])
+    |> cast(attrs, [:name, :description, :instructions, :mechanics, :force, :images])
     |> validate_required([:name])
-    |> generate_slug()
+    |> validate_length(:name, max: 255)
+    |> validate_length(:description, max: 5000)
+    |> validate_length(:instructions, max: 10000)
     |> put_muscle_ids(attrs)
     |> put_equipment_ids(attrs)
     |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
@@ -39,7 +41,7 @@ defmodule Easy.Training.Library.Exercise do
   defp put_muscle_ids(changeset, %{"muscle_ids" => muscle_ids}) when is_list(muscle_ids) do
     exercise_muscles =
       Enum.map(muscle_ids, fn muscle_id ->
-        %{muscle_id: muscle_id, role: "primary"}
+        %{muscle_id: muscle_id, role: :primary}
       end)
 
     put_assoc(changeset, :exercise_muscles, exercise_muscles)
@@ -48,7 +50,7 @@ defmodule Easy.Training.Library.Exercise do
   defp put_muscle_ids(changeset, %{muscle_ids: muscle_ids}) when is_list(muscle_ids) do
     exercise_muscles =
       Enum.map(muscle_ids, fn muscle_id ->
-        %{muscle_id: muscle_id, role: "primary"}
+        %{muscle_id: muscle_id, role: :primary}
       end)
 
     put_assoc(changeset, :exercise_muscles, exercise_muscles)
@@ -77,20 +79,4 @@ defmodule Easy.Training.Library.Exercise do
   end
 
   defp put_equipment_ids(changeset, _), do: changeset
-
-  defp generate_slug(changeset) do
-    case get_change(changeset, :name) do
-      nil ->
-        changeset
-
-      name ->
-        slug =
-          name
-          |> String.downcase()
-          |> String.replace(~r/[^\w\s-]/, "")
-          |> String.replace(~r/\s+/, "-")
-
-        put_change(changeset, :slug, slug)
-    end
-  end
 end

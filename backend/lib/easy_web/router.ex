@@ -229,5 +229,15 @@ defmodule EasyWeb.Router do
     post "/", WorkoutSessionController, :create
     get "/:id", WorkoutSessionController, :show
     put "/:id/complete", WorkoutSessionController, :complete
+    put "/:id/discard", WorkoutSessionController, :discard
+  end
+
+  # Performed Sets (real-time workout logging)
+  scope "/api/performed_sets", EasyWeb do
+    pipe_through :api_authenticated
+
+    post "/", PerformedSetController, :create
+    patch "/:id", PerformedSetController, :update
+    delete "/:id", PerformedSetController, :delete
   end
 end

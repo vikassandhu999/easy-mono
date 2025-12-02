@@ -23,11 +23,8 @@ defmodule EasyWeb.TrainingPlanController do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
          author_id <- claims["coach_id"],
-         attrs_with_ids =
-           plan_params
-           |> Map.put("business_id", business_id)
-           |> Map.put("author_id", author_id),
-         {:ok, training_plan} <- Training.create_training_plan(attrs_with_ids) do
+         {:ok, training_plan} <-
+           Training.create_training_plan(business_id, author_id, plan_params) do
       conn
       |> put_status(:created)
       |> render(:show, %{training_plan: training_plan})
@@ -57,10 +54,16 @@ defmodule EasyWeb.TrainingPlanController do
 
   def assign(conn, %{"client_id" => client_id} = params) do
     training_plan = conn.assigns.training_plan
+    business_id = conn.assigns.token_claims["business_id"]
     start_date = parse_start_date(params["start_date"])
 
     with {:ok, %{new_plan: new_plan}} <-
-           Training.assign_training_plan_to_client(training_plan.id, client_id, start_date) do
+           Training.assign_training_plan_to_client(
+             business_id,
+             training_plan.id,
+             client_id,
+             start_date
+           ) do
       # Fetch the full plan with preloads for rendering
       full_plan = Training.get_training_plan!(new_plan.id)
 

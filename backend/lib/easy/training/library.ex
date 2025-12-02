@@ -12,8 +12,38 @@ defmodule Easy.Training.Library do
 
   # Muscle Groups
 
+  @doc """
+  Returns all muscle groups.
+
+  ## Examples
+
+      iex> list_muscle_groups()
+      {:ok, [%MuscleGroup{}, ...]}
+
+  """
+  @spec list_muscle_groups() :: {:ok, list(MuscleGroup.t())}
   def list_muscle_groups do
-    Repo.all(MuscleGroup)
+    {:ok, Repo.all(MuscleGroup)}
+  end
+
+  @doc """
+  Fetches a muscle group by ID.
+
+  ## Examples
+
+      iex> fetch_muscle_group(id)
+      {:ok, %MuscleGroup{}}
+
+      iex> fetch_muscle_group(invalid_id)
+      {:error, :not_found}
+
+  """
+  @spec fetch_muscle_group(String.t()) :: {:ok, MuscleGroup.t()} | {:error, :not_found}
+  def fetch_muscle_group(id) do
+    case Repo.get(MuscleGroup, id) do
+      nil -> {:error, :not_found}
+      muscle_group -> {:ok, muscle_group}
+    end
   end
 
   def get_muscle_group!(id), do: Repo.get!(MuscleGroup, id)
@@ -40,8 +70,43 @@ defmodule Easy.Training.Library do
 
   # Muscles
 
+  @doc """
+  Returns all muscles with their muscle groups preloaded.
+
+  ## Examples
+
+      iex> list_muscles()
+      {:ok, [%Muscle{}, ...]}
+
+  """
+  @spec list_muscles() :: {:ok, list(Muscle.t())}
   def list_muscles do
-    Repo.all(Muscle)
+    muscles =
+      Muscle
+      |> Repo.all()
+      |> Repo.preload(:muscle_group)
+
+    {:ok, muscles}
+  end
+
+  @doc """
+  Fetches a muscle by ID.
+
+  ## Examples
+
+      iex> fetch_muscle(id)
+      {:ok, %Muscle{}}
+
+      iex> fetch_muscle(invalid_id)
+      {:error, :not_found}
+
+  """
+  @spec fetch_muscle(String.t()) :: {:ok, Muscle.t()} | {:error, :not_found}
+  def fetch_muscle(id) do
+    case Repo.get(Muscle, id) do
+      nil -> {:error, :not_found}
+      muscle -> {:ok, Repo.preload(muscle, :muscle_group)}
+    end
   end
 
   def get_muscle!(id), do: Repo.get!(Muscle, id)
@@ -68,8 +133,38 @@ defmodule Easy.Training.Library do
 
   # Equipment
 
+  @doc """
+  Returns all equipment.
+
+  ## Examples
+
+      iex> list_equipment()
+      {:ok, [%Equipment{}, ...]}
+
+  """
+  @spec list_equipment() :: {:ok, list(Equipment.t())}
   def list_equipment do
-    Repo.all(Equipment)
+    {:ok, Repo.all(Equipment)}
+  end
+
+  @doc """
+  Fetches equipment by ID.
+
+  ## Examples
+
+      iex> fetch_equipment(id)
+      {:ok, %Equipment{}}
+
+      iex> fetch_equipment(invalid_id)
+      {:error, :not_found}
+
+  """
+  @spec fetch_equipment(String.t()) :: {:ok, Equipment.t()} | {:error, :not_found}
+  def fetch_equipment(id) do
+    case Repo.get(Equipment, id) do
+      nil -> {:error, :not_found}
+      equipment -> {:ok, equipment}
+    end
   end
 
   def get_equipment!(id), do: Repo.get!(Equipment, id)
@@ -217,7 +312,41 @@ defmodule Easy.Training.Library do
     max(offset, 0)
   end
 
-  def create_exercise(attrs \\ %{}) do
+  @doc """
+  Creates a business-specific exercise.
+
+  The `business_id` is set programmatically and must be provided.
+
+  ## Examples
+
+      iex> create_exercise(business_id, %{name: "Bench Press"})
+      {:ok, %Exercise{}}
+
+  """
+  @spec create_exercise(String.t(), map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
+  def create_exercise(business_id, attrs) do
+    %Exercise{business_id: business_id}
+    |> Exercise.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, muscles: :muscle_group])}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Creates a system-level exercise (no business_id).
+
+  Only for admin/seed usage. Business-specific exercises should use `create_exercise/2`.
+
+  ## Examples
+
+      iex> create_system_exercise(%{name: "Squat"})
+      {:ok, %Exercise{business_id: nil}}
+
+  """
+  @spec create_system_exercise(map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
+  def create_system_exercise(attrs) do
     %Exercise{}
     |> Exercise.changeset(attrs)
     |> Repo.insert()
@@ -249,6 +378,8 @@ defmodule Easy.Training.Library do
   Creates a copy of the exercise with the given business_id.
   Handles name conflicts by incrementing copy number (e.g., "Exercise (Copy 2)").
   """
+  @spec duplicate_exercise(Exercise.t(), String.t()) ::
+          {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def duplicate_exercise(%Exercise{} = exercise, business_id) do
     # Preload associations if not already loaded
     exercise = Repo.preload(exercise, [:exercise_muscles, :exercise_equipment])
@@ -267,11 +398,10 @@ defmodule Easy.Training.Library do
       "mechanics" => exercise.mechanics && Atom.to_string(exercise.mechanics),
       "force" => exercise.force && Atom.to_string(exercise.force),
       "muscle_ids" => muscle_ids,
-      "equipment_ids" => equipment_ids,
-      "business_id" => business_id
+      "equipment_ids" => equipment_ids
     }
 
-    create_exercise(attrs)
+    create_exercise(business_id, attrs)
   end
 
   # Generates a unique copy name by checking for existing copies and incrementing

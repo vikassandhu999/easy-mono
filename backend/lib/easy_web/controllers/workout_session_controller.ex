@@ -2,61 +2,67 @@ defmodule EasyWeb.WorkoutSessionController do
   use EasyWeb, :controller
 
   alias Easy.Training
-  alias Easy.Training.Tracking.WorkoutSession
+  alias EasyWeb.FallbackController
 
-  def index(conn, _params) do
-    # Assuming client context - filtering by client_id would be needed for coaches
-    # For now, let's assume this is a client-facing endpoint or we filter by business
-    # Ideally we'd check if user is coach or client and filter accordingly
+  plug :authorize_resource when action in [:show, :complete, :discard]
 
-    # Placeholder: List all sessions for the business (needs refinement for client vs coach view)
-    # business_id = conn.assigns[:current_business_id]
-    # sessions = Training.list_sessions(business_id: business_id)
-
-    # For MVP, let's just return empty or implement basic listing if needed
-    # But based on plan, we need list_sessions.
-    # Let's implement basic listing for now.
-
-    # TODO: Implement proper filtering based on user role
-    sessions = []
-    render(conn, :index, sessions: sessions)
+  def index(conn, params) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         {:ok, sessions} <- Training.list_sessions(business_id, filter_opts(params)) do
+      render(conn, :index, sessions: sessions)
+    end
   end
 
   def create(conn, %{"session" => session_params}) do
-    business_id = conn.assigns[:current_business_id]
-    # Assuming client is creating session
-    client_id = conn.assigns[:current_user_id]
-
-    session_params =
-      session_params
-      |> Map.put("business_id", business_id)
-      |> Map.put("client_id", client_id)
-
-    with {:ok, %WorkoutSession{} = session} <- Training.start_session(session_params) do
+    with claims <- conn.assigns.token_claims,
+         business_id <- claims["business_id"],
+         client_id <- claims["client_id"],
+         {:ok, session} <- Training.start_session(business_id, client_id, session_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", ~p"/api/sessions/#{session}")
       |> render(:show, session: session)
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    session = Training.get_session!(id)
-    render(conn, :show, session: session)
+  def show(conn, _params) do
+    render(conn, :show, session: conn.assigns.session)
   end
 
-  def complete(conn, %{"id" => id, "session" => session_params}) do
-    session = Training.get_session!(id)
+  def complete(conn, %{"session" => session_params}) do
+    with {:ok, session} <- Training.complete_session(conn.assigns.session, session_params) do
+      render(conn, :show, session: session)
+    end
+  end
 
-    # Verify ownership
-    # Simplified check
-    if session.client_id == conn.assigns[:current_user_id] do
-      with {:ok, %WorkoutSession{} = session} <-
-             Training.complete_session(session, session_params) do
-        render(conn, :show, session: session)
-      end
+  def discard(conn, _params) do
+    with {:ok, session} <- Training.discard_session(conn.assigns.session) do
+      render(conn, :show, session: session)
+    end
+  end
+
+  defp filter_opts(params) do
+    opts = []
+
+    opts =
+      if params["client_id"], do: Keyword.put(opts, :client_id, params["client_id"]), else: opts
+
+    opts =
+      if params["state"],
+        do: Keyword.put(opts, :state, String.to_existing_atom(params["state"])),
+        else: opts
+
+    opts
+  end
+
+  defp authorize_resource(conn, _opts) do
+    with %{"id" => id} <- conn.params,
+         %{"business_id" => business_id} <- conn.assigns.token_claims,
+         {:ok, session} <- Training.fetch_session(business_id, id) do
+      assign(conn, :session, session)
     else
-      {:error, :forbidden}
+      _ ->
+        FallbackController.not_found_response(conn, "Workout session not found.")
     end
   end
 end

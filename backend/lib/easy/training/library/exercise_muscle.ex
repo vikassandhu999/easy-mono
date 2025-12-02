@@ -3,16 +3,13 @@ defmodule Easy.Training.Library.ExerciseMuscle do
 
   alias Easy.Training.Library.{Exercise, Muscle}
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "exercise_muscles" do
     belongs_to :exercise, Exercise
     belongs_to :muscle, Muscle
 
-    field :role, :string, default: "primary"
+    field :role, Ecto.Enum, values: [:primary, :secondary, :stabilizer], default: :primary
 
-    timestamps(type: :utc_datetime_usec)
+    timestamps()
   end
 
   @doc false

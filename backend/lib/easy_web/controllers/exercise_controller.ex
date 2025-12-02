@@ -25,11 +25,8 @@ defmodule EasyWeb.ExerciseController do
   def create(conn, _params) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
-         attrs_with_business_id =
-           conn.body_params
-           |> Map.put("business_id", business_id),
          {:ok, exercise} <-
-           Training.create_exercise(attrs_with_business_id) do
+           Training.create_exercise(business_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:create, %{exercise: exercise})

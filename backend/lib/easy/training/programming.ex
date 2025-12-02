@@ -94,16 +94,76 @@ defmodule Easy.Training.Programming do
     |> Repo.preload(planned_workouts: [workout_elements: [:exercise, :planned_sets]])
   end
 
-  def create_training_plan(attrs \\ %{}) do
-    %TrainingPlan{}
+  @doc """
+  Creates a training plan template.
+
+  The `business_id` and `author_id` must be provided as they are set programmatically.
+
+  ## Examples
+
+      iex> create_training_plan(business_id, author_id, %{name: "Push Pull Legs"})
+      {:ok, %TrainingPlan{}}
+
+  """
+  @spec create_training_plan(String.t(), String.t(), map()) ::
+          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
+  def create_training_plan(business_id, author_id, attrs) do
+    %TrainingPlan{business_id: business_id, author_id: author_id}
     |> TrainingPlan.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, plan} ->
+        {:ok,
+         Repo.preload(plan, planned_workouts: [workout_elements: [:exercise, :planned_sets]])}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
+  @doc """
+  Assigns a training plan template to a client by creating a deep copy.
+
+  Note: This function requires the template to already be loaded with the correct business_id.
+  For API usage, prefer `assign_training_plan_to_client/4` which validates business ownership.
+
+  ## Examples
+
+      iex> assign_to_client(training_plan, client_id)
+      {:ok, %{new_plan: %TrainingPlan{is_template: false, client_id: client_id}}}
+
+  """
+  @spec assign_to_client(TrainingPlan.t(), String.t()) ::
+          {:ok, map()} | {:error, :not_found} | {:error, any(), Ecto.Changeset.t(), map()}
+  def assign_to_client(%TrainingPlan{} = template, client_id) do
+    assign_training_plan_to_client(template.business_id, template.id, client_id)
+  end
+
+  @doc """
+  Updates a training plan.
+
+  ## Examples
+
+      iex> update_training_plan(plan, %{name: "New Name"})
+      {:ok, %TrainingPlan{}}
+
+  """
+  @spec update_training_plan(TrainingPlan.t(), map()) ::
+          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
   def update_training_plan(%TrainingPlan{} = training_plan, attrs) do
     training_plan
     |> TrainingPlan.changeset(attrs)
     |> Repo.update()
+    |> case do
+      {:ok, plan} ->
+        {:ok,
+         Repo.preload(plan, [planned_workouts: [workout_elements: [:exercise, :planned_sets]]],
+           force: true
+         )}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def delete_training_plan(%TrainingPlan{} = training_plan) do
@@ -150,12 +210,25 @@ defmodule Easy.Training.Programming do
 
   # Planned Workouts
 
+  @doc """
+  Returns all planned workouts for a training plan.
+
+  ## Examples
+
+      iex> list_planned_workouts(training_plan_id)
+      {:ok, [%PlannedWorkout{}, ...]}
+
+  """
+  @spec list_planned_workouts(String.t()) :: {:ok, list(PlannedWorkout.t())}
   def list_planned_workouts(training_plan_id) do
-    PlannedWorkout
-    |> where([w], w.training_plan_id == ^training_plan_id)
-    |> order_by([w], asc: w.day_number)
-    |> Repo.all()
-    |> Repo.preload(workout_elements: [:exercise, :planned_sets])
+    workouts =
+      PlannedWorkout
+      |> where([w], w.training_plan_id == ^training_plan_id)
+      |> order_by([w], asc: w.day_number)
+      |> Repo.all()
+      |> Repo.preload(workout_elements: [:exercise, :planned_sets])
+
+    {:ok, workouts}
   end
 
   def create_planned_workout(attrs \\ %{}) do
@@ -326,14 +399,16 @@ defmodule Easy.Training.Programming do
 
       Multi.new()
       |> Multi.insert(:new_plan, fn _ ->
-        TrainingPlan.changeset(%TrainingPlan{}, %{
+        %TrainingPlan{
+          business_id: original.business_id,
+          author_id: original.author_id,
+          client_id: nil
+        }
+        |> TrainingPlan.changeset(%{
           name: copy_name,
           description: original.description,
           is_template: true,
           duration_weeks: original.duration_weeks,
-          business_id: original.business_id,
-          author_id: original.author_id,
-          client_id: nil,
           original_template_id: original.id
         })
       end)
@@ -385,32 +460,45 @@ defmodule Easy.Training.Programming do
 
   @doc """
   Assigns a training plan template to a client by creating a deep copy.
+
+  The `business_id` is required for authorization - ensures the template belongs to the business.
   The start_date parameter is reserved for future use (e.g., scheduling workout dates).
+
+  ## Examples
+
+      iex> assign_training_plan_to_client(business_id, template_id, client_id)
+      {:ok, %{new_plan: %TrainingPlan{}}}
+
+      iex> assign_training_plan_to_client(business_id, invalid_template_id, client_id)
+      {:error, :not_found}
+
   """
-  def assign_training_plan_to_client(template_id, client_id, start_date \\ nil) do
+  @spec assign_training_plan_to_client(String.t(), String.t(), String.t(), Date.t() | nil) ::
+          {:ok, map()} | {:error, :not_found} | {:error, any(), Ecto.Changeset.t(), map()}
+  def assign_training_plan_to_client(business_id, template_id, client_id, start_date \\ nil) do
     _start_date = start_date || Date.utc_today()
 
-    template =
-      Repo.get!(TrainingPlan, template_id)
-      |> Repo.preload(planned_workouts: [workout_elements: [:exercise, :planned_sets]])
-
-    Multi.new()
-    |> Multi.insert(:new_plan, fn _ ->
-      TrainingPlan.changeset(%TrainingPlan{}, %{
-        name: template.name,
-        description: template.description,
-        is_template: false,
-        duration_weeks: template.duration_weeks,
-        business_id: template.business_id,
-        author_id: template.author_id,
-        client_id: client_id,
-        original_template_id: template.id
-      })
-    end)
-    |> Multi.merge(fn %{new_plan: new_plan} ->
-      copy_workouts_multi(new_plan, template.planned_workouts)
-    end)
-    |> Repo.transaction()
+    with {:ok, template} <- fetch_training_plan(business_id, template_id) do
+      Multi.new()
+      |> Multi.insert(:new_plan, fn _ ->
+        %TrainingPlan{
+          business_id: template.business_id,
+          author_id: template.author_id,
+          client_id: client_id
+        }
+        |> TrainingPlan.changeset(%{
+          name: template.name,
+          description: template.description,
+          is_template: false,
+          duration_weeks: template.duration_weeks,
+          original_template_id: template.id
+        })
+      end)
+      |> Multi.merge(fn %{new_plan: new_plan} ->
+        copy_workouts_multi(new_plan, template.planned_workouts)
+      end)
+      |> Repo.transaction()
+    end
   end
 
   defp copy_workouts_multi(new_plan, workouts) do
@@ -459,11 +547,17 @@ defmodule Easy.Training.Programming do
       Multi.insert(multi, {:set, set.id}, fn _ ->
         PlannedSet.changeset(%PlannedSet{}, %{
           position: set.position,
-          reps_min: set.reps_min,
-          reps_max: set.reps_max,
+          target_reps: set.target_reps,
           load_value: set.load_value,
           load_type: set.load_type,
+          intensity_target: set.intensity_target,
+          tempo: set.tempo,
           rest_seconds: set.rest_seconds,
+          duration_seconds: set.duration_seconds,
+          distance_value: set.distance_value,
+          distance_unit: set.distance_unit,
+          set_type: set.set_type,
+          notes: set.notes,
           workout_element_id: new_element.id
         })
       end)

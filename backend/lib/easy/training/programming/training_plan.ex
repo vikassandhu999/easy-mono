@@ -29,12 +29,11 @@ defmodule Easy.Training.Programming.TrainingPlan do
       :description,
       :is_template,
       :duration_weeks,
-      :business_id,
-      :author_id,
-      :client_id,
       :original_template_id
     ])
-    |> validate_required([:name, :business_id, :author_id])
+    |> validate_required([:name])
+    |> validate_length(:name, max: 255)
+    |> validate_length(:description, max: 5000)
     |> validate_number(:duration_weeks, greater_than: 0)
     |> validate_template_or_client()
     |> foreign_key_constraint(:business_id)

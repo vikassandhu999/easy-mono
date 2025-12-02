@@ -20,7 +20,7 @@ defmodule Easy.Training.Library.Muscle do
   def changeset(muscle, attrs) do
     muscle
     |> cast(attrs, [:name, :description, :muscle_group_id])
-    |> validate_required([:name, :muscle_group_id])
+    |> validate_required([:name])
     |> unique_constraint(:name)
     |> foreign_key_constraint(:muscle_group_id)
   end

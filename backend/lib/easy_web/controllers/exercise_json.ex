@@ -27,9 +27,9 @@ defmodule EasyWeb.ExerciseJSON do
       name: exercise.name,
       description: exercise.description,
       instructions: exercise.instructions,
-      slug: exercise.slug,
       mechanics: exercise.mechanics,
       force: exercise.force,
+      images: exercise.images || [],
       business_id: exercise.business_id,
       muscles: muscles_data(exercise.muscles),
       equipment: equipment_data(exercise.equipment)

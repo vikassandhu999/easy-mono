@@ -3,14 +3,11 @@ defmodule Easy.Training.Library.ExerciseEquipment do
 
   alias Easy.Training.Library.{Exercise, Equipment}
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "exercise_equipment" do
     belongs_to :exercise, Exercise
     belongs_to :equipment, Equipment
 
-    timestamps(type: :utc_datetime_usec)
+    timestamps()
   end
 
   @doc false

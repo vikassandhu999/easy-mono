@@ -13,7 +13,7 @@ export type Ingredient = {
     fiber: null | string;
     meta_info: Record<string, unknown>;
     business_id: string;
-    creator_id: null | string;
+    author_id: null | string;
     inserted_at: string;
     updated_at: string;
 };

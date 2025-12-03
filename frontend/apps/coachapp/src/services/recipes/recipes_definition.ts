@@ -15,7 +15,7 @@ export type Ingredient = {
 
 export type RecipeIngredient = {
     id: string;
-    order: number | string;
+    position: number | string;
     quantity?: number;
     quantity_as_text?: string;
     ingredient_id: string;
@@ -44,7 +44,7 @@ export type Recipe = {
     total_fats: null | string;
     total_fiber: null | string;
     status: RecipeStatus;
-    creator_id: null | string;
+    author_id: null | string;
 
     inserted_at: string;
     updated_at: string;
@@ -79,7 +79,7 @@ export type DuplicateRecipe = {
 
 export const IngredientItem_zod = z.object({
     name: z.string().optional(), // will not be sent to api this is for fe and will be filtered
-    order: z.number(),
+    position: z.number(),
     ingredient_id: z.string(),
     quantity_as_text: z.string().min(0, 'Please Enter quanity.'),
 });

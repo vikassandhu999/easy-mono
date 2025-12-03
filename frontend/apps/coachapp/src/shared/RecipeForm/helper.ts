@@ -26,7 +26,7 @@ export const populateRecipe = (recipe: Recipe) => ({
 
     recipe_ingredients: recipe.recipe_ingredients?.map((ingredient) => ({
         name: ingredient.ingredient?.name, // Use nested ingredient name from API
-        order: typeof ingredient.order === 'string' ? parseInt(ingredient.order, 10) : ingredient.order,
+        position: typeof ingredient.position === 'string' ? parseInt(ingredient.position, 10) : ingredient.position,
         ingredient_id: ingredient.ingredient_id,
         quantity_as_text: ingredient.quantity_as_text || '',
     })),

@@ -8,7 +8,7 @@ export type NutritionPlanStatus = 'active' | 'archived' | 'draft';
 
 export type MealItem = {
     id: string;
-    sort_order: number;
+    position: number;
     servings: number | string;
     recipe_id: string;
     recipe?: Recipe;
@@ -39,7 +39,7 @@ export type NutritionPlan = {
     meals: Meal[];
     client_id: null | string;
     business_id: string;
-    creator_id: string;
+    author_id: string;
     inserted_at: string;
     updated_at: string;
 };
@@ -65,7 +65,7 @@ export interface NutritionPlansList {
 // Zod schemas for forms
 
 export const MealItem_zod = z.object({
-    sort_order: z.number().default(0),
+    position: z.number().default(0),
     recipe_id: z.string().min(1, 'Recipe is required'),
 });
 

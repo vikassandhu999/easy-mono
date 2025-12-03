@@ -11,7 +11,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
                 data: {
                     recipe_id: body.recipe_id,
                     servings: body.servings,
-                    sort_order: body.sort_order ?? 0,
+                    position: body.position ?? 0,
                 },
             }),
             transformResponse: (response: {data: MealItem}) => response.data,
@@ -36,7 +36,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
                 method: 'patch',
                 data: {
                     servings: body.servings,
-                    sort_order: body.sort_order,
+                    position: body.position,
                 },
             }),
             transformResponse: (response: {data: MealItem}) => response.data,

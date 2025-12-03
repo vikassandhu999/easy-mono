@@ -4,7 +4,7 @@ import {Recipe} from '../recipes/recipes_definition';
 
 export type MealItem = {
     id: string;
-    sort_order: number;
+    position: number;
     servings: number | string;
     recipe_id: string;
     meal_id: string;
@@ -17,14 +17,14 @@ export type CreateMealItem = {
     meal_id: string;
     recipe_id: string;
     servings: number | string;
-    sort_order?: number;
+    position?: number;
     nutrition_plan_id: string;
 };
 
 export type UpdateMealItem = {
     id: string;
     servings?: number | string;
-    sort_order?: number;
+    position?: number;
     nutrition_plan_id?: string;
 };
 
@@ -52,7 +52,7 @@ export const CreateMealItem_zod = z.object({
         const num = typeof val === 'string' ? parseFloat(val) : val;
         return num > 0;
     }, 'Servings must be greater than 0'),
-    sort_order: z.number().int().min(0).default(0),
+    position: z.number().int().min(0).default(0),
     nutrition_plan_id: z.string().min(1, 'Nutrition plan is required'),
 });
 
@@ -65,7 +65,7 @@ export const UpdateMealItem_zod = z.object({
             return num > 0;
         }, 'Servings must be greater than 0')
         .optional(),
-    sort_order: z.number().int().min(0).optional(),
+    position: z.number().int().min(0).optional(),
     nutrition_plan_id: z.string().min(1, 'Nutrition plan is required').optional(),
 });
 

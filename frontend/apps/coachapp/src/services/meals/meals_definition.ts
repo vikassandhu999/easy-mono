@@ -6,7 +6,7 @@ export type MealDaytime = 'breakfast' | 'dinner' | 'early_morning' | 'lunch' | '
 
 export type MealItem = {
     id: string;
-    sort_order: number;
+    position: number;
     servings: number | string;
     recipe_id: string;
     meal_id: string;
@@ -22,7 +22,7 @@ export type Meal = {
     label: null | string;
     time: null | string;
     notes: null | string;
-    sort_order: number;
+    position: number;
     nutrition_plan_id: string;
     meal_items: MealItem[];
     inserted_at: string;
@@ -53,7 +53,7 @@ export interface MealsList {
     "daytime": "breakfast",
     "day_number": 0,
     "label": "breakfast",
-    "sort_order": 0,
+    "position": 0,
     "nutrition_plan_id" : "6b5ce925-7e8d-4df2-b13b-a2f462f068ee"
 } */
 //
@@ -65,14 +65,14 @@ export const CreateMeal_zod = z.object({
     label: z.string().optional(),
     time: z.string().optional(),
     notes: z.string().optional(),
-    sort_order: z.number().int().default(0),
+    position: z.number().int().default(0),
 });
 
 export const UpdateMeal_zod = z.object({
     label: z.string().optional(),
     time: z.string().optional(),
     notes: z.string().optional(),
-    sort_order: z.number().int().optional(),
+    position: z.number().int().optional(),
 });
 
 export type CreateMeal = z.infer<typeof CreateMeal_zod>;

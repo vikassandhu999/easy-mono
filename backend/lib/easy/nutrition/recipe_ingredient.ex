@@ -1,20 +1,18 @@
 defmodule Easy.Nutrition.RecipeIngredient do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Easy.Nutrition.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  alias Easy.Nutrition.{Recipe, Ingredient, MeasurementUnit}
 
   schema "recipe_ingredients" do
-    field(:order, :integer)
-    field(:quantity, :decimal)
+    field :position, :integer
+    field :quantity, :decimal
 
-    field(:quantity_as_text, :string)
+    field :quantity_as_text, :string
 
-    belongs_to(:recipe, Easy.Nutrition.Recipe, on_replace: :delete, type: :binary_id)
-    belongs_to(:ingredient, Easy.Nutrition.Ingredient, type: :binary_id)
+    belongs_to :recipe, Recipe
+    belongs_to :ingredient, Ingredient
 
-    belongs_to(:unit, Easy.Nutrition.MeasurementUnit, type: :binary_id)
+    belongs_to :unit, MeasurementUnit
 
     timestamps()
   end
@@ -22,17 +20,17 @@ defmodule Easy.Nutrition.RecipeIngredient do
   def changeset(recipe_ingredient, attrs) do
     recipe_ingredient
     |> cast(attrs, [
-      :order,
+      :position,
       :quantity,
       :quantity_as_text,
       :recipe_id,
       :ingredient_id,
       :unit_id
     ])
-    |> validate_required([:order, :ingredient_id])
+    |> validate_required([:position, :ingredient_id])
     |> validate_at_least_one([:quantity, :quantity_as_text])
     |> validate_number(:quantity, greater_than_or_equal_to: 0)
-    |> validate_number(:order, greater_than_or_equal_to: 0)
+    |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:recipe_id)
     |> foreign_key_constraint(:ingredient_id)
     |> foreign_key_constraint(:unit_id)

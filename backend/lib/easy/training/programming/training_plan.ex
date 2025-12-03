@@ -9,6 +9,9 @@ defmodule Easy.Training.Programming.TrainingPlan do
     field :name, :string
     field :description, :string
     field :is_template, :boolean, default: true
+
+    field :status, Ecto.Enum, values: [:active, :draft, :archived], default: :active
+
     # Weekly plans: start_date and end_date define the repeating period for assigned plans
     field :start_date, :date
     field :end_date, :date
@@ -30,6 +33,7 @@ defmodule Easy.Training.Programming.TrainingPlan do
       :name,
       :description,
       :is_template,
+      :status,
       :start_date,
       :end_date,
       :original_template_id

@@ -1,12 +1,10 @@
 defmodule Easy.Nutrition.Meal do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Easy.Nutrition.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  alias Easy.Nutrition.{NutritionPlan, MealItem}
 
   schema "meals" do
-    field(:daytime, Ecto.Enum,
+    field :daytime, Ecto.Enum,
       values: [
         :early_morning,
         :breakfast,
@@ -16,23 +14,20 @@ defmodule Easy.Nutrition.Meal do
         :post_workout,
         :snack
       ]
-    )
 
-    field(:day_number, :integer)
-    field(:label, :string)
+    field :day_number, :integer
+    field :label, :string
 
-    field(:time, :time)
-    field(:notes, :string)
+    field :time, :time
+    field :notes, :string
 
-    field(:sort_order, :integer, default: 0)
-    # cached_macros removed
+    field :position, :integer, default: 0
 
-    belongs_to(:nutrition_plan, Easy.Nutrition.NutritionPlan, type: :binary_id)
+    belongs_to :nutrition_plan, NutritionPlan
 
-    has_many(:meal_items, Easy.Nutrition.MealItem,
+    has_many :meal_items, MealItem,
       on_delete: :delete_all,
-      preload_order: [asc: :sort_order]
-    )
+      preload_order: [asc: :position]
 
     timestamps()
   end
@@ -46,9 +41,34 @@ defmodule Easy.Nutrition.Meal do
       :time,
       :notes,
       :nutrition_plan_id,
-      :sort_order
+      :position
     ])
     |> validate_required([:daytime, :day_number])
-    |> cast_assoc(:meal_items, with: &Easy.Nutrition.MealItem.changeset/2)
+    |> validate_number(:day_number, greater_than_or_equal_to: 1)
+    |> validate_number(:position, greater_than_or_equal_to: 0)
+    |> foreign_key_constraint(:nutrition_plan_id)
+    |> cast_assoc(:meal_items, with: &MealItem.changeset/2)
+  end
+
+  @doc """
+  Changeset that also validates day_number against plan duration.
+
+  Use this when you have access to the nutrition plan and want to
+  validate that day_number doesn't exceed the plan's total days.
+
+  ## Parameters
+    - meal: The meal struct
+    - attrs: Attributes to change
+    - plan: The NutritionPlan struct (must have duration_weeks loaded)
+  """
+  def changeset_with_plan(meal, attrs, %NutritionPlan{} = plan) do
+    max_days = (plan.duration_weeks || 1) * 7
+
+    meal
+    |> changeset(attrs)
+    |> validate_number(:day_number,
+      less_than_or_equal_to: max_days,
+      message: "must be between 1 and %{number} for this plan's duration"
+    )
   end
 end

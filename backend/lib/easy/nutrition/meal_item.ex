@@ -1,26 +1,24 @@
 defmodule Easy.Nutrition.MealItem do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Easy.Nutrition.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  alias Easy.Nutrition.{Recipe, Meal}
 
   schema "meal_items" do
-    field :sort_order, :integer, default: 0
+    field :position, :integer, default: 0
 
     field :servings, :decimal
 
-    belongs_to :recipe, Easy.Nutrition.Recipe, type: :binary_id
-    belongs_to :meal, Easy.Nutrition.Meal, type: :binary_id
+    belongs_to :recipe, Recipe
+    belongs_to :meal, Meal
 
     timestamps()
   end
 
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:sort_order, :servings, :recipe_id, :meal_id])
+    |> cast(attrs, [:position, :servings, :recipe_id, :meal_id])
     |> validate_required([:recipe_id, :servings])
-    |> validate_number(:sort_order, greater_than_or_equal_to: 0)
+    |> validate_number(:position, greater_than_or_equal_to: 0)
     # Ensure recipe is unique per meal to prevent accidental duplication
     |> unique_constraint([:meal_id, :recipe_id], name: :meal_recipe_unique_idx)
   end

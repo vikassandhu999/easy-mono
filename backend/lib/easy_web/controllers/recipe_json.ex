@@ -34,7 +34,7 @@ defmodule EasyWeb.RecipeJSON do
       total_fats: recipe.total_fats,
       total_fiber: recipe.total_fiber,
       status: recipe.status,
-      creator_id: recipe.creator_id,
+      author_id: recipe.author_id,
       inserted_at: recipe.inserted_at,
       updated_at: recipe.updated_at
     }
@@ -51,7 +51,7 @@ defmodule EasyWeb.RecipeJSON do
   defp render_recipe_ingredient(ingredient) do
     %{
       id: ingredient.id,
-      order: ingredient.order,
+      position: ingredient.position,
       quantity: ingredient.quantity,
       quantity_as_text: ingredient.quantity_as_text,
       ingredient_id: ingredient.ingredient_id,

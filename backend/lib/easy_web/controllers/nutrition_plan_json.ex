@@ -28,9 +28,9 @@ defmodule EasyWeb.NutritionPlanJSON do
       start_date: plan.start_date,
       tags: plan.tags,
       client_id: plan.client_id,
-      original_plan_id: plan.original_plan_id,
+      original_template_id: plan.original_template_id,
       business_id: plan.business_id,
-      creator_id: plan.creator_id,
+      author_id: plan.author_id,
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
@@ -52,7 +52,7 @@ defmodule EasyWeb.NutritionPlanJSON do
       label: meal.label,
       time: meal.time,
       notes: meal.notes,
-      sort_order: meal.sort_order,
+      position: meal.position,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
     }
@@ -69,7 +69,7 @@ defmodule EasyWeb.NutritionPlanJSON do
   defp render_meal_item(meal_item) do
     %{
       id: meal_item.id,
-      sort_order: meal_item.sort_order,
+      position: meal_item.position,
       servings: meal_item.servings,
       recipe_id: meal_item.recipe_id,
       recipe: render_nested_recipe(meal_item.recipe)

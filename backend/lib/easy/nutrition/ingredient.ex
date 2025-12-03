@@ -1,9 +1,8 @@
 defmodule Easy.Nutrition.Ingredient do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Easy.Nutrition.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  alias Easy.Organizations.{Business, Coach}
+  alias Easy.Nutrition.ServingSize
 
   schema "ingredients" do
     field :name, :string
@@ -17,14 +16,14 @@ defmodule Easy.Nutrition.Ingredient do
     field :fiber_per_100g, :decimal
     field :meta_info, :map, default: %{}
 
-    belongs_to :business, Easy.Organizations.Business, type: :binary_id
-    belongs_to :creator, Easy.Organizations.Coach, type: :binary_id
-    has_many :serving_sizes, Easy.Nutrition.ServingSize
+    belongs_to :business, Business
+    belongs_to :author, Coach
+    has_many :serving_sizes, ServingSize
 
     timestamps()
   end
 
-  @required_fields [:name, :business_id, :creator_id]
+  @required_fields [:name]
   @optional_fields [
     :description,
     :image_url,
@@ -40,14 +39,14 @@ defmodule Easy.Nutrition.Ingredient do
   def changeset(ingredient, attrs) do
     ingredient
     |> cast(attrs, @required_fields ++ @optional_fields)
-    |> validate_required(@required_fields)
+    |> validate_required(@required_fields ++ [:business_id, :author_id])
     |> validate_number(:calories_per_100g, greater_than_or_equal_to: 0)
     |> validate_number(:protein_per_100g, greater_than_or_equal_to: 0)
     |> validate_number(:carbohydrates_per_100g, greater_than_or_equal_to: 0)
     |> validate_number(:fats_per_100g, greater_than_or_equal_to: 0)
     |> validate_number(:fiber_per_100g, greater_than_or_equal_to: 0)
-    |> assoc_constraint(:business)
-    |> assoc_constraint(:creator)
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:author_id)
     |> cast_assoc(:serving_sizes)
   end
 

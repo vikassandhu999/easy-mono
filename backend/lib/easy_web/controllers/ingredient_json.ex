@@ -30,7 +30,7 @@ defmodule EasyWeb.IngredientJSON do
       meta_info: ingredient.meta_info,
       serving_sizes: render_serving_sizes(ingredient.serving_sizes),
       business_id: ingredient.business_id,
-      creator_id: ingredient.creator_id,
+      author_id: ingredient.author_id,
       inserted_at: ingredient.inserted_at,
       updated_at: ingredient.updated_at
     }

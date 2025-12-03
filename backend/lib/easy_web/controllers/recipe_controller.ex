@@ -24,12 +24,7 @@ defmodule EasyWeb.RecipeController do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
          coach_id <- claims["coach_id"],
-         attrs_with_ids =
-           conn.body_params
-           |> Map.put("business_id", business_id)
-           |> Map.put("creator_id", coach_id),
-         {:ok, recipe} <-
-           Nutrition.create_recipe(attrs_with_ids) do
+         {:ok, recipe} <- Nutrition.create_recipe(business_id, coach_id, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:create, %{recipe: recipe})

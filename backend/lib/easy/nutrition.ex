@@ -3,7 +3,16 @@ defmodule Easy.Nutrition do
 
   alias Easy.Repo
   alias Easy.Utils
-  alias Easy.Nutrition.{Ingredient, NutritionPlan, Recipe, Meal, MealItem, RecipeIngredient}
+
+  alias Easy.Nutrition.{
+    Ingredient,
+    NutritionPlan,
+    Recipe,
+    Meal,
+    MealItem,
+    RecipeIngredient,
+    Calculator
+  }
 
   @default_limit 50
   @max_limit 100
@@ -52,7 +61,7 @@ defmodule Easy.Nutrition do
     attrs =
       attrs
       |> Map.put("business_id", business_id)
-      |> Map.put("creator_id", coach_id)
+      |> Map.put("author_id", coach_id)
 
     %NutritionPlan{}
     |> NutritionPlan.changeset(attrs)
@@ -204,7 +213,7 @@ defmodule Easy.Nutrition do
     attrs =
       attrs
       |> Map.put("business_id", business_id)
-      |> Map.put("creator_id", coach_id)
+      |> Map.put("author_id", coach_id)
 
     %Ingredient{}
     |> Ingredient.changeset(attrs)
@@ -273,32 +282,56 @@ defmodule Easy.Nutrition do
   @spec create_recipe(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def create_recipe(business_id, coach_id, attrs) when is_binary(business_id) do
-    attrs_with_business_and_creator =
+    attrs_with_business_and_author =
       attrs
       |> Map.put("business_id", business_id)
-      |> Map.put("creator_id", coach_id)
+      |> Map.put("author_id", coach_id)
 
-    create_recipe(attrs_with_business_and_creator)
+    create_recipe(attrs_with_business_and_author)
   end
 
   def create_recipe(attrs) when is_map(attrs) do
     attrs = normalize_ingredient_orders(attrs)
 
-    %Recipe{}
-    |> Recipe.changeset(attrs)
-    |> Repo.insert()
-    |> handle_recipe_result()
+    result =
+      %Recipe{}
+      |> Recipe.changeset(attrs)
+      |> Repo.insert()
+
+    case result do
+      {:ok, recipe} ->
+        # Recalculate macros server-side for data integrity
+        recipe = repo_preload_recipe(recipe)
+
+        Calculator.recalculate_and_update_recipe(recipe)
+        |> handle_recipe_result()
+
+      error ->
+        error
+    end
   end
 
   @spec update_recipe(Recipe.t(), map()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def update_recipe(%Recipe{} = recipe, attrs) do
     attrs = normalize_ingredient_orders(attrs)
 
-    recipe
-    |> Repo.preload(:recipe_ingredients)
-    |> Recipe.changeset(attrs)
-    |> Repo.update()
-    |> handle_recipe_result()
+    result =
+      recipe
+      |> Repo.preload(:recipe_ingredients)
+      |> Recipe.changeset(attrs)
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_recipe} ->
+        # Recalculate macros server-side for data integrity
+        updated_recipe = repo_preload_recipe(updated_recipe)
+
+        Calculator.recalculate_and_update_recipe(updated_recipe)
+        |> handle_recipe_result()
+
+      error ->
+        error
+    end
   end
 
   @spec change_recipe(Recipe.t(), map()) :: Ecto.Changeset.t()
@@ -325,7 +358,7 @@ defmodule Easy.Nutrition do
           "unit_id" => ingredient.unit_id,
           "quantity" => ingredient.quantity,
           "quantity_as_text" => ingredient.quantity_as_text,
-          "order" => ingredient.order
+          "position" => ingredient.position
         }
       end)
 
@@ -344,7 +377,7 @@ defmodule Easy.Nutrition do
       "total_fiber" => recipe.total_fiber,
       "status" => recipe.status,
       "business_id" => business_id,
-      "creator_id" => coach_id,
+      "author_id" => coach_id,
       "recipe_ingredients" => recipe_ingredients_attrs
     }
 
@@ -492,9 +525,9 @@ defmodule Easy.Nutrition do
       "start_date" => start_date || Date.utc_today(),
       "tags" => original_plan.tags,
       "client_id" => target_client_id,
-      "original_plan_id" => original_plan.id,
+      "original_template_id" => original_plan.id,
       "business_id" => business_id,
-      "creator_id" => original_plan.creator_id
+      "author_id" => original_plan.author_id
     }
 
     %NutritionPlan{}
@@ -515,9 +548,9 @@ defmodule Easy.Nutrition do
       "start_date" => nil,
       "tags" => original_plan.tags,
       "client_id" => nil,
-      "original_plan_id" => original_plan.id,
+      "original_template_id" => original_plan.id,
       "business_id" => business_id,
-      "creator_id" => coach_id
+      "author_id" => coach_id
     }
 
     %NutritionPlan{}
@@ -541,7 +574,7 @@ defmodule Easy.Nutrition do
         "label" => original_meal.label,
         "time" => original_meal.time,
         "notes" => original_meal.notes,
-        "sort_order" => original_meal.sort_order,
+        "position" => original_meal.position,
         "nutrition_plan_id" => original_meal.nutrition_plan_id
       }
       |> Map.merge(Enum.into(overrides, %{}, fn {k, v} -> {to_string(k), v} end))
@@ -559,7 +592,7 @@ defmodule Easy.Nutrition do
   defp copy_meal_items!(items, new_meal_id) do
     Enum.each(items, fn item ->
       item_attrs = %{
-        "sort_order" => item.sort_order,
+        "position" => item.position,
         "servings" => item.servings,
         "recipe_id" => item.recipe_id,
         "meal_id" => new_meal_id
@@ -617,7 +650,7 @@ defmodule Easy.Nutrition do
   defp inject_default_orders(ingredients), do: ingredients
 
   defp order_present?(%{} = attrs) do
-    present?(attrs, :order) || present?(attrs, "order")
+    present?(attrs, :position) || present?(attrs, "position")
   end
 
   defp order_present?(_), do: true
@@ -627,7 +660,7 @@ defmodule Easy.Nutrition do
   end
 
   defp maybe_put_order(%{} = attrs, index) do
-    key = if has_atom_keys?(attrs), do: :order, else: "order"
+    key = if has_atom_keys?(attrs), do: :position, else: "position"
     Map.put(attrs, key, index)
   end
 
@@ -646,13 +679,13 @@ defmodule Easy.Nutrition do
   end
 
   defp meal_items_ordered_query do
-    from(mi in MealItem, order_by: [asc: mi.sort_order])
+    from(mi in MealItem, order_by: [asc: mi.position])
   end
 
   defp nutrition_plan_preloads do
     [
       meals:
-        {from(m in Meal, order_by: [asc: m.day_number, asc: m.sort_order]),
+        {from(m in Meal, order_by: [asc: m.day_number, asc: m.position]),
          [
            meal_items: {meal_items_ordered_query(), [:recipe]}
          ]}
@@ -804,7 +837,7 @@ defmodule Easy.Nutrition do
         Enum.with_index(item_ids)
         |> Enum.each(fn {id, index} ->
           from(mi in MealItem, where: mi.id == ^id and mi.meal_id == ^meal.id)
-          |> Repo.update_all(set: [sort_order: index])
+          |> Repo.update_all(set: [position: index])
         end)
       end)
 
@@ -913,7 +946,7 @@ defmodule Easy.Nutrition do
               m.id == ^meal_id and m.nutrition_plan_id == ^plan_id and
                 m.day_number == ^day_number
           )
-          |> Repo.update_all(set: [sort_order: index])
+          |> Repo.update_all(set: [position: index])
         end)
       end)
 
@@ -936,7 +969,7 @@ defmodule Easy.Nutrition do
           "daytime" => meal_def.daytime,
           "day_number" => day,
           "label" => meal_def.label,
-          "sort_order" => meal_def.sort_order
+          "position" => meal_def.position
         }
 
         case create_meal(plan, attrs) do
@@ -949,19 +982,19 @@ defmodule Easy.Nutrition do
 
   defp get_meal_template("standard") do
     [
-      %{daytime: :breakfast, label: "Breakfast", sort_order: 0},
-      %{daytime: :snack, label: "Morning Snack", sort_order: 1},
-      %{daytime: :lunch, label: "Lunch", sort_order: 2},
-      %{daytime: :snack, label: "Afternoon Snack", sort_order: 3},
-      %{daytime: :dinner, label: "Dinner", sort_order: 4}
+      %{daytime: :breakfast, label: "Breakfast", position: 0},
+      %{daytime: :snack, label: "Morning Snack", position: 1},
+      %{daytime: :lunch, label: "Lunch", position: 2},
+      %{daytime: :snack, label: "Afternoon Snack", position: 3},
+      %{daytime: :dinner, label: "Dinner", position: 4}
     ]
   end
 
   defp get_meal_template("simple") do
     [
-      %{daytime: :breakfast, label: "Breakfast", sort_order: 0},
-      %{daytime: :lunch, label: "Lunch", sort_order: 1},
-      %{daytime: :dinner, label: "Dinner", sort_order: 2}
+      %{daytime: :breakfast, label: "Breakfast", position: 0},
+      %{daytime: :lunch, label: "Lunch", position: 1},
+      %{daytime: :dinner, label: "Dinner", position: 2}
     ]
   end
 

@@ -12,7 +12,7 @@ defmodule EasyWeb.MealItemJSON do
   def data(%MealItem{} = item) do
     %{
       id: item.id,
-      sort_order: item.sort_order,
+      position: item.position,
       servings: item.servings,
       recipe_id: item.recipe_id,
       meal_id: item.meal_id,

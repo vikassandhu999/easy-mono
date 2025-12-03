@@ -13,7 +13,7 @@ defmodule EasyWeb.MealJSON do
       label: meal.label,
       time: meal.time,
       notes: meal.notes,
-      sort_order: meal.sort_order,
+      position: meal.position,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
     }
@@ -30,7 +30,7 @@ defmodule EasyWeb.MealJSON do
   defp render_meal_item(meal_item) do
     %{
       id: meal_item.id,
-      sort_order: meal_item.sort_order,
+      position: meal_item.position,
       servings: meal_item.servings,
       recipe_id: meal_item.recipe_id,
       recipe: render_nested_recipe(meal_item.recipe)

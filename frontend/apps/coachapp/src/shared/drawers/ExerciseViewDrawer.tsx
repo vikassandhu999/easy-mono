@@ -9,7 +9,7 @@ import {DRAWER_KEYS} from '@/configs/drawer';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {isSystemExercise, useDeleteExercise, useDuplicateExercise, useGetExercise} from '@/services/exercises';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 const ExerciseViewDrawer = () => {
     const {closeDrawer, openDrawer, getDrawerParams} = useParamsDrawer({});
@@ -160,17 +160,18 @@ const ExerciseViewDrawer = () => {
                                 emblaOptions={{loop: true}}
                                 slideGap="md"
                                 slideSize="100%"
-                                withControls={exercise.images.length > 1}
+                                withControls={false}
                                 withIndicators={exercise.images.length > 1}
                             >
                                 {exercise.images.map((imageUrl, index) => (
                                     <Carousel.Slide key={index}>
                                         <Image
                                             alt={`${exercise.name} - Image ${index + 1}`}
-                                            fit="cover"
+                                            fit="contain"
                                             h={200}
-                                            radius="md"
+                                            radius="lg"
                                             src={imageUrl}
+                                            style={{objectPosition: 'top'}}
                                         />
                                     </Carousel.Slide>
                                 ))}

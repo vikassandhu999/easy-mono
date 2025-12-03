@@ -1,6 +1,6 @@
-import {Badge, Button, Card, Checkbox, Group, Modal, Stack, Text, useMantineTheme} from '@mantine/core';
+import {Avatar, Badge, Button, Card, Checkbox, Group, Modal, Stack, Text, useMantineTheme} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconBarbell, IconChevronDown, IconX} from '@tabler/icons-react';
+import {BarbellIcon, CaretDownIcon, XIcon} from '@phosphor-icons/react';
 import {useMemo, useState} from 'react';
 
 import {Exercise, isSystemExercise, Muscle, useListExercises} from '@/services/exercises';
@@ -17,6 +17,7 @@ interface ExerciseListItemProps {
 const ExerciseListItem = ({exercise, onClick}: ExerciseListItemProps) => {
     const theme = useMantineTheme();
     const isSystem = isSystemExercise(exercise);
+    const firstImage = exercise.images?.[0];
 
     return (
         <Card
@@ -32,6 +33,15 @@ const ExerciseListItem = ({exercise, onClick}: ExerciseListItemProps) => {
                 align="flex-start"
                 wrap="nowrap"
             >
+                {/* Exercise Image */}
+                <Avatar
+                    radius="md"
+                    size="lg"
+                    src={firstImage}
+                >
+                    <BarbellIcon size={24} />
+                </Avatar>
+
                 <Stack gap="sm">
                     <Group gap="xs">
                         <Text fw={500}>{exercise.name}</Text>
@@ -98,7 +108,7 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
 
     // Fetch muscles for filter
     const {data: musclesData} = useListMuscles({});
-    const muscles = musclesData?.data ?? [];
+    const muscles = useMemo(() => musclesData?.data ?? [], [musclesData?.data]);
 
     const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useListExercises({
         search: search || undefined,
@@ -154,12 +164,12 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                     onClick={handleOpenModal}
                     type="button"
                 >
-                    <IconBarbell size={14} />
+                    <BarbellIcon size={14} />
                     <span>Muscles</span>
                     {selectedMuscleIds.length > 0 && (
                         <span className={classes.muscleCount}>{selectedMuscleIds.length}</span>
                     )}
-                    <IconChevronDown size={14} />
+                    <CaretDownIcon size={14} />
                 </button>
 
                 {/* Selected muscle chips */}
@@ -176,7 +186,7 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                                     type="button"
                                 >
                                     {muscle.name}
-                                    <IconX size={12} />
+                                    <XIcon size={12} />
                                 </button>
                             );
                         })}

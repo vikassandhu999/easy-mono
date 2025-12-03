@@ -1,5 +1,10 @@
 import {z} from 'zod';
 
+// Enum types for PlannedSet
+export type LoadType = 'absolute_kg' | 'absolute_lbs' | 'bodyweight' | 'none' | 'percent_1rm' | 'rpe';
+export type DistanceUnit = 'km' | 'meters' | 'miles' | 'none' | 'yards';
+export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
+
 export type TrainingPlan = {
     id: string;
     name: string;
@@ -37,16 +42,42 @@ export type Exercise = {
     id: string;
     name: string;
     description: null | string;
+    images?: string[]; // Array of image URLs for the exercise
 };
 
 export type PlannedSet = {
     id: string;
     position: number;
-    reps_min: null | number;
-    reps_max: null | number;
+
+    // Primary Target (at least one required)
+    target_reps: null | string; // "10", "8-12", "AMRAP"
+    duration_seconds: null | number;
+    distance_value: null | number;
+    distance_unit: DistanceUnit; // Required if distance_value set
+
+    // Load
     load_value: null | number;
-    load_type: null | string;
+    load_type: LoadType;
+
+    // Intensity
+    intensity_target: null | string; // "RPE 8", "Zone 2"
+
+    // Execution
+    tempo: null | string; // "3010"
     rest_seconds: null | number;
+
+    // Classification
+    set_type: SetType;
+
+    // Notes
+    notes: null | string;
+
+    // Relationships
+    workout_element_id: string;
+
+    // Timestamps
+    inserted_at: string;
+    updated_at: string;
 };
 
 export type TrainingPlansListOpts = {
@@ -68,13 +99,45 @@ export interface TrainingPlansList {
 
 // Zod schemas
 
+// Zod enums for PlannedSet
+export const LoadType_zod = z.enum(['absolute_kg', 'absolute_lbs', 'bodyweight', 'percent_1rm', 'rpe', 'none']);
+export const DistanceUnit_zod = z.enum(['meters', 'km', 'miles', 'yards', 'none']);
+export const SetType_zod = z.enum([
+    'warmup',
+    'working',
+    'dropset',
+    'backoff',
+    'amrap',
+    'emom',
+    'cluster',
+    'rest_pause',
+]);
+
 export const PlannedSet_zod = z.object({
     position: z.number(),
-    reps_min: z.number().nullable().optional(),
-    reps_max: z.number().nullable().optional(),
+
+    // Primary Target (at least one required)
+    target_reps: z.string().nullable().optional(),
+    duration_seconds: z.number().nullable().optional(),
+    distance_value: z.number().nullable().optional(),
+    distance_unit: DistanceUnit_zod.optional().default('none'),
+
+    // Load
     load_value: z.number().nullable().optional(),
-    load_type: z.string().nullable().optional(),
+    load_type: LoadType_zod.optional().default('none'),
+
+    // Intensity
+    intensity_target: z.string().nullable().optional(),
+
+    // Execution
+    tempo: z.string().nullable().optional(),
     rest_seconds: z.number().nullable().optional(),
+
+    // Classification
+    set_type: SetType_zod.optional().default('working'),
+
+    // Notes
+    notes: z.string().nullable().optional(),
 });
 
 export const WorkoutElement_zod = z.object({

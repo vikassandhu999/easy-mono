@@ -6,7 +6,7 @@ import {
   useCreatePlannedWorkout,
   useDeletePlannedWorkout,
 } from "@/services/planned_workouts";
-import { PlannedWorkout, WorkoutElement } from "@/services/training_plans";
+import {type LoadType,  PlannedWorkout, type SetType, WorkoutElement } from "@/services/training_plans";
 import {
   CreateWorkoutElement,
   useCreateWorkoutElement,
@@ -88,7 +88,8 @@ const useDayWorkouts = ({
   };
 
   const handleExerciseSelect = async (selectedIds: string[]) => {
-    if (!planId || !selectedWorkoutId || selectedIds.length === 0) return;
+        const firstSelectedId = selectedIds[0];
+    if (!planId || !selectedWorkoutId || !firstSelectedId) return;
 
     setLocalLoading(true);
 
@@ -97,37 +98,55 @@ const useDayWorkouts = ({
       const workout = workoutsForDay.find((w) => w.id === selectedWorkoutId);
       const nextPosition = (workout?.elements?.length ?? 0) + 1;
 
-      const elementData: CreateWorkoutElement = {
-        planned_workout_id: selectedWorkoutId,
-        exercise_id: selectedIds[0],
-        position: nextPosition,
-        sets: [
-          {
-            position: 1,
-            reps_min: 8,
-            reps_max: 12,
-            load_value: null,
-            load_type: null,
-            rest_seconds: 60,
-          },
-          {
-            position: 2,
-            reps_min: 8,
-            reps_max: 12,
-            load_value: null,
-            load_type: null,
-            rest_seconds: 60,
-          },
-          {
-            position: 3,
-            reps_min: 8,
-            reps_max: 12,
-            load_value: null,
-            load_type: null,
-            rest_seconds: 60,
-          },
-        ],
-      };
+            const elementData: CreateWorkoutElement = {
+                planned_workout_id: selectedWorkoutId,
+                exercise_id: firstSelectedId,
+                position: nextPosition,
+                sets: [
+                    {
+                        position: 1,
+                        target_reps: '8-12',
+                        load_value: null,
+                        load_type: 'none',
+                        intensity_target: null,
+                        rest_seconds: 60,
+                        set_type: 'working',
+                        notes: null,
+                        duration_seconds: null,
+                        distance_value: null,
+                        distance_unit: 'none',
+                        tempo: null,
+                    },
+                    {
+                        position: 2,
+                        target_reps: '8-12',
+                        load_value: null,
+                        load_type: 'none',
+                        intensity_target: null,
+                        rest_seconds: 60,
+                        set_type: 'working',
+                        notes: null,
+                        duration_seconds: null,
+                        distance_value: null,
+                        distance_unit: 'none',
+                        tempo: null,
+                    },
+                    {
+                        position: 3,
+                        target_reps: '8-12',
+                        load_value: null,
+                        load_type: 'none',
+                        intensity_target: null,
+                        rest_seconds: 60,
+                        set_type: 'working',
+                        notes: null,
+                        duration_seconds: null,
+                        distance_value: null,
+                        distance_unit: 'none',
+                        tempo: null,
+                    },
+                ],
+            };
 
       await createWorkoutElementMutation(elementData).unwrap();
       closeExerciseDrawer();
@@ -165,35 +184,48 @@ const useDayWorkouts = ({
     setSelectedWorkoutId(null);
   };
 
-  const updateElementSets = async (
-    elementId: string,
-    sets: {
-      position: number;
-      reps_min: null | number;
-      reps_max: null | number;
-      rest_seconds: null | number;
-    }[],
-  ) => {
-    setLocalLoading(true);
+    const updateElementSets = async (
+        elementId: string,
+        sets: {
+            position: number;
+            target_reps: null | string;
+            load_value: null | number;
+            load_type: LoadType;
+            intensity_target: null | string;
+            rest_seconds: null | number;
+            set_type: SetType;
+            notes: null | string;
+        }[],
+    ) => {
+        setLocalLoading(true);
 
-    try {
-      await updateWorkoutElementMutation({
-        id: elementId,
-        sets: sets.map((s) => ({
-          ...s,
-          load_value: null,
-          load_type: null,
-        })),
-      }).unwrap();
-      notifySuccess("Sets updated");
-      closeElementEditor();
-    } catch (e) {
-      const errMsg = humanizeError(e);
-      notifyError(errMsg);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+        try {
+            await updateWorkoutElementMutation({
+                id: elementId,
+                sets: sets.map((s) => ({
+                    position: s.position,
+                    target_reps: s.target_reps,
+                    load_value: s.load_value,
+                    load_type: s.load_type,
+                    intensity_target: s.intensity_target,
+                    rest_seconds: s.rest_seconds,
+                    set_type: s.set_type,
+                    notes: s.notes,
+                    duration_seconds: null,
+                    distance_value: null,
+                    distance_unit: 'none',
+                    tempo: null,
+                })),
+            }).unwrap();
+            notifySuccess('Sets updated');
+            closeElementEditor();
+        } catch (e) {
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
+        } finally {
+            setLocalLoading(false);
+        }
+    };
 
   // Workout management
   const openAddWorkoutModal = () => {

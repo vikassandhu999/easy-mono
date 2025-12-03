@@ -19,12 +19,15 @@ export type Exercise = {
     name: string;
     description: null | string;
     instructions: null | string;
-    slug: string;
-    mechanics: ExerciseMechanics | null;
-    force: ExerciseForce | null;
-    business_id: null | string;
+    // slug field removed per migration guide - use id for lookups
+    mechanics: ExerciseMechanics | null; // Now nullable
+    force: ExerciseForce | null; // Now nullable
+    business_id: null | string; // null = system exercise
     muscles: Muscle[];
     equipment: Equipment[];
+    images: string[]; // Array of image URLs for the exercise
+    inserted_at?: string;
+    updated_at?: string;
 };
 
 /**
@@ -61,6 +64,7 @@ export const CreateExercise_zod = z.object({
     force: z.enum(['pull', 'push', 'static']).optional(),
     muscle_ids: z.array(z.string()).optional(),
     equipment_ids: z.array(z.string()).optional(),
+    images: z.array(z.string().url()).optional(), // Array of image URLs
 });
 
 export type CreateExercise = z.infer<typeof CreateExercise_zod>;

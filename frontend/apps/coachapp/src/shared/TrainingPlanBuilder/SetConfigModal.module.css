@@ -1,0 +1,394 @@
+/**
+ * SetConfigModal Styles
+ *
+ * Responsive design: Bottom sheet on mobile, centered modal on desktop.
+ * Uses accordion pattern for space-efficient editing.
+ */
+
+/* ============================================
+   MODAL/DRAWER CONTAINERS
+   ============================================ */
+
+/* Mobile: Bottom Sheet Drawer */
+.drawerContent {
+    max-height: 70dvh;
+    border-top-left-radius: var(--mantine-radius-lg);
+    border-top-right-radius: var(--mantine-radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.drawerBody {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Desktop: Centered Modal */
+.modalContent {
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalBody {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-primary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.headerContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.title {
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--mantine-color-gray-9);
+    line-height: var(--leading-tight);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.subtitle {
+    font-size: var(--text-xs);
+    color: var(--mantine-color-gray-5);
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+}
+
+.setsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+/* ============================================
+   SET CARD
+   ============================================ */
+
+.setCard {
+    background: var(--surface-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: box-shadow var(--duration-fast) var(--ease-in-out);
+}
+
+.setCardExpanded {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: var(--mantine-color-brand-3);
+}
+
+/* Set Header - Clickable */
+.setHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--duration-fast) var(--ease-in-out);
+}
+
+.setHeader:hover {
+    background: var(--mantine-color-gray-0);
+}
+
+.setHeader:active {
+    background: var(--mantine-color-gray-1);
+}
+
+.setNumber {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--mantine-color-brand-1);
+    color: var(--mantine-color-brand-7);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    flex-shrink: 0;
+}
+
+.setInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.setTypeRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.setTypeBadge {
+    font-size: var(--text-2xs);
+    font-weight: var(--font-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--mantine-color-gray-6);
+    background: var(--mantine-color-gray-1);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.setTypeBadgeAlt {
+    color: var(--mantine-color-brand-7);
+    background: var(--mantine-color-brand-1);
+}
+
+.setSummary {
+    font-size: var(--text-sm);
+    color: var(--mantine-color-gray-7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.expandIcon {
+    color: var(--mantine-color-gray-4);
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-in-out);
+}
+
+.expandIconRotated {
+    transform: rotate(180deg);
+}
+
+/* Set Body - Expanded Content */
+.setBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0 var(--space-3) var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-3);
+    animation: slideDown var(--duration-fast) var(--ease-out);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Input Rows */
+.inputRow {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.inputField {
+    flex: 1;
+    min-width: 0;
+}
+
+.inputFieldSmall {
+    flex: 0 0 80px;
+}
+
+.inputLabel {
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    color: var(--mantine-color-gray-6);
+    margin-bottom: 4px;
+}
+
+/* Set Actions */
+.setActions {
+    display: flex;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px dashed var(--border-subtle);
+}
+
+/* ============================================
+   ADD SET BUTTON
+   ============================================ */
+
+.addSetButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-3);
+    background: transparent;
+    border: 2px dashed var(--border-subtle);
+    border-radius: var(--radius-lg);
+    color: var(--mantine-color-gray-5);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-in-out);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.addSetButton:hover:not(:disabled) {
+    border-color: var(--mantine-color-brand-4);
+    background: var(--mantine-color-brand-0);
+    color: var(--mantine-color-brand-6);
+}
+
+.addSetButton:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.addSetButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--surface-primary);
+    /* Safe area for bottom notch on mobile */
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+    flex-shrink: 0;
+}
+
+.removeExerciseBtn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+}
+
+.saveButton {
+    flex: 1;
+    height: 44px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (min-width: 768px) {
+    .inputFieldSmall {
+        flex: 0 0 100px;
+    }
+
+    .setNumber {
+        width: 36px;
+        height: 36px;
+        font-size: var(--text-base);
+    }
+
+    .setHeader {
+        padding: var(--space-4);
+    }
+
+    .setBody {
+        padding: 0 var(--space-4) var(--space-4);
+        padding-top: var(--space-4);
+    }
+
+    .setsList {
+        padding: var(--space-4);
+        gap: var(--space-3);
+    }
+
+    /* Desktop modal adjustments */
+    .header {
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .content {
+        max-height: 50vh;
+    }
+
+    .footer {
+        padding: var(--space-3) var(--space-5);
+        padding-bottom: var(--space-3);
+    }
+
+    .title {
+        font-size: var(--text-lg);
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .setCard,
+    .setHeader,
+    .expandIcon,
+    .addSetButton {
+        transition: none;
+    }
+
+    .setBody {
+        animation: none;
+    }
+
+    .addSetButton:active:not(:disabled) {
+        transform: none;
+    }
+}

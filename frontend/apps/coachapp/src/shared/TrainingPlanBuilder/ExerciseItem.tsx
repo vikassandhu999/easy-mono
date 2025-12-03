@@ -1,5 +1,5 @@
 import {ActionIcon, Text} from '@mantine/core';
-import {IconTrash} from '@tabler/icons-react';
+import {TrashIcon} from '@phosphor-icons/react';
 
 import {PlannedSet, WorkoutElement} from '@/services/training_plans';
 
@@ -13,33 +13,53 @@ type ExerciseItemProps = {
     onClick?: () => void;
 };
 
+/**
+ * Format sets for display using the new schema.
+ * Parses target_reps string (e.g., "10", "8-12", "AMRAP") for display.
+ */
 const formatSets = (sets: PlannedSet[]): string => {
     if (!sets || sets.length === 0) return 'No sets configured';
 
     const setCount = sets.length;
     const firstSet = sets[0];
 
-    // Try to summarize the sets
-    if (firstSet.reps_min !== null || firstSet.reps_max !== null) {
-        const repsMin = firstSet.reps_min ?? firstSet.reps_max;
-        const repsMax = firstSet.reps_max ?? firstSet.reps_min;
+    // Early return if firstSet is somehow undefined
+    if (!firstSet) return `${setCount} ${setCount === 1 ? 'set' : 'sets'}`;
 
-        if (repsMin === repsMax) {
-            return `${setCount} × ${repsMin} reps`;
+    // Display based on target_reps
+    if (firstSet.target_reps) {
+        const reps = firstSet.target_reps;
+
+        // Check for special formats
+        if (reps.toUpperCase() === 'AMRAP') {
+            return `${setCount} × AMRAP`;
         }
-        return `${setCount} × ${repsMin}-${repsMax} reps`;
+        if (reps.toUpperCase() === 'MAX' || reps.toUpperCase() === 'FAILURE') {
+            return `${setCount} × ${reps}`;
+        }
+
+        return `${setCount} × ${reps} reps`;
+    }
+
+    // Fallback for duration-based sets
+    if (firstSet.duration_seconds) {
+        const duration = firstSet.duration_seconds;
+        if (duration >= 60) {
+            return `${setCount} × ${Math.floor(duration / 60)}min`;
+        }
+        return `${setCount} × ${duration}s`;
+    }
+
+    // Fallback for distance-based sets
+    if (firstSet.distance_value) {
+        const unit = firstSet.distance_unit !== 'none' ? firstSet.distance_unit : 'm';
+        return `${setCount} × ${firstSet.distance_value}${unit}`;
     }
 
     return `${setCount} ${setCount === 1 ? 'set' : 'sets'}`;
 };
 
-const ExerciseItem = ({
-    element,
-    position,
-    exerciseName = 'Unknown Exercise',
-    onDelete,
-    onClick,
-}: ExerciseItemProps) => {
+const ExerciseItem = ({element, position, exerciseName = 'Unknown Exercise', onDelete, onClick}: ExerciseItemProps) => {
     const setsInfo = formatSets(element.sets || []);
 
     return (
@@ -62,9 +82,7 @@ const ExerciseItem = ({
             <div className={classes.exerciseItemInfo}>
                 <Text className={classes.exerciseName}>{exerciseName}</Text>
                 <Text className={classes.exerciseSets}>{setsInfo}</Text>
-                {element.notes && (
-                    <Text className={classes.exerciseMuscle}>{element.notes}</Text>
-                )}
+                {element.notes && <Text className={classes.exerciseMuscle}>{element.notes}</Text>}
             </div>
 
             {/* Delete Button */}
@@ -79,7 +97,7 @@ const ExerciseItem = ({
                 size="sm"
                 variant="subtle"
             >
-                <IconTrash size={14} />
+                <TrashIcon size={14} />
             </ActionIcon>
         </div>
     );

@@ -8,6 +8,7 @@ export const getDefaultValues: Partial<CreateExercise> = {
     force: undefined,
     muscle_ids: [],
     equipment_ids: [],
+    images: [],
 };
 
 export const populateExercise = (exercise: Exercise): CreateExercise => {
@@ -19,5 +20,6 @@ export const populateExercise = (exercise: Exercise): CreateExercise => {
         force: exercise.force || undefined,
         muscle_ids: exercise.muscles?.map((m) => m.id) || [],
         equipment_ids: exercise.equipment?.map((e) => e.id) || [],
+        images: exercise.images || [],
     };
 };

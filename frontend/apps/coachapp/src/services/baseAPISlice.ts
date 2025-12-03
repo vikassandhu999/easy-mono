@@ -249,6 +249,8 @@ export const baseAPISlice = createApi({
         'Exercises', // Exercise management
         'Muscles', // Muscle management
         'Equipment', // Equipment management
+        'WorkoutSessions', // Workout session tracking
+        'PerformedSets', // Performed set logging
     ],
     endpoints: () => ({}),
 });

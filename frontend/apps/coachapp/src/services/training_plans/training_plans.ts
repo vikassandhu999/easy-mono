@@ -1,6 +1,7 @@
 import {baseAPISlice} from '../baseAPISlice';
 import {buildListParams, getNextPage} from '../paginationUtils';
 import {
+    AssignTrainingPlanInput,
     CreateTrainingPlan,
     TrainingPlan,
     TrainingPlansList,
@@ -100,11 +101,11 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
             ],
         }),
 
-        assignTrainingPlan: build.mutation<TrainingPlan, {id: string; client_id: string; start_date?: string}>({
-            query: ({id, client_id, start_date}) => ({
+        assignTrainingPlan: build.mutation<TrainingPlan, AssignTrainingPlanInput & {id: string}>({
+            query: ({id, client_id, start_date, end_date}) => ({
                 url: `/api/training_plans/${id}/assign`,
                 method: 'post',
-                data: {client_id, start_date},
+                data: {client_id, start_date, end_date},
             }),
             transformResponse: (response: {data: TrainingPlan}) => response.data,
             invalidatesTags: ['TrainingPlans'],

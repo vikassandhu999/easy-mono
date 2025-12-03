@@ -2,7 +2,7 @@ import {LoadingOverlay} from '@mantine/core';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useSearchParams} from 'react-router';
 
-import {useGetTrainingPlan} from '@/services/training_plans';
+import {type DayOfWeek, useGetTrainingPlan} from '@/services/training_plans';
 
 import DayWorkoutsView from './DayWorkoutsView';
 import WeekSelector from './WeekSelector';
@@ -11,9 +11,9 @@ const TrainingPlanBuilder = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const isUserInteraction = useRef(false);
 
-    // Read day from params, default to 1
-    const dayFromParams = parseInt(searchParams.get('day_number') || '1', 10);
-    const [currentDay, setCurrentDay] = useState<number>(dayFromParams);
+    // Read day from params, default to 1 (Monday)
+    const dayFromParams = parseInt(searchParams.get('day_number') || '1', 10) as DayOfWeek;
+    const [currentDay, setCurrentDay] = useState<DayOfWeek>(dayFromParams);
 
     const planId = searchParams.get('training_plan_id');
 
@@ -23,7 +23,7 @@ const TrainingPlanBuilder = () => {
 
     // Sync currentDay with URL params when changed externally
     useEffect(() => {
-        const paramDay = parseInt(searchParams.get('day_number') || '1', 10);
+        const paramDay = parseInt(searchParams.get('day_number') || '1', 10) as DayOfWeek;
         if (paramDay !== currentDay && !isUserInteraction.current) {
             setCurrentDay(paramDay);
         }
@@ -32,7 +32,7 @@ const TrainingPlanBuilder = () => {
     }, [searchParams]);
 
     // Update URL when day changes
-    const handleDayChange = (day: number) => {
+    const handleDayChange = (day: DayOfWeek) => {
         isUserInteraction.current = true;
         setCurrentDay(day);
         setSearchParams((prev) => {
@@ -45,7 +45,7 @@ const TrainingPlanBuilder = () => {
     // Get all days that have workouts for visual indicator
     const workoutDays = useMemo(() => {
         if (!plan?.workouts) return [];
-        const days = new Set<number>();
+        const days = new Set<DayOfWeek>();
         plan.workouts.forEach((workout) => {
             days.add(workout.day_number);
         });
@@ -83,8 +83,6 @@ const TrainingPlanBuilder = () => {
             <WeekSelector
                 currentDay={currentDay}
                 onSelect={handleDayChange}
-                shouldAutoScroll={!isUserInteraction.current}
-                weeks={plan?.duration_weeks ?? 4}
                 workoutDays={workoutDays}
             />
             <div

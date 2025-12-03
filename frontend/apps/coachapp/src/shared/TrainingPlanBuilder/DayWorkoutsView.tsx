@@ -1,7 +1,7 @@
 import {LoadingOverlay, Text} from '@mantine/core';
 import {IconPlus} from '@tabler/icons-react';
 
-import {PlannedWorkout} from '@/services/training_plans';
+import {type DayOfWeek, PlannedWorkout, WEEKDAY_NAMES} from '@/services/training_plans';
 import {ExerciseSelectDrawer} from '@/shared/ExerciseSelect';
 
 import AddWorkoutModal from './AddWorkoutModal';
@@ -11,7 +11,7 @@ import useDayWorkouts from './useDayWorkouts';
 import WorkoutCard from './WorkoutCard';
 
 type DayWorkoutsViewProps = {
-    currentDay: number;
+    currentDay: DayOfWeek;
     planId: null | string;
     workouts: PlannedWorkout[];
     exerciseNames?: Record<string, string>;
@@ -95,7 +95,7 @@ const DayWorkoutsView = ({
 
             {/* Add Workout Modal */}
             <AddWorkoutModal
-                dayName={`Day ${currentDay}`}
+                dayName={WEEKDAY_NAMES[currentDay]}
                 onClose={closeAddWorkoutModal}
                 onSubmit={createWorkout}
                 opened={isAddWorkoutModalOpen}

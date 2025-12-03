@@ -1,6 +1,6 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Loader, NumberInput, Stack, Text, Textarea, TextInput, Title} from '@mantine/core';
+import {Loader, Stack, Text, Textarea, TextInput, Title} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -157,7 +157,7 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
                                     Plan Name
                                 </Title>
                             }
-                            placeholder="e.g. Strength Training - 4 Weeks"
+                            placeholder="e.g. Push Pull Legs"
                         />
                     )}
                 />
@@ -180,28 +180,6 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
                             placeholder="Describe the goal and details of this training plan"
                             rows={3}
                             value={field.value || ''}
-                        />
-                    )}
-                />
-
-                <Controller
-                    control={control}
-                    name="duration_weeks"
-                    render={({field}) => (
-                        <NumberInput
-                            {...field}
-                            error={errors.duration_weeks?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Duration (Weeks)
-                                </Title>
-                            }
-                            min={1}
-                            placeholder="4"
-                            value={field.value}
                         />
                     )}
                 />

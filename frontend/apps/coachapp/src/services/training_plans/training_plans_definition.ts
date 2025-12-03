@@ -5,12 +5,37 @@ export type LoadType = 'absolute_kg' | 'absolute_lbs' | 'bodyweight' | 'none' | 
 export type DistanceUnit = 'km' | 'meters' | 'miles' | 'none' | 'yards';
 export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
 
+// Day of week types for weekly schedule model
+export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type DayName = 'Friday' | 'Monday' | 'Saturday' | 'Sunday' | 'Thursday' | 'Tuesday' | 'Wednesday';
+
+export const WEEKDAY_NAMES: Record<DayOfWeek, DayName> = {
+    1: 'Monday',
+    2: 'Tuesday',
+    3: 'Wednesday',
+    4: 'Thursday',
+    5: 'Friday',
+    6: 'Saturday',
+    7: 'Sunday',
+};
+
+export const WEEKDAYS: Array<{value: DayOfWeek; label: DayName}> = [
+    {value: 1, label: 'Monday'},
+    {value: 2, label: 'Tuesday'},
+    {value: 3, label: 'Wednesday'},
+    {value: 4, label: 'Thursday'},
+    {value: 5, label: 'Friday'},
+    {value: 6, label: 'Saturday'},
+    {value: 7, label: 'Sunday'},
+];
+
 export type TrainingPlan = {
     id: string;
     name: string;
     description: null | string;
     is_template: boolean;
-    duration_weeks: number;
+    start_date: null | string; // ISO 8601 date (YYYY-MM-DD), null for templates
+    end_date: null | string; // ISO 8601 date (YYYY-MM-DD), null for templates
     business_id: string;
     author_id: string;
     client_id: null | string;
@@ -24,7 +49,8 @@ export type PlannedWorkout = {
     id: string;
     name: string;
     notes: null | string;
-    day_number: number;
+    day_number: DayOfWeek; // 1-7 representing Monday-Sunday
+    day_name: DayName; // Human-readable day name
     elements: WorkoutElement[];
 };
 
@@ -151,7 +177,7 @@ export const WorkoutElement_zod = z.object({
 export const PlannedWorkout_zod = z.object({
     name: z.string().min(1, 'Workout name is required'),
     notes: z.string().nullable().optional(),
-    day_number: z.number().min(1, 'Day number must be at least 1'),
+    day_number: z.number().int().min(1).max(7, 'Day number must be between 1 and 7'),
     elements: z.array(WorkoutElement_zod).optional(),
 });
 
@@ -159,9 +185,16 @@ export const CreateTrainingPlan_zod = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(255),
     description: z.string().optional().default(''),
     is_template: z.boolean().default(true),
-    duration_weeks: z.number().int().min(1, 'Duration must be at least 1 week'),
     workouts: z.array(PlannedWorkout_zod).optional(),
 });
 
+// Schema for assigning a training plan to a client (requires dates)
+export const AssignTrainingPlan_zod = z.object({
+    client_id: z.string().uuid('Client ID is required'),
+    start_date: z.string().min(1, 'Start date is required'),
+    end_date: z.string().min(1, 'End date is required'),
+});
+
+export type AssignTrainingPlanInput = z.infer<typeof AssignTrainingPlan_zod>;
 export type CreateTrainingPlan = z.infer<typeof CreateTrainingPlan_zod>;
 export type UpdateTrainingPlan = Partial<CreateTrainingPlan> & {id: string};

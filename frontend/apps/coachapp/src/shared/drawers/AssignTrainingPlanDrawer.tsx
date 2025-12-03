@@ -1,9 +1,9 @@
-import { humanizeError } from "@easy/error-parser";
-import { Button, Group, Loader, Stack, Text } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
-import { useDebouncedValue } from "@mantine/hooks";
-import { IconCalendar, IconSearch, IconX } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import {humanizeError} from '@easy/error-parser';
+import {Button, Group, Loader, Stack, Text} from '@mantine/core';
+import {DatePickerInput} from '@mantine/dates';
+import {useDebouncedValue} from '@mantine/hooks';
+import {IconCalendar, IconX} from '@tabler/icons-react';
+import {useMemo, useState} from 'react';
 
 import useParamsDrawer from "@/hooks/useParamDrawer";
 import {
@@ -22,49 +22,55 @@ interface TrainingPlanTemplateItemProps {
   plan: TrainingPlan;
 }
 
-const TrainingPlanTemplateItem = ({
-  plan,
-  onSelect,
-  isSelected,
-}: TrainingPlanTemplateItemProps) => {
-  return (
-    <div
-      className={`${classes.planItem} ${isSelected ? classes.planItemSelected : ""}`}
-      onClick={() => onSelect(plan)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(plan);
-        }
-      }}
-      role="button"
-      tabIndex={0}
-    >
-      <div className={classes.planInfo}>
-        <Text fw={500} size="sm">
-          {plan.name}
-        </Text>
-        {plan.description && (
-          <Text c="dimmed" lineClamp={2} size="xs">
-            {plan.description}
-          </Text>
-        )}
-        <Group gap="xs" mt="xs">
-          {plan.duration_weeks && (
-            <span className={classes.tag}>
-              {plan.duration_weeks}{" "}
-              {plan.duration_weeks === 1 ? "week" : "weeks"}
-            </span>
-          )}
-        </Group>
-      </div>
-      <div
-        className={`${classes.checkbox} ${isSelected ? classes.checkboxSelected : ""}`}
-      >
-        {isSelected && <span className={classes.checkmark}>✓</span>}
-      </div>
-    </div>
-  );
+const TrainingPlanTemplateItem = ({plan, onSelect, isSelected}: TrainingPlanTemplateItemProps) => {
+    const workoutCount = plan.workouts?.length ?? 0;
+
+    return (
+        <div
+            className={`${classes.planItem} ${isSelected ? classes.planItemSelected : ''}`}
+            onClick={() => onSelect(plan)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(plan);
+                }
+            }}
+            role="button"
+            tabIndex={0}
+        >
+            <div className={classes.planInfo}>
+                <Text
+                    fw={500}
+                    size="sm"
+                >
+                    {plan.name}
+                </Text>
+                {plan.description && (
+                    <Text
+                        c="dimmed"
+                        lineClamp={2}
+                        size="xs"
+                    >
+                        {plan.description}
+                    </Text>
+                )}
+                <Group
+                    gap="xs"
+                    mt="xs"
+                >
+                    {workoutCount > 0 && (
+                        <span className={classes.tag}>
+                            {workoutCount} {workoutCount === 1 ? 'workout' : 'workouts'}
+                        </span>
+                    )}
+                    <span className={classes.tag}>Weekly Schedule</span>
+                </Group>
+            </div>
+            <div className={`${classes.checkbox} ${isSelected ? classes.checkboxSelected : ''}`}>
+                {isSelected && <span className={classes.checkmark}>✓</span>}
+            </div>
+        </div>
+    );
 };
 
 const formatDateForApi = (date: Date | null): string | undefined => {
@@ -86,10 +92,11 @@ const AssignTrainingPlanDrawer = () => {
   const { closeDrawer, getDrawerParams } = useParamsDrawer({});
   const { client_id } = getDrawerParams();
 
-  const [selectedPlan, setSelectedPlan] = useState<null | TrainingPlan>(null);
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch] = useDebouncedValue(searchInput, 300);
+    const [selectedPlan, setSelectedPlan] = useState<null | TrainingPlan>(null);
+    const [startDate, setStartDate] = useState<Date | null>(new Date());
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [searchInput, setSearchInput] = useState('');
+    const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
   const [assignPlan, { isLoading: isAssigning }] = useAssignTrainingPlan();
 
@@ -107,21 +114,31 @@ const AssignTrainingPlanDrawer = () => {
     setSelectedPlan(plan.id === selectedPlan?.id ? null : plan);
   };
 
-  const handleAssign = async () => {
-    if (!selectedPlan || !client_id || !startDate) return;
+    const handleAssign = async () => {
+        if (!selectedPlan || !client_id || !startDate || !endDate) return;
 
-    try {
-      await assignPlan({
-        id: selectedPlan.id,
-        client_id,
-        start_date: formatDateForApi(startDate),
-      }).unwrap();
-      closeDrawer();
-    } catch (error) {
-      const errMsg = humanizeError(error);
-      notifyError(errMsg);
-    }
-  };
+        const formattedStartDate = formatDateForApi(startDate);
+        const formattedEndDate = formatDateForApi(endDate);
+
+        if (!formattedStartDate || !formattedEndDate) {
+            notifyError('Please select valid start and end dates');
+            return;
+        }
+
+        try {
+            await assignPlan({
+                id: selectedPlan.id,
+                client_id,
+                start_date: formattedStartDate,
+                end_date: formattedEndDate,
+            }).unwrap();
+            notifySuccess(`"${selectedPlan.name}" assigned successfully`);
+            closeDrawer();
+        } catch (error) {
+            const errMsg = humanizeError(error);
+            notifyError(errMsg);
+        }
+    };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(event.currentTarget.value);
@@ -131,39 +148,54 @@ const AssignTrainingPlanDrawer = () => {
     setSearchInput("");
   };
 
-  return (
-    <AutoDrawer
-      actions={
-        <Group w="100%">
-          <Button
-            color="blue"
-            disabled={!selectedPlan || !startDate}
-            flex={1}
-            loading={isAssigning}
-            onClick={handleAssign}
-            radius="xl"
-            size="sm"
-            variant="solid"
-          >
-            Assign Plan
-          </Button>
-        </Group>
-      }
-      content={
-        <Stack gap="md">
-          {/* Start Date Picker */}
-          <DatePickerInput
-            clearable={false}
-            description="When should this plan start for the client?"
-            label="Start Date"
-            minDate={new Date()}
-            onChange={setStartDate}
-            placeholder="Select start date"
-            required
-            rightSection={<IconCalendar size={16} />}
-            rightSectionPointerEvents="none"
-            value={startDate}
-          />
+    return (
+        <AutoDrawer
+            actions={
+                <Group w="100%">
+                    <Button
+                        color="blue"
+                        disabled={!selectedPlan || !startDate || !endDate}
+                        flex={1}
+                        loading={isAssigning}
+                        onClick={handleAssign}
+                        radius="xl"
+                        size="sm"
+                        variant="solid"
+                    >
+                        Assign Plan
+                    </Button>
+                </Group>
+            }
+            content={
+                <Stack gap="md">
+                    {/* Start Date Picker */}
+                    <DatePickerInput
+                        clearable={false}
+                        description="When should this plan start for the client?"
+                        label="Start Date"
+                        minDate={new Date()}
+                        onChange={setStartDate}
+                        placeholder="Select start date"
+                        required
+                        rightSection={<IconCalendar size={16} />}
+                        rightSectionPointerEvents="none"
+                        value={startDate}
+                    />
+
+                    {/* End Date Picker */}
+                    <DatePickerInput
+                        clearable
+                        description="When should this plan end for the client?"
+                        disabled={!startDate}
+                        label="End Date"
+                        minDate={startDate ?? new Date()}
+                        onChange={setEndDate}
+                        placeholder="Select end date"
+                        required
+                        rightSection={<IconCalendar size={16} />}
+                        rightSectionPointerEvents="none"
+                        value={endDate}
+                    />
 
           {/* Search Input */}
           <div className={classes.searchWrapper}>

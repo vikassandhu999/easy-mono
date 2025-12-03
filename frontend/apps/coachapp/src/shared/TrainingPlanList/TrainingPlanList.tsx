@@ -1,5 +1,5 @@
 import {Card, Group, Stack, Text, ThemeIcon} from '@mantine/core';
-import {IconBarbell, IconCalendar, IconChevronRight} from '@tabler/icons-react';
+import {IconBarbell, IconChevronRight} from '@tabler/icons-react';
 import {useMemo} from 'react';
 
 import {TrainingPlan, useListTrainingPlans} from '@/services/training_plans';
@@ -92,18 +92,12 @@ const TrainingPlanListItem = ({plan, onClick}: TrainingPlanListItemProps) => {
                         c="dimmed"
                         gap="sm"
                     >
-                        {plan.duration_weeks && (
-                            <Group gap={4}>
-                                <IconCalendar size={13} />
-                                <Text size="xs">{plan.duration_weeks}w</Text>
-                            </Group>
-                        )}
                         {workoutCount > 0 && (
                             <Text size="xs">
                                 {workoutCount} {workoutCount === 1 ? 'workout' : 'workouts'}
                             </Text>
                         )}
-                        {!plan.duration_weeks && workoutCount === 0 && plan.description && (
+                        {workoutCount === 0 && plan.description && (
                             <Text
                                 lineClamp={1}
                                 size="xs"

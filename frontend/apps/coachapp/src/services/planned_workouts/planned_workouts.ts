@@ -1,11 +1,13 @@
 import {baseAPISlice} from '../baseAPISlice';
+import {type DayName, type DayOfWeek} from '../training_plans/training_plans_definition';
 import {WorkoutElement} from '../workout_elements';
 
 export type PlannedWorkout = {
     id: string;
     name: string;
     notes: null | string;
-    day_number: number;
+    day_number: DayOfWeek; // 1-7 representing Monday-Sunday
+    day_name: DayName; // Human-readable day name
     training_plan_id: string;
     elements: WorkoutElement[];
     inserted_at?: string;
@@ -15,7 +17,7 @@ export type PlannedWorkout = {
 export type CreatePlannedWorkout = {
     training_plan_id: string;
     name: string;
-    day_number: number;
+    day_number: DayOfWeek; // 1-7 representing Monday-Sunday
     notes?: null | string;
 };
 
@@ -23,7 +25,7 @@ export type UpdatePlannedWorkout = {
     id: string;
     name?: string;
     notes?: null | string;
-    day_number?: number;
+    day_number?: DayOfWeek;
 };
 
 export const plannedWorkoutsApi = baseAPISlice.injectEndpoints({

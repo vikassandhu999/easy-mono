@@ -174,16 +174,31 @@ const TrainingPlanViewDrawer = () => {
             </Text>
           </div>
 
-          {/* Duration */}
-          <div>
-            <Title fw="bold" order={5}>
-              Duration
-            </Title>
-            <Text size="sm">
-              {plan.duration_weeks}{" "}
-              {plan.duration_weeks === 1 ? "week" : "weeks"}
-            </Text>
-          </div>
+                    {/* Schedule Type */}
+                    <div>
+                        <Title
+                            fw="bold"
+                            order={5}
+                        >
+                            Schedule
+                        </Title>
+                        <Text size="sm">Weekly (7-day cycle)</Text>
+                    </div>
+
+                    {/* Date Range - only for assigned plans */}
+                    {!plan.is_template && plan.start_date && plan.end_date && (
+                        <div>
+                            <Title
+                                fw="bold"
+                                order={5}
+                            >
+                                Duration
+                            </Title>
+                            <Text size="sm">
+                                {plan.start_date} to {plan.end_date}
+                            </Text>
+                        </div>
+                    )}
 
           {/* Type */}
           <div>
@@ -215,42 +230,55 @@ const TrainingPlanViewDrawer = () => {
             </Group>
           </div>
 
-          {/* Workouts */}
-          <div>
-            <Title fw="bold" order={5}>
-              Workouts
-            </Title>
-            {plan.workouts && plan.workouts.length > 0 ? (
-              <Stack gap="xs" mt="xs">
-                {plan.workouts.map((workout) => (
-                  <Badge
-                    color="grape"
-                    key={workout.id}
-                    size="sm"
-                    variant="light"
-                  >
-                    Day {workout.day_number}: {workout.name}
-                    {workout.elements && workout.elements.length > 0 && (
-                      <Text c="dimmed" component="span" ml={4} size="xs">
-                        ({workout.elements.length} exercises)
-                      </Text>
-                    )}
-                  </Badge>
-                ))}
-              </Stack>
-            ) : (
-              <Text c="dimmed" size="sm">
-                No workouts defined. Click &quot;Build Plan&quot; to add
-                workouts.
-              </Text>
-            )}
-          </div>
-        </Stack>
-      }
-      onClose={closeDrawer}
-      title={plan.name}
-    />
-  );
+                    {/* Workouts */}
+                    <div>
+                        <Title
+                            fw="bold"
+                            order={5}
+                        >
+                            Workouts
+                        </Title>
+                        {plan.workouts && plan.workouts.length > 0 ? (
+                            <Stack
+                                gap="xs"
+                                mt="xs"
+                            >
+                                {plan.workouts.map((workout) => (
+                                    <Badge
+                                        color="grape"
+                                        key={workout.id}
+                                        size="sm"
+                                        variant="light"
+                                    >
+                                        {workout.day_name}: {workout.name}
+                                        {workout.elements && workout.elements.length > 0 && (
+                                            <Text
+                                                c="dimmed"
+                                                component="span"
+                                                ml={4}
+                                                size="xs"
+                                            >
+                                                ({workout.elements.length} exercises)
+                                            </Text>
+                                        )}
+                                    </Badge>
+                                ))}
+                            </Stack>
+                        ) : (
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                No workouts defined. Click &quot;Build Plan&quot; to add workouts.
+                            </Text>
+                        )}
+                    </div>
+                </Stack>
+            }
+            onClose={closeDrawer}
+            title={plan.name}
+        />
+    );
 };
 
 export default TrainingPlanViewDrawer;

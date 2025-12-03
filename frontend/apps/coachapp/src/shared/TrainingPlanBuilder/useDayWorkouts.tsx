@@ -1,12 +1,8 @@
 import { humanizeError } from "@easy/error-parser";
 import { useMemo, useState } from "react";
 
-import {
-  CreatePlannedWorkout,
-  useCreatePlannedWorkout,
-  useDeletePlannedWorkout,
-} from "@/services/planned_workouts";
-import {type LoadType,  PlannedWorkout, type SetType, WorkoutElement } from "@/services/training_plans";
+import {CreatePlannedWorkout, useCreatePlannedWorkout, useDeletePlannedWorkout} from '@/services/planned_workouts';
+import {type DayOfWeek, type LoadType, PlannedWorkout, type SetType, WorkoutElement} from '@/services/training_plans';
 import {
   CreateWorkoutElement,
   useCreateWorkoutElement,
@@ -16,9 +12,9 @@ import {
 import { notifyError, notifySuccess } from "@/utils/notification";
 
 export type UseDayWorkoutsArgs = {
-  currentDay: number;
-  planId: null | string;
-  workouts: PlannedWorkout[];
+    currentDay: DayOfWeek;
+    planId: null | string;
+    workouts: PlannedWorkout[];
 };
 
 const useDayWorkouts = ({
@@ -49,15 +45,15 @@ const useDayWorkouts = ({
     return workouts.filter((workout) => workout.day_number === currentDay);
   }, [workouts, currentDay]);
 
-  // Get all days that have workouts (for visual indicator)
-  const workoutDays = useMemo(() => {
-    if (!workouts) return [];
-    const days = new Set<number>();
-    workouts.forEach((workout) => {
-      days.add(workout.day_number);
-    });
-    return Array.from(days);
-  }, [workouts]);
+    // Get all days that have workouts (for visual indicator)
+    const workoutDays = useMemo(() => {
+        if (!workouts) return [];
+        const days = new Set<DayOfWeek>();
+        workouts.forEach((workout) => {
+            days.add(workout.day_number);
+        });
+        return Array.from(days);
+    }, [workouts]);
 
   // Build a map of exercise_id -> exercise name from the workout elements
   const exerciseNames: Record<string, string> = useMemo(() => {

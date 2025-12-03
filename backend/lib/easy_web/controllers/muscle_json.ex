@@ -12,8 +12,7 @@ defmodule EasyWeb.MuscleJSON do
   def data(%Muscle{} = muscle) do
     %{
       id: muscle.id,
-      name: muscle.name,
-      group: if(muscle.muscle_group, do: muscle.muscle_group.name, else: nil)
+      name: muscle.name
     }
   end
 end

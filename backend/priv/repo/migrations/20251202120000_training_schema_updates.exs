@@ -33,7 +33,7 @@ defmodule Easy.Repo.Migrations.TrainingSchemaUpdates do
     # UNIQUE CONSTRAINTS FOR POSITIONS
     # ============================================================================
     execute """
-    CREATE UNIQUE INDEX IF NOT EXISTS planned_workouts_training_plan_id_day_number_index
+    CREATE INDEX IF NOT EXISTS planned_workouts_training_plan_id_day_number_index
     ON planned_workouts (training_plan_id, day_number)
     """
 

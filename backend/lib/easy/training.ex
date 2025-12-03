@@ -14,8 +14,6 @@ defmodule Easy.Training do
   defdelegate duplicate_exercise(exercise, business_id), to: Easy.Training.Library
 
   # Library - Reference Data
-  defdelegate list_muscle_groups(), to: Easy.Training.Library
-  defdelegate fetch_muscle_group(id), to: Easy.Training.Library
   defdelegate list_muscles(), to: Easy.Training.Library
   defdelegate fetch_muscle(id), to: Easy.Training.Library
   defdelegate list_equipment(), to: Easy.Training.Library

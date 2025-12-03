@@ -16,7 +16,6 @@ defmodule EasyWeb.MuscleController do
     Muscle
     |> search(search_term)
     |> Repo.all()
-    |> Repo.preload(:muscle_group)
   end
 
   defp search(query, nil), do: query

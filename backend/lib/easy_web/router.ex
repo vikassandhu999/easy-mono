@@ -29,19 +29,16 @@ defmodule EasyWeb.Router do
     post "/token", AuthController, :token
   end
 
-  scope "/api/auth", EasyWeb do
-    pipe_through :api_authenticated
-    post "/me", AuthController, :me
-  end
-
   # Client-specific auth endpoints
   # These validate that the user has a client record before granting access
   scope "/api/auth/client", EasyWeb do
     pipe_through :api
 
     post "/send-login-code", ClientAuthController, :send_login_code
-    post "/send-invitation-code", ClientAuthController, :send_invitation_code
-    post "/send-public-join-code", ClientAuthController, :send_public_join_code
+    # Private Invitation = { "email", "invitation_token" }
+    # Public Invitation = { "email", "public_join_code"}
+    post "/check-invitation", ClientAuthController, :send_invitation_code
+    post "/verify-invitation", ClientAuthController, :send_invitation_code
     post "/token", ClientAuthController, :token
     post "/register", ClientAuthController, :register
   end
@@ -229,15 +226,5 @@ defmodule EasyWeb.Router do
     post "/", WorkoutSessionController, :create
     get "/:id", WorkoutSessionController, :show
     put "/:id/complete", WorkoutSessionController, :complete
-    put "/:id/discard", WorkoutSessionController, :discard
-  end
-
-  # Performed Sets (real-time workout logging)
-  scope "/api/performed_sets", EasyWeb do
-    pipe_through :api_authenticated
-
-    post "/", PerformedSetController, :create
-    patch "/:id", PerformedSetController, :update
-    delete "/:id", PerformedSetController, :delete
   end
 end

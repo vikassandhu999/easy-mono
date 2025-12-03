@@ -8,70 +8,12 @@ defmodule Easy.Training.Library do
   import Ecto.Query, warn: false
   alias Easy.Repo
 
-  alias Easy.Training.Library.{MuscleGroup, Muscle, Equipment, Exercise}
-
-  # Muscle Groups
-
-  @doc """
-  Returns all muscle groups.
-
-  ## Examples
-
-      iex> list_muscle_groups()
-      {:ok, [%MuscleGroup{}, ...]}
-
-  """
-  @spec list_muscle_groups() :: {:ok, list(MuscleGroup.t())}
-  def list_muscle_groups do
-    {:ok, Repo.all(MuscleGroup)}
-  end
-
-  @doc """
-  Fetches a muscle group by ID.
-
-  ## Examples
-
-      iex> fetch_muscle_group(id)
-      {:ok, %MuscleGroup{}}
-
-      iex> fetch_muscle_group(invalid_id)
-      {:error, :not_found}
-
-  """
-  @spec fetch_muscle_group(String.t()) :: {:ok, MuscleGroup.t()} | {:error, :not_found}
-  def fetch_muscle_group(id) do
-    case Repo.get(MuscleGroup, id) do
-      nil -> {:error, :not_found}
-      muscle_group -> {:ok, muscle_group}
-    end
-  end
-
-  def get_muscle_group!(id), do: Repo.get!(MuscleGroup, id)
-
-  def create_muscle_group(attrs \\ %{}) do
-    %MuscleGroup{}
-    |> MuscleGroup.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_muscle_group(%MuscleGroup{} = muscle_group, attrs) do
-    muscle_group
-    |> MuscleGroup.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def delete_muscle_group(%MuscleGroup{} = muscle_group) do
-    Repo.delete(muscle_group)
-  end
-
-  def change_muscle_group(%MuscleGroup{} = muscle_group, attrs \\ %{}) do
-    MuscleGroup.changeset(muscle_group, attrs)
-  end
+  alias Easy.Training.Library.{Muscle, Equipment, Exercise}
 
   # Muscles
 
   @doc """
-  Returns all muscles with their muscle groups preloaded.
+  Returns all muscles.
 
   ## Examples
 
@@ -81,11 +23,7 @@ defmodule Easy.Training.Library do
   """
   @spec list_muscles() :: {:ok, list(Muscle.t())}
   def list_muscles do
-    muscles =
-      Muscle
-      |> Repo.all()
-      |> Repo.preload(:muscle_group)
-
+    muscles = Repo.all(Muscle)
     {:ok, muscles}
   end
 
@@ -105,7 +43,7 @@ defmodule Easy.Training.Library do
   def fetch_muscle(id) do
     case Repo.get(Muscle, id) do
       nil -> {:error, :not_found}
-      muscle -> {:ok, Repo.preload(muscle, :muscle_group)}
+      muscle -> {:ok, muscle}
     end
   end
 
@@ -216,7 +154,7 @@ defmodule Easy.Training.Library do
       |> limit(^limit)
       |> offset(^offset)
       |> Repo.all()
-      |> Repo.preload([:equipment, muscles: :muscle_group])
+      |> Repo.preload([:equipment, :muscles])
 
     {:ok, {exercises, %{limit: limit, offset: offset, total: total}}}
   end
@@ -231,7 +169,7 @@ defmodule Easy.Training.Library do
            from e in Exercise,
              where:
                e.id == ^exercise_id and (e.business_id == ^business_id or is_nil(e.business_id)),
-             preload: [:equipment, muscles: :muscle_group]
+             preload: [:equipment, :muscles]
          ) do
       nil -> {:error, :not_found}
       exercise -> {:ok, exercise}
@@ -241,7 +179,7 @@ defmodule Easy.Training.Library do
   def get_exercise!(id) do
     Exercise
     |> Repo.get!(id)
-    |> Repo.preload([:equipment, muscles: :muscle_group])
+    |> Repo.preload([:equipment, :muscles])
   end
 
   defp search_exercises(query, params) do
@@ -329,7 +267,7 @@ defmodule Easy.Training.Library do
     |> Exercise.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, muscles: :muscle_group])}
+      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, :muscles])}
       {:error, changeset} -> {:error, changeset}
     end
   end
@@ -351,7 +289,7 @@ defmodule Easy.Training.Library do
     |> Exercise.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, muscles: :muscle_group])}
+      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, :muscles])}
       {:error, changeset} -> {:error, changeset}
     end
   end
@@ -362,7 +300,7 @@ defmodule Easy.Training.Library do
     |> Repo.update()
     |> case do
       {:ok, updated_exercise} ->
-        {:ok, Repo.preload(updated_exercise, [:equipment, muscles: :muscle_group], force: true)}
+        {:ok, Repo.preload(updated_exercise, [:equipment, :muscles], force: true)}
 
       {:error, changeset} ->
         {:error, changeset}

@@ -40,8 +40,7 @@ defmodule EasyWeb.ExerciseJSON do
     for muscle <- muscles do
       %{
         id: muscle.id,
-        name: muscle.name,
-        group: muscle.muscle_group && muscle.muscle_group.name
+        name: muscle.name
       }
     end
   end

@@ -9,7 +9,9 @@ defmodule Easy.Training.Programming.TrainingPlan do
     field :name, :string
     field :description, :string
     field :is_template, :boolean, default: true
-    field :duration_weeks, :integer
+    # Weekly plans: start_date and end_date define the repeating period for assigned plans
+    field :start_date, :date
+    field :end_date, :date
 
     belongs_to :business, Business
     belongs_to :author, Coach
@@ -28,14 +30,23 @@ defmodule Easy.Training.Programming.TrainingPlan do
       :name,
       :description,
       :is_template,
-      :duration_weeks,
+      :start_date,
+      :end_date,
       :original_template_id
     ])
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_number(:duration_weeks, greater_than: 0)
     |> validate_template_or_client()
+    |> validate_date_range()
+    |> check_constraint(:start_date,
+      name: :valid_date_range,
+      message: "end date must be after start date"
+    )
+    |> check_constraint(:start_date,
+      name: :assigned_plans_have_dates,
+      message: "assigned plans must have start and end dates"
+    )
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:author_id)
     |> foreign_key_constraint(:client_id)
@@ -52,6 +63,31 @@ defmodule Easy.Training.Programming.TrainingPlan do
 
       !is_template && is_nil(client_id) ->
         add_error(changeset, :client_id, "assigned plan must have a client")
+
+      true ->
+        changeset
+    end
+  end
+
+  defp validate_date_range(changeset) do
+    start_date = get_field(changeset, :start_date)
+    end_date = get_field(changeset, :end_date)
+    is_template = get_field(changeset, :is_template)
+
+    cond do
+      # Templates don't need dates
+      is_template ->
+        changeset
+
+      # Assigned plans require both dates
+      !is_template && (is_nil(start_date) || is_nil(end_date)) ->
+        changeset
+        |> add_error(:start_date, "assigned plan must have a start date")
+        |> add_error(:end_date, "assigned plan must have an end date")
+
+      # Validate end_date is after or equal to start_date
+      start_date && end_date && Date.compare(end_date, start_date) == :lt ->
+        add_error(changeset, :end_date, "must be after or equal to start date")
 
       true ->
         changeset

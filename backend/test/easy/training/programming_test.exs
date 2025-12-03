@@ -14,8 +14,7 @@ defmodule Easy.Training.ProgrammingTest do
     test "create_training_plan/3 creates a template", %{business: business, coach: coach} do
       attrs = %{
         "name" => "PPL Program",
-        "description" => "Push Pull Legs",
-        "duration_weeks" => 8
+        "description" => "Push Pull Legs"
       }
 
       assert {:ok, plan} = Programming.create_training_plan(business.id, coach.id, attrs)
@@ -59,8 +58,7 @@ defmodule Easy.Training.ProgrammingTest do
     test "duplicate_training_plan/2 creates a deep copy", %{business: business, coach: coach} do
       {:ok, plan} =
         Programming.create_training_plan(business.id, coach.id, %{
-          "name" => "Original Plan",
-          "duration_weeks" => 4
+          "name" => "Original Plan"
         })
 
       # Add a workout to the plan
@@ -78,7 +76,7 @@ defmodule Easy.Training.ProgrammingTest do
     end
   end
 
-  describe "assign_training_plan_to_client/4" do
+  describe "assign_training_plan_to_client/5" do
     setup do
       {:ok, business, coach} = create_test_business_with_coach()
       {:ok, client} = create_test_client(business.id)
@@ -86,8 +84,7 @@ defmodule Easy.Training.ProgrammingTest do
 
       {:ok, plan} =
         Programming.create_training_plan(business.id, coach.id, %{
-          "name" => "Client Plan",
-          "duration_weeks" => 4
+          "name" => "Client Plan"
         })
 
       {:ok, workout} =
@@ -118,26 +115,37 @@ defmodule Easy.Training.ProgrammingTest do
     end
 
     test "creates a deep copy assigned to client with business_id authorization", ctx do
+      start_date = Date.utc_today()
+      end_date = Date.add(start_date, 30)
+
       assert {:ok, %{new_plan: assigned}} =
                Programming.assign_training_plan_to_client(
                  ctx.business.id,
                  ctx.plan.id,
-                 ctx.client.id
+                 ctx.client.id,
+                 start_date,
+                 end_date
                )
 
       assert assigned.is_template == false
       assert assigned.client_id == ctx.client.id
       assert assigned.original_template_id == ctx.plan.id
+      assert assigned.start_date == start_date
+      assert assigned.end_date == end_date
     end
 
     test "returns error when template belongs to different business", ctx do
       {:ok, other_business, _} = create_test_business_with_coach()
+      start_date = Date.utc_today()
+      end_date = Date.add(start_date, 30)
 
       assert {:error, :not_found} =
                Programming.assign_training_plan_to_client(
                  other_business.id,
                  ctx.plan.id,
-                 ctx.client.id
+                 ctx.client.id,
+                 start_date,
+                 end_date
                )
     end
   end
@@ -152,7 +160,8 @@ defmodule Easy.Training.ProgrammingTest do
       %{business: business, plan: plan}
     end
 
-    test "create_planned_workout/1 validates day_number >= 1", %{plan: plan} do
+    test "create_planned_workout/1 validates day_number between 1 and 7", %{plan: plan} do
+      # Test day_number too low
       assert {:error, changeset} =
                Programming.create_planned_workout(%{
                  name: "Invalid Day",
@@ -161,6 +170,16 @@ defmodule Easy.Training.ProgrammingTest do
                })
 
       assert %{day_number: ["must be greater than or equal to 1"]} = errors_on(changeset)
+
+      # Test day_number too high
+      assert {:error, changeset} =
+               Programming.create_planned_workout(%{
+                 name: "Invalid Day",
+                 day_number: 8,
+                 training_plan_id: plan.id
+               })
+
+      assert %{day_number: ["must be less than or equal to 7"]} = errors_on(changeset)
     end
 
     test "unique constraint on (training_plan_id, day_number)", %{plan: plan} do

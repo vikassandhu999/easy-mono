@@ -32,11 +32,14 @@ defmodule Easy.Training do
   defdelegate duplicate_training_plan(business_id, training_plan_id),
     to: Easy.Training.Programming
 
-  defdelegate assign_training_plan_to_client(business_id, template_id, client_id),
-    to: Easy.Training.Programming
-
-  defdelegate assign_training_plan_to_client(business_id, template_id, client_id, start_date),
-    to: Easy.Training.Programming
+  defdelegate assign_training_plan_to_client(
+                business_id,
+                template_id,
+                client_id,
+                start_date,
+                end_date
+              ),
+              to: Easy.Training.Programming
 
   # Programming - Planned Workouts
   defdelegate list_planned_workouts(training_plan_id), to: Easy.Training.Programming

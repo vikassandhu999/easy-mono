@@ -125,18 +125,24 @@ defmodule Easy.Training.Programming do
   Assigns a training plan template to a client by creating a deep copy.
 
   Note: This function requires the template to already be loaded with the correct business_id.
-  For API usage, prefer `assign_training_plan_to_client/4` which validates business ownership.
+  For API usage, prefer `assign_training_plan_to_client/5` which validates business ownership.
 
   ## Examples
 
-      iex> assign_to_client(training_plan, client_id)
+      iex> assign_to_client(training_plan, client_id, ~D[2024-01-01], ~D[2024-03-31])
       {:ok, %{new_plan: %TrainingPlan{is_template: false, client_id: client_id}}}
 
   """
-  @spec assign_to_client(TrainingPlan.t(), String.t()) ::
+  @spec assign_to_client(TrainingPlan.t(), String.t(), Date.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found} | {:error, any(), Ecto.Changeset.t(), map()}
-  def assign_to_client(%TrainingPlan{} = template, client_id) do
-    assign_training_plan_to_client(template.business_id, template.id, client_id)
+  def assign_to_client(%TrainingPlan{} = template, client_id, start_date, end_date) do
+    assign_training_plan_to_client(
+      template.business_id,
+      template.id,
+      client_id,
+      start_date,
+      end_date
+    )
   end
 
   @doc """
@@ -408,7 +414,6 @@ defmodule Easy.Training.Programming do
           name: copy_name,
           description: original.description,
           is_template: true,
-          duration_weeks: original.duration_weeks,
           original_template_id: original.id
         })
       end)
@@ -462,22 +467,20 @@ defmodule Easy.Training.Programming do
   Assigns a training plan template to a client by creating a deep copy.
 
   The `business_id` is required for authorization - ensures the template belongs to the business.
-  The start_date parameter is reserved for future use (e.g., scheduling workout dates).
+  The `start_date` and `end_date` define when the weekly plan repeats for the client.
 
   ## Examples
 
-      iex> assign_training_plan_to_client(business_id, template_id, client_id)
+      iex> assign_training_plan_to_client(business_id, template_id, client_id, ~D[2024-01-01], ~D[2024-03-31])
       {:ok, %{new_plan: %TrainingPlan{}}}
 
-      iex> assign_training_plan_to_client(business_id, invalid_template_id, client_id)
+      iex> assign_training_plan_to_client(business_id, invalid_template_id, client_id, start, end)
       {:error, :not_found}
 
   """
-  @spec assign_training_plan_to_client(String.t(), String.t(), String.t(), Date.t() | nil) ::
+  @spec assign_training_plan_to_client(String.t(), String.t(), String.t(), Date.t(), Date.t()) ::
           {:ok, map()} | {:error, :not_found} | {:error, any(), Ecto.Changeset.t(), map()}
-  def assign_training_plan_to_client(business_id, template_id, client_id, start_date \\ nil) do
-    _start_date = start_date || Date.utc_today()
-
+  def assign_training_plan_to_client(business_id, template_id, client_id, start_date, end_date) do
     with {:ok, template} <- fetch_training_plan(business_id, template_id) do
       Multi.new()
       |> Multi.insert(:new_plan, fn _ ->
@@ -490,7 +493,8 @@ defmodule Easy.Training.Programming do
           name: template.name,
           description: template.description,
           is_template: false,
-          duration_weeks: template.duration_weeks,
+          start_date: start_date,
+          end_date: end_date,
           original_template_id: template.id
         })
       end)

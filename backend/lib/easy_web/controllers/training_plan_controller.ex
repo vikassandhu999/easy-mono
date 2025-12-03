@@ -52,17 +52,23 @@ defmodule EasyWeb.TrainingPlanController do
     end
   end
 
-  def assign(conn, %{"client_id" => client_id} = params) do
+  def assign(conn, %{
+        "client_id" => client_id,
+        "start_date" => start_date_str,
+        "end_date" => end_date_str
+      }) do
     training_plan = conn.assigns.training_plan
     business_id = conn.assigns.token_claims["business_id"]
-    start_date = parse_start_date(params["start_date"])
 
-    with {:ok, %{new_plan: new_plan}} <-
+    with {:ok, start_date} <- parse_date(start_date_str, :start_date),
+         {:ok, end_date} <- parse_date(end_date_str, :end_date),
+         {:ok, %{new_plan: new_plan}} <-
            Training.assign_training_plan_to_client(
              business_id,
              training_plan.id,
              client_id,
-             start_date
+             start_date,
+             end_date
            ) do
       # Fetch the full plan with preloads for rendering
       full_plan = Training.get_training_plan!(new_plan.id)
@@ -71,6 +77,12 @@ defmodule EasyWeb.TrainingPlanController do
       |> put_status(:created)
       |> render(:show, %{training_plan: full_plan})
     end
+  end
+
+  def assign(conn, %{"client_id" => _client_id}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{errors: %{start_date: ["is required"], end_date: ["is required"]}})
   end
 
   def duplicate(conn, _params) do
@@ -85,14 +97,16 @@ defmodule EasyWeb.TrainingPlanController do
     end
   end
 
-  defp parse_start_date(nil), do: Date.utc_today()
+  defp parse_date(nil, field), do: {:error, {field, "is required"}}
 
-  defp parse_start_date(date_string) when is_binary(date_string) do
+  defp parse_date(date_string, field) when is_binary(date_string) do
     case Date.from_iso8601(date_string) do
-      {:ok, date} -> date
-      {:error, _} -> Date.utc_today()
+      {:ok, date} -> {:ok, date}
+      {:error, _} -> {:error, {field, "is invalid"}}
     end
   end
+
+  defp parse_date(_, field), do: {:error, {field, "is invalid"}}
 
   defp authorize_resource(conn, _opts) do
     with %{"id" => id} <- conn.params,

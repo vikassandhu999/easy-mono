@@ -6,6 +6,16 @@ defmodule EasyWeb.TrainingPlanJSON do
     PlannedSet
   }
 
+  @day_names %{
+    1 => "Monday",
+    2 => "Tuesday",
+    3 => "Wednesday",
+    4 => "Thursday",
+    5 => "Friday",
+    6 => "Saturday",
+    7 => "Sunday"
+  }
+
   @doc """
   Renders a list of training plans.
   """
@@ -26,7 +36,8 @@ defmodule EasyWeb.TrainingPlanJSON do
       name: plan.name,
       description: plan.description,
       is_template: plan.is_template,
-      duration_weeks: plan.duration_weeks,
+      start_date: plan.start_date,
+      end_date: plan.end_date,
       business_id: plan.business_id,
       author_id: plan.author_id,
       client_id: plan.client_id,
@@ -47,6 +58,7 @@ defmodule EasyWeb.TrainingPlanJSON do
       name: workout.name,
       notes: workout.notes,
       day_number: workout.day_number,
+      day_name: @day_names[workout.day_number],
       elements: elements_data(workout.workout_elements)
     }
   end

@@ -20,7 +20,7 @@ import {
   useUpdateCoachProfileMutation,
 } from "@/services/auth";
 import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 const CoachProfileEditDrawer = () => {
   const { closeDrawer } = useParamsDrawer({});

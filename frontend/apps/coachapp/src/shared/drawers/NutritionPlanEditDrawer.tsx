@@ -11,7 +11,7 @@ import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
 import NutritionPlanForm, {
   NutritionPlanFormHandle,
 } from "@/shared/NutritionPlanForm";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 import { DrawerErrorState, DrawerLoadingState } from "./shared";
 

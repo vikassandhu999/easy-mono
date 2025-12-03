@@ -1,6 +1,6 @@
 import {Loader, Menu, Text, TextInput} from '@mantine/core';
 import {useDebouncedCallback, useIntersection, useLocalStorage} from '@mantine/hooks';
-import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
+import {CheckIcon, XIcon} from '@phosphor-icons/react';
 import {IconBarbell, IconChevronDown, IconHistory, IconPlus} from '@tabler/icons-react';
 import {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 
@@ -245,18 +245,7 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
         [exercises, focusedIndex, handleSelect, onSearchChangeDebounced],
     );
 
-    // Group muscles by muscle group for the dropdown
-    const musclesByGroup = useMemo(() => {
-        const grouped: Record<string, Muscle[]> = {};
-        muscles.forEach((muscle) => {
-            const group = muscle.group || 'Other';
-            if (!grouped[group]) {
-                grouped[group] = [];
-            }
-            grouped[group].push(muscle);
-        });
-        return grouped;
-    }, [muscles]);
+
 
     return (
         <>
@@ -333,28 +322,23 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
                                         <Menu.Divider />
                                     </>
                                 )}
-                                {Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
-                                    <div key={group}>
-                                        <Menu.Label>{group}</Menu.Label>
-                                        {groupMuscles.map((muscle) => (
-                                            <Menu.Item
-                                                key={muscle.id}
-                                                leftSection={
-                                                    selectedMuscleIds.includes(muscle.id) ? (
-                                                        <CheckIcon
-                                                            size={14}
-                                                            weight="bold"
-                                                        />
-                                                    ) : (
-                                                        <span style={{width: 14}} />
-                                                    )
-                                                }
-                                                onClick={() => handleToggleMuscle(muscle.id)}
-                                            >
-                                                {muscle.name}
-                                            </Menu.Item>
-                                        ))}
-                                    </div>
+                                {muscles.map((muscle) => (
+                                    <Menu.Item
+                                        key={muscle.id}
+                                        leftSection={
+                                            selectedMuscleIds.includes(muscle.id) ? (
+                                                <CheckIcon
+                                                    size={14}
+                                                    weight="bold"
+                                                />
+                                            ) : (
+                                                <span style={{width: 14}} />
+                                            )
+                                        }
+                                        onClick={() => handleToggleMuscle(muscle.id)}
+                                    >
+                                        {muscle.name}
+                                    </Menu.Item>
                                 ))}
                             </Menu.Dropdown>
                         </Menu>

@@ -8,7 +8,7 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuthActions} from '@/hooks/useAuthActions';
 import {useVerifyRegirationMutation, VerifyRegisteration_zod, VerifyRegisterationRequest} from '@/services/auth';
-import {notifyError, notifySuccess, notifyWarning} from '@/utils/notification';
+import {notifyError,  notifyWarning} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -41,7 +41,6 @@ const VerifyRegisterationPage: React.FC = () => {
             const resp = await verifyPasscode(values).unwrap();
             saveAuthTokens(resp.access_token, resp.refresh_token);
 
-            notifySuccess('Email verified successfully');
 
             navigate('/');
         } catch (err) {

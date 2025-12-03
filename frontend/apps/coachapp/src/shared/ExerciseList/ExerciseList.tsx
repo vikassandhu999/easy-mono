@@ -3,11 +3,13 @@ import {useDisclosure} from '@mantine/hooks';
 import {BarbellIcon, CaretDownIcon, XIcon} from '@phosphor-icons/react';
 import {useMemo, useState} from 'react';
 
-import {Exercise, isSystemExercise, Muscle, useListExercises} from '@/services/exercises';
+import {Exercise, isSystemExercise} from '@/services/exercises';
 import {useListMuscles} from '@/services/muscles';
 import RecordsList from '@/shared/layouts/RecordsList';
 
 import classes from './styles.module.css';
+import {useListExercises} from '@/services/exercises';
+import { capitalizeWords } from '@easy/error-parser';
 
 interface ExerciseListItemProps {
     exercise: Exercise;
@@ -117,19 +119,6 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
 
     const exercises = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
-    // Group muscles by their group
-    const musclesByGroup = useMemo(() => {
-        const grouped: Record<string, Muscle[]> = {};
-        muscles.forEach((muscle) => {
-            const group = muscle.group || 'Other';
-            if (!grouped[group]) {
-                grouped[group] = [];
-            }
-            grouped[group].push(muscle);
-        });
-        return grouped;
-    }, [muscles]);
-
     const handleToggleMuscle = (muscleId: string) => {
         setTempSelectedMuscleIds((prev) =>
             prev.includes(muscleId) ? prev.filter((id) => id !== muscleId) : [...prev, muscleId],
@@ -210,29 +199,16 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                 title="Filter by Muscles"
             >
                 <Stack gap="md">
-                    {Object.entries(musclesByGroup).map(([group, groupMuscles]) => (
-                        <div key={group}>
-                            <Text
-                                c="dimmed"
-                                fw={600}
-                                mb="xs"
-                                size="xs"
-                                tt="uppercase"
-                            >
-                                {group}
-                            </Text>
-                            <Stack gap="xs">
-                                {groupMuscles.map((muscle) => (
-                                    <Checkbox
-                                        checked={tempSelectedMuscleIds.includes(muscle.id)}
-                                        key={muscle.id}
-                                        label={muscle.name}
-                                        onChange={() => handleToggleMuscle(muscle.id)}
-                                    />
-                                ))}
-                            </Stack>
-                        </div>
-                    ))}
+                    <Group gap="xs">
+                        {muscles.map((muscle) => (
+                            <Checkbox
+                                checked={tempSelectedMuscleIds.includes(muscle.id)}
+                                key={muscle.id}
+                                label={capitalizeWords(muscle.name)}
+                                onChange={() => handleToggleMuscle(muscle.id)}
+                            />
+                        ))}
+                    </Group>
 
                     <Group
                         gap="sm"

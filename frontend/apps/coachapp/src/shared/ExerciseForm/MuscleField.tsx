@@ -4,6 +4,7 @@ import {Controller, UseFormReturn} from 'react-hook-form';
 
 import {CreateExercise} from '@/services/exercises';
 import {useListMuscles} from '@/services/muscles';
+import { capitalizeWords } from '@/utils/text';
 
 type MuscleFieldProps = {
     form: UseFormReturn<CreateExercise, any, CreateExercise>;
@@ -20,7 +21,7 @@ const MuscleField: FC<MuscleFieldProps> = ({form}) => {
     const selectData = useMemo(() => {
         return muscles.map((muscle) => ({
             value: muscle.id,
-            label: muscle.name + ' (' + muscle.group + ')',
+            label: capitalizeWords(muscle.name),
         }));
     }, [muscles]);
 

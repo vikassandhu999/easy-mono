@@ -20,7 +20,7 @@ import {
   useUpdateClient,
 } from "@/services/clients";
 import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 const ClientEditDrawer = () => {
   const { closeDrawer, getDrawerParams } = useParamsDrawer({});

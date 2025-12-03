@@ -14,7 +14,7 @@ import {
   tokenStorage,
 } from "@/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 /**
  * Hook for auth operations

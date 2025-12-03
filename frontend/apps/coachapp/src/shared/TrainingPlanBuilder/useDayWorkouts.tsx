@@ -9,7 +9,7 @@ import {
   useDeleteWorkoutElement,
   useUpdateWorkoutElement,
 } from "@/services/workout_elements";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 export type UseDayWorkoutsArgs = {
     currentDay: DayOfWeek;
@@ -161,7 +161,6 @@ const useDayWorkouts = ({
 
     try {
       await deleteWorkoutElementMutation(elementId).unwrap();
-      notifySuccess("Exercise removed");
     } catch (e) {
       const errMsg = humanizeError(e);
       notifyError(errMsg);
@@ -213,7 +212,6 @@ const useDayWorkouts = ({
                     tempo: null,
                 })),
             }).unwrap();
-            notifySuccess('Sets updated');
             closeElementEditor();
         } catch (e) {
             const errMsg = humanizeError(e);
@@ -248,7 +246,6 @@ const useDayWorkouts = ({
         training_plan_id: planId,
         day_number: currentDay,
       }).unwrap();
-      notifySuccess("Workout created");
       closeAddWorkoutModal();
     } catch (e) {
       const errMsg = humanizeError(e);
@@ -263,7 +260,6 @@ const useDayWorkouts = ({
 
     try {
       await deletePlannedWorkoutMutation(workoutId).unwrap();
-      notifySuccess("Workout deleted");
     } catch (e) {
       const errMsg = humanizeError(e);
       notifyError(errMsg);

@@ -10,7 +10,7 @@ import {
   TrainingPlanForm,
   TrainingPlanFormHandle,
 } from "@/shared/TrainingPlanForm";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 const TrainingPlanCreateDrawer = () => {
   const { closeDrawer, openDrawer } = useParamsDrawer({});

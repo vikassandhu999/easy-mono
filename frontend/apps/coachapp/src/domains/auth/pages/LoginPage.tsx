@@ -7,7 +7,7 @@ import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
 import {SendLoginCode_zod, SendLoginCodeRequest, useSendLoginCodeMutation} from '@/services/auth';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -27,7 +27,6 @@ const LoginPage: React.FC = () => {
         try {
             const response = await sendOTP(values).unwrap();
 
-            notifySuccess(`We've sent you a verification code to sign in`);
 
             const params = new URLSearchParams([
                 ['token_id', response.token.token_id],

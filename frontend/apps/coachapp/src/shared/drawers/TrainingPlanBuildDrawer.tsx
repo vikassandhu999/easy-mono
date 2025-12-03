@@ -69,7 +69,6 @@ export default function TrainingPlanBuildDrawer() {
 
     try {
       await deleteTrainingPlan(trainingPlanId).unwrap();
-      notifySuccess("Training plan deleted successfully");
       closeDeleteModal();
       closeDrawer();
     } catch (error) {
@@ -84,7 +83,6 @@ export default function TrainingPlanBuildDrawer() {
     try {
       const duplicatedPlan =
         await duplicateTrainingPlan(trainingPlanId).unwrap();
-      notifySuccess("Training plan duplicated successfully");
       // Open the duplicated plan in the builder
       openDrawer(DRAWER_KEYS.TRAINING_PLAN_BUILDER, {
         training_plan_id: duplicatedPlan.id,

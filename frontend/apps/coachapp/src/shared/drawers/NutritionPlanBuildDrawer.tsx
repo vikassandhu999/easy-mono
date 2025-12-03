@@ -20,7 +20,7 @@ import {
 } from "@/services/nutrition_plans";
 import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
 import NutritionPlanBuilder from "@/shared/NutritionPlanBuilder/NutritionPlanBuilder";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 type ActionMenuProps = {
   nutritionPlanId: string;
@@ -83,7 +83,6 @@ export default function NutritionPlanBuildDrawer() {
       const duplicatedPlan = await duplicateNutritionPlan({
         id: nutritionPlanId,
       }).unwrap();
-      notifySuccess("Nutrition plan duplicated successfully");
 
       // Open the duplicated plan in the builder
       openDrawer(DRAWER_KEYS.NUTRITION_PLAN_BUILDER, {

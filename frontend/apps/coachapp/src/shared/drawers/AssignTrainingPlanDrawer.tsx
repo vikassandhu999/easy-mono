@@ -132,7 +132,6 @@ const AssignTrainingPlanDrawer = () => {
                 start_date: formattedStartDate,
                 end_date: formattedEndDate,
             }).unwrap();
-            notifySuccess(`"${selectedPlan.name}" assigned successfully`);
             closeDrawer();
         } catch (error) {
             const errMsg = humanizeError(error);

@@ -38,7 +38,6 @@ export function DrawerFormWrapper<T extends FormHandle>({
   const handleSubmit = async (shouldClose = false) => {
     try {
       await formRef.current?.submit();
-      notifySuccess(successMessage);
       if (shouldClose) {
         onClose();
       }

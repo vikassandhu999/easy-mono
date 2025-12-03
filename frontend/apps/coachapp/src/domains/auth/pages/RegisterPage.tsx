@@ -7,7 +7,7 @@ import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
 import {Register_zod, RegisterRequest, useRegisterMutation} from '@/services/auth';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -31,7 +31,6 @@ const RegisterPage: React.FC = () => {
         try {
             const resp = await registerMutation(values).unwrap();
 
-            notifySuccess('A verification code has been sent to your email.');
 
             const params = new URLSearchParams([
                 ['token_id', resp.token.token_id],

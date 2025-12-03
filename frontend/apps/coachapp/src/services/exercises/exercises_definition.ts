@@ -6,7 +6,6 @@ export type ExerciseForce = 'pull' | 'push' | 'static';
 export type Muscle = {
     id: string;
     name: string;
-    group: null | string;
 };
 
 export type Equipment = {

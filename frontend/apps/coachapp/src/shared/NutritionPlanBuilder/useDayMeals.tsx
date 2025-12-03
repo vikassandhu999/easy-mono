@@ -5,7 +5,7 @@ import {useMemo, useState} from 'react';
 import {useCreateMealItem, useDeleteMealItem} from '@/services/meal_items';
 import {useCreateMeal} from '@/services/meals';
 import {Meal} from '@/services/nutrition_plans';
-import {notifyError, notifySuccess} from '@/utils/notification';
+import {notifyError} from '@/utils/notification';
 
 export type UseDayMealsArgs = {
     currentDay: number;
@@ -113,7 +113,6 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
                 position: 0,
                 nutrition_plan_id: planId,
             });
-            notifySuccess('Recipe added successfully');
             closeRecipeDrawer();
         } catch (e) {
             const errMsg = humanizeError(e);

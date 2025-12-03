@@ -1,4 +1,4 @@
-import {humanizeError} from '@easy/error-parser';
+import {capitalizeWords, humanizeError} from '@easy/error-parser';
 import {Carousel} from '@mantine/carousel';
 import {ActionIcon, Badge, Box, Button, Divider, Group, Image, Loader, Stack, Text, Title} from '@mantine/core';
 import {modals} from '@mantine/modals';
@@ -184,7 +184,7 @@ const ExerciseViewDrawer = () => {
                             align="center"
                             gap="sm"
                         >
-                            <Title order={3}>{exercise.name}</Title>
+                            <Title order={3}>{capitalizeWords(exercise.name)}</Title>
                         </Group>
                         <Text c="dimmed">{exercise.description || 'No description available'}</Text>
                     </Stack>
@@ -197,7 +197,7 @@ const ExerciseViewDrawer = () => {
                                     color="blue"
                                     variant="light"
                                 >
-                                    {exercise.mechanics}
+                                    {capitalizeWords(exercise.mechanics)}
                                 </Badge>
                             ) : (
                                 <Text
@@ -215,7 +215,7 @@ const ExerciseViewDrawer = () => {
                                     color="grape"
                                     variant="light"
                                 >
-                                    {exercise.force}
+                                    {capitalizeWords(exercise.force)}
                                 </Badge>
                             ) : (
                                 <Text
@@ -237,7 +237,7 @@ const ExerciseViewDrawer = () => {
                                         key={m.id}
                                         variant="dot"
                                     >
-                                        {`${m.name} (${m.group})`}
+                                        {capitalizeWords(m.name)}
                                     </Badge>
                                 ))}
                             </Group>
@@ -261,7 +261,7 @@ const ExerciseViewDrawer = () => {
                                         key={e.id}
                                         variant="outline"
                                     >
-                                        {e.name}
+                                        {capitalizeWords(e.name)}
                                     </Badge>
                                 ))}
                             </Group>

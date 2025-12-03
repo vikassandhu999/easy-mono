@@ -11,7 +11,7 @@ import {
 } from "@/services/exercises";
 import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
 import { ExerciseForm, ExerciseFormHandle } from "@/shared/ExerciseForm";
-import { notifyError, notifySuccess } from "@/utils/notification";
+import { notifyError } from "@/utils/notification";
 
 const ExerciseEditDrawer = () => {
   const { closeDrawer, openDrawer, getDrawerParams } = useParamsDrawer({});

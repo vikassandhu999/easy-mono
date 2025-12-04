@@ -70,8 +70,8 @@ defmodule EasyWeb.TrainingPlanController do
              start_date,
              end_date
            ) do
-      # Fetch the full plan with preloads for rendering
-      full_plan = Training.get_training_plan!(new_plan.id)
+      # Use optimized fetch_training_plan which has efficient preloads
+      {:ok, full_plan} = Training.fetch_training_plan(business_id, new_plan.id)
 
       conn
       |> put_status(:created)

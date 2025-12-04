@@ -43,12 +43,13 @@ defmodule Easy.Training.Programming do
 
     total = Repo.aggregate(query, :count)
 
+    # Use query-based preload to avoid N+1 queries
     training_plans =
       query
       |> limit(^limit)
       |> offset(^offset)
+      |> preload(planned_workouts: [workout_elements: :exercise])
       |> Repo.all()
-      |> Repo.preload(planned_workouts: [workout_elements: :exercise])
 
     {:ok, {training_plans, %{limit: limit, offset: offset, total: total}}}
   end
@@ -88,9 +89,15 @@ defmodule Easy.Training.Programming do
     end
   end
 
-  def get_training_plan!(id) do
-    Repo.get!(TrainingPlan, id)
-    |> Repo.preload(planned_workouts: [workout_elements: :exercise])
+  @doc """
+  Gets a training plan by ID with preloaded associations.
+  Raises if not found. Use fetch_training_plan/2 for tenant-safe queries.
+  """
+  def get_training_plan!(business_id, id) do
+    TrainingPlan
+    |> where([t], t.id == ^id and t.business_id == ^business_id)
+    |> preload(planned_workouts: [workout_elements: :exercise])
+    |> Repo.one!()
   end
 
   @doc """
@@ -112,7 +119,9 @@ defmodule Easy.Training.Programming do
     |> Repo.insert()
     |> case do
       {:ok, plan} ->
-        {:ok, Repo.preload(plan, planned_workouts: [workout_elements: :exercise])}
+        # New plans have no workouts, so just set empty preloaded associations
+        # to maintain consistent struct shape without extra queries
+        {:ok, %{plan | planned_workouts: []}}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -160,7 +169,13 @@ defmodule Easy.Training.Programming do
     |> Repo.update()
     |> case do
       {:ok, plan} ->
-        {:ok, Repo.preload(plan, [planned_workouts: [workout_elements: :exercise]], force: true)}
+        # Reload associations only if they were already loaded (avoid unnecessary queries)
+        if Ecto.assoc_loaded?(training_plan.planned_workouts) do
+          {:ok,
+           Repo.preload(plan, [planned_workouts: [workout_elements: :exercise]], force: true)}
+        else
+          {:ok, plan}
+        end
 
       {:error, changeset} ->
         {:error, changeset}
@@ -222,13 +237,14 @@ defmodule Easy.Training.Programming do
   """
   @spec list_planned_workouts(String.t(), String.t()) :: {:ok, list(PlannedWorkout.t())}
   def list_planned_workouts(business_id, training_plan_id) do
+    # Use query-based preload to avoid N+1 queries
     workouts =
       PlannedWorkout
       |> join(:inner, [w], t in TrainingPlan, on: w.training_plan_id == t.id)
       |> where([w, t], w.training_plan_id == ^training_plan_id and t.business_id == ^business_id)
       |> order_by([w], asc: w.day_number)
+      |> preload(workout_elements: :exercise)
       |> Repo.all()
-      |> Repo.preload(workout_elements: :exercise)
 
     {:ok, workouts}
   end
@@ -245,9 +261,15 @@ defmodule Easy.Training.Programming do
     |> Repo.update()
   end
 
-  def get_planned_workout!(id) do
-    Repo.get!(PlannedWorkout, id)
-    |> Repo.preload(workout_elements: :exercise)
+  @doc """
+  Gets a planned workout by ID with preloaded associations.
+  Raises if not found. Use fetch_planned_workout/2 for tenant-safe queries.
+  """
+  def get_planned_workout!(business_id, id) do
+    PlannedWorkout
+    |> where([w], w.id == ^id and w.business_id == ^business_id)
+    |> preload(workout_elements: :exercise)
+    |> Repo.one!()
   end
 
   def delete_planned_workout(%PlannedWorkout{} = workout) do
@@ -279,9 +301,15 @@ defmodule Easy.Training.Programming do
     |> Repo.insert()
   end
 
-  def get_workout_element!(id) do
-    Repo.get!(WorkoutElement, id)
-    |> Repo.preload(:exercise)
+  @doc """
+  Gets a workout element by ID with preloaded exercise.
+  Raises if not found. Use fetch_workout_element/2 for tenant-safe queries.
+  """
+  def get_workout_element!(business_id, id) do
+    WorkoutElement
+    |> where([e], e.id == ^id and e.business_id == ^business_id)
+    |> preload(:exercise)
+    |> Repo.one!()
   end
 
   def update_workout_element(%WorkoutElement{} = element, attrs) do
@@ -326,7 +354,14 @@ defmodule Easy.Training.Programming do
     |> Repo.insert()
     |> case do
       {:ok, element} ->
-        {:ok, Repo.preload(element, :exercise)}
+        # Use query-based preload for efficiency
+        loaded_element =
+          WorkoutElement
+          |> where([e], e.id == ^element.id)
+          |> preload(:exercise)
+          |> Repo.one!()
+
+        {:ok, loaded_element}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -345,7 +380,12 @@ defmodule Easy.Training.Programming do
     |> Repo.update()
     |> case do
       {:ok, updated_element} ->
-        {:ok, Repo.preload(updated_element, :exercise, force: true)}
+        # Only reload exercise if it was already loaded (avoid unnecessary queries)
+        if Ecto.assoc_loaded?(element.exercise) do
+          {:ok, Repo.preload(updated_element, :exercise, force: true)}
+        else
+          {:ok, updated_element}
+        end
 
       {:error, changeset} ->
         {:error, changeset}
@@ -382,7 +422,8 @@ defmodule Easy.Training.Programming do
       |> Repo.transaction()
       |> case do
         {:ok, %{new_plan: new_plan}} ->
-          {:ok, get_training_plan!(new_plan.id)}
+          # Reload with preloads in a single optimized query
+          fetch_training_plan(business_id, new_plan.id)
 
         {:error, _step, changeset, _changes} ->
           {:error, changeset}
@@ -396,25 +437,29 @@ defmodule Easy.Training.Programming do
       |> String.replace(~r/\s*\(Copy\s*\d*\)\s*$/, "")
       |> String.trim()
 
-    # Find existing copies
-    existing_names =
-      TrainingPlan
-      |> where([t], t.business_id == ^business_id)
-      |> where([t], ilike(t.name, ^"#{base_name}%"))
-      |> select([t], t.name)
-      |> Repo.all()
-
-    find_available_copy_name(base_name, existing_names, 1)
+    # Use database EXISTS check instead of loading all names into memory
+    find_available_copy_name_db(base_name, business_id, 1)
   end
 
-  defp find_available_copy_name(base_name, existing_names, attempt) do
+  defp find_available_copy_name_db(base_name, _business_id, attempt) when attempt > 100 do
+    # Safety limit - fallback to timestamp-based name
+    "#{base_name} (Copy #{System.system_time(:second)})"
+  end
+
+  defp find_available_copy_name_db(base_name, business_id, attempt) do
     candidate =
       if attempt == 1,
         do: "#{base_name} (Copy)",
         else: "#{base_name} (Copy #{attempt})"
 
-    if candidate in existing_names do
-      find_available_copy_name(base_name, existing_names, attempt + 1)
+    # Check existence in database - single lightweight query per attempt
+    exists =
+      TrainingPlan
+      |> where([t], t.business_id == ^business_id and t.name == ^candidate)
+      |> Repo.exists?()
+
+    if exists do
+      find_available_copy_name_db(base_name, business_id, attempt + 1)
     else
       candidate
     end

@@ -22,7 +22,7 @@ defmodule Easy.Training do
   # Programming - Training Plans
   defdelegate list_training_plans(business_id, params \\ %{}), to: Easy.Training.Programming
   defdelegate fetch_training_plan(business_id, training_plan_id), to: Easy.Training.Programming
-  defdelegate get_training_plan!(id), to: Easy.Training.Programming
+  defdelegate get_training_plan!(business_id, id), to: Easy.Training.Programming
   defdelegate create_training_plan(business_id, author_id, attrs), to: Easy.Training.Programming
   defdelegate update_training_plan(plan, attrs), to: Easy.Training.Programming
   defdelegate delete_training_plan(plan), to: Easy.Training.Programming
@@ -42,7 +42,7 @@ defmodule Easy.Training do
   # Programming - Planned Workouts
   defdelegate list_planned_workouts(business_id, training_plan_id), to: Easy.Training.Programming
   defdelegate fetch_planned_workout(business_id, workout_id), to: Easy.Training.Programming
-  defdelegate get_planned_workout!(id), to: Easy.Training.Programming
+  defdelegate get_planned_workout!(business_id, id), to: Easy.Training.Programming
 
   defdelegate create_planned_workout(business_id, training_plan_id, attrs),
     to: Easy.Training.Programming
@@ -52,7 +52,7 @@ defmodule Easy.Training do
 
   # Programming - Workout Elements
   defdelegate fetch_workout_element(business_id, element_id), to: Easy.Training.Programming
-  defdelegate get_workout_element!(id), to: Easy.Training.Programming
+  defdelegate get_workout_element!(business_id, id), to: Easy.Training.Programming
 
   defdelegate create_workout_element(business_id, planned_workout_id, attrs),
     to: Easy.Training.Programming

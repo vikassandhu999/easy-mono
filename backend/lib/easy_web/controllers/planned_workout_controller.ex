@@ -14,7 +14,8 @@ defmodule EasyWeb.PlannedWorkoutController do
          {:ok, _training_plan} <- verify_training_plan_ownership(business_id, training_plan_id),
          {:ok, workout} <-
            Training.create_planned_workout(business_id, training_plan_id, workout_params) do
-      full_workout = Training.get_planned_workout!(workout.id)
+      # Use tenant-safe getter with business_id
+      full_workout = Training.get_planned_workout!(business_id, workout.id)
 
       conn
       |> put_status(:created)
@@ -29,9 +30,12 @@ defmodule EasyWeb.PlannedWorkoutController do
   end
 
   def update(conn, %{"planned_workout" => workout_params}) do
+    business_id = conn.assigns.token_claims["business_id"]
+
     with {:ok, updated_workout} <-
            Training.update_planned_workout(conn.assigns.planned_workout, workout_params) do
-      full_workout = Training.get_planned_workout!(updated_workout.id)
+      # Reload with preloads using tenant-safe getter
+      full_workout = Training.get_planned_workout!(business_id, updated_workout.id)
 
       conn
       |> put_status(:ok)

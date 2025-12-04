@@ -42,7 +42,8 @@ defmodule EasyWeb.WorkoutElementController do
 
     case result do
       {:ok, updated_element} ->
-        full_element = Training.get_workout_element!(updated_element.id)
+        business_id = conn.assigns.token_claims["business_id"]
+        full_element = Training.get_workout_element!(business_id, updated_element.id)
 
         conn
         |> put_status(:ok)
@@ -79,7 +80,7 @@ defmodule EasyWeb.WorkoutElementController do
   defp create_element_with_sets(business_id, planned_workout_id, element_attrs, []) do
     Training.create_workout_element(business_id, planned_workout_id, element_attrs)
     |> case do
-      {:ok, element} -> {:ok, Training.get_workout_element!(element.id)}
+      {:ok, element} -> {:ok, Training.get_workout_element!(business_id, element.id)}
       error -> error
     end
   end

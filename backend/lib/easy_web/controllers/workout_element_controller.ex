@@ -9,12 +9,13 @@ defmodule EasyWeb.WorkoutElementController do
   def create(conn, %{"workout_element" => element_params}) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
+         planned_workout_id <- element_params["planned_workout_id"],
          # Verify the workout belongs to a training plan owned by this business
-         {:ok, _workout} <-
-           verify_workout_ownership(business_id, element_params["planned_workout_id"]),
+         {:ok, _workout} <- verify_workout_ownership(business_id, planned_workout_id),
          sets_attrs <- Map.get(element_params, "sets", []),
          element_attrs <- Map.delete(element_params, "sets"),
-         {:ok, element} <- create_element_with_sets(element_attrs, sets_attrs) do
+         {:ok, element} <-
+           create_element_with_sets(business_id, planned_workout_id, element_attrs, sets_attrs) do
       conn
       |> put_status(:created)
       |> render(:show, %{workout_element: element})
@@ -75,15 +76,20 @@ defmodule EasyWeb.WorkoutElementController do
 
   defp verify_workout_ownership(_business_id, _workout_id), do: {:error, :invalid_workout_id}
 
-  defp create_element_with_sets(element_attrs, []) do
-    Training.create_workout_element(element_attrs)
+  defp create_element_with_sets(business_id, planned_workout_id, element_attrs, []) do
+    Training.create_workout_element(business_id, planned_workout_id, element_attrs)
     |> case do
       {:ok, element} -> {:ok, Training.get_workout_element!(element.id)}
       error -> error
     end
   end
 
-  defp create_element_with_sets(element_attrs, sets_attrs) do
-    Training.create_workout_element_with_sets(element_attrs, sets_attrs)
+  defp create_element_with_sets(business_id, planned_workout_id, element_attrs, sets_attrs) do
+    Training.create_workout_element_with_sets(
+      business_id,
+      planned_workout_id,
+      element_attrs,
+      sets_attrs
+    )
   end
 end

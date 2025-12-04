@@ -1,6 +1,7 @@
 defmodule Easy.Training.Tracking.PerformedSet do
   use Easy.Training.Schema
 
+  alias Easy.Organizations.Business
   alias Easy.Training.Tracking.WorkoutSession
   alias Easy.Training.Library.Exercise
 
@@ -41,6 +42,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
     field :completed, :boolean, default: true
     field :notes, :string
 
+    belongs_to :business, Business
     belongs_to :workout_session, WorkoutSession
     belongs_to :exercise, Exercise
 
@@ -64,10 +66,10 @@ defmodule Easy.Training.Tracking.PerformedSet do
       :tempo_actual,
       :completed,
       :notes,
-      :workout_session_id,
       :exercise_id
     ])
-    |> validate_required([:position, :workout_session_id, :exercise_id])
+    |> validate_required([:position, :workout_session_id, :exercise_id, :business_id])
+    |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
     |> validate_number(:rir, greater_than_or_equal_to: 0)
@@ -80,6 +82,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
     )
     |> foreign_key_constraint(:workout_session_id)
     |> foreign_key_constraint(:exercise_id)
+    |> foreign_key_constraint(:business_id)
   end
 
   defp validate_at_least_one_performance_metric(changeset) do

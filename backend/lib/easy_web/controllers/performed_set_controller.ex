@@ -30,11 +30,12 @@ defmodule EasyWeb.PerformedSetController do
   """
   def create(conn, %{"performed_set" => set_params}) do
     session = conn.assigns.workout_session
+    business_id = conn.assigns.token_claims["business_id"]
 
     # Ensure the set is for this session
     set_params = Map.put(set_params, "workout_session_id", session.id)
 
-    with {:ok, set} <- Training.create_performed_set(set_params) do
+    with {:ok, set} <- Training.create_performed_set(business_id, set_params) do
       conn
       |> put_status(:created)
       |> render(:show, %{performed_set: set})

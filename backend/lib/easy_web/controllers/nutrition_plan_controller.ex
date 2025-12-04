@@ -161,18 +161,29 @@ defmodule EasyWeb.NutritionPlanController do
     end
   end
 
+  @allowed_aggregates [:daily, :weekly, :total]
+
   def macros(conn, params) do
     plan = conn.assigns.nutrition_plan
 
     opts = %{
       day_number: params["day_number"] && String.to_integer(params["day_number"]),
-      aggregate: params["aggregate"] && String.to_existing_atom(params["aggregate"])
+      aggregate: params["aggregate"] && parse_aggregate(params["aggregate"])
     }
 
     with {:ok, macros} <- Nutrition.calculate_plan_macros(plan.id, opts) do
       json(conn, %{data: macros})
     end
   end
+
+  defp parse_aggregate(value) when is_binary(value) do
+    case Easy.Utils.safe_to_atom(value, @allowed_aggregates) do
+      nil -> nil
+      atom -> atom
+    end
+  end
+
+  defp parse_aggregate(_), do: nil
 
   defp authorize_resource(conn, _opts) do
     with %{"id" => id} <- conn.params,

@@ -58,8 +58,6 @@ defmodule EasyWeb.PlannedWorkoutJSON do
 
   defp render_set(set) do
     %{
-      id: set.id,
-      position: set.position,
       target_reps: set.target_reps,
       load_value: set.load_value,
       load_type: set.load_type,

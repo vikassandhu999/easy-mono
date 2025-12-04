@@ -40,10 +40,9 @@ defmodule Easy.Nutrition.Meal do
       :label,
       :time,
       :notes,
-      :nutrition_plan_id,
       :position
     ])
-    |> validate_required([:daytime, :day_number])
+    |> validate_required([:daytime, :day_number, :nutrition_plan_id])
     |> validate_number(:day_number, greater_than_or_equal_to: 1)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:nutrition_plan_id)

@@ -190,16 +190,18 @@ defmodule Easy.Training.Tracking do
 
   @doc """
   Creates a performed set for a workout session.
+  The business_id must be provided for tenant isolation.
 
   ## Examples
 
-      iex> create_performed_set(%{workout_session_id: sid, exercise_id: eid, actual_reps: "10", load_value: 50, load_unit: :kg})
+      iex> create_performed_set(business_id, %{workout_session_id: sid, exercise_id: eid, actual_reps: "10", load_value: 50, load_unit: :kg})
       {:ok, %PerformedSet{}}
 
   """
-  @spec create_performed_set(map()) :: {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
-  def create_performed_set(attrs) do
-    %PerformedSet{}
+  @spec create_performed_set(String.t(), map()) ::
+          {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
+  def create_performed_set(business_id, attrs) do
+    %PerformedSet{business_id: business_id}
     |> PerformedSet.changeset(attrs)
     |> Repo.insert()
     |> case do

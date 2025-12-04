@@ -2,7 +2,10 @@ defmodule EasyWeb.WorkoutSessionController do
   use EasyWeb, :controller
 
   alias Easy.Training
+  alias Easy.Utils
   alias EasyWeb.FallbackController
+
+  @allowed_states ["active", "completed", "discarded"]
 
   plug :authorize_resource when action in [:show, :complete, :discard]
 
@@ -48,9 +51,10 @@ defmodule EasyWeb.WorkoutSessionController do
       if params["client_id"], do: Keyword.put(opts, :client_id, params["client_id"]), else: opts
 
     opts =
-      if params["state"],
-        do: Keyword.put(opts, :state, String.to_existing_atom(params["state"])),
-        else: opts
+      case Utils.safe_to_atom(params["state"], @allowed_states) do
+        nil -> opts
+        state -> Keyword.put(opts, :state, state)
+      end
 
     opts
   end

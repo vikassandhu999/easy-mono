@@ -10,8 +10,7 @@ defmodule Easy.Training.Programming do
   alias Easy.Training.Programming.{
     TrainingPlan,
     PlannedWorkout,
-    WorkoutElement,
-    PlannedSet
+    WorkoutElement
   }
 
   @max_limit 100
@@ -49,7 +48,7 @@ defmodule Easy.Training.Programming do
       |> limit(^limit)
       |> offset(^offset)
       |> Repo.all()
-      |> Repo.preload(planned_workouts: [workout_elements: [:exercise, :planned_sets]])
+      |> Repo.preload(planned_workouts: [workout_elements: :exercise])
 
     {:ok, {training_plans, %{limit: limit, offset: offset, total: total}}}
   end
@@ -63,7 +62,7 @@ defmodule Easy.Training.Programming do
     case Repo.one(
            from t in TrainingPlan,
              where: t.id == ^training_plan_id and t.business_id == ^business_id,
-             preload: [planned_workouts: [workout_elements: [:exercise, :planned_sets]]]
+             preload: [planned_workouts: [workout_elements: :exercise]]
          ) do
       nil -> {:error, :not_found}
       training_plan -> {:ok, training_plan}
@@ -91,7 +90,7 @@ defmodule Easy.Training.Programming do
 
   def get_training_plan!(id) do
     Repo.get!(TrainingPlan, id)
-    |> Repo.preload(planned_workouts: [workout_elements: [:exercise, :planned_sets]])
+    |> Repo.preload(planned_workouts: [workout_elements: :exercise])
   end
 
   @doc """
@@ -113,8 +112,7 @@ defmodule Easy.Training.Programming do
     |> Repo.insert()
     |> case do
       {:ok, plan} ->
-        {:ok,
-         Repo.preload(plan, planned_workouts: [workout_elements: [:exercise, :planned_sets]])}
+        {:ok, Repo.preload(plan, planned_workouts: [workout_elements: :exercise])}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -162,10 +160,7 @@ defmodule Easy.Training.Programming do
     |> Repo.update()
     |> case do
       {:ok, plan} ->
-        {:ok,
-         Repo.preload(plan, [planned_workouts: [workout_elements: [:exercise, :planned_sets]]],
-           force: true
-         )}
+        {:ok, Repo.preload(plan, [planned_workouts: [workout_elements: :exercise]], force: true)}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -217,28 +212,29 @@ defmodule Easy.Training.Programming do
   # Planned Workouts
 
   @doc """
-  Returns all planned workouts for a training plan.
+  Returns all planned workouts for a training plan owned by the business.
 
   ## Examples
 
-      iex> list_planned_workouts(training_plan_id)
+      iex> list_planned_workouts(business_id, training_plan_id)
       {:ok, [%PlannedWorkout{}, ...]}
 
   """
-  @spec list_planned_workouts(String.t()) :: {:ok, list(PlannedWorkout.t())}
-  def list_planned_workouts(training_plan_id) do
+  @spec list_planned_workouts(String.t(), String.t()) :: {:ok, list(PlannedWorkout.t())}
+  def list_planned_workouts(business_id, training_plan_id) do
     workouts =
       PlannedWorkout
-      |> where([w], w.training_plan_id == ^training_plan_id)
+      |> join(:inner, [w], t in TrainingPlan, on: w.training_plan_id == t.id)
+      |> where([w, t], w.training_plan_id == ^training_plan_id and t.business_id == ^business_id)
       |> order_by([w], asc: w.day_number)
       |> Repo.all()
-      |> Repo.preload(workout_elements: [:exercise, :planned_sets])
+      |> Repo.preload(workout_elements: :exercise)
 
     {:ok, workouts}
   end
 
-  def create_planned_workout(attrs \\ %{}) do
-    %PlannedWorkout{}
+  def create_planned_workout(business_id, training_plan_id, attrs) do
+    %PlannedWorkout{business_id: business_id, training_plan_id: training_plan_id}
     |> PlannedWorkout.changeset(attrs)
     |> Repo.insert()
   end
@@ -251,7 +247,7 @@ defmodule Easy.Training.Programming do
 
   def get_planned_workout!(id) do
     Repo.get!(PlannedWorkout, id)
-    |> Repo.preload(workout_elements: [:exercise, :planned_sets])
+    |> Repo.preload(workout_elements: :exercise)
   end
 
   def delete_planned_workout(%PlannedWorkout{} = workout) do
@@ -267,7 +263,7 @@ defmodule Easy.Training.Programming do
         join: t in TrainingPlan,
         on: w.training_plan_id == t.id,
         where: w.id == ^workout_id and t.business_id == ^business_id,
-        preload: [workout_elements: [:exercise, :planned_sets]]
+        preload: [workout_elements: :exercise]
 
     case Repo.one(query) do
       nil -> {:error, :not_found}
@@ -277,15 +273,15 @@ defmodule Easy.Training.Programming do
 
   # Workout Elements
 
-  def create_workout_element(attrs \\ %{}) do
-    %WorkoutElement{}
+  def create_workout_element(business_id, planned_workout_id, attrs) do
+    %WorkoutElement{business_id: business_id, planned_workout_id: planned_workout_id}
     |> WorkoutElement.changeset(attrs)
     |> Repo.insert()
   end
 
   def get_workout_element!(id) do
     Repo.get!(WorkoutElement, id)
-    |> Repo.preload([:exercise, :planned_sets])
+    |> Repo.preload(:exercise)
   end
 
   def update_workout_element(%WorkoutElement{} = element, attrs) do
@@ -309,7 +305,7 @@ defmodule Easy.Training.Programming do
         join: t in TrainingPlan,
         on: w.training_plan_id == t.id,
         where: e.id == ^element_id and t.business_id == ^business_id,
-        preload: [:exercise, :planned_sets]
+        preload: :exercise
 
     case Repo.one(query) do
       nil -> {:error, :not_found}
@@ -318,79 +314,42 @@ defmodule Easy.Training.Programming do
   end
 
   @doc """
-  Creates a workout element with sets in a transaction.
+  Creates a workout element with embedded sets.
+  Sets are included in the element_attrs under the :planned_sets key.
   """
-  def create_workout_element_with_sets(element_attrs, sets_attrs) do
-    Multi.new()
-    |> Multi.insert(:element, fn _ ->
-      WorkoutElement.changeset(%WorkoutElement{}, element_attrs)
-    end)
-    |> Multi.merge(fn %{element: element} ->
-      Enum.reduce(Enum.with_index(sets_attrs), Multi.new(), fn {set_attrs, idx}, multi ->
-        Multi.insert(multi, {:set, idx}, fn _ ->
-          PlannedSet.changeset(
-            %PlannedSet{},
-            Map.put(set_attrs, "workout_element_id", element.id)
-          )
-        end)
-      end)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{element: element}} ->
-        {:ok, Repo.preload(element, [:exercise, :planned_sets])}
+  def create_workout_element_with_sets(business_id, planned_workout_id, element_attrs, sets_attrs) do
+    # Merge sets into element attrs for embedded handling
+    attrs_with_sets = Map.put(element_attrs, "planned_sets", sets_attrs)
 
-      {:error, _step, changeset, _changes} ->
+    %WorkoutElement{business_id: business_id, planned_workout_id: planned_workout_id}
+    |> WorkoutElement.changeset(attrs_with_sets)
+    |> Repo.insert()
+    |> case do
+      {:ok, element} ->
+        {:ok, Repo.preload(element, :exercise)}
+
+      {:error, changeset} ->
         {:error, changeset}
     end
   end
 
   @doc """
-  Updates a workout element and replaces all its sets.
+  Updates a workout element and replaces all its embedded sets.
   """
   def update_workout_element_with_sets(%WorkoutElement{} = element, element_attrs, sets_attrs) do
-    Multi.new()
-    |> Multi.update(:element, WorkoutElement.changeset(element, element_attrs))
-    |> Multi.delete_all(
-      :delete_sets,
-      from(s in PlannedSet, where: s.workout_element_id == ^element.id)
-    )
-    |> Multi.merge(fn %{element: updated_element} ->
-      Enum.reduce(Enum.with_index(sets_attrs), Multi.new(), fn {set_attrs, idx}, multi ->
-        Multi.insert(multi, {:set, idx}, fn _ ->
-          PlannedSet.changeset(
-            %PlannedSet{},
-            Map.put(set_attrs, "workout_element_id", updated_element.id)
-          )
-        end)
-      end)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{element: updated_element}} ->
-        {:ok, Repo.preload(updated_element, [:exercise, :planned_sets], force: true)}
+    # Merge sets into element attrs for embedded handling
+    attrs_with_sets = Map.put(element_attrs, "planned_sets", sets_attrs)
 
-      {:error, _step, changeset, _changes} ->
+    element
+    |> WorkoutElement.changeset(attrs_with_sets)
+    |> Repo.update()
+    |> case do
+      {:ok, updated_element} ->
+        {:ok, Repo.preload(updated_element, :exercise, force: true)}
+
+      {:error, changeset} ->
         {:error, changeset}
     end
-  end
-
-  # Planned Sets
-
-  def create_planned_set(attrs \\ %{}) do
-    %PlannedSet{}
-    |> PlannedSet.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_planned_set(%PlannedSet{} = set, attrs) do
-    set
-    |> PlannedSet.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def delete_planned_set(%PlannedSet{} = set) do
-    Repo.delete(set)
   end
 
   # Duplication Logic
@@ -511,7 +470,8 @@ defmodule Easy.Training.Programming do
 
       multi
       |> Multi.insert(workout_alias, fn _ ->
-        PlannedWorkout.changeset(%PlannedWorkout{}, %{
+        %PlannedWorkout{business_id: new_plan.business_id}
+        |> PlannedWorkout.changeset(%{
           name: workout.name,
           notes: workout.notes,
           day_number: workout.day_number,
@@ -520,51 +480,50 @@ defmodule Easy.Training.Programming do
       end)
       |> Multi.merge(fn changes ->
         new_workout = changes[workout_alias]
-        copy_elements_multi(new_workout, workout.workout_elements)
+        copy_elements_multi(new_plan.business_id, new_workout, workout.workout_elements)
       end)
     end)
   end
 
-  defp copy_elements_multi(new_workout, elements) do
+  defp copy_elements_multi(business_id, new_workout, elements) do
     Enum.reduce(elements, Multi.new(), fn element, multi ->
       element_alias = {:element, element.id}
 
       multi
       |> Multi.insert(element_alias, fn _ ->
-        WorkoutElement.changeset(%WorkoutElement{}, %{
+        # Copy planned_sets as embedded data
+        copied_sets = copy_sets_data(element.planned_sets)
+
+        %WorkoutElement{business_id: business_id}
+        |> WorkoutElement.changeset(%{
           position: element.position,
           superset_group_id: element.superset_group_id,
           notes: element.notes,
           planned_workout_id: new_workout.id,
-          exercise_id: element.exercise_id
+          exercise_id: element.exercise_id,
+          planned_sets: copied_sets
         })
-      end)
-      |> Multi.merge(fn changes ->
-        new_element = changes[element_alias]
-        copy_sets_multi(new_element, element.planned_sets)
       end)
     end)
   end
 
-  defp copy_sets_multi(new_element, sets) do
-    Enum.reduce(sets, Multi.new(), fn set, multi ->
-      Multi.insert(multi, {:set, set.id}, fn _ ->
-        PlannedSet.changeset(%PlannedSet{}, %{
-          position: set.position,
-          target_reps: set.target_reps,
-          load_value: set.load_value,
-          load_type: set.load_type,
-          intensity_target: set.intensity_target,
-          tempo: set.tempo,
-          rest_seconds: set.rest_seconds,
-          duration_seconds: set.duration_seconds,
-          distance_value: set.distance_value,
-          distance_unit: set.distance_unit,
-          set_type: set.set_type,
-          notes: set.notes,
-          workout_element_id: new_element.id
-        })
-      end)
+  defp copy_sets_data(sets) when is_list(sets) do
+    Enum.map(sets, fn set ->
+      %{
+        target_reps: set.target_reps,
+        load_value: set.load_value,
+        load_type: set.load_type,
+        intensity_target: set.intensity_target,
+        tempo: set.tempo,
+        rest_seconds: set.rest_seconds,
+        duration_seconds: set.duration_seconds,
+        distance_value: set.distance_value,
+        distance_unit: set.distance_unit,
+        set_type: set.set_type,
+        notes: set.notes
+      }
     end)
   end
+
+  defp copy_sets_data(_), do: []
 end

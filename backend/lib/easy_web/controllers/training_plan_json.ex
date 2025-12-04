@@ -2,8 +2,7 @@ defmodule EasyWeb.TrainingPlanJSON do
   alias Easy.Training.Programming.{
     TrainingPlan,
     PlannedWorkout,
-    WorkoutElement,
-    PlannedSet
+    WorkoutElement
   }
 
   @day_names %{
@@ -97,10 +96,8 @@ defmodule EasyWeb.TrainingPlanJSON do
 
   defp sets_data(_), do: []
 
-  defp set_data(%PlannedSet{} = set) do
+  defp set_data(set) do
     %{
-      id: set.id,
-      position: set.position,
       target_reps: set.target_reps,
       load_value: set.load_value,
       load_type: set.load_type,

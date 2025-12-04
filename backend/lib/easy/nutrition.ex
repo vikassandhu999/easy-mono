@@ -429,9 +429,7 @@ defmodule Easy.Nutrition do
   @spec create_meal(NutritionPlan.t(), map()) ::
           {:ok, Meal.t()} | {:error, Ecto.Changeset.t()}
   def create_meal(%NutritionPlan{} = nutrition_plan, attrs) do
-    attrs = Map.put(attrs, "nutrition_plan_id", nutrition_plan.id)
-
-    %Meal{}
+    %Meal{nutrition_plan_id: nutrition_plan.id}
     |> Meal.changeset(attrs)
     |> Repo.insert()
   end
@@ -771,9 +769,7 @@ defmodule Easy.Nutrition do
   @spec create_meal_item(Meal.t(), map()) ::
           {:ok, MealItem.t()} | {:error, Ecto.Changeset.t()}
   def create_meal_item(%Meal{} = meal, attrs) do
-    attrs = Map.put(attrs, "meal_id", meal.id)
-
-    %MealItem{}
+    %MealItem{meal_id: meal.id}
     |> MealItem.changeset(attrs)
     |> Repo.insert()
   end

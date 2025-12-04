@@ -1,11 +1,13 @@
 defmodule Easy.Training.Programming.PlannedSet do
-  use Easy.Training.Schema
+  @moduledoc """
+  Embedded schema for planned sets within a workout element.
+  Stored as JSONB array in the workout_elements table.
+  """
+  use Ecto.Schema
+  import Ecto.Changeset
 
-  alias Easy.Training.Programming.WorkoutElement
-
-  schema "planned_sets" do
-    field :position, :integer
-
+  @primary_key false
+  embedded_schema do
     # === PRIMARY TARGET (What you're measuring) ===
     # Supports: "10", "8-12", "AMRAP", "10,8,6", "30s", "5km", "Max", "Failure"
     field :target_reps, :string
@@ -39,17 +41,12 @@ defmodule Easy.Training.Programming.PlannedSet do
 
     # === NOTES ===
     field :notes, :string
-
-    belongs_to :workout_element, WorkoutElement
-
-    timestamps()
   end
 
   @doc false
   def changeset(planned_set, attrs) do
     planned_set
     |> cast(attrs, [
-      :position,
       :target_reps,
       :load_value,
       :load_type,
@@ -60,21 +57,14 @@ defmodule Easy.Training.Programming.PlannedSet do
       :distance_value,
       :distance_unit,
       :set_type,
-      :notes,
-      :workout_element_id
+      :notes
     ])
-    |> validate_required([:position, :workout_element_id])
-    |> validate_number(:position, greater_than_or_equal_to: 0)
+    |> validate_length(:notes, max: 5000)
     |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
     |> validate_at_least_one_target()
     |> validate_target_reps_format()
     |> validate_distance_requires_unit()
-    |> unique_constraint([:workout_element_id, :position],
-      name: :planned_sets_workout_element_id_position_index,
-      message: "position already exists in this workout element"
-    )
-    |> foreign_key_constraint(:workout_element_id)
   end
 
   defp validate_at_least_one_target(changeset) do

@@ -9,10 +9,11 @@ defmodule EasyWeb.PlannedWorkoutController do
   def create(conn, %{"planned_workout" => workout_params}) do
     with claims <- conn.assigns.token_claims,
          business_id <- claims["business_id"],
+         training_plan_id <- workout_params["training_plan_id"],
          # Verify the training plan belongs to this business
-         {:ok, _training_plan} <-
-           verify_training_plan_ownership(business_id, workout_params["training_plan_id"]),
-         {:ok, workout} <- Training.create_planned_workout(workout_params) do
+         {:ok, _training_plan} <- verify_training_plan_ownership(business_id, training_plan_id),
+         {:ok, workout} <-
+           Training.create_planned_workout(business_id, training_plan_id, workout_params) do
       full_workout = Training.get_planned_workout!(workout.id)
 
       conn

@@ -1,6 +1,7 @@
 defmodule Easy.Training.Programming.PlannedWorkout do
   use Easy.Training.Schema
 
+  alias Easy.Organizations.Business
   alias Easy.Training.Programming.{TrainingPlan, WorkoutElement}
 
   @doc """
@@ -15,6 +16,7 @@ defmodule Easy.Training.Programming.PlannedWorkout do
     # Day of week: 1 (Monday) through 7 (Sunday)
     field :day_number, :integer
 
+    belongs_to :business, Business
     belongs_to :training_plan, TrainingPlan
 
     has_many :workout_elements, WorkoutElement,
@@ -27,8 +29,9 @@ defmodule Easy.Training.Programming.PlannedWorkout do
   @doc false
   def changeset(planned_workout, attrs) do
     planned_workout
-    |> cast(attrs, [:name, :notes, :day_number, :training_plan_id])
-    |> validate_required([:name, :day_number, :training_plan_id])
+    |> cast(attrs, [:name, :notes, :day_number])
+    |> validate_required([:name, :day_number, :training_plan_id, :business_id])
+    |> validate_length(:notes, max: 5000)
     |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
     |> check_constraint(:day_number,
       name: :day_number_valid_weekday,
@@ -39,6 +42,7 @@ defmodule Easy.Training.Programming.PlannedWorkout do
       message: "day number already exists in this training plan"
     )
     |> foreign_key_constraint(:training_plan_id)
+    |> foreign_key_constraint(:business_id)
   end
 
   @doc """

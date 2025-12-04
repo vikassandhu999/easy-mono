@@ -23,7 +23,6 @@ defmodule Easy.Nutrition.RecipeIngredient do
       :position,
       :quantity,
       :quantity_as_text,
-      :recipe_id,
       :ingredient_id,
       :unit_id
     ])

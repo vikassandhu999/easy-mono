@@ -40,20 +40,30 @@ defmodule Easy.Training do
               to: Easy.Training.Programming
 
   # Programming - Planned Workouts
-  defdelegate list_planned_workouts(training_plan_id), to: Easy.Training.Programming
+  defdelegate list_planned_workouts(business_id, training_plan_id), to: Easy.Training.Programming
   defdelegate fetch_planned_workout(business_id, workout_id), to: Easy.Training.Programming
   defdelegate get_planned_workout!(id), to: Easy.Training.Programming
-  defdelegate create_planned_workout(attrs), to: Easy.Training.Programming
+
+  defdelegate create_planned_workout(business_id, training_plan_id, attrs),
+    to: Easy.Training.Programming
+
   defdelegate update_planned_workout(workout, attrs), to: Easy.Training.Programming
   defdelegate delete_planned_workout(workout), to: Easy.Training.Programming
 
   # Programming - Workout Elements
   defdelegate fetch_workout_element(business_id, element_id), to: Easy.Training.Programming
   defdelegate get_workout_element!(id), to: Easy.Training.Programming
-  defdelegate create_workout_element(attrs), to: Easy.Training.Programming
 
-  defdelegate create_workout_element_with_sets(element_attrs, sets_attrs),
+  defdelegate create_workout_element(business_id, planned_workout_id, attrs),
     to: Easy.Training.Programming
+
+  defdelegate create_workout_element_with_sets(
+                business_id,
+                planned_workout_id,
+                element_attrs,
+                sets_attrs
+              ),
+              to: Easy.Training.Programming
 
   defdelegate update_workout_element(element, attrs), to: Easy.Training.Programming
 
@@ -71,7 +81,7 @@ defmodule Easy.Training do
   defdelegate discard_session(session), to: Easy.Training.Tracking
 
   # Tracking - Performed Sets
-  defdelegate create_performed_set(attrs), to: Easy.Training.Tracking
+  defdelegate create_performed_set(business_id, attrs), to: Easy.Training.Tracking
   defdelegate update_performed_set(set, attrs), to: Easy.Training.Tracking
   defdelegate delete_performed_set(set), to: Easy.Training.Tracking
   defdelegate fetch_performed_set(business_id, set_id), to: Easy.Training.Tracking

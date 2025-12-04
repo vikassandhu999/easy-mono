@@ -72,9 +72,6 @@ export type Exercise = {
 };
 
 export type PlannedSet = {
-    id: string;
-    position: number;
-
     // Primary Target (at least one required)
     target_reps: null | string; // "10", "8-12", "AMRAP"
     duration_seconds: null | number;
@@ -97,13 +94,6 @@ export type PlannedSet = {
 
     // Notes
     notes: null | string;
-
-    // Relationships
-    workout_element_id: string;
-
-    // Timestamps
-    inserted_at: string;
-    updated_at: string;
 };
 
 export type TrainingPlansListOpts = {
@@ -140,8 +130,6 @@ export const SetType_zod = z.enum([
 ]);
 
 export const PlannedSet_zod = z.object({
-    position: z.number(),
-
     // Primary Target (at least one required)
     target_reps: z.string().nullable().optional(),
     duration_seconds: z.number().nullable().optional(),

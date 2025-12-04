@@ -2,38 +2,28 @@ import {baseAPISlice} from '../baseAPISlice';
 import {type DistanceUnit, type LoadType, type SetType} from '../training_plans/training_plans_definition';
 
 export type PlannedSet = {
-    id?: string;
-    position: number;
-    
     // Primary Target (at least one required)
-    target_reps: string | null;      // "10", "8-12", "AMRAP"
-    duration_seconds: number | null;
-    distance_value: number | null;
-    distance_unit: DistanceUnit;     // Required if distance_value set
-    
+    target_reps: null | string; // "10", "8-12", "AMRAP"
+    duration_seconds: null | number;
+    distance_value: null | number;
+    distance_unit: DistanceUnit; // Required if distance_value set
+
     // Load
-    load_value: number | null;
+    load_value: null | number;
     load_type: LoadType;
-    
+
     // Intensity
-    intensity_target: string | null; // "RPE 8", "Zone 2"
-    
+    intensity_target: null | string; // "RPE 8", "Zone 2"
+
     // Execution
-    tempo: string | null;            // "3010"
-    rest_seconds: number | null;
-    
+    tempo: null | string; // "3010"
+    rest_seconds: null | number;
+
     // Classification
     set_type: SetType;
-    
+
     // Notes
-    notes: string | null;
-    
-    // Relationships (optional, included in responses)
-    workout_element_id?: string;
-    
-    // Timestamps (optional, included in responses)
-    inserted_at?: string;
-    updated_at?: string;
+    notes: null | string;
 };
 
 export type WorkoutElement = {
@@ -54,7 +44,7 @@ export type CreateWorkoutElement = {
     position: number;
     superset_group_id?: null | string;
     notes?: null | string;
-    sets?: Omit<PlannedSet, 'id'>[];
+    sets?: PlannedSet[];
 };
 
 export type UpdateWorkoutElement = {
@@ -62,7 +52,7 @@ export type UpdateWorkoutElement = {
     position?: number;
     superset_group_id?: null | string;
     notes?: null | string;
-    sets?: Omit<PlannedSet, 'id'>[];
+    sets?: PlannedSet[];
 };
 
 export const workoutElementsApi = baseAPISlice.injectEndpoints({

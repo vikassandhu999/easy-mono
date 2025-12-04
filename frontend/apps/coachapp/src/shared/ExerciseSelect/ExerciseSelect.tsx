@@ -1,5 +1,5 @@
 import {Loader, Menu, Text, TextInput} from '@mantine/core';
-import {useDebouncedCallback, useIntersection, useLocalStorage} from '@mantine/hooks';
+import {useDebouncedCallback, useLocalStorage} from '@mantine/hooks';
 import {CheckIcon, XIcon} from '@phosphor-icons/react';
 import {IconBarbell, IconChevronDown, IconHistory, IconPlus} from '@tabler/icons-react';
 import {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
@@ -101,6 +101,7 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
 
     const searchInputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     const onSearchChangeDebounced = useDebouncedCallback(setSearch, 300);
 
@@ -115,30 +116,57 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
         muscle_ids: selectedMuscleIds.length > 0 ? selectedMuscleIds : undefined,
     });
 
-    // Infinite scroll trigger
-    const {ref: loadMoreRef, entry} = useIntersection({
-        root: listRef.current,
-        threshold: 0.5,
-    });
-
-    useEffect(() => {
-        if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
-        }
-    }, [entry?.isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
     const exercises = useMemo(() => {
         if (!data?.pages) return [];
         return data.pages.flatMap((page) => page.records);
     }, [data?.pages]);
 
+    // Infinite scroll using native IntersectionObserver to properly observe within the scrollable container
+    useEffect(() => {
+        const loadMoreElement = loadMoreRef.current;
+        const listElement = listRef.current;
+
+        // Don't set up observer if:
+        // - Elements aren't mounted yet
+        // - No more pages to load
+        // - Currently fetching
+        // - No exercises loaded yet (prevents immediate triggering on first render)
+        if (!loadMoreElement || !listElement || !hasNextPage || isFetchingNextPage || exercises.length === 0) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry?.isIntersecting) {
+                    fetchNextPage();
+                }
+            },
+            {
+                root: listElement,
+                threshold: 0.1,
+                rootMargin: '0px',
+            },
+        );
+
+        // Small delay to ensure the DOM has settled after render
+        const timeoutId = setTimeout(() => {
+            observer.observe(loadMoreElement);
+        }, 100);
+
+        return () => {
+            clearTimeout(timeoutId);
+            observer.disconnect();
+        };
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, exercises.length]);
+
     // Get recent exercises from the loaded data
-    const recentExercises = useMemo(() => {
+    const recentExercises = useMemo((): Exercise[] => {
         if (!recentExerciseIds.length) return [];
         return recentExerciseIds
             .slice(0, 3)
             .map((id) => exercisesMap[id])
-            .filter(Boolean);
+            .filter((exercise): exercise is Exercise => exercise !== undefined);
     }, [recentExerciseIds, exercisesMap]);
 
     // Update exercises map when exercises change
@@ -181,7 +209,9 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
     );
 
     const handleSave = useCallback(() => {
-        const selectedExercises = selectedIds.map((id) => exercisesMap[id]).filter(Boolean);
+        const selectedExercises = selectedIds
+            .map((id) => exercisesMap[id])
+            .filter((exercise): exercise is Exercise => exercise !== undefined);
         onComplete?.(selectedIds, selectedExercises);
     }, [selectedIds, exercisesMap, onComplete]);
 
@@ -215,8 +245,11 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
                     break;
                 case 'Enter':
                     if (focusedIndex >= 0 && focusedIndex < exercises.length) {
-                        e.preventDefault();
-                        handleSelect(exercises[focusedIndex].id);
+                        const focusedExercise = exercises[focusedIndex];
+                        if (focusedExercise) {
+                            e.preventDefault();
+                            handleSelect(focusedExercise.id);
+                        }
                     }
                     break;
                 case 'Escape':
@@ -235,8 +268,11 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
                 e.preventDefault();
                 setFocusedIndex(0);
             } else if (e.key === 'Enter' && exercises.length > 0 && focusedIndex === -1) {
-                e.preventDefault();
-                handleSelect(exercises[0].id);
+                const firstExercise = exercises[0];
+                if (firstExercise) {
+                    e.preventDefault();
+                    handleSelect(firstExercise.id);
+                }
             } else if (e.key === 'Escape') {
                 setSearch('');
                 onSearchChangeDebounced('');
@@ -244,8 +280,6 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
         },
         [exercises, focusedIndex, handleSelect, onSearchChangeDebounced],
     );
-
-
 
     return (
         <>
@@ -382,7 +416,7 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
                                     type="button"
                                 >
                                     <span className={classes.recentChipName}>{exercise.name}</span>
-                                    {exercise.muscles && exercise.muscles.length > 0 && (
+                                    {exercise.muscles && exercise.muscles.length > 0 && exercise.muscles[0] && (
                                         <span className={classes.recentChipMeta}>{exercise.muscles[0].name}</span>
                                     )}
                                     {selectedIds.includes(exercise.id) && (

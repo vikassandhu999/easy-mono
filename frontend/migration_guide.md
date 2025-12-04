@@ -1,345 +1,221 @@
-# Training Plan Weekly Schedule - Frontend Migration Guide
+# Frontend API Migration Guide - December 2024
 
-## Overview
+This document describes the breaking API changes introduced in the December 2024 backend update.
 
-Training plans have been updated to use a **weekly schedule model**. Plans are now designed for a single week (7 days) and repeat based on the day of the week when assigned to a client.
+## Summary
 
-## Breaking Changes
+| Change | Impact | Action Required |
+|--------|--------|-----------------|
+| `planned_sets` no longer have `id` or `position` fields | ⚠️ Breaking | Use array index for ordering and identification |
 
-### 1. `duration_weeks` Field Removed
+---
 
-**Before:**
-```json
-{
-  "id": "uuid",
-  "name": "PPL Program",
-  "duration_weeks": 8,
-  ...
-}
-```
+## Breaking Change: PlannedSet `id` and `position` Fields Removed
 
-**After:**
-```json
-{
-  "id": "uuid",
-  "name": "PPL Program",
-  "start_date": "2024-01-01",
-  "end_date": "2024-03-31",
-  ...
-}
-```
+### What Changed
 
-| Old Field | New Fields | Notes |
-|-----------|------------|-------|
-| `duration_weeks` | `start_date`, `end_date` | Only present on assigned plans (non-templates) |
+`PlannedSet` has been converted from a separate database table to an **embedded schema** stored as JSONB array within `WorkoutElement`. As a result:
+- Sets **no longer have an `id` field**
+- Sets **no longer have a `position` field** - array index provides ordering
 
-### 2. Assign Endpoint Now Requires Dates
-
-**Endpoint:** `POST /api/training_plans/:id/assign`
-
-**Before:**
-```json
-{
-  "client_id": "client-uuid",
-  "start_date": "2024-01-01"  // Optional
-}
-```
-
-**After:**
-```json
-{
-  "client_id": "client-uuid",
-  "start_date": "2024-01-01",  // Required (ISO 8601)
-  "end_date": "2024-03-31"     // Required (ISO 8601)
-}
-```
-
-**Validation Errors:**
-```json
-{
-  "errors": {
-    "start_date": ["is required"],
-    "end_date": ["is required"]
-  }
-}
-```
-
-### 3. Workout `day_number` Now Represents Day of Week
-
-**Before:** `day_number` was a sequential day (1, 2, 3, ... up to any number)
-
-**After:** `day_number` is constrained to 1-7 representing days of the week
-
-| day_number | Day |
-|------------|-----|
-| 1 | Monday |
-| 2 | Tuesday |
-| 3 | Wednesday |
-| 4 | Thursday |
-| 5 | Friday |
-| 6 | Saturday |
-| 7 | Sunday |
-
-### 4. New `day_name` Field in Workout Response
-
-Workouts now include a human-readable `day_name` field:
-
-```json
-{
-  "id": "workout-uuid",
-  "name": "Push Day",
-  "day_number": 1,
-  "day_name": "Monday",
-  "notes": "...",
-  "elements": [...]
-}
-```
-
-## Updated Response Schemas
-
-### Training Plan (Template)
+### API Response Before
 
 ```json
 {
   "data": {
-    "id": "uuid",
-    "name": "Push Pull Legs",
-    "description": "3-day split program",
-    "is_template": true,
-    "start_date": null,
-    "end_date": null,
-    "business_id": "uuid",
-    "author_id": "uuid",
-    "client_id": null,
-    "original_template_id": null,
-    "workouts": [...]
+    "id": "plan-uuid",
+    "workouts": [{
+      "id": "workout-uuid",
+      "elements": [{
+        "id": "element-uuid",
+        "sets": [{
+          "id": "set-uuid",          // ❌ REMOVED
+          "position": 0,              // ❌ REMOVED
+          "target_reps": "10",
+          "load_value": 100,
+          "load_type": "absolute_kg"
+        }]
+      }]
+    }]
   }
 }
 ```
 
-### Training Plan (Assigned to Client)
+### API Response After
 
 ```json
 {
   "data": {
-    "id": "uuid",
-    "name": "Push Pull Legs",
-    "description": "3-day split program",
-    "is_template": false,
-    "start_date": "2024-01-01",
-    "end_date": "2024-03-31",
-    "business_id": "uuid",
-    "author_id": "uuid",
-    "client_id": "client-uuid",
-    "original_template_id": "template-uuid",
-    "workouts": [...]
+    "id": "plan-uuid",
+    "workouts": [{
+      "id": "workout-uuid",
+      "elements": [{
+        "id": "element-uuid",
+        "sets": [
+          {                          // ✅ Array index 0 = first set
+            "target_reps": "10",
+            "load_value": 100,
+            "load_type": "absolute_kg"
+          },
+          {                          // ✅ Array index 1 = second set
+            "target_reps": "8",
+            "load_value": 110,
+            "load_type": "absolute_kg"
+          }
+        ]
+      }]
+    }]
   }
 }
 ```
 
-### Planned Workout
+### Frontend Migration Steps
 
-```json
-{
-  "id": "uuid",
-  "name": "Push Day",
-  "notes": "Focus on chest and triceps",
-  "day_number": 1,
-  "day_name": "Monday",
-  "elements": [...]
-}
-```
-
-## Frontend Implementation Guide
-
-### 1. Update TypeScript Interfaces
+#### 1. Update TypeScript Types
 
 ```typescript
-// Before
-interface TrainingPlan {
-  id: string;
-  name: string;
-  description?: string;
-  is_template: boolean;
-  duration_weeks?: number;
+// BEFORE
+interface PlannedSet {
+  id: string;           // ❌ Remove
+  position: number;     // ❌ Remove
+  target_reps?: string;
+  load_value?: number;
+  load_type?: LoadType;
   // ...
 }
 
-// After
-interface TrainingPlan {
-  id: string;
-  name: string;
-  description?: string;
-  is_template: boolean;
-  start_date: string | null;  // ISO 8601 date (YYYY-MM-DD)
-  end_date: string | null;    // ISO 8601 date (YYYY-MM-DD)
-  business_id: string;
-  author_id: string;
-  client_id: string | null;
-  original_template_id: string | null;
-  workouts: PlannedWorkout[];
-}
-
-interface PlannedWorkout {
-  id: string;
-  name: string;
+// AFTER
+interface PlannedSet {
+  target_reps?: string;
+  load_value?: number;
+  load_type?: LoadType;
+  intensity_target?: string;
+  tempo?: string;
+  rest_seconds?: number;
+  duration_seconds?: number;
+  distance_value?: number;
+  distance_unit?: DistanceUnit;
+  set_type?: SetType;
   notes?: string;
-  day_number: 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  day_name: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-  elements: WorkoutElement[];
 }
 ```
 
-### 2. Update Assign Form
+#### 2. Update Set Identification Logic
 
-Add date range picker for assigning training plans:
-
-```tsx
-// Example React component
-function AssignTrainingPlanForm({ planId, clientId, onSuccess }) {
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-
-  const handleSubmit = async () => {
-    if (!startDate || !endDate) {
-      // Show validation error
-      return;
-    }
-
-    await api.post(`/training_plans/${planId}/assign`, {
-      client_id: clientId,
-      start_date: formatISO(startDate, { representation: 'date' }),
-      end_date: formatISO(endDate, { representation: 'date' }),
-    });
-
-    onSuccess();
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <DatePicker
-        label="Start Date"
-        value={startDate}
-        onChange={setStartDate}
-        required
-      />
-      <DatePicker
-        label="End Date"
-        value={endDate}
-        onChange={setEndDate}
-        minDate={startDate}
-        required
-      />
-      <Button type="submit">Assign Plan</Button>
-    </form>
-  );
-}
-```
-
-### 3. Update Workout Day Selection
-
-When creating/editing workouts, use a weekday selector instead of a numeric input:
-
-```tsx
-const WEEKDAYS = [
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
-  { value: 7, label: 'Sunday' },
-];
-
-function WorkoutDaySelect({ value, onChange }) {
-  return (
-    <Select
-      label="Day of Week"
-      value={value}
-      onChange={onChange}
-      options={WEEKDAYS}
-    />
-  );
-}
-```
-
-### 4. Display Training Plan Duration
-
-Instead of showing weeks, calculate and display the duration from dates:
+**Before:** Sets were identified by `set.id` or `set.position`
+**After:** Use `element.id + array index`
 
 ```typescript
-function formatPlanDuration(plan: TrainingPlan): string {
-  if (plan.is_template || !plan.start_date || !plan.end_date) {
-    return 'Template (Weekly)';
-  }
-  
-  const start = parseISO(plan.start_date);
-  const end = parseISO(plan.end_date);
-  const weeks = differenceInWeeks(end, start);
-  
-  if (weeks < 1) {
-    const days = differenceInDays(end, start) + 1;
-    return `${days} day${days !== 1 ? 's' : ''}`;
-  }
-  
-  return `${weeks} week${weeks !== 1 ? 's' : ''}`;
-}
+// BEFORE
+const setKey = set.id;
+// or
+const setKey = `${element.id}-${set.position}`;
+
+// AFTER
+element.sets.map((set, index) => {
+  const setKey = `${element.id}-${index}`;
+});
 ```
 
-### 5. Calendar View for Assigned Plans
+#### 3. Update React Keys
 
-For displaying assigned plans, generate repeating workout dates:
+```tsx
+// BEFORE
+{element.sets.map(set => (
+  <SetRow key={set.id} set={set} />
+))}
+
+// AFTER
+{element.sets.map((set, index) => (
+  <SetRow key={`${element.id}-${index}`} set={set} index={index} />
+))}
+```
+
+#### 4. Update Create/Update Payloads
+
+When creating or updating workout elements with sets, just send the array - ordering is determined by array position:
 
 ```typescript
-function getWorkoutDates(
-  plan: TrainingPlan,
-  workout: PlannedWorkout
-): Date[] {
-  if (!plan.start_date || !plan.end_date) return [];
-  
-  const dates: Date[] = [];
-  const start = parseISO(plan.start_date);
-  const end = parseISO(plan.end_date);
-  
-  // day_number: 1 = Monday (ISO weekday)
-  let current = start;
-  
-  // Find first occurrence of this weekday
-  while (getISODay(current) !== workout.day_number && current <= end) {
-    current = addDays(current, 1);
+// Creating/updating a workout element with sets
+const payload = {
+  workout_element: {
+    position: 0,
+    exercise_id: "exercise-uuid",
+    planned_sets: [
+      // First set (index 0)
+      { target_reps: "10", load_value: 100, load_type: "absolute_kg" },
+      // Second set (index 1)  
+      { target_reps: "8", load_value: 110, load_type: "absolute_kg" },
+      // Third set (index 2)
+      { target_reps: "6", load_value: 120, load_type: "absolute_kg" }
+    ]
   }
-  
-  // Add all occurrences
-  while (current <= end) {
-    dates.push(current);
-    current = addWeeks(current, 1);
-  }
-  
-  return dates;
-}
+};
 ```
 
-## Removed Fields
+#### 5. Reordering Sets
 
-| Field | Status | Migration |
-|-------|--------|-----------|
-| `duration_weeks` | **Removed** | Use `start_date` and `end_date` to calculate duration |
+To reorder sets, simply change the array order in your state and send the updated array:
 
-## New Fields
+```typescript
+// Move set from index 2 to index 0
+const reorderedSets = [...sets];
+const [movedSet] = reorderedSets.splice(2, 1);
+reorderedSets.unshift(movedSet);
 
-| Field | Location | Type | Notes |
-|-------|----------|------|-------|
-| `start_date` | TrainingPlan | `string \| null` | ISO 8601 date, null for templates |
-| `end_date` | TrainingPlan | `string \| null` | ISO 8601 date, null for templates |
-| `day_name` | PlannedWorkout | `string` | Human-readable day name |
+// Send update with new array order
+updateWorkoutElement(elementId, { planned_sets: reorderedSets });
+```
 
-## Validation Rules
+---
 
-1. **Workouts:** `day_number` must be between 1 and 7
-2. **Assigned Plans:** Both `start_date` and `end_date` are required
-3. **Date Range:** `end_date` must be greater than or equal to `start_date`
-4. **Templates:** `start_date` and `end_date` should be `null`
+## Non-Breaking Changes (No Frontend Action Required)
+
+The following changes are **internal only** and don't affect the API contract:
+
+### 1. Tenant Isolation Enhancements
+- `business_id` added to `planned_workouts`, `workout_elements`, and `performed_sets` tables
+- This is handled entirely on the backend - no frontend changes needed
+
+### 2. Security Hardening
+- Foreign key fields removed from user-controllable input
+- `String.to_existing_atom` replaced with safe parsing
+- These are internal security improvements - no API changes
+
+### 3. Additional Validations
+- `started_at` now required on `WorkoutSession`
+- If you were already sending `started_at`, no change needed
+- If not, ensure workout session creation includes `started_at`
+
+```typescript
+// Ensure this is included when creating sessions
+const sessionPayload = {
+  session: {
+    started_at: new Date().toISOString(),  // Required now
+    planned_workout_id: "optional-uuid"
+  }
+};
+```
+
+---
+
+## Testing Checklist
+
+After making the above changes, verify:
+
+- [ ] Training plan list/detail views render correctly
+- [ ] Workout element sets display without errors
+- [ ] Creating new sets works (no `id` in payload)
+- [ ] Updating existing sets works (identify by position)
+- [ ] Reordering sets works correctly
+- [ ] Workout session creation includes `started_at`
+
+---
 
 ## Questions?
 
-Contact the backend team if you have any questions about these changes.
+If you encounter issues with this migration, check:
+
+1. Network tab for API response structure
+2. Console for any `undefined` errors related to `set.id`
+3. React DevTools for key-related warnings

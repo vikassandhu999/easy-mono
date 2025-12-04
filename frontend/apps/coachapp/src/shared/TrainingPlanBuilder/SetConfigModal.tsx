@@ -9,7 +9,6 @@ import {PlannedSet} from '@/services/workout_elements';
 import classes from './SetConfigModal.module.css';
 
 type SetData = {
-    position: number;
     target_reps: null | string; // "10", "8-12", "AMRAP"
     load_value: null | number;
     load_type: LoadType;
@@ -72,7 +71,6 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
     useEffect(() => {
         if (opened) {
             const mappedSets = initialSets.map((s) => ({
-                position: s.position,
                 target_reps: s.target_reps,
                 load_value: s.load_value,
                 load_type: s.load_type || 'none',
@@ -111,8 +109,7 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
         setSets((prev) => prev.map((s) => ({...s, load_type: val})));
     };
 
-    const createDefaultSet = (position: number, copyFrom?: SetData): SetData => ({
-        position,
+    const createDefaultSet = (copyFrom?: SetData): SetData => ({
         target_reps: copyFrom?.target_reps ?? '8-12',
         load_value: copyFrom?.load_value ?? null,
         load_type: globalUnit,
@@ -128,7 +125,7 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
 
     const addSet = () => {
         const lastSet = sets[sets.length - 1];
-        const newSet = createDefaultSet(sets.length + 1, lastSet);
+        const newSet = createDefaultSet(lastSet);
         setSets([...sets, newSet]);
         // Don't auto-expand, as inline editing is available
     };
@@ -138,16 +135,15 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
         if (!setToCopy) return;
 
         const newSets = [...sets];
-        const newSet = createDefaultSet(index + 2, setToCopy);
+        const newSet = createDefaultSet(setToCopy);
         newSets.splice(index + 1, 0, newSet);
 
-        // Reposition all sets
-        setSets(newSets.map((s, i) => ({...s, position: i + 1})));
+        setSets(newSets);
     };
 
     const removeSet = (index: number) => {
         if (sets.length <= 1) return;
-        const newSets = sets.filter((_, i) => i !== index).map((s, i) => ({...s, position: i + 1}));
+        const newSets = sets.filter((_, i) => i !== index);
         setSets(newSets);
         if (expandedSet === index) setExpandedSet(null);
     };
@@ -228,7 +224,7 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                     className={classes.setHeader}
                                     style={{cursor: 'default', padding: '12px'}}
                                 >
-                                    <div className={classes.setNumber}>{set.position}</div>
+                                    <div className={classes.setNumber}>{index + 1}</div>
 
                                     <div style={{flex: 1, display: 'flex', gap: '8px', alignItems: 'center'}}>
                                         <TextInput

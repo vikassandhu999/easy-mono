@@ -1,7 +1,7 @@
 import {Button} from '@mantine/core';
 import {FC, useRef} from 'react';
 
-import {Content} from '@/services/contents';
+import {Exercise} from '@/services/exercises';
 import AutoDrawer from '@/shared/AutoDrawer';
 
 import ExerciseSelect from './ExerciseSelect';
@@ -9,13 +9,13 @@ import ExerciseSelect from './ExerciseSelect';
 interface ExerciseSelectDrawerProps {
     multiple?: boolean;
     onClose: () => void;
-    onComplete?: (selectedIds: string[], selectedExercises?: Content[]) => void;
+    onComplete?: (selectedIds: string[], selectedExercises?: Exercise[]) => void;
 }
 
 const ExerciseSelectDrawer: FC<ExerciseSelectDrawerProps> = ({multiple = true, onClose, onComplete}) => {
     const exerciseSelectRef = useRef<{handleSave: () => void}>(null);
 
-    const handleComplete = (selectedIds: string[], selectedExercises?: Content[]) => {
+    const handleComplete = (selectedIds: string[], selectedExercises?: Exercise[]) => {
         onComplete?.(selectedIds, selectedExercises);
         onClose();
     };

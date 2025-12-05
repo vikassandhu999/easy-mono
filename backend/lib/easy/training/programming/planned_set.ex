@@ -15,13 +15,12 @@ defmodule Easy.Training.Programming.PlannedSet do
     # === INTENSITY MODIFIERS ===
     field :load_value, :decimal
 
-    field :load_type, Ecto.Enum,
-      values: [:absolute_kg, :absolute_lbs, :bodyweight, :percent_1rm, :rpe, :none],
+    field :load_unit, Ecto.Enum,
+      values: [:kg, :lbs, :bodyweight, :percent_1rm, :none],
       default: :none
 
     # "RPE 8", "Zone 2", "65% HR"
     field :intensity_target, :string
-
     # === EXECUTION PARAMETERS ===
     field :tempo, :string
     field :rest_seconds, :integer
@@ -49,7 +48,7 @@ defmodule Easy.Training.Programming.PlannedSet do
     |> cast(attrs, [
       :target_reps,
       :load_value,
-      :load_type,
+      :load_unit,
       :intensity_target,
       :tempo,
       :rest_seconds,

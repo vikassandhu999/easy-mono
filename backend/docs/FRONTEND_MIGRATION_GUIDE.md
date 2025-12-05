@@ -699,3 +699,105 @@ The migration handles data transformation. Old `reps`/`weight_kg` values are con
 For questions or issues during migration:
 - Backend Team: Check the `training_datamodels_review.md` file for implementation details
 - Create issues in the repository for bugs or unclear documentation
+# Frontend Migration Guide - Training Domain API Updates (v1.2.0)
+
+> **Version**: 1.2.0
+> **Last Updated**: December 5, 2025
+> **Changeset**: Standardize Load Units & Enums
+
+---
+
+## 📋 Executive Summary
+
+This update harmonizes the `PlannedSet` and `PerformedSet` schemas to strictly align their Enums and unit handling.
+**Breaking Change**: `load_type` has been renamed to `load_unit` across all endpoints to match `PerformedSet` terminology.
+
+### Key Changes
+1. **Rename**: `load_type` -> `load_unit` in `PlannedSet` (affects `WorkoutElement` and `PlannedWorkout` payloads).
+2. **Enum Mapping**: `absolute_kg` -> `kg`, `absolute_lbs` -> `lbs`.
+3. **Deprecation**: `rpe` removed from `load_unit` enum (use `intensity_target` instead).
+
+---
+
+## 🔄 Migration Steps
+
+### 1. Update Payload Keys
+
+**Find & Replace** in your API client and types:
+- `load_type` -> `load_unit`
+
+### 2. Update Enum Values
+
+Map old `load_type` values to new `load_unit` values:
+
+| Old Value | New Value | Notes |
+|-----------|-----------|-------|
+| `absolute_kg` | `kg` | Simplified |
+| `absolute_lbs` | `lbs` | Simplified |
+| `rpe` | `none` | **Action Required**: Move value to `intensity_target` |
+| `bodyweight` | `bodyweight` | Unchanged |
+| `percent_1rm` | `percent_1rm` | Unchanged |
+| `none` | `none` | Unchanged |
+
+### 3. Move RPE Targets
+
+If you were using `load_type: "rpe"`, you must now store the RPE value in `intensity_target`.
+
+**Before:**
+```json
+{
+  "load_type": "rpe",
+  "load_value": 8
+}
+```
+
+**After:**
+```json
+{
+  "load_unit": "none",
+  "intensity_target": "RPE 8"
+}
+```
+
+---
+
+## 📦 Updated TypeScript Interfaces
+
+### PlannedSet (v1.2.0)
+
+```typescript
+type LoadUnit = "kg" | "lbs" | "bodyweight" | "percent_1rm" | "none";
+
+interface PlannedSet {
+  // ... other fields ...
+  load_unit: LoadUnit; // Renamed from load_type
+  load_value: number | null;
+  intensity_target: string | null; // Use for RPE now
+}
+```
+
+---
+
+## 🔗 Endpoint Examples
+
+### Creating a Workout Element
+
+**POST** `/api/workout_elements`
+
+```json
+{
+  "workout_element": {
+    "planned_workout_id": "uuid",
+    "exercise_id": "uuid",
+    "position": 0,
+    "sets": [
+      {
+        "position": 0,
+        "target_reps": "8-12",
+        "load_unit": "kg",     // CHANGED: was load_type="absolute_kg"
+        "load_value": 100
+      }
+    ]
+  }
+}
+```

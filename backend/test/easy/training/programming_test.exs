@@ -2,7 +2,7 @@ defmodule Easy.Training.ProgrammingTest do
   use Easy.DataCase, async: true
 
   alias Easy.Training.Programming
-  alias Easy.Training.Programming.{TrainingPlan, PlannedWorkout, WorkoutElement, PlannedSet}
+  alias Easy.Training.Programming
   alias Easy.Training.Library
 
   describe "training_plans" do
@@ -63,10 +63,9 @@ defmodule Easy.Training.ProgrammingTest do
 
       # Add a workout to the plan
       {:ok, _workout} =
-        Programming.create_planned_workout(%{
+        Programming.create_planned_workout(business.id, plan.id, %{
           name: "Day 1",
-          day_number: 1,
-          training_plan_id: plan.id
+          day_number: 1
         })
 
       assert {:ok, copy} = Programming.duplicate_training_plan(business.id, plan.id)
@@ -88,27 +87,23 @@ defmodule Easy.Training.ProgrammingTest do
         })
 
       {:ok, workout} =
-        Programming.create_planned_workout(%{
+        Programming.create_planned_workout(business.id, plan.id, %{
           name: "Day 1",
-          day_number: 1,
-          training_plan_id: plan.id
+          day_number: 1
         })
 
-      {:ok, element} =
-        Programming.create_workout_element(%{
+      {:ok, _element} =
+        Programming.create_workout_element(business.id, workout.id, %{
           position: 0,
           exercise_id: exercise.id,
-          planned_workout_id: workout.id
-        })
-
-      {:ok, _set} =
-        Programming.create_planned_set(%{
-          position: 0,
-          target_reps: "10",
-          load_value: 50,
-          load_type: :absolute_kg,
-          rest_seconds: 90,
-          workout_element_id: element.id
+          planned_sets: [
+            %{
+              target_reps: "10",
+              load_value: 50,
+              load_unit: :kg,
+              rest_seconds: 90
+            }
+          ]
         })
 
       %{business: business, coach: coach, client: client, plan: plan}
@@ -160,44 +155,44 @@ defmodule Easy.Training.ProgrammingTest do
       %{business: business, plan: plan}
     end
 
-    test "create_planned_workout/1 validates day_number between 1 and 7", %{plan: plan} do
+    test "create_planned_workout/1 validates day_number between 1 and 7", %{
+      business: business,
+      plan: plan
+    } do
       # Test day_number too low
       assert {:error, changeset} =
-               Programming.create_planned_workout(%{
+               Programming.create_planned_workout(business.id, plan.id, %{
                  name: "Invalid Day",
-                 day_number: 0,
-                 training_plan_id: plan.id
+                 day_number: 0
                })
 
       assert %{day_number: ["must be greater than or equal to 1"]} = errors_on(changeset)
 
       # Test day_number too high
       assert {:error, changeset} =
-               Programming.create_planned_workout(%{
+               Programming.create_planned_workout(business.id, plan.id, %{
                  name: "Invalid Day",
-                 day_number: 8,
-                 training_plan_id: plan.id
+                 day_number: 8
                })
 
       assert %{day_number: ["must be less than or equal to 7"]} = errors_on(changeset)
     end
 
-    test "unique constraint on (training_plan_id, day_number)", %{plan: plan} do
+    test "unique constraint on (training_plan_id, day_number)", %{business: business, plan: plan} do
       {:ok, _} =
-        Programming.create_planned_workout(%{
+        Programming.create_planned_workout(business.id, plan.id, %{
           name: "Day 1",
-          day_number: 1,
-          training_plan_id: plan.id
+          day_number: 1
         })
 
       assert {:error, changeset} =
-               Programming.create_planned_workout(%{
+               Programming.create_planned_workout(business.id, plan.id, %{
                  name: "Another Day 1",
-                 day_number: 1,
-                 training_plan_id: plan.id
+                 day_number: 1
                })
 
-      assert %{day_number: ["day already exists in this training plan"]} = errors_on(changeset)
+      assert %{training_plan_id: ["day number already exists in this training plan"]} =
+               errors_on(changeset)
     end
   end
 
@@ -210,158 +205,221 @@ defmodule Easy.Training.ProgrammingTest do
         Programming.create_training_plan(business.id, coach.id, %{"name" => "Test Plan"})
 
       {:ok, workout} =
-        Programming.create_planned_workout(%{
+        Programming.create_planned_workout(business.id, plan.id, %{
           name: "Day 1",
-          day_number: 1,
-          training_plan_id: plan.id
+          day_number: 1
         })
 
-      {:ok, element} =
-        Programming.create_workout_element(%{
-          position: 0,
-          exercise_id: exercise.id,
-          planned_workout_id: workout.id
-        })
-
-      %{element: element}
+      %{business: business, workout: workout, exercise: exercise}
     end
 
-    test "creates a strength set with target_reps and load", %{element: element} do
-      assert {:ok, set} =
-               Programming.create_planned_set(%{
+    test "creates a strength set with target_reps and load", %{
+      business: business,
+      workout: workout,
+      exercise: exercise
+    } do
+      assert {:ok, element} =
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 target_reps: "5",
-                 load_value: 100,
-                 load_type: :absolute_kg,
-                 intensity_target: "RPE 8",
-                 rest_seconds: 180,
-                 set_type: :working,
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     target_reps: "5",
+                     load_value: 100,
+                     load_unit: :kg,
+                     intensity_target: "RPE 8",
+                     rest_seconds: 180,
+                     set_type: :working
+                   }
+                 ]
                })
 
+      [set] = element.planned_sets
       assert set.target_reps == "5"
-      assert set.load_type == :absolute_kg
+      assert set.load_unit == :kg
       assert set.set_type == :working
     end
 
-    test "creates a rep range set", %{element: element} do
-      assert {:ok, set} =
-               Programming.create_planned_set(%{
+    test "creates a rep range set", %{business: business, workout: workout, exercise: exercise} do
+      assert {:ok, element} =
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 target_reps: "8-12",
-                 load_type: :bodyweight,
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     target_reps: "8-12",
+                     load_unit: :bodyweight
+                   }
+                 ]
                })
 
+      [set] = element.planned_sets
       assert set.target_reps == "8-12"
-      assert set.load_type == :bodyweight
+      assert set.load_unit == :bodyweight
     end
 
-    test "creates an AMRAP set", %{element: element} do
-      assert {:ok, set} =
-               Programming.create_planned_set(%{
+    test "creates an AMRAP set", %{business: business, workout: workout, exercise: exercise} do
+      assert {:ok, element} =
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 target_reps: "AMRAP",
-                 duration_seconds: 60,
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     target_reps: "AMRAP",
+                     duration_seconds: 60
+                   }
+                 ]
                })
 
+      [set] = element.planned_sets
       assert set.target_reps == "AMRAP"
       assert set.duration_seconds == 60
     end
 
-    test "creates a cardio set with duration and distance", %{element: element} do
-      assert {:ok, set} =
-               Programming.create_planned_set(%{
+    test "creates a cardio set with duration and distance", %{
+      business: business,
+      workout: workout,
+      exercise: exercise
+    } do
+      assert {:ok, element} =
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 duration_seconds: 1800,
-                 distance_value: 5,
-                 distance_unit: :km,
-                 intensity_target: "Zone 2",
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     duration_seconds: 1800,
+                     distance_value: 5,
+                     distance_unit: :km,
+                     intensity_target: "Zone 2"
+                   }
+                 ]
                })
 
+      [set] = element.planned_sets
       assert set.duration_seconds == 1800
       assert set.distance_value == Decimal.new("5")
       assert set.distance_unit == :km
     end
 
-    test "validates at least one target is required", %{element: element} do
+    test "validates at least one target is required", %{
+      business: business,
+      workout: workout,
+      exercise: exercise
+    } do
       assert {:error, changeset} =
-               Programming.create_planned_set(%{
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 load_value: 100,
-                 load_type: :absolute_kg,
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     load_value: 100,
+                     load_unit: :kg
+                   }
+                 ]
                })
 
-      assert %{target_reps: ["must have at least one target: reps, duration, or distance"]} =
+      assert %{
+               planned_sets: [
+                 %{target_reps: ["must have at least one target: reps, duration, or distance"]}
+               ]
+             } =
                errors_on(changeset)
     end
 
-    test "validates distance_unit required when distance_value set", %{element: element} do
+    test "validates distance_unit required when distance_value set", %{
+      business: business,
+      workout: workout,
+      exercise: exercise
+    } do
       assert {:error, changeset} =
-               Programming.create_planned_set(%{
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 target_reps: "10",
-                 distance_value: 5,
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     target_reps: "10",
+                     distance_value: 5
+                   }
+                 ]
                })
 
-      assert %{distance_unit: ["required when distance_value is set"]} = errors_on(changeset)
+      assert %{planned_sets: [%{distance_unit: ["required when distance_value is set"]}]} =
+               errors_on(changeset)
     end
 
-    test "unique constraint on (workout_element_id, position)", %{element: element} do
+    test "unique constraint on (workout_element_id, position)", %{
+      business: business,
+      workout: workout,
+      exercise: exercise
+    } do
       {:ok, _} =
-        Programming.create_planned_set(%{
+        Programming.create_workout_element(business.id, workout.id, %{
           position: 0,
-          target_reps: "10",
-          workout_element_id: element.id
+          exercise_id: exercise.id,
+          planned_sets: [
+            %{
+              target_reps: "10"
+            }
+          ]
         })
 
       assert {:error, changeset} =
-               Programming.create_planned_set(%{
+               Programming.create_workout_element(business.id, workout.id, %{
                  position: 0,
-                 target_reps: "12",
-                 workout_element_id: element.id
+                 exercise_id: exercise.id,
+                 planned_sets: [
+                   %{
+                     target_reps: "12"
+                   }
+                 ]
                })
 
-      assert %{position: ["position already exists in this workout element"]} =
+      assert %{position: ["has already been taken"]} =
                errors_on(changeset)
     end
   end
 
   # Helpers
   defp create_test_business_with_coach do
+    # Ensure default plan exists
+    if Easy.Repo.aggregate(Easy.Organizations.Plan, :count) == 0 do
+      Easy.Repo.insert!(%Easy.Organizations.Plan{
+        name: "Free Trial",
+        slug: "free-trial",
+        price_cents: 0,
+        billing_interval: "month",
+        is_default: true,
+        features: %{},
+        limits: %{}
+      })
+    end
+
     {:ok, user} =
-      Easy.Accounts.register_user(%{
+      Easy.Accounts.create_user(%{
         email: "coach#{System.unique_integer()}@example.com",
         phone: "+1#{:rand.uniform(9_999_999_999)}"
       })
 
     {:ok, business} =
-      Easy.Organizations.create_business(%{
+      Easy.Organizations.create_business_with_owner(user, %{
         name: "Test Business #{System.unique_integer()}",
         email: "business#{System.unique_integer()}@example.com",
-        owner_id: user.id
+        handle: "business-#{System.unique_integer()}"
       })
 
-    {:ok, coach} =
-      Easy.Organizations.create_coach(%{
-        user_id: user.id,
-        business_id: business.id,
-        role: :owner
-      })
+    coach = Easy.Accounts.get_coach_by_user(user)
 
     {:ok, business, coach}
   end
 
   defp create_test_client(business_id) do
-    Easy.Clients.create_client(%{
-      name: "Test Client #{System.unique_integer()}",
+    %Easy.Clients.Client{}
+    |> Easy.Clients.Client.create_changeset(%{
+      full_name: "Test Client #{System.unique_integer()}",
       email: "client#{System.unique_integer()}@example.com",
       business_id: business_id
     })
+    |> Easy.Repo.insert()
   end
 
   defp create_test_exercise(business_id) do

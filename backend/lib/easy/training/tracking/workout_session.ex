@@ -33,7 +33,7 @@ defmodule Easy.Training.Tracking.WorkoutSession do
       :notes,
       :planned_workout_id
     ])
-    |> validate_required([:state, :started_at])
+    |> validate_required([:state, :started_at, :client_id, :business_id])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_end_after_start()

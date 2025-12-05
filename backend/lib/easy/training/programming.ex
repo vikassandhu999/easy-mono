@@ -515,12 +515,14 @@ defmodule Easy.Training.Programming do
 
       multi
       |> Multi.insert(workout_alias, fn _ ->
-        %PlannedWorkout{business_id: new_plan.business_id}
+        %PlannedWorkout{
+          business_id: new_plan.business_id,
+          training_plan_id: new_plan.id
+        }
         |> PlannedWorkout.changeset(%{
           name: workout.name,
           notes: workout.notes,
-          day_number: workout.day_number,
-          training_plan_id: new_plan.id
+          day_number: workout.day_number
         })
       end)
       |> Multi.merge(fn changes ->
@@ -539,12 +541,14 @@ defmodule Easy.Training.Programming do
         # Copy planned_sets as embedded data
         copied_sets = copy_sets_data(element.planned_sets)
 
-        %WorkoutElement{business_id: business_id}
+        %WorkoutElement{
+          business_id: business_id,
+          planned_workout_id: new_workout.id
+        }
         |> WorkoutElement.changeset(%{
           position: element.position,
           superset_group_id: element.superset_group_id,
           notes: element.notes,
-          planned_workout_id: new_workout.id,
           exercise_id: element.exercise_id,
           planned_sets: copied_sets
         })
@@ -557,7 +561,7 @@ defmodule Easy.Training.Programming do
       %{
         target_reps: set.target_reps,
         load_value: set.load_value,
-        load_type: set.load_type,
+        load_unit: set.load_unit,
         intensity_target: set.intensity_target,
         tempo: set.tempo,
         rest_seconds: set.rest_seconds,

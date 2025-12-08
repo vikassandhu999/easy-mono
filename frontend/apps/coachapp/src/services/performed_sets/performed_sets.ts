@@ -5,11 +5,11 @@ export const performedSetsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         /**
          * Log a set during workout
-         * POST /api/performed_sets
+         * POST /api/coach/performed_sets
          */
         createPerformedSet: build.mutation<PerformedSet, CreatePerformedSet>({
             query: (body) => ({
-                url: '/api/performed_sets',
+                url: '/api/coach/performed_sets',
                 method: 'POST',
                 data: {performed_set: body},
             }),
@@ -24,11 +24,11 @@ export const performedSetsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Update logged set
-         * PATCH /api/performed_sets/:id
+         * PATCH /api/coach/performed_sets/:id
          */
         updatePerformedSet: build.mutation<PerformedSet, UpdatePerformedSet>({
             query: ({id, ...body}) => ({
-                url: `/api/performed_sets/${id}`,
+                url: `/api/coach/performed_sets/${id}`,
                 method: 'PATCH',
                 data: {performed_set: body},
             }),
@@ -43,11 +43,11 @@ export const performedSetsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Delete set (undo)
-         * DELETE /api/performed_sets/:id
+         * DELETE /api/coach/performed_sets/:id
          */
         deletePerformedSet: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/performed_sets/${id}`,
+                url: `/api/coach/performed_sets/${id}`,
                 method: 'DELETE',
             }),
             invalidatesTags: (_result, _error, id) => [

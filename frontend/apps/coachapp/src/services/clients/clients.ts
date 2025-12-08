@@ -15,7 +15,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // GET /api/clients - List clients with filters and pagination
         listClients: build.infiniteQuery<ClientsList, ClientsListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/clients',
+                url: '/api/coach/clients',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -54,7 +54,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // GET /api/clients/:id - Get client details
         getClient: build.query<Client, string>({
             query: (clientId) => ({
-                url: `/api/clients/${clientId}`,
+                url: `/api/coach/clients/${clientId}`,
                 method: 'get',
             }),
             transformResponse: (response: {client: Client}) => response.client,
@@ -64,7 +64,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // POST /api/clients/invite - Invite a new client
         inviteClient: build.mutation<InviteClientResponse, InviteClientProps>({
             query: (body) => ({
-                url: '/api/clients/invite',
+                url: '/api/coach/clients/invite',
                 method: 'post',
                 data: body,
             }),
@@ -74,7 +74,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // PATCH /api/clients/:id - Update client details
         updateClient: build.mutation<Client, {clientId: string; data: UpdateClientProps}>({
             query: ({clientId, data}) => ({
-                url: `/api/clients/${clientId}`,
+                url: `/api/coach/clients/${clientId}`,
                 method: 'patch',
                 data,
             }),
@@ -88,7 +88,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // PATCH /api/clients/:id/status - Update client status
         updateClientStatus: build.mutation<Client, UpdateClientStatusProps & {clientId: string}>({
             query: ({clientId, status}) => ({
-                url: `/api/clients/${clientId}/status`,
+                url: `/api/coach/clients/${clientId}/status`,
                 method: 'patch',
                 data: {status},
             }),
@@ -102,7 +102,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // POST /api/clients/:id/resend-invitation - Resend invitation email
         resendInvitation: build.mutation<Client, string>({
             query: (clientId) => ({
-                url: `/api/clients/${clientId}/resend-invitation`,
+                url: `/api/coach/clients/${clientId}/resend-invitation`,
                 method: 'post',
             }),
             transformResponse: (response: {client: Client}) => response.client,
@@ -115,7 +115,7 @@ export const clientsApi = baseAPISlice.injectEndpoints({
         // DELETE /api/clients/:id - Archive client
         archiveClient: build.mutation<Client, string>({
             query: (clientId) => ({
-                url: `/api/clients/${clientId}`,
+                url: `/api/coach/clients/${clientId}`,
                 method: 'delete',
             }),
             transformResponse: (response: {client: Client}) => response.client,

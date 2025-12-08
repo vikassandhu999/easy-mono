@@ -18,7 +18,11 @@ type IngredientsFieldProps = {
 const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const quantityRefs = useRef<Map<string, HTMLInputElement>>(new Map());
-    const {watch, setValue} = form;
+    const {
+        watch,
+        setValue,
+        formState: {errors},
+    } = form;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 300);
@@ -323,6 +327,11 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                                 </span>
                                 <TextInput
                                     className={classes.ingredientQuantity}
+                                    error={
+                                        Array.isArray(errors.recipe_ingredients)
+                                            ? (errors.recipe_ingredients?.[idx] as any)?.quantity_as_text?.message
+                                            : undefined
+                                    }
                                     onChange={(e) => {
                                         updateIngredientQuntity(ingredient.ingredient_id, e.currentTarget.value);
                                     }}
@@ -347,6 +356,14 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                             </div>
                         ))}
                     </div>
+                )}
+                {errors.recipe_ingredients?.message && (
+                    <Text
+                        c="red"
+                        size="xs"
+                    >
+                        {errors.recipe_ingredients.message as string}
+                    </Text>
                 )}
 
                 {/* Empty state */}

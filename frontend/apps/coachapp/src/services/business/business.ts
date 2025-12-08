@@ -23,7 +23,7 @@ export const businessApi = baseAPISlice.injectEndpoints({
 
         getBusiness: build.query<Business, void>({
             query: () => ({
-                url: '/api/organization',
+                url: '/api/coach/organization',
                 method: 'get',
             }),
             transformResponse: (response: BusinessResponse) => response.data,
@@ -32,7 +32,7 @@ export const businessApi = baseAPISlice.injectEndpoints({
 
         updateBusiness: build.mutation<Business, UpdateBusinessProps>({
             query: (body) => ({
-                url: '/api/organization',
+                url: '/api/coach/organization',
                 method: 'patch',
                 data: {business: body},
             }),

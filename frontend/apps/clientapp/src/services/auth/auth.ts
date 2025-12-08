@@ -16,46 +16,32 @@ import {
 
 export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-        /**
-         * Send login code to client's email
-         * POST /api/auth/client/send-login-code
-         */
+
         sendLoginCode: build.mutation<SendLoginCodeResponse, SendLoginCodeRequest>({
             query: (body) => ({
-                url: '/api/auth/client/send-login-code',
+                url: '/api/auth/client/login/code',
                 method: 'post',
                 data: body,
             }),
         }),
 
-        /**
-         * Verify login code and get tokens
-         * POST /api/auth/client/token
-         */
         verifyLogin: build.mutation<VerifyLoginResponse, VerifyLoginRequest>({
             query: (body) => ({
-                url: '/api/auth/client/token',
+                url: '/api/auth/client/login',
                 method: 'post',
                 data: body,
             }),
         }),
 
-        /**
-         * Refresh access token
-         * POST /api/auth/client/token
-         */
         refreshToken: build.mutation<RefreshTokenResponse, RefreshTokenRequest>({
             query: (body) => ({
-                url: '/api/auth/client/token',
+                url: '/api/auth/client/refresh',
                 method: 'post',
                 data: body,
             }),
         }),
 
-        /**
-         * Complete client registration with invitation token
-         * POST /api/auth/client/register
-         */
+
         register: build.mutation<ClientSignupResponse, ClientSignupRequest>({
             query: (body) => ({
                 url: '/api/auth/client/register',
@@ -64,11 +50,7 @@ export const authApi = baseAPISlice.injectEndpoints({
             }),
         }),
 
-        /**
-         * Send verification code for invitation acceptance flow
-         * This does NOT require an existing client record
-         * POST /api/auth/client/send-invitation-code
-         */
+
         sendInvitationCode: build.mutation<SendInvitationCodeResponse, SendInvitationCodeRequest>({
             query: (body) => ({
                 url: '/api/auth/client/send-invitation-code',

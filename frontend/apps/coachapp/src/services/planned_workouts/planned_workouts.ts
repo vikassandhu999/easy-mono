@@ -32,7 +32,7 @@ export const plannedWorkoutsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createPlannedWorkout: build.mutation<PlannedWorkout, CreatePlannedWorkout>({
             query: (body) => ({
-                url: '/api/planned_workouts',
+                url: '/api/coach/planned_workouts',
                 method: 'post',
                 data: {planned_workout: body},
             }),
@@ -42,7 +42,7 @@ export const plannedWorkoutsApi = baseAPISlice.injectEndpoints({
 
         getPlannedWorkout: build.query<PlannedWorkout, string>({
             query: (id) => ({
-                url: `/api/planned_workouts/${id}`,
+                url: `/api/coach/planned_workouts/${id}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: PlannedWorkout}) => response.data,
@@ -50,7 +50,7 @@ export const plannedWorkoutsApi = baseAPISlice.injectEndpoints({
 
         updatePlannedWorkout: build.mutation<PlannedWorkout, UpdatePlannedWorkout>({
             query: (body) => ({
-                url: `/api/planned_workouts/${body.id}`,
+                url: `/api/coach/planned_workouts/${body.id}`,
                 method: 'put',
                 data: {
                     planned_workout: {
@@ -65,7 +65,7 @@ export const plannedWorkoutsApi = baseAPISlice.injectEndpoints({
 
         deletePlannedWorkout: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/planned_workouts/${id}`,
+                url: `/api/coach/planned_workouts/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: ['TrainingPlans'],

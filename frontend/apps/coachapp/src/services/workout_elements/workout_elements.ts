@@ -59,7 +59,7 @@ export const workoutElementsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createWorkoutElement: build.mutation<WorkoutElement, CreateWorkoutElement>({
             query: (body) => ({
-                url: '/api/workout_elements',
+                url: '/api/coach/workout_elements',
                 method: 'post',
                 data: {workout_element: body},
             }),
@@ -69,7 +69,7 @@ export const workoutElementsApi = baseAPISlice.injectEndpoints({
 
         getWorkoutElement: build.query<WorkoutElement, string>({
             query: (id) => ({
-                url: `/api/workout_elements/${id}`,
+                url: `/api/coach/workout_elements/${id}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: WorkoutElement}) => response.data,
@@ -77,7 +77,7 @@ export const workoutElementsApi = baseAPISlice.injectEndpoints({
 
         updateWorkoutElement: build.mutation<WorkoutElement, UpdateWorkoutElement>({
             query: (body) => ({
-                url: `/api/workout_elements/${body.id}`,
+                url: `/api/coach/workout_elements/${body.id}`,
                 method: 'put',
                 data: {
                     workout_element: {
@@ -92,7 +92,7 @@ export const workoutElementsApi = baseAPISlice.injectEndpoints({
 
         deleteWorkoutElement: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/workout_elements/${id}`,
+                url: `/api/coach/workout_elements/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: ['TrainingPlans'],

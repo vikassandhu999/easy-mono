@@ -2,6 +2,8 @@ import {Center, Loader} from '@mantine/core';
 import {Navigate, Outlet, useLocation} from 'react-router';
 
 import {useAuth} from '@/hooks/useAuthActions';
+import {MainLayout} from '@/shared/layouts';
+import {useNavigationVisibility} from '@/utils/useNavigationVisibility';
 
 /**
  * ProtectedRouteLayout - Wraps routes that require authentication
@@ -10,6 +12,7 @@ import {useAuth} from '@/hooks/useAuthActions';
 const ProtectedRouteLayout: React.FC = () => {
     const {isAuthenticated, isAuthenticating} = useAuth();
     const location = useLocation();
+    const showNavigation = useNavigationVisibility();
 
     // Show loading state while checking authentication
     if (isAuthenticating) {
@@ -37,8 +40,12 @@ const ProtectedRouteLayout: React.FC = () => {
         );
     }
 
-    // Render child routes
-    return <Outlet />;
+    // Render child routes inside layout
+    return (
+        <MainLayout showNavigation={showNavigation}>
+            <Outlet />
+        </MainLayout>
+    );
 };
 
 export default ProtectedRouteLayout;

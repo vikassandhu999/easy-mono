@@ -66,7 +66,7 @@ export const authApi = baseAPISlice.injectEndpoints({
         }),
         updateCoachProfile: build.mutation<UpdateCoachProfileResponse, UpdateCoachProfileRequest>({
             query: (body) => ({
-                url: '/api/auth/profile',
+                url: '/api/coach/profile',
                 method: 'patch',
                 data: body,
             }),

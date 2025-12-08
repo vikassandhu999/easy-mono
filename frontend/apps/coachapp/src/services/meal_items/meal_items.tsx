@@ -6,7 +6,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createMealItem: build.mutation<MealItem, CreateMealItem>({
             query: (body) => ({
-                url: `/api/meals/${body.meal_id}/items`,
+                url: `/api/coach/meals/${body.meal_id}/items`,
                 method: 'post',
                 data: {
                     recipe_id: body.recipe_id,
@@ -23,7 +23,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
 
         getMealItem: build.query<MealItem, string>({
             query: (mealItemId) => ({
-                url: `/api/meal_items/${mealItemId}`,
+                url: `/api/coach/meal_items/${mealItemId}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: MealItem}) => response.data,
@@ -32,7 +32,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
 
         updateMealItem: build.mutation<MealItem, UpdateMealItem>({
             query: (body) => ({
-                url: `/api/meal_items/${body.id}`,
+                url: `/api/coach/meal_items/${body.id}`,
                 method: 'patch',
                 data: {
                     servings: body.servings,
@@ -49,7 +49,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
 
         deleteMealItem: build.mutation<void, {id: string; meal_id: string; nutrition_plan_id: string}>({
             query: ({id}) => ({
-                url: `/api/meal_items/${id}`,
+                url: `/api/coach/meal_items/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, {id, meal_id, nutrition_plan_id}) => [
@@ -61,7 +61,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
 
         listMealItems: build.infiniteQuery<MealItemsList, MealItemsListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/meal_items',
+                url: '/api/coach/meal_items',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -98,7 +98,7 @@ export const mealItemsApi = baseAPISlice.injectEndpoints({
 
         reorderMealItems: build.mutation<MealItemsList, {meal_id: string; item_ids: string[]}>({
             query: ({meal_id, item_ids}) => ({
-                url: `/api/meals/${meal_id}/meal_items/reorder`,
+                url: `/api/coach/meals/${meal_id}/meal_items/reorder`,
                 method: 'post',
                 data: {item_ids},
             }),

@@ -5,7 +5,7 @@ export const musclesApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         listMuscles: build.query<MusclesList, MusclesListOpts>({
             query: (params) => ({
-                url: '/api/muscles',
+                url: '/api/coach/muscles',
                 method: 'get',
                 params,
             }),

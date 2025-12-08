@@ -1,7 +1,7 @@
 import {ActionIcon, Text, TextInput} from '@mantine/core';
 import {IconGripVertical, IconPlus, IconTrash} from '@tabler/icons-react';
 import {FC, useCallback, useEffect, useRef, useState} from 'react';
-import {useFieldArray, UseFormReturn} from 'react-hook-form';
+import {UseFormReturn} from 'react-hook-form';
 
 import {CreateRecipeForm} from '@/services/recipes';
 
@@ -16,49 +16,104 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
     const [draggedIndex, setDraggedIndex] = useState<null | number>(null);
     const [dragOverIndex, setDragOverIndex] = useState<null | number>(null);
     const {
-        register,
-        control,
+        watch,
+        setValue,
         formState: {errors},
     } = form;
 
-    // TypeScript incorrectly infers only 'ingredients' as valid field name for useFieldArray
-    const {fields, append, remove, move} = useFieldArray({
-        control,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        name: 'instructions',
-    });
+    const instructions = watch('instructions') || [];
+
+    // Helper functions to manage the string array
+    const append = useCallback(
+        (value: string) => {
+            setValue(
+                'instructions',
+                [...instructions, value],
+                {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                },
+            );
+        },
+        [instructions, setValue],
+    );
+
+    const remove = useCallback(
+        (index: number) => {
+            const newInstructions = instructions.filter((_, i) => i !== index);
+            setValue(
+                'instructions',
+                newInstructions,
+                {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                },
+            );
+        },
+        [instructions, setValue],
+    );
+
+    const move = useCallback(
+        (fromIndex: number, toIndex: number) => {
+            const newInstructions = [...instructions];
+            const [removed] = newInstructions.splice(fromIndex, 1);
+            newInstructions.splice(toIndex, 0, removed as string);
+            setValue(
+                'instructions',
+                newInstructions,
+                {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                },
+            );
+        },
+        [instructions, setValue],
+    );
+
+    const updateInstruction = useCallback(
+        (index: number, value: string) => {
+            const newInstructions = [...instructions];
+            newInstructions[index] = value;
+            setValue(
+                'instructions',
+                newInstructions,
+                {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                },
+            );
+        },
+        [instructions, setValue],
+    );
 
     // Auto-add first empty step if none exist
     useEffect(() => {
-        if (fields.length === 0) {
-            // @ts-expect-error - Type inference issue with append accepting string
-            append('');
+        if (instructions.length === 0) {
+            setValue('instructions', ['']);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Focus the last input when a new step is added
     useEffect(() => {
-        if (fields.length > 0) {
-            const lastInput = inputRefs.current[fields.length - 1];
+        if (instructions.length > 0) {
+            const lastInput = inputRefs.current[instructions.length - 1];
             if (lastInput && document.activeElement?.tagName !== 'INPUT') {
                 // Only auto-focus if user isn't already typing
             }
         }
-    }, [fields.length]);
+    }, [instructions.length]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // @ts-expect-error - Type inference issue with append accepting string
                 append('');
                 // Focus will happen via the effect after state updates
                 setTimeout(() => {
                     inputRefs.current[idx + 1]?.focus();
                 }, 50);
-            } else if (e.key === 'Backspace' && e.currentTarget.value === '' && fields.length > 1) {
+            } else if (e.key === 'Backspace' && e.currentTarget.value === '' && instructions.length > 1) {
                 e.preventDefault();
                 remove(idx);
                 // Focus previous input
@@ -72,7 +127,7 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
                 setTimeout(() => {
                     inputRefs.current[idx - 1]?.focus();
                 }, 50);
-            } else if (e.key === 'ArrowDown' && e.altKey && idx < fields.length - 1) {
+            } else if (e.key === 'ArrowDown' && e.altKey && idx < instructions.length - 1) {
                 // Alt+ArrowDown to move step down
                 e.preventDefault();
                 move(idx, idx + 1);
@@ -81,7 +136,7 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
                 }, 50);
             }
         },
-        [append, remove, move, fields.length],
+        [append, remove, move, instructions.length],
     );
 
     const handleDragStart = (index: number) => {
@@ -108,23 +163,23 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
             <div className={classes.sectionHeader}>
                 <div className={classes.sectionTitleRow}>
                     <span className={classes.sectionTitle}>Instructions</span>
-                    {fields.length > 0 && (
+                    {instructions.length > 0 && (
                         <Text
                             c="dimmed"
                             size="xs"
                         >
-                            {fields.length} {fields.length === 1 ? 'step' : 'steps'}
+                            {instructions.length} {instructions.length === 1 ? 'step' : 'steps'}
                         </Text>
                     )}
                 </div>
             </div>
 
             <div className={classes.instructionsList}>
-                {fields.map((field, idx) => (
+                {instructions.map((_, idx) => (
                     <div
                         className={`${classes.instructionStep} ${draggedIndex === idx ? classes.instructionStepDragging : ''} ${dragOverIndex === idx ? classes.instructionStepDragOver : ''}`}
                         draggable
-                        key={field.id}
+                        key={idx}
                         onDragEnd={handleDragEnd}
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDragStart={() => handleDragStart(idx)}
@@ -134,16 +189,22 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
                         </span>
                         <span className={classes.stepNumber}>{idx + 1}</span>
                         <TextInput
-                            {...register(`instructions.${idx}`)}
                             className={classes.stepInput}
+                            error={
+                                Array.isArray(errors.instructions)
+                                    ? (errors.instructions?.[idx] as any)?.message
+                                    : undefined
+                            }
+                            onChange={(e) => updateInstruction(idx, e.target.value)}
                             onKeyDown={(e) => handleKeyDown(e, idx)}
                             placeholder={idx === 0 ? 'e.g. Preheat oven to 180°C' : 'Next step...'}
                             ref={(el) => {
                                 inputRefs.current[idx] = el;
                             }}
                             size="sm"
+                            value={instructions[idx] || ''}
                         />
-                        {fields.length > 1 && (
+                        {instructions.length > 1 && (
                             <ActionIcon
                                 aria-label="Remove step"
                                 className={classes.stepDelete}
@@ -159,7 +220,6 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
                 ))}
                 <button
                     className={classes.addStepButton}
-                    // @ts-expect-error - Type inference issue with append accepting string
                     onClick={() => append('')}
                     type="button"
                 >

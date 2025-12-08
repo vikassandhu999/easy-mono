@@ -10,11 +10,11 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         /**
          * List sessions (filterable)
-         * GET /api/sessions
+         * GET /api/coach/sessions
          */
         listWorkoutSessions: build.query<WorkoutSessionList, void | WorkoutSessionListOpts>({
             query: (params) => ({
-                url: '/api/sessions',
+                url: '/api/coach/sessions',
                 method: 'GET',
                 params: params || undefined,
             }),
@@ -31,11 +31,11 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Start new session
-         * POST /api/sessions
+         * POST /api/coach/sessions
          */
         createWorkoutSession: build.mutation<WorkoutSession, CreateWorkoutSession>({
             query: (body) => ({
-                url: '/api/sessions',
+                url: '/api/coach/sessions',
                 method: 'POST',
                 data: {workout_session: body},
             }),
@@ -45,11 +45,11 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Show with performed sets
-         * GET /api/sessions/:id
+         * GET /api/coach/sessions/:id
          */
         getWorkoutSession: build.query<WorkoutSession, string>({
             query: (id) => ({
-                url: `/api/sessions/${id}`,
+                url: `/api/coach/sessions/${id}`,
                 method: 'GET',
             }),
             transformResponse: (response: {data: WorkoutSession}) => response.data,
@@ -58,11 +58,11 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Complete session
-         * PUT /api/sessions/:id/complete
+         * PUT /api/coach/sessions/:id/complete
          */
         completeWorkoutSession: build.mutation<WorkoutSession, string>({
             query: (id) => ({
-                url: `/api/sessions/${id}/complete`,
+                url: `/api/coach/sessions/${id}/complete`,
                 method: 'PUT',
             }),
             transformResponse: (response: {data: WorkoutSession}) => response.data,
@@ -74,11 +74,11 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
 
         /**
          * Discard session
-         * PUT /api/sessions/:id/discard
+         * PUT /api/coach/sessions/:id/discard
          */
         discardWorkoutSession: build.mutation<WorkoutSession, string>({
             query: (id) => ({
-                url: `/api/sessions/${id}/discard`,
+                url: `/api/coach/sessions/${id}/discard`,
                 method: 'PUT',
             }),
             transformResponse: (response: {data: WorkoutSession}) => response.data,

@@ -5,7 +5,7 @@ export const equipmentApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         listEquipment: build.query<EquipmentList, EquipmentListOpts>({
             query: (params) => ({
-                url: '/api/equipment',
+                url: '/api/coach/equipment',
                 method: 'get',
                 params,
             }),

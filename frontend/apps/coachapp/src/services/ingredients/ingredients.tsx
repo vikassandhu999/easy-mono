@@ -13,7 +13,7 @@ export const ingredientsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createIngredient: build.mutation<Ingredient, CreateIngredient>({
             query: (body) => ({
-                url: '/api/ingredients',
+                url: '/api/coach/ingredients',
                 method: 'post',
                 data: body,
             }),
@@ -26,7 +26,7 @@ export const ingredientsApi = baseAPISlice.injectEndpoints({
 
         getIngredient: build.query<Ingredient, string>({
             query: (ingredientId) => ({
-                url: `/api/ingredients/${ingredientId}`,
+                url: `/api/coach/ingredients/${ingredientId}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: Ingredient}) => response.data,
@@ -35,7 +35,7 @@ export const ingredientsApi = baseAPISlice.injectEndpoints({
 
         updateIngredient: build.mutation<Ingredient, UpdateIngredient>({
             query: (body) => ({
-                url: '/api/ingredients/' + body.id,
+                url: '/api/coach/ingredients/' + body.id,
                 method: 'patch',
                 data: {
                     ...body,
@@ -53,7 +53,7 @@ export const ingredientsApi = baseAPISlice.injectEndpoints({
 
         listIngredients: build.infiniteQuery<IngredientsList, IngredientsListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/ingredients',
+                url: '/api/coach/ingredients',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -90,7 +90,7 @@ export const ingredientsApi = baseAPISlice.injectEndpoints({
 
         deleteIngredient: build.mutation<void, string>({
             query: (ingredientId) => ({
-                url: `/api/ingredients/${ingredientId}`,
+                url: `/api/coach/ingredients/${ingredientId}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, ingredientId) => [

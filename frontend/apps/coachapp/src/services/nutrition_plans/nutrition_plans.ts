@@ -14,7 +14,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createNutritionPlan: build.mutation<NutritionPlan, CreateNutritionPlan>({
             query: (body) => ({
-                url: '/api/nutrition_plans',
+                url: '/api/coach/nutrition_plans',
                 method: 'post',
                 data: body,
             }),
@@ -27,7 +27,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         getNutritionPlan: build.query<NutritionPlan, string>({
             query: (id) => ({
-                url: `/api/nutrition_plans/${id}`,
+                url: `/api/coach/nutrition_plans/${id}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: NutritionPlan}) => response.data,
@@ -36,7 +36,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         updateNutritionPlan: build.mutation<NutritionPlan, UpdateNutritionPlan>({
             query: (body) => ({
-                url: `/api/nutrition_plans/${body.id}`,
+                url: `/api/coach/nutrition_plans/${body.id}`,
                 method: 'patch',
                 data: {
                     ...body,
@@ -54,7 +54,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         listNutritionPlans: build.infiniteQuery<NutritionPlansList, NutritionPlansListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/nutrition_plans',
+                url: '/api/coach/nutrition_plans',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -91,7 +91,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         deleteNutritionPlan: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/nutrition_plans/${id}`,
+                url: `/api/coach/nutrition_plans/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, id) => [
@@ -102,7 +102,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         assignNutritionPlan: build.mutation<NutritionPlan, AssignNutritionPlan>({
             query: ({id, client_id, start_date}) => ({
-                url: `/api/nutrition_plans/${id}/assign`,
+                url: `/api/coach/nutrition_plans/${id}/assign`,
                 method: 'post',
                 data: {client_id, start_date},
             }),
@@ -115,7 +115,7 @@ export const nutritionPlansApi = baseAPISlice.injectEndpoints({
 
         duplicateNutritionPlan: build.mutation<NutritionPlan, DuplicateNutritionPlan>({
             query: ({id}) => ({
-                url: `/api/nutrition_plans/${id}/duplicate`,
+                url: `/api/coach/nutrition_plans/${id}/duplicate`,
                 method: 'post',
             }),
             transformResponse: (response: {data: NutritionPlan}) => response.data,

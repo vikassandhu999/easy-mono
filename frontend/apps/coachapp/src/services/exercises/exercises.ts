@@ -24,7 +24,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createExercise: build.mutation<Exercise, CreateExercise>({
             query: (body) => ({
-                url: '/api/exercises',
+                url: '/api/coach/exercises',
                 method: 'post',
                 data: body,
             }),
@@ -37,7 +37,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
 
         getExercise: build.query<Exercise, string>({
             query: (id) => ({
-                url: `/api/exercises/${id}`,
+                url: `/api/coach/exercises/${id}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: Exercise}) => response.data,
@@ -46,7 +46,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
 
         updateExercise: build.mutation<Exercise, UpdateExercise>({
             query: (body) => ({
-                url: `/api/exercises/${body.id}`,
+                url: `/api/coach/exercises/${body.id}`,
                 method: 'patch',
                 data: {
                     ...body,
@@ -62,7 +62,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
 
         listExercises: build.infiniteQuery<ExercisesList, ExercisesListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/exercises',
+                url: '/api/coach/exercises',
                 method: 'get',
                 params: buildExerciseListParams(queryArg, pageParam),
             }),
@@ -99,7 +99,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
 
         deleteExercise: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/exercises/${id}`,
+                url: `/api/coach/exercises/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, id) => [
@@ -110,7 +110,7 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
 
         duplicateExercise: build.mutation<Exercise, DuplicateExercise>({
             query: ({id}) => ({
-                url: `/api/exercises/${id}/duplicate`,
+                url: `/api/coach/exercises/${id}/duplicate`,
                 method: 'post',
             }),
             transformResponse: (response: {data: Exercise}) => response.data,

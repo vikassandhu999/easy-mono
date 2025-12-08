@@ -6,7 +6,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createMeal: build.mutation<Meal, CreateMeal>({
             query: (body) => ({
-                url: `/api/meals`,
+                url: `/api/coach/meals`,
                 method: 'post',
                 data: {
                     daytime: body.daytime,
@@ -25,7 +25,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
 
         getMeal: build.query<Meal, string>({
             query: (mealId) => ({
-                url: `/api/meals/${mealId}`,
+                url: `/api/coach/meals/${mealId}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: Meal}) => response.data,
@@ -34,7 +34,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
 
         updateMeal: build.mutation<Meal, UpdateMeal>({
             query: (body) => ({
-                url: `/api/meals/${body.id}`,
+                url: `/api/coach/meals/${body.id}`,
                 method: 'patch',
                 data: {
                     label: body.label,
@@ -52,7 +52,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
 
         deleteMeal: build.mutation<void, {id: string; nutrition_plan_id: string}>({
             query: ({id}) => ({
-                url: `/api/meals/${id}`,
+                url: `/api/coach/meals/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, {id, nutrition_plan_id}) => [
@@ -63,7 +63,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
 
         listMeals: build.infiniteQuery<MealsList, MealsListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/meals',
+                url: '/api/coach/meals',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -100,7 +100,7 @@ export const mealsApi = baseAPISlice.injectEndpoints({
 
         copyMealToDay: build.mutation<Meal, {id: string; target_day: number}>({
             query: ({id, target_day}) => ({
-                url: `/api/meals/${id}/copy_to_day`,
+                url: `/api/coach/meals/${id}/copy_to_day`,
                 method: 'post',
                 data: {target_day},
             }),

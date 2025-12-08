@@ -13,7 +13,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createTrainingPlan: build.mutation<TrainingPlan, CreateTrainingPlan>({
             query: (body) => ({
-                url: '/api/training_plans',
+                url: '/api/coach/training_plans',
                 method: 'post',
                 data: {training_plan: body},
             }),
@@ -26,7 +26,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         getTrainingPlan: build.query<TrainingPlan, string>({
             query: (id) => ({
-                url: `/api/training_plans/${id}`,
+                url: `/api/coach/training_plans/${id}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: TrainingPlan}) => response.data,
@@ -35,7 +35,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         updateTrainingPlan: build.mutation<TrainingPlan, UpdateTrainingPlan>({
             query: (body) => ({
-                url: `/api/training_plans/${body.id}`,
+                url: `/api/coach/training_plans/${body.id}`,
                 method: 'put',
                 data: {
                     training_plan: {
@@ -55,7 +55,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         listTrainingPlans: build.infiniteQuery<TrainingPlansList, TrainingPlansListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/training_plans',
+                url: '/api/coach/training_plans',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -92,7 +92,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         deleteTrainingPlan: build.mutation<void, string>({
             query: (id) => ({
-                url: `/api/training_plans/${id}`,
+                url: `/api/coach/training_plans/${id}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, id) => [
@@ -103,7 +103,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         assignTrainingPlan: build.mutation<TrainingPlan, AssignTrainingPlanInput & {id: string}>({
             query: ({id, client_id, start_date, end_date}) => ({
-                url: `/api/training_plans/${id}/assign`,
+                url: `/api/coach/training_plans/${id}/assign`,
                 method: 'post',
                 data: {client_id, start_date, end_date},
             }),
@@ -113,7 +113,7 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
 
         duplicateTrainingPlan: build.mutation<TrainingPlan, string>({
             query: (id) => ({
-                url: `/api/training_plans/${id}/duplicate`,
+                url: `/api/coach/training_plans/${id}/duplicate`,
                 method: 'post',
             }),
             transformResponse: (response: {data: TrainingPlan}) => response.data,

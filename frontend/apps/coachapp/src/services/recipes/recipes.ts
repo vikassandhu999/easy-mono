@@ -6,7 +6,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
         createRecipe: build.mutation<Recipe, CreateRecipe>({
             query: (body) => ({
-                url: '/api/recipes',
+                url: '/api/coach/recipes',
                 method: 'post',
                 data: body,
             }),
@@ -19,7 +19,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
 
         getRecipe: build.query<Recipe, string>({
             query: (recipeId) => ({
-                url: `/api/recipes/${recipeId}`,
+                url: `/api/coach/recipes/${recipeId}`,
                 method: 'get',
             }),
             transformResponse: (response: {data: Recipe}) => response.data,
@@ -28,7 +28,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
 
         updateRecipe: build.mutation<Recipe, UpdateRecipe>({
             query: (body) => ({
-                url: '/api/recipes/' + body.id,
+                url: '/api/coach/recipes/' + body.id,
                 method: 'patch',
                 data: {
                     ...body,
@@ -46,7 +46,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
 
         listRecipes: build.infiniteQuery<RecipesList, RecipesListOpts, number>({
             query: ({queryArg, pageParam = 0}) => ({
-                url: '/api/recipes',
+                url: '/api/coach/recipes',
                 method: 'get',
                 params: buildListParams(queryArg, pageParam),
             }),
@@ -83,7 +83,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
 
         deleteRecipe: build.mutation<void, string>({
             query: (recipeId) => ({
-                url: `/api/recipes/${recipeId}`,
+                url: `/api/coach/recipes/${recipeId}`,
                 method: 'delete',
             }),
             invalidatesTags: (_result, _error, recipeId) => [
@@ -94,7 +94,7 @@ export const recipesApi = baseAPISlice.injectEndpoints({
 
         duplicateRecipe: build.mutation<Recipe, DuplicateRecipe>({
             query: ({id}) => ({
-                url: `/api/recipes/${id}/duplicate`,
+                url: `/api/coach/recipes/${id}/duplicate`,
                 method: 'post',
             }),
             transformResponse: (response: {data: Recipe}) => response.data,

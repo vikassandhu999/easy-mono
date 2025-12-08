@@ -14,10 +14,22 @@ defmodule Easy.Clients.Client do
     field :full_name, :string
     field :phone, :string
     field :notes, :string
+    field :image_url, :string
     field :status, :string, default: "pending"
     field :invitation_token, :string
     field :invitation_expires_at, :utc_datetime
     field :join_source, :string, default: "email_invite"
+    field :height_cm, :integer
+    field :weight_kg, :integer
+    field :date_of_birth, :date
+    field :sex, :string
+    field :gender_identity, :string
+    field :activity_level, :string
+    field :goal, :string
+    field :dietary_notes, :string
+    field :injury_notes, :string
+    field :medication_notes, :string
+    field :measurement_system, :string
 
     belongs_to :user, Easy.Accounts.User
     belongs_to :business, Easy.Organizations.Business
@@ -29,6 +41,10 @@ defmodule Easy.Clients.Client do
 
   @valid_statuses ~w(pending active inactive archived)
   @valid_join_sources ~w(email_invite public_link manual)
+  @valid_sex ~w(male female intersex prefer_not_to_say)
+  @valid_activity_levels ~w(sedentary light moderate active athlete)
+  @valid_goals ~w(lose_weight maintain gain_muscle improve_endurance rehab)
+  @valid_measurement_systems ~w(metric imperial)
 
   # ===========================================================================
   # Changesets
@@ -40,11 +56,31 @@ defmodule Easy.Clients.Client do
   """
   def changeset(client, attrs) do
     client
-    |> cast(attrs, [:email, :full_name, :phone, :notes, :status])
+    |> cast(attrs, [
+      :email,
+      :full_name,
+      :phone,
+      :notes,
+      :image_url,
+      :status,
+      :height_cm,
+      :weight_kg,
+      :date_of_birth,
+      :sex,
+      :gender_identity,
+      :activity_level,
+      :goal,
+      :dietary_notes,
+      :injury_notes,
+      :medication_notes,
+      :measurement_system
+    ])
     |> validate_required([:email, :full_name])
     |> validate_email()
     |> validate_phone()
+    |> validate_image_url()
     |> validate_status()
+    |> validate_health_fields()
   end
 
   def create_changeset(client, attrs, join_source \\ "email_invite") do
@@ -54,15 +90,35 @@ defmodule Easy.Clients.Client do
       DateTime.add(DateTime.utc_now(), 7 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
 
     client
-    |> cast(attrs, [:email, :full_name, :phone, :notes, :business_id])
+    |> cast(attrs, [
+      :email,
+      :full_name,
+      :phone,
+      :notes,
+      :image_url,
+      :business_id,
+      :height_cm,
+      :weight_kg,
+      :date_of_birth,
+      :sex,
+      :gender_identity,
+      :activity_level,
+      :goal,
+      :dietary_notes,
+      :injury_notes,
+      :medication_notes,
+      :measurement_system
+    ])
     |> validate_required([:email, :full_name, :business_id])
     |> validate_email()
     |> validate_phone()
+    |> validate_image_url()
     |> put_change(:status, "pending")
     |> put_change(:invitation_token, token)
     |> put_change(:invitation_expires_at, expires_at)
     |> put_change(:join_source, join_source)
     |> validate_join_source()
+    |> validate_health_fields()
     |> foreign_key_constraint(:business_id)
     |> unique_constraint([:email, :business_id],
       name: :clients_email_business_index,
@@ -77,9 +133,28 @@ defmodule Easy.Clients.Client do
   """
   def update_changeset(client, attrs) do
     client
-    |> cast(attrs, [:full_name, :phone, :notes, :status])
+    |> cast(attrs, [
+      :full_name,
+      :phone,
+      :notes,
+      :image_url,
+      :status,
+      :height_cm,
+      :weight_kg,
+      :date_of_birth,
+      :sex,
+      :gender_identity,
+      :activity_level,
+      :goal,
+      :dietary_notes,
+      :injury_notes,
+      :medication_notes,
+      :measurement_system
+    ])
     |> validate_phone()
+    |> validate_image_url()
     |> validate_status()
+    |> validate_health_fields()
   end
 
   @doc """
@@ -88,8 +163,25 @@ defmodule Easy.Clients.Client do
   """
   def profile_changeset(client, attrs) do
     client
-    |> cast(attrs, [:full_name, :phone])
+    |> cast(attrs, [
+      :full_name,
+      :phone,
+      :image_url,
+      :height_cm,
+      :weight_kg,
+      :date_of_birth,
+      :sex,
+      :gender_identity,
+      :activity_level,
+      :goal,
+      :dietary_notes,
+      :injury_notes,
+      :medication_notes,
+      :measurement_system
+    ])
     |> validate_phone()
+    |> validate_image_url()
+    |> validate_health_fields()
   end
 
   @doc """
@@ -135,8 +227,22 @@ defmodule Easy.Clients.Client do
         changeset
 
       _phone ->
-        validate_format(changeset, :phone, ~r/^\+?[1-9]\d{1,14}$/,
+        validate_format(changeset, :phone, ~r/^\\+?[1-9]\\d{1,14}$/,
           message: "must be a valid international phone number"
+        )
+    end
+  end
+
+  defp validate_image_url(changeset) do
+    case get_field(changeset, :image_url) do
+      nil ->
+        changeset
+
+      _url ->
+        changeset
+        |> validate_length(:image_url, max: 2048)
+        |> validate_format(:image_url, ~r/^https?:\/\//,
+          message: "must be a valid URL (http or https)"
         )
     end
   end
@@ -210,18 +316,69 @@ defmodule Easy.Clients.Client do
     status = if approval_required, do: "pending", else: "active"
 
     client
-    |> cast(attrs, [:email, :full_name, :phone, :business_id])
+    |> cast(attrs, [
+      :email,
+      :full_name,
+      :phone,
+      :image_url,
+      :business_id,
+      :height_cm,
+      :weight_kg,
+      :date_of_birth,
+      :sex,
+      :gender_identity,
+      :activity_level,
+      :goal,
+      :dietary_notes,
+      :injury_notes,
+      :medication_notes,
+      :measurement_system
+    ])
     |> validate_required([:email, :full_name, :business_id])
     |> validate_email()
     |> validate_phone()
+    |> validate_image_url()
     |> put_change(:status, status)
     |> put_change(:join_source, "public_link")
     |> put_change(:invitation_token, nil)
     |> put_change(:invitation_expires_at, nil)
+    |> validate_health_fields()
     |> foreign_key_constraint(:business_id)
     |> unique_constraint([:email, :business_id],
       name: :clients_email_business_index,
       message: "already exists in this business"
     )
+  end
+
+  defp validate_health_fields(changeset) do
+    changeset
+    |> validate_number(:height_cm, greater_than: 0)
+    |> validate_number(:weight_kg, greater_than: 0)
+    |> validate_inclusion(:sex, @valid_sex)
+    |> validate_inclusion(:activity_level, @valid_activity_levels)
+    |> validate_inclusion(:goal, @valid_goals)
+    |> validate_inclusion(:measurement_system, @valid_measurement_systems)
+    |> validate_date_of_birth(:date_of_birth)
+  end
+
+  defp validate_date_of_birth(changeset, field) do
+    case get_change(changeset, field) do
+      nil ->
+        changeset
+
+      date ->
+        today = Date.utc_today()
+
+        cond do
+          Date.compare(date, today) == :gt ->
+            add_error(changeset, field, "cannot be in the future")
+
+          Date.diff(today, date) > 365 * 130 ->
+            add_error(changeset, field, "age must be less than 130 years")
+
+          true ->
+            changeset
+        end
+    end
   end
 end

@@ -4,6 +4,8 @@ defmodule Easy.Nutrition do
   alias Easy.Repo
   alias Easy.Utils
 
+  require Logger
+
   alias Easy.Nutrition.{
     Ingredient,
     NutritionPlan,
@@ -210,6 +212,8 @@ defmodule Easy.Nutrition do
   @spec create_ingredient(String.t(), String.t(), map()) ::
           {:ok, Ingredient.t()} | {:error, Ecto.Changeset.t()}
   def create_ingredient(business_id, coach_id, attrs) do
+    Logger.info("Business ID : #{business_id}, Author ID: #{coach_id}")
+
     attrs =
       attrs
       |> Map.put("business_id", business_id)
@@ -262,7 +266,7 @@ defmodule Easy.Nutrition do
       |> limit(^limit)
       |> offset(^offset)
       |> Repo.all()
-      |> Repo.preload([:creator, recipe_ingredients: [:ingredient, :unit]])
+      |> Repo.preload([:author, recipe_ingredients: [:ingredient, :unit]])
 
     {:ok, {recipes, %{limit: limit, offset: offset, total: total}}}
   end
@@ -272,7 +276,7 @@ defmodule Easy.Nutrition do
     case Repo.one(
            from r in Recipe,
              where: r.id == ^recipe_id and r.business_id == ^business_id,
-             preload: [:creator, recipe_ingredients: [:ingredient, :unit]]
+             preload: [:author, recipe_ingredients: [:ingredient, :unit]]
          ) do
       nil -> {:error, :not_found}
       recipe -> {:ok, recipe}
@@ -671,7 +675,7 @@ defmodule Easy.Nutrition do
   defp repo_preload_recipe(recipe) do
     Repo.preload(recipe, [
       :business,
-      :creator,
+      :author,
       recipe_ingredients: [:ingredient, :unit]
     ])
   end

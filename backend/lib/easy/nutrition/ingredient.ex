@@ -38,7 +38,7 @@ defmodule Easy.Nutrition.Ingredient do
 
   def changeset(ingredient, attrs) do
     ingredient
-    |> cast(attrs, @required_fields ++ @optional_fields)
+    |> cast(attrs, @required_fields ++ @optional_fields ++ [:business_id, :author_id])
     |> validate_required(@required_fields ++ [:business_id, :author_id])
     |> validate_number(:calories_per_100g, greater_than_or_equal_to: 0)
     |> validate_number(:protein_per_100g, greater_than_or_equal_to: 0)

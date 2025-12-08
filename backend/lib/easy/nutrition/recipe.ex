@@ -52,7 +52,9 @@ defmodule Easy.Nutrition.Recipe do
       :total_protein,
       :total_carbohydrates,
       :total_fats,
-      :total_fiber
+      :total_fiber,
+      :business_id,
+      :author_id
     ])
     |> validate_required([:name, :status, :business_id, :author_id])
     |> validate_number(:prep_time_minutes, greater_than_or_equal_to: 0)

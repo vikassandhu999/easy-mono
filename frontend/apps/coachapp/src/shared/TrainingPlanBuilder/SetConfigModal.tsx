@@ -2,30 +2,36 @@ import {ActionIcon, Button, Drawer, Group, Loader, Modal, NumberInput, Select, T
 import {useMediaQuery} from '@mantine/hooks';
 import {CaretDownIcon, CopyIcon, PlusIcon, TrashIcon, XIcon} from '@phosphor-icons/react';
 import {useEffect, useState} from 'react';
+import {Controller, useFieldArray, useForm} from 'react-hook-form';
 
-import {type LoadType, type SetType} from '@/services/training_plans/training_plans_definition';
+import {type DistanceUnit, type LoadUnit, type SetType} from '@/services/training_plans/training_plans_definition';
 import {PlannedSet} from '@/services/workout_elements';
 
 import classes from './SetConfigModal.module.css';
 
 type SetData = {
-    target_reps: null | string; // "10", "8-12", "AMRAP"
+    target_reps: null | string;
     load_value: null | number;
-    load_type: LoadType;
-    intensity_target: null | string; // "RPE 8", "Zone 2"
+    load_unit: LoadUnit;
+    intensity_target: null | string;
     rest_seconds: null | number;
-    set_type: SetType;
     notes: null | string;
     tempo: null | string;
     duration_seconds: null | number;
     distance_value: null | number;
-    distance_unit: string;
+    distance_unit: DistanceUnit;
+    set_type: SetType;
+};
+
+type FormValues = {
+    sets: SetData[];
+    globalUnit: LoadUnit;
 };
 
 // Options for load type dropdown
-const LOAD_TYPE_OPTIONS = [
-    {value: 'absolute_kg', label: 'kg'},
-    {value: 'absolute_lbs', label: 'lbs'},
+const load_unit_OPTIONS = [
+    {value: 'kg', label: 'kg'},
+    {value: 'lbs', label: 'lbs'},
     {value: 'bodyweight', label: 'BW'},
     {value: 'percent_1rm', label: '% 1RM'},
     {value: 'rpe', label: 'RPE'},
@@ -34,22 +40,26 @@ const LOAD_TYPE_OPTIONS = [
 
 // Options for distance unit dropdown
 const DISTANCE_UNIT_OPTIONS = [
-    {value: 'm', label: 'm'},
+    {value: 'meters', label: 'm'},
     {value: 'km', label: 'km'},
     {value: 'yards', label: 'yds'},
     {value: 'miles', label: 'mi'},
     {value: 'none', label: '—'},
 ];
 
-// Options for set type dropdown
-const SET_TYPE_OPTIONS = [
-    {value: 'working', label: 'Working'},
-    {value: 'warmup', label: 'Warmup'},
-    {value: 'dropset', label: 'Drop Set'},
-    {value: 'backoff', label: 'Back-off'},
-    {value: 'amrap', label: 'AMRAP'},
-    {value: 'emom', label: 'EMOM'},
-];
+const createDefaultSet = (globalUnit: LoadUnit, copyFrom?: SetData): SetData => ({
+    target_reps: copyFrom?.target_reps ?? '12',
+    load_value: copyFrom?.load_value ?? null,
+    load_unit: globalUnit,
+    intensity_target: copyFrom?.intensity_target ?? null,
+    rest_seconds: copyFrom?.rest_seconds ?? 60,
+    notes: copyFrom?.notes ?? null,
+    tempo: copyFrom?.tempo ?? null,
+    duration_seconds: copyFrom?.duration_seconds ?? null,
+    distance_value: copyFrom?.distance_value ?? null,
+    distance_unit: copyFrom?.distance_unit ?? 'none',
+    set_type: copyFrom?.set_type ?? 'working',
+});
 
 interface SetConfigModalProps {
     exerciseName: string;
@@ -61,111 +71,97 @@ interface SetConfigModalProps {
 }
 
 const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onDelete}: SetConfigModalProps) => {
-    const [sets, setSets] = useState<SetData[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [expandedSet, setExpandedSet] = useState<null | number>(null);
-    const [globalUnit, setGlobalUnit] = useState<LoadType>('absolute_kg');
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
-    // Reset sets when modal opens
+    const {control, handleSubmit, watch, setValue, reset} = useForm<FormValues>({
+        defaultValues: {
+            sets: [],
+            globalUnit: 'kg',
+        },
+    });
+
+    const {fields, append, insert, remove} = useFieldArray({
+        control,
+        name: 'sets',
+    });
+
+    const globalUnit = watch('globalUnit');
+    const sets = watch('sets');
+
+    // Reset form when modal opens
     useEffect(() => {
         if (opened) {
-            const mappedSets = initialSets.map((s) => ({
+            const initialGlobalUnit = initialSets[0]?.load_unit || 'kg';
+            const mappedSets: SetData[] = initialSets.map((s) => ({
                 target_reps: s.target_reps,
                 load_value: s.load_value,
-                load_type: s.load_type || 'none',
+                load_unit: s.load_unit || initialGlobalUnit,
                 intensity_target: s.intensity_target,
                 rest_seconds: s.rest_seconds,
                 set_type: s.set_type || 'working',
                 notes: s.notes,
-                tempo: (s as any).tempo ?? null,
-                duration_seconds: (s as any).duration_seconds ?? null,
-                distance_value: (s as any).distance_value ?? null,
-                distance_unit: (s as any).distance_unit ?? 'none',
+                tempo: s.tempo ?? null,
+                duration_seconds: s.duration_seconds ?? null,
+                distance_value: s.distance_value ?? null,
+                distance_unit: s.distance_unit ?? 'none',
             }));
-            setSets(mappedSets);
 
-            // Initialize global unit from first set if available
-            if (mappedSets.length > 0 && mappedSets[0]?.load_type) {
-                setGlobalUnit(mappedSets[0].load_type);
-            }
+            reset({
+                sets: mappedSets,
+                globalUnit: initialGlobalUnit,
+            });
 
             setExpandedSet(null);
         }
-    }, [opened, initialSets]);
+    }, [opened, initialSets, reset]);
 
-    const handleSave = async () => {
+    const onSubmit = async (data: FormValues) => {
         setIsSaving(true);
         try {
-            await onSave(sets);
+            await onSave(data.sets);
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleGlobalUnitChange = (val: LoadType) => {
-        setGlobalUnit(val);
+    const handleGlobalUnitChange = (val: LoadUnit) => {
+        setValue('globalUnit', val);
         // Update all sets to use the new unit
-        setSets((prev) => prev.map((s) => ({...s, load_type: val})));
+        sets.forEach((_, index) => {
+            setValue(`sets.${index}.load_unit`, val);
+        });
     };
-
-    const createDefaultSet = (copyFrom?: SetData): SetData => ({
-        target_reps: copyFrom?.target_reps ?? '8-12',
-        load_value: copyFrom?.load_value ?? null,
-        load_type: globalUnit,
-        intensity_target: copyFrom?.intensity_target ?? null,
-        rest_seconds: copyFrom?.rest_seconds ?? 60,
-        set_type: copyFrom?.set_type ?? 'working',
-        notes: null,
-        tempo: copyFrom?.tempo ?? null,
-        duration_seconds: copyFrom?.duration_seconds ?? null,
-        distance_value: copyFrom?.distance_value ?? null,
-        distance_unit: copyFrom?.distance_unit ?? 'none',
-    });
 
     const addSet = () => {
         const lastSet = sets[sets.length - 1];
-        const newSet = createDefaultSet(lastSet);
-        setSets([...sets, newSet]);
-        // Don't auto-expand, as inline editing is available
+        const newSet = createDefaultSet(globalUnit, lastSet);
+        append(newSet);
     };
 
     const duplicateSet = (index: number) => {
         const setToCopy = sets[index];
         if (!setToCopy) return;
-
-        const newSets = [...sets];
-        const newSet = createDefaultSet(setToCopy);
-        newSets.splice(index + 1, 0, newSet);
-
-        setSets(newSets);
+        const newSet = createDefaultSet(globalUnit, setToCopy);
+        insert(index + 1, newSet);
     };
 
     const removeSet = (index: number) => {
-        if (sets.length <= 1) return;
-        const newSets = sets.filter((_, i) => i !== index);
-        setSets(newSets);
+        if (fields.length <= 1) return;
+        remove(index);
         if (expandedSet === index) setExpandedSet(null);
-    };
-
-    const updateSet = <K extends keyof SetData>(index: number, field: K, value: SetData[K]) => {
-        const newSets = [...sets];
-        const currentSet = newSets[index];
-        if (currentSet) {
-            newSets[index] = {...currentSet, [field]: value};
-            setSets(newSets);
-        }
     };
 
     // Modal content - shared between Drawer and Modal
     const modalContent = (
-        <>
+        <form onSubmit={handleSubmit(onSubmit)}>
             {/* Header */}
             <div className={classes.header}>
                 <div className={classes.headerContent}>
                     <Text className={classes.title}>{exerciseName}</Text>
                     <Text className={classes.subtitle}>
-                        {sets.length} {sets.length === 1 ? 'set' : 'sets'}
+                        {fields.length} {fields.length === 1 ? 'set' : 'sets'}
                     </Text>
                 </div>
                 <Group
@@ -174,8 +170,8 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                 >
                     <Select
                         allowDeselect={false}
-                        data={LOAD_TYPE_OPTIONS}
-                        onChange={(val) => handleGlobalUnitChange((val as LoadType) || 'none')}
+                        data={load_unit_OPTIONS}
+                        onChange={(val) => handleGlobalUnitChange((val as LoadUnit) || 'none')}
                         size="xs"
                         value={globalUnit}
                         w={80}
@@ -211,13 +207,13 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
             {/* Scrollable Sets List */}
             <div className={classes.content}>
                 <div className={classes.setsList}>
-                    {sets.map((set, index) => {
+                    {fields.map((field, index) => {
                         const isExpanded = expandedSet === index;
 
                         return (
                             <div
                                 className={`${classes.setCard} ${isExpanded ? classes.setCardExpanded : ''}`}
-                                key={index}
+                                key={field.id}
                             >
                                 {/* Set Row - Inline Editing */}
                                 <div
@@ -227,13 +223,19 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                     <div className={classes.setNumber}>{index + 1}</div>
 
                                     <div style={{flex: 1, display: 'flex', gap: '8px', alignItems: 'center'}}>
-                                        <TextInput
-                                            disabled={isSaving}
-                                            onChange={(e) => updateSet(index, 'target_reps', e.target.value || null)}
-                                            placeholder="Reps"
-                                            size="sm"
-                                            style={{flex: 1}}
-                                            value={set.target_reps ?? ''}
+                                        <Controller
+                                            control={control}
+                                            name={`sets.${index}.target_reps`}
+                                            render={({field: {value, onChange}}) => (
+                                                <TextInput
+                                                    disabled={isSaving}
+                                                    onChange={(e) => onChange(e.target.value || null)}
+                                                    placeholder="Reps"
+                                                    size="sm"
+                                                    style={{flex: 1}}
+                                                    value={value ?? ''}
+                                                />
+                                            )}
                                         />
                                         <Text
                                             c="dimmed"
@@ -241,26 +243,35 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                         >
                                             x
                                         </Text>
-                                        <NumberInput
-                                            disabled={isSaving || globalUnit === 'bodyweight' || globalUnit === 'none'}
-                                            min={0}
-                                            onChange={(val) =>
-                                                updateSet(index, 'load_value', val === '' ? null : Number(val))
-                                            }
-                                            placeholder={globalUnit === 'bodyweight' ? 'BW' : 'Load'}
-                                            rightSection={
-                                                <Text
-                                                    c="dimmed"
-                                                    pr={4}
-                                                    size="xs"
-                                                >
-                                                    {LOAD_TYPE_OPTIONS.find((o) => o.value === globalUnit)?.label}
-                                                </Text>
-                                            }
-                                            rightSectionWidth={40}
-                                            size="sm"
-                                            style={{flex: 1}}
-                                            value={set.load_value ?? ''}
+                                        <Controller
+                                            control={control}
+                                            name={`sets.${index}.load_value`}
+                                            render={({field: {value, onChange}}) => (
+                                                <NumberInput
+                                                    disabled={
+                                                        isSaving || globalUnit === 'bodyweight' || globalUnit === 'none'
+                                                    }
+                                                    min={0}
+                                                    onChange={(val) => onChange(val === '' ? null : Number(val))}
+                                                    placeholder={globalUnit === 'bodyweight' ? 'BW' : 'Load'}
+                                                    rightSection={
+                                                        <Text
+                                                            c="dimmed"
+                                                            pr={4}
+                                                            size="xs"
+                                                        >
+                                                            {
+                                                                load_unit_OPTIONS.find((o) => o.value === globalUnit)
+                                                                    ?.label
+                                                            }
+                                                        </Text>
+                                                    }
+                                                    rightSectionWidth={40}
+                                                    size="sm"
+                                                    style={{flex: 1}}
+                                                    value={value ?? ''}
+                                                />
+                                            )}
                                         />
                                     </div>
 
@@ -279,36 +290,26 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                 {/* Expanded Content */}
                                 {isExpanded && (
                                     <div className={classes.setBody}>
-                                        {/* Secondary Row: Rest & Type */}
+                                        {/* Secondary Row: Rest */}
                                         <div className={classes.inputRow}>
                                             <div className={classes.inputField}>
                                                 <Text className={classes.inputLabel}>Rest (seconds)</Text>
-                                                <NumberInput
-                                                    disabled={isSaving}
-                                                    min={0}
-                                                    onChange={(val) =>
-                                                        updateSet(
-                                                            index,
-                                                            'rest_seconds',
-                                                            val === '' ? null : Number(val),
-                                                        )
-                                                    }
-                                                    placeholder="60"
-                                                    size="md"
-                                                    step={15}
-                                                    value={set.rest_seconds ?? ''}
-                                                />
-                                            </div>
-                                            <div className={classes.inputField}>
-                                                <Text className={classes.inputLabel}>Set Type</Text>
-                                                <Select
-                                                    data={SET_TYPE_OPTIONS}
-                                                    disabled={isSaving}
-                                                    onChange={(val) =>
-                                                        updateSet(index, 'set_type', (val as SetType) || 'working')
-                                                    }
-                                                    size="md"
-                                                    value={set.set_type}
+                                                <Controller
+                                                    control={control}
+                                                    name={`sets.${index}.rest_seconds`}
+                                                    render={({field: {value, onChange}}) => (
+                                                        <NumberInput
+                                                            disabled={isSaving}
+                                                            min={0}
+                                                            onChange={(val) =>
+                                                                onChange(val === '' ? null : Number(val))
+                                                            }
+                                                            placeholder="60"
+                                                            size="md"
+                                                            step={15}
+                                                            value={value ?? ''}
+                                                        />
+                                                    )}
                                                 />
                                             </div>
                                         </div>
@@ -317,24 +318,34 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                         <div className={classes.inputRow}>
                                             <div className={classes.inputField}>
                                                 <Text className={classes.inputLabel}>Tempo</Text>
-                                                <TextInput
-                                                    disabled={isSaving}
-                                                    onChange={(e) => updateSet(index, 'tempo', e.target.value || null)}
-                                                    placeholder="e.g. 3010"
-                                                    size="md"
-                                                    value={set.tempo ?? ''}
+                                                <Controller
+                                                    control={control}
+                                                    name={`sets.${index}.tempo`}
+                                                    render={({field: {value, onChange}}) => (
+                                                        <TextInput
+                                                            disabled={isSaving}
+                                                            onChange={(e) => onChange(e.target.value || null)}
+                                                            placeholder="e.g. 3010"
+                                                            size="md"
+                                                            value={value ?? ''}
+                                                        />
+                                                    )}
                                                 />
                                             </div>
                                             <div className={classes.inputField}>
                                                 <Text className={classes.inputLabel}>Intensity</Text>
-                                                <TextInput
-                                                    disabled={isSaving}
-                                                    onChange={(e) =>
-                                                        updateSet(index, 'intensity_target', e.target.value || null)
-                                                    }
-                                                    placeholder="e.g. RPE 8"
-                                                    size="md"
-                                                    value={set.intensity_target ?? ''}
+                                                <Controller
+                                                    control={control}
+                                                    name={`sets.${index}.intensity_target`}
+                                                    render={({field: {value, onChange}}) => (
+                                                        <TextInput
+                                                            disabled={isSaving}
+                                                            onChange={(e) => onChange(e.target.value || null)}
+                                                            placeholder="e.g. RPE 8"
+                                                            size="md"
+                                                            value={value ?? ''}
+                                                        />
+                                                    )}
                                                 />
                                             </div>
                                         </div>
@@ -343,48 +354,58 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                         <div className={classes.inputRow}>
                                             <div className={classes.inputField}>
                                                 <Text className={classes.inputLabel}>Duration (sec)</Text>
-                                                <NumberInput
-                                                    disabled={isSaving}
-                                                    min={0}
-                                                    onChange={(val) =>
-                                                        updateSet(
-                                                            index,
-                                                            'duration_seconds',
-                                                            val === '' ? null : Number(val),
-                                                        )
-                                                    }
-                                                    placeholder="Seconds"
-                                                    size="md"
-                                                    value={set.duration_seconds ?? ''}
+                                                <Controller
+                                                    control={control}
+                                                    name={`sets.${index}.duration_seconds`}
+                                                    render={({field: {value, onChange}}) => (
+                                                        <NumberInput
+                                                            disabled={isSaving}
+                                                            min={0}
+                                                            onChange={(val) =>
+                                                                onChange(val === '' ? null : Number(val))
+                                                            }
+                                                            placeholder="Seconds"
+                                                            size="md"
+                                                            value={value ?? ''}
+                                                        />
+                                                    )}
                                                 />
                                             </div>
                                             <div className={classes.inputField}>
                                                 <Text className={classes.inputLabel}>Distance</Text>
                                                 <div style={{display: 'flex', gap: 8}}>
-                                                    <NumberInput
-                                                        disabled={isSaving}
-                                                        min={0}
-                                                        onChange={(val) =>
-                                                            updateSet(
-                                                                index,
-                                                                'distance_value',
-                                                                val === '' ? null : Number(val),
-                                                            )
-                                                        }
-                                                        placeholder="Dist"
-                                                        size="md"
-                                                        style={{flex: 1}}
-                                                        value={set.distance_value ?? ''}
+                                                    <Controller
+                                                        control={control}
+                                                        name={`sets.${index}.distance_value`}
+                                                        render={({field: {value, onChange}}) => (
+                                                            <NumberInput
+                                                                disabled={isSaving}
+                                                                min={0}
+                                                                onChange={(val) =>
+                                                                    onChange(val === '' ? null : Number(val))
+                                                                }
+                                                                placeholder="Dist"
+                                                                size="md"
+                                                                style={{flex: 1}}
+                                                                value={value ?? ''}
+                                                            />
+                                                        )}
                                                     />
-                                                    <Select
-                                                        data={DISTANCE_UNIT_OPTIONS}
-                                                        disabled={isSaving}
-                                                        onChange={(val) =>
-                                                            updateSet(index, 'distance_unit', val || 'none')
-                                                        }
-                                                        size="md"
-                                                        style={{width: 80}}
-                                                        value={set.distance_unit}
+                                                    <Controller
+                                                        control={control}
+                                                        name={`sets.${index}.distance_unit`}
+                                                        render={({field: {value, onChange}}) => (
+                                                            <Select
+                                                                data={DISTANCE_UNIT_OPTIONS}
+                                                                disabled={isSaving}
+                                                                onChange={(val) =>
+                                                                    onChange((val as DistanceUnit) || 'none')
+                                                                }
+                                                                size="md"
+                                                                style={{width: 80}}
+                                                                value={value}
+                                                            />
+                                                        )}
                                                     />
                                                 </div>
                                             </div>
@@ -398,16 +419,18 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                                                 leftSection={<CopyIcon size={16} />}
                                                 onClick={() => duplicateSet(index)}
                                                 size="xs"
+                                                type="button"
                                                 variant="subtle"
                                             >
                                                 Duplicate
                                             </Button>
                                             <Button
                                                 color="red"
-                                                disabled={sets.length <= 1 || isSaving}
+                                                disabled={fields.length <= 1 || isSaving}
                                                 leftSection={<TrashIcon size={16} />}
                                                 onClick={() => removeSet(index)}
                                                 size="xs"
+                                                type="button"
                                                 variant="subtle"
                                             >
                                                 Remove
@@ -437,11 +460,11 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                 <Button
                     className={classes.saveButton}
                     color="brand"
-                    disabled={isSaving || sets.length === 0}
+                    disabled={isSaving || fields.length === 0}
                     fullWidth
-                    onClick={handleSave}
                     radius="lg"
                     size="md"
+                    type="submit"
                 >
                     {isSaving ? (
                         <Loader
@@ -453,7 +476,7 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                     )}
                 </Button>
             </div>
-        </>
+        </form>
     );
 
     // Desktop: Centered Modal

@@ -41,7 +41,10 @@ defmodule Easy.Training.Programming do
       |> order_by([t], desc: t.inserted_at)
       |> search_training_plans(params)
 
-    total = Repo.aggregate(query, :count)
+    total =
+      query
+      |> exclude(:order_by)
+      |> Repo.aggregate(:count)
 
     # Use query-based preload to avoid N+1 queries
     training_plans =
@@ -437,33 +440,28 @@ defmodule Easy.Training.Programming do
       |> String.replace(~r/\s*\(Copy\s*\d*\)\s*$/, "")
       |> String.trim()
 
-    # Use database EXISTS check instead of loading all names into memory
-    find_available_copy_name_db(base_name, business_id, 1)
-  end
-
-  defp find_available_copy_name_db(base_name, _business_id, attempt) when attempt > 100 do
-    # Safety limit - fallback to timestamp-based name
-    "#{base_name} (Copy #{System.system_time(:second)})"
-  end
-
-  defp find_available_copy_name_db(base_name, business_id, attempt) do
-    candidate =
-      if attempt == 1,
-        do: "#{base_name} (Copy)",
-        else: "#{base_name} (Copy #{attempt})"
-
-    # Check existence in database - single lightweight query per attempt
-    exists =
+    existing_names =
       TrainingPlan
-      |> where([t], t.business_id == ^business_id and t.name == ^candidate)
-      |> Repo.exists?()
+      |> where([t], t.business_id == ^business_id)
+      |> where([t], t.name == ^base_name or like(t.name, ^"#{base_name} (Copy%)"))
+      |> select([t], t.name)
+      |> Repo.all()
+      |> MapSet.new()
 
-    if exists do
-      find_available_copy_name_db(base_name, business_id, attempt + 1)
-    else
-      candidate
+    1..100
+    |> Enum.find_value(fn attempt ->
+      candidate = attempt_copy_name(base_name, attempt)
+
+      if MapSet.member?(existing_names, candidate), do: nil, else: candidate
+    end)
+    |> case do
+      nil -> "#{base_name} (Copy #{System.system_time(:second)})"
+      candidate -> candidate
     end
   end
+
+  defp attempt_copy_name(base_name, 1), do: "#{base_name} (Copy)"
+  defp attempt_copy_name(base_name, attempt), do: "#{base_name} (Copy #{attempt})"
 
   # Copy-on-Assignment Logic
 

@@ -16,7 +16,7 @@ defmodule Easy.Training.Programming.PlannedSet do
     field :load_value, :decimal
 
     field :load_unit, Ecto.Enum,
-      values: [:kg, :lbs, :bodyweight, :percent_1rm, :none],
+      values: [:kg, :lbs, :bodyweight, :percent_1rm, :rpe, :none],
       default: :none
 
     # "RPE 8", "Zone 2", "65% HR"
@@ -33,7 +33,7 @@ defmodule Easy.Training.Programming.PlannedSet do
       values: [:meters, :km, :miles, :yards, :none],
       default: :none
 
-    # === SET CLASSIFICATION ===
+    # === SET CLASSIFICATION === 
     field :set_type, Ecto.Enum,
       values: [:warmup, :working, :dropset, :backoff, :amrap, :emom, :cluster, :rest_pause],
       default: :working
@@ -42,6 +42,20 @@ defmodule Easy.Training.Programming.PlannedSet do
     field :notes, :string
   end
 
+  @spec changeset(
+          {map(),
+           %{
+             optional(atom()) =>
+               atom()
+               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try,
+                  any()}
+           }}
+          | %{
+              :__struct__ => atom() | %{:__changeset__ => any(), optional(any()) => any()},
+              optional(atom()) => any()
+            },
+          :invalid | %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
+        ) :: Ecto.Changeset.t()
   @doc false
   def changeset(planned_set, attrs) do
     planned_set
@@ -59,6 +73,7 @@ defmodule Easy.Training.Programming.PlannedSet do
       :notes
     ])
     |> validate_length(:notes, max: 5000)
+    |> validate_load_requires_unit()
     |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
     |> validate_at_least_one_target()
@@ -82,6 +97,17 @@ defmodule Easy.Training.Programming.PlannedSet do
     end
   end
 
+  defp validate_load_requires_unit(changeset) do
+    load = get_field(changeset, :load_value)
+    unit = get_field(changeset, :load_unit)
+
+    if load && (!unit || unit == :none) do
+      add_error(changeset, :load_unit, "required when load_value is set")
+    else
+      changeset
+    end
+  end
+
   defp validate_target_reps_format(changeset) do
     case get_field(changeset, :target_reps) do
       nil ->
@@ -91,7 +117,7 @@ defmodule Easy.Training.Programming.PlannedSet do
         changeset
 
       text ->
-        if valid_target_reps_format?(text) do
+        if valid_target_reps_format?(text) and valid_target_reps_semantics?(text) do
           changeset
         else
           add_error(
@@ -109,6 +135,25 @@ defmodule Easy.Training.Programming.PlannedSet do
       ~r/^(\d+(-\d+)?|\d+(,\d+)+|\d+(\.\d+)?(s|sec|m|min|h|hr|km|mi|yd)?|AMRAP|Max|Failure)$/i,
       text
     )
+  end
+
+  defp valid_target_reps_semantics?(text) do
+    cond do
+      Regex.match?(~r/^\d+$/, text) ->
+        String.to_integer(text) > 0
+
+      Regex.match?(~r/^\d+-\d+$/, text) ->
+        [low, high] = text |> String.split("-") |> Enum.map(&String.to_integer/1)
+        low > 0 and high > 0 and low < high
+
+      Regex.match?(~r/^\d+(,\d+)+$/, text) ->
+        text
+        |> String.split(",")
+        |> Enum.all?(fn part -> String.to_integer(part) > 0 end)
+
+      true ->
+        true
+    end
   end
 
   defp validate_distance_requires_unit(changeset) do

@@ -72,14 +72,14 @@ defmodule Easy.Repo.Migrations.EmbedPlannedSetsInWorkoutElements do
           jsonb_build_object(
             'target_reps', ps.target_reps,
             'load_value', ps.load_value,
-            'load_type', ps.load_type,
+            'load_unit', COALESCE(ps.load_type, 'none'),
             'intensity_target', ps.intensity_target,
             'tempo', ps.tempo,
             'rest_seconds', ps.rest_seconds,
             'duration_seconds', ps.duration_seconds,
             'distance_value', ps.distance_value,
-            'distance_unit', ps.distance_unit,
-            'set_type', ps.set_type,
+            'distance_unit', COALESCE(ps.distance_unit, 'none'),
+            'set_type', COALESCE(ps.set_type, 'working'),
             'notes', ps.notes
           ) ORDER BY ps.position
         )
@@ -101,7 +101,7 @@ defmodule Easy.Repo.Migrations.EmbedPlannedSetsInWorkoutElements do
       add :position, :integer, null: false
       add :target_reps, :string
       add :load_value, :decimal
-      add :load_type, :string, default: "none"
+      add :load_unit, :string, default: "none"
       add :intensity_target, :string
       add :tempo, :string
       add :rest_seconds, :integer
@@ -124,13 +124,13 @@ defmodule Easy.Repo.Migrations.EmbedPlannedSetsInWorkoutElements do
     # 2. Migrate data back from JSONB to the table
     # Use array index (ordinality - 1) as position since we no longer store it
     execute """
-    INSERT INTO planned_sets (id, position, target_reps, load_value, load_type, intensity_target, tempo, rest_seconds, duration_seconds, distance_value, distance_unit, set_type, notes, workout_element_id, inserted_at, updated_at)
+    INSERT INTO planned_sets (id, position, target_reps, load_value, load_unit, intensity_target, tempo, rest_seconds, duration_seconds, distance_value, distance_unit, set_type, notes, workout_element_id, inserted_at, updated_at)
     SELECT
       gen_random_uuid(),
       (ordinality - 1)::integer,
       set_data->>'target_reps',
       (set_data->>'load_value')::decimal,
-      COALESCE(set_data->>'load_type', 'none'),
+      COALESCE(set_data->>'load_unit', set_data->>'load_type', 'none'),
       set_data->>'intensity_target',
       set_data->>'tempo',
       (set_data->>'rest_seconds')::integer,

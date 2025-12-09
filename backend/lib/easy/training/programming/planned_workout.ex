@@ -30,16 +30,13 @@ defmodule Easy.Training.Programming.PlannedWorkout do
   def changeset(planned_workout, attrs) do
     planned_workout
     |> cast(attrs, [:name, :notes, :day_number])
+    # business_id and training_plan_id are set by the context to enforce tenant isolation
     |> validate_required([:name, :day_number, :training_plan_id, :business_id])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
     |> check_constraint(:day_number,
       name: :day_number_valid_weekday,
       message: "must be between 1 (Monday) and 7 (Sunday)"
-    )
-    |> unique_constraint([:training_plan_id, :day_number],
-      name: :planned_workouts_training_plan_id_day_number_index,
-      message: "day number already exists in this training plan"
     )
     |> foreign_key_constraint(:training_plan_id)
     |> foreign_key_constraint(:business_id)

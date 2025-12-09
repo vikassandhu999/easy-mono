@@ -16,7 +16,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
     field :load_value, :decimal
 
     field :load_unit, Ecto.Enum,
-      values: [:kg, :lbs, :bodyweight, :percent_1rm, :none],
+      values: [:kg, :lbs, :bodyweight, :percent_1rm, :rpe, :none],
       default: :none
 
     # "RPE 8.5", "Very hard", "Zone 3"

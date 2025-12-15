@@ -94,7 +94,8 @@ defmodule EasyWeb.ResponseHelpers do
     %{
       id: format_uuid(user.id),
       email: user.email,
-      full_name: user.full_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       email_verified: user.email_verified,
       email_verified_at: format_timestamp(user.email_verified_at),
       created_at: format_timestamp(user.inserted_at),

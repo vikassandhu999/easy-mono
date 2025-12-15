@@ -96,8 +96,11 @@ defmodule Easy.Clients do
 
   def get_my_profile(%Scope{client_id: client_id}) do
     case Repo.get(Client, client_id) do
-      nil -> {:error, :not_found}
-      client -> {:ok, Repo.preload(client, [:business])}
+      nil ->
+        {:error, :not_found}
+
+      client ->
+        {:ok, Repo.preload(client, [:business, coaches: [:user]])}
     end
   end
 
@@ -139,6 +142,10 @@ defmodule Easy.Clients do
       client
       |> Client.profile_changeset(attrs)
       |> Repo.update()
+      |> case do
+        {:ok, updated} -> {:ok, Repo.preload(updated, [:business, coaches: [:user]])}
+        other -> other
+      end
     end
   end
 

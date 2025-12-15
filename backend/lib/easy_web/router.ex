@@ -46,13 +46,13 @@ defmodule EasyWeb.Router do
     post "/token", AuthController, :token
   end
 
-  scope "/api/auth/client", EasyWeb do
+  scope "/api/auth/client", EasyWeb.Client do
     pipe_through :api
 
-    post "/login/code", ClientAuthController, :send_login_code
-    post "/login", ClientAuthController, :verify_login_code
-    post "/refresh", ClientAuthController, :refresh_token
-    get "/me", ClientAuthController, :me
+    post "/login/code", AuthController, :send_login_code
+    post "/login", AuthController, :verify_login_code
+    post "/refresh", AuthController, :refresh_token
+    get "/me", AuthController, :me
   end
 
   scope "/api/auth/client/invite", EasyWeb do
@@ -86,11 +86,15 @@ defmodule EasyWeb.Router do
 
   # COACH ROUTES
 
+  # Coach profile update uses shared AuthController
   scope "/api/coach", EasyWeb do
     pipe_through :coach_authenticated
 
-    # Coach profile
     patch "/profile", AuthController, :update_coach_profile
+  end
+
+  scope "/api/coach", EasyWeb.Coach do
+    pipe_through :coach_authenticated
 
     # Organization management
     get "/organization", BusinessController, :show
@@ -201,22 +205,17 @@ defmodule EasyWeb.Router do
 
   # CLIENT ROUTES
 
-  scope "/api/client", EasyWeb do
+  scope "/api/client", EasyWeb.Client do
     pipe_through :client_authenticated
 
     get "/profile", ProfileController, :show
     patch "/profile", ProfileController, :update
+    get "/business", BusinessController, :show
+
+    # Schedule (computed on read for MVP)
+    get "/schedule/next", ScheduleController, :next
+    get "/schedule/week", ScheduleController, :week
   end
-
-  # (Optional backward-compatible client self-service path)
-  scope "/api/me", EasyWeb do
-    pipe_through :client_authenticated
-
-    get "/profile", ProfileController, :show
-    patch "/profile", ProfileController, :update
-  end
-
-  # GUARDS
 
   defp ensure_coach_scope(conn, _opts) do
     case conn.assigns[:scope] do

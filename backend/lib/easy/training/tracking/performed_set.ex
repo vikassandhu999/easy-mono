@@ -1,7 +1,6 @@
 defmodule Easy.Training.Tracking.PerformedSet do
   use Easy.Training.Schema
 
-  alias Easy.Organizations.Business
   alias Easy.Training.Tracking.WorkoutSession
   alias Easy.Training.Library.Exercise
 
@@ -17,7 +16,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
     field :load_value, :decimal
 
     field :load_unit, Ecto.Enum,
-      values: [:kg, :lbs, :bodyweight, :percent_1rm, :none],
+      values: [:kg, :lbs, :bodyweight, :percent_1rm, :rpe, :none],
       default: :none
 
     # "RPE 8.5", "Very hard", "Zone 3"
@@ -42,9 +41,9 @@ defmodule Easy.Training.Tracking.PerformedSet do
     field :completed, :boolean, default: true
     field :notes, :string
 
-    belongs_to :business, Business
     belongs_to :workout_session, WorkoutSession
     belongs_to :exercise, Exercise
+    belongs_to :business, Easy.Organizations.Business
 
     timestamps()
   end
@@ -75,6 +74,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
     |> validate_number(:rir, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
     |> validate_at_least_one_performance_metric()
+    |> validate_load_requires_unit()
     |> validate_distance_requires_unit()
     |> unique_constraint([:workout_session_id, :position],
       name: :performed_sets_workout_session_id_position_index,
@@ -96,6 +96,17 @@ defmodule Easy.Training.Tracking.PerformedSet do
         :actual_reps,
         "must have at least one metric: reps, duration, or distance"
       )
+    else
+      changeset
+    end
+  end
+
+  defp validate_load_requires_unit(changeset) do
+    load = get_field(changeset, :load_value)
+    unit = get_field(changeset, :load_unit)
+
+    if load && (!unit || unit == :none) do
+      add_error(changeset, :load_unit, "required when load_value is set")
     else
       changeset
     end

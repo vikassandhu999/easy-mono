@@ -31,7 +31,7 @@ defmodule EasyWeb.Coach.WorkoutElementJSON do
     %{
       target_reps: set.target_reps,
       load_value: set.load_value,
-      load_type: set.load_type,
+      load_unit: set.load_unit,
       intensity_target: set.intensity_target,
       tempo: set.tempo,
       rest_seconds: set.rest_seconds,

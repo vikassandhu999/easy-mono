@@ -13,7 +13,7 @@ defmodule Easy.Training.Library.ExerciseEquipment do
   @doc false
   def changeset(exercise_equipment, attrs) do
     exercise_equipment
-    |> cast(attrs, [])
+    |> cast(attrs, [:exercise_id, :equipment_id])
     |> validate_required([:exercise_id, :equipment_id])
     |> unique_constraint([:exercise_id, :equipment_id])
     |> foreign_key_constraint(:exercise_id)

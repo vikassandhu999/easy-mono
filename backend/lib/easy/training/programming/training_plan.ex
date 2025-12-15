@@ -38,7 +38,7 @@ defmodule Easy.Training.Programming.TrainingPlan do
       :end_date,
       :original_template_id
     ])
-    |> validate_required([:name])
+    |> validate_required([:name, :author_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_template_or_client()

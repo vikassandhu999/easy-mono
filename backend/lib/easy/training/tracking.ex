@@ -165,6 +165,7 @@ defmodule Easy.Training.Tracking do
   def complete_session(%WorkoutSession{} = session, attrs \\ %{}) do
     attrs =
       attrs
+      |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
       |> Map.put("ended_at", DateTime.utc_now())
       |> Map.put("state", :completed)
 
@@ -201,7 +202,12 @@ defmodule Easy.Training.Tracking do
   @spec create_performed_set(String.t(), map()) ::
           {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
   def create_performed_set(business_id, attrs) do
-    %PerformedSet{business_id: business_id}
+    session_id = attrs[:workout_session_id] || attrs["workout_session_id"]
+
+    %PerformedSet{
+      workout_session_id: session_id,
+      business_id: business_id
+    }
     |> PerformedSet.changeset(attrs)
     |> Repo.insert()
     |> case do

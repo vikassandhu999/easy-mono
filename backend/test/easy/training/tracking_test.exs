@@ -2,8 +2,8 @@ defmodule Easy.Training.TrackingTest do
   use Easy.DataCase, async: true
 
   alias Easy.Training.Tracking
-  alias Easy.Training.Tracking.{WorkoutSession, PerformedSet}
-  alias Easy.Training.{Programming, Library}
+  alias Easy.Training.Tracking.PerformedSet
+  alias Easy.Training.Library
 
   describe "workout_sessions" do
     setup do
@@ -83,15 +83,16 @@ defmodule Easy.Training.TrackingTest do
       {:ok, exercise} = Library.create_exercise(business.id, %{"name" => "Test Exercise"})
       {:ok, session} = Tracking.start_session(business.id, client.id)
 
-      %{session: session, exercise: exercise}
+      %{session: session, exercise: exercise, business: business}
     end
 
     test "creates a strength set with actual_reps and load", %{
       session: session,
-      exercise: exercise
+      exercise: exercise,
+      business: business
     } do
       assert {:ok, set} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  actual_reps: "10",
                  load_value: 100,
@@ -111,10 +112,11 @@ defmodule Easy.Training.TrackingTest do
 
     test "creates a cardio set with duration and distance", %{
       session: session,
-      exercise: exercise
+      exercise: exercise,
+      business: business
     } do
       assert {:ok, set} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  duration_seconds: 1756,
                  distance_value: 5.1,
@@ -129,9 +131,9 @@ defmodule Easy.Training.TrackingTest do
       assert set.distance_unit == :km
     end
 
-    test "creates a bodyweight set", %{session: session, exercise: exercise} do
+    test "creates a bodyweight set", %{session: session, exercise: exercise, business: business} do
       assert {:ok, set} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  actual_reps: "15",
                  load_unit: :bodyweight,
@@ -146,10 +148,11 @@ defmodule Easy.Training.TrackingTest do
 
     test "validates at least one performance metric required", %{
       session: session,
-      exercise: exercise
+      exercise: exercise,
+      business: business
     } do
       assert {:error, changeset} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  load_value: 100,
                  load_unit: :kg,
@@ -163,10 +166,11 @@ defmodule Easy.Training.TrackingTest do
 
     test "validates distance_unit required when distance_value set", %{
       session: session,
-      exercise: exercise
+      exercise: exercise,
+      business: business
     } do
       assert {:error, changeset} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  actual_reps: "10",
                  distance_value: 5,
@@ -177,9 +181,30 @@ defmodule Easy.Training.TrackingTest do
       assert %{distance_unit: ["required when distance_value is set"]} = errors_on(changeset)
     end
 
-    test "validates rpe is between 1 and 10", %{session: session, exercise: exercise} do
+    test "validates load_unit required when load_value set", %{
+      session: session,
+      exercise: exercise,
+      business: business
+    } do
       assert {:error, changeset} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
+                 position: 0,
+                 actual_reps: "10",
+                 load_value: 100,
+                 workout_session_id: session.id,
+                 exercise_id: exercise.id
+               })
+
+      assert %{load_unit: ["required when load_value is set"]} = errors_on(changeset)
+    end
+
+    test "validates rpe is between 1 and 10", %{
+      session: session,
+      exercise: exercise,
+      business: business
+    } do
+      assert {:error, changeset} =
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  actual_reps: "10",
                  rpe: 11,
@@ -192,10 +217,11 @@ defmodule Easy.Training.TrackingTest do
 
     test "unique constraint on (workout_session_id, position)", %{
       session: session,
-      exercise: exercise
+      exercise: exercise,
+      business: business
     } do
       {:ok, _} =
-        Tracking.create_performed_set(%{
+        Tracking.create_performed_set(business.id, %{
           position: 0,
           actual_reps: "10",
           workout_session_id: session.id,
@@ -203,20 +229,24 @@ defmodule Easy.Training.TrackingTest do
         })
 
       assert {:error, changeset} =
-               Tracking.create_performed_set(%{
+               Tracking.create_performed_set(business.id, %{
                  position: 0,
                  actual_reps: "12",
                  workout_session_id: session.id,
                  exercise_id: exercise.id
                })
 
-      assert %{position: ["position already exists in this workout session"]} =
+      assert %{workout_session_id: ["position already exists in this workout session"]} =
                errors_on(changeset)
     end
 
-    test "update_performed_set/2 updates set values", %{session: session, exercise: exercise} do
+    test "update_performed_set/2 updates set values", %{
+      session: session,
+      exercise: exercise,
+      business: business
+    } do
       {:ok, set} =
-        Tracking.create_performed_set(%{
+        Tracking.create_performed_set(business.id, %{
           position: 0,
           actual_reps: "10",
           workout_session_id: session.id,
@@ -228,9 +258,13 @@ defmodule Easy.Training.TrackingTest do
       assert updated.rpe == Decimal.new("9.0")
     end
 
-    test "delete_performed_set/1 removes the set", %{session: session, exercise: exercise} do
+    test "delete_performed_set/1 removes the set", %{
+      session: session,
+      exercise: exercise,
+      business: business
+    } do
       {:ok, set} =
-        Tracking.create_performed_set(%{
+        Tracking.create_performed_set(business.id, %{
           position: 0,
           actual_reps: "10",
           workout_session_id: session.id,
@@ -244,41 +278,46 @@ defmodule Easy.Training.TrackingTest do
 
   # Helpers
   defp create_test_setup do
+    # Ensure default plan exists
+    if Easy.Repo.aggregate(Easy.Organizations.Plan, :count) == 0 do
+      Easy.Repo.insert!(%Easy.Organizations.Plan{
+        name: "Free Trial",
+        slug: "free-trial",
+        price_cents: 0,
+        billing_interval: "month",
+        is_default: true,
+        features: %{},
+        limits: %{}
+      })
+    end
+
     {:ok, user} =
-      Easy.Accounts.register_user(%{
+      Easy.Accounts.create_user(%{
         email: "user#{System.unique_integer()}@example.com",
         phone: "+1#{:rand.uniform(9_999_999_999)}"
       })
 
     {:ok, business} =
-      Easy.Organizations.create_business(%{
+      Easy.Organizations.create_business_with_owner(user, %{
         name: "Test Business #{System.unique_integer()}",
         email: "business#{System.unique_integer()}@example.com",
-        owner_id: user.id
+        handle: "business-#{System.unique_integer()}"
       })
 
-    {:ok, coach} =
-      Easy.Organizations.create_coach(%{
-        user_id: user.id,
-        business_id: business.id,
-        role: :owner
-      })
+    coach = Easy.Accounts.get_coach_by_user(user)
 
-    {:ok, client} =
-      Easy.Clients.create_client(%{
-        name: "Test Client #{System.unique_integer()}",
-        email: "client#{System.unique_integer()}@example.com",
-        business_id: business.id
-      })
+    {:ok, client} = create_test_client(business.id)
 
     {:ok, business, coach, client}
   end
 
   defp create_test_client(business_id) do
-    Easy.Clients.create_client(%{
-      name: "Test Client #{System.unique_integer()}",
+    %Easy.Clients.Client{}
+    |> Easy.Clients.Client.create_changeset(%{
+      full_name: "Test Client #{System.unique_integer()}",
       email: "client#{System.unique_integer()}@example.com",
       business_id: business_id
     })
+    |> Easy.Repo.insert()
   end
 end

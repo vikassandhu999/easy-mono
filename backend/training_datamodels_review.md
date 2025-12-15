@@ -801,6 +801,32 @@ defmodule Easy.Training.Tracking.PerformedSet do
     field :tempo_actual, :string
     field :completed, :boolean, default: true
     field :notes, :string
+    
+    # === ADHERENCE TRACKING ===
+    field :planned_set_index, :integer  # Link to planned set in array
+    
+    belongs_to :workout_session, WorkoutSession
+    belongs_to :exercise, Exercise
+    belongs_to :business, Easy.Organizations.Business
+    
+    timestamps()
+  end
+end
+```
+
+---
+
+## ⚠️ Current Limitations (Documented Dec 2025)
+
+These are known limitations of the current implementation that may need to be addressed in future iterations:
+
+1.  **Periodization**: The `PlannedWorkout` schema only supports a `day_number` (1-7), effectively limiting training plans to a single repeating week. There is no `week_number` field to support multi-week periodization (e.g., 4-week mesocycles).
+2.  **Exercise Alternatives**: There is no support for specifying alternative exercises if equipment is unavailable.
+3.  **Client Modifications**: Assigned plans are effectively read-only snapshots. If a client needs to modify their plan (e.g., swap days), there is no structured way to track this deviation from the template.
+4.  **Soft Deletes**: Deleting a training plan is a hard delete, meaning all history is lost. This may be a compliance issue.
+    field :tempo_actual, :string
+    field :completed, :boolean, default: true
+    field :notes, :string
 
     belongs_to :workout_session, WorkoutSession
     belongs_to :exercise, Exercise

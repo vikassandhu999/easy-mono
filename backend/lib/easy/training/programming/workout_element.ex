@@ -28,6 +28,7 @@ defmodule Easy.Training.Programming.WorkoutElement do
       sort_param: :planned_sets_sort,
       drop_param: :planned_sets_drop
     )
+    # planned_workout_id and business_id are injected by the context to enforce tenant isolation
     |> validate_required([:position, :exercise_id, :planned_workout_id, :business_id])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)

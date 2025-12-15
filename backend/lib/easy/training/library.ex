@@ -140,21 +140,21 @@ defmodule Easy.Training.Library do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
     offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
 
-    query =
+    base_query =
       Exercise
       |> where([e], e.business_id == ^business_id or is_nil(e.business_id))
-      |> order_by([e], desc: e.inserted_at)
       |> search_exercises(params)
       |> filter_by_muscles(params)
 
-    total = Repo.aggregate(query, :count)
+    total = Repo.aggregate(base_query, :count)
 
     exercises =
-      query
+      base_query
+      |> order_by([e], desc: e.inserted_at)
       |> limit(^limit)
       |> offset(^offset)
+      |> preload([:equipment, :muscles])
       |> Repo.all()
-      |> Repo.preload([:equipment, :muscles])
 
     {:ok, {exercises, %{limit: limit, offset: offset, total: total}}}
   end
@@ -195,10 +195,14 @@ defmodule Easy.Training.Library do
         query
 
       muscle_ids ->
+        exercise_ids_subquery =
+          from(em in Easy.Training.Library.ExerciseMuscle,
+            where: em.muscle_id in ^muscle_ids,
+            select: em.exercise_id
+          )
+
         from e in query,
-          join: em in assoc(e, :exercise_muscles),
-          where: em.muscle_id in ^muscle_ids,
-          distinct: true
+          where: e.id in subquery(exercise_ids_subquery)
     end
   end
 
@@ -319,8 +323,8 @@ defmodule Easy.Training.Library do
   @spec duplicate_exercise(Exercise.t(), String.t()) ::
           {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def duplicate_exercise(%Exercise{} = exercise, business_id) do
-    # Preload associations if not already loaded
-    exercise = Repo.preload(exercise, [:exercise_muscles, :exercise_equipment])
+    # Only preload associations if not already loaded
+    exercise = ensure_associations_loaded(exercise, [:exercise_muscles, :exercise_equipment])
 
     # Extract muscle and equipment IDs from the original exercise
     muscle_ids = Enum.map(exercise.exercise_muscles, & &1.muscle_id)
@@ -342,38 +346,40 @@ defmodule Easy.Training.Library do
     create_exercise(business_id, attrs)
   end
 
-  # Generates a unique copy name by checking for existing copies and incrementing
+  # Ensures associations are loaded, only preloading if not already loaded
+  defp ensure_associations_loaded(struct, associations) do
+    associations_to_load =
+      Enum.reject(associations, fn assoc ->
+        Ecto.assoc_loaded?(Map.get(struct, assoc))
+      end)
+
+    case associations_to_load do
+      [] -> struct
+      assocs -> Repo.preload(struct, assocs)
+    end
+  end
+
+  # Generates a unique copy name by counting existing copies and incrementing
   defp generate_unique_copy_name(original_name, business_id) do
     # Strip any existing "(Copy)" or "(Copy N)" suffix to get base name
     base_name = String.replace(original_name, ~r/\s*\(Copy(?:\s+\d+)?\)$/, "")
 
-    # Find all existing copies for this business
-    existing_names =
+    # Count existing copies for this business using an efficient query
+    # This uses a prefix match which can use the btree index
+    copy_count =
       from(e in Exercise,
         where: e.business_id == ^business_id,
-        where: like(e.name, ^"#{base_name} (Copy%") or e.name == ^"#{base_name} (Copy)",
-        select: e.name
+        where:
+          e.name == ^"#{base_name} (Copy)" or
+            fragment("? ~ ?", e.name, ^"^#{Regex.escape(base_name)} \\(Copy \\d+\\)$"),
+        select: count(e.id)
       )
-      |> Repo.all()
+      |> Repo.one()
 
-    if Enum.empty?(existing_names) do
-      # No existing copies, use simple "(Copy)" suffix
+    if copy_count == 0 do
       "#{base_name} (Copy)"
     else
-      # Find the highest copy number
-      highest_number =
-        existing_names
-        |> Enum.map(fn name ->
-          case Regex.run(~r/\(Copy(?:\s+(\d+))?\)$/, name) do
-            [_, ""] -> 1
-            [_] -> 1
-            [_, num] -> String.to_integer(num)
-            nil -> 0
-          end
-        end)
-        |> Enum.max(fn -> 0 end)
-
-      "#{base_name} (Copy #{highest_number + 1})"
+      "#{base_name} (Copy #{copy_count + 1})"
     end
   end
 

@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Stack, Text, TextInput} from '@mantine/core';
-import {IconArrowRight, IconMail} from '@tabler/icons-react';
+import {IconArrowRight} from '@tabler/icons-react';
 import React, {useCallback} from 'react';
 import {useForm} from 'react-hook-form';
 import {Navigate, useNavigate} from 'react-router';
@@ -71,7 +71,6 @@ const SignInPage: React.FC = () => {
                                 Email address
                             </Text>
                         }
-                        leftSection={<IconMail size={18} />}
                         placeholder="Enter your email"
                         size="lg"
                         type="email"

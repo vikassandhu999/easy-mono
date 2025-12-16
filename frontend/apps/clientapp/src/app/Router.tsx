@@ -4,8 +4,11 @@ import AcceptInvitationPage from '@/domains/auth/pages/AcceptInvitationPage';
 import PublicJoinPage from '@/domains/auth/pages/PublicJoinPage';
 import SignInCodePage from '@/domains/auth/pages/SignInCodePage';
 import SignInPage from '@/domains/auth/pages/SignInPage';
+import HomePage from '@/domains/home/pages/HomePage';
+import SchedulePage from '@/domains/schedule/pages/SchedulePage';
+import MainProfilePage from '@/domains/settings/pages/MainProfilePage';
+import SettingsPage from '@/domains/settings/pages/SettingsPage';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
-import DashboardPage from '@/views/Dashboard/DashboardPage';
 
 const router = createBrowserRouter([
     // Public auth routes
@@ -30,8 +33,20 @@ const router = createBrowserRouter([
         element: <ProtectedRouteLayout />,
         children: [
             {
-                element: <DashboardPage />,
+                element: <HomePage />,
                 path: '/',
+            },
+            {
+                element: <SchedulePage />,
+                path: '/schedule',
+            },
+            {
+                element: <SettingsPage />,
+                path: '/settings',
+            },
+            {
+                element: <MainProfilePage />,
+                path: '/settings/profile',
             },
         ],
     },

@@ -229,7 +229,7 @@ const axiosBaseQuery = (): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQue
 export const baseAPISlice = createApi({
     reducerPath: 'api',
     baseQuery: axiosBaseQuery(),
-    tagTypes: ['Invitation', 'PublicJoin', 'Profile', 'Schedule', 'Content'],
+    tagTypes: ['Invitation', 'PublicJoin', 'Profile', 'Schedule', 'Content', 'Business'],
     endpoints: () => ({}),
 });
 

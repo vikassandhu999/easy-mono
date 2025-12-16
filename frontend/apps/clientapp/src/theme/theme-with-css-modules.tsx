@@ -1,487 +1,1108 @@
 import '@fontsource-variable/inter';
 import '@fontsource-variable/roboto-mono';
 import '@fontsource-variable/nunito';
-import '@mantine/core/styles.css';
-
-import './default-css-variables.css';
-import '@mantine/notifications/styles.css';
-import '@mantine/dates/styles.css';
 import {
+    ActionIcon,
+    Anchor,
+    AppShell,
+    Avatar,
     Badge,
+    Breadcrumbs,
+    Button,
+    Card,
     Checkbox,
+    Chip,
     ColorInput,
     createTheme,
+    Divider,
     Drawer,
     Input,
     InputDescription,
     InputError,
     InputLabel,
     InputWrapper,
+    Loader,
     MantineColorsTuple,
     Menu,
+    Modal,
     MultiSelect,
+    NavLink,
+    Notification,
     NumberInput,
+    Pagination,
+    Paper,
     PasswordInput,
+    Pill,
     PillsInput,
     PinInput,
+    Progress,
     Radio,
     RadioGroup,
+    rem,
     ScrollArea,
+    SegmentedControl,
     Select,
+    Skeleton,
+    Slider,
+    Stepper,
+    Switch,
+    Table,
+    Tabs,
+    TagsInput,
+    Text,
     Textarea,
     TextInput,
+    ThemeIcon,
+    Title,
+    Tooltip,
 } from '@mantine/core';
+import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
 
+import './default-css-variables.css';
+
+/* ============================================
+   COLOR PALETTE
+
+   Designed for a coaching/fitness app:
+   - Brand Blue: Trust, professionalism, calm motivation
+   - Green: Success, health, achievement
+   - Red: Alerts, errors, intensity
+   - Orange: Energy, warnings, warmth
+   - Gray: Neutral UI, hierarchy
+   ============================================ */
+
+// Primary brand color - Professional blue that conveys trust and expertise
 const brandBlue: MantineColorsTuple = [
-    '#f0f7ff',
-    '#d1e9ff',
-    '#a6d4ff',
-    '#7fbfff',
-    '#5aa9ff',
-    '#3b94ff',
-    '#2d7fff',
-    '#1e6aff',
-    '#0f56ff',
-    '#0043e6',
+    '#eff6ff', // 0 - Lightest background
+    '#dbeafe', // 1 - Light hover
+    '#bfdbfe', // 2 - Subtle highlight
+    '#93c5fd', // 3 - Light accent
+    '#60a5fa', // 4 - Medium accent
+    '#3b82f6', // 5 - Primary (main brand)
+    '#2563eb', // 6 - Primary hover
+    '#1d4ed8', // 7 - Primary pressed
+    '#1e40af', // 8 - Dark variant
+    '#1e3a8a', // 9 - Darkest
 ];
 
-const systemRed: MantineColorsTuple = [
-    '#fff5f5',
-    '#ffe3e3',
-    '#ffc9c9',
-    '#ffa8a8',
-    '#ff8787',
-    '#ff6b6b',
-    '#fa5252',
-    '#f03e3e',
-    '#e03131',
-    '#c92a2a',
+// Success/Health green - Achievement and positive outcomes
+const successGreen: MantineColorsTuple = [
+    '#f0fdf4', // 0
+    '#dcfce7', // 1
+    '#bbf7d0', // 2
+    '#86efac', // 3
+    '#4ade80', // 4
+    '#22c55e', // 5 - Primary success
+    '#16a34a', // 6
+    '#15803d', // 7
+    '#166534', // 8
+    '#14532d', // 9
 ];
 
-const systemGreen: MantineColorsTuple = [
-    '#f3faf7',
-    '#d3f9e0',
-    '#a9f3c1',
-    '#7fe9a0',
-    '#5dd87f',
-    '#40c057',
-    '#37b24d',
-    '#2f9e44',
-    '#2b8a3e',
-    '#237032',
+// Error/Alert red - Clear error states and warnings
+const errorRed: MantineColorsTuple = [
+    '#fef2f2', // 0
+    '#fee2e2', // 1
+    '#fecaca', // 2
+    '#fca5a5', // 3
+    '#f87171', // 4
+    '#ef4444', // 5 - Primary error
+    '#dc2626', // 6
+    '#b91c1c', // 7
+    '#991b1b', // 8
+    '#7f1d1d', // 9
 ];
 
+// Energy orange - Warnings and high-energy states
+const energyOrange: MantineColorsTuple = [
+    '#fff7ed', // 0
+    '#ffedd5', // 1
+    '#fed7aa', // 2
+    '#fdba74', // 3
+    '#fb923c', // 4
+    '#f97316', // 5 - Primary warning
+    '#ea580c', // 6
+    '#c2410c', // 7
+    '#9a3412', // 8
+    '#7c2d12', // 9
+];
+
+// Neutral gray - UI hierarchy and text
 const neutralGray: MantineColorsTuple = [
-    '#ffffff',
-    '#f8f9fa',
-    '#e9ecef',
-    '#dee2e6',
-    '#ced4da',
-    '#adb5bd',
-    '#6c757d',
-    '#495057',
-    '#343a40',
-    '#1a1a1a',
+    '#ffffff', // 0 - Pure white
+    '#f8fafc', // 1 - Background
+    '#f1f5f9', // 2 - Subtle background
+    '#e2e8f0', // 3 - Border light
+    '#cbd5e1', // 4 - Border
+    '#94a3b8', // 5 - Muted text
+    '#64748b', // 6 - Secondary text
+    '#475569', // 7 - Body text
+    '#334155', // 8 - Strong text
+    '#1e293b', // 9 - Heading text
 ];
 
-const formDescriptionStyles = {
-    order: 1,
-    fontWeight: 400,
-    fontSize: 'var(--mantine-font-size-sm)',
-    lineHeight: 1.5,
-    color: 'var(--mantine-color-gray-7)',
-    marginBottom: 0,
-} as const;
+/* ============================================
+   SHARED STYLE DEFINITIONS
+   ============================================ */
 
-const formErrorStyles = {
-    order: 3,
-    fontWeight: 500,
-    fontSize: 'var(--mantine-font-size-sm)',
-    lineHeight: 1.5,
-    color: 'var(--mantine-color-red-7)',
-    marginTop: 0,
-} as const;
-
+// Form label styling - Consistent across all inputs
 const formLabelStyles = {
-    order: 0,
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: 'var(--ce-size-2xs)',
-    fontWeight: 600,
-    fontSize: 'var(--label-font-size)',
-    lineHeight: 1.2,
+    fontWeight: 500,
+    fontSize: 'var(--text-sm)',
+    lineHeight: 'var(--leading-normal)',
     color: 'var(--mantine-color-gray-8)',
-    marginBottom: 0,
-    '&[data-required]::after': {
-        content: '"*"',
-        marginLeft: 'calc(var(--ce-size-xs) / 2)',
-        color: 'var(--mantine-color-gray-7)',
-        fontWeight: 500,
-    },
+    marginBottom: 'var(--space-1)',
 } as const;
 
-const formFieldWrapperStyles = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    gap: 'var(--ce-size-2xs)',
-    marginBottom: 0,
-    width: '100%',
-} as const;
-
-const baseInteractiveFieldStyles = {
-    order: 2,
-    borderRadius: 'var(--ce-size-sm)',
-    border: '1.5px solid var(--mantine-color-gray-4)',
-    backgroundColor: 'var(--mantine-color-white)',
-    fontSize: 'var(--body-font-size)',
+// Form description styling
+const formDescriptionStyles = {
     fontWeight: 400,
-    lineHeight: 1.5,
-    transition: 'border-color 150ms ease, box-shadow 150ms ease',
-    '&:focus, &:focus-visible': {
+    fontSize: 'var(--text-xs)',
+    lineHeight: 'var(--leading-relaxed)',
+    color: 'var(--mantine-color-gray-6)',
+    marginTop: 'var(--space-1)',
+} as const;
+
+// Form error styling
+const formErrorStyles = {
+    fontWeight: 500,
+    fontSize: 'var(--text-xs)',
+    lineHeight: 'var(--leading-normal)',
+    color: 'var(--mantine-color-red-6)',
+    marginTop: 'var(--space-1)',
+} as const;
+
+// Base input field styling - Mobile-first touch-friendly
+const baseInputStyles = {
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border-default)',
+    backgroundColor: 'var(--surface-primary)',
+    fontSize: 'var(--text-base)',
+    fontWeight: 400,
+    lineHeight: 'var(--leading-normal)',
+    height: 'var(--input-height)',
+    minHeight: 'var(--input-height)',
+    paddingInline: 'var(--space-3)',
+    transition:
+        'border-color var(--duration-fast) var(--ease-in-out), box-shadow var(--duration-fast) var(--ease-in-out)',
+    '&:hover:not(:disabled):not(:focus)': {
+        borderColor: 'var(--border-strong)',
+    },
+    '&:focus, &:focus-within': {
         outline: 'none',
-        borderColor: 'var(--mantine-color-brand-6)',
-        borderWidth: '2px',
-        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.12)',
+        borderColor: 'var(--mantine-color-brand-5)',
+        boxShadow: 'var(--shadow-focus-brand)',
     },
     '&[data-invalid]': {
-        borderColor: 'var(--mantine-color-red-6)',
-        boxShadow: '0 0 0 2px rgba(250, 82, 82, 0.12)',
+        borderColor: 'var(--mantine-color-red-5)',
+        '&:focus': {
+            boxShadow: 'var(--shadow-focus-error)',
+        },
     },
     '&::placeholder': {
-        color: 'var(--mantine-color-gray-6)',
+        color: 'var(--mantine-color-gray-5)',
         opacity: 1,
     },
     '&:disabled': {
-        backgroundColor: 'var(--mantine-color-gray-1)',
-        borderColor: 'var(--mantine-color-gray-3)',
-        color: 'var(--mantine-color-gray-6)',
+        backgroundColor: 'var(--surface-secondary)',
+        borderColor: 'var(--border-subtle)',
+        color: 'var(--mantine-color-gray-5)',
         cursor: 'not-allowed',
+        opacity: 0.7,
     },
 } as const;
 
+// Form field wrapper
+const formWrapperStyles = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0,
+    width: '100%',
+} as const;
+
+/* ============================================
+   THEME EXPORT
+   ============================================ */
+
 export const theme = createTheme({
+    /* Color configuration */
     colors: {
         brand: brandBlue,
         gray: neutralGray,
-        green: systemGreen,
-        red: systemRed,
+        green: successGreen,
+        red: errorRed,
+        orange: energyOrange,
     },
+    primaryColor: 'brand',
+    primaryShade: 5,
+
+    /* Default radius for all components */
+    defaultRadius: 'md',
+
+    /* Respect user's reduced motion preferences */
+    respectReducedMotion: true,
+
+    /* Cursor style */
+    cursorType: 'pointer',
+
+    /* Component customizations */
     components: {
-        Badge: Badge.extend({
-            defaultProps: {size: 'md'},
-            styles: {root: {fontWeight: 600, textTransform: 'capitalize'}},
+        /* ========== BUTTONS & ACTIONS ========== */
+
+        ActionIcon: ActionIcon.extend({
+            defaultProps: {
+                variant: 'subtle',
+            },
+            styles: {
+                root: {
+                    transition: 'all var(--duration-fast) var(--ease-in-out)',
+                },
+            },
         }),
-        Checkbox: Checkbox.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                body: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: 'var(--ce-size-2xs)',
-                },
-                description: {
-                    ...formDescriptionStyles,
-                    marginBottom: 0,
-                },
-                error: {...formErrorStyles},
-                input: {
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: 'var(--ce-size-2xs)',
-                    border: '1.5px solid var(--mantine-color-gray-5)',
-                    transition: 'border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease',
-                    '&:checked': {
-                        backgroundColor: 'var(--mantine-color-brand-6)',
-                        borderColor: 'var(--mantine-color-brand-6)',
+
+        Button: Button.extend({
+            defaultProps: {
+                size: 'md',
+                radius: 'md',
+            },
+            styles: (_theme, props) => {
+                const heights: Record<string, string> = {
+                    xs: 'var(--button-height-xs)',
+                    sm: 'var(--button-height-sm)',
+                    md: 'var(--button-height-md)',
+                    lg: 'var(--button-height-lg)',
+                    xl: 'var(--button-height-xl)',
+                };
+                return {
+                    root: {
+                        height: heights[props.size as string] || heights.md,
+                        fontWeight: 600,
+                        fontSize: 'var(--text-base)',
+                        transition: 'all var(--duration-fast) var(--ease-in-out)',
+                        '&:active:not(:disabled)': {
+                            transform: 'scale(0.98)',
+                        },
                     },
-                    '&:focus-visible': {
-                        outline: 'none',
-                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                    label: {
+                        fontWeight: 600,
                     },
-                    '&:disabled': {
-                        backgroundColor: 'var(--mantine-color-gray-1)',
-                        borderColor: 'var(--mantine-color-gray-3)',
-                    },
-                },
-                label: {
-                    color: 'var(--mantine-color-gray-8)',
-                    fontWeight: 500,
-                    lineHeight: 1.5,
-                    marginBottom: 0,
-                },
-            }),
+                };
+            },
         }),
-        ColorInput: ColorInput.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                input: {
-                    ...baseInteractiveFieldStyles,
-                    paddingLeft: 'calc(var(--ce-size-md) + 2.5rem)',
+
+        /* ========== LAYOUT & CONTAINERS ========== */
+
+        AppShell: AppShell.extend({
+            styles: {
+                main: {
+                    backgroundColor: 'var(--surface-secondary)',
+                    minHeight: '100dvh',
                 },
-                label: {...formLabelStyles},
-                wrapper: {...formFieldWrapperStyles},
-            }),
+                header: {
+                    backgroundColor: 'var(--surface-primary)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                },
+                navbar: {
+                    backgroundColor: 'var(--surface-primary)',
+                    borderRight: '1px solid var(--border-subtle)',
+                },
+                footer: {
+                    backgroundColor: 'var(--surface-primary)',
+                    borderTop: '1px solid var(--border-subtle)',
+                },
+            },
         }),
+
+        Card: Card.extend({
+            defaultProps: {
+                padding: 'md',
+                radius: 'lg',
+                withBorder: false,
+            },
+            styles: {
+                root: {
+                    backgroundColor: 'var(--surface-primary)',
+                    boxShadow: 'var(--shadow-sm)',
+                    transition: 'box-shadow var(--duration-normal) var(--ease-in-out)',
+                    '&[data-with-border]': {
+                        border: '1px solid var(--border-subtle)',
+                        boxShadow: 'none',
+                    },
+                },
+            },
+        }),
+
+        Divider: Divider.extend({
+            styles: {
+                root: {
+                    borderColor: 'var(--border-subtle)',
+                },
+            },
+        }),
+
         Drawer: Drawer.extend({
             defaultProps: {
                 position: 'right',
-                scrollAreaComponent: ScrollArea.Autosize,
                 size: '100%',
-                transitionProps: {duration: 150, timingFunction: 'linear', transition: 'fade-left'},
+                scrollAreaComponent: ScrollArea.Autosize,
+                transitionProps: {
+                    duration: 200,
+                    timingFunction: 'ease-out',
+                    transition: 'slide-left',
+                },
             },
-            styles: {body: {overflow: 'hidden', padding: 0}},
-        }),
-        Input: Input.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                input: {...baseInteractiveFieldStyles},
-                wrapper: {...formFieldWrapperStyles},
-            }),
-        }),
-        InputDescription: InputDescription.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({description: {...formDescriptionStyles}}),
-        }),
-        InputError: InputError.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({error: {...formErrorStyles}}),
-        }),
-        InputLabel: InputLabel.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({label: {...formLabelStyles}}),
-        }),
-        InputWrapper: InputWrapper.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                label: {...formLabelStyles},
-                root: {...formFieldWrapperStyles},
-            }),
-        }),
-        Menu: Menu.extend({
             styles: {
-                divider: {
-                    margin: 0,
-                    marginBlock: 'var(--ce-size-xs)',
+                header: {
+                    padding: 'var(--space-4)',
+                    borderBottom: '1px solid var(--border-subtle)',
                 },
-                dropdown: {
-                    borderRadius: 'var(--mantine-radius-md)',
-                    border: '1px solid var(--mantine-color-gray-3)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    padding: 'var(--ce-size-xs)',
+                title: {
+                    fontWeight: 600,
+                    fontSize: 'var(--text-lg)',
                 },
-                item: {
-                    borderRadius: 'var(--mantine-radius-sm)',
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                    padding: 'var(--ce-size-sm)',
-                    '&[data-hovered]': {
-                        backgroundColor: 'var(--mantine-color-gray-0)',
+                body: {
+                    padding: 'var(--space-4)',
+                },
+                close: {
+                    width: 'var(--touch-target-min)',
+                    height: 'var(--touch-target-min)',
+                },
+            },
+        }),
+
+        Modal: Modal.extend({
+            defaultProps: {
+                radius: 'lg',
+                centered: true,
+                overlayProps: {
+                    backgroundOpacity: 0.4,
+                    blur: 4,
+                },
+                transitionProps: {
+                    duration: 200,
+                    transition: 'pop',
+                },
+            },
+            styles: {
+                header: {
+                    padding: 'var(--space-4)',
+                    paddingBottom: 'var(--space-3)',
+                },
+                title: {
+                    fontWeight: 600,
+                    fontSize: 'var(--text-lg)',
+                    color: 'var(--mantine-color-gray-9)',
+                },
+                body: {
+                    padding: 'var(--space-4)',
+                    paddingTop: 0,
+                },
+                close: {
+                    width: 'var(--touch-target-min)',
+                    height: 'var(--touch-target-min)',
+                },
+            },
+        }),
+
+        Paper: Paper.extend({
+            defaultProps: {
+                radius: 'md',
+            },
+            styles: {
+                root: {
+                    backgroundColor: 'var(--surface-primary)',
+                },
+            },
+        }),
+
+        /* ========== FORM INPUTS ========== */
+
+        Checkbox: Checkbox.extend({
+            defaultProps: {
+                size: 'md',
+                radius: 'sm',
+            },
+            styles: {
+                root: {
+                    cursor: 'pointer',
+                },
+                input: {
+                    width: rem(20),
+                    height: rem(20),
+                    cursor: 'pointer',
+                    border: '1.5px solid var(--border-default)',
+                    transition: 'all var(--duration-fast) var(--ease-in-out)',
+                    '&:checked': {
+                        backgroundColor: 'var(--mantine-color-brand-5)',
+                        borderColor: 'var(--mantine-color-brand-5)',
                     },
-                    '&[data-hovered][data-menu-item][data-color="red"]': {
-                        backgroundColor: 'var(--mantine-color-red-0)',
+                    '&:focus-visible': {
+                        boxShadow: 'var(--shadow-focus-brand)',
                     },
-                },
-                itemLabel: {
-                    fontSize: 'var(--body-font-size)',
-                    fontWeight: 400,
-                },
-                itemSection: {
-                    marginRight: 'var(--ce-size-xs)',
                 },
                 label: {
-                    fontSize: 'var(--label-font-size)',
-                    fontWeight: 600,
-                    marginBottom: 'var(--ce-size-xs)',
-                    color: 'var(--mantine-color-gray-6)',
+                    paddingLeft: 'var(--space-2)',
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 400,
+                    cursor: 'pointer',
+                },
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+            },
+        }),
+
+        ColorInput: ColorInput.extend({
+            defaultProps: {size: 'md'},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: baseInputStyles,
+                wrapper: formWrapperStyles,
+            },
+        }),
+
+        Input: Input.extend({
+            defaultProps: {size: 'md'},
+            styles: {
+                input: baseInputStyles,
+                wrapper: formWrapperStyles,
+            },
+        }),
+
+        InputDescription: InputDescription.extend({
+            styles: {description: formDescriptionStyles},
+        }),
+
+        InputError: InputError.extend({
+            styles: {error: formErrorStyles},
+        }),
+
+        InputLabel: InputLabel.extend({
+            styles: {label: formLabelStyles},
+        }),
+
+        InputWrapper: InputWrapper.extend({
+            styles: {
+                root: formWrapperStyles,
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+            },
+        }),
+
+        MultiSelect: MultiSelect.extend({
+            defaultProps: {size: 'md'},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: {
+                    ...baseInputStyles,
+                    height: 'auto',
+                    minHeight: 'var(--input-height)',
+                    paddingBlock: 'var(--space-2)',
+                },
+                wrapper: formWrapperStyles,
+                pill: {
+                    backgroundColor: 'var(--mantine-color-brand-1)',
+                    color: 'var(--mantine-color-brand-7)',
                 },
             },
         }),
-        MultiSelect: MultiSelect.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                input: {
-                    ...baseInteractiveFieldStyles,
-                },
-                label: {...formLabelStyles},
-                values: {
-                    gap: 'var(--ce-size-2xs)',
-                },
-                wrapper: {...formFieldWrapperStyles},
-            }),
-        }),
+
         NumberInput: NumberInput.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                input: {
-                    ...baseInteractiveFieldStyles,
-                    paddingRight: '3.5rem',
-                },
-                label: {...formLabelStyles},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: baseInputStyles,
+                wrapper: formWrapperStyles,
                 control: {
-                    width: '44px',
-                    borderLeft: '1px solid var(--mantine-color-gray-3)',
+                    borderColor: 'var(--border-subtle)',
                     '&:hover': {
-                        backgroundColor: 'var(--mantine-color-gray-1)',
-                    },
-                    '&:focus-visible': {
-                        outline: 'none',
-                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                        backgroundColor: 'var(--surface-secondary)',
                     },
                 },
-                controls: {
-                    height: '100%',
-                },
-                wrapper: {...formFieldWrapperStyles},
-            }),
+            },
         }),
+
         PasswordInput: PasswordInput.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                input: {...baseInteractiveFieldStyles},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: baseInputStyles,
                 innerInput: {
-                    ...baseInteractiveFieldStyles,
+                    height: '100%',
+                    fontSize: 'var(--text-base)',
                 },
-                label: {...formLabelStyles},
+                wrapper: formWrapperStyles,
                 visibilityToggle: {
-                    color: 'var(--mantine-color-gray-7)',
-                    '&:focus-visible': {
-                        outline: 'none',
-                        boxShadow: '0 0 0 2px rgba(31, 106, 255, 0.2)',
+                    width: 'var(--touch-target-min)',
+                    height: '100%',
+                    color: 'var(--mantine-color-gray-6)',
+                    '&:hover': {
+                        backgroundColor: 'transparent',
+                        color: 'var(--mantine-color-gray-8)',
                     },
                 },
-                wrapper: {...formFieldWrapperStyles},
-            }),
+            },
         }),
+
         PillsInput: PillsInput.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
                 input: {
-                    ...baseInteractiveFieldStyles,
-                    minHeight: '54px',
+                    ...baseInputStyles,
+                    height: 'auto',
+                    minHeight: 'var(--input-height)',
                 },
-                label: {...formLabelStyles},
-                pillsList: {
-                    gap: 'var(--ce-size-2xs)',
-                },
-                wrapper: {...formFieldWrapperStyles},
-            }),
+                wrapper: formWrapperStyles,
+            },
         }),
+
         PinInput: PinInput.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
+            styles: {
                 input: {
-                    ...baseInteractiveFieldStyles,
+                    ...baseInputStyles,
+                    width: rem(48),
+                    height: rem(48),
                     textAlign: 'center',
-                    width: '3rem',
-                    height: '3rem',
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 600,
                     padding: 0,
                 },
                 root: {
-                    display: 'flex',
-                    gap: 'var(--ce-size-sm)',
-                    width: '100%',
-                    justifyContent: 'flex-start',
+                    gap: 'var(--space-2)',
                 },
-            }),
+            },
         }),
+
         Radio: Radio.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {
-                    ...formDescriptionStyles,
-                    marginBottom: 0,
+            styles: {
+                root: {
+                    cursor: 'pointer',
                 },
-                error: {...formErrorStyles},
-                inner: {
-                    alignItems: 'flex-start',
-                    gap: 'var(--ce-size-2xs)',
+                radio: {
+                    width: rem(20),
+                    height: rem(20),
+                    cursor: 'pointer',
+                    border: '1.5px solid var(--border-default)',
+                    transition: 'all var(--duration-fast) var(--ease-in-out)',
+                    '&:checked': {
+                        backgroundColor: 'var(--mantine-color-brand-5)',
+                        borderColor: 'var(--mantine-color-brand-5)',
+                    },
                 },
                 label: {
-                    color: 'var(--mantine-color-gray-8)',
-                    fontWeight: 500,
-                    lineHeight: 1.5,
-                    marginBottom: 0,
+                    paddingLeft: 'var(--space-2)',
+                    fontSize: 'var(--text-base)',
+                    cursor: 'pointer',
                 },
-            }),
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+            },
         }),
+
         RadioGroup: RadioGroup.extend({
-            defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                label: {...formLabelStyles},
-                root: {
-                    ...formFieldWrapperStyles,
-                    gap: 'var(--ce-size-sm)',
-                },
-            }),
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+            },
         }),
 
         Select: Select.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
                 input: {
-                    ...baseInteractiveFieldStyles,
+                    ...baseInputStyles,
                     cursor: 'pointer',
-                    paddingRight: 'calc(var(--ce-size-md) + 2.5rem)',
                 },
-                label: {...formLabelStyles},
+                wrapper: formWrapperStyles,
                 dropdown: {
-                    borderRadius: 'var(--mantine-radius-md)',
-                    border: '1px solid var(--mantine-color-gray-3)',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-subtle)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: 'var(--space-1)',
                 },
-                wrapper: {...formFieldWrapperStyles},
-            }),
+                option: {
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-2) var(--space-3)',
+                    fontSize: 'var(--text-base)',
+                    '&[data-selected]': {
+                        backgroundColor: 'var(--mantine-color-brand-5)',
+                    },
+                    '&[data-hovered]:not([data-selected])': {
+                        backgroundColor: 'var(--surface-secondary)',
+                    },
+                },
+            },
+        }),
+
+        Slider: Slider.extend({
+            styles: {
+                root: {
+                    paddingBlock: 'var(--space-2)',
+                },
+                track: {
+                    height: rem(6),
+                },
+                thumb: {
+                    width: rem(20),
+                    height: rem(20),
+                    border: '2px solid var(--mantine-color-brand-5)',
+                    boxShadow: 'var(--shadow-sm)',
+                },
+                bar: {
+                    backgroundColor: 'var(--mantine-color-brand-5)',
+                },
+                markLabel: {
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--mantine-color-gray-6)',
+                },
+            },
+        }),
+
+        Switch: Switch.extend({
+            defaultProps: {size: 'md'},
+            styles: {
+                root: {
+                    cursor: 'pointer',
+                },
+                track: {
+                    minWidth: rem(44),
+                    height: rem(24),
+                    cursor: 'pointer',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--surface-tertiary)',
+                    '&[data-checked]': {
+                        backgroundColor: 'var(--mantine-color-brand-5)',
+                        borderColor: 'var(--mantine-color-brand-5)',
+                    },
+                },
+                thumb: {
+                    width: rem(20),
+                    height: rem(20),
+                    border: 'none',
+                    boxShadow: 'var(--shadow-sm)',
+                },
+                label: {
+                    paddingLeft: 'var(--space-2)',
+                    fontSize: 'var(--text-base)',
+                    cursor: 'pointer',
+                },
+            },
+        }),
+
+        TagsInput: TagsInput.extend({
+            defaultProps: {size: 'md'},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: {
+                    ...baseInputStyles,
+                    height: 'auto',
+                    minHeight: 'var(--input-height)',
+                },
+                wrapper: formWrapperStyles,
+            },
         }),
 
         Textarea: Textarea.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
                 input: {
-                    ...baseInteractiveFieldStyles,
+                    ...baseInputStyles,
+                    height: 'auto',
+                    minHeight: rem(100),
+                    paddingBlock: 'var(--space-3)',
                     resize: 'vertical',
-                    padding: 'var(--ce-size-md)',
                 },
-                label: {...formLabelStyles},
-                wrapper: {...formFieldWrapperStyles},
-            }),
+                wrapper: formWrapperStyles,
+            },
         }),
 
         TextInput: TextInput.extend({
             defaultProps: {size: 'md'},
-            styles: () => ({
-                description: {...formDescriptionStyles},
-                error: {...formErrorStyles},
-                input: {
-                    ...baseInteractiveFieldStyles,
-                    '&[data-with-icon]': {
-                        paddingLeft: 'calc(var(--ce-size-md) + 2.5rem)',
+            styles: {
+                label: formLabelStyles,
+                description: formDescriptionStyles,
+                error: formErrorStyles,
+                input: baseInputStyles,
+                wrapper: formWrapperStyles,
+            },
+        }),
+
+        /* ========== NAVIGATION ========== */
+
+        Anchor: Anchor.extend({
+            styles: {
+                root: {
+                    color: 'var(--mantine-color-brand-6)',
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    '&:hover': {
+                        textDecoration: 'underline',
                     },
                 },
-                label: {...formLabelStyles},
-                wrapper: {...formFieldWrapperStyles},
-            }),
+            },
+        }),
+
+        Breadcrumbs: Breadcrumbs.extend({
+            styles: {
+                root: {
+                    fontSize: 'var(--text-sm)',
+                },
+                separator: {
+                    color: 'var(--mantine-color-gray-5)',
+                    margin: '0 var(--space-2)',
+                },
+            },
+        }),
+
+        Menu: Menu.extend({
+            defaultProps: {
+                radius: 'lg',
+                shadow: 'lg',
+            },
+            styles: {
+                dropdown: {
+                    border: '1px solid var(--border-subtle)',
+                    padding: 'var(--space-1)',
+                },
+                item: {
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-2) var(--space-3)',
+                    fontSize: 'var(--text-base)',
+                    minHeight: 'var(--touch-target-min)',
+                    '&[data-hovered]': {
+                        backgroundColor: 'var(--surface-secondary)',
+                    },
+                },
+                itemLabel: {
+                    fontWeight: 400,
+                },
+                itemSection: {
+                    marginRight: 'var(--space-2)',
+                },
+                label: {
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 600,
+                    color: 'var(--mantine-color-gray-5)',
+                    padding: 'var(--space-2) var(--space-3)',
+                    textTransform: 'uppercase',
+                    letterSpacing: 'var(--tracking-wider)',
+                },
+                divider: {
+                    marginBlock: 'var(--space-1)',
+                    borderColor: 'var(--border-subtle)',
+                },
+            },
+        }),
+
+        NavLink: NavLink.extend({
+            styles: {
+                root: {
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-2) var(--space-3)',
+                    minHeight: 'var(--touch-target-min)',
+                    transition: 'background-color var(--duration-fast) var(--ease-in-out)',
+                    '&:hover': {
+                        backgroundColor: 'var(--surface-secondary)',
+                    },
+                    '&[data-active]': {
+                        backgroundColor: 'var(--mantine-color-brand-0)',
+                        color: 'var(--mantine-color-brand-7)',
+                        '&:hover': {
+                            backgroundColor: 'var(--mantine-color-brand-1)',
+                        },
+                    },
+                },
+                label: {
+                    fontWeight: 500,
+                },
+            },
+        }),
+
+        Pagination: Pagination.extend({
+            styles: {
+                control: {
+                    minWidth: 'var(--touch-target-min)',
+                    height: 'var(--touch-target-min)',
+                    fontSize: 'var(--text-sm)',
+                    borderRadius: 'var(--radius-md)',
+                    '&[data-active]': {
+                        backgroundColor: 'var(--mantine-color-brand-5)',
+                    },
+                },
+            },
+        }),
+
+        Tabs: Tabs.extend({
+            styles: {
+                root: {},
+                list: {
+                    gap: 0,
+                    borderBottom: '1px solid var(--border-subtle)',
+                },
+                tab: {
+                    fontWeight: 500,
+                    fontSize: 'var(--text-base)',
+                    padding: 'var(--space-3) var(--space-4)',
+                    minHeight: 'var(--touch-target-min)',
+                    borderRadius: 0,
+                    borderBottom: '2px solid transparent',
+                    marginBottom: '-1px',
+                    color: 'var(--mantine-color-gray-6)',
+                    transition: 'all var(--duration-fast) var(--ease-in-out)',
+                    '&:hover': {
+                        backgroundColor: 'var(--surface-secondary)',
+                        color: 'var(--mantine-color-gray-8)',
+                    },
+                    '&[data-active]': {
+                        borderColor: 'var(--mantine-color-brand-5)',
+                        color: 'var(--mantine-color-brand-6)',
+                        backgroundColor: 'transparent',
+                    },
+                },
+                panel: {
+                    paddingTop: 'var(--space-4)',
+                },
+            },
+        }),
+
+        /* ========== DATA DISPLAY ========== */
+
+        Avatar: Avatar.extend({
+            defaultProps: {
+                radius: 'xl',
+            },
+            styles: {
+                root: {
+                    border: '2px solid var(--surface-primary)',
+                },
+                placeholder: {
+                    backgroundColor: 'var(--mantine-color-brand-1)',
+                    color: 'var(--mantine-color-brand-6)',
+                    fontWeight: 600,
+                },
+            },
+        }),
+
+        Badge: Badge.extend({
+            defaultProps: {
+                size: 'md',
+                radius: 'xl',
+                variant: 'light',
+            },
+            styles: {
+                root: {
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    letterSpacing: 'var(--tracking-normal)',
+                },
+            },
+        }),
+
+        Chip: Chip.extend({
+            styles: {
+                label: {
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 500,
+                    padding: 'var(--space-1) var(--space-3)',
+                    minHeight: rem(32),
+                },
+            },
+        }),
+
+        Pill: Pill.extend({
+            styles: {
+                root: {
+                    fontWeight: 500,
+                    fontSize: 'var(--text-xs)',
+                },
+            },
+        }),
+
+        Progress: Progress.extend({
+            styles: {
+                root: {
+                    backgroundColor: 'var(--surface-tertiary)',
+                },
+                section: {
+                    transition: 'width var(--duration-slow) var(--ease-out)',
+                },
+            },
+        }),
+
+        SegmentedControl: SegmentedControl.extend({
+            styles: {
+                root: {
+                    backgroundColor: 'var(--surface-tertiary)',
+                    padding: 'var(--space-0-5)',
+                    borderRadius: 'var(--radius-lg)',
+                },
+                control: {
+                    minHeight: rem(36),
+                },
+                label: {
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 500,
+                    padding: 'var(--space-2) var(--space-3)',
+                },
+                indicator: {
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-sm)',
+                },
+            },
+        }),
+
+        Skeleton: Skeleton.extend({
+            styles: {
+                root: {
+                    '&::after': {
+                        background: 'linear-gradient(90deg, transparent, var(--surface-secondary), transparent)',
+                    },
+                },
+            },
+        }),
+
+        Stepper: Stepper.extend({
+            styles: {
+                step: {
+                    minWidth: 'var(--touch-target-min)',
+                },
+                stepIcon: {
+                    width: rem(32),
+                    height: rem(32),
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 600,
+                },
+                stepLabel: {
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 500,
+                },
+                stepDescription: {
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--mantine-color-gray-6)',
+                },
+            },
+        }),
+
+        Table: Table.extend({
+            styles: {
+                table: {
+                    fontSize: 'var(--text-sm)',
+                },
+                th: {
+                    fontWeight: 600,
+                    fontSize: 'var(--text-xs)',
+                    textTransform: 'uppercase',
+                    letterSpacing: 'var(--tracking-wide)',
+                    color: 'var(--mantine-color-gray-6)',
+                    padding: 'var(--space-3)',
+                    borderBottom: '1px solid var(--border-default)',
+                },
+                td: {
+                    padding: 'var(--space-3)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                },
+                tr: {
+                    transition: 'background-color var(--duration-fast) var(--ease-in-out)',
+                    '&:hover': {
+                        backgroundColor: 'var(--surface-secondary)',
+                    },
+                },
+            },
+        }),
+
+        ThemeIcon: ThemeIcon.extend({
+            defaultProps: {
+                variant: 'light',
+                radius: 'md',
+            },
+        }),
+
+        /* ========== TYPOGRAPHY ========== */
+
+        Text: Text.extend({
+            styles: {
+                root: {
+                    color: 'var(--mantine-color-text-primary)',
+                },
+            },
+        }),
+
+        Title: Title.extend({
+            styles: {
+                root: {
+                    color: 'var(--mantine-color-gray-9)',
+                    letterSpacing: 'var(--tracking-tight)',
+                },
+            },
+        }),
+
+        /* ========== FEEDBACK & OVERLAYS ========== */
+
+        Loader: Loader.extend({
+            defaultProps: {
+                type: 'dots',
+            },
+        }),
+
+        Notification: Notification.extend({
+            defaultProps: {
+                radius: 'lg',
+            },
+            styles: {
+                root: {
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: 'var(--space-3)',
+                    border: '1px solid var(--border-subtle)',
+                },
+                title: {
+                    fontWeight: 600,
+                    fontSize: 'var(--text-base)',
+                },
+                description: {
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--mantine-color-gray-7)',
+                },
+            },
+        }),
+
+        Tooltip: Tooltip.extend({
+            defaultProps: {
+                radius: 'md',
+                withArrow: true,
+                arrowSize: 8,
+            },
+            styles: {
+                tooltip: {
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 500,
+                    padding: 'var(--space-1-5) var(--space-2)',
+                    backgroundColor: 'var(--mantine-color-gray-9)',
+                },
+            },
         }),
     },
-    primaryColor: 'brand',
-    primaryShade: 5,
 });

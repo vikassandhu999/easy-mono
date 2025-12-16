@@ -6,6 +6,6 @@ import {NavItem} from './types';
 export const navItems: NavItem[] = [
     {href: '/', icon: IconSmartHome, label: 'Home'},
     {href: '/schedule', icon: IconUsers, label: 'Schedule'},
-    {href: '/Chat', icon: FoldersIcon, label: 'Chat'},
-    {href: '/profile', icon: IconSettings2, label: 'Profile'},
+    {href: '/chat', icon: FoldersIcon, label: 'Chat'},
+    {href: '/settings', icon: IconSettings2, label: 'Settings'},
 ];

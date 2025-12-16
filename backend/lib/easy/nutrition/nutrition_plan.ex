@@ -49,7 +49,9 @@ defmodule Easy.Nutrition.NutritionPlan do
       :start_date,
       :tags,
       :client_id,
-      :original_template_id
+      :original_template_id,
+      :business_id,
+      :author_id
     ])
     |> validate_required([:name, :status, :business_id, :author_id])
     |> validate_number(:duration_weeks, greater_than: 0)

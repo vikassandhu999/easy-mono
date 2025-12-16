@@ -40,10 +40,11 @@ defmodule Easy.Nutrition.Meal do
       :label,
       :time,
       :notes,
-      :position
+      :position,
+      :nutrition_plan_id
     ])
     |> validate_required([:daytime, :day_number, :nutrition_plan_id])
-    |> validate_number(:day_number, greater_than_or_equal_to: 1)
+    |> validate_number(:day_number, greater_than_or_equal_to: 0)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:nutrition_plan_id)
     |> cast_assoc(:meal_items, with: &MealItem.changeset/2)

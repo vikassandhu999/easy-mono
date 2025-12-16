@@ -83,7 +83,7 @@ defmodule Easy.Scheduling do
         end
 
       if today_item do
-        {:ok, today_item}Ω
+        {:ok, today_item}
       else
         # 2) Lookahead window and return first scheduled item
         next_item =

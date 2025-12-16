@@ -562,6 +562,7 @@ defmodule Easy.Nutrition do
 
   defp copy_meals!(meals, new_plan_id) do
     meals = Repo.preload(meals, :meal_items)
+    require Logger
 
     Enum.each(meals, fn meal ->
       copy_meal!(meal, %{nutrition_plan_id: new_plan_id})

@@ -1,10 +1,4 @@
 defmodule EasyWeb.PerformedSetController do
-  @moduledoc """
-  Controller for managing performed sets during workout tracking.
-
-  Sets are created/updated in real-time as the client logs their workout.
-  All operations are scoped to the workout session's business.
-  """
   use EasyWeb, :controller
 
   alias Easy.Training
@@ -13,21 +7,6 @@ defmodule EasyWeb.PerformedSetController do
   plug :authorize_session when action in [:create]
   plug :authorize_set when action in [:update, :delete]
 
-  @doc """
-  Creates a new performed set for a workout session.
-
-  ## Request Body
-      {
-        "performed_set": {
-          "workout_session_id": "uuid",
-          "exercise_id": "uuid",
-          "position": 0,
-          "actual_reps": "10",
-          "load_value": 100,
-          "load_unit": "kg"
-        }
-      }
-  """
   def create(conn, %{"performed_set" => set_params}) do
     session = conn.assigns.workout_session
     business_id = conn.assigns.token_claims["business_id"]
@@ -42,9 +21,6 @@ defmodule EasyWeb.PerformedSetController do
     end
   end
 
-  @doc """
-  Updates an existing performed set.
-  """
   def update(conn, %{"performed_set" => set_params}) do
     set = conn.assigns.performed_set
 
@@ -55,9 +31,6 @@ defmodule EasyWeb.PerformedSetController do
     end
   end
 
-  @doc """
-  Deletes a performed set.
-  """
   def delete(conn, _params) do
     with {:ok, _deleted} <- Training.delete_performed_set(conn.assigns.performed_set) do
       send_resp(conn, :no_content, "")

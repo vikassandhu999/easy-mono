@@ -1,6 +1,6 @@
-import {Button, Card, Group, Modal, Stack, Switch, Text, ThemeIcon} from '@mantine/core';
+import {Button, Card, Group, Modal, Stack, Text, ThemeIcon} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconAlertTriangle, IconArchive, IconToggleLeft, IconTrash, IconUserEdit} from '@tabler/icons-react';
+import {IconAlertTriangle, IconArchive, IconArchiveOff, IconUserEdit} from '@tabler/icons-react';
 import {useNavigate} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
@@ -8,69 +8,38 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {Client, useArchiveClient, useUpdateClientStatus} from '@/services/clients';
 import {notifyError} from '@/utils/notification';
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'active':
-            return 'green';
-        case 'pending':
-            return 'yellow';
-        case 'inactive':
-            return 'gray';
-        case 'archived':
-            return 'red';
-        default:
-            return 'gray';
-    }
-};
-
 const SettingsTab = ({client}: {client: Client}) => {
     const navigate = useNavigate();
     const {openDrawer} = useParamsDrawer({});
     const [updateClientStatus, {isLoading: isUpdatingStatus}] = useUpdateClientStatus();
-    const [archiveClient, {isLoading: isDeleting}] = useArchiveClient();
-    const [deleteModalOpened, {open: openDeleteModal, close: closeDeleteModal}] = useDisclosure(false);
+    const [archiveClient, {isLoading: isArchiving}] = useArchiveClient();
+    const [archiveModalOpened, {open: openArchiveModal, close: closeArchiveModal}] = useDisclosure(false);
 
-    const isInactive = client.status === 'inactive';
     const isArchived = client.status === 'archived';
 
     const handleEditProfile = () => {
         openDrawer(DRAWER_KEYS.CLIENT_EDIT, {client_id: client.id});
     };
 
-    const handleInactiveToggle = async (checked: boolean) => {
+    const handleArchiveToggle = async () => {
         try {
-            await updateClientStatus({
-                clientId: client.id,
-                status: checked ? 'inactive' : 'active',
-            }).unwrap();
+            if (isArchived) {
+                await updateClientStatus({
+                    clientId: client.id,
+                    status: 'active',
+                }).unwrap();
+            } else {
+                await archiveClient(client.id).unwrap();
+            }
+            closeArchiveModal();
         } catch (error) {
-            console.error('Failed to update client status:', error);
-            notifyError('Failed to update client status');
+            console.error('Failed to update client archive status:', error);
+            notifyError('Failed to update client archive status');
         }
     };
 
-    const handleArchivedToggle = async (checked: boolean) => {
-        try {
-            await updateClientStatus({
-                clientId: client.id,
-                status: checked ? 'archived' : 'active',
-            }).unwrap();
-        } catch (error) {
-            console.error('Failed to update client status:', error);
-            notifyError('Failed to update client status');
-        }
-    };
 
-    const handleDeleteClient = async () => {
-        try {
-            await archiveClient(client.id).unwrap();
-            closeDeleteModal();
-            navigate('/clients');
-        } catch (error) {
-            console.error('Failed to delete client:', error);
-            notifyError('Failed to delete client');
-        }
-    };
+
 
     return (
         <>
@@ -115,170 +84,73 @@ const SettingsTab = ({client}: {client: Client}) => {
                     </Stack>
                 </Card>
 
-                {/* Status Management Section */}
+
                 <Card
-                    padding="md"
-                    radius="md"
-                    withBorder
-                >
-                    <Stack gap="md">
-                        <Group gap="xs">
-                            <ThemeIcon
-                                color="orange"
-                                size="sm"
-                                variant="light"
-                            >
-                                <IconToggleLeft size={14} />
-                            </ThemeIcon>
-                            <Text
-                                fw={500}
-                                size="sm"
-                            >
-                                Status Management
-                            </Text>
-                        </Group>
-                        <Text
-                            c="dimmed"
-                            size="sm"
-                        >
-                            Current status:{' '}
-                            <Text
-                                c={getStatusColor(client.status)}
-                                component="span"
-                                fw={500}
-                                tt="capitalize"
-                            >
-                                {client.status}
-                            </Text>
-                        </Text>
-
-                        <Stack gap="sm">
-                            <Group
-                                justify="space-between"
-                                wrap="nowrap"
-                            >
-                                <Group
-                                    gap="xs"
-                                    wrap="nowrap"
-                                >
-                                    <IconToggleLeft
-                                        color="var(--mantine-color-orange-6)"
-                                        size={18}
-                                    />
-                                    <Stack gap={0}>
-                                        <Text size="sm">Set Inactive</Text>
-                                        <Text
-                                            c="dimmed"
-                                            size="xs"
-                                        >
-                                            Temporarily pause this client
-                                        </Text>
-                                    </Stack>
-                                </Group>
-                                <Switch
-                                    checked={isInactive}
-                                    color="orange"
-                                    disabled={isUpdatingStatus || isArchived}
-                                    onChange={(e) => handleInactiveToggle(e.currentTarget.checked)}
-                                />
-                            </Group>
-
-                            <Group
-                                justify="space-between"
-                                wrap="nowrap"
-                            >
-                                <Group
-                                    gap="xs"
-                                    wrap="nowrap"
-                                >
-                                    <IconArchive
-                                        color="var(--mantine-color-cyan-6)"
-                                        size={18}
-                                    />
-                                    <Stack gap={0}>
-                                        <Text size="sm">Archive</Text>
-                                        <Text
-                                            c="dimmed"
-                                            size="xs"
-                                        >
-                                            Move client to archive
-                                        </Text>
-                                    </Stack>
-                                </Group>
-                                <Switch
-                                    checked={isArchived}
-                                    color="cyan"
-                                    disabled={isUpdatingStatus}
-                                    onChange={(e) => handleArchivedToggle(e.currentTarget.checked)}
-                                />
-                            </Group>
-                        </Stack>
-                    </Stack>
-                </Card>
-
-                {/* Danger Zone */}
-                <Card
-                    bd="1px solid var(--mantine-color-red-3)"
-                    bg="var(--mantine-color-red-0)"
+                    bd={isArchived ? "1px solid var(--mantine-color-green-3)" : "1px solid var(--mantine-color-orange-3)"}
+                    bg={isArchived ? "var(--mantine-color-green-0)" : "var(--mantine-color-orange-0)"}
                     padding="md"
                     radius="md"
                 >
                     <Stack gap="md">
                         <Group gap="xs">
                             <ThemeIcon
-                                color="red"
+                                color={isArchived ? "green" : "orange"}
                                 size="sm"
                                 variant="light"
                             >
-                                <IconAlertTriangle size={14} />
+                                {isArchived ? <IconArchiveOff size={14} /> : <IconArchive size={14} />}
                             </ThemeIcon>
                             <Text
-                                c="red"
+                                c={isArchived ? "green" : "orange"}
                                 fw={500}
                                 size="sm"
                             >
-                                Danger Zone
+                                {isArchived ? 'Archived Client' : 'Archive Client'}
                             </Text>
                         </Group>
                         <Text
                             c="dimmed"
                             size="sm"
                         >
-                            Permanently delete this client and all associated data. This action cannot be undone.
+                            {isArchived
+                                ? 'This client is currently archived. Unarchive to restore access and make them active again.'
+                                : 'Archive this client to hide them from your active client list. You can unarchive them later.'}
                         </Text>
                         <Button
-                            color="red"
-                            leftSection={<IconTrash size={16} />}
-                            onClick={openDeleteModal}
+                            color={isArchived ? "green" : "orange"}
+                            leftSection={isArchived ? <IconArchiveOff size={16} /> : <IconArchive size={16} />}
+                            onClick={openArchiveModal}
                             radius="xl"
                             size="xs"
                             variant="outline"
                             w="max-content"
                         >
-                            Delete Client
+                            {isArchived ? 'Unarchive Client' : 'Archive Client'}
                         </Button>
                     </Stack>
                 </Card>
             </Stack>
 
-            {/* Delete Confirmation Modal */}
+            {/* Archive/Unarchive Confirmation Modal */}
             <Modal
                 centered
-                onClose={closeDeleteModal}
-                opened={deleteModalOpened}
-                title="Delete Client"
+                onClose={closeArchiveModal}
+                opened={archiveModalOpened}
+                title={isArchived ? 'Unarchive Client' : 'Archive Client'}
             >
                 <Stack gap="md">
                     <Text size="sm">
-                        Are you sure you want to delete <strong>{client.full_name}</strong>? This action cannot be
-                        undone and will remove all associated data.
+                        {isArchived
+                            ? <>Are you sure you want to unarchive <strong>{client.full_name}</strong>? They will be restored to your active client list.</>
+                            : <>Are you sure you want to archive <strong>{client.full_name}</strong>? They will be hidden from your active client list but can be unarchived later.</>
+                        }
                     </Text>
                     <Group
                         gap="sm"
                         justify="flex-end"
                     >
                         <Button
-                            onClick={closeDeleteModal}
+                            onClick={closeArchiveModal}
                             radius="xl"
                             size="sm"
                             variant="subtle"
@@ -286,15 +158,15 @@ const SettingsTab = ({client}: {client: Client}) => {
                             Cancel
                         </Button>
                         <Button
-                            color="red"
-                            leftSection={<IconTrash size={16} />}
-                            loading={isDeleting}
-                            onClick={handleDeleteClient}
+                            color={isArchived ? "green" : "orange"}
+                            leftSection={isArchived ? <IconArchiveOff size={16} /> : <IconArchive size={16} />}
+                            loading={isArchiving || isUpdatingStatus}
+                            onClick={handleArchiveToggle}
                             radius="xl"
                             size="sm"
                             variant="filled"
                         >
-                            Delete Client
+                            {isArchived ? 'Unarchive Client' : 'Archive Client'}
                         </Button>
                     </Group>
                 </Stack>

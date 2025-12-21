@@ -1,15 +1,16 @@
-import { humanizeError } from "@easy/error-parser";
-import { useMemo, useState } from "react";
+import {humanizeError} from '@easy/error-parser';
+import {useMemo, useState} from 'react';
 
 import {CreatePlannedWorkout, useCreatePlannedWorkout, useDeletePlannedWorkout} from '@/services/planned_workouts';
-import {type DayOfWeek, type LoadType, PlannedWorkout, type SetType, WorkoutElement} from '@/services/training_plans';
+import {type DayOfWeek, type LoadUnit, PlannedWorkout, type SetType, WorkoutElement} from '@/services/training_plans';
 import {
-  CreateWorkoutElement,
-  useCreateWorkoutElement,
-  useDeleteWorkoutElement,
-  useUpdateWorkoutElement,
-} from "@/services/workout_elements";
-import { notifyError } from "@/utils/notification";
+    CreateWorkoutElement,
+    PlannedSet,
+    useCreateWorkoutElement,
+    useDeleteWorkoutElement,
+    useUpdateWorkoutElement,
+} from '@/services/workout_elements';
+import {notifyError} from '@/utils/notification';
 
 export type UseDayWorkoutsArgs = {
     currentDay: DayOfWeek;
@@ -17,33 +18,25 @@ export type UseDayWorkoutsArgs = {
     workouts: PlannedWorkout[];
 };
 
-const useDayWorkouts = ({
-  currentDay,
-  planId,
-  workouts,
-}: UseDayWorkoutsArgs) => {
-  const [localLoading, setLocalLoading] = useState<boolean>(false);
-  const [isExerciseDrawerOpen, setIsExerciseDrawerOpen] = useState(false);
-  const [selectedWorkoutId, setSelectedWorkoutId] = useState<null | string>(
-    null,
-  );
-  const [selectedElement, setSelectedElement] = useState<null | WorkoutElement>(
-    null,
-  );
-  const [isAddWorkoutModalOpen, setIsAddWorkoutModalOpen] = useState(false);
+const useDayWorkouts = ({currentDay, planId, workouts}: UseDayWorkoutsArgs) => {
+    const [localLoading, setLocalLoading] = useState<boolean>(false);
+    const [isExerciseDrawerOpen, setIsExerciseDrawerOpen] = useState(false);
+    const [selectedWorkoutId, setSelectedWorkoutId] = useState<null | string>(null);
+    const [selectedElement, setSelectedElement] = useState<null | WorkoutElement>(null);
+    const [isAddWorkoutModalOpen, setIsAddWorkoutModalOpen] = useState(false);
 
-  // Mutations
-  const [createWorkoutElementMutation] = useCreateWorkoutElement();
-  const [updateWorkoutElementMutation] = useUpdateWorkoutElement();
-  const [deleteWorkoutElementMutation] = useDeleteWorkoutElement();
-  const [createPlannedWorkoutMutation] = useCreatePlannedWorkout();
-  const [deletePlannedWorkoutMutation] = useDeletePlannedWorkout();
+    // Mutations
+    const [createWorkoutElementMutation] = useCreateWorkoutElement();
+    const [updateWorkoutElementMutation] = useUpdateWorkoutElement();
+    const [deleteWorkoutElementMutation] = useDeleteWorkoutElement();
+    const [createPlannedWorkoutMutation] = useCreatePlannedWorkout();
+    const [deletePlannedWorkoutMutation] = useDeletePlannedWorkout();
 
-  // Get workouts for the current day
-  const workoutsForDay = useMemo(() => {
-    if (!workouts) return [];
-    return workouts.filter((workout) => workout.day_number === currentDay);
-  }, [workouts, currentDay]);
+    // Get workouts for the current day
+    const workoutsForDay = useMemo(() => {
+        if (!workouts) return [];
+        return workouts.filter((workout) => workout.day_number === currentDay);
+    }, [workouts, currentDay]);
 
     // Get all days that have workouts (for visual indicator)
     const workoutDays = useMemo(() => {
@@ -55,44 +48,44 @@ const useDayWorkouts = ({
         return Array.from(days);
     }, [workouts]);
 
-  // Build a map of exercise_id -> exercise name from the workout elements
-  const exerciseNames: Record<string, string> = useMemo(() => {
-    const names: Record<string, string> = {};
-    workouts?.forEach((workout) => {
-      workout.elements?.forEach((element) => {
-        if (element.exercise?.id && element.exercise?.name) {
-          names[element.exercise.id] = element.exercise.name;
-        }
-      });
-    });
-    return names;
-  }, [workouts]);
+    // Build a map of exercise_id -> exercise name from the workout elements
+    const exerciseNames: Record<string, string> = useMemo(() => {
+        const names: Record<string, string> = {};
+        workouts?.forEach((workout) => {
+            workout.elements?.forEach((element) => {
+                if (element.exercise?.id && element.exercise?.name) {
+                    names[element.exercise.id] = element.exercise.name;
+                }
+            });
+        });
+        return names;
+    }, [workouts]);
 
-  const openExerciseDrawer = (workoutId: string) => {
-    setSelectedWorkoutId(workoutId);
-    setIsExerciseDrawerOpen(true);
-  };
+    const openExerciseDrawer = (workoutId: string) => {
+        setSelectedWorkoutId(workoutId);
+        setIsExerciseDrawerOpen(true);
+    };
 
-  const closeExerciseDrawer = () => {
-    setIsExerciseDrawerOpen(false);
-    setSelectedWorkoutId(null);
-  };
+    const closeExerciseDrawer = () => {
+        setIsExerciseDrawerOpen(false);
+        setSelectedWorkoutId(null);
+    };
 
-  const handleAddExercise = async (workoutId: string) => {
-    if (!planId) return;
-    openExerciseDrawer(workoutId);
-  };
+    const handleAddExercise = async (workoutId: string) => {
+        if (!planId) return;
+        openExerciseDrawer(workoutId);
+    };
 
-  const handleExerciseSelect = async (selectedIds: string[]) => {
+    const handleExerciseSelect = async (selectedIds: string[]) => {
         const firstSelectedId = selectedIds[0];
-    if (!planId || !selectedWorkoutId || !firstSelectedId) return;
+        if (!planId || !selectedWorkoutId || !firstSelectedId) return;
 
-    setLocalLoading(true);
+        setLocalLoading(true);
 
-    try {
-      // Find the workout to get the next position
-      const workout = workoutsForDay.find((w) => w.id === selectedWorkoutId);
-      const nextPosition = (workout?.elements?.length ?? 0) + 1;
+        try {
+            // Find the workout to get the next position
+            const workout = workoutsForDay.find((w) => w.id === selectedWorkoutId);
+            const nextPosition = (workout?.elements?.length ?? 0) + 1;
 
             const elementData: CreateWorkoutElement = {
                 planned_workout_id: selectedWorkoutId,
@@ -100,10 +93,9 @@ const useDayWorkouts = ({
                 position: nextPosition,
                 sets: [
                     {
-                        position: 1,
                         target_reps: '8-12',
                         load_value: null,
-                        load_type: 'none',
+                        load_unit: 'none',
                         intensity_target: null,
                         rest_seconds: 60,
                         set_type: 'working',
@@ -114,10 +106,9 @@ const useDayWorkouts = ({
                         tempo: null,
                     },
                     {
-                        position: 2,
                         target_reps: '8-12',
                         load_value: null,
-                        load_type: 'none',
+                        load_unit: 'none',
                         intensity_target: null,
                         rest_seconds: 60,
                         set_type: 'working',
@@ -128,10 +119,9 @@ const useDayWorkouts = ({
                         tempo: null,
                     },
                     {
-                        position: 3,
                         target_reps: '8-12',
                         load_value: null,
-                        load_type: 'none',
+                        load_unit: 'none',
                         intensity_target: null,
                         rest_seconds: 60,
                         set_type: 'working',
@@ -144,73 +134,48 @@ const useDayWorkouts = ({
                 ],
             };
 
-      await createWorkoutElementMutation(elementData).unwrap();
-      closeExerciseDrawer();
-    } catch (e) {
-      const errMsg = humanizeError(e);
-      notifyError(errMsg);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+            await createWorkoutElementMutation(elementData).unwrap();
+            closeExerciseDrawer();
+        } catch (e) {
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
+        } finally {
+            setLocalLoading(false);
+        }
+    };
 
-  const deleteExercise = async (_workoutId: string, elementId: string) => {
-    if (!planId) return;
+    const deleteExercise = async (_workoutId: string, elementId: string) => {
+        if (!planId) return;
 
-    setLocalLoading(true);
+        setLocalLoading(true);
 
-    try {
-      await deleteWorkoutElementMutation(elementId).unwrap();
-    } catch (e) {
-      const errMsg = humanizeError(e);
-      notifyError(errMsg);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+        try {
+            await deleteWorkoutElementMutation(elementId).unwrap();
+        } catch (e) {
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
+        } finally {
+            setLocalLoading(false);
+        }
+    };
 
-  const handleExerciseClick = (workoutId: string, element: WorkoutElement) => {
-    setSelectedWorkoutId(workoutId);
-    setSelectedElement(element);
-  };
+    const handleExerciseClick = (workoutId: string, element: WorkoutElement) => {
+        setSelectedWorkoutId(workoutId);
+        setSelectedElement(element);
+    };
 
-  const closeElementEditor = () => {
-    setSelectedElement(null);
-    setSelectedWorkoutId(null);
-  };
+    const closeElementEditor = () => {
+        setSelectedElement(null);
+        setSelectedWorkoutId(null);
+    };
 
-    const updateElementSets = async (
-        elementId: string,
-        sets: {
-            position: number;
-            target_reps: null | string;
-            load_value: null | number;
-            load_type: LoadType;
-            intensity_target: null | string;
-            rest_seconds: null | number;
-            set_type: SetType;
-            notes: null | string;
-        }[],
-    ) => {
+    const updateElementSets = async (elementId: string, sets: PlannedSet[]) => {
         setLocalLoading(true);
 
         try {
             await updateWorkoutElementMutation({
                 id: elementId,
-                sets: sets.map((s) => ({
-                    position: s.position,
-                    target_reps: s.target_reps,
-                    load_value: s.load_value,
-                    load_type: s.load_type,
-                    intensity_target: s.intensity_target,
-                    rest_seconds: s.rest_seconds,
-                    set_type: s.set_type,
-                    notes: s.notes,
-                    duration_seconds: null,
-                    distance_value: null,
-                    distance_unit: 'none',
-                    tempo: null,
-                })),
+                sets,
             }).unwrap();
             closeElementEditor();
         } catch (e) {
@@ -221,78 +186,76 @@ const useDayWorkouts = ({
         }
     };
 
-  // Workout management
-  const openAddWorkoutModal = () => {
-    setIsAddWorkoutModalOpen(true);
-  };
-
-  const closeAddWorkoutModal = () => {
-    setIsAddWorkoutModalOpen(false);
-  };
-
-  const createWorkout = async (
-    data: Omit<CreatePlannedWorkout, "day_number" | "training_plan_id">,
-  ) => {
-    if (!planId) {
-      notifyError("No training plan selected");
-      return;
-    }
-
-    setLocalLoading(true);
-
-    try {
-      await createPlannedWorkoutMutation({
-        ...data,
-        training_plan_id: planId,
-        day_number: currentDay,
-      }).unwrap();
-      closeAddWorkoutModal();
-    } catch (e) {
-      const errMsg = humanizeError(e);
-      notifyError(errMsg);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  const deleteWorkout = async (workoutId: string) => {
-    setLocalLoading(true);
-
-    try {
-      await deletePlannedWorkoutMutation(workoutId).unwrap();
-    } catch (e) {
-      const errMsg = humanizeError(e);
-      notifyError(errMsg);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  return {
-    planId,
-    isLoading: localLoading,
-    currentDay,
-    workoutsForDay,
-    workoutDays,
-    exerciseNames,
-    isExerciseDrawerOpen,
-    selectedWorkoutId,
-    selectedElement,
-    openExerciseDrawer,
-    closeExerciseDrawer,
-    handleExerciseSelect,
-    handleAddExercise,
-    deleteExercise,
-    handleExerciseClick,
-    closeElementEditor,
-    updateElementSets,
     // Workout management
-    isAddWorkoutModalOpen,
-    openAddWorkoutModal,
-    closeAddWorkoutModal,
-    createWorkout,
-    deleteWorkout,
-  };
+    const openAddWorkoutModal = () => {
+        setIsAddWorkoutModalOpen(true);
+    };
+
+    const closeAddWorkoutModal = () => {
+        setIsAddWorkoutModalOpen(false);
+    };
+
+    const createWorkout = async (data: Omit<CreatePlannedWorkout, 'day_number' | 'training_plan_id'>) => {
+        if (!planId) {
+            notifyError('No training plan selected');
+            return;
+        }
+
+        setLocalLoading(true);
+
+        try {
+            await createPlannedWorkoutMutation({
+                ...data,
+                training_plan_id: planId,
+                day_number: currentDay,
+            }).unwrap();
+            closeAddWorkoutModal();
+        } catch (e) {
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
+        } finally {
+            setLocalLoading(false);
+        }
+    };
+
+    const deleteWorkout = async (workoutId: string) => {
+        setLocalLoading(true);
+
+        try {
+            await deletePlannedWorkoutMutation(workoutId).unwrap();
+        } catch (e) {
+            const errMsg = humanizeError(e);
+            notifyError(errMsg);
+        } finally {
+            setLocalLoading(false);
+        }
+    };
+
+    return {
+        planId,
+        isLoading: localLoading,
+        currentDay,
+        workoutsForDay,
+        workoutDays,
+        exerciseNames,
+        isExerciseDrawerOpen,
+        selectedWorkoutId,
+        selectedElement,
+        openExerciseDrawer,
+        closeExerciseDrawer,
+        handleExerciseSelect,
+        handleAddExercise,
+        deleteExercise,
+        handleExerciseClick,
+        closeElementEditor,
+        updateElementSets,
+        // Workout management
+        isAddWorkoutModalOpen,
+        openAddWorkoutModal,
+        closeAddWorkoutModal,
+        createWorkout,
+        deleteWorkout,
+    };
 };
 
 export default useDayWorkouts;

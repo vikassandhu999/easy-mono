@@ -1,5 +1,5 @@
 import {baseAPISlice} from '../baseAPISlice';
-import {type DistanceUnit, type LoadType, type SetType} from '../training_plans/training_plans_definition';
+import {type DistanceUnit, type LoadUnit, type SetType} from '../training_plans/training_plans_definition';
 
 export type PlannedSet = {
     // Primary Target (at least one required)
@@ -7,17 +7,17 @@ export type PlannedSet = {
     duration_seconds: null | number;
     distance_value: null | number;
     distance_unit: DistanceUnit; // Required if distance_value set
-
+    rest_seconds: null | number;
     // Load
     load_value: null | number;
-    load_type: LoadType;
+    load_unit: LoadUnit;
 
     // Intensity
     intensity_target: null | string; // "RPE 8", "Zone 2"
 
     // Execution
     tempo: null | string; // "3010"
-    rest_seconds: null | number;
+    // rest_seconds: null | number; // ADVANCED: Rest between sets
 
     // Classification
     set_type: SetType;

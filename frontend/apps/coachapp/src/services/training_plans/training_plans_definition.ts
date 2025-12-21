@@ -1,7 +1,7 @@
 import {z} from 'zod';
 
 // Enum types for PlannedSet
-export type LoadType = 'absolute_kg' | 'absolute_lbs' | 'bodyweight' | 'none' | 'percent_1rm' | 'rpe';
+export type LoadUnit = 'bodyweight' | 'kg' | 'lbs' | 'none' | 'percent_1rm' | 'rpe';
 export type DistanceUnit = 'km' | 'meters' | 'miles' | 'none' | 'yards';
 export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
 
@@ -80,7 +80,7 @@ export type PlannedSet = {
 
     // Load
     load_value: null | number;
-    load_type: LoadType;
+    load_unit: LoadUnit;
 
     // Intensity
     intensity_target: null | string; // "RPE 8", "Zone 2"
@@ -116,7 +116,7 @@ export interface TrainingPlansList {
 // Zod schemas
 
 // Zod enums for PlannedSet
-export const LoadType_zod = z.enum(['absolute_kg', 'absolute_lbs', 'bodyweight', 'percent_1rm', 'rpe', 'none']);
+export const LoadUnit_zod = z.enum(['kg', 'lbs', 'bodyweight', 'percent_1rm', 'rpe', 'none']);
 export const DistanceUnit_zod = z.enum(['meters', 'km', 'miles', 'yards', 'none']);
 export const SetType_zod = z.enum([
     'warmup',
@@ -138,7 +138,7 @@ export const PlannedSet_zod = z.object({
 
     // Load
     load_value: z.number().nullable().optional(),
-    load_type: LoadType_zod.optional().default('none'),
+    load_unit: LoadUnit_zod.optional().default('none'),
 
     // Intensity
     intensity_target: z.string().nullable().optional(),

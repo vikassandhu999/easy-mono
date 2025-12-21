@@ -10,7 +10,7 @@ import HomePage from '@/domains/dashboard/pages/HomePage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
 import FlowsListPage from '@/domains/flows/pages/FlowsListPage';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
-import MainProfilePage from '@/domains/profile/pages/MainProfilePage';
+import SettingsPage from '@/domains/profile/pages/SettingsPage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
 
@@ -46,11 +46,7 @@ const router = createBrowserRouter([
             {
                 element: <ProtectedRouteLayout />,
                 children: [
-                    // Drawers which will open based on params
-                    {
-                        element: <HomePage />,
-                        path: '/',
-                    },
+
                     {
                         element: <ClientListPage />,
                         path: '/clients',
@@ -69,8 +65,8 @@ const router = createBrowserRouter([
                     },
 
                     {
-                        element: <MainProfilePage />,
-                        path: '/profile',
+                        element: <SettingsPage />,
+                        path: '/settings',
                     },
                 ],
             },

@@ -1,19 +1,9 @@
 defmodule EasyWeb.Coach.BusinessSettingsController do
-  @moduledoc """
-  Controller for managing business settings.
-
-  Handles public join configuration and branding settings.
-  """
   use EasyWeb, :controller
 
   alias Easy.Organizations
   alias Easy.Auth.Scope
 
-  @doc """
-  GET /api/organization/settings
-
-  Returns the current business settings.
-  """
   def show(conn, _params) do
     scope = conn.assigns.scope
 
@@ -29,11 +19,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  PATCH /api/organization/settings
-
-  Updates all business settings.
-  """
   def update(conn, %{"settings" => settings_params}) do
     scope = conn.assigns.scope
 
@@ -49,11 +34,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  PATCH /api/organization/settings/public-join
-
-  Updates only public join settings.
-  """
   def update_public_join(conn, %{"settings" => settings_params}) do
     scope = conn.assigns.scope
 
@@ -69,11 +49,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  PATCH /api/organization/settings/branding
-
-  Updates only branding settings.
-  """
   def update_branding(conn, %{"settings" => settings_params}) do
     scope = conn.assigns.scope
 
@@ -89,11 +64,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  POST /api/organization/settings/regenerate-code
-
-  Regenerates the public join code.
-  """
   def regenerate_code(conn, _params) do
     scope = conn.assigns.scope
 
@@ -109,11 +79,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  POST /api/organization/settings/enable-public-join
-
-  Enables public join for the business.
-  """
   def enable_public_join(conn, _params) do
     scope = conn.assigns.scope
 
@@ -129,11 +94,6 @@ defmodule EasyWeb.Coach.BusinessSettingsController do
     end
   end
 
-  @doc """
-  POST /api/organization/settings/disable-public-join
-
-  Disables public join for the business.
-  """
   def disable_public_join(conn, _params) do
     scope = conn.assigns.scope
 

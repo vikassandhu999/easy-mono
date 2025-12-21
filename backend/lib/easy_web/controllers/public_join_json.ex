@@ -7,15 +7,10 @@ defmodule EasyWeb.PublicJoinJSON do
 
   def data(%BusinessSettings{} = settings) do
     %{
-      # Business Info (from preloaded business)
       business: business_data(settings.business),
-
-      # Public Page Branding
       tagline: settings.tagline,
       cover_image_url: settings.cover_image_url,
       accent_color: settings.accent_color,
-
-      # Join Settings
       approval_required: settings.public_join_approval_required
     }
   end

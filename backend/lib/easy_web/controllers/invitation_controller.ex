@@ -8,15 +8,6 @@ defmodule EasyWeb.InvitationController do
   alias Easy.Accounts.User
   alias Easy.Repo
 
-  @doc """
-  Validates an invitation token and returns invitation details.
-  Used for the invitation preview screen before accepting.
-
-  Params:
-    - invitation_token: The invitation token from the invite link
-
-  Returns invitation details including client, business, and inviting coach info.
-  """
   def validate_invitation(conn, %{"invitation_token" => invitation_token}) do
     case Clients.get_invitation_with_coach(invitation_token) do
       {:ok, %{client: client, inviting_coach: coach}} ->
@@ -68,18 +59,6 @@ defmodule EasyWeb.InvitationController do
     |> json(%{error: "invitation_token is required"})
   end
 
-  @doc """
-  Accepts an invitation, creates user if not exists, links to client,
-  and returns auth credentials.
-
-  Params:
-    - invitation_token: The invitation token
-    - email: User's email (must match invitation)
-    - first_name: User's first name (required if creating new user)
-    - last_name: User's last name (required if creating new user)
-
-  Returns access_token and refresh_token on success.
-  """
   def accept_invitation(
         conn,
         %{"invitation_token" => invitation_token, "email" => email} = params
@@ -165,37 +144,6 @@ defmodule EasyWeb.InvitationController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "invitation_token and email are required"})
-  end
-
-  # Legacy show action for backwards compatibility
-  def show(conn, %{"token" => invitation_token}) do
-    case Clients.get_invitation_with_coach(invitation_token) do
-      {:ok, %{client: client, inviting_coach: coach}} ->
-        Logger.info("Invitation Token: #{invitation_token}")
-
-        render(conn, :show,
-          invitation_token: invitation_token,
-          expires_at: client.invitation_expires_at,
-          client: client,
-          business: client.business,
-          inviting_coach: coach
-        )
-
-      {:error, :invalid_token} ->
-        {:error, Easy.Error.not_found("Invitation not found or invalid")}
-
-      {:error, :token_expired} ->
-        {:error, Easy.Error.new(:invitation_expired, "This invitation has expired", %{}, :gone)}
-
-      {:error, _reason} ->
-        {:error,
-         Easy.Error.new(
-           :internal_error,
-           "An internal error occurred",
-           %{},
-           :internal_server_error
-         )}
-    end
   end
 
   # Private helpers

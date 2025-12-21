@@ -30,120 +30,13 @@ defmodule Easy.Scheduling do
 
   alias Easy.Nutrition.{NutritionPlan, Meal}
 
+  require Logger
+
   @type iso_date :: Date.t()
-
-  @next_lookahead_days 14
-
-  @doc """
-  Returns the next actionable item for the client.
-
-  Rules (MVP):
-  1) Prefer today's due training item if it exists and is not completed.
-  2) Otherwise, look ahead up to #{@next_lookahead_days} days and return the first scheduled item
-     (training first, then nutrition if training absent).
-  3) Returns `nil` if there's no schedule in the window.
-
-  Shape (returned inside `ScheduleJSON.next/1`):
-      %{
-        kind: "training" | "nutrition",
-        date: %Date{},
-        status: "due" | "upcoming" | "completed",
-        title: "...",
-        subtitle: "...",
-        entity: map() | struct() | nil,
-        cta: "start" | "view" | nil
-      }
-  """
-  @spec get_next_for_client(Scope.t()) :: {:ok, map() | nil} | {:error, term()}
-  def get_next_for_client(%Scope{} = scope) do
-    with :ok <- require_client(scope),
-         {:ok, {plan, workouts_by_weekday}} <- fetch_active_training_plan_with_workouts(scope),
-         {:ok, {nutrition_plan, meals_by_day_number}} <-
-           fetch_active_nutrition_plan_with_meals(scope),
-         today <- Date.utc_today(),
-         {:ok, sessions_by_workout_id} <-
-           fetch_recent_sessions_index(scope, Map.values(workouts_by_weekday)) do
-      # 1) Prefer training today if due
-      today_item =
-        case plan do
-          nil ->
-            nil
-
-          _ ->
-            weekday = Date.day_of_week(today)
-
-            workouts =
-              workouts_by_weekday
-              |> Map.get(weekday, [])
-
-            case first_due_training_item_for_date(today, workouts, sessions_by_workout_id) do
-              nil -> nil
-              item -> item
-            end
-        end
-
-      if today_item do
-        {:ok, today_item}
-      else
-        # 2) Lookahead window and return first scheduled item
-        next_item =
-          0..@next_lookahead_days
-          |> Enum.reduce_while(nil, fn offset, _acc ->
-            date = Date.add(today, offset)
-
-            training =
-              case plan do
-                nil ->
-                  nil
-
-                _ ->
-                  weekday = Date.day_of_week(date)
-                  workouts = Map.get(workouts_by_weekday, weekday, [])
-                  first_training_item_for_date(date, workouts, sessions_by_workout_id)
-              end
-
-            nutrition =
-              case nutrition_plan do
-                nil ->
-                  nil
-
-                _ ->
-                  day_number = nutrition_day_number(nutrition_plan, date)
-                  meals = Map.get(meals_by_day_number, day_number, [])
-                  first_nutrition_item_for_date(date, meals)
-              end
-
-            chosen = choose_next_item(training, nutrition, date, today)
-
-            if chosen do
-              {:halt, chosen}
-            else
-              {:cont, nil}
-            end
-          end)
-
-        {:ok, next_item}
-      end
-    end
-  end
 
   @doc """
   Returns the merged schedule for a week starting on `week_start` (Monday).
 
-  Result shape:
-      %{
-        week_start: %Date{},
-        week_end: %Date{},
-        days: [
-          %{
-            date: %Date{},
-            weekday: 1..7,
-            training: %{items: [...]},
-            nutrition: %{items: [...]}
-          },
-          ...
-        ]
-      }
   """
   @spec get_week_for_client(Scope.t(), iso_date()) :: {:ok, map()} | {:error, term()}
   def get_week_for_client(%Scope{} = scope, %Date{} = week_start) do
@@ -205,9 +98,7 @@ defmodule Easy.Scheduling do
     end
   end
 
-  # ===========================================================================
   # Training schedule (weekly)
-  # ===========================================================================
 
   defp fetch_active_training_plan_with_workouts(%Scope{} = scope, date \\ nil) do
     business_id = scope.business_id
@@ -246,14 +137,16 @@ defmodule Easy.Scheduling do
     business_id = scope.business_id
     client_id = scope.client_id
 
+    Logger.info("Workout Nested  #{inspect(workouts_nested)}")
+
     planned_workouts =
       workouts_nested
       |> List.flatten()
-      |> Enum.filter(&match?(%PlannedWorkout{}, &1))
+      |> Enum.filter(fn x -> match?(%PlannedWorkout{}, x) end)
 
     workout_ids =
       planned_workouts
-      |> Enum.map(& &1.id)
+      |> Enum.map(fn x -> x.id end)
       |> Enum.uniq()
 
     sessions_by_workout_id =
@@ -275,6 +168,8 @@ defmodule Easy.Scheduling do
         end)
       end
 
+    Logger.info("Session By Workout Ids #{inspect(sessions_by_workout_id)}")
+
     {:ok, sessions_by_workout_id}
   end
 
@@ -283,8 +178,15 @@ defmodule Easy.Scheduling do
 
     status =
       case session do
-        %WorkoutSession{state: :completed} -> "completed"
-        _ -> if Date.compare(date, Date.utc_today()) == :lt, do: "missed", else: "due"
+        %WorkoutSession{state: :completed} ->
+          "completed"
+
+        _ ->
+          case Date.compare(date, Date.utc_today()) do
+            :lt -> "skipped"
+            :gt -> "upcoming"
+            :eq -> "available"
+          end
       end
 
     %{
@@ -295,34 +197,11 @@ defmodule Easy.Scheduling do
       subtitle: workout.notes,
       entity: %{
         planned_workout_id: workout.id
-      },
-      cta: if(status in ["due", "upcoming"], do: "start", else: "view")
+      }
     }
   end
 
-  defp first_training_item_for_date(%Date{} = date, workouts, sessions_by_workout_id) do
-    workouts
-    |> Enum.sort_by(& &1.inserted_at, {:desc, DateTime})
-    |> Enum.find_value(fn w ->
-      training_item_for_date(date, w, sessions_by_workout_id)
-    end)
-  end
-
-  defp first_due_training_item_for_date(%Date{} = date, workouts, sessions_by_workout_id) do
-    workouts
-    |> Enum.find_value(fn w ->
-      item = training_item_for_date(date, w, sessions_by_workout_id)
-
-      case item do
-        %{status: "completed"} -> nil
-        other -> other
-      end
-    end)
-  end
-
-  # ===========================================================================
   # Nutrition schedule (multi-week) - computed by day_number in plan
-  # ===========================================================================
 
   defp fetch_active_nutrition_plan_with_meals(%Scope{} = scope, date \\ nil) do
     business_id = scope.business_id

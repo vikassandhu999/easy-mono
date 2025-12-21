@@ -212,8 +212,6 @@ defmodule EasyWeb.Router do
     patch "/profile", ProfileController, :update
     get "/business", BusinessController, :show
 
-    # Schedule (computed on read for MVP)
-    get "/schedule/next", ScheduleController, :next
     get "/schedule/week", ScheduleController, :week
   end
 

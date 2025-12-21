@@ -57,6 +57,7 @@ defmodule EasyWeb.Endpoint do
       "http://localhost:3001",
       "http://localhost:5173",
       "http://192.168.1.2:2020",
+      "http://192.168.1.2:1313",
       "http://192.168.1.3:2020",
       "http://192.168.1.6:2020",
       "http://192.168.1.8:2020",

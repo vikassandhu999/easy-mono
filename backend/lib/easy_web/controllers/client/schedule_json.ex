@@ -12,36 +12,6 @@ defmodule EasyWeb.Client.ScheduleJSON do
   alias EasyWeb.ResponseHelpers
 
   @doc """
-  Renders the next actionable item for the client.
-
-  Shape (example):
-
-      %{
-        data: %{
-          next: %{
-            kind: "training" | "nutrition",
-            date: "YYYY-MM-DD",
-            status: "due" | "upcoming" | "completed",
-            title: "...",
-            subtitle: "...",
-            entity: %{...} | nil
-          }
-        }
-      }
-
-  Notes:
-  - `entity` is intentionally flexible. Context code can provide a minimal
-    representation (e.g. planned_workout id/name) without deep nesting.
-  """
-  def next(%{result: result}) do
-    %{
-      data: %{
-        next: format_next_item(result)
-      }
-    }
-  end
-
-  @doc """
   Renders a weekly schedule (Mon..Sun).
 
   Shape (example):
@@ -60,6 +30,17 @@ defmodule EasyWeb.Client.ScheduleJSON do
           ]
         }
       }
+
+  Training Item
+
+    %{
+      training : %{
+        items : {
+
+        }
+      }
+    }
+
   """
   def week(%{result: result}) do
     days = Map.get(result, :days, []) || []

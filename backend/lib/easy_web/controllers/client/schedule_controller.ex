@@ -21,23 +21,6 @@ defmodule EasyWeb.Client.ScheduleController do
   alias Easy.Scheduling
 
   @doc """
-  GET /api/client/schedule/next
-
-  Returns the next actionable schedule item for the authenticated client.
-  """
-  def next(conn, _params) do
-    scope = conn.assigns.scope
-
-    unless Scope.is_client?(scope) do
-      {:error, Easy.Error.unauthorized("This endpoint is only for clients")}
-    else
-      with {:ok, result} <- Scheduling.get_next_for_client(scope) do
-        render(conn, :next, result: result)
-      end
-    end
-  end
-
-  @doc """
   GET /api/client/schedule/week?week_start=YYYY-MM-DD
 
   Returns the schedule for a week starting at `week_start` (ISO date).
@@ -47,7 +30,7 @@ defmodule EasyWeb.Client.ScheduleController do
     scope = conn.assigns.scope
 
     unless Scope.is_client?(scope) do
-      {:error, Easy.Error.unauthorized("This endpoint is only for clients")}
+      {:error, Easy.Error.unauthorized("Permission denied")}
     else
       with {:ok, week_start} <- parse_week_start(params["week_start"]),
            {:ok, result} <- Scheduling.get_week_for_client(scope, week_start) do
@@ -56,14 +39,10 @@ defmodule EasyWeb.Client.ScheduleController do
     end
   end
 
-  # ===========================================================================
   # Private helpers
-  # ===========================================================================
 
   defp parse_week_start(nil) do
-    # Default: compute current week start (Monday) in UTC for MVP.
     today = Date.utc_today()
-    # 1..7 (Mon..Sun)
     weekday = Date.day_of_week(today)
     {:ok, Date.add(today, -(weekday - 1))}
   end

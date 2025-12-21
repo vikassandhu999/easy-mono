@@ -1,7 +1,4 @@
 defmodule EasyWeb.PerformedSetJSON do
-  @moduledoc """
-  JSON rendering for performed sets.
-  """
   alias Easy.Training.Tracking.PerformedSet
 
   def show(%{performed_set: set}) do

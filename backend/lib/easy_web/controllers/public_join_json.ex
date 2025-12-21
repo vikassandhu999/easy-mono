@@ -1,23 +1,10 @@
 defmodule EasyWeb.PublicJoinJSON do
-  @moduledoc """
-  JSON rendering for public join pages.
-
-  Renders business information for clients viewing the public join page.
-  Only exposes public-safe information.
-  """
-
   alias Easy.Organizations.BusinessSettings
 
-  @doc """
-  Renders public join page data.
-  """
   def show(%{settings: settings}) do
     %{data: data(settings)}
   end
 
-  @doc """
-  Renders public-safe settings and business data.
-  """
   def data(%BusinessSettings{} = settings) do
     %{
       # Business Info (from preloaded business)

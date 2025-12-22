@@ -1,13 +1,4 @@
 defmodule Easy.Nutrition.ServingSize do
-  @moduledoc """
-  Represents a serving size conversion for a specific ingredient.
-
-  Each serving size defines how many grams correspond to one unit of the
-  given measurement (e.g., 1 "cup" of oats = 80g, 1 "tbsp" of peanut butter = 16g).
-
-  The `unit_id` links to a standard MeasurementUnit when applicable.
-  The `name` field can be used for custom/display names or when no standard unit exists.
-  """
   use Easy.Nutrition.Schema
 
   alias Easy.Nutrition.{Ingredient, MeasurementUnit}

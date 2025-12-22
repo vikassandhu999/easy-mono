@@ -71,10 +71,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Completes login for client app.
-  Validates that the user has a client record.
-  """
   def client_login(token_id, code) do
     with {:ok, token} <- validate_code(token_id, code, "client_login"),
          %User{} = user <- Repo.get(User, token.user_id),
@@ -96,10 +92,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Creates an access token for a coach user.
-  Used during coach registration flow.
-  """
   def create_coach_access_token(user) do
     with %Coach{} = coach <- get_coach_by_user(user),
          {:ok, access_token} <-
@@ -110,10 +102,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Sends a login code for coach app.
-  Validates that the user has a coach record before sending the code.
-  """
   def send_login_code(email) do
     with {:ok, user} <- fetch_user_by_email(email),
          {:ok, _coach} <- validate_user_has_coach(user),
@@ -123,10 +111,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Sends a login code for client app.
-  Validates that the user has a client record before sending the code.
-  """
   def send_client_login_code(email) do
     with {:ok, user} <- fetch_user_by_email(email),
          {:ok, _client} <- validate_user_has_client(user),
@@ -153,18 +137,12 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Updates a user's profile information.
-  """
   def update_user(%User{} = user, attrs) do
     user
     |> User.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Logs out a user by revoking their session.
-  """
   def logout(refresh_token) do
     case Repo.get_by(Session, refresh_token: refresh_token) do
       %Session{} = session ->
@@ -239,10 +217,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Creates a login OTP token for a user.
-  This is used when the role validation is done externally (e.g., in the controller).
-  """
   def create_login_otp(user, type \\ "login") do
     with {:ok, token, code} <- create_otp_token(user, type) do
       send_otp_email(user.email, code, "login")
@@ -250,10 +224,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Refreshes access token for a client session.
-  Validates that the session belongs to a client (user has client record in the session's business).
-  """
   def refresh_client_token(refresh_token) do
     with %Session{} = session <- Repo.get_by(Session, refresh_token: refresh_token),
          true <- Session.valid?(session),
@@ -305,9 +275,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Creates a session specifically for a coach user.
-  """
   def create_coach_session(user) do
     case get_coach_by_user(user) do
       %Coach{} = coach -> generate_session(user, coach, nil)
@@ -315,9 +282,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Creates a session specifically for a client user.
-  """
   def create_client_session(user) do
     case get_client_by_user(user) do
       %Client{} = client ->

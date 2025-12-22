@@ -5,12 +5,6 @@ defmodule EasyWeb.Coach.BusinessController do
   alias Easy.Auth.Scope
   alias EasyWeb.FallbackController
 
-  @doc """
-  GET /api/organization
-  GET /api/current-business (deprecated)
-
-  Returns the current business with subscription details.
-  """
   def show(conn, _params) do
     scope = conn.assigns.scope
 
@@ -26,11 +20,6 @@ defmodule EasyWeb.Coach.BusinessController do
     end
   end
 
-  @doc """
-  GET /api/organization/subscription
-
-  Returns detailed subscription information including trial status and plan limits.
-  """
   def get_subscription(conn, _params) do
     scope = conn.assigns.scope
 
@@ -45,11 +34,6 @@ defmodule EasyWeb.Coach.BusinessController do
     end
   end
 
-  @doc """
-  GET /api/organization/coaches
-
-  Returns list of coaches in the current business.
-  """
   def list_coaches(conn, _params) do
     scope = conn.assigns.scope
 
@@ -60,12 +44,6 @@ defmodule EasyWeb.Coach.BusinessController do
     render(conn, :coaches, coaches: coaches)
   end
 
-  @doc """
-  PATCH /api/organization
-
-  Updates the current business profile.
-  Only the business owner can update the business.
-  """
   def update(conn, %{"business" => business_params}) do
     scope = conn.assigns.scope
 

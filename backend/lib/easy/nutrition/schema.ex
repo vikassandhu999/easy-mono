@@ -1,9 +1,4 @@
 defmodule Easy.Nutrition.Schema do
-  @moduledoc """
-  Shared kernel schema for the Nutrition domain.
-  Enforces binary_id (UUID) primary keys and standard timestamp configuration.
-  Mirrors Easy.Training.Schema for consistency across domains.
-  """
   defmacro __using__(_) do
     quote do
       use Ecto.Schema

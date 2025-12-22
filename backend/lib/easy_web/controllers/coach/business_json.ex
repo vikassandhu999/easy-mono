@@ -1,38 +1,23 @@
 defmodule EasyWeb.Coach.BusinessJSON do
-  @moduledoc """
-  JSON views for business/organization endpoints.
-  """
-
   alias Easy.Organizations.{Business, Subscription, Coach}
 
-  @doc """
-  Renders the current business with subscription details.
-  """
   def show(%{business: business}) do
     %{
       data: business_with_subscription(business)
     }
   end
 
-  @doc """
-  Renders subscription details with plan information.
-  """
   def subscription(%{subscription: subscription}) do
     %{
       data: subscription_details(subscription)
     }
   end
 
-  @doc """
-  Renders a list of coaches.
-  """
   def coaches(%{coaches: coaches}) do
     %{
       data: Enum.map(coaches, &coach_summary/1)
     }
   end
-
-  ## Private Helpers
 
   defp business_with_subscription(%Business{} = business) do
     %{

@@ -46,14 +46,6 @@ defmodule Easy.Clients.Client do
   @valid_goals ~w(lose_weight maintain gain_muscle improve_endurance rehab)
   @valid_measurement_systems ~w(metric imperial)
 
-  # ===========================================================================
-  # Changesets
-  # ===========================================================================
-
-  @doc """
-  Generic changeset for updating a client (used by coaches).
-  Allows updating all editable fields.
-  """
   def changeset(client, attrs) do
     client
     |> cast(attrs, [
@@ -127,10 +119,6 @@ defmodule Easy.Clients.Client do
     |> unique_constraint(:invitation_token)
   end
 
-  @doc """
-  Changeset for coach updating a client.
-  Allows updating profile info, notes, and status.
-  """
   def update_changeset(client, attrs) do
     client
     |> cast(attrs, [
@@ -157,10 +145,6 @@ defmodule Easy.Clients.Client do
     |> validate_health_fields()
   end
 
-  @doc """
-  Changeset for client updating their own profile.
-  Restricted to profile fields only - no notes or status.
-  """
   def profile_changeset(client, attrs) do
     client
     |> cast(attrs, [
@@ -184,10 +168,6 @@ defmodule Easy.Clients.Client do
     |> validate_health_fields()
   end
 
-  @doc """
-  Links a user account to this client and activates the client.
-  Used when a client accepts an invitation.
-  """
   def link_user_changeset(client, user_id) do
     client
     |> change()
@@ -200,19 +180,12 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  @doc """
-  Changeset for updating client status (coach action).
-  """
   def status_changeset(client, status) do
     client
     |> change()
     |> put_change(:status, status)
     |> validate_status()
   end
-
-  # ===========================================================================
-  # Validations
-  # ===========================================================================
 
   defp validate_email(changeset) do
     changeset
@@ -307,11 +280,6 @@ defmodule Easy.Clients.Client do
     |> put_change(:invitation_expires_at, nil)
   end
 
-  @doc """
-  Changeset for creating a client via public join link.
-  No invitation token is generated - client signs up directly.
-  Status depends on whether approval is required.
-  """
   def public_join_changeset(client, attrs, approval_required \\ true) do
     status = if approval_required, do: "pending", else: "active"
 

@@ -85,7 +85,7 @@ const formatDateForApi = (date: Date | null): string | undefined => {
 };
 
 const AssignTrainingPlanDrawer = () => {
-    const {closeDrawer, getDrawerParams} = useParamsDrawer({});
+    const {closeDrawer, getDrawerParams, closeAllDrawers} = useParamsDrawer({});
     const {client_id} = getDrawerParams();
 
     const [selectedPlan, setSelectedPlan] = useState<null | TrainingPlan>(null);
@@ -125,7 +125,7 @@ const AssignTrainingPlanDrawer = () => {
                 start_date: formattedStartDate,
                 end_date: formattedEndDate,
             }).unwrap();
-            closeDrawer();
+            closeAllDrawers()
         } catch (error) {
             const errMsg = humanizeError(error);
             notifyError(errMsg);

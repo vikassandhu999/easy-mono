@@ -264,16 +264,19 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                 name="total_calories"
                                 render={({field}) => (
                                     <NumberInput
-                                        {...field}
                                         className={classes.nutritionGridFull}
                                         error={errors.total_calories?.message}
                                         hideControls
                                         label="Calories"
                                         min={0}
+                                        name={field.name}
+                                        onBlur={field.onBlur}
+                                        onChange={(value) => field.onChange(value === '' ? undefined : value)}
                                         placeholder="450"
+                                        ref={field.ref}
                                         size="sm"
                                         suffix=" kcal"
-                                        value={field.value || undefined}
+                                        value={field.value ?? ''}
                                     />
                                 )}
                             />
@@ -283,16 +286,19 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                     name="total_protein"
                                     render={({field}) => (
                                         <NumberInput
-                                            {...field}
                                             decimalScale={1}
                                             error={errors.total_protein?.message}
                                             hideControls
                                             label="Protein"
                                             min={0}
+                                            name={field.name}
+                                            onBlur={field.onBlur}
+                                            onChange={(value) => field.onChange(value === '' ? undefined : value)}
                                             placeholder="25"
+                                            ref={field.ref}
                                             size="sm"
                                             suffix=" g"
-                                            value={field.value || undefined}
+                                            value={field.value ?? ''}
                                         />
                                     )}
                                 />
@@ -301,16 +307,19 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                     name="total_carbohydrates"
                                     render={({field}) => (
                                         <NumberInput
-                                            {...field}
                                             decimalScale={1}
                                             error={errors.total_carbohydrates?.message}
                                             hideControls
                                             label="Carbs"
                                             min={0}
+                                            name={field.name}
+                                            onBlur={field.onBlur}
+                                            onChange={(value) => field.onChange(value === '' ? undefined : value)}
                                             placeholder="35"
+                                            ref={field.ref}
                                             size="sm"
                                             suffix=" g"
-                                            value={field.value || undefined}
+                                            value={field.value ?? ''}
                                         />
                                     )}
                                 />
@@ -319,16 +328,19 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                     name="total_fats"
                                     render={({field}) => (
                                         <NumberInput
-                                            {...field}
                                             decimalScale={1}
                                             error={errors.total_fats?.message}
                                             hideControls
                                             label="Fats"
                                             min={0}
+                                            name={field.name}
+                                            onBlur={field.onBlur}
+                                            onChange={(value) => field.onChange(value === '' ? undefined : value)}
                                             placeholder="18"
+                                            ref={field.ref}
                                             size="sm"
                                             suffix=" g"
-                                            value={field.value || undefined}
+                                            value={field.value ?? ''}
                                         />
                                     )}
                                 />
@@ -337,16 +349,19 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
                                     name="total_fiber"
                                     render={({field}) => (
                                         <NumberInput
-                                            {...field}
                                             decimalScale={1}
                                             error={errors.total_fiber?.message}
                                             hideControls
                                             label="Fiber"
                                             min={0}
+                                            name={field.name}
+                                            onBlur={field.onBlur}
+                                            onChange={(value) => field.onChange(value === '' ? undefined : value)}
                                             placeholder="5"
+                                            ref={field.ref}
                                             size="sm"
                                             suffix=" g"
-                                            value={field.value || undefined}
+                                            value={field.value ?? ''}
                                         />
                                     )}
                                 />

@@ -7,7 +7,7 @@ defmodule Easy.Scheduling do
 
   It merges two independent sources:
   - Training (weekly): `Easy.Training.Programming.TrainingPlan` with `planned_workouts.day_number` (1..7 ISO weekday)
-  - Nutrition (multi-week): `Easy.Nutrition.NutritionPlan` with `meals.day_number` (1..duration_weeks*7)
+  - Nutrition (weekly): `Easy.Nutrition.NutritionPlan` with `meals.day_number` (1..7 ISO weekday)
 
   IMPORTANT ARCHITECTURE NOTES
   - Tenant isolation: all DB queries are scoped by `business_id`.
@@ -73,8 +73,8 @@ defmodule Easy.Scheduling do
                 []
 
               _ ->
-                day_number = nutrition_day_number(nutrition_plan, date)
-                meals = Map.get(meals_by_day_number, day_number, [])
+                # Nutrition plans are now weekly like training - use weekday directly
+                meals = Map.get(meals_by_day_number, weekday, [])
 
                 Enum.map(meals, fn m ->
                   nutrition_item_for_date(date, m)
@@ -217,7 +217,8 @@ defmodule Easy.Scheduling do
               np.client_id == ^client_id and
               np.is_template == false and
               np.status == :active and
-              np.start_date <= ^date,
+              np.start_date <= ^date and
+              np.end_date >= ^date,
           order_by: [desc: np.inserted_at],
           preload: [meals: [:meal_items]]
       )
@@ -233,19 +234,6 @@ defmodule Easy.Scheduling do
       end
 
     {:ok, {plan, meals_by_day_number}}
-  end
-
-  defp nutrition_day_number(%NutritionPlan{} = plan, %Date{} = date) do
-    # Meals use absolute day_number inside the plan (1..duration_weeks*7).
-    # We compute an offset from plan.start_date and wrap based on duration_weeks.
-    start_date = plan.start_date || date
-    days_since_start = Date.diff(date, start_date)
-
-    total_days = max((plan.duration_weeks || 1) * 7, 1)
-
-    # Convert (0-based) to 1-based day_number and wrap in [1..total_days]
-    day_index = rem(days_since_start, total_days)
-    if day_index < 0, do: day_index + total_days + 1, else: day_index + 1
   end
 
   defp nutrition_item_for_date(%Date{} = date, %Meal{} = meal) do

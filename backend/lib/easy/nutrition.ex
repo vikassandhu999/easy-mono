@@ -517,14 +517,18 @@ defmodule Easy.Nutrition do
   # Copy Helpers
 
   defp create_plan_copy!(original_plan, business_id, target_client_id, start_date \\ nil) do
+    plan_start_date = start_date || Date.utc_today()
+    # Default to 4 weeks if no end_date specified
+    plan_end_date = Date.add(plan_start_date, 27)
+
     new_plan_attrs = %{
       "name" => original_plan.name,
       "description" => original_plan.description,
       "thumbnail_url" => original_plan.thumbnail_url,
       "is_template" => false,
       "status" => :active,
-      "duration_weeks" => original_plan.duration_weeks,
-      "start_date" => start_date || Date.utc_today(),
+      "start_date" => plan_start_date,
+      "end_date" => plan_end_date,
       "tags" => original_plan.tags,
       "client_id" => target_client_id,
       "original_template_id" => original_plan.id,
@@ -546,8 +550,8 @@ defmodule Easy.Nutrition do
       "thumbnail_url" => original_plan.thumbnail_url,
       "is_template" => true,
       "status" => :draft,
-      "duration_weeks" => original_plan.duration_weeks,
       "start_date" => nil,
+      "end_date" => nil,
       "tags" => original_plan.tags,
       "client_id" => nil,
       "original_template_id" => original_plan.id,
@@ -865,10 +869,9 @@ defmodule Easy.Nutrition do
     end
   end
 
-  defp validate_day_number(plan, day) do
-    max_days = (plan.duration_weeks || 1) * 7
-
-    if day >= 1 and day <= max_days do
+  defp validate_day_number(_plan, day) do
+    # Weekly plans: day_number is 1-7 (Monday-Sunday)
+    if day >= 1 and day <= 7 do
       :ok
     else
       {:error, :invalid_day_number}

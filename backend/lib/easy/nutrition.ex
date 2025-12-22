@@ -304,11 +304,15 @@ defmodule Easy.Nutrition do
 
     case result do
       {:ok, recipe} ->
-        # Recalculate macros server-side for data integrity
         recipe = repo_preload_recipe(recipe)
 
-        Calculator.recalculate_and_update_recipe(recipe)
-        |> handle_recipe_result()
+        # Skip recalculation if user provided manual nutrition values
+        if has_manual_nutrition?(attrs) do
+          {:ok, recipe}
+        else
+          Calculator.recalculate_and_update_recipe(recipe)
+          |> handle_recipe_result()
+        end
 
       error ->
         error
@@ -327,15 +331,29 @@ defmodule Easy.Nutrition do
 
     case result do
       {:ok, updated_recipe} ->
-        # Recalculate macros server-side for data integrity
         updated_recipe = repo_preload_recipe(updated_recipe)
 
-        Calculator.recalculate_and_update_recipe(updated_recipe)
-        |> handle_recipe_result()
+        # Skip recalculation if user provided manual nutrition values
+        if has_manual_nutrition?(attrs) do
+          {:ok, updated_recipe}
+        else
+          Calculator.recalculate_and_update_recipe(updated_recipe)
+          |> handle_recipe_result()
+        end
 
       error ->
         error
     end
+  end
+
+  # Checks if attrs contain any manually provided nutrition values
+  defp has_manual_nutrition?(attrs) do
+    nutrition_keys = ~w(total_calories total_protein total_carbohydrates total_fats total_fiber)
+
+    Enum.any?(nutrition_keys, fn key ->
+      value = Map.get(attrs, key) || Map.get(attrs, String.to_existing_atom(key))
+      value != nil && value != "" && value != 0
+    end)
   end
 
   @spec change_recipe(Recipe.t(), map()) :: Ecto.Changeset.t()

@@ -1,4 +1,17 @@
-import {ActionIcon, Avatar, Badge, Box, CopyButton, Divider, Group, Stack, Text, ThemeIcon, Tooltip, UnstyledButton} from '@mantine/core';
+import {
+    ActionIcon,
+    Avatar,
+    Badge,
+    Box,
+    CopyButton,
+    Divider,
+    Group,
+    Stack,
+    Text,
+    ThemeIcon,
+    Tooltip,
+    UnstyledButton,
+} from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {
     IconBuilding,
@@ -26,7 +39,6 @@ import {notifyInfo, notifySuccess} from '@/utils/notification';
 
 import {LEGAL_LINKS, LegalLink} from '../config/ui';
 import classes from './styles.module.css';
-
 
 export default function SettingsPage() {
     const navigate = useNavigate();
@@ -84,7 +96,12 @@ export default function SettingsPage() {
                     {settings?.public_join_url && <SharePageCard joinUrl={settings.public_join_url} />}
 
                     {/* Stats Row */}
-                    {profile && <StatsRow profile={profile} navigate={navigate} />}
+                    {profile && (
+                        <StatsRow
+                            navigate={navigate}
+                            profile={profile}
+                        />
+                    )}
 
                     {/* Settings List */}
                     <SettingsList onItemClick={handleSettingClick} />
@@ -172,8 +189,8 @@ const Header: FC<HeaderProps> = ({profile}) => {
 };
 
 interface StatsRowProps {
-    profile: UserProfileResponse;
     navigate: (path: string) => void;
+    profile: UserProfileResponse;
 }
 
 const StatsRow: FC<StatsRowProps> = ({profile, navigate}) => {
@@ -199,8 +216,8 @@ const StatsRow: FC<StatsRowProps> = ({profile, navigate}) => {
 
     return (
         <Group
-            grow
             gap="md"
+            grow
         >
             {stats.map((stat) => (
                 <UnstyledButton
@@ -228,8 +245,8 @@ const StatsRow: FC<StatsRowProps> = ({profile, navigate}) => {
                         <Stack gap={0}>
                             <Text
                                 fw={700}
-                                size="lg"
                                 lh={1.2}
+                                size="lg"
                             >
                                 {stat.value}
                             </Text>
@@ -277,7 +294,8 @@ const SettingsList: FC<SettingsListProps> = ({onItemClick}) => {
                         justifyContent: 'space-between',
                         width: '100%',
                         padding: 'var(--mantine-spacing-md)',
-                        borderBottom: index < SETTINGS_ITEMS.length - 1 ? '1px solid var(--mantine-color-gray-2)' : 'none',
+                        borderBottom:
+                            index < SETTINGS_ITEMS.length - 1 ? '1px solid var(--mantine-color-gray-2)' : 'none',
                     }}
                 >
                     <Group
@@ -300,8 +318,8 @@ const SettingsList: FC<SettingsListProps> = ({onItemClick}) => {
                         </Text>
                     </Group>
                     <IconChevronRight
-                        size={16}
                         color="var(--mantine-color-gray-5)"
+                        size={16}
                     />
                 </UnstyledButton>
             ))}
@@ -319,7 +337,8 @@ const SharePageCard: FC<{joinUrl: string}> = ({joinUrl}) => {
             p="md"
             style={{
                 borderRadius: 'var(--mantine-radius-md)',
-                background: 'linear-gradient(135deg, var(--mantine-color-violet-6) 0%, var(--mantine-color-indigo-6) 100%)',
+                background:
+                    'linear-gradient(135deg, var(--mantine-color-violet-6) 0%, var(--mantine-color-indigo-6) 100%)',
             }}
         >
             <Group

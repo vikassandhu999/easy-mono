@@ -18,26 +18,43 @@ export function DesktopNavbar({navItems, onNavigate}: DesktopNavbarProps) {
     return (
         <>
             <Box mb={'lg'}>
-                <Group gap="sm" align="center" wrap="nowrap">
+                <Group
+                    align="center"
+                    gap="sm"
+                    wrap="nowrap"
+                >
                     {business?.logo_url && (
                         <Avatar
-                            src={business.logo_url}
+                            alt={business?.name || 'Business'}
                             radius="sm"
                             size="md"
-                            alt={business?.name || 'Business'}
+                            src={business.logo_url}
                         />
-                    ) }
+                    )}
 
-                    <Stack gap={0} style={{minWidth: 0}}>
-                        <Text fw={700} size="xl" truncate>
+                    <Stack
+                        gap={0}
+                        style={{minWidth: 0}}
+                    >
+                        <Text
+                            fw={700}
+                            size="xl"
+                            truncate
+                        >
                             {isLoading ? 'Loading…' : business?.name || '—'}
                         </Text>
                     </Stack>
                 </Group>
             </Box>
 
-            <Stack flex={1} gap={0}>
-                <NavItems items={navItems} onNavigate={onNavigate} />
+            <Stack
+                flex={1}
+                gap={0}
+            >
+                <NavItems
+                    items={navItems}
+                    onNavigate={onNavigate}
+                />
             </Stack>
         </>
     );

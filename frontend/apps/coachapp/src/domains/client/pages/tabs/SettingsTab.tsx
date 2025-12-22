@@ -38,9 +38,6 @@ const SettingsTab = ({client}: {client: Client}) => {
         }
     };
 
-
-
-
     return (
         <>
             <Stack gap="lg">
@@ -84,24 +81,27 @@ const SettingsTab = ({client}: {client: Client}) => {
                     </Stack>
                 </Card>
 
-
                 <Card
-                    bd={isArchived ? "1px solid var(--mantine-color-green-3)" : "1px solid var(--mantine-color-orange-3)"}
-                    bg={isArchived ? "var(--mantine-color-green-0)" : "var(--mantine-color-orange-0)"}
+                    bd={
+                        isArchived
+                            ? '1px solid var(--mantine-color-green-3)'
+                            : '1px solid var(--mantine-color-orange-3)'
+                    }
+                    bg={isArchived ? 'var(--mantine-color-green-0)' : 'var(--mantine-color-orange-0)'}
                     padding="md"
                     radius="md"
                 >
                     <Stack gap="md">
                         <Group gap="xs">
                             <ThemeIcon
-                                color={isArchived ? "green" : "orange"}
+                                color={isArchived ? 'green' : 'orange'}
                                 size="sm"
                                 variant="light"
                             >
                                 {isArchived ? <IconArchiveOff size={14} /> : <IconArchive size={14} />}
                             </ThemeIcon>
                             <Text
-                                c={isArchived ? "green" : "orange"}
+                                c={isArchived ? 'green' : 'orange'}
                                 fw={500}
                                 size="sm"
                             >
@@ -117,7 +117,7 @@ const SettingsTab = ({client}: {client: Client}) => {
                                 : 'Archive this client to hide them from your active client list. You can unarchive them later.'}
                         </Text>
                         <Button
-                            color={isArchived ? "green" : "orange"}
+                            color={isArchived ? 'green' : 'orange'}
                             leftSection={isArchived ? <IconArchiveOff size={16} /> : <IconArchive size={16} />}
                             onClick={openArchiveModal}
                             radius="xl"
@@ -140,10 +140,17 @@ const SettingsTab = ({client}: {client: Client}) => {
             >
                 <Stack gap="md">
                     <Text size="sm">
-                        {isArchived
-                            ? <>Are you sure you want to unarchive <strong>{client.full_name}</strong>? They will be restored to your active client list.</>
-                            : <>Are you sure you want to archive <strong>{client.full_name}</strong>? They will be hidden from your active client list but can be unarchived later.</>
-                        }
+                        {isArchived ? (
+                            <>
+                                Are you sure you want to unarchive <strong>{client.full_name}</strong>? They will be
+                                restored to your active client list.
+                            </>
+                        ) : (
+                            <>
+                                Are you sure you want to archive <strong>{client.full_name}</strong>? They will be
+                                hidden from your active client list but can be unarchived later.
+                            </>
+                        )}
                     </Text>
                     <Group
                         gap="sm"
@@ -158,7 +165,7 @@ const SettingsTab = ({client}: {client: Client}) => {
                             Cancel
                         </Button>
                         <Button
-                            color={isArchived ? "green" : "orange"}
+                            color={isArchived ? 'green' : 'orange'}
                             leftSection={isArchived ? <IconArchiveOff size={16} /> : <IconArchive size={16} />}
                             loading={isArchiving || isUpdatingStatus}
                             onClick={handleArchiveToggle}

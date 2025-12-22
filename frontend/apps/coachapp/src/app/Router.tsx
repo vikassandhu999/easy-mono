@@ -46,7 +46,6 @@ const router = createBrowserRouter([
             {
                 element: <ProtectedRouteLayout />,
                 children: [
-
                     {
                         element: <ClientListPage />,
                         path: '/clients',

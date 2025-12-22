@@ -26,14 +26,10 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
     // Helper functions to manage the string array
     const append = useCallback(
         (value: string) => {
-            setValue(
-                'instructions',
-                [...instructions, value],
-                {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                },
-            );
+            setValue('instructions', [...instructions, value], {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         },
         [instructions, setValue],
     );
@@ -41,14 +37,10 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
     const remove = useCallback(
         (index: number) => {
             const newInstructions = instructions.filter((_, i) => i !== index);
-            setValue(
-                'instructions',
-                newInstructions,
-                {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                },
-            );
+            setValue('instructions', newInstructions, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         },
         [instructions, setValue],
     );
@@ -58,14 +50,10 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
             const newInstructions = [...instructions];
             const [removed] = newInstructions.splice(fromIndex, 1);
             newInstructions.splice(toIndex, 0, removed as string);
-            setValue(
-                'instructions',
-                newInstructions,
-                {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                },
-            );
+            setValue('instructions', newInstructions, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         },
         [instructions, setValue],
     );
@@ -74,14 +62,10 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
         (index: number, value: string) => {
             const newInstructions = [...instructions];
             newInstructions[index] = value;
-            setValue(
-                'instructions',
-                newInstructions,
-                {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                },
-            );
+            setValue('instructions', newInstructions, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         },
         [instructions, setValue],
     );

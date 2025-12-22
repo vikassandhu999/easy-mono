@@ -1,7 +1,8 @@
-import React from 'react';
+import type {MantineRadius, MantineSpacing} from '@mantine/core';
+
 import {Card, Group, Stack, Text, UnstyledButton, useMantineTheme} from '@mantine/core';
-import type { MantineRadius, MantineSpacing} from '@mantine/core';
 import {IconChevronRight} from '@tabler/icons-react';
+import React from 'react';
 
 export type ActionListCardProps = {
     label: string;
@@ -15,7 +16,7 @@ export type ActionListCardProps = {
     radius?: MantineRadius;
     padding?: MantineSpacing;
     withBorder?: boolean;
-    danger: boolean,
+    danger: boolean;
     ariaLabel?: string;
 };
 
@@ -30,41 +31,60 @@ export default function ({
     padding = 'md',
     withBorder = true,
     ariaLabel,
-    danger = false
+    danger = false,
 }: ActionListCardProps) {
-
-  const theme = useMantineTheme();
+    const theme = useMantineTheme();
 
     return (
         <UnstyledButton
-            onClick={onClick}
-            disabled={disabled}
             aria-disabled={disabled || undefined}
             aria-label={ariaLabel}
+            disabled={disabled}
+            onClick={onClick}
             style={{width: '100%'}}
         >
             <Card
-                withBorder={withBorder}
-                radius={radius}
                 padding={padding}
+                radius={radius}
                 style={{
                     width: '100%',
-                    borderColor : danger ?  theme.colors.red["5"] :'',
+                    borderColor: danger ? theme.colors.red['5'] : '',
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.6 : 1,
                     transition: 'background-color 120ms ease, border-color 120ms ease',
                     outline: 0,
                 }}
+                withBorder={withBorder}
             >
-                <Group justify="space-between" align="center" wrap="nowrap">
-                    <Group gap="md" align="center" wrap="nowrap" style={{minWidth: 0}}>
+                <Group
+                    align="center"
+                    justify="space-between"
+                    wrap="nowrap"
+                >
+                    <Group
+                        align="center"
+                        gap="md"
+                        style={{minWidth: 0}}
+                        wrap="nowrap"
+                    >
                         {icon}
-                        <Stack gap={2} style={{flex: 1, minWidth: 0}} >
-                            <Text fw={600} truncate c={danger ? "red" : ""}>
+                        <Stack
+                            gap={2}
+                            style={{flex: 1, minWidth: 0}}
+                        >
+                            <Text
+                                c={danger ? 'red' : ''}
+                                fw={600}
+                                truncate
+                            >
                                 {label}
                             </Text>
                             {description ? (
-                                <Text size="sm" c="dimmed" truncate >
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                    truncate
+                                >
                                     {description}
                                 </Text>
                             ) : null}

@@ -8,7 +8,7 @@ import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuthActions} from '@/hooks/useAuthActions';
 import {useVerifyLoginMutation, VerifyLogin_zod, VerifyLoginRequest} from '@/services/auth';
-import {notifyError,notifyWarning} from '@/utils/notification';
+import {notifyError, notifyWarning} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -41,7 +41,6 @@ const VerifyLoginPage: React.FC = () => {
             const resp = await verifyPasscode(values).unwrap();
 
             saveAuthTokens(resp.access_token, resp.refresh_token);
-
 
             navigate('/');
         } catch (err) {

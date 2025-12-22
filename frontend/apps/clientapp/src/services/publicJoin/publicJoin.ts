@@ -21,7 +21,4 @@ export const publicJoinApi = baseAPISlice.injectEndpoints({
     overrideExisting: false,
 });
 
-export const {
-    useGetPublicJoinDetailsQuery,
-    useLazyGetPublicJoinDetailsQuery,
-} = publicJoinApi;
+export const {useGetPublicJoinDetailsQuery, useLazyGetPublicJoinDetailsQuery} = publicJoinApi;

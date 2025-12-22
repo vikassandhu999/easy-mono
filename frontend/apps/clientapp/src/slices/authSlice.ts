@@ -14,32 +14,32 @@ const TOKEN_KEYS = {
  * Client interface
  */
 export interface Client {
+    business_id: string;
     id: string;
     name: string;
     status: string;
-    business_id: string;
 }
 
 /**
  * User interface
  */
 export interface User {
-    id: string;
     email?: string;
-    phone_number?: string;
     first_name?: string;
+    id: string;
     last_name?: string;
+    phone_number?: string;
 }
 
 /**
  * Auth state interface
  */
 export interface AuthState {
+    client: Client | null;
     error: null | string;
     isAuthenticated: boolean;
     isAuthenticating: boolean;
     user: null | User;
-    client: null | Client;
 }
 
 /**

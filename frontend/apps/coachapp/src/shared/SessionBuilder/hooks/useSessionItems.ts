@@ -1,8 +1,7 @@
 import {notifications} from '@mantine/notifications';
 import {useCallback, useEffect, useState} from 'react';
 
-import {Session, SessionItemConfig, SessionType} from '@/services/session';
-import {useUpdateSessionMutation} from '@/services/session';
+import {Session, SessionItemConfig, SessionType, useUpdateSessionMutation} from '@/services/session';
 
 import {itemsToWorkoutDefinition} from '../utils';
 

@@ -4,7 +4,7 @@ export type BusinessBranding = {
     id: string;
     name: string;
     handle: string;
-    logo_url: string | null;
+    logo_url: null | string;
 };
 
 export type GetBusinessResponse = {

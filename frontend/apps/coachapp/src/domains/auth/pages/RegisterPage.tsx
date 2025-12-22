@@ -31,7 +31,6 @@ const RegisterPage: React.FC = () => {
         try {
             const resp = await registerMutation(values).unwrap();
 
-
             const params = new URLSearchParams([
                 ['token_id', resp.token.token_id],
                 ['email', values.email],

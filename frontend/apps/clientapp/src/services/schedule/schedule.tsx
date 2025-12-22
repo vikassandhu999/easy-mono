@@ -6,15 +6,15 @@ import {baseAPISlice} from '../baseAPISlice';
  * If your backend JSON differs, adjust these types to match the response exactly.
  */
 
-export type ScheduleItemKind = 'training' | 'nutrition';
+export type ScheduleItemKind = 'nutrition' | 'training';
 
 export type ScheduleCompletion = {
-    state: 'not_started' | 'in_progress' | 'completed';
+    state: 'completed' | 'in_progress' | 'not_started';
     /**
      * Optional: the related workout session id (training), if present.
      * Backend may omit this depending on implementation.
      */
-    session_id?: string | null;
+    session_id?: null | string;
 };
 
 export type TrainingScheduleItem = {
@@ -27,8 +27,8 @@ export type TrainingScheduleItem = {
     /**
      * Optional: if you expose the plan/workout ids in the backend.
      */
-    training_plan_id?: string | null;
-    planned_workout_id?: string | null;
+    training_plan_id?: null | string;
+    planned_workout_id?: null | string;
 
     completion?: ScheduleCompletion;
 };
@@ -38,13 +38,13 @@ export type NutritionScheduleItem = {
     id: string;
     title: string;
 
-    nutrition_plan_id?: string | null;
-    meal_id?: string | null;
+    nutrition_plan_id?: null | string;
+    meal_id?: null | string;
 
     completion?: ScheduleCompletion;
 };
 
-export type ScheduleItem = TrainingScheduleItem | NutritionScheduleItem;
+export type ScheduleItem = NutritionScheduleItem | TrainingScheduleItem;
 
 export type ScheduleDay = {
     /**
@@ -81,7 +81,7 @@ export type GetWeekScheduleResponse = {
 
 export type GetNextScheduleResponse = {
     data: {
-        next: (ScheduleItem & {date?: string; weekday?: number}) | null;
+        next: null | (ScheduleItem & {date?: string; weekday?: number});
     };
 };
 

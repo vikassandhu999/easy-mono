@@ -86,8 +86,6 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
         }
     }, [recipe, recipeId, reset]);
 
-
-
     useImperativeHandle(ref, () => ({
         submit: async () => {
             await handleSubmit(onSubmitForm)();
@@ -138,9 +136,6 @@ const RecipeForm = ({initialValues, onSubmit, ref, recipeId}: RecipeFormProps) =
             </div>
         );
     }
-
-
-
 
     return (
         <form onSubmit={handleSubmit(onSubmitForm)}>

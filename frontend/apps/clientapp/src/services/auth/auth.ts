@@ -16,7 +16,6 @@ import {
 
 export const authApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({
-
         sendLoginCode: build.mutation<SendLoginCodeResponse, SendLoginCodeRequest>({
             query: (body) => ({
                 url: '/api/auth/client/login/code',
@@ -41,7 +40,6 @@ export const authApi = baseAPISlice.injectEndpoints({
             }),
         }),
 
-
         register: build.mutation<ClientSignupResponse, ClientSignupRequest>({
             query: (body) => ({
                 url: '/api/auth/client/register',
@@ -49,7 +47,6 @@ export const authApi = baseAPISlice.injectEndpoints({
                 data: body,
             }),
         }),
-
 
         sendInvitationCode: build.mutation<SendInvitationCodeResponse, SendInvitationCodeRequest>({
             query: (body) => ({

@@ -3,12 +3,12 @@ import {IconBowlChopsticks, IconCalendarPlus, IconTreadmill} from '@tabler/icons
 import {useCallback, useEffect, useRef} from 'react';
 import {useNavigate} from 'react-router';
 
+import {Client} from '@/services/clients';
+import {Plan, PlanDiscipline, useListPlans} from '@/services/plans';
 import {EmptyState} from '@/shared/layouts/EmptyState';
 import RecordsList from '@/shared/layouts/RecordsList';
 import {PlanCreationDrawer, PlanCreationDrawerData} from '@/shared/PlanForm/PlanCreateDrawer';
 import PlanListItem from '@/shared/PlanListItem/PlanListItem';
-import {Client} from '@/services/clients';
-import {Plan, PlanDiscipline, useListPlans} from '@/services/plans';
 
 export const ClientPlansTab = ({
     client,

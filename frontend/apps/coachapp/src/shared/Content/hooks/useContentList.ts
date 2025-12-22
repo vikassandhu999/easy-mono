@@ -1,7 +1,12 @@
 import {useEffect, useState} from 'react';
 
-import {Content, CONTENT_SCOPE_FILTERS, ContentScopeFilter, ContentType} from '@/services/contents';
-import {useListContentsInfiniteQuery} from '@/services/contents';
+import {
+    Content,
+    CONTENT_SCOPE_FILTERS,
+    ContentScopeFilter,
+    ContentType,
+    useListContentsInfiniteQuery,
+} from '@/services/contents';
 
 export interface UseContentListOptions {
     activeOnly?: boolean;

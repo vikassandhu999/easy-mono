@@ -1,15 +1,14 @@
+import {capitalizeWords} from '@easy/error-parser';
 import {Avatar, Badge, Button, Card, Checkbox, Group, Modal, Stack, Text, useMantineTheme} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
 import {BarbellIcon, CaretDownIcon, XIcon} from '@phosphor-icons/react';
 import {useMemo, useState} from 'react';
 
-import {Exercise, isSystemExercise} from '@/services/exercises';
+import {Exercise, isSystemExercise, useListExercises} from '@/services/exercises';
 import {useListMuscles} from '@/services/muscles';
 import RecordsList from '@/shared/layouts/RecordsList';
 
 import classes from './styles.module.css';
-import {useListExercises} from '@/services/exercises';
-import { capitalizeWords } from '@easy/error-parser';
 
 interface ExerciseListItemProps {
     exercise: Exercise;

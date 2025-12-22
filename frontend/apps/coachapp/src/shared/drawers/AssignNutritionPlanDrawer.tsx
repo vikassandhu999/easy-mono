@@ -85,6 +85,8 @@ const AssignNutritionPlanDrawer = () => {
 
     const [selectedPlan, setSelectedPlan] = useState<null | NutritionPlan>(null);
     const [startDate, setStartDate] = useState<Date | null>(new Date());
+    const [endDate, setEndDate] = useState<Date | null>(null)
+
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchInput, 300);
     const {closeAllDrawers} = useParamsDrawer({});
@@ -110,6 +112,7 @@ const AssignNutritionPlanDrawer = () => {
                 id: selectedPlan.id,
                 client_id,
                 start_date: formatDateForApi(startDate),
+                end_date : formatDateForApi(endDate)
             }).unwrap();
             closeDrawer();
             closeAllDrawers();
@@ -131,8 +134,7 @@ const AssignNutritionPlanDrawer = () => {
         <AutoDrawer
             actions={
                 <Button
-                    color="green"
-                    disabled={!selectedPlan || !startDate}
+                    disabled={!selectedPlan || !startDate || !endDate}
                     fullWidth
                     loading={isAssigning}
                     onClick={handleAssign}
@@ -150,12 +152,26 @@ const AssignNutritionPlanDrawer = () => {
                         description="When should this plan start for the client?"
                         label="Start Date"
                         minDate={new Date()}
-                        onChange={setStartDate}
+                        onChange={(value) => setStartDate(value as Date | null)}
                         placeholder="Select start date"
                         required
                         rightSection={<IconCalendar size={16} />}
                         rightSectionPointerEvents="none"
                         value={startDate}
+                    />
+
+                    {/* End Date Picker */}
+                    <DatePickerInput
+                        clearable={false}
+                        description="When should this plan end?"
+                        label="End Date"
+                        minDate={startDate || new Date()}
+                        onChange={(value) => setEndDate(value as Date | null)}
+                        placeholder="Select end date"
+                        required
+                        rightSection={<IconCalendar size={16} />}
+                        rightSectionPointerEvents="none"
+                        value={endDate}
                     />
 
                     {/* Search Input */}

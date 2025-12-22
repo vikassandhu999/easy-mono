@@ -13,6 +13,7 @@ import Header from '@/shared/layouts/Header';
 
 import classes from './styles.module.css';
 import {OverviewTab, PlansTab, SettingsTab} from './tabs';
+import { capitalizeWords } from '@/utils/text';
 
 type TabValue = 'overview' | 'plans' | 'settings';
 
@@ -127,7 +128,7 @@ const ClientViewPage = () => {
                                     color={getStatusColor(client.status)}
                                     variant="light"
                                 >
-                                    {client.status}
+                                    {capitalizeWords(client.status)}
                                 </Badge>
                             </Group>
 

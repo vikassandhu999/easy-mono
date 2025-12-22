@@ -101,4 +101,5 @@ export type AssignNutritionPlan = {
     id: string;
     client_id: string;
     start_date?: string;
+    end_date?: string;
 };

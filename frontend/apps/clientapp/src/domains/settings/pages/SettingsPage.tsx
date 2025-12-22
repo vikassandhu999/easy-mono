@@ -4,10 +4,10 @@ import React, {useMemo} from 'react';
 import {useNavigate} from 'react-router';
 
 import ActionListCard from '@/domains/settings/components/ActionListCard';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
-import {useGetProfileQuery, type Profile} from '@/services/profile';
-import Header from '@/shared/layouts/Header';
+import {type Profile, useGetProfileQuery} from '@/services/profile';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
+import Header from '@/shared/layouts/Header';
 
 type SummaryCardProps = {
     profile?: Profile;
@@ -28,27 +28,45 @@ const SummaryCard = ({profile, isLoading}: SummaryCardProps) => {
 
     return (
         <Card
-            radius="lg"
             padding="lg"
+            radius="lg"
             style={{
                 boxShadow: 'none',
             }}
             withBorder
         >
-            <Group justify="space-between" align="center" wrap="nowrap">
-                <Group gap="md" wrap="nowrap">
-                    <Avatar radius="xl" size="lg" variant="outline" color="brand">
+            <Group
+                align="center"
+                justify="space-between"
+                wrap="nowrap"
+            >
+                <Group
+                    gap="md"
+                    wrap="nowrap"
+                >
+                    <Avatar
+                        color="brand"
+                        radius="xl"
+                        size="lg"
+                        variant="outline"
+                    >
                         {initials}
                     </Avatar>
                     <Stack gap={2}>
                         <Group gap="xs">
                             <Text fw={600}>{isLoading ? 'Loading…' : profile?.full_name || '—'}</Text>
                         </Group>
-                        <Text size="sm" c="dimmed">
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                        >
                             {isLoading ? '—' : profile?.email || '—'}
                         </Text>
                         {!!profile?.business?.name && (
-                            <Text size="sm" c="dimmed">
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
                                 {profile.business.name}
                             </Text>
                         )}
@@ -59,10 +77,9 @@ const SummaryCard = ({profile, isLoading}: SummaryCardProps) => {
     );
 };
 
-
 const SettingsPage = () => {
     const navigate = useNavigate();
-    const theme = useMantineTheme()
+    const theme = useMantineTheme();
     const {data, isLoading} = useGetProfileQuery();
 
     const profile = data?.data;
@@ -109,53 +126,62 @@ const SettingsPage = () => {
     ];
 
     return (
-      <React.Fragment>
+        <React.Fragment>
             <HeadingContainer>
-              <Header title='Settings' />
+                <Header title="Settings" />
             </HeadingContainer>
-            <PaddingContainer style={{
-              paddingTop : theme.spacing.lg
-            }}>
+            <PaddingContainer
+                style={{
+                    paddingTop: theme.spacing.lg,
+                }}
+            >
                 <Stack gap="xl">
-                    <SummaryCard profile={profile} isLoading={isLoading} />
+                    <SummaryCard
+                        isLoading={isLoading}
+                        profile={profile}
+                    />
 
                     <Stack gap="md">
                         {actions.map((action) => (
                             <ActionListCard
+                                ariaLabel={action.description ? `${action.label}. ${action.description}` : action.label}
+                                danger={false}
+                                description={action.description}
+                                disabled={action.disabled}
+                                icon={action.icon}
                                 key={action.label}
                                 label={action.label}
-                                description={action.description}
-                                icon={action.icon}
-                                disabled={action.disabled}
-                                danger={false}
-                                ariaLabel={action.description ? `${action.label}. ${action.description}` : action.label}
                                 onClick={() => {
                                     if (action.to && !action.disabled) navigate(action.to);
                                 }}
-                                withBorder
-                                radius="lg"
                                 padding="md"
+                                radius="lg"
+                                withBorder
                             />
                         ))}
 
                         <ActionListCard
-                            label="Logout"
-                            icon={<IconLogout2 size={18} color={theme.colors.red[6]} />}
                             ariaLabel="Logout"
-                            withChevron={false}
+                            danger={true}
+                            icon={
+                                <IconLogout2
+                                    color={theme.colors.red[6]}
+                                    size={18}
+                                />
+                            }
+                            label="Logout"
                             onClick={() => {
                                 // TODO: wire logout action
                             }}
-                            withBorder
-                            radius="lg"
                             padding="md"
-                            danger={true}
+                            radius="lg"
+                            withBorder
+                            withChevron={false}
                         />
                     </Stack>
-
                 </Stack>
             </PaddingContainer>
-      </React.Fragment>
+        </React.Fragment>
     );
 };
 

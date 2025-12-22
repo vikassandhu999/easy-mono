@@ -16,6 +16,8 @@ import {IconCalendar, IconMessageCircle, IconSwitchHorizontal, IconUser} from '@
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
+import {Client, useGetClientQuery} from '@/services/clients';
+import {PlanDiscipline} from '@/services/plans';
 import ClientProfileCard from '@/shared/ClientProfileCard';
 import ClientSelect from '@/shared/ClientSelect/ClientSelect';
 import HeadingContainer from '@/shared/containers/HeaderContainer';
@@ -23,8 +25,6 @@ import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
 import Header from '@/shared/layouts/Header';
 import {PlanCreationDrawerData} from '@/shared/PlanForm/PlanCreateDrawer';
-import {Client, useGetClientQuery} from '@/services/clients';
-import {PlanDiscipline} from '@/services/plans';
 
 import {ClientOverviewTab} from './ClientOverviewTab';
 import {ClientPlansTab} from './ClientPlansTab';

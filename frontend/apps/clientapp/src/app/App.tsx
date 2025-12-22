@@ -4,9 +4,9 @@ import {Notifications} from '@mantine/notifications';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 import AuthProvider from '@/providers/AuthProvider';
+import {theme} from '@/theme';
 
 import AppRouterProvider from './Router';
-import { theme } from '@/theme';
 
 const queryClient = new QueryClient({
     defaultOptions: {

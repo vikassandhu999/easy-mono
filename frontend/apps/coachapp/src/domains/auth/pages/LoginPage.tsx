@@ -27,7 +27,6 @@ const LoginPage: React.FC = () => {
         try {
             const response = await sendOTP(values).unwrap();
 
-
             const params = new URLSearchParams([
                 ['token_id', response.token.token_id],
                 ['email', response.user.email],

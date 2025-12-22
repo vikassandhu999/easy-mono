@@ -1,16 +1,11 @@
-export {
-    profileApi,
-    useGetProfileQuery,
-    useLazyGetProfileQuery,
-    useUpdateProfileMutation,
-} from './profile';
+export {profileApi, useGetProfileQuery, useLazyGetProfileQuery, useUpdateProfileMutation} from './profile';
 
 export type {
-    Profile,
+    Business,
     Coach,
     CoachUser,
-    Business,
     GetProfileResponse,
+    Profile,
     UpdateProfileRequest,
     UpdateProfileResponse,
 } from './profile';

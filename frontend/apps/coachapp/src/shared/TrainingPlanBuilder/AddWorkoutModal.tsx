@@ -1,11 +1,11 @@
-import {Button, Modal, Stack, TextInput, Textarea} from '@mantine/core';
+import {Button, Modal, Stack, Textarea, TextInput} from '@mantine/core';
 import {useState} from 'react';
 
 interface AddWorkoutModalProps {
-    opened: boolean;
+    dayName: string;
     onClose: () => void;
     onSubmit: (data: {name: string; notes?: string}) => Promise<void>;
-    dayName: string;
+    opened: boolean;
 }
 
 const AddWorkoutModal = ({opened, onClose, onSubmit, dayName}: AddWorkoutModalProps) => {

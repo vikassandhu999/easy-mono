@@ -5,21 +5,17 @@ import {useDebouncedValue} from '@mantine/hooks';
 import {IconCalendar, IconX} from '@tabler/icons-react';
 import {useMemo, useState} from 'react';
 
-import useParamsDrawer from "@/hooks/useParamDrawer";
-import {
-  TrainingPlan,
-  useAssignTrainingPlan,
-  useListTrainingPlans,
-} from "@/services/training_plans";
-import AutoDrawer from "@/shared/AutoDrawer/AutoDrawer";
-import { notifyError } from "@/utils/notification";
+import useParamsDrawer from '@/hooks/useParamDrawer';
+import {TrainingPlan, useAssignTrainingPlan, useListTrainingPlans} from '@/services/training_plans';
+import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
+import {notifyError} from '@/utils/notification';
 
-import classes from "./AssignPlanDrawer.module.css";
+import classes from './AssignPlanDrawer.module.css';
 
 interface TrainingPlanTemplateItemProps {
-  isSelected: boolean;
-  onSelect: (plan: TrainingPlan) => void;
-  plan: TrainingPlan;
+    isSelected: boolean;
+    onSelect: (plan: TrainingPlan) => void;
+    plan: TrainingPlan;
 }
 
 const TrainingPlanTemplateItem = ({plan, onSelect, isSelected}: TrainingPlanTemplateItemProps) => {
@@ -74,23 +70,23 @@ const TrainingPlanTemplateItem = ({plan, onSelect, isSelected}: TrainingPlanTemp
 };
 
 const formatDateForApi = (date: Date | null): string | undefined => {
-  if (!date) return undefined;
+    if (!date) return undefined;
 
-  // Ensure we have a Date object
-  const dateObj = date instanceof Date ? date : new Date(date);
+    // Ensure we have a Date object
+    const dateObj = date instanceof Date ? date : new Date(date);
 
-  // Check if valid date
-  if (isNaN(dateObj.getTime())) return undefined;
+    // Check if valid date
+    if (isNaN(dateObj.getTime())) return undefined;
 
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const day = String(dateObj.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const AssignTrainingPlanDrawer = () => {
-  const { closeDrawer, getDrawerParams } = useParamsDrawer({});
-  const { client_id } = getDrawerParams();
+    const {closeDrawer, getDrawerParams} = useParamsDrawer({});
+    const {client_id} = getDrawerParams();
 
     const [selectedPlan, setSelectedPlan] = useState<null | TrainingPlan>(null);
     const [startDate, setStartDate] = useState<Date | null>(new Date());
@@ -98,21 +94,18 @@ const AssignTrainingPlanDrawer = () => {
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
-  const [assignPlan, { isLoading: isAssigning }] = useAssignTrainingPlan();
+    const [assignPlan, {isLoading: isAssigning}] = useAssignTrainingPlan();
 
-  const { data, isLoading } = useListTrainingPlans({
-    search: debouncedSearch || undefined,
-    is_template: true,
-  });
+    const {data, isLoading} = useListTrainingPlans({
+        search: debouncedSearch || undefined,
+        is_template: true,
+    });
 
-  const plans = useMemo(
-    () => data?.pages?.flatMap((page) => page.records) ?? [],
-    [data?.pages],
-  );
+    const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
-  const handleSelect = (plan: TrainingPlan) => {
-    setSelectedPlan(plan.id === selectedPlan?.id ? null : plan);
-  };
+    const handleSelect = (plan: TrainingPlan) => {
+        setSelectedPlan(plan.id === selectedPlan?.id ? null : plan);
+    };
 
     const handleAssign = async () => {
         if (!selectedPlan || !client_id || !startDate || !endDate) return;
@@ -139,13 +132,13 @@ const AssignTrainingPlanDrawer = () => {
         }
     };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(event.currentTarget.value);
-  };
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchInput(event.currentTarget.value);
+    };
 
-  const handleClearSearch = () => {
-    setSearchInput("");
-  };
+    const handleClearSearch = () => {
+        setSearchInput('');
+    };
 
     return (
         <AutoDrawer
@@ -196,61 +189,65 @@ const AssignTrainingPlanDrawer = () => {
                         value={endDate}
                     />
 
-          {/* Search Input */}
-          <div className={classes.searchWrapper}>
-            <input
-              className={classes.searchInput}
-              onChange={handleSearchChange}
-              placeholder="Search training plans..."
-              type="text"
-              value={searchInput}
-            />
-            {searchInput && (
-              <button
-                aria-label="Clear search"
-                className={classes.clearButton}
-                onClick={handleClearSearch}
-                type="button"
-              >
-                <IconX size={14} />
-              </button>
-            )}
-          </div>
+                    {/* Search Input */}
+                    <div className={classes.searchWrapper}>
+                        <input
+                            className={classes.searchInput}
+                            onChange={handleSearchChange}
+                            placeholder="Search training plans..."
+                            type="text"
+                            value={searchInput}
+                        />
+                        {searchInput && (
+                            <button
+                                aria-label="Clear search"
+                                className={classes.clearButton}
+                                onClick={handleClearSearch}
+                                type="button"
+                            >
+                                <IconX size={14} />
+                            </button>
+                        )}
+                    </div>
 
-          {/* Plans List */}
-          {isLoading ? (
-            <div className={classes.loadingState}>
-              <Loader size="sm" />
-              <Text c="dimmed" size="sm">
-                Loading training plans...
-              </Text>
-            </div>
-          ) : plans.length === 0 ? (
-            <div className={classes.emptyState}>
-              <Text c="dimmed" size="sm">
-                {searchInput
-                  ? "No plans match your search"
-                  : "No training plan templates available"}
-              </Text>
-            </div>
-          ) : (
-            <div className={classes.plansList}>
-              {plans.map((plan) => (
-                <TrainingPlanTemplateItem
-                  isSelected={selectedPlan?.id === plan.id}
-                  key={plan.id}
-                  onSelect={handleSelect}
-                  plan={plan}
-                />
-              ))}
-            </div>
-          )}
-        </Stack>
-      }
-      onClose={closeDrawer}
-      title="Assign Training Plan"
-    />
-  );
+                    {/* Plans List */}
+                    {isLoading ? (
+                        <div className={classes.loadingState}>
+                            <Loader size="sm" />
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                Loading training plans...
+                            </Text>
+                        </div>
+                    ) : plans.length === 0 ? (
+                        <div className={classes.emptyState}>
+                            <Text
+                                c="dimmed"
+                                size="sm"
+                            >
+                                {searchInput ? 'No plans match your search' : 'No training plan templates available'}
+                            </Text>
+                        </div>
+                    ) : (
+                        <div className={classes.plansList}>
+                            {plans.map((plan) => (
+                                <TrainingPlanTemplateItem
+                                    isSelected={selectedPlan?.id === plan.id}
+                                    key={plan.id}
+                                    onSelect={handleSelect}
+                                    plan={plan}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </Stack>
+            }
+            onClose={closeDrawer}
+            title="Assign Training Plan"
+        />
+    );
 };
 
 export default AssignTrainingPlanDrawer;

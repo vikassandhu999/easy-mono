@@ -1,4 +1,5 @@
 import {baseAPISlice} from '../baseAPISlice';
+import {buildListParams, getNextPage} from '../paginationUtils';
 import {
     CreateIngredient,
     Ingredient,
@@ -6,8 +7,6 @@ import {
     IngredientsListOpts,
     UpdateIngredient,
 } from './ingrdients_definition';
-
-import {buildListParams, getNextPage} from '../paginationUtils';
 
 export const ingredientsApi = baseAPISlice.injectEndpoints({
     endpoints: (build) => ({

@@ -4,7 +4,7 @@ import {Controller, UseFormReturn} from 'react-hook-form';
 
 import {CreateExercise} from '@/services/exercises';
 import {useListMuscles} from '@/services/muscles';
-import { capitalizeWords } from '@/utils/text';
+import {capitalizeWords} from '@/utils/text';
 
 type MuscleFieldProps = {
     form: UseFormReturn<CreateExercise, any, CreateExercise>;

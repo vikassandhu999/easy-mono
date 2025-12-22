@@ -2,6 +2,7 @@ import {useCallback} from 'react';
 
 import {useLogoutMutation, useRefreshTokenMutation} from '@/services/auth';
 import {
+    type Client,
     logout as logoutAction,
     selectAuth,
     selectClient,
@@ -14,7 +15,6 @@ import {
     setClient,
     setUser,
     tokenStorage,
-    type Client,
     type User,
 } from '@/slices/authSlice';
 import {useAppDispatch, useAppSelector} from '@/store';

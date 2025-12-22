@@ -33,8 +33,8 @@ export type NutritionPlan = {
     thumbnail_url: null | string;
     is_template: boolean;
     status: NutritionPlanStatus;
-    duration_weeks: number;
     start_date: null | string;
+    end_date: null | string;
     tags: string[];
     meals: Meal[];
     client_id: null | string;
@@ -71,7 +71,7 @@ export const MealItem_zod = z.object({
 
 export const Meal_zod = z.object({
     daytime: z.enum(['early_morning', 'breakfast', 'lunch', 'dinner', 'pre_workout', 'post_workout', 'snack']),
-    day_number: z.number().int().min(1),
+    day_number: z.number().int().min(1).max(7), // Weekday 1-7 (Mon-Sun)
     label: z.string().optional(),
     time: z.string().optional(), // Time string HH:mm:ss or similar
     notes: z.string().optional(),
@@ -79,13 +79,13 @@ export const Meal_zod = z.object({
 });
 
 export const CreateNutritionPlan_zod = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters').max(255),
-    description: z.string().optional().default(''),
-    thumbnail_url: z.string().url().optional().or(z.literal('')),
+    name: z.string().min(2, 'Name must be at least 2 characters').max(255, 'Name must be less than 255 characters'),
+    description: z.string().max(255, "Description must be less than 255 characters").optional().default(''),
+    thumbnail_url: z.string().url("Thumbnail URL must be a valid URL").optional().or(z.literal('')),
     is_template: z.boolean().default(true),
-    status: z.enum(['active', 'draft', 'archived']).default('draft'),
-    duration_weeks: z.number().int().min(1, 'Duration must be at least 1 week'),
-    start_date: z.string().optional(), // Date string YYYY-MM-DD
+    status: z.enum(['active', 'draft', 'archived']).default('active'),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
     tags: z.array(z.string()).default([]),
     meals: z.array(Meal_zod).optional(),
 });

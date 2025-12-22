@@ -1,9 +1,8 @@
 import {humanizeError} from '@easy/error-parser';
-import {error} from 'console';
 import {useMemo, useState} from 'react';
 
 import {useCreateMealItem, useDeleteMealItem} from '@/services/meal_items';
-import {useCreateMeal} from '@/services/meals';
+import {MealDaytime, useCreateMeal} from '@/services/meals';
 import {Meal} from '@/services/nutrition_plans';
 import {notifyError} from '@/utils/notification';
 
@@ -34,7 +33,7 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
         };
 
         meals
-            .filter((meal) => meal.day_number === currentDay - 1)
+            .filter((meal) => meal.day_number === currentDay)
             .forEach((meal) => {
                 grouped[meal.daytime] = meal;
             });
@@ -83,9 +82,10 @@ const useDayMeals = ({currentDay, planId, meals}: UseDayMealsArgs) => {
         try {
             const result = await createMealMutation({
                 nutrition_plan_id: planId,
-                day_number: currentDay - 1,
+                day_number: currentDay,
                 daytime,
                 label,
+                position : 1
             });
 
             // Open drawer with the newly created meal ID

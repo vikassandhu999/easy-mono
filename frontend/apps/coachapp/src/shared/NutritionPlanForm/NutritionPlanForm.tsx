@@ -1,6 +1,6 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Loader, NumberInput, Stack, TagsInput, Text, Textarea, TextInput, Title} from '@mantine/core';
+import {Loader, Stack, TagsInput, Text, Textarea, TextInput, Title} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -188,28 +188,6 @@ const NutritionPlanForm = ({initialValues, onSubmit, ref, planId}: NutritionPlan
                             placeholder="Describe the goal and details of this nutrition plan"
                             rows={3}
                             value={field.value || ''}
-                        />
-                    )}
-                />
-
-                <Controller
-                    control={control}
-                    name="duration_weeks"
-                    render={({field}) => (
-                        <NumberInput
-                            {...field}
-                            error={errors.duration_weeks?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Duration (Weeks)
-                                </Title>
-                            }
-                            min={1}
-                            placeholder="4"
-                            value={field.value}
                         />
                     )}
                 />

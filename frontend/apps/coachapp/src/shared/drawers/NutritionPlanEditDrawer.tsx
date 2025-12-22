@@ -95,7 +95,6 @@ const NutritionPlanEditDrawer = () => {
                     initialValues={{
                         name: plan.name,
                         description: plan.description,
-                        duration_weeks: plan.duration_weeks,
                         status: plan.status,
                     }}
                     onSubmit={async (values) => {

@@ -52,11 +52,6 @@ const NutritionPlanTemplateItem = ({plan, onSelect, isSelected}: NutritionPlanTe
                     </Text>
                 )}
                 <div className={classes.planMeta}>
-                    {plan.duration_weeks && (
-                        <span className={classes.metaTag}>
-                            {plan.duration_weeks} {plan.duration_weeks === 1 ? 'week' : 'weeks'}
-                        </span>
-                    )}
                     {mealsCount > 0 && (
                         <span className={classes.metaTag}>
                             {mealsCount} {mealsCount === 1 ? 'meal' : 'meals'}

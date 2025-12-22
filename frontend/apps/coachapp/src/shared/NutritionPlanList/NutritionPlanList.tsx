@@ -92,12 +92,10 @@ const NutritionPlanListItem = ({plan, onClick}: NutritionPlanListItemProps) => {
                         c="dimmed"
                         gap="sm"
                     >
-                        {plan.duration_weeks && (
-                            <Group gap={4}>
-                                <IconCalendar size={13} />
-                                <Text size="xs">{plan.duration_weeks}w</Text>
-                            </Group>
-                        )}
+                        <Group gap={4}>
+                            <IconCalendar size={13} />
+                            <Text size="xs">Weekly</Text>
+                        </Group>
                         {mealsCount > 0 && (
                             <Group gap={4}>
                                 <IconSalad size={13} />
@@ -106,7 +104,7 @@ const NutritionPlanListItem = ({plan, onClick}: NutritionPlanListItemProps) => {
                                 </Text>
                             </Group>
                         )}
-                        {!plan.duration_weeks && mealsCount === 0 && plan.description && (
+                        {mealsCount === 0 && plan.description && (
                             <Text
                                 lineClamp={1}
                                 size="xs"

@@ -64,7 +64,7 @@ const router = createBrowserRouter([
                     },
                     {
                         element: <MyPagePage />,
-                        path: '/flows',
+                        path: '/page',
                     },
 
                     {

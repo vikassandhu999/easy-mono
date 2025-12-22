@@ -36,7 +36,7 @@ const DayMealsView = ({currentDay, planId, meals}: DayMealsViewProps) => {
                     multiple={false}
                     onClose={closeRecipeDrawer}
                     onComplete={(selectedIds: string[]) => {
-                        handleRecipeSelect(selectedIds[0]);
+                        handleRecipeSelect(selectedIds[0] as string);
                     }}
                 />
             )}

@@ -302,7 +302,6 @@ export default function RecipeSelect(props: RecipeSelectProps) {
                 <div className={classes.searchSection}>
                     <div className={classes.searchInputWrapper}>
                         <TextInput
-                            leftSection={<MagnifyingGlassIcon size={18} />}
                             onChange={(e) => onSearchChangeDebounced(e.currentTarget.value)}
                             onKeyDown={handleSearchKeyDown}
                             placeholder="Search recipes..."

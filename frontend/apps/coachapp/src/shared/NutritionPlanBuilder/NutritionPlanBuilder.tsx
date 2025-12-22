@@ -17,7 +17,7 @@ const NutritionPlanBuilder = () => {
 
     const planId = searchParams.get('nutrition_plan_id');
 
-    const {data: plan, isLoading: queryLoading} = useGetNutritionPlan(planId, {
+    const {data: plan, isLoading: queryLoading} = useGetNutritionPlan(planId as string, {
         skip: !planId,
     });
 
@@ -59,7 +59,6 @@ const NutritionPlanBuilder = () => {
                 currentDay={currentDay}
                 onSelect={handleDayChange}
                 shouldAutoScroll={!isUserInteraction.current}
-                weeks={plan?.duration_weeks ?? 3}
             />
             <div
                 style={{

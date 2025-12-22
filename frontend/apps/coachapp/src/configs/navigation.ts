@@ -10,7 +10,7 @@ export const ROUTES_WITH_NAVIGATION = [
     '/profile',
 ];
 
-export const ROUTE_PATTERNS_WITH_NAVIGATION = [];
+export const ROUTE_PATTERNS_WITH_NAVIGATION: RegExp[] = [];
 
 export function shouldShowNavigation(pathname: string): boolean {
     // Check exact matches first

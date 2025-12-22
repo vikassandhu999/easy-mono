@@ -1,7 +1,6 @@
 import {Button, Card, Group, Modal, Stack, Text, ThemeIcon} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconAlertTriangle, IconArchive, IconArchiveOff, IconUserEdit} from '@tabler/icons-react';
-import {useNavigate} from 'react-router';
+import { IconArchive, IconArchiveOff, IconUserEdit} from '@tabler/icons-react';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
@@ -9,7 +8,6 @@ import {Client, useArchiveClient, useUpdateClientStatus} from '@/services/client
 import {notifyError} from '@/utils/notification';
 
 const SettingsTab = ({client}: {client: Client}) => {
-    const navigate = useNavigate();
     const {openDrawer} = useParamsDrawer({});
     const [updateClientStatus, {isLoading: isUpdatingStatus}] = useUpdateClientStatus();
     const [archiveClient, {isLoading: isArchiving}] = useArchiveClient();

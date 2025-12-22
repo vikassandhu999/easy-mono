@@ -15,7 +15,7 @@ const GuestGaurd = () => {
             </Center>
         );
     }
-    return isAuthenticated ? <Navigate to="/" /> : <Outlet />;
+    return isAuthenticated ? <Navigate to="/client" /> : <Outlet />;
 };
 
 export default GuestGaurd;

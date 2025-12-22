@@ -5,10 +5,10 @@ import RegisterPage from '@/domains/auth/pages/RegisterPage';
 import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
 import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPage';
 import ClientListPage from '@/domains/client/pages/ClientListPage';
+
 import ClientViewPage from '@/domains/client/pages/ClientViewPage';
-import HomePage from '@/domains/dashboard/pages/HomePage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
-import FlowsListPage from '@/domains/flows/pages/FlowsListPage';
+import MyPagePage from '@/domains/my_page/pages/FlowsListPage';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
 import SettingsPage from '@/domains/profile/pages/SettingsPage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
@@ -46,7 +46,10 @@ const router = createBrowserRouter([
             {
                 element: <ProtectedRouteLayout />,
                 children: [
-
+                  {
+                      element: <ClientListPage />,
+                      path: '/',
+                  },
                     {
                         element: <ClientListPage />,
                         path: '/clients',
@@ -60,7 +63,7 @@ const router = createBrowserRouter([
                         path: '/library',
                     },
                     {
-                        element: <FlowsListPage />,
+                        element: <MyPagePage />,
                         path: '/flows',
                     },
 

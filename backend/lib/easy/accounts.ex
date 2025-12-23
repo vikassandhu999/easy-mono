@@ -53,10 +53,6 @@ defmodule Easy.Accounts do
     end
   end
 
-  @doc """
-  Completes login for coach app.
-  Validates that the user has a coach record.
-  """
   def login(token_id, code) do
     with {:ok, token} <- validate_code(token_id, code, "login"),
          %User{} = user <- Repo.get(User, token.user_id),

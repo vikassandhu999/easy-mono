@@ -8,20 +8,20 @@ defmodule EasyWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :api_authenticated do
+  pipeline :auth_user do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.PopulateScope
   end
 
-  pipeline :coach_authenticated do
+  pipeline :auth_coach do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.PopulateScope
     plug :ensure_coach_scope
   end
 
-  pipeline :client_authenticated do
+  pipeline :auth_client do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.PopulateScope
@@ -74,20 +74,20 @@ defmodule EasyWeb.Router do
   end
 
   scope "/api/auth", EasyWeb do
-    pipe_through :api_authenticated
+    pipe_through :auth_user
 
     get "/me", AuthController, :me
     post "/logout", AuthController, :logout
   end
 
   scope "/api/coach", EasyWeb do
-    pipe_through :coach_authenticated
+    pipe_through :auth_coach
 
     patch "/profile", AuthController, :update_coach_profile
   end
 
   scope "/api/coach", EasyWeb.Coach do
-    pipe_through :coach_authenticated
+    pipe_through :auth_coach
 
     # Organization management
     get "/organization", BusinessController, :show
@@ -197,7 +197,7 @@ defmodule EasyWeb.Router do
   end
 
   scope "/api/client", EasyWeb.Client do
-    pipe_through :client_authenticated
+    pipe_through :auth_client
 
     get "/profile", ProfileController, :show
     patch "/profile", ProfileController, :update

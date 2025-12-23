@@ -227,11 +227,6 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  @doc """
-  PATCH /api/auth/profile
-
-  Updates the authenticated coach's profile (user info and coach info).
-  """
   def update_coach_profile(conn, params) do
     scope = conn.assigns.scope
 

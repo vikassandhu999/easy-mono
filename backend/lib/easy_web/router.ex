@@ -4,8 +4,6 @@ defmodule EasyWeb.Router do
   alias Easy.Auth.Scope
   alias EasyWeb.FallbackController
 
-  # PIPELINES
-
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -36,7 +34,6 @@ defmodule EasyWeb.Router do
     get "/health", HealthController, :index
   end
 
-  # Coach/standard auth
   scope "/api/auth", EasyWeb do
     pipe_through :api
 
@@ -64,7 +61,6 @@ defmodule EasyWeb.Router do
     post "/accept", InvitationController, :accept_invitation
   end
 
-  # Public invitation/join flows
   scope "/api/invitations", EasyWeb do
     pipe_through :api
 
@@ -77,8 +73,6 @@ defmodule EasyWeb.Router do
     get "/:code", PublicJoinController, :show
   end
 
-  # SHARED AUTHENTICATED ROUTES (applies to any authenticated role)
-
   scope "/api/auth", EasyWeb do
     pipe_through :api_authenticated
 
@@ -86,9 +80,6 @@ defmodule EasyWeb.Router do
     post "/logout", AuthController, :logout
   end
 
-  # COACH ROUTES
-
-  # Coach profile update uses shared AuthController
   scope "/api/coach", EasyWeb do
     pipe_through :coach_authenticated
 
@@ -204,8 +195,6 @@ defmodule EasyWeb.Router do
     get "/sessions/:id", WorkoutSessionController, :show
     put "/sessions/:id/complete", WorkoutSessionController, :complete
   end
-
-  # CLIENT ROUTES
 
   scope "/api/client", EasyWeb.Client do
     pipe_through :client_authenticated

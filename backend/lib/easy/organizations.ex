@@ -50,6 +50,28 @@ defmodule Easy.Organizations do
   end
 
   @doc """
+  Checks if a business handle is available.
+  Returns true if the handle is not taken and not reserved.
+  """
+  def handle_available?(nil), do: false
+
+  def handle_available?(handle) do
+    reserved_words =
+      ~w(personal org admin support help security team staff official auth tip home dashboard bounties community user payment claims orgs projects jobs leaderboard onboarding pricing developers companies contracts blog docs open hiring sdk api repo go preview tv podcast)
+
+    cond do
+      handle in reserved_words ->
+        false
+
+      not Regex.match?(~r/^[a-zA-Z0-9_-]{2,32}$/, handle) ->
+        false
+
+      true ->
+        not Repo.exists?(from b in Business, where: b.handle == ^handle)
+    end
+  end
+
+  @doc """
   Updates branding settings for a business.
   """
   def update_branding_settings(business_id, attrs) do

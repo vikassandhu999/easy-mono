@@ -47,9 +47,12 @@ defmodule EasyWeb.Registration do
       :business_name,
       :business_handle
     ])
+    |> validate_length(:first_name, max: 255)
+    |> validate_length(:last_name, max: 255)
+    |> validate_length(:business_name, max: 255)
     |> validate_format(
       :email,
-      ~r/^[\w.!#$%&’*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+      ~r/^[\w.!#$%&'*+=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
     )
     |> validate_format(:business_handle, ~r/^[a-zA-Z0-9_-]{2,32}$/)
     |> validate_exclusion(:business_handle, reserved_words, message: "is reserved")

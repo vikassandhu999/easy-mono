@@ -44,6 +44,8 @@ defmodule EasyWeb.Router do
     post "/verify", AuthController, :verify
     post "/send-login-code", AuthController, :send_login_code
     post "/token", AuthController, :token
+    post "/check-email", AuthController, :check_email
+    post "/check-handle", AuthController, :check_handle
   end
 
   scope "/api/auth/client", EasyWeb.Client do

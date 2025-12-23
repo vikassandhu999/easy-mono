@@ -2,15 +2,18 @@ defmodule Easy.Accounts do
   import Ecto.Query, warn: false
 
   alias Easy.Clients.Client
-  alias Easy.Organizations.Coach
+  alias Easy.Organizations.{Coach, Business}
   alias Easy.Repo
   alias Easy.Accounts.{User, OneTimeToken, Session, Token}
   alias Easy.Organizations
 
   def register(user_attrs, business_attrs) do
-    with {:ok, result} <-
+    email = user_attrs[:email] || user_attrs["email"]
+
+    with {:ok, user_or_nil} <- check_email_available(email),
+         {:ok, result} <-
            Repo.transaction(fn ->
-             with {:ok, user} <- create_user(user_attrs),
+             with {:ok, user} <- get_or_create_user(user_or_nil, user_attrs),
                   {:ok, _} <- Organizations.create_business_with_owner(user, business_attrs),
                   {:ok, token, code} <- create_otp_token(user, "email_verification") do
                %{user: user, token: token, code: code}
@@ -24,6 +27,9 @@ defmodule Easy.Accounts do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp get_or_create_user(nil, user_attrs), do: create_user(user_attrs)
+  defp get_or_create_user(%User{} = existing_user, _user_attrs), do: {:ok, existing_user}
 
   def verify_email(token_id, code, expected_type \\ nil) do
     with {:ok, token} <- validate_code(token_id, code, expected_type) do
@@ -447,5 +453,57 @@ defmodule Easy.Accounts do
     :rand.uniform(999_999)
     |> Integer.to_string()
     |> String.pad_leading(6, "0")
+  end
+
+  defp check_email_available(nil),
+    do: {:error, Easy.Error.new("invalid_email", "Email is required")}
+
+  defp check_email_available(email) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        {:ok, nil}
+
+      %User{} = user ->
+        check_user_can_register_business(user)
+    end
+  end
+
+  defp check_user_can_register_business(user) do
+    has_coach = Repo.exists?(from c in Coach, where: c.user_id == ^user.id)
+    has_business = Repo.exists?(from b in Business, where: b.owner_id == ^user.id)
+
+    cond do
+      has_business ->
+        {:error, Easy.Error.new("already_business_owner", "You already own a business account")}
+
+      has_coach ->
+        {:error,
+         Easy.Error.new(
+           "already_coach",
+           "You already have a coach profile associated with a business"
+         )}
+
+      true ->
+        {:ok, user}
+    end
+  end
+
+  @doc """
+  Checks if an email is available for registration as a coach/business owner.
+  Returns true if the email can be used for registration.
+  """
+  def email_available_for_registration?(nil), do: false
+
+  def email_available_for_registration?(email) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        true
+
+      %User{} = user ->
+        has_coach = Repo.exists?(from c in Coach, where: c.user_id == ^user.id)
+        has_business = Repo.exists?(from b in Business, where: b.owner_id == ^user.id)
+
+        not has_coach and not has_business
+    end
   end
 end

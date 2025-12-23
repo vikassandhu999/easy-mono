@@ -39,6 +39,32 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  def check_email(conn, %{"email" => email}) do
+    available = Accounts.email_available_for_registration?(email)
+
+    conn
+    |> put_status(:ok)
+    |> json(%{available: available})
+    |> halt()
+  end
+
+  def check_email(_conn, _params) do
+    {:error, Error.unprocessable("email is required")}
+  end
+
+  def check_handle(conn, %{"handle" => handle}) do
+    available = Organizations.handle_available?(handle)
+
+    conn
+    |> put_status(:ok)
+    |> json(%{available: available})
+    |> halt()
+  end
+
+  def check_handle(_conn, _params) do
+    {:error, Error.unprocessable("handle is required")}
+  end
+
   def verify(conn, %{"token_id" => token_id, "code" => code}) do
     with {:ok, user} <- Accounts.verify_email(token_id, code, "email_verification"),
          {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-

@@ -6,6 +6,8 @@ import AssignTrainingPlanDrawer from '@/shared/drawers/AssignTrainingPlanDrawer'
 import BusinessEditDrawer from '@/shared/drawers/BusinessEditDrawer';
 import ClientEditDrawer from '@/shared/drawers/ClientEditDrawer';
 import ClientInviteDrawer from '@/shared/drawers/ClientInviteDrawer';
+import ClientOverviewDrawer from '@/shared/drawers/ClientOverviewDrawer';
+import ClientSettingsDrawer from '@/shared/drawers/ClientSettingsDrawer';
 import CoachProfileEditDrawer from '@/shared/drawers/CoachProfileEditDrawer';
 import ContentCreateDrawer from '@/shared/drawers/ContentCreateDrawer';
 import ExerciseCreateDrawer from '@/shared/drawers/ExerciseCreateDrawer';
@@ -66,6 +68,10 @@ const InAppDrawersPage = () => {
             return <ClientEditDrawer />;
         case DRAWER_KEYS.CLIENT_INVITE:
             return <ClientInviteDrawer />;
+        case DRAWER_KEYS.CLIENT_OVERVIEW:
+            return <ClientOverviewDrawer />;
+        case DRAWER_KEYS.CLIENT_SETTINGS:
+            return <ClientSettingsDrawer />;
         case DRAWER_KEYS.BUSINESS_EDIT:
             return <BusinessEditDrawer />;
         case DRAWER_KEYS.COACH_PROFILE_EDIT:

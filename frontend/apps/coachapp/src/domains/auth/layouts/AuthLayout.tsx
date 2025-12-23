@@ -1,4 +1,4 @@
-import {Box, Center, Container, Grid, Image, Loader, Stack, Text, Title} from '@mantine/core';
+import {ActionIcon, Box, Center, Container, Grid, Image, Loader, Stack, Text, Title} from '@mantine/core';
 import {PropsWithChildren} from 'react';
 
 import useScreenSize from '@/hooks/useScreenSize';
@@ -6,12 +6,15 @@ import TextLogo from '@/shared/TextLogo/TextLogo';
 
 // eslint-disable-next-line prettier/prettier, import/no-absolute-path
 import AuthIllustration from '/auth-background.png';
+import { IconArrowLeft } from '@tabler/icons-react';
 
 interface AuthLayoutProps extends PropsWithChildren {
     illustrationAlt?: string;
     loading?: boolean;
     subtitle?: string;
     title?: string;
+    onBack? : () => void;
+
 }
 
 export default function AuthLayout({
@@ -20,10 +23,11 @@ export default function AuthLayout({
     loading = false,
     subtitle,
     title,
+    onBack
 }: AuthLayoutProps) {
     const {screen, isTab} = useScreenSize();
 
-    const titleSize = screen === 'mobile' ? 'h3' : 'h3';
+    const titleSize = screen === 'mobile' ? 'h2' : 'h2';
     const subtitleSize = screen === 'mobile' ? 'md' : 'lg';
 
     return (
@@ -75,6 +79,16 @@ export default function AuthLayout({
                                 size="lg"
                             />
                         </Box>
+                        <Stack justify='center' mx="auto">
+                          {
+                            onBack &&
+                            (
+                              <ActionIcon onClick={onBack} variant='light' color='blue' size="lg">
+                                <IconArrowLeft />
+                              </ActionIcon>
+                            )
+                          }
+                        </Stack>
 
                         {(title || subtitle) && (
                             <Stack

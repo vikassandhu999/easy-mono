@@ -1,5 +1,6 @@
+import {Button, Group, SegmentedControl, TextInput, Title, Stack} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconPlus, IconSearch, IconX} from '@tabler/icons-react';
+import {IconPlus,  IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
 
@@ -7,8 +8,7 @@ import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
 import PagePaper from '@/shared/containers/PagePaper';
-
-import classes from './styles.module.css';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
 
 type StatusTab = 'active' | 'all' | 'inactive' | 'pending';
 
@@ -36,8 +36,8 @@ const ClientListPage = () => {
         navigate(`/clients/${clientId}`);
     };
 
-    const handleTabChange = (value: StatusTab) => {
-        setActiveTab(value);
+    const handleTabChange = (value: string) => {
+        setActiveTab(value as StatusTab);
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,80 +50,56 @@ const ClientListPage = () => {
 
     return (
         <PagePaper bottomGutter>
-            <div className={classes.pageContainer}>
-                {/* Header */}
-                <div className={classes.headerSection}>
-                    <div className={classes.headerRow}>
-                        <div className={classes.headerContent}>
-                            <h1 className={classes.pageTitle}>Clients</h1>
-                            <p className={classes.pageDescription}>
-                                Manage your client roster, invite new clients, and track their progress
-                            </p>
-                        </div>
-                        <button
-                            className={classes.createButton}
+            <PaddingContainer>
+                <Stack gap="md">
+                    {/* Header */}
+                    <Group justify="space-between" pt="md">
+                        <Title order={1}>Clients</Title>
+                        <Button
                             onClick={() => openDrawer(DRAWER_KEYS.CLIENT_INVITE)}
-                            type="button"
+                            rightSection={<IconPlus size={20} />}
+                            radius="xl"
+                            size="sm"
                         >
-                            <IconPlus size={16} />
                             Invite
-                        </button>
-                    </div>
-                </div>
+                        </Button>
+                    </Group>
 
-                {/* Content */}
-                <div className={classes.contentSection}>
-                    <div className={classes.container}>
-                        {/* Status Tabs */}
-                        <div className={classes.statusTabs}>
-                            {STATUS_TABS.map((tab) => (
-                                <button
-                                    className={`${classes.statusTab} ${
-                                        activeTab === tab.value ? classes.statusTabActive : ''
-                                    }`}
-                                    key={tab.value}
-                                    onClick={() => handleTabChange(tab.value)}
-                                    type="button"
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                    {/* Status Tabs */}
+                    <SegmentedControl
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        data={STATUS_TABS}
+                        radius="xl"
+                        fullWidth
+                    />
 
-                        {/* Search Input */}
-                        <div className={classes.searchWrapper}>
-                            <IconSearch
-                                className={classes.searchIcon}
-                                size={16}
-                            />
-                            <input
-                                className={classes.searchInput}
-                                onChange={handleSearchChange}
-                                placeholder="Search clients..."
-                                type="text"
-                                value={searchInput}
-                            />
-                            {searchInput && (
-                                <button
-                                    aria-label="Clear search"
-                                    className={classes.clearButton}
+                    {/* Search Input */}
+                    <TextInput
+                        placeholder="Search clients..."
+                        value={searchInput}
+                        onChange={handleSearchChange}
+                        rightSection={
+                            searchInput ? (
+                                <IconX
+                                    size={14}
+                                    style={{cursor: 'pointer'}}
                                     onClick={handleClearSearch}
-                                    type="button"
-                                >
-                                    <IconX size={14} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div>
-                        <ClientList
-                            onClientClick={handleClientClick}
-                            search={search}
-                            status={activeTab === 'all' ? undefined : activeTab}
-                        />
-                    </div>
-                </div>
-            </div>
+                                    aria-label="Clear search"
+                                />
+                            ) : null
+                        }
+                        radius="xl"
+                    />
+
+                    {/* Client List */}
+                    <ClientList
+                        onClientClick={handleClientClick}
+                        search={search}
+                        status={activeTab === 'all' ? undefined : activeTab}
+                    />
+                </Stack>
+            </PaddingContainer>
         </PagePaper>
     );
 };

@@ -1,5 +1,9 @@
 import {baseAPISlice} from '../baseAPISlice';
 import {
+    CheckEmailRequest,
+    CheckEmailResponse,
+    CheckHandleRequest,
+    CheckHandleResponse,
     RefreshTokenRequest,
     RefreshTokenResponse,
     type RegisterRequest,
@@ -72,6 +76,20 @@ export const authApi = baseAPISlice.injectEndpoints({
             }),
             invalidatesTags: ['Coach'],
         }),
+        checkEmail: build.mutation<CheckEmailResponse, CheckEmailRequest>({
+            query: (body) => ({
+                url: '/api/auth/check-email',
+                method: 'post',
+                data: body,
+            }),
+        }),
+        checkHandle: build.mutation<CheckHandleResponse, CheckHandleRequest>({
+            query: (body) => ({
+                url: '/api/auth/check-handle',
+                method: 'post',
+                data: body,
+            }),
+        }),
     }),
     overrideExisting: false,
 });
@@ -85,4 +103,6 @@ export const {
     useVerifyLoginMutation,
     useProfileQuery,
     useUpdateCoachProfileMutation,
+    useCheckEmailMutation,
+    useCheckHandleMutation,
 } = authApi;

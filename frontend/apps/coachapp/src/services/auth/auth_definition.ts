@@ -40,17 +40,58 @@ export type VerifyLoginRequest = z.infer<typeof VerifyLogin_zod>;
 
 export const Register_zod = z.object({
     email: z.string().email('Invalid email format'),
-    first_name: z.string().min(2, 'First name is too short.').max(127, 'Name is too long'),
-    last_name: z.string().min(2, 'Last name is too short.').max(127, 'Name is too long'),
-    business_name: z.string().min(2, 'Business name is too short').max(127, 'Business name is too long'),
+    first_name: z.string().min(2, 'First name is too short.').max(255, 'First name is too long'),
+    last_name: z.string().min(2, 'Last name is too short.').max(255, 'Last name is too long'),
+    business_name: z.string().min(2, 'Business name is too short').max(255, 'Business name is too long'),
     business_handle: z
         .string()
-        .min(3, 'Business handle must be at least 3 characters')
-        .max(30, 'Business handle must be no more than 30 characters')
-        .regex(/^[a-z0-9_-]+$/, 'Business handle can only contain lowercase letters, numbers, hyphens, and underscores')
-        .regex(/^[a-z0-9]/, 'Business handle must start with a letter or number')
-        .regex(/[a-z0-9]$/, 'Business handle must end with a letter or number'),
+        .min(2, 'Business handle must be at least 2 characters')
+        .max(32, 'Business handle must be no more than 32 characters')
+        .regex(/^[a-zA-Z0-9_-]+$/, 'Business handle can only contain letters, numbers, hyphens, and underscores'),
 });
+
+/* --------- Personal Info (Step 1) */
+export const PersonalInfo_zod = z.object({
+    email: z.string().email('Invalid email format'),
+    first_name: z.string().min(2, 'First name is too short.').max(255, 'First name is too long'),
+    last_name: z.string().min(2, 'Last name is too short.').max(255, 'Last name is too long'),
+});
+
+export type PersonalInfoRequest = z.infer<typeof PersonalInfo_zod>;
+
+/* --------- Business Info (Step 2) */
+export const BusinessInfo_zod = z.object({
+    business_name: z.string().min(2, 'Business name is too short').max(255, 'Business name is too long'),
+    business_handle: z
+        .string()
+        .min(2, 'Business handle must be at least 2 characters')
+        .max(32, 'Business handle must be no more than 32 characters')
+        .regex(/^[a-zA-Z0-9_-]+$/, 'Business handle can only contain letters, numbers, hyphens, and underscores'),
+});
+
+export type BusinessInfoRequest = z.infer<typeof BusinessInfo_zod>;
+
+/* --------- Check Email Availability */
+export const CheckEmail_zod = z.object({
+    email: z.string().email('Invalid email format'),
+});
+
+export interface CheckEmailResponse {
+    available: boolean;
+}
+
+export type CheckEmailRequest = z.infer<typeof CheckEmail_zod>;
+
+/* --------- Check Handle Availability */
+export const CheckHandle_zod = z.object({
+    handle: z.string().min(2).max(32),
+});
+
+export interface CheckHandleResponse {
+    available: boolean;
+}
+
+export type CheckHandleRequest = z.infer<typeof CheckHandle_zod>;
 
 export interface RegisterResponse {
     token: {

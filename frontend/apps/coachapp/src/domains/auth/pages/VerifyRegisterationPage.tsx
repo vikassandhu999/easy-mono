@@ -41,7 +41,7 @@ const VerifyRegisterationPage: React.FC = () => {
             const resp = await verifyPasscode(values).unwrap();
             saveAuthTokens(resp.access_token, resp.refresh_token);
 
-            navigate('/');
+            navigate('/clients');
         } catch (err) {
             const errMsg = humanizeError(err);
             notifyError(errMsg);

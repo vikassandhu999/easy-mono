@@ -29,7 +29,7 @@ export function NavItemButton({item, onNavigate}: NavItemButtonProps) {
             style={{
                 background: isActive ? theme.colors.blue[0] : 'transparent',
                 border: 'none',
-                borderRadius: 'var(--callout-offset)',
+                borderRadius:theme.radius.md,
                 color: isActive ? theme.colors.blue[6] : theme.colors.gray[7],
                 cursor: 'pointer',
                 fontSize: 'var(--callout-font-size)',

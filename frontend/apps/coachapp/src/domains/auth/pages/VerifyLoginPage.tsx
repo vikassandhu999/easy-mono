@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Center, PinInput, Stack, Text} from '@mantine/core';
-import {IconArrowLeft, IconArrowRight} from '@tabler/icons-react';
+import { IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
@@ -42,7 +42,7 @@ const VerifyLoginPage: React.FC = () => {
 
             saveAuthTokens(resp.access_token, resp.refresh_token);
 
-            navigate('/');
+            navigate('/clients');
         } catch (err) {
             const errMsg = humanizeError(err);
 
@@ -56,6 +56,7 @@ const VerifyLoginPage: React.FC = () => {
         <AuthLayout
             subtitle={`Enter the 6-digit code sent to ${emailFromParams}`}
             title="Verify your email"
+            onBack={() => {navigate("/login")}}
         >
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Stack gap="md">
@@ -100,19 +101,7 @@ const VerifyLoginPage: React.FC = () => {
                         Verify Passcode
                     </Button>
 
-                    <Stack
-                        align="center"
-                        gap="md"
-                    >
-                        <Button
-                            leftSection={<IconArrowLeft size={16} />}
-                            onClick={() => navigate('/login')}
-                            size="sm"
-                            variant="subtle"
-                        >
-                            Back to sign in
-                        </Button>
-                    </Stack>
+
 
                     {/* Hidden token_id field */}
                     <input

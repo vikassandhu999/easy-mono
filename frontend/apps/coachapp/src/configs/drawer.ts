@@ -125,6 +125,20 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         prev_key: null,
         values: ['client_id'],
     },
+    {
+        id: 'client-overview',
+        key: 'client_overview',
+        type: 'view',
+        prev_key: null,
+        values: ['client_id'],
+    },
+    {
+        id: 'client-settings',
+        key: 'client_settings',
+        type: 'view',
+        prev_key: null,
+        values: ['client_id'],
+    },
     // Profile drawers
     {
         id: 'business-edit',
@@ -196,6 +210,8 @@ export const DRAWER_KEYS = {
     // Client
     CLIENT_INVITE: 'client_invite',
     CLIENT_EDIT: 'client_edit',
+    CLIENT_OVERVIEW: 'client_overview',
+    CLIENT_SETTINGS: 'client_settings',
 
     // Profile
     BUSINESS_EDIT: 'business_edit',

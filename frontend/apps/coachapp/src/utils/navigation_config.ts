@@ -14,9 +14,12 @@ export const ROUTES_WITH_NAVIGATION = [
     '/settings', // Settings list page
     '/library', // library list page
     '/profile',
+    '/page', // My page
 ];
 
-export const ROUTE_PATTERNS_WITH_NAVIGATION = [];
+export const ROUTE_PATTERNS_WITH_NAVIGATION: RegExp[] = [
+    /^\/clients\/[^/]+$/, // /clients/:id - client detail page
+];
 
 /**
  * Check if a given pathname should hide navigation.

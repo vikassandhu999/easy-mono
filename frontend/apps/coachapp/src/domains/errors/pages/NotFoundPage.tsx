@@ -8,6 +8,15 @@ export function NotFoundPage() {
     const navigate = useNavigate();
 
     const redirectBack = () => {
+        const currentPath = window.location.pathname;
+
+        setTimeout(() => {
+            if (window.location.pathname === currentPath) {
+                navigate('/clients', {replace: true});
+            }
+        }, 100);
+
+        // Try to go back
         navigate(-1);
     };
 

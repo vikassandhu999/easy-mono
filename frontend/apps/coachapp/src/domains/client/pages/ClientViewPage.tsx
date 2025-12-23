@@ -1,27 +1,15 @@
-import {Avatar, Badge, Card, Group, Stack, Text} from '@mantine/core';
-import {useState} from 'react';
+import {ActionIcon, Avatar, Badge, Button, Card, Group, Stack, Text, Title} from '@mantine/core';
+import {IconArrowLeft, IconSettings} from '@tabler/icons-react';
 import {useNavigate, useParams} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import useScreenSize from '@/hooks/useScreenSize';
 import {useGetClient} from '@/services/clients';
-import HeadingContainer from '@/shared/containers/HeaderContainer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
 import PagePaper from '@/shared/containers/PagePaper';
-import Header from '@/shared/layouts/Header';
 
-import classes from './styles.module.css';
-import {OverviewTab, PlansTab, SettingsTab} from './tabs';
-import { capitalizeWords } from '@/utils/text';
-
-type TabValue = 'overview' | 'plans' | 'settings';
-
-const TABS: {color: string; id: string; label: string; value: TabValue}[] = [
-    {id: 'overview', label: 'Overview', value: 'overview', color: 'blue'},
-    {id: 'plans', label: 'Plans', value: 'plans', color: 'green'},
-    {id: 'settings', label: 'Settings', value: 'settings', color: 'orange'},
-];
+import {PlansTab} from './tabs';
+import {capitalizeWords} from '@/utils/text';
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -38,23 +26,10 @@ const getStatusColor = (status: string) => {
     }
 };
 
-const getColorClass = (color: string, isActive: boolean) => {
-    if (!isActive) return '';
-    const colorMap: Record<string, string> = {
-        blue: classes.chipBlue,
-        green: classes.chipGreen,
-        cyan: classes.chipCyan,
-        orange: classes.chipOrange,
-    };
-    return colorMap[color] || '';
-};
-
 const ClientViewPage = () => {
     const {id} = useParams<{id: string}>();
     const navigate = useNavigate();
-    const {isMobile} = useScreenSize();
     const {openDrawer} = useParamsDrawer({});
-    const [activeTab, setActiveTab] = useState<TabValue>(TABS[0].value);
 
     const {
         data: client,
@@ -84,101 +59,105 @@ const ClientViewPage = () => {
         );
     }
 
-    const handleTabChange = (value: TabValue) => {
-        setActiveTab(value);
-    };
-
     const handleAddPlan = () => {
         openDrawer(DRAWER_KEYS.ASSIGN_PLAN, {client_id: id!});
     };
 
+    const handleOpenOverview = () => {
+        openDrawer(DRAWER_KEYS.CLIENT_OVERVIEW, {client_id: id!});
+    };
+
+    const handleOpenSettings = () => {
+        openDrawer(DRAWER_KEYS.CLIENT_SETTINGS, {client_id: id!});
+    };
+
     return (
         <PagePaper bottomGutter>
-            <HeadingContainer>
-                <Header
-                    onBack={() => navigate('/clients')}
-                    title={client.full_name}
-                />
-            </HeadingContainer>
-
             <PaddingContainer>
-                <Card
-                    padding="lg"
-                    radius="md"
-                >
-                    <Group
-                        align="flex-start"
-                        wrap="nowrap"
+                {/* Header Row: Back + Name + Overview Button + Settings Icon */}
+
+                <Group justify="space-between" py="md">
+                  <Group>
+                    <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="lg"
+                        onClick={() => navigate('/clients')}
+                        aria-label="Go back"
                     >
-                        <Avatar
-                            color="initials"
-                            name={client.full_name}
+                        <IconArrowLeft size={26} />
+                    </ActionIcon>
+                    <Title order={1}>{client.full_name}</Title>
+
+                  </Group>
+
+
+
+                    <Group gap="xs" wrap="nowrap">
+                        <Button
+                            variant="light"
+                            size="xs"
                             radius="xl"
-                            size="xl"
-                        />
-                        <Stack gap="xs">
-                            <Group>
-                                <Text
-                                    fw={700}
-                                    size="lg"
-                                >
+                            onClick={handleOpenOverview}
+                        >
+                            Overview
+                        </Button>
+                        <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="lg"
+                            onClick={handleOpenSettings}
+                            aria-label="Settings"
+                        >
+                            <IconSettings size={20} />
+                        </ActionIcon>
+                    </Group>
+                </Group>
+
+
+                {/* Summary Card */}
+                <Card
+                    withBorder
+                    radius="lg"
+                    padding="lg"
+                    mb="xl"
+                    bg="gray.0"
+                >
+                    <Group justify="space-between" wrap="nowrap">
+                        <Group gap="md" wrap="nowrap">
+                            <Avatar
+                                color="initials"
+                                name={client.full_name}
+                                radius="xl"
+                                size={48}
+                            />
+                            <Stack gap={2}>
+                                <Text fw={600} size="md">
                                     {client.full_name}
                                 </Text>
-                                <Badge
-                                    color={getStatusColor(client.status)}
-                                    variant="light"
-                                >
-                                    {capitalizeWords(client.status)}
-                                </Badge>
-                            </Group>
-
-                            <Stack gap={4}>
-                                <Text
-                                    c="dimmed"
-                                    size="sm"
-                                >
-                                    Email: {client.email}
+                                <Text size="sm" c="dimmed">
+                                    {client.email}
                                 </Text>
-                                {client.phone && (
-                                    <Text
-                                        c="dimmed"
-                                        size="sm"
-                                    >
-                                        Phone: {client.phone}
-                                    </Text>
-                                )}
                             </Stack>
-                        </Stack>
+                        </Group>
+                        <Badge
+                            color={getStatusColor(client.status)}
+                            size="md"
+                            variant="light"
+                            radius="xl"
+                        >
+                            {capitalizeWords(client.status)}
+                        </Badge>
                     </Group>
                 </Card>
 
-                {/* Custom Styled Chips */}
-                <div className={`${classes.chips} ${isMobile ? classes.chipsMobile : ''}`}>
-                    {TABS.map(({id, label, value, color}) => {
-                        const isActive = activeTab === value;
-                        return (
-                            <button
-                                className={`${classes.chip} ${isActive ? classes.chipActive : ''} ${getColorClass(color, isActive)}`}
-                                key={id}
-                                onClick={() => handleTabChange(value)}
-                                type="button"
-                            >
-                                <span className={classes.chipDot} />
-                                {label}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <Stack mt="xl">
-                    {activeTab === 'overview' && <OverviewTab client={client} />}
-                    {activeTab === 'plans' && (
-                        <PlansTab
-                            clientId={id!}
-                            onAddPlan={handleAddPlan}
-                        />
-                    )}
-                    {activeTab === 'settings' && <SettingsTab client={client} />}
+                {/* Current Plans Section */}
+                <Stack gap="md">
+                    <Title order={5}>Current Plans</Title>
+                    <PlansTab
+                        clientId={id!}
+                        onAddPlan={handleAddPlan}
+                    />
                 </Stack>
             </PaddingContainer>
         </PagePaper>

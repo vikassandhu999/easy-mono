@@ -145,6 +145,12 @@ export interface UserProfileResponse {
         business_id: string;
         bio: null | string;
         specialties: string[];
+        instagram_url: null | string;
+        facebook_url: null | string;
+        youtube_url: null | string;
+        x_url: null | string;
+        years_of_experience: null | number;
+        certifications: string[];
         stats: CoachStats;
     };
     user: {
@@ -156,12 +162,57 @@ export interface UserProfileResponse {
     };
 }
 
+// Helper to count words in a string
+const countWords = (text: string): number => {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+};
+
 // Update Coach Profile
 export const UpdateCoachProfile_zod = z.object({
     first_name: z.string().min(1, 'First name is required').max(127),
     last_name: z.string().min(1, 'Last name is required').max(127),
-    bio: z.string().max(500).optional().nullable(),
-    specialties: z.array(z.string()).optional(),
+    bio: z
+        .string()
+        .optional()
+        .nullable()
+        .refine((val) => !val || countWords(val) <= 200, {
+            message: 'Bio cannot exceed 200 words',
+        }),
+    specialties: z
+        .array(z.string())
+        .max(6, 'Maximum 6 specialties allowed')
+        .optional(),
+    instagram_url: z
+        .string()
+        .url('Please enter a valid URL')
+        .optional()
+        .nullable()
+        .or(z.literal('')),
+    facebook_url: z
+        .string()
+        .url('Please enter a valid URL')
+        .optional()
+        .nullable()
+        .or(z.literal('')),
+    youtube_url: z
+        .string()
+        .url('Please enter a valid URL')
+        .optional()
+        .nullable()
+        .or(z.literal('')),
+    x_url: z
+        .string()
+        .url('Please enter a valid URL')
+        .optional()
+        .nullable()
+        .or(z.literal('')),
+    years_of_experience: z
+        .number()
+        .int()
+        .min(0, 'Years of experience must be 0 or greater')
+        .optional()
+        .nullable(),
+    certifications: z.array(z.string()).optional(),
 });
 
 export type UpdateCoachProfileRequest = z.infer<typeof UpdateCoachProfile_zod>;

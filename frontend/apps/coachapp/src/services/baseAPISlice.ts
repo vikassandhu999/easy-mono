@@ -238,6 +238,7 @@ export const baseAPISlice = createApi({
         'Plans',
         'PlanSessions',
         'Coach', // Coach profile management
+        'Profile', // User profile (auth/me endpoint)
         'Business', // Business preferences management
         'BusinessSettings', // Business settings (public join, branding)
         'Recipes', // Recipe management

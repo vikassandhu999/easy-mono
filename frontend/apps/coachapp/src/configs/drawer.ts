@@ -148,10 +148,17 @@ export const DRAWER_CONFIG: DrawerConfig[] = [
         values: [],
     },
     {
+        id: 'coach-profile-view',
+        key: 'coach_profile_view',
+        type: 'view',
+        prev_key: null,
+        values: [],
+    },
+    {
         id: 'coach-profile-edit',
         key: 'coach_profile_edit',
         type: 'edit',
-        prev_key: null,
+        prev_key: 'coach_profile_view',
         values: [],
     },
     // Assign Plan drawers
@@ -215,6 +222,7 @@ export const DRAWER_KEYS = {
 
     // Profile
     BUSINESS_EDIT: 'business_edit',
+    COACH_PROFILE_VIEW: 'coach_profile_view',
     COACH_PROFILE_EDIT: 'coach_profile_edit',
 
     // Assign Plan

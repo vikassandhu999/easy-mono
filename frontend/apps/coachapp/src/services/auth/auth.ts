@@ -61,6 +61,7 @@ export const authApi = baseAPISlice.injectEndpoints({
                 url: '/api/auth/me',
                 method: 'get',
             }),
+            providesTags: ['Profile'],
         }),
         logout: build.mutation<{status: string}, void>({
             query: () => ({
@@ -74,7 +75,7 @@ export const authApi = baseAPISlice.injectEndpoints({
                 method: 'patch',
                 data: body,
             }),
-            invalidatesTags: ['Coach'],
+            invalidatesTags: ['Coach', 'Profile'],
         }),
         checkEmail: build.mutation<CheckEmailResponse, CheckEmailRequest>({
             query: (body) => ({

@@ -62,7 +62,7 @@ export default function SettingsPage() {
     const handleSettingClick = (id: string) => {
         switch (id) {
             case 'profile':
-                openDrawer(DRAWER_KEYS.COACH_PROFILE_EDIT);
+                openDrawer(DRAWER_KEYS.COACH_PROFILE_VIEW);
                 break;
             case 'business':
                 openDrawer(DRAWER_KEYS.BUSINESS_EDIT);

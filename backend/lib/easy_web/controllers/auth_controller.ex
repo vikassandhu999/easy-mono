@@ -168,6 +168,12 @@ defmodule EasyWeb.AuthController do
                 business_id: coach.business_id,
                 bio: coach.bio,
                 specialties: coach.specialties || [],
+                instagram_url: coach.instagram_url,
+                facebook_url: coach.facebook_url,
+                youtube_url: coach.youtube_url,
+                x_url: coach.x_url,
+                years_of_experience: coach.years_of_experience,
+                certifications: coach.certifications || [],
                 stats: %{
                   total_clients: total_clients,
                   total_plans: total_nutrition_plans + total_training_plans
@@ -233,7 +239,18 @@ defmodule EasyWeb.AuthController do
     Scope.require_role!(scope, "coach")
 
     user_attrs = Map.take(params, ["first_name", "last_name"])
-    coach_attrs = Map.take(params, ["bio", "specialties"])
+
+    coach_attrs =
+      Map.take(params, [
+        "bio",
+        "specialties",
+        "instagram_url",
+        "facebook_url",
+        "youtube_url",
+        "x_url",
+        "years_of_experience",
+        "certifications"
+      ])
 
     with %Accounts.User{} = user <- Repo.get(Accounts.User, scope.user_id),
          {:ok, updated_user} <- Accounts.update_user(user, user_attrs),

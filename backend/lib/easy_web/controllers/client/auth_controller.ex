@@ -1,10 +1,4 @@
 defmodule EasyWeb.Client.AuthController do
-  @moduledoc """
-  Authentication controller for client-specific endpoints.
-
-  This controller handles authentication flows for the client app,
-  ensuring users have valid client records before granting access.
-  """
   use EasyWeb, :controller
   alias Easy.Repo
   require Logger

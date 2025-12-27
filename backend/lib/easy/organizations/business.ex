@@ -1,9 +1,4 @@
 defmodule Easy.Organizations.Business do
-  @moduledoc """
-  Business schema representing a coaching practice or organization.
-
-  Businesses are owned by users and can have multiple coaches and clients.
-  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -58,9 +53,6 @@ defmodule Easy.Organizations.Business do
     :timezone
   ]
 
-  @doc """
-  Changeset for creating or updating a business.
-  """
   def changeset(business, attrs) do
     business
     |> cast(attrs, @castable_fields)
@@ -71,10 +63,6 @@ defmodule Easy.Organizations.Business do
     |> validate_format(:website, ~r/^https?:\/\//, message: "must start with http:// or https://")
   end
 
-  @doc """
-  Changeset for creating a new business.
-  Automatically generates slug from name if not provided.
-  """
   def create_changeset(business, attrs) do
     business
     |> cast(attrs, [:name, :description, :owner_id, :status, :handle | @castable_fields])
@@ -85,9 +73,6 @@ defmodule Easy.Organizations.Business do
     |> foreign_key_constraint(:owner_id)
   end
 
-  @doc """
-  Changeset for updating business profile/settings.
-  """
   def update_changeset(business, attrs) do
     business
     |> cast(attrs, [

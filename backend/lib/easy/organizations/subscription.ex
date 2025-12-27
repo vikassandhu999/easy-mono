@@ -1,10 +1,4 @@
 defmodule Easy.Organizations.Subscription do
-  @moduledoc """
-  Subscription schema for business billing and plan management.
-
-  Tracks subscription status, billing periods, and trial periods for businesses.
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -78,12 +72,6 @@ defmodule Easy.Organizations.Subscription do
     changeset(subscription, attrs)
   end
 
-  @doc """
-  Creates a changeset for a trial subscription.
-
-  ## Options
-  - `trial_days` - Number of days for trial period (default: 30)
-  """
   def trial_changeset(subscription, business_id, plan_id, trial_days \\ 30) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     trial_end = DateTime.add(now, trial_days * 24 * 60 * 60, :second)
@@ -103,18 +91,10 @@ defmodule Easy.Organizations.Subscription do
     changeset(subscription, attrs)
   end
 
-  @doc """
-  Returns true if subscription is currently in trial period.
-  """
   @spec is_trial?(t()) :: boolean()
   def is_trial?(%__MODULE__{status: "trial"}), do: true
   def is_trial?(_), do: false
 
-  @doc """
-  Returns true if trial period has expired.
-
-  Checks if trial_end is in the past. Returns false if no trial period exists.
-  """
   @spec trial_expired?(t()) :: boolean()
   def trial_expired?(%__MODULE__{trial_end: nil}), do: false
 
@@ -122,9 +102,6 @@ defmodule Easy.Organizations.Subscription do
     DateTime.compare(trial_end, DateTime.utc_now()) == :lt
   end
 
-  @doc """
-  Returns subscription status as an atom for pattern matching.
-  """
   @spec status_atom(t()) :: :active | :trial | :trial_expired | :cancelled | :expired
   def status_atom(%__MODULE__{status: "active"}), do: :active
   def status_atom(%__MODULE__{status: "trial"}), do: :trial

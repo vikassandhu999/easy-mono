@@ -7,58 +7,45 @@ defmodule EasyWeb.Coach.WorkoutElementController do
   plug :authorize_resource when action in [:show, :update, :delete]
 
   def create(conn, %{"workout_element" => element_params}) do
-    with claims <- conn.assigns.token_claims,
-         business_id <- claims["business_id"],
-         planned_workout_id <- element_params["planned_workout_id"],
-         # Verify the workout belongs to a training plan owned by this business
-         {:ok, _workout} <- verify_workout_ownership(business_id, planned_workout_id),
-         sets_attrs <- Map.get(element_params, "sets", []),
-         element_attrs <- Map.delete(element_params, "sets"),
+    business_id = conn.assigns.token_claims["business_id"]
+    workout_id = element_params["planned_workout_id"]
+    sets_attrs = Map.get(element_params, "sets", [])
+    element_attrs = Map.delete(element_params, "sets")
+
+    with {:ok, _} <- verify_workout_ownership(business_id, workout_id),
          {:ok, element} <-
-           create_element_with_sets(business_id, planned_workout_id, element_attrs, sets_attrs) do
+           create_element_with_sets(business_id, workout_id, element_attrs, sets_attrs) do
       conn
       |> put_status(:created)
-      |> render(:show, %{workout_element: element})
+      |> render(:show, workout_element: element)
     end
   end
 
   def show(conn, _params) do
-    conn
-    |> put_status(:ok)
-    |> render(:show, %{workout_element: conn.assigns.workout_element})
+    render(conn, :show, workout_element: conn.assigns.workout_element)
   end
 
   def update(conn, %{"workout_element" => element_params}) do
     element = conn.assigns.workout_element
+    business_id = conn.assigns.token_claims["business_id"]
     sets_attrs = Map.get(element_params, "sets")
     element_attrs = Map.delete(element_params, "sets")
 
-    result =
-      if sets_attrs do
-        Training.update_workout_element_with_sets(element, element_attrs, sets_attrs)
-      else
-        Training.update_workout_element(element, element_attrs)
-      end
-
-    case result do
-      {:ok, updated_element} ->
-        business_id = conn.assigns.token_claims["business_id"]
-        full_element = Training.get_workout_element!(business_id, updated_element.id)
-
-        conn
-        |> put_status(:ok)
-        |> render(:show, %{workout_element: full_element})
-
-      {:error, changeset} ->
-        {:error, changeset}
+    with {:ok, updated} <- do_update(element, element_attrs, sets_attrs) do
+      render(conn, :show, workout_element: Training.get_workout_element!(business_id, updated.id))
     end
   end
 
   def delete(conn, _params) do
-    with {:ok, _deleted_element} <- Training.delete_workout_element(conn.assigns.workout_element) do
+    with {:ok, _} <- Training.delete_workout_element(conn.assigns.workout_element) do
       send_resp(conn, :no_content, "")
     end
   end
+
+  defp do_update(element, attrs, nil), do: Training.update_workout_element(element, attrs)
+
+  defp do_update(element, attrs, sets),
+    do: Training.update_workout_element_with_sets(element, attrs, sets)
 
   defp authorize_resource(conn, _opts) do
     with %{"id" => id} <- conn.params,
@@ -66,8 +53,7 @@ defmodule EasyWeb.Coach.WorkoutElementController do
          {:ok, element} <- Training.fetch_workout_element(business_id, id) do
       assign(conn, :workout_element, element)
     else
-      _ ->
-        FallbackController.not_found_response(conn, "Workout element not found.")
+      _ -> FallbackController.not_found_response(conn, "Workout element not found.")
     end
   end
 
@@ -75,22 +61,15 @@ defmodule EasyWeb.Coach.WorkoutElementController do
     Training.fetch_planned_workout(business_id, workout_id)
   end
 
-  defp verify_workout_ownership(_business_id, _workout_id), do: {:error, :invalid_workout_id}
+  defp verify_workout_ownership(_, _), do: {:error, :invalid_workout_id}
 
-  defp create_element_with_sets(business_id, planned_workout_id, element_attrs, []) do
-    Training.create_workout_element(business_id, planned_workout_id, element_attrs)
-    |> case do
-      {:ok, element} -> {:ok, Training.get_workout_element!(business_id, element.id)}
-      error -> error
+  defp create_element_with_sets(business_id, workout_id, attrs, []) do
+    with {:ok, element} <- Training.create_workout_element(business_id, workout_id, attrs) do
+      {:ok, Training.get_workout_element!(business_id, element.id)}
     end
   end
 
-  defp create_element_with_sets(business_id, planned_workout_id, element_attrs, sets_attrs) do
-    Training.create_workout_element_with_sets(
-      business_id,
-      planned_workout_id,
-      element_attrs,
-      sets_attrs
-    )
+  defp create_element_with_sets(business_id, workout_id, attrs, sets) do
+    Training.create_workout_element_with_sets(business_id, workout_id, attrs, sets)
   end
 end

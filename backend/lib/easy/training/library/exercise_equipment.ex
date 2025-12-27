@@ -10,7 +10,6 @@ defmodule Easy.Training.Library.ExerciseEquipment do
     timestamps()
   end
 
-  @doc false
   def changeset(exercise_equipment, attrs) do
     exercise_equipment
     |> cast(attrs, [:exercise_id, :equipment_id])

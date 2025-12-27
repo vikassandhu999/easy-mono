@@ -1,8 +1,4 @@
 defmodule Easy.Training.Schema do
-  @moduledoc """
-  Shared kernel schema for the Training domain.
-  Enforces binary_id (UUID) primary keys and standard timestamp configuration.
-  """
   defmacro __using__(_) do
     quote do
       use Ecto.Schema

@@ -1,25 +1,4 @@
 defmodule Easy.Scheduling do
-  @moduledoc """
-  Scheduling context (computed-on-read MVP).
-
-  This context builds a client-facing "schedule" by reading the currently assigned
-  training and nutrition plans for a client and projecting them onto calendar days.
-
-  It merges two independent sources:
-  - Training (weekly): `Easy.Training.Programming.TrainingPlan` with `planned_workouts.day_number` (1..7 ISO weekday)
-  - Nutrition (weekly): `Easy.Nutrition.NutritionPlan` with `meals.day_number` (1..7 ISO weekday)
-
-  IMPORTANT ARCHITECTURE NOTES
-  - Tenant isolation: all DB queries are scoped by `business_id`.
-  - Controllers must remain thin: this module returns `{:ok, result}` / `{:error, reason}` tuples.
-  - Performance: avoid N+1 by querying and preloading needed associations up front.
-
-  For MVP correctness, "completion" is derived from existing tracking/log models.
-  Training completion uses `WorkoutSession` state for the planned workout. We pick the
-  most recent session for that planned workout (optionally within the day).
-  Nutrition completion is not logged yet in this code; we return placeholders.
-  """
-
   import Ecto.Query, warn: false
 
   alias Easy.Auth.Scope
@@ -34,10 +13,6 @@ defmodule Easy.Scheduling do
 
   @type iso_date :: Date.t()
 
-  @doc """
-  Returns the merged schedule for a week starting on `week_start` (Monday).
-
-  """
   @spec get_week_for_client(Scope.t(), iso_date()) :: {:ok, map()} | {:error, term()}
   def get_week_for_client(%Scope{} = scope, %Date{} = week_start) do
     with :ok <- require_client(scope),

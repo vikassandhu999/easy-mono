@@ -63,5 +63,6 @@ defmodule Easy.Nutrition.Recipe do
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:author_id)
     |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
+    |> cast_assoc(:recipe_steps, with: &RecipeStep.changeset/2)
   end
 end

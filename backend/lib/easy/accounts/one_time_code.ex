@@ -1,18 +1,4 @@
 defmodule Easy.Accounts.OneTimeToken do
-  @moduledoc """
-  One-Time Token for OTP-based authentication flows.
-
-  Used for:
-  - Email verification during coach registration
-  - Login authentication
-  - Client invitation acceptance
-
-  Tokens contain:
-  - A UUID token for invitation links
-  - A 6-digit OTP code (hashed) for verification
-  - Type to distinguish different use cases
-  """
-
   use Ecto.Schema
   import Ecto.Changeset
 

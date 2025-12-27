@@ -19,7 +19,6 @@ defmodule Easy.Training.Programming.WorkoutElement do
     timestamps()
   end
 
-  @doc false
   def changeset(workout_element, attrs) do
     workout_element
     |> cast(attrs, [:position, :superset_group_id, :notes, :exercise_id])

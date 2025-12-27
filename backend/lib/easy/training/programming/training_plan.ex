@@ -26,7 +26,6 @@ defmodule Easy.Training.Programming.TrainingPlan do
     timestamps()
   end
 
-  @doc false
   def changeset(training_plan, attrs) do
     training_plan
     |> cast(attrs, [

@@ -1,11 +1,4 @@
 defmodule Easy.Organizations.BusinessSettings do
-  @moduledoc """
-  BusinessSettings schema for storing business configuration.
-
-  This is a 1:1 relationship with Business, containing settings for:
-  - Public join link configuration
-  - Public page branding
-  """
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -29,10 +22,6 @@ defmodule Easy.Organizations.BusinessSettings do
     timestamps()
   end
 
-  @doc """
-  Changeset for creating business settings.
-  Auto-generates a unique public_join_code for every business.
-  """
   def create_changeset(settings, attrs) do
     settings
     |> cast(attrs, [:business_id])
@@ -43,9 +32,6 @@ defmodule Easy.Organizations.BusinessSettings do
     |> foreign_key_constraint(:business_id)
   end
 
-  @doc """
-  Changeset for updating public join settings.
-  """
   def public_join_changeset(settings, attrs) do
     settings
     |> cast(attrs, [
@@ -65,9 +51,6 @@ defmodule Easy.Organizations.BusinessSettings do
     |> maybe_generate_join_code()
   end
 
-  @doc """
-  Changeset for updating public page branding.
-  """
   def branding_changeset(settings, attrs) do
     settings
     |> cast(attrs, [:tagline, :cover_image_url, :accent_color])
@@ -78,9 +61,6 @@ defmodule Easy.Organizations.BusinessSettings do
     |> validate_url(:cover_image_url)
   end
 
-  @doc """
-  Full changeset for updating all settings at once.
-  """
   def changeset(settings, attrs) do
     settings
     |> cast(attrs, [
@@ -107,9 +87,6 @@ defmodule Easy.Organizations.BusinessSettings do
     |> unique_constraint(:public_join_code)
   end
 
-  @doc """
-  Generates a new random join code.
-  """
   def regenerate_code_changeset(settings) do
     settings
     |> change()
@@ -117,18 +94,11 @@ defmodule Easy.Organizations.BusinessSettings do
     |> unique_constraint(:public_join_code)
   end
 
-  @doc """
-  Clears the join code (disables code-based joining).
-  """
   def clear_code_changeset(settings) do
     settings
     |> change()
     |> put_change(:public_join_code, nil)
   end
-
-  # ===========================================================================
-  # Private Functions
-  # ===========================================================================
 
   defp maybe_generate_join_code(changeset) do
     case get_field(changeset, :public_join_enabled) do

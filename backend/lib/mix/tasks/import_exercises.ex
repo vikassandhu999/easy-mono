@@ -1,22 +1,4 @@
 defmodule Mix.Tasks.ImportExercises do
-  @moduledoc """
-  Mix task to import exercises from a JSON file into the database.
-
-  ## Usage
-
-      mix import_exercises [path_to_json]
-
-  If no path is provided, it defaults to `data/exercises_converted.json`.
-
-  ## Examples
-
-      # Import from default file
-      mix import_exercises
-
-      # Import from custom file
-      mix import_exercises data/my_exercises.json
-  """
-
   use Mix.Task
 
   import Ecto.Query, warn: false

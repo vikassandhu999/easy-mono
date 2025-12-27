@@ -1,21 +1,6 @@
 defmodule Easy.Auth.JWT do
-  @moduledoc """
-  JWT (JSON Web Token) creation and validation.
-
-  Handles access token generation for authenticated sessions.
-  Uses HS256 signing algorithm with configured secret key.
-  """
-
   @access_token_expiry_minutes 60 * 2
 
-  @doc """
-  Creates a JWT access token for a user and session.
-
-  ## Options
-  - `:expiry_minutes` - Token expiry in minutes (default: 60)
-  - `:issuer` - Token issuer (default: "easy_backend")
-  - `:audience` - Token audience (default: "easy_app")
-  """
   def create_access_token(user, session, opts \\ []) do
     expiry_minutes = Keyword.get(opts, :expiry_minutes, @access_token_expiry_minutes)
     issuer = Keyword.get(opts, :issuer, "easy_backend")
@@ -31,11 +16,6 @@ defmodule Easy.Auth.JWT do
     end
   end
 
-  @doc """
-  Validates a JWT access token.
-
-  Returns {:ok, claims} if valid, {:error, reason} if invalid.
-  """
   def validate_token(token) when is_binary(token) do
     signer = Joken.Signer.create("HS256", get_jwt_secret())
 
@@ -52,12 +32,6 @@ defmodule Easy.Auth.JWT do
     end
   end
 
-  @doc """
-  Extracts claims from a token without verification.
-
-  WARNING: Only use for debugging or when signature verification
-  is not required. Always use validate_token/1 in production.
-  """
   def peek_claims(token) when is_binary(token) do
     case Joken.peek_claims(token) do
       {:ok, claims} -> {:ok, claims}
@@ -65,9 +39,6 @@ defmodule Easy.Auth.JWT do
     end
   end
 
-  @doc """
-  Returns the default access token expiry in minutes.
-  """
   def default_expiry_minutes, do: @access_token_expiry_minutes
 
   defp build_claims(user, session, expiry_minutes, issuer, audience) do

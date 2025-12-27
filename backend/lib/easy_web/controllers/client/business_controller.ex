@@ -1,23 +1,9 @@
 defmodule EasyWeb.Client.BusinessController do
-  @moduledoc """
-  Client-facing business endpoints.
-
-  Currently provides branding details for the authenticated client's business.
-
-  Endpoints
-  - GET /api/client/business - Get business branding (name + logo_url)
-  """
-
   use EasyWeb, :controller
 
   alias Easy.Auth.Scope
   alias Easy.Organizations
 
-  @doc """
-  GET /api/client/business
-
-  Returns branding info (business name and logo_url) for the authenticated client's business.
-  """
   def show(conn, _params) do
     scope = conn.assigns.scope
 

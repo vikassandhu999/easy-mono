@@ -1,357 +1,153 @@
 defmodule Easy.Training.Library do
-  @moduledoc """
-  The Library context.
-  """
-
-  require Logger
-
   import Ecto.Query, warn: false
-  alias Easy.Repo
 
-  alias Easy.Training.Library.{Muscle, Equipment, Exercise}
+  alias Easy.Repo
+  alias Easy.Training.QueryHelpers
+  alias Easy.Training.Library.{Muscle, Equipment, Exercise, ExerciseMuscle}
+
+  @exercise_preloads [:equipment, :muscles]
 
   # Muscles
 
-  @doc """
-  Returns all muscles.
-
-  ## Examples
-
-      iex> list_muscles()
-      {:ok, [%Muscle{}, ...]}
-
-  """
   @spec list_muscles() :: {:ok, list(Muscle.t())}
-  def list_muscles do
-    muscles = Repo.all(Muscle)
-    {:ok, muscles}
-  end
+  def list_muscles, do: {:ok, Repo.all(Muscle)}
 
-  @doc """
-  Fetches a muscle by ID.
-
-  ## Examples
-
-      iex> fetch_muscle(id)
-      {:ok, %Muscle{}}
-
-      iex> fetch_muscle(invalid_id)
-      {:error, :not_found}
-
-  """
   @spec fetch_muscle(String.t()) :: {:ok, Muscle.t()} | {:error, :not_found}
-  def fetch_muscle(id) do
-    case Repo.get(Muscle, id) do
-      nil -> {:error, :not_found}
-      muscle -> {:ok, muscle}
-    end
-  end
-
-  def get_muscle!(id), do: Repo.get!(Muscle, id)
-
-  def create_muscle(attrs \\ %{}) do
-    %Muscle{}
-    |> Muscle.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_muscle(%Muscle{} = muscle, attrs) do
-    muscle
-    |> Muscle.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def delete_muscle(%Muscle{} = muscle) do
-    Repo.delete(muscle)
-  end
-
-  def change_muscle(%Muscle{} = muscle, attrs \\ %{}) do
-    Muscle.changeset(muscle, attrs)
-  end
+  def fetch_muscle(id), do: Repo.get(Muscle, id) |> wrap_result()
 
   # Equipment
 
-  @doc """
-  Returns all equipment.
-
-  ## Examples
-
-      iex> list_equipment()
-      {:ok, [%Equipment{}, ...]}
-
-  """
   @spec list_equipment() :: {:ok, list(Equipment.t())}
-  def list_equipment do
-    {:ok, Repo.all(Equipment)}
-  end
+  def list_equipment, do: {:ok, Repo.all(Equipment)}
 
-  @doc """
-  Fetches equipment by ID.
-
-  ## Examples
-
-      iex> fetch_equipment(id)
-      {:ok, %Equipment{}}
-
-      iex> fetch_equipment(invalid_id)
-      {:error, :not_found}
-
-  """
   @spec fetch_equipment(String.t()) :: {:ok, Equipment.t()} | {:error, :not_found}
-  def fetch_equipment(id) do
-    case Repo.get(Equipment, id) do
-      nil -> {:error, :not_found}
-      equipment -> {:ok, equipment}
-    end
-  end
-
-  def get_equipment!(id), do: Repo.get!(Equipment, id)
-
-  def create_equipment(attrs \\ %{}) do
-    %Equipment{}
-    |> Equipment.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_equipment(%Equipment{} = equipment, attrs) do
-    equipment
-    |> Equipment.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def delete_equipment(%Equipment{} = equipment) do
-    Repo.delete(equipment)
-  end
-
-  def change_equipment(%Equipment{} = equipment, attrs \\ %{}) do
-    Equipment.changeset(equipment, attrs)
-  end
+  def fetch_equipment(id), do: Repo.get(Equipment, id) |> wrap_result()
 
   # Exercises
 
-  @default_limit 50
-  @max_limit 100
-
-  @doc """
-  Returns the list of exercises with pagination.
-  """
   @spec list_exercises(String.t(), map()) :: {:ok, {list(Exercise.t()), map()}}
   def list_exercises(business_id, params \\ %{}) do
-    limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
-    offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()
+    limit =
+      params
+      |> QueryHelpers.fetch_param(:limit)
+      |> QueryHelpers.parse_integer()
+      |> QueryHelpers.clamp_limit()
+
+    offset =
+      params
+      |> QueryHelpers.fetch_param(:offset)
+      |> QueryHelpers.parse_integer()
+      |> QueryHelpers.normalize_offset()
+
+    search = params |> QueryHelpers.fetch_param(:search) |> QueryHelpers.parse_search()
+    muscle_ids = params |> QueryHelpers.fetch_param(:muscle_ids) |> QueryHelpers.parse_list()
 
     base_query =
       Exercise
       |> where([e], e.business_id == ^business_id or is_nil(e.business_id))
-      |> search_exercises(params)
-      |> filter_by_muscles(params)
+      |> apply_search(search)
+      |> apply_muscle_filter(muscle_ids)
 
-    total = Repo.aggregate(base_query, :count)
+    total = Repo.aggregate(base_query, :count, :id)
 
     exercises =
       base_query
       |> order_by([e], desc: e.inserted_at)
       |> limit(^limit)
       |> offset(^offset)
-      |> preload([:equipment, :muscles])
+      |> preload(^@exercise_preloads)
       |> Repo.all()
 
     {:ok, {exercises, %{limit: limit, offset: offset, total: total}}}
   end
 
-  @doc """
-  Fetches a single exercise by ID and business_id for authorization.
-  """
   @spec fetch_exercise(String.t(), String.t()) :: {:ok, Exercise.t()} | {:error, :not_found}
-  def fetch_exercise(business_id, exercise_id) do
-    # Fetch exercises that belong to the business OR are system-level (business_id is nil)
-    case Repo.one(
-           from e in Exercise,
-             where:
-               e.id == ^exercise_id and (e.business_id == ^business_id or is_nil(e.business_id)),
-             preload: [:equipment, :muscles]
-         ) do
-      nil -> {:error, :not_found}
-      exercise -> {:ok, exercise}
-    end
-  end
-
-  def get_exercise!(id) do
+  def fetch_exercise(business_id, id) do
     Exercise
-    |> Repo.get!(id)
-    |> Repo.preload([:equipment, :muscles])
+    |> where([e], e.id == ^id and (e.business_id == ^business_id or is_nil(e.business_id)))
+    |> preload(^@exercise_preloads)
+    |> Repo.one()
+    |> wrap_result()
   end
 
-  defp search_exercises(query, params) do
-    case params |> fetch_param(:search) |> parse_search() do
-      nil -> query
-      search -> where(query, [e], ilike(e.name, ^"%#{search}%"))
-    end
-  end
+  @spec get_exercise!(String.t()) :: Exercise.t()
+  def get_exercise!(id), do: Repo.get!(Exercise, id) |> Repo.preload(@exercise_preloads)
 
-  defp filter_by_muscles(query, params) do
-    case params |> fetch_param(:muscle_ids) |> parse_list() do
-      nil ->
-        query
-
-      muscle_ids ->
-        exercise_ids_subquery =
-          from(em in Easy.Training.Library.ExerciseMuscle,
-            where: em.muscle_id in ^muscle_ids,
-            select: em.exercise_id
-          )
-
-        from e in query,
-          where: e.id in subquery(exercise_ids_subquery)
-    end
-  end
-
-  defp parse_list(nil), do: nil
-  defp parse_list([]), do: nil
-  defp parse_list(list) when is_list(list), do: list
-
-  defp parse_list(string) when is_binary(string) do
-    string
-    |> String.split(",")
-    |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(&1 == ""))
-    |> case do
-      [] -> nil
-      list -> list
-    end
-  end
-
-  defp parse_list(_), do: nil
-
-  defp fetch_param(params, key) when is_atom(key) do
-    Map.get(params, key) || Map.get(params, Atom.to_string(key))
-  end
-
-  defp parse_integer(value) when is_integer(value), do: value
-  defp parse_integer(value) when is_binary(value), do: String.to_integer(value)
-  defp parse_integer(_), do: nil
-
-  defp parse_search(nil), do: nil
-
-  defp parse_search(search) when is_binary(search) do
-    search = String.trim(search)
-    if search == "", do: nil, else: search
-  end
-
-  defp parse_search(_), do: nil
-
-  defp clamp_limit(nil), do: @default_limit
-
-  defp clamp_limit(limit) when is_integer(limit) do
-    limit
-    |> max(1)
-    |> min(@max_limit)
-  end
-
-  defp normalize_offset(nil), do: 0
-
-  defp normalize_offset(offset) when is_integer(offset) do
-    max(offset, 0)
-  end
-
-  @doc """
-  Creates a business-specific exercise.
-
-  The `business_id` is set programmatically and must be provided.
-
-  ## Examples
-
-      iex> create_exercise(business_id, %{name: "Bench Press"})
-      {:ok, %Exercise{}}
-
-  """
   @spec create_exercise(String.t(), map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def create_exercise(business_id, attrs) do
     %Exercise{business_id: business_id}
     |> Exercise.changeset(attrs)
     |> Repo.insert()
-    |> case do
-      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, :muscles])}
-      {:error, changeset} -> {:error, changeset}
-    end
+    |> reload_preloads(@exercise_preloads)
   end
 
-  @doc """
-  Creates a system-level exercise (no business_id).
-
-  Only for admin/seed usage. Business-specific exercises should use `create_exercise/2`.
-
-  ## Examples
-
-      iex> create_system_exercise(%{name: "Squat"})
-      {:ok, %Exercise{business_id: nil}}
-
-  """
   @spec create_system_exercise(map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def create_system_exercise(attrs) do
     %Exercise{}
     |> Exercise.changeset(attrs)
     |> Repo.insert()
-    |> case do
-      {:ok, exercise} -> {:ok, Repo.preload(exercise, [:equipment, :muscles])}
-      {:error, changeset} -> {:error, changeset}
-    end
+    |> reload_preloads(@exercise_preloads)
   end
 
+  @spec update_exercise(Exercise.t(), map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def update_exercise(%Exercise{} = exercise, attrs) do
     exercise
     |> Exercise.changeset(attrs)
     |> Repo.update()
-    |> case do
-      {:ok, updated_exercise} ->
-        {:ok, Repo.preload(updated_exercise, [:equipment, :muscles], force: true)}
+    |> reload_preloads(@exercise_preloads, force: true)
+  end
 
-      {:error, changeset} ->
-        {:error, changeset}
+  @spec delete_exercise(Exercise.t()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
+  def delete_exercise(%Exercise{} = exercise), do: Repo.delete(exercise)
+
+  @spec duplicate_exercise(Exercise.t(), String.t()) ::
+          {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
+  def duplicate_exercise(%Exercise{} = exercise, business_id) do
+    with :ok <- authorize_access(exercise, business_id) do
+      exercise = ensure_loaded(exercise, [:exercise_muscles, :exercise_equipment])
+
+      attrs = %{
+        "name" => generate_copy_name(exercise.name, business_id),
+        "description" => exercise.description,
+        "instructions" => exercise.instructions,
+        "mechanics" => exercise.mechanics && Atom.to_string(exercise.mechanics),
+        "force" => exercise.force && Atom.to_string(exercise.force),
+        "muscle_ids" => Enum.map(exercise.exercise_muscles, & &1.muscle_id),
+        "equipment_ids" => Enum.map(exercise.exercise_equipment, & &1.equipment_id)
+      }
+
+      create_exercise(business_id, attrs)
     end
   end
 
-  def delete_exercise(%Exercise{} = exercise) do
-    Repo.delete(exercise)
+  # Private - Query Filters
+
+  defp apply_search(query, nil), do: query
+  defp apply_search(query, search), do: where(query, [e], ilike(e.name, ^"%#{search}%"))
+
+  defp apply_muscle_filter(query, nil), do: query
+
+  defp apply_muscle_filter(query, muscle_ids) do
+    exercise_ids =
+      from(em in ExerciseMuscle, where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
+
+    where(query, [e], e.id in subquery(exercise_ids))
   end
 
-  @doc """
-  Duplicates an exercise for a specific business.
-  Creates a copy of the exercise with the given business_id.
-  Handles name conflicts by incrementing copy number (e.g., "Exercise (Copy 2)").
-  """
-  @spec duplicate_exercise(Exercise.t(), String.t()) ::
-          {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
-  def duplicate_exercise(%Exercise{} = exercise, business_id) do
-    # Only preload associations if not already loaded
-    exercise = ensure_associations_loaded(exercise, [:exercise_muscles, :exercise_equipment])
+  # Private - Result Handling
 
-    # Extract muscle and equipment IDs from the original exercise
-    muscle_ids = Enum.map(exercise.exercise_muscles, & &1.muscle_id)
-    equipment_ids = Enum.map(exercise.exercise_equipment, & &1.equipment_id)
+  defp wrap_result(nil), do: {:error, :not_found}
+  defp wrap_result(record), do: {:ok, record}
 
-    # Generate a unique name for the copy
-    copy_name = generate_unique_copy_name(exercise.name, business_id)
+  defp reload_preloads(result, preloads, opts \\ [])
 
-    attrs = %{
-      "name" => copy_name,
-      "description" => exercise.description,
-      "instructions" => exercise.instructions,
-      "mechanics" => exercise.mechanics && Atom.to_string(exercise.mechanics),
-      "force" => exercise.force && Atom.to_string(exercise.force),
-      "muscle_ids" => muscle_ids,
-      "equipment_ids" => equipment_ids
-    }
+  defp reload_preloads({:ok, record}, preloads, opts),
+    do: {:ok, Repo.preload(record, preloads, opts)}
 
-    create_exercise(business_id, attrs)
-  end
+  defp reload_preloads(error, _preloads, _opts), do: error
 
-  # Ensures associations are loaded, only preloading if not already loaded
-  defp ensure_associations_loaded(struct, associations) do
-    associations_to_load =
-      Enum.reject(associations, fn assoc ->
-        Ecto.assoc_loaded?(Map.get(struct, assoc))
-      end)
+  defp ensure_loaded(struct, associations) do
+    associations_to_load = Enum.reject(associations, &Ecto.assoc_loaded?(Map.get(struct, &1)))
 
     case associations_to_load do
       [] -> struct
@@ -359,13 +155,15 @@ defmodule Easy.Training.Library do
     end
   end
 
-  # Generates a unique copy name by counting existing copies and incrementing
-  defp generate_unique_copy_name(original_name, business_id) do
-    # Strip any existing "(Copy)" or "(Copy N)" suffix to get base name
+  # Private - Authorization & Copy Name
+
+  defp authorize_access(%Exercise{business_id: nil}, _business_id), do: :ok
+  defp authorize_access(%Exercise{business_id: business_id}, business_id), do: :ok
+  defp authorize_access(_exercise, _business_id), do: {:error, :not_found}
+
+  defp generate_copy_name(original_name, business_id) do
     base_name = String.replace(original_name, ~r/\s*\(Copy(?:\s+\d+)?\)$/, "")
 
-    # Count existing copies for this business using an efficient query
-    # This uses a prefix match which can use the btree index
     copy_count =
       from(e in Exercise,
         where: e.business_id == ^business_id,
@@ -381,9 +179,5 @@ defmodule Easy.Training.Library do
     else
       "#{base_name} (Copy #{copy_count + 1})"
     end
-  end
-
-  def change_exercise(%Exercise{} = exercise, attrs \\ %{}) do
-    Exercise.changeset(exercise, attrs)
   end
 end

@@ -22,7 +22,6 @@ defmodule Easy.Training.Tracking.WorkoutSession do
     timestamps()
   end
 
-  @doc false
   def changeset(workout_session, attrs) do
     workout_session
     |> cast(attrs, [

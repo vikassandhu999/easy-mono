@@ -14,7 +14,6 @@ defmodule Easy.Training.Library.Equipment do
     timestamps()
   end
 
-  @doc false
   def changeset(equipment, attrs) do
     equipment
     |> cast(attrs, [:name, :description])

@@ -9,7 +9,6 @@ defmodule Easy.Clients do
   alias Easy.Auth.Scope
   alias Easy.QueryHelpers
 
-  @spec list_clients(Scope.t(), keyword()) :: {:ok, [Client.t()], integer()} | {:error, atom()}
   def list_clients(%Scope{} = scope, opts \\ []) do
     unless Scope.has_business_context?(scope) do
       {:error, :forbidden}
@@ -47,21 +46,11 @@ defmodule Easy.Clients do
     end
   end
 
-  @doc """
-  Counts total clients for a business (regardless of status).
-  """
-  @spec count_clients_for_business(String.t()) :: integer()
   def count_clients_for_business(business_id) do
     from(c in Client, where: c.business_id == ^business_id)
     |> Repo.aggregate(:count)
   end
 
-  @doc """
-  Gets an active client record by user ID.
-  Returns nil if no active client is found.
-  Active means status is "active" or "pending" (not "archived").
-  """
-  @spec get_active_client_by_user_id(String.t()) :: Client.t() | nil
   def get_active_client_by_user_id(user_id) do
     Repo.one(
       from c in Client,
@@ -71,7 +60,6 @@ defmodule Easy.Clients do
     )
   end
 
-  @spec get_client(Scope.t(), String.t()) :: {:ok, Client.t()} | {:error, atom()}
   def get_client(%Scope{} = scope, client_id) when is_binary(client_id) do
     case Repo.get(Client, client_id) do
       nil ->
@@ -237,9 +225,6 @@ defmodule Easy.Clients do
     end
   end
 
-  @spec complete_client_signup(String.t(), String.t()) ::
-          {:ok, %{user: User.t(), client: Client.t(), session: map()}}
-          | {:error, atom() | Ecto.Changeset.t()}
   def complete_client_signup(invitation_token, user_id) do
     with {:ok, client} <- get_invitation(invitation_token),
          {:ok, user} <- get_user(user_id),
@@ -250,7 +235,6 @@ defmodule Easy.Clients do
     end
   end
 
-  @spec resend_invitation(Scope.t(), String.t()) :: {:ok, Client.t()} | {:error, atom()}
   def resend_invitation(%Scope{} = scope, client_id) do
     with :ok <- require_coach(scope),
          {:ok, client} <- get_client(scope, client_id),

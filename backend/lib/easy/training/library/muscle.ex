@@ -14,7 +14,6 @@ defmodule Easy.Training.Library.Muscle do
     timestamps()
   end
 
-  @doc false
   def changeset(muscle, attrs) do
     muscle
     |> cast(attrs, [:name, :description])

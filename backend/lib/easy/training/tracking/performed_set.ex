@@ -48,7 +48,6 @@ defmodule Easy.Training.Tracking.PerformedSet do
     timestamps()
   end
 
-  @doc false
   def changeset(performed_set, attrs) do
     performed_set
     |> cast(attrs, [

@@ -3,20 +3,14 @@ defmodule EasyWeb.Coach.NutritionPlanJSON do
   alias Easy.Nutrition.NutritionPlan
 
   def index(%{nutrition_plans: plans, meta: meta}) do
-    %{
-      data: Enum.map(plans, &render_plan/1),
-      meta: meta
-    }
+    %{data: Enum.map(plans, &data/1), meta: meta}
   end
 
-  def show(%{nutrition_plan: plan}) do
-    %{data: render_plan(plan)}
-  end
-
+  def show(%{nutrition_plan: plan}), do: %{data: data(plan)}
   def create(assigns), do: show(assigns)
   def update(assigns), do: show(assigns)
 
-  defp render_plan(%NutritionPlan{} = plan) do
+  defp data(%NutritionPlan{} = plan) do
     %{
       id: plan.id,
       name: plan.name,
@@ -41,10 +35,10 @@ defmodule EasyWeb.Coach.NutritionPlanJSON do
   defp maybe_put_meals(output, nil), do: output
 
   defp maybe_put_meals(output, meals) when is_list(meals) do
-    Map.put(output, :meals, Enum.map(meals, &render_meal/1))
+    Map.put(output, :meals, Enum.map(meals, &meal_data/1))
   end
 
-  defp render_meal(meal) do
+  defp meal_data(meal) do
     %{
       id: meal.id,
       day_number: meal.day_number,
@@ -62,27 +56,21 @@ defmodule EasyWeb.Coach.NutritionPlanJSON do
   defp maybe_put_meal_items(output, %NotLoaded{}), do: output
   defp maybe_put_meal_items(output, nil), do: output
 
-  defp maybe_put_meal_items(output, meal_items) when is_list(meal_items) do
-    Map.put(output, :meal_items, Enum.map(meal_items, &render_meal_item/1))
+  defp maybe_put_meal_items(output, items) when is_list(items) do
+    Map.put(output, :meal_items, Enum.map(items, &meal_item_data/1))
   end
 
-  defp render_meal_item(meal_item) do
+  defp meal_item_data(item) do
     %{
-      id: meal_item.id,
-      position: meal_item.position,
-      servings: meal_item.servings,
-      recipe_id: meal_item.recipe_id,
-      recipe: render_nested_recipe(meal_item.recipe)
+      id: item.id,
+      position: item.position,
+      servings: item.servings,
+      recipe_id: item.recipe_id,
+      recipe: recipe_data(item.recipe)
     }
   end
 
-  defp render_nested_recipe(%NotLoaded{}), do: nil
-  defp render_nested_recipe(nil), do: nil
-
-  defp render_nested_recipe(recipe) do
-    %{
-      id: recipe.id,
-      name: recipe.name
-    }
-  end
+  defp recipe_data(%NotLoaded{}), do: nil
+  defp recipe_data(nil), do: nil
+  defp recipe_data(recipe), do: %{id: recipe.id, name: recipe.name}
 end

@@ -4,11 +4,7 @@ defmodule Easy.Training.Programming.PlannedWorkout do
   alias Easy.Organizations.Business
   alias Easy.Training.Programming.{TrainingPlan, WorkoutElement}
 
-  @doc """
-  Day of week mapping:
-  1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday,
-  5 = Friday, 6 = Saturday, 7 = Sunday (ISO 8601 standard)
-  """
+  # Day of week: 1 = Monday through 7 = Sunday (ISO 8601)
 
   schema "planned_workouts" do
     field :name, :string
@@ -26,7 +22,6 @@ defmodule Easy.Training.Programming.PlannedWorkout do
     timestamps()
   end
 
-  @doc false
   def changeset(planned_workout, attrs) do
     planned_workout
     |> cast(attrs, [:name, :notes, :day_number])
@@ -42,9 +37,6 @@ defmodule Easy.Training.Programming.PlannedWorkout do
     |> foreign_key_constraint(:business_id)
   end
 
-  @doc """
-  Returns the day name for a given day number.
-  """
   def day_name(1), do: "Monday"
   def day_name(2), do: "Tuesday"
   def day_name(3), do: "Wednesday"

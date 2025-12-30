@@ -31,7 +31,8 @@ const ClientListItem = ({client, onClick}: ClientListItemProps) => {
             onClick={() => {
                 onClick?.(client.id);
             }}
-            radius="xl"
+            radius={'lg'}
+            shadow={'xl'}
             style={{cursor: 'pointer'}}
             withBorder={true}
         >
@@ -101,6 +102,7 @@ const ClientList = ({onClientClick, search, status}: ClientListProps) => {
         <RecordsList
             emptyState={<Text>No Clients Found</Text>}
             fetchNextPage={fetchNextPage}
+            gap={'xs'}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
             isLoading={isLoading}

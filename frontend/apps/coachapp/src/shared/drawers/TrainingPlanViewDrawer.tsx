@@ -137,7 +137,7 @@ const TrainingPlanViewDrawer = () => {
                             size="sm"
                             variant="light"
                         >
-                            Edit Info
+                            Edit
                         </Button>
 
                         <Button

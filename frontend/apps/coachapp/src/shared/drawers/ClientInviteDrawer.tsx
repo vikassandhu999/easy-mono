@@ -41,7 +41,7 @@ const ClientInviteDrawer = () => {
                         size="sm"
                         variant="solid"
                     >
-                        Send Invitation
+                        Send Invite
                     </Button>
                 </Group>
             }

@@ -1,5 +1,5 @@
 import {capitalizeWords} from '@easy/error-parser';
-import {Avatar, Badge, Button, Card, Checkbox, Group, Modal, Stack, Text, useMantineTheme} from '@mantine/core';
+import {Avatar, Badge, Button, Card, Checkbox, Group, Modal, SimpleGrid, Stack, Text} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
 import {BarbellIcon, CaretDownIcon, XIcon} from '@phosphor-icons/react';
 import {useMemo, useState} from 'react';
@@ -8,33 +8,52 @@ import {Exercise, isSystemExercise, useListExercises} from '@/services/exercises
 import {useListMuscles} from '@/services/muscles';
 import RecordsList from '@/shared/layouts/RecordsList';
 
-import classes from './styles.module.css';
-
 interface ExerciseListItemProps {
     exercise: Exercise;
     onClick?: (id: string) => void;
 }
 
 const ExerciseListItem = ({exercise, onClick}: ExerciseListItemProps) => {
-    const theme = useMantineTheme();
     const isSystem = isSystemExercise(exercise);
     const firstImage = exercise.images?.[0];
 
     return (
         <Card
-            onClick={() => {
-                onClick?.(exercise.id);
+            aria-label={`Exercise: ${exercise.name}`}
+            onClick={() => onClick?.(exercise.id)}
+            padding="md"
+            radius="lg"
+            role="button"
+            shadow={'xl'}
+            style={{
+                cursor: 'pointer',
+                outline: 0,
+                transition: 'box-shadow 0.15s ease, transform 0.15s ease',
             }}
-            radius="xl"
-            shadow={theme.shadows.xs}
-            style={{cursor: 'pointer'}}
-            withBorder={true}
+            styles={{
+                root: {
+                    minHeight: 'var(--touch-target-min)',
+                    '&:hover': {
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        transform: 'translateY(-1px)',
+                    },
+                    '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                    },
+                    '&:focus-visible': {
+                        outline: '2px solid var(--mantine-color-brand-6)',
+                        outlineOffset: '2px',
+                    },
+                },
+            }}
+            tabIndex={0}
+            withBorder
         >
             <Group
                 align="flex-start"
                 wrap="nowrap"
             >
-                {/* Exercise Image */}
                 <Avatar
                     radius="md"
                     size="lg"
@@ -43,27 +62,31 @@ const ExerciseListItem = ({exercise, onClick}: ExerciseListItemProps) => {
                     <BarbellIcon size={24} />
                 </Avatar>
 
-                <Stack gap="sm">
-                    <Group gap="xs">
-                        <Text fw={500}>{exercise.name}</Text>
-                        {isSystem ? (
+                <Stack
+                    gap="xs"
+                    style={{flex: 1, minWidth: 0}}
+                >
+                    <Group
+                        gap="xs"
+                        wrap="wrap"
+                    >
+                        <Text
+                            fw={500}
+                            lineClamp={1}
+                        >
+                            {exercise.name}
+                        </Text>
+                        {!isSystem && (
                             <Badge
                                 color="gray"
                                 size="xs"
                                 variant="light"
                             >
-                                From Coacheasy
-                            </Badge>
-                        ) : (
-                            <Badge
-                                color="gray"
-                                size="xs"
-                                variant="light"
-                            >
-                                Created By You
+                                {'Custom'}
                             </Badge>
                         )}
                     </Group>
+
                     {exercise.description && (
                         <Text
                             c="dimmed"
@@ -73,24 +96,29 @@ const ExerciseListItem = ({exercise, onClick}: ExerciseListItemProps) => {
                             {exercise.description}
                         </Text>
                     )}
-                    <Group gap="xs">
-                        {exercise.mechanics && (
-                            <Badge
-                                color="blue"
-                                variant="light"
-                            >
-                                {exercise.mechanics}
-                            </Badge>
-                        )}
-                        {exercise.force && (
-                            <Badge
-                                color="grape"
-                                variant="light"
-                            >
-                                {exercise.force}
-                            </Badge>
-                        )}
-                    </Group>
+
+                    {(exercise.mechanics || exercise.force) && (
+                        <Group gap="xs">
+                            {exercise.mechanics && (
+                                <Badge
+                                    color="blue"
+                                    size="sm"
+                                    variant="light"
+                                >
+                                    {exercise.mechanics}
+                                </Badge>
+                            )}
+                            {exercise.force && (
+                                <Badge
+                                    color="grape"
+                                    size="sm"
+                                    variant="light"
+                                >
+                                    {exercise.force}
+                                </Badge>
+                            )}
+                        </Group>
+                    )}
                 </Stack>
             </Group>
         </Card>
@@ -107,7 +135,6 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
     const [tempSelectedMuscleIds, setTempSelectedMuscleIds] = useState<string[]>([]);
     const [modalOpened, {open: openModal, close: closeModal}] = useDisclosure(false);
 
-    // Fetch muscles for filter
     const {data: musclesData} = useListMuscles({});
     const muscles = useMemo(() => musclesData?.data ?? [], [musclesData?.data]);
 
@@ -144,61 +171,77 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
     };
 
     return (
-        <div className={classes.container}>
-            {/* Muscle Filter */}
-            <div className={classes.filterRow}>
-                <button
-                    className={`${classes.muscleFilterButton} ${selectedMuscleIds.length > 0 ? classes.muscleFilterButtonActive : ''}`}
+        <Stack gap="md">
+            <Group
+                gap="sm"
+                wrap="wrap"
+            >
+                <Button
+                    color={selectedMuscleIds.length > 0 ? 'blue' : 'gray'}
+                    leftSection={<BarbellIcon size={14} />}
                     onClick={handleOpenModal}
-                    type="button"
+                    // radius="xl"
+                    rightSection={<CaretDownIcon size={14} />}
+                    size={'compact-xs'}
+                    variant={selectedMuscleIds.length > 0 ? 'light' : 'default'}
                 >
-                    <BarbellIcon size={14} />
-                    <span>Muscles</span>
+                    Muscles
                     {selectedMuscleIds.length > 0 && (
-                        <span className={classes.muscleCount}>{selectedMuscleIds.length}</span>
+                        <Badge
+                            circle
+                            ml="xs"
+                            size="sm"
+                        >
+                            {selectedMuscleIds.length}
+                        </Badge>
                     )}
-                    <CaretDownIcon size={14} />
-                </button>
+                </Button>
 
-                {/* Selected muscle chips */}
                 {selectedMuscleIds.length > 0 && (
-                    <div className={classes.selectedChips}>
+                    <Group gap="xs">
                         {selectedMuscleIds.map((muscleId) => {
                             const muscle = muscles.find((m) => m.id === muscleId);
                             if (!muscle) return null;
                             return (
-                                <button
-                                    className={classes.selectedChip}
+                                <Badge
+                                    color="blue"
                                     key={muscleId}
                                     onClick={() => handleRemoveMuscle(muscleId)}
-                                    type="button"
+                                    rightSection={
+                                        <XIcon
+                                            size={12}
+                                            style={{cursor: 'pointer'}}
+                                        />
+                                    }
+                                    size="lg"
+                                    style={{cursor: 'pointer'}}
+                                    variant="light"
                                 >
                                     {muscle.name}
-                                    <XIcon size={12} />
-                                </button>
+                                </Badge>
                             );
                         })}
-                        <button
-                            className={classes.clearAllButton}
+                        <Button
+                            color="red"
                             onClick={handleClearMuscleFilters}
-                            type="button"
+                            size="xs"
+                            variant="subtle"
                         >
                             Clear all
-                        </button>
-                    </div>
+                        </Button>
+                    </Group>
                 )}
-            </div>
+            </Group>
 
-            {/* Muscle Filter Modal */}
             <Modal
                 centered
                 onClose={closeModal}
                 opened={modalOpened}
                 size="sm"
-                title="Filter by Muscles"
+                title="Filter by muscles"
             >
                 <Stack gap="md">
-                    <Group gap="xs">
+                    <SimpleGrid cols={2}>
                         {muscles.map((muscle) => (
                             <Checkbox
                                 checked={tempSelectedMuscleIds.includes(muscle.id)}
@@ -207,12 +250,11 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                                 onChange={() => handleToggleMuscle(muscle.id)}
                             />
                         ))}
-                    </Group>
+                    </SimpleGrid>
 
                     <Group
-                        gap="sm"
+                        gap="md"
                         justify="flex-end"
-                        mt="md"
                     >
                         {tempSelectedMuscleIds.length > 0 && (
                             <Button
@@ -229,7 +271,7 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                             radius="xl"
                             size="sm"
                         >
-                            Apply Filters
+                            Apply filters
                         </Button>
                     </Group>
                 </Stack>
@@ -238,6 +280,7 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
             <RecordsList
                 emptyState={<Text>No Exercise Found</Text>}
                 fetchNextPage={fetchNextPage}
+                gap={'xs'}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
                 isLoading={isLoading}
@@ -249,7 +292,7 @@ const ExerciseList = ({onExerciseClick, search}: ExerciseListProps) => {
                     />
                 )}
             />
-        </div>
+        </Stack>
     );
 };
 

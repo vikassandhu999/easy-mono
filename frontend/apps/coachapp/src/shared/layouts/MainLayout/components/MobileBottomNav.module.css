@@ -8,9 +8,11 @@
 
   background-color: var(--mantine-color-white);
   border-top: 1px solid var(--mantine-color-gray-2);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+  -webkit-box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
+  -moz-box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
+  box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
 
-  padding: 8px 16px 16px;
+  padding: 4px 8px;
 
   transform: translateY(100%);
   transition:
@@ -19,7 +21,7 @@
   opacity: 0;
 
   /* Ensure safe area for mobile devices */
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
 
   /* Prevent affecting child component styles */
   isolation: isolate;

@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
-import {ActionIcon, Menu, Modal} from '@mantine/core';
+import {ActionIcon, Group, Menu, Modal} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
+import {IconCopy, IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
 import {FC} from 'react';
 import {useSearchParams} from 'react-router';
 
@@ -104,7 +104,6 @@ export default function TrainingPlanBuildDrawer() {
                 title={planNameTitle}
             />
 
-            {/* Delete Confirmation Modal */}
             <Modal
                 centered
                 onClose={closeDeleteModal}
@@ -163,45 +162,62 @@ const ActionMenu: FC<ActionMenuProps> = ({trainingPlanId, isTemplate, onEdit, on
     if (!trainingPlanId) return null;
 
     return (
-        <Menu
-            position="bottom-end"
-            shadow="md"
-            width={200}
-        >
-            <Menu.Target>
-                <ActionIcon
-                    color="dark"
-                    variant="subtle"
-                >
-                    <IconDots />
-                </ActionIcon>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-                <Menu.Item
-                    leftSection={<IconPencil size={14} />}
-                    onClick={onEdit}
-                >
-                    Edit Basic Info
-                </Menu.Item>
-                {isTemplate && (
-                    <Menu.Item
-                        leftSection={<IconCopyPlus size={14} />}
-                        onClick={onDuplicate}
+        <Group gap={'xs'}>
+            <ActionIcon
+                color="dark"
+                size={'lg'}
+                variant="subtle"
+            >
+                <IconPencil />
+            </ActionIcon>
+            <ActionIcon
+                color="dark"
+                size={'lg'}
+                variant="subtle"
+            >
+                <IconCopy />
+            </ActionIcon>
+            <Menu
+                position="bottom-end"
+                shadow="md"
+                width={200}
+            >
+                <Menu.Target>
+                    <ActionIcon
+                        color="dark"
+                        size={'lg'}
+                        variant="subtle"
                     >
-                        Duplicate
-                    </Menu.Item>
-                )}
+                        <IconDots />
+                    </ActionIcon>
+                </Menu.Target>
 
-                <Menu.Divider />
-                <Menu.Item
-                    color="red"
-                    leftSection={<IconTrash size={14} />}
-                    onClick={onDelete}
-                >
-                    Delete Plan
-                </Menu.Item>
-            </Menu.Dropdown>
-        </Menu>
+                <Menu.Dropdown>
+                    <Menu.Item
+                        leftSection={<IconPencil size={14} />}
+                        onClick={onEdit}
+                    >
+                        Edit
+                    </Menu.Item>
+                    {isTemplate && (
+                        <Menu.Item
+                            leftSection={<IconCopyPlus size={14} />}
+                            onClick={onDuplicate}
+                        >
+                            Duplicate
+                        </Menu.Item>
+                    )}
+
+                    <Menu.Divider />
+                    <Menu.Item
+                        color="red"
+                        leftSection={<IconTrash size={14} />}
+                        onClick={onDelete}
+                    >
+                        Delete Plan
+                    </Menu.Item>
+                </Menu.Dropdown>
+            </Menu>
+        </Group>
     );
 };

@@ -31,29 +31,11 @@
 
 .button:hover {
   color: var(--mantine-color-gray-8);
-  background-color: var(--mantine-color-gray-1);
 }
 
 .button[data-active="true"] {
   color: var(--mantine-color-blue-6);
   font-weight: 700;
-  background-color: var(--mantine-color-blue-0);
-}
-
-.button[data-active="true"]::after {
-  content: "";
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background-color: var(--mantine-color-blue-6);
-  border-radius: 50%;
-}
-
-.button[data-active="true"]:hover {
-  background-color: var(--mantine-color-blue-1);
 }
 
 .button:focus-visible {
@@ -70,6 +52,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: calc(1.5 * var(--ce-callout-font-size));
 }
 
 .badge {

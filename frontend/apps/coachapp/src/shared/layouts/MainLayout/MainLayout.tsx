@@ -27,7 +27,7 @@ export function MainLayout({children, disableTopMargin, showNavigation}: MainLay
         : {
               breakpoint: 'sm',
               collapsed: {desktop: false, mobile: !opened},
-              width: {base: '100%', md: 280},
+              width: {base: '100%', md: 220},
           };
     const showDesktopNavbar = !isMobile;
     const showMobileNavbar = isMobile && showNavigation;

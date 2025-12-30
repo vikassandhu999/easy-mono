@@ -1,10 +1,3 @@
-/*
-  A responsive drawer/modal component that automatically adapts to screen size.
-  Renders as a bottom drawer on mobile/tablet devices and a centered modal on desktop.
-  Includes a sticky header with back button, title, and optional action buttons.
-
-*/
-
 import {ActionIcon, Box, Group, Modal, Title} from '@mantine/core';
 import {IconArrowLeft} from '@tabler/icons-react';
 import React from 'react';
@@ -38,7 +31,7 @@ const Header = ({onClose, title, actions}: AutoDrawerProps) => {
             <Title
                 fw={600}
                 lineClamp={1}
-                order={5}
+                order={4}
                 style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
             >
                 {title}

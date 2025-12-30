@@ -1,14 +1,12 @@
-import {Button, Group, SegmentedControl, TextInput, Title, Stack} from '@mantine/core';
+import {Box, Button, Container, Group, SegmentedControl, Stack, TextInput, Title} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconPlus,  IconX} from '@tabler/icons-react';
+import {IconPlus, IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
-import PagePaper from '@/shared/containers/PagePaper';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
 
 type StatusTab = 'active' | 'all' | 'inactive' | 'pending';
 
@@ -49,16 +47,38 @@ const ClientListPage = () => {
     };
 
     return (
-        <PagePaper bottomGutter>
-            <PaddingContainer>
-                <Stack gap="md">
+        <Box
+            bg="white"
+            style={{
+                minHeight: '100vh',
+                paddingBottom: 'calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom))',
+            }}
+        >
+            <Container
+                px="md"
+                size="md"
+            >
+                <Stack
+                    gap="md"
+                    pb="xl"
+                    pt="md"
+                >
                     {/* Header */}
-                    <Group justify="space-between" pt="md">
-                        <Title order={1}>Clients</Title>
+                    <Group
+                        align="center"
+                        justify="space-between"
+                    >
+                        <Title
+                            fw={600}
+                            order={1}
+                        >
+                            Clients
+                        </Title>
                         <Button
+                            fw={600}
                             onClick={() => openDrawer(DRAWER_KEYS.CLIENT_INVITE)}
-                            rightSection={<IconPlus size={20} />}
                             radius="xl"
+                            rightSection={<IconPlus size={18} />}
                             size="sm"
                         >
                             Invite
@@ -67,40 +87,40 @@ const ClientListPage = () => {
 
                     {/* Status Tabs */}
                     <SegmentedControl
-                        value={activeTab}
-                        onChange={handleTabChange}
                         data={STATUS_TABS}
+                        onChange={handleTabChange}
                         radius="xl"
-                        fullWidth
+                        size="xs"
+                        value={activeTab}
                     />
 
                     {/* Search Input */}
                     <TextInput
-                        placeholder="Search clients..."
-                        value={searchInput}
                         onChange={handleSearchChange}
+                        placeholder="Search clients..."
+                        radius={'lg'}
                         rightSection={
                             searchInput ? (
                                 <IconX
-                                    size={14}
-                                    style={{cursor: 'pointer'}}
-                                    onClick={handleClearSearch}
                                     aria-label="Clear search"
+                                    onClick={handleClearSearch}
+                                    size={16}
+                                    style={{cursor: 'pointer'}}
                                 />
                             ) : null
                         }
-                        radius="xl"
+                        size="md"
+                        value={searchInput}
                     />
 
-                    {/* Client List */}
                     <ClientList
                         onClientClick={handleClientClick}
                         search={search}
                         status={activeTab === 'all' ? undefined : activeTab}
                     />
                 </Stack>
-            </PaddingContainer>
-        </PagePaper>
+            </Container>
+        </Box>
     );
 };
 

@@ -1,4 +1,4 @@
-import {Button, Group, Stack} from '@mantine/core';
+import {ActionIcon, Group, SegmentedControl, Stack} from '@mantine/core';
 import {IconPlus} from '@tabler/icons-react';
 import {useState} from 'react';
 
@@ -7,13 +7,11 @@ import useParamsDrawer from '@/hooks/useParamDrawer';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {TrainingPlanList} from '@/shared/TrainingPlanList';
 
-import classes from '../styles.module.css';
-
 type PlanTabValue = 'nutrition' | 'training';
 
-const PLAN_TABS: {id: string; label: string; value: PlanTabValue}[] = [
-    {id: 'nutrition', label: 'Nutrition', value: 'nutrition'},
-    {id: 'training', label: 'Training', value: 'training'},
+const PLAN_TABS: {label: string; value: PlanTabValue}[] = [
+    {label: 'Nutrition', value: 'nutrition'},
+    {label: 'Training', value: 'training'},
 ];
 
 interface PlansTabProps {
@@ -38,31 +36,28 @@ const PlansTab = ({clientId, onAddPlan}: PlansTabProps) => {
     };
 
     return (
-        <Stack>
-            <Group justify="space-between">
+        <Stack gap="md">
+            <Group
+                bottom={'1px'}
+                justify="space-between"
+            >
                 {/* Plan Type Tabs */}
-                <div className={classes.planTabs}>
-                    {PLAN_TABS.map((tab) => (
-                        <button
-                            className={`${classes.planTab} ${activePlanTab === tab.value ? classes.planTabActive : ''}`}
-                            key={tab.id}
-                            onClick={() => setActivePlanTab(tab.value)}
-                            type="button"
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                <Button
-                    leftSection={<IconPlus size="18" />}
-                    onClick={onAddPlan}
+                <SegmentedControl
+                    data={PLAN_TABS}
+                    onChange={(value) => setActivePlanTab(value as PlanTabValue)}
                     radius="xl"
                     size="sm"
-                    variant="solid"
+                    value={activePlanTab}
+                />
+
+                <ActionIcon
+                    onClick={onAddPlan}
+                    radius={'xl'}
+                    size={'xl'}
+                    variant="filled"
                 >
-                    Add Plan
-                </Button>
+                    <IconPlus size={24} />
+                </ActionIcon>
             </Group>
 
             {activePlanTab === 'nutrition' && (

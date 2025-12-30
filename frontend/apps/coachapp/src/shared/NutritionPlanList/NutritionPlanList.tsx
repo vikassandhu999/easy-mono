@@ -152,19 +152,29 @@ const NutritionPlanList = ({onPlanClick, search, clientId}: NutritionPlanListPro
                     <ThemeIcon
                         color="gray"
                         radius="md"
-                        size={40}
+                        size={48}
                         variant="light"
                     >
                         <IconSalad
-                            size={20}
+                            size={24}
                             stroke={1.5}
                         />
                     </ThemeIcon>
                     <Text
                         c="dimmed"
+                        fw={500}
                         size="sm"
                     >
-                        No nutrition plans found
+                        {search ? 'No nutrition plans match your search' : 'No nutrition plans yet'}
+                    </Text>
+                    <Text
+                        c="dimmed"
+                        size="xs"
+                        ta="center"
+                    >
+                        {search
+                            ? 'Try a different search term'
+                            : 'To Create your first nutrition plan click on + Create button'}
                     </Text>
                 </Stack>
             }

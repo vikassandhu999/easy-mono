@@ -1,32 +1,9 @@
-import {Card, Group, Stack, Text, ThemeIcon} from '@mantine/core';
-import {IconBarbell, IconChevronRight} from '@tabler/icons-react';
+import {Badge, Card, Center, Group, Skeleton, Stack, Text, ThemeIcon} from '@mantine/core';
+import {IconBarbell, IconChevronRight, IconListNumbers} from '@tabler/icons-react';
 import {useMemo} from 'react';
 
 import {TrainingPlan, useListTrainingPlans} from '@/services/training_plans';
 import RecordsList from '@/shared/layouts/RecordsList';
-
-// Color dots for visual variety
-const DOT_COLORS = [
-    'var(--mantine-color-blue-5)',
-    'var(--mantine-color-violet-5)',
-    'var(--mantine-color-teal-5)',
-    'var(--mantine-color-orange-5)',
-    'var(--mantine-color-pink-5)',
-    'var(--mantine-color-cyan-5)',
-    'var(--mantine-color-grape-5)',
-    'var(--mantine-color-indigo-5)',
-];
-
-// Get consistent color for a plan based on its ID
-const getDotColor = (planId: string) => {
-    let hash = 0;
-    for (let i = 0; i < planId.length; i++) {
-        const char = planId.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash;
-    }
-    return DOT_COLORS[Math.abs(hash) % DOT_COLORS.length];
-};
 
 interface TrainingPlanListItemProps {
     onClick?: (id: string) => void;
@@ -34,83 +11,96 @@ interface TrainingPlanListItemProps {
 }
 
 const TrainingPlanListItem = ({plan, onClick}: TrainingPlanListItemProps) => {
-    const dotColor = getDotColor(plan.id);
     const workoutCount = plan.workouts?.length ?? 0;
+
+    const handleClick = () => {
+        onClick?.(plan.id);
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClick?.(plan.id);
+        }
+    };
 
     return (
         <Card
-            onClick={() => onClick?.(plan.id)}
+            aria-label={`Training plan: ${plan.name}`}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
             padding="md"
-            radius="md"
+            radius="lg"
+            role="button"
+            shadow={'xl'}
             style={{
                 cursor: 'pointer',
+                outline: 0,
                 transition: 'box-shadow 0.15s ease, transform 0.15s ease',
-                position: 'relative',
             }}
             styles={{
                 root: {
+                    minHeight: 'var(--touch-target-min)',
                     '&:hover': {
                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                         transform: 'translateY(-1px)',
                     },
+                    '&:active': {
+                        transform: 'translateY(0)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+                    },
+                    '&:focus-visible': {
+                        outline: '2px solid var(--mantine-color-brand-6)',
+                        outlineOffset: '2px',
+                    },
                 },
             }}
-            withBorder={true}
+            tabIndex={0}
+            withBorder
         >
-            {/* Color dot at top left */}
-            <div
-                style={{
-                    position: 'absolute',
-                    top: 12,
-                    left: 12,
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: dotColor,
-                }}
-            />
-
             <Group
+                align="center"
                 gap="md"
-                style={{paddingLeft: 16}}
                 wrap="nowrap"
             >
-                {/* Content */}
                 <Stack
                     gap={4}
                     style={{flex: 1, minWidth: 0}}
                 >
                     <Text
-                        fw={500}
+                        fw={600}
                         lineClamp={1}
-                        size="sm"
+                        size={'sm'}
                     >
                         {plan.name}
                     </Text>
 
-                    <Group
-                        c="dimmed"
-                        gap="sm"
-                    >
-                        {workoutCount > 0 && (
-                            <Text size="xs">
-                                {workoutCount} {workoutCount === 1 ? 'workout' : 'workouts'}
-                            </Text>
-                        )}
-                        {workoutCount === 0 && plan.description && (
-                            <Text
-                                lineClamp={1}
+                    {workoutCount === 0 && plan.description && (
+                        <Text
+                            c="dimmed"
+                            lineClamp={1}
+                            size="xs"
+                        >
+                            {plan.description}
+                        </Text>
+                    )}
+
+                    {workoutCount > 0 && (
+                        <Group gap="xs">
+                            <Badge
+                                color="blue"
+                                leftSection={<IconListNumbers size={12} />}
                                 size="xs"
+                                variant="light"
                             >
-                                {plan.description}
-                            </Text>
-                        )}
-                    </Group>
+                                {workoutCount} {workoutCount === 1 ? 'workout' : 'workouts'}
+                            </Badge>
+                        </Group>
+                    )}
                 </Stack>
 
-                {/* Chevron indicator */}
                 <IconChevronRight
-                    color="var(--mantine-color-gray-4)"
+                    color="var(--mantine-color-gray-5)"
                     size={18}
                     style={{flexShrink: 0}}
                 />
@@ -118,6 +108,43 @@ const TrainingPlanListItem = ({plan, onClick}: TrainingPlanListItemProps) => {
         </Card>
     );
 };
+
+/* Skeleton loader for better perceived performance */
+const TrainingPlanListSkeleton = () => (
+    <>
+        {[1, 2, 3].map((i) => (
+            <Card
+                key={i}
+                padding="md"
+                radius="lg"
+                withBorder
+            >
+                <Group
+                    align="center"
+                    gap="md"
+                    wrap="nowrap"
+                >
+                    <Skeleton
+                        height={44}
+                        radius="md"
+                        width={44}
+                    />
+                    <Stack
+                        gap={8}
+                        style={{flex: 1}}
+                    >
+                        <Skeleton height={14} />
+                        <Skeleton
+                            height={16}
+                            radius="xl"
+                            width={110}
+                        />
+                    </Stack>
+                </Group>
+            </Card>
+        ))}
+    </>
+);
 
 export interface TrainingPlanListProps {
     clientId?: string;
@@ -134,37 +161,54 @@ const TrainingPlanList = ({onPlanClick, search, clientId}: TrainingPlanListProps
 
     const plans = useMemo(() => data?.pages?.flatMap((page) => page.records) ?? [], [data?.pages]);
 
+    if (isLoading) {
+        return <TrainingPlanListSkeleton />;
+    }
+
     return (
         <RecordsList
             emptyState={
-                <Stack
-                    align="center"
-                    gap="sm"
-                    py="xl"
-                >
-                    <ThemeIcon
-                        color="gray"
-                        radius="md"
-                        size={40}
-                        variant="light"
+                <Center py="xl">
+                    <Stack
+                        align="center"
+                        gap="sm"
                     >
-                        <IconBarbell
-                            size={20}
-                            stroke={1.5}
-                        />
-                    </ThemeIcon>
-                    <Text
-                        c="dimmed"
-                        size="sm"
-                    >
-                        No training plans found
-                    </Text>
-                </Stack>
+                        <ThemeIcon
+                            color="gray"
+                            radius="lg"
+                            size={64}
+                            variant="light"
+                        >
+                            <IconBarbell
+                                size={28}
+                                stroke={1.5}
+                            />
+                        </ThemeIcon>
+                        <Text
+                            c="dimmed"
+                            fw={500}
+                            size="sm"
+                        >
+                            {search ? 'No training plans match your search' : 'No training plans yet'}
+                        </Text>
+                        <Text
+                            c="dimmed"
+                            maw={260}
+                            size="xs"
+                            ta="center"
+                        >
+                            {search
+                                ? 'Try a different search term'
+                                : 'Create your first training plan by clicking the + button above'}
+                        </Text>
+                    </Stack>
+                </Center>
             }
             fetchNextPage={fetchNextPage}
+            gap={'xs'}
             hasNextPage={hasNextPage}
             isFetchingNextPage={isFetchingNextPage}
-            isLoading={isLoading}
+            isLoading={false}
             records={plans}
             renderItem={(plan) => (
                 <TrainingPlanListItem

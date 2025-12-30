@@ -42,15 +42,16 @@ const AssignPlanDrawer = () => {
     return (
         <AutoDrawer
             content={
-                <Stack gap="md">
+                <Stack gap="xs">
                     {PLAN_TYPE_CONFIG.map((item) => {
                         const Icon = item.icon;
                         return (
                             <Card
                                 key={item.id}
                                 onClick={() => handleSelect(item.value)}
-                                padding="lg"
-                                radius="xl"
+                                padding={'lg'}
+                                radius={'lg'}
+                                shadow={'xl'}
                                 style={{cursor: 'pointer'}}
                                 w="100%"
                                 withBorder

@@ -5,11 +5,10 @@ import RegisterPage from '@/domains/auth/pages/RegisterPage';
 import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
 import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPage';
 import ClientListPage from '@/domains/client/pages/ClientListPage';
-
 import ClientViewPage from '@/domains/client/pages/ClientViewPage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
-import MyPagePage from '@/domains/my_page/pages/FlowsListPage';
 import LibraryListPage from '@/domains/library/pages/LibraryListPage';
+import MyPagePage from '@/domains/my_page/pages/FlowsListPage';
 import SettingsPage from '@/domains/profile/pages/SettingsPage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
@@ -41,15 +40,15 @@ const router = createBrowserRouter([
         ],
     },
     {
-        element: <PrivateGaurd />, // For routes that require authentication
+        element: <PrivateGaurd />,
         children: [
             {
                 element: <ProtectedRouteLayout />,
                 children: [
-                  {
-                      element: <ClientListPage />,
-                      path: '/',
-                  },
+                    {
+                        element: <ClientListPage />,
+                        path: '/',
+                    },
                     {
                         element: <ClientListPage />,
                         path: '/clients',

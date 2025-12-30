@@ -1,0 +1,274 @@
+/**
+ * TrainingPlanList Styles
+ * 
+ * Mobile-first design following the CoachEasy design system.
+ * Consistent with ExerciseList and RecipeList patterns.
+ * - Uses design system tokens (--space-*, --text-*, --radius-*, etc.)
+ * - Minimum touch targets of 44px
+ * - Clear focus-visible states
+ * - Proper contrast and semantic colors
+ */
+
+/* ============================================
+   LIST CONTAINER
+   ============================================ */
+
+.listContainer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* ============================================
+   TRAINING PLAN CARD
+   - Interactive card with proper focus states
+   - Touch-friendly minimum sizes
+   ============================================ */
+
+.planCard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--surface-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-in-out);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: var(--touch-target-min);
+}
+
+.planCard:hover {
+    background: var(--mantine-color-gray-0);
+    border-color: var(--mantine-color-gray-4);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.planCard:active {
+    transform: translateY(0) scale(0.99);
+    box-shadow: none;
+}
+
+.planCard:focus-visible {
+    border-color: var(--mantine-color-blue-5);
+    box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
+}
+
+/* ============================================
+   ICON WRAPPER
+   - Colored background circle for visual interest
+   ============================================ */
+
+.iconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-in-out);
+}
+
+.planCard:hover .iconWrapper {
+    transform: scale(1.05);
+}
+
+/* ============================================
+   PLAN CONTENT
+   ============================================ */
+
+.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    line-height: var(--leading-snug);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.description {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    line-height: var(--leading-normal);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ============================================
+   METADATA TAGS
+   ============================================ */
+
+.metaTags {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.metaTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    background: var(--mantine-color-gray-0);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: var(--font-medium);
+    color: var(--mantine-color-gray-6);
+    line-height: 1;
+}
+
+.metaTag svg {
+    opacity: 0.8;
+}
+
+/* Workout count tag - blue for consistency */
+.metaTagWorkouts {
+    background: var(--mantine-color-blue-0);
+    color: var(--mantine-color-blue-7);
+}
+
+/* Duration tag */
+.metaTagDuration {
+    background: var(--mantine-color-grape-0);
+    color: var(--mantine-color-grape-7);
+}
+
+/* ============================================
+   ARROW INDICATOR
+   ============================================ */
+
+.arrow {
+    color: var(--mantine-color-gray-4);
+    flex-shrink: 0;
+    transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.planCard:hover .arrow {
+    color: var(--mantine-color-gray-6);
+    transform: translateX(2px);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-8);
+    text-align: center;
+}
+
+.emptyIconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--mantine-color-gray-1);
+    border-radius: var(--radius-lg);
+    color: var(--mantine-color-gray-5);
+}
+
+.emptyTitle {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+}
+
+.emptyHint {
+    font-size: var(--text-xs);
+    color: var(--mantine-color-gray-5);
+    max-width: 240px;
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+
+.skeleton {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--surface-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+}
+
+.skeletonIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(90deg, var(--mantine-color-gray-1) 25%, var(--mantine-color-gray-2) 50%, var(--mantine-color-gray-1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeletonContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.skeletonLine {
+    height: 14px;
+    background: linear-gradient(90deg, var(--mantine-color-gray-1) 25%, var(--mantine-color-gray-2) 50%, var(--mantine-color-gray-1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+.skeletonLine:first-child {
+    width: 70%;
+}
+
+.skeletonLine:nth-child(2) {
+    width: 40%;
+    height: 12px;
+}
+
+.skeletonTags {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.skeletonTag {
+    width: 60px;
+    height: 16px;
+    background: linear-gradient(90deg, var(--mantine-color-gray-1) 25%, var(--mantine-color-gray-2) 50%, var(--mantine-color-gray-1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-full);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}

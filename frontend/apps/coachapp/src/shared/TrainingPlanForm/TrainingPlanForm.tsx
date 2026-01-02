@@ -1,6 +1,6 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Loader, Stack, Text, Textarea, TextInput, Title} from '@mantine/core';
+import {Loader, Stack, Text, Textarea, TextInput} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -141,23 +141,22 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
 
     return (
         <form onSubmit={handleSubmit(onSubmitForm)}>
-            <Stack gap="xl">
+            <Stack
+                gap="xl"
+                mt={'md'}
+            >
                 <Controller
                     control={control}
                     name="name"
                     render={({field}) => (
                         <TextInput
                             {...field}
+                            description="A descriptive name for the training plan."
                             error={errors.name?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Plan Name
-                                </Title>
-                            }
-                            placeholder="e.g. Push Pull Legs"
+                            label={'Plan Name'}
+                            placeholder="e.g., 12-Week Marathon Training Plan"
+                            required
+                            size={'md'}
                         />
                     )}
                 />
@@ -168,17 +167,10 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
                         <Textarea
                             {...field}
                             error={errors.description?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Description
-                                </Title>
-                            }
+                            label={'Description'}
                             minRows={3}
-                            placeholder="Describe the goal and details of this training plan"
                             rows={3}
+                            size={'md'}
                             value={field.value || ''}
                         />
                     )}

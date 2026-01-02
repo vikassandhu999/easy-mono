@@ -156,15 +156,9 @@ const ExerciseForm = ({initialValues, onSubmit, ref, exerciseId}: ExerciseFormPr
                         <TextInput
                             {...field}
                             error={errors.name?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Name
-                                </Title>
-                            }
-                            placeholder="e.g. Bench Press"
+                            label={'Name'}
+                            placeholder="Bench Press"
+                            size={'md'}
                         />
                     )}
                 />
@@ -175,16 +169,10 @@ const ExerciseForm = ({initialValues, onSubmit, ref, exerciseId}: ExerciseFormPr
                         <Textarea
                             {...field}
                             error={errors.description?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Description
-                                </Title>
-                            }
+                            label={'Description'}
                             minRows={3}
                             placeholder="Brief description of the exercise"
+                            size={'md'}
                             value={field.value || ''}
                         />
                     )}

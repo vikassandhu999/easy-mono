@@ -1,5 +1,3 @@
-@import "./theme/default-css-variables.css";
-
 .scrollbar-hidden::-webkit-scrollbar {
     display: none;
 }

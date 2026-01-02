@@ -33,15 +33,9 @@ const ForceField: FC<ForceFieldProps> = ({form}) => {
                         },
                     ]}
                     error={formState.errors.force?.message}
-                    label={
-                        <Title
-                            fw="bold"
-                            order={5}
-                        >
-                            Force
-                        </Title>
-                    }
+                    label={'Force'}
                     placeholder="Pick value"
+                    size={'md'}
                     value={field.value || null}
                 />
             )}

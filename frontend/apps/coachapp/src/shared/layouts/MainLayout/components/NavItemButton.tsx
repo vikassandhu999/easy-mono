@@ -1,7 +1,8 @@
-import {Badge, Box, Group, useMantineTheme} from '@mantine/core';
+import {Box, Group} from '@mantine/core';
 import {useLocation} from 'react-router';
 
 import {NavItem} from '../types';
+import classes from './NavItemButton.module.css';
 
 interface NavItemButtonProps {
     item: NavItem;
@@ -10,60 +11,19 @@ interface NavItemButtonProps {
 
 export function NavItemButton({item, onNavigate}: NavItemButtonProps) {
     const location = useLocation();
-    const theme = useMantineTheme();
     const Icon = item.icon;
 
     const isActive = location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href));
 
     return (
         <Box
+            className={classes.button}
             component="button"
+            data-active={isActive ? 'true' : 'false'}
             onClick={() => onNavigate(item.href)}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : theme.colors.gray[0];
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isActive ? theme.colors.blue[0] : 'transparent';
-            }}
-            p="sm"
-            style={{
-                background: isActive ? theme.colors.blue[0] : 'transparent',
-                border: 'none',
-                borderRadius: theme.radius.lg,
-                color: isActive ? theme.colors.blue[6] : theme.colors.gray[7],
-                cursor: 'pointer',
-                fontSize: 'var(--callout-font-size)',
-                fontWeight: isActive ? 600 : 500,
-                lineHeight: 'var(--callout-line-height)',
-                minHeight: '44px',
-                padding: 'var(--callout-offset)',
-                paddingInline: 'var(--ce-size-md)',
-                transition: 'all 0.2s ease',
-                width: '100%',
-            }}
         >
-            <Group
-                align="center"
-                gap="xs"
-                justify="space-between"
-            >
-                <Group
-                    align="center"
-                    gap="sm"
-                >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                </Group>
-                {item.badge && (
-                    <Badge
-                        color={isActive ? 'green' : 'gray'}
-                        size="xs"
-                        variant="filled"
-                    >
-                        {item.badge}
-                    </Badge>
-                )}
-            </Group>
+            <Icon size={24} />
+            <span>{item.label}</span>
         </Box>
     );
 }

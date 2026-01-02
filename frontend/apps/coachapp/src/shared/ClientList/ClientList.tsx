@@ -31,10 +31,12 @@ const ClientListItem = ({client, onClick}: ClientListItemProps) => {
             onClick={() => {
                 onClick?.(client.id);
             }}
-            radius={'lg'}
-            shadow={'xl'}
-            style={{cursor: 'pointer'}}
-            withBorder={true}
+            style={{
+                cursor: 'pointer',
+                borderRadius: 'var(--mantine-radius-xl)',
+                border: '1px solid var(--ce-stroke-weak)',
+                boxShadow: 'var(--ce-shadow-raised)',
+            }}
         >
             <Group
                 align="center"
@@ -44,7 +46,7 @@ const ClientListItem = ({client, onClick}: ClientListItemProps) => {
                     color="initials"
                     name={client.full_name}
                     radius="xl"
-                    size="lg"
+                    size="md"
                 />
                 <Stack
                     gap={4}

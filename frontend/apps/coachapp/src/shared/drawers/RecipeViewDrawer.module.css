@@ -11,7 +11,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--ce-space-4);
 }
 
 /* ============================================
@@ -21,7 +21,7 @@
 .headerSection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .statusBadge {
@@ -71,7 +71,7 @@
    ============================================ */
 
 .imageWrapper {
-  margin-top: var(--space-2);
+  margin-top: var(--ce-space-2);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -83,15 +83,15 @@
 .metaRow {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--ce-space-4);
   flex-wrap: wrap;
-  margin-top: var(--space-2);
+  margin-top: var(--ce-space-2);
 }
 
 .metaItem {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--ce-space-1);
   font-size: var(--text-sm);
   color: var(--mantine-color-gray-6);
 }
@@ -107,14 +107,14 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .sectionTitle {
@@ -127,7 +127,7 @@
 .divider {
   height: 1px;
   background: var(--border-subtle);
-  margin: var(--space-2) 0;
+  margin: var(--ce-space-2) 0;
 }
 
 /* ============================================
@@ -147,7 +147,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3);
+  padding: var(--ce-space-3);
   background: var(--surface-primary);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -180,7 +180,7 @@
 .nutritionGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 @media (min-width: 400px) {
@@ -200,7 +200,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-3);
+  padding: var(--ce-space-3);
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -213,7 +213,7 @@
   color: var(--mantine-color-gray-5);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--ce-space-1);
 }
 
 .nutritionValue {
@@ -244,12 +244,12 @@
 .instructionsList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .instructionItem {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
   align-items: flex-start;
 }
 
@@ -291,7 +291,7 @@
   font-size: var(--text-sm);
   color: var(--mantine-color-gray-5);
   font-style: italic;
-  padding: var(--space-3);
+  padding: var(--ce-space-3);
   background: var(--mantine-color-gray-0);
   border-radius: var(--radius-md);
   text-align: center;
@@ -304,8 +304,8 @@
 .editButton {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-1);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: var(--mantine-color-blue-0);
   border: 1px solid var(--mantine-color-blue-2);
   border-radius: var(--radius-full);
@@ -331,9 +331,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
   min-height: 200px;
-  padding: var(--space-6);
+  padding: var(--ce-space-6);
 }
 
 .loadingText {
@@ -346,9 +346,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
   min-height: 200px;
-  padding: var(--space-6);
+  padding: var(--ce-space-6);
   text-align: center;
 }
 
@@ -370,7 +370,7 @@
 }
 
 .retryButton {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--ce-space-2) var(--ce-space-4);
   background: var(--mantine-color-blue-6);
   border: none;
   border-radius: var(--radius-md);
@@ -391,7 +391,7 @@
 
 @media (min-width: 768px) {
   .container {
-    gap: var(--space-5);
+    gap: var(--ce-space-5);
   }
 
   .recipeName {
@@ -399,7 +399,7 @@
   }
 
   .metaRow {
-    gap: var(--space-5);
+    gap: var(--ce-space-5);
   }
 
   .sectionTitle {
@@ -412,6 +412,7 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .editButton,
   .retryButton {
     transition: none;

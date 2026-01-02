@@ -157,14 +157,7 @@ const NutritionPlanForm = ({initialValues, onSubmit, ref, planId}: NutritionPlan
                         <TextInput
                             {...field}
                             error={errors.name?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Plan Name
-                                </Title>
-                            }
+                            label={'Plan Name'}
                             placeholder="e.g. Muscle Building - 4 Weeks"
                         />
                     )}
@@ -176,14 +169,7 @@ const NutritionPlanForm = ({initialValues, onSubmit, ref, planId}: NutritionPlan
                         <Textarea
                             {...field}
                             error={errors.description?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Description
-                                </Title>
-                            }
+                            label={'Description'}
                             minRows={3}
                             placeholder="Describe the goal and details of this nutrition plan"
                             rows={3}
@@ -201,15 +187,9 @@ const NutritionPlanForm = ({initialValues, onSubmit, ref, planId}: NutritionPlan
                             clearable
                             data={[]}
                             error={errors.tags?.message}
-                            label={
-                                <Title
-                                    fw="bold"
-                                    order={5}
-                                >
-                                    Tags
-                                </Title>
-                            }
+                            label={'Tags'}
                             placeholder="Add tags (e.g. keto, weight-loss)"
+                            size={'md'}
                             value={field.value}
                         />
                     )}

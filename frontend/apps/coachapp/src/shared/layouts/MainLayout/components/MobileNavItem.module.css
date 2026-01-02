@@ -1,26 +1,27 @@
 /* Mobile navigation item - Light theme */
 .button {
-  font-family:
-    CircularSp,
-    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
+  font-size: var(--ce-font-size-small);
+  line-height: var(--ce-line-height-small);
+  font-weight: 400;
 
   background-color: transparent;
   border: none;
-  border-radius: 8px;
   color: var(--mantine-color-gray-6);
 
-  min-height: 52px;
+  min-height: calc(40px + env(safe-area-inset-bottom));
   min-width: 60px;
-  padding: 8px 4px;
+
+  /* Ensure safe area for mobile devices */
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 8px;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  color: var(--ce-text-strong);
+
 
   cursor: pointer;
   text-decoration: none;
@@ -34,13 +35,7 @@
 }
 
 .button[data-active="true"] {
-  color: var(--mantine-color-blue-6);
-  font-weight: 700;
-}
-
-.button:focus-visible {
-  outline: 2px solid var(--mantine-color-blue-6);
-  outline-offset: 2px;
+  color: var(--ce-text-brand);
 }
 
 .button:active {
@@ -52,30 +47,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: calc(1.5 * var(--ce-callout-font-size));
-}
-
-.badge {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-
-  background-color: var(--mantine-color-red-6);
-  color: var(--mantine-color-white);
-  border: 2px solid var(--mantine-color-white);
-  border-radius: 8px;
-
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.2;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  z-index: 1;
+  font-size: var(--ce-font-size-tiny);
+  line-height: var(--ce-line-height-tiny);
 }

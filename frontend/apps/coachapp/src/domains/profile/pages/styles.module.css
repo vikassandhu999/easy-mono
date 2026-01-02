@@ -11,15 +11,15 @@
 .profileCard {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) 0;
+  gap: var(--ce-space-4);
+  padding: var(--ce-space-4) 0;
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) 0;
+  gap: var(--ce-space-4);
+  padding: var(--ce-space-4) 0;
 }
 
 .headerInfo {
@@ -51,7 +51,7 @@
 .profileEmail {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
   flex-wrap: wrap;
   font-size: var(--text-sm);
   color: var(--mantine-color-gray-6);
@@ -65,15 +65,15 @@
 .actionGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .actionGridCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-4);
   /*background: var(--surface-secondary);*/
   background: white;
   border: 1px solid var(--border-subtle);
@@ -100,13 +100,13 @@
 
 .sectionTitle {
   letter-spacing: 0.5px;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--ce-space-3);
 }
 
 .actionList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .actionListItems {
@@ -121,7 +121,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4);
+  padding: var(--ce-space-4);
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -147,7 +147,7 @@
 .actionListItemLeft {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .actionListIcon {
@@ -157,7 +157,7 @@
 .actionListLabel {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: var(--text-primary);
@@ -174,8 +174,8 @@
 
 .feedbackCard {
   display: flex;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-4);
   background: var(--mantine-color-pink-0);
   border: 1px solid var(--mantine-color-pink-2);
   border-radius: var(--radius-lg);
@@ -194,7 +194,7 @@
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--mantine-color-pink-7);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--ce-space-1);
 }
 
 .feedbackText {
@@ -211,8 +211,8 @@
 .legalLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-2) 0;
 }
 
 .legalLink {
@@ -238,7 +238,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--ce-space-3) var(--ce-space-4);
   background: transparent;
   border: 1px solid var(--mantine-color-red-4);
   font-size: var(--text-sm);
@@ -296,11 +296,11 @@
   }
 
   .profileCard {
-    padding: var(--space-5);
+    padding: var(--ce-space-5);
   }
 
   .legalLinks {
-    gap: var(--space-4);
+    gap: var(--ce-space-4);
   }
 }
 
@@ -312,7 +312,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-8) 0;
+  padding: var(--ce-space-8) 0;
 }
 
 /* ============================================
@@ -332,6 +332,7 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .actionGridCard,
   .actionListItem,
   .legalLink,

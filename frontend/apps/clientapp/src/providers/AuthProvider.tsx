@@ -4,10 +4,7 @@ import {useAuthActions} from '@/hooks/useAuthActions';
 import {restoreAuth, tokenStorage} from '@/slices/authSlice';
 import {useAppDispatch} from '@/store';
 
-/**
- * AuthProvider - Initializes auth state from localStorage and handles token refresh
- * Uses Redux for state management
- */
+
 const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
     const dispatch = useAppDispatch();
     const {refreshAccessToken} = useAuthActions();
@@ -62,7 +59,4 @@ const AuthProvider: FC<React.PropsWithChildren> = ({children}) => {
 
 export default AuthProvider;
 
-/**
- * Export useAuth hook for convenience
- */
 export {useAuth, useAuthActions} from '@/hooks/useAuthActions';

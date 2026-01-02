@@ -7,6 +7,8 @@ import {useNavigate} from 'react-router';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
+import PaddingContainer from '@/shared/containers/PaddingContainer';
+import PagePaper from '@/shared/containers/PagePaper';
 
 type StatusTab = 'active' | 'all' | 'inactive' | 'pending';
 
@@ -47,64 +49,42 @@ const ClientListPage = () => {
     };
 
     return (
-        <Box
-            bg="white"
-            style={{
-                minHeight: '100vh',
-                paddingBottom: 'calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom))',
-            }}
-        >
-            <Container
-                px="md"
-                size="md"
-            >
-                <Stack
-                    gap="md"
-                    pb="xl"
-                    pt="md"
-                >
-                    {/* Header */}
+        <PagePaper>
+            <PaddingContainer>
+                <Stack gap={'sm'}>
                     <Group
                         align="center"
                         justify="space-between"
                     >
-                        <Title
-                            fw={600}
-                            order={1}
-                        >
-                            Clients
-                        </Title>
+                        <Title order={1}>Clients</Title>
                         <Button
-                            fw={600}
+                            color={'var(--ce-bg-brand)'}
                             onClick={() => openDrawer(DRAWER_KEYS.CLIENT_INVITE)}
                             radius="xl"
                             rightSection={<IconPlus size={18} />}
-                            size="sm"
+                            size={'md'}
                         >
                             Invite
                         </Button>
                     </Group>
 
-                    {/* Status Tabs */}
                     <SegmentedControl
                         data={STATUS_TABS}
                         onChange={handleTabChange}
-                        radius="xl"
-                        size="xs"
+                        size="lg"
                         value={activeTab}
                     />
 
-                    {/* Search Input */}
                     <TextInput
                         onChange={handleSearchChange}
                         placeholder="Search clients..."
-                        radius={'lg'}
+                        radius={99999}
                         rightSection={
                             searchInput ? (
                                 <IconX
                                     aria-label="Clear search"
                                     onClick={handleClearSearch}
-                                    size={16}
+                                    size={24}
                                     style={{cursor: 'pointer'}}
                                 />
                             ) : null
@@ -119,8 +99,8 @@ const ClientListPage = () => {
                         status={activeTab === 'all' ? undefined : activeTab}
                     />
                 </Stack>
-            </Container>
-        </Box>
+            </PaddingContainer>
+        </PagePaper>
     );
 };
 

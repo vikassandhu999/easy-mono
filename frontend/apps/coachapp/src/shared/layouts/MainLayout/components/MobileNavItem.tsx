@@ -25,7 +25,6 @@ export function MobileNavItem({item, onNavigate}: MobileNavItemProps) {
         >
             <Icon size={20} />
             <span className={classes.label}>{item.label}</span>
-            {item.badge && <span className={classes.badge}>{item.badge}</span>}
         </button>
     );
 }

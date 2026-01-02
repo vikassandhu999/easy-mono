@@ -34,18 +34,12 @@ const MuscleField: FC<MuscleFieldProps> = ({form}) => {
                     {...field}
                     data={selectData}
                     error={formState.errors.muscle_ids?.message}
-                    label={
-                        <Title
-                            fw="bold"
-                            order={5}
-                        >
-                            Target Muscles
-                        </Title>
-                    }
+                    label={'Target Muscles'}
                     limit={20}
                     onSearchChange={setSearch}
                     placeholder="Select muscles"
                     searchable
+                    size={'md'}
                     value={field.value || []}
                 />
             )}

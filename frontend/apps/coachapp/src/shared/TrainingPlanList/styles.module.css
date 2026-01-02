@@ -3,7 +3,7 @@
  * 
  * Mobile-first design following the CoachEasy design system.
  * Consistent with ExerciseList and RecipeList patterns.
- * - Uses design system tokens (--space-*, --text-*, --radius-*, etc.)
+ * - Uses design system tokens (--ce-space-*, --text-*, --radius-*, etc.)
  * - Minimum touch targets of 44px
  * - Clear focus-visible states
  * - Proper contrast and semantic colors
@@ -16,7 +16,7 @@
 .listContainer {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--ce-space-2);
 }
 
 /* ============================================
@@ -28,8 +28,8 @@
 .planCard {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3);
+    gap: var(--ce-space-3);
+    padding: var(--ce-space-3);
     background: var(--surface-primary);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -86,7 +86,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--ce-space-1);
 }
 
 .name {
@@ -117,7 +117,7 @@
 .metaTags {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--ce-space-2);
     flex-wrap: wrap;
 }
 
@@ -174,8 +174,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-8);
+    gap: var(--ce-space-3);
+    padding: var(--ce-space-8);
     text-align: center;
 }
 
@@ -209,8 +209,8 @@
 .skeleton {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3);
+    gap: var(--ce-space-3);
+    padding: var(--ce-space-3);
     background: var(--surface-primary);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -229,7 +229,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--ce-space-2);
 }
 
 .skeletonLine {
@@ -251,7 +251,7 @@
 
 .skeletonTags {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--ce-space-2);
 }
 
 .skeletonTag {

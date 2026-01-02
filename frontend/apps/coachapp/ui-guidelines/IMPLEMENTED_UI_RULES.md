@@ -14,7 +14,7 @@ It is written in our own words to be actionable for implementation (theme + comp
 - Minimum touch/click targets: 44px (comfortable: 48px). Use `--touch-target-min`.
 
 ## 3) Use a small set of reusable tokens
-- **Spacing**: use the `--space-*` scale (4px base grid). Avoid one-off spacing.
+- **Spacing**: use the `--ce-space-*` scale (4px base grid). Avoid one-off spacing.
 - **Radius**: use `--radius-*` options only.
 - **Shadows**: use `--shadow-*` options only (subtle by default).
 - **Typography**: use the `--text-*` scale + `--leading-*` line-heights.

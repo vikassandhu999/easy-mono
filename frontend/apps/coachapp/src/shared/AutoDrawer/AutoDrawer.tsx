@@ -18,18 +18,17 @@ const Header = ({onClose, title, actions}: AutoDrawerProps) => {
             color="dark"
             onClick={onClose}
             radius="lg"
-            size="lg"
+            size={'xl'}
             style={{cursor: 'pointer', flexShrink: 0}}
             variant="subtle"
         >
-            <IconArrowLeft size={24} />
+            <IconArrowLeft size={32} />
         </ActionIcon>
     );
 
     const TitleElement =
         typeof title === 'string' ? (
             <Title
-                fw={600}
                 lineClamp={1}
                 order={4}
                 style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
@@ -51,7 +50,7 @@ const Header = ({onClose, title, actions}: AutoDrawerProps) => {
                 position: 'sticky',
                 top: 0,
                 zIndex: 1,
-                borderBottom: '1px solid #eee',
+                borderBottom: '1px solid var(--ce-stroke-weak)',
             }}
         >
             <Group

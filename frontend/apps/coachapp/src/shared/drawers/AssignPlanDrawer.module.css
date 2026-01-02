@@ -14,7 +14,7 @@
 .searchInput {
   width: 100%;
   height: 40px;
-  padding: 0 var(--space-3);
+  padding: 0 var(--ce-space-3);
   padding-left: 36px;
   padding-right: 36px;
   background: var(--surface-secondary);
@@ -37,7 +37,7 @@
 
 .searchIcon {
   position: absolute;
-  left: var(--space-3);
+  left: var(--ce-space-3);
   top: 50%;
   transform: translateY(-50%);
   color: var(--mantine-color-gray-5);
@@ -46,7 +46,7 @@
 
 .clearButton {
   position: absolute;
-  right: var(--space-2);
+  right: var(--ce-space-2);
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -75,14 +75,14 @@
 .plansList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .planItem {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-3);
   background: var(--surface-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -117,8 +117,8 @@
 .planMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-top: var(--space-1);
+  gap: var(--ce-space-1);
+  margin-top: var(--ce-space-1);
 }
 
 .metaTag {
@@ -204,15 +204,15 @@
 .centered {
   display: flex;
   justify-content: center;
-  padding: var(--space-6) 0;
+  padding: var(--ce-space-6) 0;
 }
 
 .loadingState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-6) 0;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-6) 0;
 }
 
 .emptyState {
@@ -220,7 +220,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-8) var(--space-4);
+  padding: var(--ce-space-8) var(--ce-space-4);
   text-align: center;
 }
 
@@ -229,6 +229,7 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .searchInput,
   .clearButton,
   .planItem,

@@ -11,7 +11,7 @@
 .formContainer {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--ce-space-4);
 }
 
 /* ============================================
@@ -21,14 +21,14 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .sectionTitle {
@@ -67,8 +67,8 @@
 .ingredientItem {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2);
   background: var(--mantine-color-gray-0);
   border-radius: var(--radius-md);
   transition: all var(--duration-fast) var(--ease-in-out);
@@ -90,7 +90,7 @@
 
 .ingredientItemDragOver {
   border-top: 2px solid var(--mantine-color-orange-5);
-  padding-top: calc(var(--space-2) - 2px);
+  padding-top: calc(var(--ce-space-2) - 2px);
 }
 
 .dragHandle {
@@ -100,7 +100,7 @@
   color: var(--mantine-color-gray-4);
   cursor: grab;
   flex-shrink: 0;
-  padding: var(--space-1);
+  padding: var(--ce-space-1);
   border-radius: var(--radius-sm);
   transition: color var(--duration-fast) var(--ease-in-out);
 }
@@ -169,8 +169,8 @@
 .searchResults {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2);
   background: var(--mantine-color-gray-0);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
@@ -180,8 +180,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: var(--surface-primary);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -215,8 +215,8 @@
 .createIngredientButton {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: var(--mantine-color-orange-0);
   border: 1px solid var(--mantine-color-orange-3);
   border-radius: var(--radius-sm);
@@ -237,7 +237,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-4);
+  padding: var(--ce-space-4);
   background: var(--mantine-color-gray-0);
   border-radius: var(--radius-md);
   border: 1px dashed var(--border-subtle);
@@ -250,9 +250,9 @@
 .instructionStep {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
   cursor: grab;
-  padding: var(--space-1) 0;
+  padding: var(--ce-space-1) 0;
   transition: all var(--duration-fast) var(--ease-in-out);
 }
 
@@ -268,7 +268,7 @@
 
 .instructionStepDragOver {
   border-top: 2px solid var(--mantine-color-orange-5);
-  padding-top: calc(var(--space-1) - 2px);
+  padding-top: calc(var(--ce-space-1) - 2px);
 }
 
 .stepNumber {
@@ -308,8 +308,8 @@
 .addStepButton {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: transparent;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-md);
@@ -330,7 +330,7 @@
 /* Keyboard Hint */
 .keyboardHint {
   text-align: center;
-  padding: var(--space-1) 0;
+  padding: var(--ce-space-1) 0;
 }
 
 /* ============================================
@@ -340,20 +340,20 @@
 .nutritionToggle {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .nutritionContent {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-top: var(--space-2);
+  gap: var(--ce-space-3);
+  padding-top: var(--ce-space-2);
 }
 
 .nutritionGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .nutritionGridFull {
@@ -373,7 +373,7 @@
 .metaGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .metaGridSingle {
@@ -389,8 +389,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-6);
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-6);
   min-height: 200px;
 }
 
@@ -404,8 +404,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-6);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-6);
   text-align: center;
 }
 
@@ -439,31 +439,31 @@
 .sectionContent {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .sectionTitleRow {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .ingredientsList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .instructionsList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 .textAreaWrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 /* ============================================
@@ -474,22 +474,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-2);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2);
 }
 
 .noResults {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2);
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2);
 }
 
 .searchResultsList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
 }
 
 /* ============================================
@@ -498,11 +498,11 @@
 
 @media (min-width: 768px) {
   .formContainer {
-    gap: var(--space-5);
+    gap: var(--ce-space-5);
   }
 
   .section {
-    gap: var(--space-4);
+    gap: var(--ce-space-4);
   }
 
   .ingredientName {
@@ -525,6 +525,7 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .ingredientItem,
   .searchResultItem,
   .ingredientDelete,

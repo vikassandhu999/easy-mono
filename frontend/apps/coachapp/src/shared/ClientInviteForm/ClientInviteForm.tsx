@@ -1,7 +1,7 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Stack, Text, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
-import React, {forwardRef, useImperativeHandle} from 'react';
+import {forwardRef, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
 import {InviteClient_zod, InviteClientProps} from '@/services/clients';
@@ -47,12 +47,16 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)}>
             <Stack gap="md">
-                <Text
-                    c="dimmed"
-                    size="sm"
+                <p
+                    style={{
+                        color: 'var(--ce-text-weak)',
+                        fontSize: 'var(--ce-font-size-tiny)',
+                        lineHeight: 'var(--ce-line-height-tiny)',
+                        margin: 0,
+                    }}
                 >
                     Your client will receive an email invitation to join your coaching program.
-                </Text>
+                </p>
 
                 <Controller
                     control={control}
@@ -61,8 +65,8 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
                         <TextInput
                             {...field}
                             error={fieldState.error?.message}
-                            label="Full Name"
-                            placeholder="John smith"
+                            label="Client name"
+                            size={'md'}
                             withAsterisk
                         />
                     )}
@@ -76,7 +80,7 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
                             {...field}
                             error={fieldState.error?.message}
                             label="Email address"
-                            placeholder="john@example.com"
+                            size={'md'}
                             type="email"
                             withAsterisk
                         />
@@ -92,7 +96,7 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
                             error={fieldState.error?.message}
                             label="Phone number (optional)"
                             onChange={(e) => field.onChange(e.target.value || undefined)}
-                            placeholder="+1 (555) 123-4567"
+                            size={'md'}
                             type="tel"
                             value={field.value || ''}
                         />
@@ -108,8 +112,8 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
                             error={fieldState.error?.message}
                             label="Notes (optional)"
                             onChange={(e) => field.onChange(e.target.value || undefined)}
-                            placeholder="Training for a marathon, vegetarian diet..."
                             rows={4}
+                            size={'md'}
                             value={field.value || ''}
                         />
                     )}

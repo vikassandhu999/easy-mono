@@ -19,8 +19,8 @@
    ============================================ */
 
 .headerSection {
-  padding: var(--space-4);
-  padding-bottom: var(--space-2);
+  padding: var(--ce-space-4);
+  padding-bottom: var(--ce-space-2);
   background: var(--surface-primary);
 }
 
@@ -28,7 +28,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--ce-space-3);
 }
 
 .headerContent {
@@ -48,7 +48,7 @@
   font-size: var(--text-xs);
   color: var(--text-secondary);
   line-height: var(--leading-normal);
-  margin-top: var(--space-1);
+  margin-top: var(--ce-space-1);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -63,8 +63,8 @@
 .createButton {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-1);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: var(--mantine-color-blue-6);
   border: none;
   border-radius: var(--radius-full);
@@ -95,8 +95,8 @@
 
 .contentSection {
   flex: 1;
-  padding: 0 var(--space-4);
-  padding-bottom: var(--space-6);
+  padding: 0 var(--ce-space-4);
+  padding-bottom: var(--ce-space-6);
 }
 
 /* ============================================
@@ -106,8 +106,8 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-3) 0;
   position: sticky;
   top: 0;
   z-index: 99;
@@ -131,7 +131,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--ce-space-2) var(--ce-space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -166,7 +166,7 @@
 .searchInput {
   width: 100%;
   height: var(--input-height-sm);
-  padding: 0 var(--space-3);
+  padding: 0 var(--ce-space-3);
   padding-left: 36px;
   padding-right: 36px;
   background: var(--surface-secondary);
@@ -189,7 +189,7 @@
 
 .searchIcon {
   position: absolute;
-  left: var(--space-3);
+  left: var(--ce-space-3);
   top: 50%;
   transform: translateY(-50%);
   color: var(--mantine-color-gray-5);
@@ -198,7 +198,7 @@
 
 .clearButton {
   position: absolute;
-  right: var(--space-2);
+  right: var(--ce-space-2);
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -226,8 +226,8 @@
 
 @media (min-width: 768px) {
   .headerSection {
-    padding: var(--space-5);
-    padding-bottom: var(--space-3);
+    padding: var(--ce-space-5);
+    padding-bottom: var(--ce-space-3);
   }
 
   .pageTitle {
@@ -241,20 +241,20 @@
   }
 
   .createButton {
-    padding: var(--space-2) var(--space-4);
+    padding: var(--ce-space-2) var(--ce-space-4);
   }
 
   .contentSection {
-    padding: 0 var(--space-5);
-    padding-bottom: var(--space-8);
+    padding: 0 var(--ce-space-5);
+    padding-bottom: var(--ce-space-8);
   }
 
   .container {
-    gap: var(--space-3);
+    gap: var(--ce-space-3);
   }
 
   .statusTab {
-    padding: var(--space-2) var(--space-4);
+    padding: var(--ce-space-2) var(--ce-space-4);
     font-size: var(--text-base);
   }
 
@@ -291,20 +291,20 @@
 .chips {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ce-space-2);
   flex-wrap: wrap;
-  margin-top: var(--space-4);
+  margin-top: var(--ce-space-4);
 }
 
 .chipsMobile {
-  gap: var(--space-1);
+  gap: var(--ce-space-1);
 }
 
 .chip {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--ce-space-1);
+  padding: var(--ce-space-2) var(--ce-space-3);
   background: var(--surface-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
@@ -384,7 +384,7 @@
 /* Responsive adjustments for chips */
 @media (min-width: 768px) {
   .chip {
-    padding: var(--space-2) var(--space-4);
+    padding: var(--ce-space-2) var(--ce-space-4);
   }
 }
 
@@ -404,7 +404,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--ce-space-2) var(--ce-space-4);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);

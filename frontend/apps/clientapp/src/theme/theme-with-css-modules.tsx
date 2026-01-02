@@ -153,7 +153,7 @@ const formLabelStyles = {
     fontSize: 'var(--text-sm)',
     lineHeight: 'var(--leading-normal)',
     color: 'var(--mantine-color-gray-8)',
-    marginBottom: 'var(--space-1)',
+    marginBottom: 'var(--ce-space-1)',
 } as const;
 
 // Form description styling
@@ -162,7 +162,7 @@ const formDescriptionStyles = {
     fontSize: 'var(--text-xs)',
     lineHeight: 'var(--leading-relaxed)',
     color: 'var(--mantine-color-gray-6)',
-    marginTop: 'var(--space-1)',
+    marginTop: 'var(--ce-space-1)',
 } as const;
 
 // Form error styling
@@ -171,7 +171,7 @@ const formErrorStyles = {
     fontSize: 'var(--text-xs)',
     lineHeight: 'var(--leading-normal)',
     color: 'var(--mantine-color-red-6)',
-    marginTop: 'var(--space-1)',
+    marginTop: 'var(--ce-space-1)',
 } as const;
 
 // Base input field styling - Mobile-first touch-friendly
@@ -184,7 +184,7 @@ const baseInputStyles = {
     lineHeight: 'var(--leading-normal)',
     height: 'var(--input-height)',
     minHeight: 'var(--input-height)',
-    paddingInline: 'var(--space-3)',
+    paddingInline: 'var(--ce-space-3)',
     transition:
         'border-color var(--duration-fast) var(--ease-in-out), box-shadow var(--duration-fast) var(--ease-in-out)',
     '&:hover:not(:disabled):not(:focus)': {
@@ -355,7 +355,7 @@ export const theme = createTheme({
             },
             styles: {
                 header: {
-                    padding: 'var(--space-4)',
+                    padding: 'var(--ce-space-4)',
                     borderBottom: '1px solid var(--border-subtle)',
                 },
                 title: {
@@ -363,7 +363,7 @@ export const theme = createTheme({
                     fontSize: 'var(--text-lg)',
                 },
                 body: {
-                    padding: 'var(--space-4)',
+                    padding: 'var(--ce-space-4)',
                 },
                 close: {
                     width: 'var(--touch-target-min)',
@@ -387,8 +387,8 @@ export const theme = createTheme({
             },
             styles: {
                 header: {
-                    padding: 'var(--space-4)',
-                    paddingBottom: 'var(--space-3)',
+                    padding: 'var(--ce-space-4)',
+                    paddingBottom: 'var(--ce-space-3)',
                 },
                 title: {
                     fontWeight: 600,
@@ -396,7 +396,7 @@ export const theme = createTheme({
                     color: 'var(--mantine-color-gray-9)',
                 },
                 body: {
-                    padding: 'var(--space-4)',
+                    padding: 'var(--ce-space-4)',
                     paddingTop: 0,
                 },
                 close: {
@@ -443,7 +443,7 @@ export const theme = createTheme({
                     },
                 },
                 label: {
-                    paddingLeft: 'var(--space-2)',
+                    paddingLeft: 'var(--ce-space-2)',
                     fontSize: 'var(--text-base)',
                     fontWeight: 400,
                     cursor: 'pointer',
@@ -503,7 +503,7 @@ export const theme = createTheme({
                     ...baseInputStyles,
                     height: 'auto',
                     minHeight: 'var(--input-height)',
-                    paddingBlock: 'var(--space-2)',
+                    paddingBlock: 'var(--ce-space-2)',
                 },
                 wrapper: formWrapperStyles,
                 pill: {
@@ -582,7 +582,7 @@ export const theme = createTheme({
                     padding: 0,
                 },
                 root: {
-                    gap: 'var(--space-2)',
+                    gap: 'var(--ce-space-2)',
                 },
             },
         }),
@@ -605,7 +605,7 @@ export const theme = createTheme({
                     },
                 },
                 label: {
-                    paddingLeft: 'var(--space-2)',
+                    paddingLeft: 'var(--ce-space-2)',
                     fontSize: 'var(--text-base)',
                     cursor: 'pointer',
                 },
@@ -637,11 +637,11 @@ export const theme = createTheme({
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-subtle)',
                     boxShadow: 'var(--shadow-lg)',
-                    padding: 'var(--space-1)',
+                    padding: 'var(--ce-space-1)',
                 },
                 option: {
                     borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-2) var(--space-3)',
+                    padding: 'var(--ce-space-2) var(--ce-space-3)',
                     fontSize: 'var(--text-base)',
                     '&[data-selected]': {
                         backgroundColor: 'var(--mantine-color-brand-5)',
@@ -656,7 +656,7 @@ export const theme = createTheme({
         Slider: Slider.extend({
             styles: {
                 root: {
-                    paddingBlock: 'var(--space-2)',
+                    paddingBlock: 'var(--ce-space-2)',
                 },
                 track: {
                     height: rem(6),
@@ -701,7 +701,7 @@ export const theme = createTheme({
                     boxShadow: 'var(--shadow-sm)',
                 },
                 label: {
-                    paddingLeft: 'var(--space-2)',
+                    paddingLeft: 'var(--ce-space-2)',
                     fontSize: 'var(--text-base)',
                     cursor: 'pointer',
                 },
@@ -733,7 +733,7 @@ export const theme = createTheme({
                     ...baseInputStyles,
                     height: 'auto',
                     minHeight: rem(100),
-                    paddingBlock: 'var(--space-3)',
+                    paddingBlock: 'var(--ce-space-3)',
                     resize: 'vertical',
                 },
                 wrapper: formWrapperStyles,
@@ -773,7 +773,7 @@ export const theme = createTheme({
                 },
                 separator: {
                     color: 'var(--mantine-color-gray-5)',
-                    margin: '0 var(--space-2)',
+                    margin: '0 var(--ce-space-2)',
                 },
             },
         }),
@@ -786,11 +786,11 @@ export const theme = createTheme({
             styles: {
                 dropdown: {
                     border: '1px solid var(--border-subtle)',
-                    padding: 'var(--space-1)',
+                    padding: 'var(--ce-space-1)',
                 },
                 item: {
                     borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-2) var(--space-3)',
+                    padding: 'var(--ce-space-2) var(--ce-space-3)',
                     fontSize: 'var(--text-base)',
                     minHeight: 'var(--touch-target-min)',
                     '&[data-hovered]': {
@@ -801,18 +801,18 @@ export const theme = createTheme({
                     fontWeight: 400,
                 },
                 itemSection: {
-                    marginRight: 'var(--space-2)',
+                    marginRight: 'var(--ce-space-2)',
                 },
                 label: {
                     fontSize: 'var(--text-xs)',
                     fontWeight: 600,
                     color: 'var(--mantine-color-gray-5)',
-                    padding: 'var(--space-2) var(--space-3)',
+                    padding: 'var(--ce-space-2) var(--ce-space-3)',
                     textTransform: 'uppercase',
                     letterSpacing: 'var(--tracking-wider)',
                 },
                 divider: {
-                    marginBlock: 'var(--space-1)',
+                    marginBlock: 'var(--ce-space-1)',
                     borderColor: 'var(--border-subtle)',
                 },
             },
@@ -822,7 +822,7 @@ export const theme = createTheme({
             styles: {
                 root: {
                     borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-2) var(--space-3)',
+                    padding: 'var(--ce-space-2) var(--ce-space-3)',
                     minHeight: 'var(--touch-target-min)',
                     transition: 'background-color var(--duration-fast) var(--ease-in-out)',
                     '&:hover': {
@@ -866,7 +866,7 @@ export const theme = createTheme({
                 tab: {
                     fontWeight: 500,
                     fontSize: 'var(--text-base)',
-                    padding: 'var(--space-3) var(--space-4)',
+                    padding: 'var(--ce-space-3) var(--ce-space-4)',
                     minHeight: 'var(--touch-target-min)',
                     borderRadius: 0,
                     borderBottom: '2px solid transparent',
@@ -884,7 +884,7 @@ export const theme = createTheme({
                     },
                 },
                 panel: {
-                    paddingTop: 'var(--space-4)',
+                    paddingTop: 'var(--ce-space-4)',
                 },
             },
         }),
@@ -927,7 +927,7 @@ export const theme = createTheme({
                 label: {
                     fontSize: 'var(--text-sm)',
                     fontWeight: 500,
-                    padding: 'var(--space-1) var(--space-3)',
+                    padding: 'var(--ce-space-1) var(--ce-space-3)',
                     minHeight: rem(32),
                 },
             },
@@ -957,7 +957,7 @@ export const theme = createTheme({
             styles: {
                 root: {
                     backgroundColor: 'var(--surface-tertiary)',
-                    padding: 'var(--space-0-5)',
+                    padding: 'var(--ce-space-0-5)',
                     borderRadius: 'var(--radius-lg)',
                 },
                 control: {
@@ -966,7 +966,7 @@ export const theme = createTheme({
                 label: {
                     fontSize: 'var(--text-sm)',
                     fontWeight: 500,
-                    padding: 'var(--space-2) var(--space-3)',
+                    padding: 'var(--ce-space-2) var(--ce-space-3)',
                 },
                 indicator: {
                     borderRadius: 'var(--radius-md)',
@@ -1018,11 +1018,11 @@ export const theme = createTheme({
                     textTransform: 'uppercase',
                     letterSpacing: 'var(--tracking-wide)',
                     color: 'var(--mantine-color-gray-6)',
-                    padding: 'var(--space-3)',
+                    padding: 'var(--ce-space-3)',
                     borderBottom: '1px solid var(--border-default)',
                 },
                 td: {
-                    padding: 'var(--space-3)',
+                    padding: 'var(--ce-space-3)',
                     borderBottom: '1px solid var(--border-subtle)',
                 },
                 tr: {
@@ -1075,7 +1075,7 @@ export const theme = createTheme({
             styles: {
                 root: {
                     boxShadow: 'var(--shadow-lg)',
-                    padding: 'var(--space-3)',
+                    padding: 'var(--ce-space-3)',
                     border: '1px solid var(--border-subtle)',
                 },
                 title: {
@@ -1099,7 +1099,7 @@ export const theme = createTheme({
                 tooltip: {
                     fontSize: 'var(--text-xs)',
                     fontWeight: 500,
-                    padding: 'var(--space-1-5) var(--space-2)',
+                    padding: 'var(--ce-space-1-5) var(--ce-space-2)',
                     backgroundColor: 'var(--mantine-color-gray-9)',
                 },
             },

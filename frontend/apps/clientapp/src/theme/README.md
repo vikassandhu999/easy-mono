@@ -67,13 +67,13 @@ H4: 1rem                     (16px)
 Based on 4px base unit for perfect alignment:
 
 ```tsx
---space-1: 0.25rem   (4px)   // Minimal spacing
---space-2: 0.5rem    (8px)   // Small gaps
---space-3: 0.75rem   (12px)  // Compact spacing
---space-4: 1rem      (16px)  // Standard spacing
---space-6: 1.5rem    (24px)  // Section spacing
---space-8: 2rem      (32px)  // Large spacing
---space-12: 3rem     (48px)  // Page sections
+--ce-space-1: 0.25rem   (4px)   // Minimal spacing
+--ce-space-2: 0.5rem    (8px)   // Small gaps
+--ce-space-3: 0.75rem   (12px)  // Compact spacing
+--ce-space-4: 1rem      (16px)  // Standard spacing
+--ce-space-6: 1.5rem    (24px)  // Section spacing
+--ce-space-8: 2rem      (32px)  // Large spacing
+--ce-space-12: 3rem     (48px)  // Page sections
 ```
 
 ## 👆 Touch Targets
@@ -183,7 +183,7 @@ import './theme/default-css-variables.css';
 
 // In your styles
 .custom-element {
-  padding: var(--space-4);
+  padding: var(--ce-space-4);
   font-size: var(--text-base);
   color: var(--mantine-color-text-primary);
   border-radius: var(--radius-md);
@@ -235,7 +235,7 @@ Dark variant: Add `on-dark` class
 ```css
 :root {
   --mantine-color-brand-6: #your-brand-color;
-  --space-4: 1.25rem; /* Increase spacing */
+  --ce-space-4: 1.25rem; /* Increase spacing */
 }
 ```
 
@@ -264,7 +264,7 @@ All Mantine components are pre-styled with consistent:
 ## 🎯 Best Practices
 
 1. **Use semantic colors**: `color="brand"` not hardcoded hex
-2. **Use spacing variables**: `var(--space-4)` not `16px`
+2. **Use spacing variables**: `var(--ce-space-4)` not `16px`
 3. **Mobile-first**: Design for small screens, enhance for large
 4. **Touch-friendly**: Use `size="md"` or larger for touch interfaces
 5. **Consistent radius**: Use theme radius, don't hardcode
@@ -279,7 +279,7 @@ All Mantine components are pre-styled with consistent:
 ✅ Use `size="md"` (44px) or larger for primary actions
 
 ### Spacing feels tight?
-✅ This is intentional for mobile - use `--space-5` or higher for breathing room
+✅ This is intentional for mobile - use `--ce-space-5` or higher for breathing room
 
 ### Need more contrast?
 ✅ Use `--mantine-color-text-primary` for important text

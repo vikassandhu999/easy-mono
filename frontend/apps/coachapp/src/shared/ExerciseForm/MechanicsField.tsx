@@ -33,15 +33,9 @@ const MechanicsField: FC<MechanicsFieldProps> = ({form}) => {
                         },
                     ]}
                     error={formState.errors.mechanics?.message}
-                    label={
-                        <Title
-                            fw="bold"
-                            order={5}
-                        >
-                            Mechanics
-                        </Title>
-                    }
+                    label={'Mechanics'}
                     placeholder="Pick value"
+                    size={'md'}
                     value={field.value || null}
                 />
             )}

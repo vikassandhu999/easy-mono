@@ -7,12 +7,8 @@
   z-index: 100;
 
   background-color: var(--mantine-color-white);
-  border-top: 1px solid var(--mantine-color-gray-2);
-  -webkit-box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
-  -moz-box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
-  box-shadow: 0px 24px 24px 10px rgba(2, 2, 2, 0.1);
-
-  padding: 4px 8px;
+  border-top: 1px solid var(--ce-stroke-weak);
+  box-shadow: var(--ce-shadow-raised);
 
   transform: translateY(100%);
   transition:
@@ -20,8 +16,7 @@
     opacity 0.2s ease-in-out;
   opacity: 0;
 
-  /* Ensure safe area for mobile devices */
-  padding-bottom: env(safe-area-inset-bottom);
+
 
   /* Prevent affecting child component styles */
   isolation: isolate;

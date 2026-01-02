@@ -1,4 +1,4 @@
-import {ActionIcon, Button, Divider, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
+import {ActionIcon, Button, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconBarbell, IconChefHat, IconPlus, IconRun, IconSalad, IconX} from '@tabler/icons-react';
 import {useEffect, useRef, useState} from 'react';
@@ -152,16 +152,12 @@ const LibraryListPage = () => {
                         align="center"
                         justify={'space-between'}
                     >
-                        <ScrollArea
-                            type={'never'}
-                            // w={'100%'}
-                        >
+                        <ScrollArea type={'never'}>
                             <SegmentedControl
                                 data={CATEGORY_TABS}
                                 onChange={handleTabChange}
-                                radius="xl"
                                 ref={segmentedControlRef}
-                                size="xs"
+                                size={'lg'}
                                 value={activeTab}
                             />
                         </ScrollArea>
@@ -170,7 +166,7 @@ const LibraryListPage = () => {
                             leftSection={<IconPlus size={18} />}
                             onClick={handleCreate}
                             radius="xl"
-                            size="sm"
+                            size="md"
                             visibleFrom="sm"
                         >
                             {activeCategory.createLabel}
@@ -223,24 +219,25 @@ const LibraryListPage = () => {
                     )}
                 </Stack>
             </PaddingContainer>
-            <ActionIcon
+            <Button
                 aria-label={`Create ${activeCategory.createLabel}`}
-                color="blue"
+                color="var(--ce-fill-brand-strong)"
                 hiddenFrom="sm"
+                leftSection={<IconPlus size={20} />}
                 onClick={handleCreate}
-                radius="xl"
-                size="xl"
+                radius={'xl'}
+                size={'md'}
                 style={{
                     position: 'fixed',
-                    bottom: 'calc(var(--mantine-spacing-lg) + env(safe-area-inset-bottom) + 60px)',
+                    bottom: 'calc(var(--mantine-spacing-md) + env(safe-area-inset-bottom) + 60px)',
                     right: 'var(--mantine-spacing-md)',
-                    boxShadow: 'var(--mantine-shadow-lg)',
+                    boxShadow: 'var(--ce-shadow-raised)',
                     zIndex: 100,
                 }}
                 variant="filled"
             >
-                <IconPlus size={24} />
-            </ActionIcon>
+                New
+            </Button>
         </PagePaper>
     );
 };

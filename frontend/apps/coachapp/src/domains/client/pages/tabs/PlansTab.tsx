@@ -41,12 +41,10 @@ const PlansTab = ({clientId, onAddPlan}: PlansTabProps) => {
                 bottom={'1px'}
                 justify="space-between"
             >
-                {/* Plan Type Tabs */}
                 <SegmentedControl
                     data={PLAN_TABS}
                     onChange={(value) => setActivePlanTab(value as PlanTabValue)}
-                    radius="xl"
-                    size="sm"
+                    size="lg"
                     value={activePlanTab}
                 />
 
@@ -54,7 +52,7 @@ const PlansTab = ({clientId, onAddPlan}: PlansTabProps) => {
                     onClick={onAddPlan}
                     radius={'xl'}
                     size={'xl'}
-                    variant="filled"
+                    style={{backgroundColor: 'var(--ce-fill-brand-strong)'}}
                 >
                     <IconPlus size={24} />
                 </ActionIcon>

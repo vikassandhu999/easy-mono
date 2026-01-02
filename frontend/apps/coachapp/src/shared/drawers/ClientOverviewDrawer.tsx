@@ -23,9 +23,16 @@ const ClientOverviewDrawer = () => {
         return (
             <AutoDrawer
                 content={
-                    <Stack align="center" justify="center" py="xl">
+                    <Stack
+                        align="center"
+                        justify="center"
+                        py="xl"
+                    >
                         <Loader size="sm" />
-                        <Text c="dimmed" size="sm">
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                        >
                             Loading client...
                         </Text>
                     </Stack>
@@ -40,7 +47,10 @@ const ClientOverviewDrawer = () => {
         return (
             <AutoDrawer
                 content={
-                    <Text c="red" size="sm">
+                    <Text
+                        c="red"
+                        size="sm"
+                    >
                         Client not found
                     </Text>
                 }
@@ -80,12 +90,23 @@ const ClientOverviewDrawer = () => {
             content={
                 <Stack gap="md">
                     {/* Onboarding Answers */}
-                    <Card withBorder radius="md" padding="md">
+                    <Card
+                        padding="md"
+                        radius="md"
+                        withBorder
+                    >
                         <Stack gap="xs">
-                            <Text fw={500} size="sm">
+                            <Text
+                                fw={500}
+                                size="sm"
+                            >
                                 Onboarding Answers
                             </Text>
-                            <Text c="dimmed" size="sm" fs="italic">
+                            <Text
+                                c="dimmed"
+                                fs="italic"
+                                size="sm"
+                            >
                                 {client.status === 'pending'
                                     ? 'Client has not joined yet.'
                                     : 'No onboarding answers available.'}
@@ -94,9 +115,16 @@ const ClientOverviewDrawer = () => {
                     </Card>
 
                     {/* Notes */}
-                    <Card withBorder radius="md" padding="md">
+                    <Card
+                        padding="md"
+                        radius="md"
+                        withBorder
+                    >
                         <Stack gap="sm">
-                            <Text fw={500} size="sm">
+                            <Text
+                                fw={500}
+                                size="sm"
+                            >
                                 Notes
                             </Text>
 
@@ -134,11 +162,17 @@ const ClientOverviewDrawer = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Text c="dimmed" size="sm" fs={client.notes ? undefined : 'italic'}>
+                                    <Text
+                                        c="dimmed"
+                                        fs={client.notes ? undefined : 'italic'}
+                                        size="sm"
+                                    >
                                         {client.notes ?? 'No notes available'}
                                     </Text>
                                     <Button
-                                        leftSection={hasExistingNote ? <IconPencil size={16} /> : <IconPlus size={16} />}
+                                        leftSection={
+                                            hasExistingNote ? <IconPencil size={16} /> : <IconPlus size={16} />
+                                        }
                                         onClick={handleEditNote}
                                         radius="xl"
                                         size="xs"

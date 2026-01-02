@@ -10,7 +10,7 @@ This document outlines the design principles and implementation patterns used to
 - **Vertical Stacking**: Content stacks vertically by default on mobile to accommodate narrow widths.
 
 ### 2. Space Efficiency
-- **Compact Spacing**: Use a tight 4px grid system (`--space-1` = 4px).
+- **Compact Spacing**: Use a tight 4px grid system (`--ce-space-1` = 4px).
 - **Collapsible Sections**: Hide dense or secondary information (like Nutrition facts) behind toggles/accordions.
 - **Density**: Reduce padding and margins on mobile while maintaining legibility.
 
@@ -25,11 +25,11 @@ We use a set of CSS variables defined in `src/theme/default-css-variables.css` t
 ### Spacing Scale
 | Variable | Value | Usage |
 |----------|-------|-------|
-| `--space-1` | 4px | Tight grouping (icon + text) |
-| `--space-2` | 8px | Component internal spacing |
-| `--space-3` | 12px | Section spacing |
-| `--space-4` | 16px | Container padding |
-| `--space-5` | 24px | Major section gaps |
+| `--ce-space-1` | 4px | Tight grouping (icon + text) |
+| `--ce-space-2` | 8px | Component internal spacing |
+| `--ce-space-3` | 12px | Section spacing |
+| `--ce-space-4` | 16px | Container padding |
+| `--ce-space-5` | 24px | Major section gaps |
 
 ### Typography
 | Variable | Value | Usage |
@@ -48,7 +48,7 @@ We use a set of CSS variables defined in `src/theme/default-css-variables.css` t
   .metaGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr); /* 2 cols on mobile */
-    gap: var(--space-3);
+    gap: var(--ce-space-3);
   }
   @media (min-width: 768px) {
     .metaGrid { grid-template-columns: repeat(3, 1fr); }

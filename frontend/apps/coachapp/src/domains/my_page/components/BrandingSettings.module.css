@@ -17,7 +17,7 @@
    ============================================ */
 
 .previewHint {
-  padding: var(--space-2);
+  padding: var(--ce-space-2);
   background: var(--mantine-color-gray-0);
   border-radius: var(--radius-sm);
 }
@@ -28,6 +28,6 @@
 
 @media (max-width: 576px) {
   .container {
-    padding: var(--space-3);
+    padding: var(--ce-space-3);
   }
 }

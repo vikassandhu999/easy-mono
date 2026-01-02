@@ -1,28 +1,12 @@
-import {ActionIcon, Avatar, Badge, Box, Button, Card, Container, Group, Stack, Text, Title} from '@mantine/core';
-import {IconArrowLeft, IconSettings} from '@tabler/icons-react';
+import {ActionIcon, Box, Container, Group, Stack, Text, Title} from '@mantine/core';
+import {IconArrowLeft} from '@tabler/icons-react';
 import {useNavigate, useParams} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useGetClient} from '@/services/clients';
-import {capitalizeWords} from '@/utils/text';
 
 import {PlansTab} from './tabs';
-
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'active':
-            return 'green';
-        case 'pending':
-            return 'yellow';
-        case 'inactive':
-            return 'gray';
-        case 'archived':
-            return 'red';
-        default:
-            return 'gray';
-    }
-};
 
 const ClientViewPage = () => {
     const {id} = useParams<{id: string}>();
@@ -75,14 +59,6 @@ const ClientViewPage = () => {
         openDrawer(DRAWER_KEYS.ASSIGN_PLAN, {client_id: id!});
     };
 
-    const handleOpenOverview = () => {
-        openDrawer(DRAWER_KEYS.CLIENT_OVERVIEW, {client_id: id!});
-    };
-
-    const handleOpenSettings = () => {
-        openDrawer(DRAWER_KEYS.CLIENT_SETTINGS, {client_id: id!});
-    };
-
     return (
         <Box
             bg="white"
@@ -104,23 +80,24 @@ const ClientViewPage = () => {
                     <Group justify="space-between">
                         <Group gap="sm">
                             <ActionIcon
-                                aria-label="Go back"
-                                color="gray"
+                                color="dark"
                                 onClick={() => navigate('/clients')}
-                                size="lg"
+                                radius="lg"
+                                size={'xl'}
+                                style={{cursor: 'pointer', flexShrink: 0}}
                                 variant="subtle"
                             >
-                                <IconArrowLeft size={24} />
+                                <IconArrowLeft size={32} />
                             </ActionIcon>
                             <Title
                                 fw={600}
-                                order={1}
+                                order={3}
                             >
                                 {client.full_name}
                             </Title>
                         </Group>
 
-                        <Group
+                        {/* <Group
                             gap="xs"
                             wrap="nowrap"
                         >
@@ -128,7 +105,7 @@ const ClientViewPage = () => {
                                 fw={600}
                                 onClick={handleOpenOverview}
                                 radius="xl"
-                                size="sm"
+                                size={'compact-xs'}
                                 variant="light"
                             >
                                 Overview
@@ -140,69 +117,15 @@ const ClientViewPage = () => {
                                 size="lg"
                                 variant="subtle"
                             >
-                                <IconSettings size={20} />
+                                <IconSettings size={32} />
                             </ActionIcon>
-                        </Group>
+                        </Group> */}
                     </Group>
 
-                    <Card
-                        bg="gray.0"
-                        padding="lg"
-                        radius="xl"
-                        withBorder
-                    >
-                        <Group
-                            justify="space-between"
-                            wrap="nowrap"
-                        >
-                            <Group
-                                gap="md"
-                                wrap="nowrap"
-                            >
-                                <Avatar
-                                    color="initials"
-                                    name={client.full_name}
-                                    radius="xl"
-                                    size={48}
-                                />
-                                <Stack gap={4}>
-                                    <Text
-                                        fw={600}
-                                        size="md"
-                                    >
-                                        {client.full_name}
-                                    </Text>
-                                    <Text
-                                        c="dimmed"
-                                        size="sm"
-                                    >
-                                        {client.email}
-                                    </Text>
-                                </Stack>
-                            </Group>
-                            <Badge
-                                color={getStatusColor(client.status)}
-                                radius="xl"
-                                size="md"
-                                variant="light"
-                            >
-                                {capitalizeWords(client.status)}
-                            </Badge>
-                        </Group>
-                    </Card>
-
-                    <Stack gap="sm">
-                        <Title
-                            fw={600}
-                            order={5}
-                        >
-                            Plans
-                        </Title>
-                        <PlansTab
-                            clientId={id!}
-                            onAddPlan={handleAddPlan}
-                        />
-                    </Stack>
+                    <PlansTab
+                        clientId={id!}
+                        onAddPlan={handleAddPlan}
+                    />
                 </Stack>
             </Container>
         </Box>

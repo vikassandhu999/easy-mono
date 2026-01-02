@@ -29,31 +29,11 @@ const TrainingPlanListItem = ({plan, onClick}: TrainingPlanListItemProps) => {
             aria-label={`Training plan: ${plan.name}`}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
-            padding="md"
-            radius="lg"
-            role="button"
-            shadow={'xl'}
             style={{
                 cursor: 'pointer',
-                outline: 0,
-                transition: 'box-shadow 0.15s ease, transform 0.15s ease',
-            }}
-            styles={{
-                root: {
-                    minHeight: 'var(--touch-target-min)',
-                    '&:hover': {
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                        transform: 'translateY(-1px)',
-                    },
-                    '&:active': {
-                        transform: 'translateY(0)',
-                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
-                    },
-                    '&:focus-visible': {
-                        outline: '2px solid var(--mantine-color-brand-6)',
-                        outlineOffset: '2px',
-                    },
-                },
+                borderRadius: 'var(--mantine-radius-xl)',
+                border: '1px solid var(--ce-stroke-weak)',
+                boxShadow: 'var(--ce-shadow-raised)',
             }}
             tabIndex={0}
             withBorder

@@ -33,18 +33,12 @@ const EquipmentField: FC<EquipmentFieldProps> = ({form}) => {
                     {...field}
                     data={selectData}
                     error={formState.errors.equipment_ids?.message}
-                    label={
-                        <Title
-                            fw="bold"
-                            order={5}
-                        >
-                            Equipment
-                        </Title>
-                    }
+                    label={'Equipment'}
                     limit={20}
                     onSearchChange={setSearch}
                     placeholder="Select equipment"
                     searchable
+                    size={'md'}
                     value={field.value || []}
                 />
             )}

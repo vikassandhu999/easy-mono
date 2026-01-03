@@ -5,7 +5,7 @@ import {useRef} from 'react';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {InviteClientProps, useInviteClient} from '@/services/clients';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {ClientInviteForm, ClientInviteFormHandle} from '@/shared/ClientInviteForm/ClientInviteForm';
+import {ClientInviteForm, ClientInviteFormHandle} from '@/components/ClientInviteForm';
 import {notifyError} from '@/utils/notification';
 
 const ClientInviteDrawer = () => {

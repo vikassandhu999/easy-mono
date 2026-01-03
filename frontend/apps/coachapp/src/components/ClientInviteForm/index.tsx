@@ -1,5 +1,5 @@
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {Stack, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {forwardRef, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';

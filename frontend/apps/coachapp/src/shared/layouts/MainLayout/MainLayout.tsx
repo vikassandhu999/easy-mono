@@ -57,7 +57,7 @@ export function MainLayout({children, disableTopMargin, showNavigation}: MainLay
             <AppShell.Main
                 style={{
                     background: 'transparent',
-                    marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-size-xl)',
+                    marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-space-16)',
                 }}
             >
                 {children}

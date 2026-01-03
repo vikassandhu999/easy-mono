@@ -33,8 +33,8 @@ import {useAuthActions} from '@/hooks/useAuthActions';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useProfileQuery, UserProfileResponse} from '@/services/auth';
 import {useGetBusinessSettingsQuery} from '@/services/settings/settings';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PageWrapper from '@/containers/PageWrapper';
+import PageContentWrapper from '@/components/PageContentWrapper';
+import PageWrapper from '@/components/PageWrapper';
 import {notifyInfo, notifySuccess} from '@/utils/notification';
 
 import {LEGAL_LINKS, LegalLink} from '../config/ui';
@@ -76,18 +76,18 @@ export default function SettingsPage() {
     if (profileLoading) {
         return (
             <PageWrapper>
-                <PaddingContainer>
+                <PageContentWrapper>
                     <div className={classes.loadingState}>
                         <Text c="dimmed">Loading profile...</Text>
                     </div>
-                </PaddingContainer>
+                </PageContentWrapper>
             </PageWrapper>
         );
     }
 
     return (
         <PageWrapper>
-            <PaddingContainer>
+            <PageContentWrapper>
                 <Stack gap="lg">
                     {/* Header */}
                     {profile && <Header profile={profile} />}
@@ -119,7 +119,7 @@ export default function SettingsPage() {
                     {/* Legal Links */}
                     <LegalLinks links={LEGAL_LINKS} />
                 </Stack>
-            </PaddingContainer>
+            </PageContentWrapper>
         </PageWrapper>
     );
 }

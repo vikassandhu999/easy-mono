@@ -1,5 +1,5 @@
 import {FoldersIcon} from '@phosphor-icons/react';
-import { IconSettings2, IconUsers, IconWorldWww} from '@tabler/icons-react';
+import {IconSettings2, IconUsers, IconWorldWww} from '@tabler/icons-react';
 
 import {NavItem} from './types';
 

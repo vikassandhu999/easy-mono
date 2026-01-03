@@ -1,5 +1,6 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 
+import ClientsPage from '@/containers/ClientsPage';
 import LoginPage from '@/domains/auth/pages/LoginPage';
 import RegisterPage from '@/domains/auth/pages/RegisterPage';
 import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
@@ -50,9 +51,13 @@ const router = createBrowserRouter([
                         path: '/',
                     },
                     {
-                        element: <ClientListPage />,
+                        element: <ClientsPage />,
                         path: '/clients',
                     },
+                    // {
+                    //     element: <ClientsPage />,
+                    //     path: '/clients1',
+                    // },
                     {
                         element: <ClientViewPage />,
                         path: '/clients/:id',
@@ -75,6 +80,6 @@ const router = createBrowserRouter([
     },
 ]);
 
-export default function AppRouterProvider() {
+export default function Routes() {
     return <RouterProvider router={router} />;
 }

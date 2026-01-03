@@ -4,11 +4,11 @@ import {IconPlus, IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
 
+import PageContentWrapper from '@/components/PageContentWrapper';
+import PageWrapper from '@/components/PageWrapper';
 import {DRAWER_KEYS} from '@/configs';
-import PageWrapper from '@/containers/PageWrapper';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
 
 type StatusTab = 'active' | 'all' | 'inactive' | 'pending';
 
@@ -50,7 +50,7 @@ const ClientListPage = () => {
 
     return (
         <PageWrapper>
-            <PaddingContainer>
+            <PageContentWrapper>
                 <Stack gap={'sm'}>
                     <Group
                         align="center"
@@ -99,7 +99,7 @@ const ClientListPage = () => {
                         status={activeTab === 'all' ? undefined : activeTab}
                     />
                 </Stack>
-            </PaddingContainer>
+            </PageContentWrapper>
         </PageWrapper>
     );
 };

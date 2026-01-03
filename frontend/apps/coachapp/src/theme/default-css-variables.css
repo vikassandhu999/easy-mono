@@ -130,60 +130,7 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  /* ============================================
-     MODULAR TYPE SCALE (Mobile-First)
-     ============================================ */
 
-  /* Font Sizes - Mobile optimized */
-  --text-3xs: 0.625rem;
-  /* 10px - Legal/fine print */
-  --text-2xs: 0.6875rem;
-  /* 11px - Tiny labels */
-  --text-xs: 0.75rem;
-  /* 12px - Captions, timestamps */
-  --text-sm: 0.8125rem;
-  /* 13px - Secondary text */
-  --text-base: 0.875rem;
-  /* 14px - Body text (mobile) */
-  --text-md: 1rem;
-  /* 16px - Emphasized body */
-  --text-lg: 1.125rem;
-  /* 18px - Subheadings */
-  --text-xl: 1.25rem;
-  /* 20px - Section headers */
-  --text-2xl: 1.5rem;
-  /* 24px - Page titles */
-  --text-3xl: 1.875rem;
-  /* 30px - Hero text */
-  --text-4xl: 2.25rem;
-  /* 36px - Display */
-  --text-5xl: 3rem;
-  /* 48px - Large display */
-
-  /* Line Heights - Optimized for readability */
-  --leading-none: 1;
-  --leading-tight: 1.15;
-  --leading-snug: 1.25;
-  --leading-normal: 1.4;
-  --leading-relaxed: 1.5;
-  --leading-loose: 1.625;
-
-  /* Letter Spacing */
-  --tracking-tighter: -0.03em;
-  --tracking-tight: -0.015em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.01em;
-  --tracking-wider: 0.025em;
-  --tracking-widest: 0.05em;
-
-  /* Font Weights */
-  --font-thin: 100;
-  --font-light: 300;
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
-  --font-extrabold: 800;
 
   /* ============================================
      SPACING SYSTEM (4px Base Grid)
@@ -193,48 +140,45 @@
   --ce-space-px: 1px;
   --ce-space-0-5: 0.125rem;
   /* 2px */
-  --ce-space-1: 0.25rem;
+  --ce-space-2: 0.25rem;
   /* 4px */
-  --ce-space-1-5: 0.375rem;
+  --ce-space-4: 0.375rem;
   /* 6px */
-  --ce-space-2: 0.5rem;
+  --ce-space-6: 0.5rem;
   /* 8px */
-  --ce-space-2-5: 0.625rem;
+  --ce-space-8: 0.625rem;
   /* 10px */
-  --ce-space-3: 0.75rem;
+  --ce-space-10: 0.75rem;
   /* 12px */
-  --ce-space-3-5: 0.875rem;
+  --ce-space-12: 0.875rem;
   /* 14px */
-  --ce-space-4: 1rem;
+  --ce-space-14: 1rem;
   /* 16px */
-  --ce-space-5: 1.25rem;
+  --ce-space-16: 1.25rem;
   /* 20px */
-  --ce-space-6: 1.5rem;
+  --ce-space-20: 1.5rem;
   /* 24px */
-  --ce-space-7: 1.75rem;
+  --ce-space-24: 1.75rem;
   /* 28px */
-  --ce-space-8: 2rem;
+  --ce-space-28: 2rem;
   /* 32px */
-  --ce-space-9: 2.25rem;
+  --ce-space-32: 2.25rem;
   /* 36px */
-  --ce-space-10: 2.5rem;
+  --ce-space-36: 2.5rem;
   /* 40px */
-  --ce-space-11: 2.75rem;
+  --ce-space-40: 2.75rem;
   /* 44px */
-  --ce-space-12: 3rem;
+  --ce-space-44: 3rem;
   /* 48px */
-  --ce-space-14: 3.5rem;
+  --ce-space-48: 3.5rem;
   /* 56px */
-  --ce-space-16: 4rem;
+  --ce-space-56: 4rem;
   /* 64px */
-  --ce-space-20: 5rem;
+  --ce-space-64: 5rem;
   /* 80px */
-  --ce-space-24: 6rem;
+  --ce-space-80: 6rem;
   /* 96px */
 
-  /* ============================================
-     TOUCH TARGETS & INTERACTIVE ELEMENTS
-     ============================================ */
 
   /* Minimum touch target (Apple/Google guidelines: 44px) */
   --touch-target-min: 40px;
@@ -254,260 +198,12 @@
   --button-height-lg: 52px;
   --button-height-xl: 60px;
 
-  /* ============================================
-     BORDER RADIUS
-     ============================================ */
 
-  --radius-none: 0;
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 24px;
-  --radius-full: 9999px;
 
-  /* ============================================
-     SHADOWS (Subtle, Performance-Optimized)
-     ============================================ */
-
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.06);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.2);
-  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.04);
-
-  /* Focus shadows */
-  --shadow-focus-brand: 0 0 0 3px rgb(0 0 0 / 0.2);
-  --shadow-focus-error: 0 0 0 3px rgb(239 68 68 / 0.2);
-  --shadow-focus-success: 0 0 0 3px rgb(34 197 94 / 0.2);
-
-  /* ============================================
-     TRANSITIONS & ANIMATIONS
-     ============================================ */
-
-  /* Durations */
-  --duration-instant: 50ms;
-  --duration-fast: 100ms;
-  --duration-normal: 150ms;
-  --duration-slow: 200ms;
-  --duration-slower: 300ms;
-
-  /* Easings */
-  --ease-linear: linear;
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Common transitions */
-  --transition-colors: color var(--duration-normal) var(--ease-in-out),
-    background-color var(--duration-normal) var(--ease-in-out),
-    border-color var(--duration-normal) var(--ease-in-out);
-  --transition-transform: transform var(--duration-normal) var(--ease-out);
-  --transition-shadow: box-shadow var(--duration-normal) var(--ease-in-out);
-  --transition-all: all var(--duration-normal) var(--ease-in-out);
-
-  /* ============================================
-     Z-INDEX SCALE
-     ============================================ */
-
-  --z-base: 0;
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-fixed: 300;
-  --z-modal-backdrop: 400;
-  --z-modal: 500;
-  --z-popover: 600;
-  --z-tooltip: 700;
-  --z-toast: 800;
-  --z-max: 9999;
-
-  /* ============================================
-     MANTINE INTEGRATION
-     ============================================ */
-
-  /* Core Settings */
   --mantine-scale: 1;
   --mantine-cursor-type: pointer;
   --mantine-webkit-font-smoothing: antialiased;
   --mantine-moz-font-smoothing: grayscale;
-
-  /* Base Colors */
-  --mantine-color-white: #ffffff;
-  --mantine-color-black: #0f172a;
-
-  /* Typography */
-  --mantine-font-family: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --mantine-font-family-monospace: "Roboto Mono Variable", ui-monospace, monospace;
-  --mantine-font-family-headings: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --mantine-line-height: var(--leading-relaxed);
-
-  /* Font Weights */
-  --mantine-font-weight-normal: var(--font-normal);
-  --mantine-font-weight-medium: var(--font-medium);
-  --mantine-font-weight-bold: var(--font-semibold);
-  --mantine-heading-font-weight: var(--font-semibold);
-  --mantine-heading-text-wrap: balance;
-
-  /* Letter Spacing */
-  --mantine-letter-spacing-tight: var(--tracking-tight);
-  --mantine-letter-spacing-normal: var(--tracking-normal);
-  --mantine-letter-spacing-wide: var(--tracking-wide);
-
-  /* Breakpoints */
-  --mantine-breakpoint-xs: 30em;
-  /* 480px */
-  --mantine-breakpoint-sm: 48em;
-  /* 768px */
-  --mantine-breakpoint-md: 64em;
-  /* 1024px */
-  --mantine-breakpoint-lg: 80em;
-  /* 1280px */
-  --mantine-breakpoint-xl: 90em;
-  /* 1440px */
-
-  /* Spacing (Maps to our system) */
-  --mantine-spacing-3xs: var(--ce-space-0-5);
-  --mantine-spacing-2xs: var(--ce-space-1);
-  --mantine-spacing-xs: var(--ce-space-2);
-  --mantine-spacing-sm: var(--ce-space-3);
-  --mantine-spacing-md: var(--ce-space-4);
-  --mantine-spacing-lg: var(--ce-space-5);
-  --mantine-spacing-xl: var(--ce-space-6);
-  --mantine-spacing-2xl: var(--ce-space-8);
-  --mantine-spacing-3xl: var(--ce-space-10);
-
-  /* Font Sizes */
-  --mantine-font-size-xs: var(--text-xs);
-  --mantine-font-size-sm: var(--text-sm);
-  --mantine-font-size-md: var(--text-base);
-  --mantine-font-size-lg: var(--text-md);
-  --mantine-font-size-xl: var(--text-lg);
-
-  /* Line Heights */
-  --mantine-line-height-xs: var(--leading-snug);
-  --mantine-line-height-sm: var(--leading-snug);
-  --mantine-line-height-md: var(--leading-normal);
-  --mantine-line-height-lg: var(--leading-relaxed);
-  --mantine-line-height-xl: var(--leading-relaxed);
-
-  /* Shadows */
-  --mantine-shadow-xs: var(--shadow-xs);
-  --mantine-shadow-sm: var(--shadow-sm);
-  --mantine-shadow-md: var(--shadow-md);
-  --mantine-shadow-lg: var(--shadow-lg);
-  --mantine-shadow-xl: var(--shadow-xl);
-
-  /* Radius */
-  --mantine-radius-default: var(--radius-md);
-  --mantine-radius-xs: var(--radius-xs);
-  --mantine-radius-sm: var(--radius-sm);
-  --mantine-radius-md: var(--radius-md);
-  --mantine-radius-lg: var(--radius-lg);
-  --mantine-radius-xl: var(--radius-xl);
-
-  /* Z-Index */
-  --mantine-z-index-app: var(--z-base);
-  --mantine-z-index-modal: var(--z-modal);
-  --mantine-z-index-popover: var(--z-popover);
-  --mantine-z-index-overlay: var(--z-modal-backdrop);
-  --mantine-z-index-max: var(--z-max);
-
-  /* Heading Sizes - Mobile First (Compact) */
-  --mantine-h1-font-size: var(--ce-font-size-display);
-  --mantine-h1-line-height: var(--ce-line-height-display);
-  --mantine-h1-font-weight: var(--font-bold);
-  --mantine-h1-letter-spacing: var(--tracking-tight);
-
-  --mantine-h2-font-size: var(--ce-font-size-h1);
-  --mantine-h2-line-height: var(--ce-line-height-h1);
-  --mantine-h2-font-weight: var(--font-semibold);
-  --mantine-h2-letter-spacing: var(--tracking-tight);
-
-  --mantine-h3-font-size: var(--ce-font-size-h2);
-  --mantine-h3-line-height: var(--ce-line-height-h2);
-  --mantine-h3-font-weight: var(--font-semibold);
-  --mantine-h3-letter-spacing: var(--tracking-normal);
-
-  --mantine-h4-font-size: var(--ce-font-size-h3);
-  --mantine-h4-line-height: var(--ce-line-height-h3);
-  --mantine-h4-font-weight: var(--font-semibold);
-  --mantine-h4-letter-spacing: var(--tracking-normal);
-
-  --mantine-h5-font-size: var(--ce-font-size-small);
-  --mantine-h5-line-height: var(--ce-line-height-small);
-  --mantine-h5-font-weight: var(--font-medium);
-  --mantine-h5-letter-spacing: var(--tracking-normal);
-
-  --mantine-h6-font-size: var(--ce-font-size-tiny);
-  --mantine-h6-line-height: var(--ce-line-height-tiny);
-  --mantine-h6-font-weight: var(--font-medium);
-  --mantine-h6-letter-spacing: var(--tracking-wide);
-
-  /* ============================================
-     SEMANTIC TEXT COLORS
-     ============================================ */
-
-  --mantine-color-text-primary: var(--ce-text-strong);
-  --mantine-color-text-secondary: var(--ce-text-weak);
-  --mantine-color-text-tertiary: var(--ce-text-weak);
-  --mantine-color-text-muted: var(--ce-text-inverse-weak);
-  --mantine-color-text-inverse: var(--ce-text-inverse-strong);
-  --mantine-color-text-disabled: var(--ce-text-disabled);
-
-  /* Body Text Defaults */
-  --mantine-text-body-font-size: var(--text-base);
-  --mantine-text-body-line-height: var(--leading-relaxed);
-  --mantine-text-body-font-weight: var(--font-normal);
-  --mantine-text-body-color: var(--mantine-color-text-primary);
-
-  /* Max width for readable text */
-  --mantine-text-max-width: 65ch;
-
-  /* ============================================
-     SEMANTIC SURFACE COLORS
-     ============================================ */
-
-  --surface-primary: var(--ce-bg-base);
-  --surface-secondary: var(--ce-bg-raised);
-  --surface-tertiary: var(--ce-bg-alernate);
-  --surface-elevated: var(--ce-bg-elevated);
-  --surface-sunken: var(--ce-bg-sunken);
-  --surface-overlay: var(--ce-bg-overlay);
-  /* ============================================
-     BORDER COLORS
-     ============================================ */
-
-  --border-subtle: #e2e8f0;
-  --border-default: #cbd5e1;
-  --border-strong: #94a3b8;
-  --border-focus: var(--color-logo-primary);
-
-  /* ============================================
-     LEGACY COMPATIBILITY VARS
-     ============================================ */
-
-  --ce-size-3xs: var(--ce-space-1);
-  --ce-size-2xs: var(--ce-space-2);
-  --ce-size-xs: var(--ce-space-3);
-  --ce-size-sm: var(--ce-space-3-5);
-  --ce-size-md: var(--ce-space-4);
-  --ce-size-lg: var(--ce-space-5);
-  --ce-size-xl: var(--ce-space-6);
-  --ce-size-2xl: var(--ce-space-8);
-  --ce-size-3xl: var(--ce-space-12);
-  --ce-size-4xl: var(--ce-space-16);
-
-  /* Legacy typography vars */
-  --body-font-size: var(--text-base);
-  --body-line-height: var(--leading-relaxed);
-  --label-font-size: var(--text-sm);
-  --caption-font-size: var(--text-xs);
-  --heading-font-size: var(--text-lg);
 }
 
 /* ============================================
@@ -517,9 +213,6 @@
 /* Small devices (landscape phones, 576px+) */
 @media (min-width: 576px) {
   :root {
-    --text-base: 0.875rem;
-    --input-height: var(--input-height-md);
-
     --ce-font-size-display: 40px;
     --ce-font-size-h1: 36px;
     --ce-font-size-h2: 28px;
@@ -540,21 +233,12 @@
 
 /* Medium devices (tablets, 768px+) */
 @media (min-width: 768px) {
-  :root {
-    --text-base: 0.9375rem;
-    --ce-space-4: 1.125rem;
-    --ce-space-5: 1.375rem;
-    --ce-space-6: 1.625rem;
-  }
+  :root {}
 }
 
 /* Large devices (desktops, 1024px+) */
 @media (min-width: 1024px) {
-  :root {
-    --text-base: 1rem;
-    --input-height-md: 42px;
-    --button-height-md: 42px;
-  }
+  :root {}
 }
 
 /* ============================================
@@ -644,4 +328,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+body {
+  background-color: var(--ce-bg-base);
+  color: var(--ce-text-strong);
 }

@@ -10,8 +10,8 @@ import {
     useGetSessionQuery,
     useUpdateSessionMutation,
 } from '@/services/session';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PageWrapper from '@/containers/PageWrapper';
+import PageContentWrapper from '@/components/PageContentWrapper';
+import PageWrapper from '@/components/PageWrapper';
 import {logger} from '@/utils/logger';
 
 import SessionCreateForm from './SessionCreateForm';
@@ -82,7 +82,7 @@ export default function SessionBuilder({
     if (!currentSessionId && !effectiveSessionType) {
         return (
             <PageWrapper>
-                <PaddingContainer
+                <PageContentWrapper
                     paddingX="sm"
                     paddingY="lg"
                 >
@@ -92,7 +92,7 @@ export default function SessionBuilder({
                     >
                         Provide a session type before building a new session.
                     </Alert>
-                </PaddingContainer>
+                </PageContentWrapper>
             </PageWrapper>
         );
     }

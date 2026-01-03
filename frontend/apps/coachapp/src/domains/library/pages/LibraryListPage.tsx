@@ -5,8 +5,8 @@ import {useEffect, useRef, useState} from 'react';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PageWrapper from '@/containers/PageWrapper';
+import PageContentWrapper from '@/components/PageContentWrapper';
+import PageWrapper from '@/components/PageWrapper';
 import {ExerciseList} from '@/shared/ExerciseList';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
@@ -143,7 +143,7 @@ const LibraryListPage = () => {
 
     return (
         <PageWrapper>
-            <PaddingContainer>
+            <PageContentWrapper>
                 <Stack
                     gap="md"
                     pb="xl"
@@ -221,7 +221,7 @@ const LibraryListPage = () => {
                         />
                     )}
                 </Stack>
-            </PaddingContainer>
+            </PageContentWrapper>
             <Button
                 aria-label={`Create ${activeCategory.createLabel}`}
                 color="var(--ce-fill-brand-strong)"

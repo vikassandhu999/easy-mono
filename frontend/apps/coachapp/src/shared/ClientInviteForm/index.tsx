@@ -1,1 +1,1 @@
-export * from './ClientInviteForm';
+export * from '../../components/ClientInviteForm';

@@ -2,7 +2,7 @@
     --input-color: var(--ce-text-strong);
 
     border: 2px solid transparent;
-    border-radius: var(--radius-xl);
+    border-radius: var(--ce-space-8);
 
     padding: 1.5px;
 
@@ -19,7 +19,7 @@
 
 .input {
     border: 1px solid var(--ce-stroke-strong);
-    border-radius: var(--radius-lg);
+    border-radius: var(--ce-space-6);
     font-size: var(--ce-font-size-small);
     line-height: var(--ce-line-height-small);
 

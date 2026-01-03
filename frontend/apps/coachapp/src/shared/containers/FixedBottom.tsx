@@ -4,7 +4,7 @@ import React, {useLayoutEffect} from 'react';
 
 import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
 
-import PaddingContainer from './PaddingContainer';
+import PageContentWrapper from '../../components/PageContentWrapper';
 
 interface Props {
     isSubmitting?: boolean;
@@ -55,7 +55,7 @@ export const FixedBottom: React.FC<Props> = ({
                 zIndex: 999,
             }}
         >
-            <PaddingContainer>
+            <PageContentWrapper>
                 <Button
                     disabled={submitDisabled}
                     fullWidth
@@ -68,7 +68,7 @@ export const FixedBottom: React.FC<Props> = ({
                 >
                     {label}
                 </Button>
-            </PaddingContainer>
+            </PageContentWrapper>
         </Box>
     );
 };

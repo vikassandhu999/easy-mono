@@ -1,7 +1,7 @@
 import {Box, MantineColor, useMantineTheme} from '@mantine/core';
 import {PropsWithChildren} from 'react';
 
-import PaddingContainer from './PaddingContainer';
+import PageContentWrapper from '../../components/PageContentWrapper';
 
 type Props = PropsWithChildren & {
     bg?: MantineColor;
@@ -33,7 +33,7 @@ export default function HeadingContainer({
                 zIndex: 100,
             }}
         >
-            <PaddingContainer
+            <PageContentWrapper
                 style={{
                     paddingBlock: 'var(--ce-size-sm)',
                     paddingInline: 'var(--ce-size-md)',
@@ -42,7 +42,7 @@ export default function HeadingContainer({
                 }}
             >
                 {children}
-            </PaddingContainer>
+            </PageContentWrapper>
         </Box>
     );
 }

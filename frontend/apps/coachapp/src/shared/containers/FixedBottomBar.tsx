@@ -3,7 +3,7 @@ import React, {PropsWithChildren, useLayoutEffect} from 'react';
 
 import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
 
-import PaddingContainer from './PaddingContainer';
+import PageContentWrapper from '../../components/PageContentWrapper';
 
 interface FixedBottomBarProps extends PropsWithChildren {
     maxWidth?: number | string;
@@ -51,7 +51,7 @@ export const FixedBottomBar: React.FC<FixedBottomBarProps> = ({children, maxWidt
                     maxWidth: maxWidth || '100%',
                 }}
             >
-                <PaddingContainer>{children}</PaddingContainer>
+                <PageContentWrapper>{children}</PageContentWrapper>
             </Box>
         </Box>
     );

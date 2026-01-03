@@ -21,8 +21,8 @@ import {useNavigate} from 'react-router';
 
 import {useProfileQuery} from '@/services/auth';
 import AutoDrawer from '@/shared/AutoDrawer';
-import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PageWrapper from '@/containers/PageWrapper';
+import PageContentWrapper from '@/components/PageContentWrapper';
+import PageWrapper from '@/components/PageWrapper';
 
 import {QUICK_ACTIONS, QuickActionConfig} from '../config';
 
@@ -77,7 +77,7 @@ export default function HomePage() {
                 }}
                 visible={isLoading}
             />
-            <PaddingContainer>
+            <PageContentWrapper>
                 {isError && (
                     <Alert
                         color="red"
@@ -180,7 +180,7 @@ export default function HomePage() {
                         </Stack>
                     </Card>
                 </Stack>
-            </PaddingContainer>
+            </PageContentWrapper>
 
             {/* Notification Drawer */}
             {notificationDrawerOpened && (

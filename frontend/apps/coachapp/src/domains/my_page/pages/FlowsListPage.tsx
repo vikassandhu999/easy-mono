@@ -48,7 +48,7 @@ import {
     useRegenerateJoinCodeMutation,
     useUpdateBrandingSettingsMutation,
 } from '@/services/settings/settings';
-import PageWrapper from '@/containers/PageWrapper';
+import PageWrapper from '@/components/PageWrapper';
 import {notifyError, notifyInfo, notifySuccess} from '@/utils/notification';
 
 import classes from './styles.module.css';

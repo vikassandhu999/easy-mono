@@ -7,7 +7,7 @@ import {AppProvider} from '@/providers/AppProvider';
 import AuthProvider from '@/providers/AuthProvider';
 
 import {theme} from '../theme/index';
-import AppRouterProvider from './Router.tsx';
+import Routes from './routes.tsx';
 
 const queryClient = new QueryClient({defaultOptions: {queries: {staleTime: 5 * 60 * 1000}}});
 
@@ -19,7 +19,7 @@ function App() {
                 <QueryClientProvider client={queryClient}>
                     <AppProvider>
                         <AuthProvider>
-                            <AppRouterProvider />
+                            <Routes />
                         </AuthProvider>
                     </AppProvider>
                 </QueryClientProvider>

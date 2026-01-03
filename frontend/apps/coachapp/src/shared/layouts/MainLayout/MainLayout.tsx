@@ -39,7 +39,7 @@ export function MainLayout({children, disableTopMargin, showNavigation}: MainLay
         >
             {showDesktopNavbar && (
                 <AppShell.Navbar
-                    p="md"
+                    p="0"
                     style={{
                         display: 'flex',
                         flexDirection: 'column',

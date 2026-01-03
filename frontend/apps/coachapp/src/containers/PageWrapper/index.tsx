@@ -6,7 +6,7 @@ type Props = PropsWithChildren<{
     topGutter?: boolean;
 }>;
 
-export default function PagePaper({bottomGutter = true, children, topGutter = true}: Props) {
+export default function PageWrapper({bottomGutter = true, children, topGutter = true}: Props) {
     return (
         <Box
             style={{

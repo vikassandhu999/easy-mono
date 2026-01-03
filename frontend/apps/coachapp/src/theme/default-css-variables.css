@@ -452,12 +452,12 @@
      SEMANTIC TEXT COLORS
      ============================================ */
 
-  --mantine-color-text-primary: #000626E5;
-  --mantine-color-text-secondary: #000933A6;
-  --mantine-color-text-tertiary: #4F4F4F;
-  --mantine-color-text-muted: #cbd5e1;
-  --mantine-color-text-inverse: #FFFFFF;
-  --mantine-color-text-disabled: #0011661A;
+  --mantine-color-text-primary: var(--ce-text-strong);
+  --mantine-color-text-secondary: var(--ce-text-weak);
+  --mantine-color-text-tertiary: var(--ce-text-weak);
+  --mantine-color-text-muted: var(--ce-text-inverse-weak);
+  --mantine-color-text-inverse: var(--ce-text-inverse-strong);
+  --mantine-color-text-disabled: var(--ce-text-disabled);
 
   /* Body Text Defaults */
   --mantine-text-body-font-size: var(--text-base);
@@ -472,13 +472,12 @@
      SEMANTIC SURFACE COLORS
      ============================================ */
 
-  --surface-primary: #FFFFFF;
-  --surface-secondary: #F5F6FA;
-  --surface-tertiary: #F5F6FA;
-  --surface-elevated: #F5F6FA;
-  --surface-sunken: #F5F6FA;
-  --surface-overlay: #F5F6FA;
-
+  --surface-primary: var(--ce-bg-base);
+  --surface-secondary: var(--ce-bg-raised);
+  --surface-tertiary: var(--ce-bg-alernate);
+  --surface-elevated: var(--ce-bg-elevated);
+  --surface-sunken: var(--ce-bg-sunken);
+  --surface-overlay: var(--ce-bg-overlay);
   /* ============================================
      BORDER COLORS
      ============================================ */

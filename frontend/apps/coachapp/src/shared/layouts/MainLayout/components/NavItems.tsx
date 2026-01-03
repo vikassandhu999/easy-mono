@@ -10,7 +10,7 @@ interface NavItemsProps {
 
 export function NavItems({items, onNavigate}: NavItemsProps) {
     return (
-        <Stack gap="xs">
+        <Stack gap="0">
             {items.map((item) => (
                 <NavItemButton
                     item={item}

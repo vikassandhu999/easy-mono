@@ -48,7 +48,7 @@ import {
     useRegenerateJoinCodeMutation,
     useUpdateBrandingSettingsMutation,
 } from '@/services/settings/settings';
-import PagePaper from '@/shared/containers/PagePaper';
+import PageWrapper from '@/containers/PageWrapper';
 import {notifyError, notifyInfo, notifySuccess} from '@/utils/notification';
 
 import classes from './styles.module.css';
@@ -198,7 +198,7 @@ const MyPagePage = () => {
 
     if (isLoading) {
         return (
-            <PagePaper bottomGutter>
+            <PageWrapper bottomGutter>
                 <div className={classes.pageContainer}>
                     <Group
                         justify="center"
@@ -208,13 +208,13 @@ const MyPagePage = () => {
                         <Text c="dimmed">Loading settings...</Text>
                     </Group>
                 </div>
-            </PagePaper>
+            </PageWrapper>
         );
     }
 
     if (error) {
         return (
-            <PagePaper bottomGutter>
+            <PageWrapper bottomGutter>
                 <div className={classes.pageContainer}>
                     <div className={classes.contentSection}>
                         <Alert
@@ -226,12 +226,12 @@ const MyPagePage = () => {
                         </Alert>
                     </div>
                 </div>
-            </PagePaper>
+            </PageWrapper>
         );
     }
 
     return (
-        <PagePaper bottomGutter>
+        <PageWrapper bottomGutter>
             <div className={classes.pageContainer}>
                 {/* Header */}
                 <div className={classes.headerSection}>
@@ -721,7 +721,7 @@ const MyPagePage = () => {
                     youtube={form.values.youtube}
                 />
             </Modal>
-        </PagePaper>
+        </PageWrapper>
     );
 };
 

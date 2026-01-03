@@ -6,7 +6,7 @@ import {useEffect, useRef, useState} from 'react';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PagePaper from '@/shared/containers/PagePaper';
+import PageWrapper from '@/containers/PageWrapper';
 import {ExerciseList} from '@/shared/ExerciseList';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
@@ -142,7 +142,7 @@ const LibraryListPage = () => {
     };
 
     return (
-        <PagePaper>
+        <PageWrapper>
             <PaddingContainer>
                 <Stack
                     gap="md"
@@ -162,11 +162,14 @@ const LibraryListPage = () => {
                             />
                         </ScrollArea>
                         <Button
-                            fw={600}
-                            leftSection={<IconPlus size={18} />}
+                            color={'var(--ce-fill-brand-strong)'}
+                            leftSection={<IconPlus size={20} />}
                             onClick={handleCreate}
                             radius="xl"
                             size="md"
+                            style={{
+                                boxShadow: 'var(--ce-shadow-raised)',
+                            }}
                             visibleFrom="sm"
                         >
                             {activeCategory.createLabel}
@@ -188,7 +191,7 @@ const LibraryListPage = () => {
                                 />
                             ) : null
                         }
-                        size="md"
+                        size={'md'}
                         value={searchInput}
                     />
 
@@ -238,7 +241,7 @@ const LibraryListPage = () => {
             >
                 New
             </Button>
-        </PagePaper>
+        </PageWrapper>
     );
 };
 

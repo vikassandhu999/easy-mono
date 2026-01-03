@@ -22,7 +22,7 @@ import {useNavigate} from 'react-router';
 import {useProfileQuery} from '@/services/auth';
 import AutoDrawer from '@/shared/AutoDrawer';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PagePaper from '@/shared/containers/PagePaper';
+import PageWrapper from '@/containers/PageWrapper';
 
 import {QUICK_ACTIONS, QuickActionConfig} from '../config';
 
@@ -70,7 +70,7 @@ export default function HomePage() {
     }, [profile?.coach?.stats]);
 
     return (
-        <PagePaper>
+        <PageWrapper>
             <LoadingOverlay
                 loaderProps={{
                     type: 'bars',
@@ -220,7 +220,7 @@ export default function HomePage() {
                     title="Notifications"
                 />
             )}
-        </PagePaper>
+        </PageWrapper>
     );
 }
 

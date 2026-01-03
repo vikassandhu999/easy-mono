@@ -14,7 +14,14 @@ interface DesktopNavbarProps {
 export function DesktopNavbar({navItems, onNavigate}: DesktopNavbarProps) {
     return (
         <>
-            <Box mb={'lg'}>
+            <Box
+                mx={'lg'}
+                my={'xl'}
+                pb={'xl'}
+                style={{
+                    borderBottom: '1px solid var(--ce-stroke-weak)',
+                }}
+            >
                 <TextLogo size={'md'} />
             </Box>
 

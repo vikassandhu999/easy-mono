@@ -30,24 +30,6 @@ import './default-css-variables.css';
 import inputClasses from './input.module.css';
 import segmentedControllClasses from './overrides/segmented-control.module.css';
 
-type MantineSize = 'lg' | 'md' | 'sm' | 'xl' | 'xs';
-
-const resolveButtonHeight = (size: MantineSize | undefined) => {
-    switch (size) {
-        case 'xs':
-            return 'max(var(--button-height-xs), var(--touch-target-min))';
-        case 'sm':
-            return 'max(var(--button-height-sm), var(--touch-target-min))';
-        case 'lg':
-            return 'max(var(--button-height-lg), var(--touch-target-min))';
-        case 'xl':
-            return 'max(var(--button-height-xl), var(--touch-target-min))';
-        case 'md':
-        default:
-            return 'max(var(--button-height-md), var(--touch-target-min))';
-    }
-};
-
 export const theme = createTheme({
     fontFamily: "'DM Sans Variable', sans-serif",
     fontFamilyMonospace: 'var(--mantine-font-family-monospace)',
@@ -91,12 +73,12 @@ export const theme = createTheme({
         fontFamily: 'var(--mantine-font-family-headings)',
         fontWeight: '600',
         sizes: {
-            h1: {fontSize: 'var(--text-2xl)', lineHeight: '1.2'},
-            h2: {fontSize: 'var(--text-xl)', lineHeight: '1.25'},
-            h3: {fontSize: 'var(--text-lg)', lineHeight: '1.3'},
-            h4: {fontSize: 'var(--text-md)', lineHeight: '1.35'},
-            h5: {fontSize: 'var(--text-sm)', lineHeight: '1.4'},
-            h6: {fontSize: 'var(--text-xs)', lineHeight: '1.4'},
+            h1: {fontSize: 'var(--ce-font-size-display)', lineHeight: 'var(--ce-line-height-display)'},
+            h2: {fontSize: 'var(--ce-font-size-h1)', lineHeight: 'var(--ce-line-height-h1)'},
+            h3: {fontSize: 'var(--ce-font-size-h2)', lineHeight: 'var(--ce-line-height-h2)'},
+            h4: {fontSize: 'var(--ce-font-size-h3)', lineHeight: 'var(--ce-line-height-h3)'},
+            h5: {fontSize: 'var(--ce-font-size-h4)', lineHeight: 'var(--ce-line-height-h4)'},
+            h6: {fontSize: 'var(--ce-font-size-h5)', lineHeight: 'var(--ce-line-height-h5)'},
         },
     },
 

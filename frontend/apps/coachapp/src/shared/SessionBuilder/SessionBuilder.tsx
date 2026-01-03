@@ -11,7 +11,7 @@ import {
     useUpdateSessionMutation,
 } from '@/services/session';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PagePaper from '@/shared/containers/PagePaper';
+import PageWrapper from '@/containers/PageWrapper';
 import {logger} from '@/utils/logger';
 
 import SessionCreateForm from './SessionCreateForm';
@@ -81,7 +81,7 @@ export default function SessionBuilder({
 
     if (!currentSessionId && !effectiveSessionType) {
         return (
-            <PagePaper>
+            <PageWrapper>
                 <PaddingContainer
                     paddingX="sm"
                     paddingY="lg"
@@ -93,7 +93,7 @@ export default function SessionBuilder({
                         Provide a session type before building a new session.
                     </Alert>
                 </PaddingContainer>
-            </PagePaper>
+            </PageWrapper>
         );
     }
 

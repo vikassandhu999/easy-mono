@@ -1,14 +1,14 @@
-import {Box, Button, Container, Group, SegmentedControl, Stack, TextInput, Title} from '@mantine/core';
+import {Button, Group, SegmentedControl, Stack, TextInput, Title} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconPlus, IconX} from '@tabler/icons-react';
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
+import PageWrapper from '@/containers/PageWrapper';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import ClientList from '@/shared/ClientList';
 import PaddingContainer from '@/shared/containers/PaddingContainer';
-import PagePaper from '@/shared/containers/PagePaper';
 
 type StatusTab = 'active' | 'all' | 'inactive' | 'pending';
 
@@ -49,14 +49,14 @@ const ClientListPage = () => {
     };
 
     return (
-        <PagePaper>
+        <PageWrapper>
             <PaddingContainer>
                 <Stack gap={'sm'}>
                     <Group
                         align="center"
                         justify="space-between"
                     >
-                        <Title order={1}>Clients</Title>
+                        <Title order={3}>Clients</Title>
                         <Button
                             color={'var(--ce-bg-brand)'}
                             onClick={() => openDrawer(DRAWER_KEYS.CLIENT_INVITE)}
@@ -100,7 +100,7 @@ const ClientListPage = () => {
                     />
                 </Stack>
             </PaddingContainer>
-        </PagePaper>
+        </PageWrapper>
     );
 };
 

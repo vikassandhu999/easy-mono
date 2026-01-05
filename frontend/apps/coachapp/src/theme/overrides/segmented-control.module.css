@@ -27,8 +27,6 @@
     &[data-active='true'] {
         color: var(--ce-text-strong);
     }
-
-
 }
 
 .indicator {

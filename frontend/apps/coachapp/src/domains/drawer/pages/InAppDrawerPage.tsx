@@ -26,63 +26,63 @@ import TrainingPlanEditDrawer from '@/shared/drawers/TrainingPlanEditDrawer';
 import TrainingPlanViewDrawer from '@/shared/drawers/TrainingPlanViewDrawer';
 
 const InAppDrawersPage = () => {
-    const {activeDrawerKey} = useParamsDrawer({
-        drawer_config: DRAWER_CONFIG,
-    });
+  const {activeDrawerKey} = useParamsDrawer({
+    drawer_config: DRAWER_CONFIG,
+  });
 
-    switch (activeDrawerKey) {
-        case DRAWER_KEYS.CONTENT_CREATE:
-            return <ContentCreateDrawer />;
-        case DRAWER_KEYS.RECIPE_CREATE:
-            return <RecipeCreateDrawer />;
-        case DRAWER_KEYS.RECIPE_VIEW:
-            return <RecipeViewDrawer />;
-        case DRAWER_KEYS.RECIPE_EDIT:
-            return <RecipeEditDrawer />;
-        case DRAWER_KEYS.NUTRITION_PLAN_CREATE:
-            return <NutritionPlanCreateDrawer />;
-        case DRAWER_KEYS.NUTRITION_PLAN_BUILDER:
-            return <NutritionPlanBuildDrawer />;
-        case DRAWER_KEYS.NUTRITION_PLAN_EDIT:
-            return <NutritionPlanEditDrawer />;
-        case DRAWER_KEYS.EXERCISE_CREATE:
-            return <ExerciseCreateDrawer />;
-        case DRAWER_KEYS.EXERCISE_VIEW:
-            return <ExerciseViewDrawer />;
-        case DRAWER_KEYS.EXERCISE_EDIT:
-            return <ExerciseEditDrawer />;
-        case DRAWER_KEYS.ASSIGN_PLAN:
-            return <AssignPlanDrawer />;
-        case DRAWER_KEYS.ASSIGN_NUTRITION_PLAN:
-            return <AssignNutritionPlanDrawer />;
-        case DRAWER_KEYS.ASSIGN_TRAINING_PLAN:
-            return <AssignTrainingPlanDrawer />;
-        case DRAWER_KEYS.TRAINING_PLAN_VIEW:
-            return <TrainingPlanViewDrawer />;
-        case DRAWER_KEYS.TRAINING_PLAN_CREATE:
-            return <TrainingPlanCreateDrawer />;
-        case DRAWER_KEYS.TRAINING_PLAN_EDIT:
-            return <TrainingPlanEditDrawer />;
-        case DRAWER_KEYS.TRAINING_PLAN_BUILDER:
-            return <TrainingPlanBuildDrawer />;
-        case DRAWER_KEYS.CLIENT_EDIT:
-            return <ClientEditDrawer />;
-        case DRAWER_KEYS.CLIENT_INVITE:
-            return <ClientInviteDrawer />;
-        case DRAWER_KEYS.CLIENT_OVERVIEW:
-            return <ClientOverviewDrawer />;
-        case DRAWER_KEYS.CLIENT_SETTINGS:
-            return <ClientSettingsDrawer />;
-        case DRAWER_KEYS.BUSINESS_EDIT:
-            return <BusinessEditDrawer />;
-        case DRAWER_KEYS.COACH_PROFILE_VIEW:
-            return <CoachProfileViewDrawer />;
-        case DRAWER_KEYS.COACH_PROFILE_EDIT:
-            return <CoachProfileEditDrawer />;
+  switch (activeDrawerKey) {
+    case DRAWER_KEYS.CONTENT_CREATE:
+      return <ContentCreateDrawer />;
+    case DRAWER_KEYS.RECIPE_CREATE:
+      return <RecipeCreateDrawer />;
+    case DRAWER_KEYS.RECIPE_VIEW:
+      return <RecipeViewDrawer />;
+    case DRAWER_KEYS.RECIPE_EDIT:
+      return <RecipeEditDrawer />;
+    case DRAWER_KEYS.NUTRITION_PLAN_CREATE:
+      return <NutritionPlanCreateDrawer />;
+    case DRAWER_KEYS.NUTRITION_PLAN_BUILDER:
+      return <NutritionPlanBuildDrawer />;
+    case DRAWER_KEYS.NUTRITION_PLAN_EDIT:
+      return <NutritionPlanEditDrawer />;
+    case DRAWER_KEYS.EXERCISE_CREATE:
+      return <ExerciseCreateDrawer />;
+    case DRAWER_KEYS.EXERCISE_VIEW:
+      return <ExerciseViewDrawer />;
+    case DRAWER_KEYS.EXERCISE_EDIT:
+      return <ExerciseEditDrawer />;
+    case DRAWER_KEYS.ASSIGN_PLAN:
+      return <AssignPlanDrawer />;
+    case DRAWER_KEYS.ASSIGN_NUTRITION_PLAN:
+      return <AssignNutritionPlanDrawer />;
+    case DRAWER_KEYS.ASSIGN_TRAINING_PLAN:
+      return <AssignTrainingPlanDrawer />;
+    case DRAWER_KEYS.TRAINING_PLAN_VIEW:
+      return <TrainingPlanViewDrawer />;
+    case DRAWER_KEYS.TRAINING_PLAN_CREATE:
+      return <TrainingPlanCreateDrawer />;
+    case DRAWER_KEYS.TRAINING_PLAN_EDIT:
+      return <TrainingPlanEditDrawer />;
+    case DRAWER_KEYS.TRAINING_PLAN_BUILDER:
+      return <TrainingPlanBuildDrawer />;
+    case DRAWER_KEYS.CLIENT_EDIT:
+      return <ClientEditDrawer />;
+    case DRAWER_KEYS.CLIENT_INVITE:
+      return <ClientInviteDrawer />;
+    case DRAWER_KEYS.CLIENT_OVERVIEW:
+      return <ClientOverviewDrawer />;
+    case DRAWER_KEYS.CLIENT_SETTINGS:
+      return <ClientSettingsDrawer />;
+    case DRAWER_KEYS.BUSINESS_EDIT:
+      return <BusinessEditDrawer />;
+    case DRAWER_KEYS.COACH_PROFILE_VIEW:
+      return <CoachProfileViewDrawer />;
+    case DRAWER_KEYS.COACH_PROFILE_EDIT:
+      return <CoachProfileEditDrawer />;
 
-        default:
-            return null;
-    }
+    default:
+      return null;
+  }
 };
 
 export default InAppDrawersPage;

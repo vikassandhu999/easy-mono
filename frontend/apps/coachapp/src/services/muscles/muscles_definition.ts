@@ -1,12 +1,12 @@
 export type Muscle = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
 export type MusclesListOpts = {
-    search?: string;
+  search?: string;
 };
 
 export interface MusclesList {
-    data: Muscle[];
+  data: Muscle[];
 }

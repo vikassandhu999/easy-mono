@@ -9,55 +9,55 @@ import classes from './styles.module.css';
 import useDayMeals from './useDayMeals';
 
 type DayMealsViewProps = {
-    currentDay: number;
-    planId: null | string;
-    meals: Meal[];
+  currentDay: number;
+  planId: null | string;
+  meals: Meal[];
 };
 
 const DayMealsView = ({currentDay, planId, meals}: DayMealsViewProps) => {
-    const {
-        planId: effectivePlanId,
-        isLoading,
-        mealsByDaytime,
-        isRecipeDrawerOpen,
-        closeRecipeDrawer,
-        handleRecipeSelect,
-        handleAddRecipe,
-        deleteMealItem,
-    } = useDayMeals({currentDay, planId, meals});
+  const {
+    planId: effectivePlanId,
+    isLoading,
+    mealsByDaytime,
+    isRecipeDrawerOpen,
+    closeRecipeDrawer,
+    handleRecipeSelect,
+    handleAddRecipe,
+    deleteMealItem,
+  } = useDayMeals({currentDay, planId, meals});
 
-    if (!effectivePlanId) return null;
+  if (!effectivePlanId) return null;
 
-    return (
-        <div className={classes.loadingContainer}>
-            <LoadingOverlay visible={isLoading} />
-            {isRecipeDrawerOpen && (
-                <RecipeSelectDrawer
-                    multiple={false}
-                    onClose={closeRecipeDrawer}
-                    onComplete={(selectedIds: string[]) => {
-                        handleRecipeSelect(selectedIds[0] as string);
-                    }}
-                />
-            )}
-            <div className={classes.mealsContainer}>
-                {MEAL_TYPES.map((mealType) => {
-                    const meal = mealsByDaytime[mealType.value];
+  return (
+    <div className={classes.loadingContainer}>
+      <LoadingOverlay visible={isLoading} />
+      {isRecipeDrawerOpen && (
+        <RecipeSelectDrawer
+          multiple={false}
+          onClose={closeRecipeDrawer}
+          onComplete={(selectedIds: string[]) => {
+            handleRecipeSelect(selectedIds[0] as string);
+          }}
+        />
+      )}
+      <div className={classes.mealsContainer}>
+        {MEAL_TYPES.map((mealType) => {
+          const meal = mealsByDaytime[mealType.value];
 
-                    return (
-                        <MealCard
-                            key={mealType.value}
-                            meal={meal}
-                            mealType={mealType}
-                            nutritionPlanId={effectivePlanId}
-                            onAddRecipe={handleAddRecipe}
-                            onDeleteRecipe={deleteMealItem}
-                        />
-                    );
-                })}
-            </div>
-        </div>
-    );
+          return (
+            <MealCard
+              key={mealType.value}
+              meal={meal}
+              mealType={mealType}
+              nutritionPlanId={effectivePlanId}
+              onAddRecipe={handleAddRecipe}
+              onDeleteRecipe={deleteMealItem}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 export default DayMealsView;

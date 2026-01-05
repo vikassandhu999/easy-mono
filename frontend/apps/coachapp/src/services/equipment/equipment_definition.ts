@@ -1,12 +1,12 @@
 export type Equipment = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
 export type EquipmentListOpts = {
-    search?: string;
+  search?: string;
 };
 
 export interface EquipmentList {
-    data: Equipment[];
+  data: Equipment[];
 }

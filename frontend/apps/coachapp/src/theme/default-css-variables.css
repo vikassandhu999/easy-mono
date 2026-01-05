@@ -13,7 +13,6 @@
  */
 
 :root {
-
   --ce-text-strong: #000626E5;
   --ce-text-weak: #000933A6;
   --ce-text-brand: #4C64D9;
@@ -30,7 +29,7 @@
   --ce-bg-raised: #FFFFFF;
   --ce-bg-overlay: #FFFFFF;
   --ce-bg-sunken: #F5F6FA;
-  --ce-bg-alernate: #F5F6FA;
+  --ce-bg-alternate: #F5F6FA;
   --ce-bg-brand: #4C64D9;
   --ce-bg-inverse: #12131A;
 

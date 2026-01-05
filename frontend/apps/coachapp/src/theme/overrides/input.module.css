@@ -1,10 +1,11 @@
 .wrapper {
     --input-color: var(--ce-text-strong);
 
-    border: 2px solid transparent;
+    outline: 2px solid transparent;
     border-radius: var(--ce-space-8);
+    box-sizing: border-box;
 
-    padding: 1.5px;
+    padding: 2px;
 
     &:focus,
     &:focus-within,
@@ -13,7 +14,7 @@
     &:autofill:focus,
     &:autofill:focus-within,
     &:autofill:active {
-        border: 2px solid var(--ce-stroke-selected);
+        outline: 2px solid var(--ce-stroke-selected);
     }
 }
 
@@ -61,6 +62,8 @@
     line-height: var(--ce-line-height-small);
     color: var(--ce-text-strong);
 
+    margin-left: 2px;
+
 
     &:disabled,
     &[data-disabled] {
@@ -73,6 +76,8 @@
     color: var(--ce-text-weak);
     font-size: var(--ce-font-size-tiny);
     line-height: var(--ce-line-height-tiny);
+    margin-left: 2px;
+
 }
 
 .error {
@@ -80,4 +85,6 @@
     font-size: var(--ce-font-size-tiny);
     line-height: var(--ce-line-height-tiny);
     font-weight: 600;
+    margin-left: 2px;
+
 }

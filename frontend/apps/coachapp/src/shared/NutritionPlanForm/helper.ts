@@ -6,23 +6,23 @@ import {NutritionPlan} from '@/services/nutrition_plans';
 // - thumbnail_url: Optional, Must be valid URL
 
 export const getDefaultValues = {
-    name: '',
-    description: '',
-    thumbnail_url: '',
-    is_template: true,
-    status: 'draft' as const,
-    start_date: '',
-    end_date: '',
-    tags: [] as string[],
+  name: '',
+  description: '',
+  thumbnail_url: '',
+  is_template: true,
+  status: 'draft' as const,
+  start_date: '',
+  end_date: '',
+  tags: [] as string[],
 };
 
 export const populateNutritionPlan = (plan: NutritionPlan) => ({
-    name: plan.name,
-    description: plan.description || '',
-    thumbnail_url: plan.thumbnail_url || '',
-    is_template: plan.is_template,
-    status: plan.status,
-    start_date: plan.start_date || '',
-    end_date: plan.end_date || '',
-    tags: plan.tags || [],
+  name: plan.name,
+  description: plan.description || '',
+  thumbnail_url: plan.thumbnail_url || '',
+  is_template: plan.is_template,
+  status: plan.status,
+  start_date: plan.start_date || '',
+  end_date: plan.end_date || '',
+  tags: plan.tags || [],
 });

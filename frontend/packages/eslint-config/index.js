@@ -51,7 +51,7 @@ module.exports = {
                 printWidth: 120,
                 singleAttributePerLine: true,
                 singleQuote: true,
-                tabWidth: 4,
+                tabWidth: 2,
                 trailingComma: 'all',
             },
         ],

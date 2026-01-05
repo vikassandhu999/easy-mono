@@ -1,16 +1,16 @@
 import {
-    ActionIcon,
-    Badge,
-    Button,
-    Collapse,
-    Group,
-    NumberInput,
-    Paper,
-    SimpleGrid,
-    Stack,
-    Text,
-    TextInput,
-    Tooltip,
+  ActionIcon,
+  Badge,
+  Button,
+  Collapse,
+  Group,
+  NumberInput,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Tooltip,
 } from '@mantine/core';
 import {modals} from '@mantine/modals';
 import {BarbellIcon, CaretDownIcon, CaretRightIcon, PlusIcon, TrashIcon} from '@phosphor-icons/react';
@@ -24,13 +24,13 @@ import {SessionFormValues} from '../sessionForm';
 import WorkoutExercise from './WorkoutExercise';
 
 interface WorkoutSectionProps {
-    contentsMap: Record<string, Content>;
-    control: UseFormReturn<SessionFormValues>['control'];
-    isExpanded: boolean;
-    onExpand: () => void;
-    onRemove: () => void;
-    sectionIndex: number;
-    setContentsMap: React.Dispatch<React.SetStateAction<Record<string, Content>>>;
+  contentsMap: Record<string, Content>;
+  control: UseFormReturn<SessionFormValues>['control'];
+  isExpanded: boolean;
+  onExpand: () => void;
+  onRemove: () => void;
+  sectionIndex: number;
+  setContentsMap: React.Dispatch<React.SetStateAction<Record<string, Content>>>;
 }
 
 /**
@@ -45,330 +45,327 @@ interface WorkoutSectionProps {
  * - Single-edit-mode: Only one exercise expanded at a time
  */
 export default function WorkoutSection({
-    control,
-    sectionIndex,
-    onRemove,
-    isExpanded,
-    onExpand,
-    contentsMap,
-    setContentsMap,
+  control,
+  sectionIndex,
+  onRemove,
+  isExpanded,
+  onExpand,
+  contentsMap,
+  setContentsMap,
 }: WorkoutSectionProps) {
-    const [expandedExerciseIndex, setExpandedExerciseIndex] = useState<null | number>(0);
-    const {
-        fields: exercises,
-        append: addExercise,
-        remove: removeExercise,
-    } = useFieldArray({
-        control,
-        name: `definition.sections.${sectionIndex}.exercises`,
-    });
+  const [expandedExerciseIndex, setExpandedExerciseIndex] = useState<null | number>(0);
+  const {
+    fields: exercises,
+    append: addExercise,
+    remove: removeExercise,
+  } = useFieldArray({
+    control,
+    name: `definition.sections.${sectionIndex}.exercises`,
+  });
 
-    // Get section data
-    const sectionType = control._formValues.definition?.sections?.[sectionIndex]?.type;
-    const isHiddenSection = sectionType === 'hidden';
+  // Get section data
+  const sectionType = control._formValues.definition?.sections?.[sectionIndex]?.type;
+  const isHiddenSection = sectionType === 'hidden';
 
-    // Helper to get user-facing section type label
-    // Future: Map different types to different labels (e.g., 'circuit' → 'Circuit', 'amrap' → 'AMRAP')
-    const getSectionTypeLabel = (type?: string) => {
-        if (type === 'hidden') return 'Section';
-        // For now, all visible sections are supersets
-        return 'Superset';
-    };
+  // Helper to get user-facing section type label
+  // Future: Map different types to different labels (e.g., 'circuit' → 'Circuit', 'amrap' → 'AMRAP')
+  const getSectionTypeLabel = (type?: string) => {
+    if (type === 'hidden') return 'Section';
+    // For now, all visible sections are supersets
+    return 'Superset';
+  };
 
-    const sectionTypeLabel = getSectionTypeLabel(sectionType);
-    const sectionTitle =
-        control._formValues.definition?.sections?.[sectionIndex]?.title || `${sectionTypeLabel} ${sectionIndex + 1}`;
-    const targetRounds = control._formValues.definition?.sections?.[sectionIndex]?.target_rounds || 0;
+  const sectionTypeLabel = getSectionTypeLabel(sectionType);
+  const sectionTitle =
+    control._formValues.definition?.sections?.[sectionIndex]?.title || `${sectionTypeLabel} ${sectionIndex + 1}`;
+  const targetRounds = control._formValues.definition?.sections?.[sectionIndex]?.target_rounds || 0;
 
-    // For hidden sections, render only the exercises without the section wrapper
-    if (isHiddenSection) {
-        // Don't render anything if there are no exercises
-        if (exercises.length === 0) {
-            return null;
-        }
-
-        return (
-            <Stack gap="md">
-                {exercises.map((exercise, exerciseIndex) => (
-                    <WorkoutExercise
-                        contentsMap={contentsMap}
-                        control={control}
-                        exerciseIndex={exerciseIndex}
-                        isExpanded={expandedExerciseIndex === exerciseIndex}
-                        key={exercise.id}
-                        onExpand={() => {
-                            setExpandedExerciseIndex(expandedExerciseIndex === exerciseIndex ? null : exerciseIndex);
-                        }}
-                        onRemove={() => {
-                            removeExercise(exerciseIndex);
-                            if (expandedExerciseIndex === exerciseIndex) {
-                                setExpandedExerciseIndex(Math.max(0, exerciseIndex - 1));
-                            }
-                        }}
-                        sectionIndex={sectionIndex}
-                        setContentsMap={setContentsMap}
-                    />
-                ))}
-            </Stack>
-        );
+  // For hidden sections, render only the exercises without the section wrapper
+  if (isHiddenSection) {
+    // Don't render anything if there are no exercises
+    if (exercises.length === 0) {
+      return null;
     }
 
     return (
-        <Paper
-            p={0}
-            radius="lg"
-            style={{
-                border: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
-                overflow: 'hidden',
+      <Stack gap="md">
+        {exercises.map((exercise, exerciseIndex) => (
+          <WorkoutExercise
+            contentsMap={contentsMap}
+            control={control}
+            exerciseIndex={exerciseIndex}
+            isExpanded={expandedExerciseIndex === exerciseIndex}
+            key={exercise.id}
+            onExpand={() => {
+              setExpandedExerciseIndex(expandedExerciseIndex === exerciseIndex ? null : exerciseIndex);
             }}
-        >
-            {/* Section Header - Always Visible */}
-            <Group
-                align="center"
-                gap="md"
-                justify="space-between"
-                onClick={(e) => {
-                    // Prevent collapse if clicking on menu or its children
-                    if (!(e.target as HTMLElement).closest('[data-prevent-collapse]')) {
-                        onExpand();
-                    }
-                }}
-                p="md"
-                style={{
-                    cursor: 'pointer',
-                    backgroundColor: isExpanded
-                        ? 'light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6))'
-                        : 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))',
-                    borderBottom: isExpanded
-                        ? '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
-                        : 'none',
-                }}
-                wrap="nowrap"
-            >
-                <Group
-                    gap="md"
-                    style={{flex: 1, minWidth: 0}}
-                >
-                    {/* Expand/Collapse Icon */}
-                    <ActionIcon
-                        color={isExpanded ? 'blue' : 'gray'}
-                        radius="lg"
-                        size="lg"
-                        variant="subtle"
-                    >
-                        {isExpanded ? <CaretDownIcon size={18} /> : <CaretRightIcon size={18} />}
-                    </ActionIcon>
-
-                    {/* Section Info */}
-                    <div style={{flex: 1, minWidth: 0}}>
-                        <Text
-                            fw={600}
-                            lineClamp={1}
-                            size="md"
-                        >
-                            {sectionTitle || `Untitled ${sectionTypeLabel}`}
-                        </Text>
-                        <Group
-                            gap="xs"
-                            mt={2}
-                        >
-                            <Badge
-                                color="gray"
-                                size="xs"
-                                variant="dot"
-                            >
-                                {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
-                            </Badge>
-                            {targetRounds > 0 && (
-                                <Badge
-                                    color="blue"
-                                    size="xs"
-                                    variant="dot"
-                                >
-                                    {targetRounds} {targetRounds === 1 ? 'round' : 'rounds'}
-                                </Badge>
-                            )}
-                        </Group>
-                    </div>
-                </Group>
-
-                {/* Action Buttons */}
-                <Group
-                    gap="xs"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <Tooltip label={`Delete ${sectionTypeLabel}`}>
-                        <ActionIcon
-                            color="red"
-                            onClick={onRemove}
-                            radius="xl"
-                            size="sm"
-                            variant="light"
-                        >
-                            <TrashIcon size={16} />
-                        </ActionIcon>
-                    </Tooltip>
-                </Group>
-            </Group>
-
-            {/* Section Content - Collapsible */}
-            <Collapse in={isExpanded}>
-                <Stack
-                    gap="sm"
-                    p="sm"
-                    pt="md"
-                >
-                    {/* Section Configuration */}
-                    <SimpleGrid
-                        cols={{base: 1, sm: 2}}
-                        spacing="md"
-                    >
-                        <TextInput
-                            {...control.register(`definition.sections.${sectionIndex}.title`)}
-                            label="Title"
-                            placeholder="e.g., Warm Up, Upper Body"
-                            size="md"
-                        />
-                        <Controller
-                            control={control}
-                            name={`definition.sections.${sectionIndex}.target_rounds`}
-                            render={({field}) => (
-                                <NumberInput
-                                    label="Rounds"
-                                    min={0}
-                                    onBlur={field.onBlur}
-                                    onChange={(value) => field.onChange(typeof value === 'number' ? value : undefined)}
-                                    placeholder="0 = no limit"
-                                    ref={field.ref}
-                                    size="md"
-                                    value={field.value ?? undefined}
-                                />
-                            )}
-                        />
-                    </SimpleGrid>
-
-                    {/* Exercises List */}
-                    <Stack gap="sm">
-                        {exercises.map((exercise, exerciseIndex) => (
-                            <WorkoutExercise
-                                contentsMap={contentsMap}
-                                control={control}
-                                exerciseIndex={exerciseIndex}
-                                isExpanded={expandedExerciseIndex === exerciseIndex}
-                                key={exercise.id}
-                                onExpand={() => {
-                                    // Toggle: if clicking on already expanded exercise, collapse it
-                                    setExpandedExerciseIndex(
-                                        expandedExerciseIndex === exerciseIndex ? null : exerciseIndex,
-                                    );
-                                }}
-                                onRemove={() => {
-                                    removeExercise(exerciseIndex);
-                                    // If removing the expanded exercise, expand the previous one or first
-                                    if (expandedExerciseIndex === exerciseIndex) {
-                                        setExpandedExerciseIndex(Math.max(0, exerciseIndex - 1));
-                                    }
-                                }}
-                                sectionIndex={sectionIndex}
-                                setContentsMap={setContentsMap}
-                            />
-                        ))}
-
-                        {exercises.length === 0 && (
-                            <Paper
-                                p="xl"
-                                radius="lg"
-                                style={{
-                                    backgroundColor:
-                                        'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
-                                    border: '2px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
-                                }}
-                            >
-                                <Stack
-                                    align="center"
-                                    gap="md"
-                                >
-                                    <BarbellIcon
-                                        size={40}
-                                        style={{opacity: 0.25}}
-                                        weight="duotone"
-                                    />
-                                    <Text
-                                        c="dimmed"
-                                        fw={500}
-                                        size="sm"
-                                        ta="center"
-                                    >
-                                        Add exercises
-                                    </Text>
-                                </Stack>
-                            </Paper>
-                        )}
-
-                        {/* Add Exercise Button */}
-                        <Button
-                            fullWidth
-                            leftSection={<PlusIcon size={18} />}
-                            mt="md"
-                            onClick={() => {
-                                modals.open({
-                                    children: (
-                                        <ContentSelect
-                                            onComplete={(ids, selectedContents) => {
-                                                if (ids.length && selectedContents) {
-                                                    // Store the selected content details
-                                                    const newContentsMap = {...contentsMap};
-                                                    selectedContents.forEach((content) => {
-                                                        newContentsMap[content.id] = content;
-                                                    });
-                                                    setContentsMap(newContentsMap);
-
-                                                    addExercise({
-                                                        content_id: ids[0],
-                                                        each_side: false,
-                                                        id: `exercise-${Date.now()}`,
-                                                        sets: [],
-                                                        tempo: '',
-                                                    });
-                                                    // Expand the newly added exercise
-                                                    setExpandedExerciseIndex(exercises.length);
-                                                }
-                                                modals.closeAll();
-                                            }}
-                                        />
-                                    ),
-                                    centered: true,
-                                    id: 'select-exercise',
-                                    padding: 'lg',
-                                    radius: 'md',
-                                    size: 'xl',
-                                    styles: {
-                                        body: {
-                                            height: '80vh',
-                                            maxHeight: '800px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            padding: 0,
-                                        },
-                                        content: {
-                                            height: 'auto',
-                                        },
-                                        header: {
-                                            display: 'none',
-                                        },
-                                    },
-                                    title: 'Select Exercise',
-                                });
-                            }}
-                            radius="lg"
-                            size="lg"
-                            variant={exercises.length === 0 ? 'filled' : 'light'}
-                        >
-                            {exercises.length === 0 ? 'Add First Exercise' : 'Add Exercise'}
-                        </Button>
-                    </Stack>
-                </Stack>
-            </Collapse>
-        </Paper>
+            onRemove={() => {
+              removeExercise(exerciseIndex);
+              if (expandedExerciseIndex === exerciseIndex) {
+                setExpandedExerciseIndex(Math.max(0, exerciseIndex - 1));
+              }
+            }}
+            sectionIndex={sectionIndex}
+            setContentsMap={setContentsMap}
+          />
+        ))}
+      </Stack>
     );
+  }
+
+  return (
+    <Paper
+      p={0}
+      radius="lg"
+      style={{
+        border: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Section Header - Always Visible */}
+      <Group
+        align="center"
+        gap="md"
+        justify="space-between"
+        onClick={(e) => {
+          // Prevent collapse if clicking on menu or its children
+          if (!(e.target as HTMLElement).closest('[data-prevent-collapse]')) {
+            onExpand();
+          }
+        }}
+        p="md"
+        style={{
+          cursor: 'pointer',
+          backgroundColor: isExpanded
+            ? 'light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6))'
+            : 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))',
+          borderBottom: isExpanded
+            ? '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
+            : 'none',
+        }}
+        wrap="nowrap"
+      >
+        <Group
+          gap="md"
+          style={{flex: 1, minWidth: 0}}
+        >
+          {/* Expand/Collapse Icon */}
+          <ActionIcon
+            color={isExpanded ? 'blue' : 'gray'}
+            radius="lg"
+            size="lg"
+            variant="subtle"
+          >
+            {isExpanded ? <CaretDownIcon size={18} /> : <CaretRightIcon size={18} />}
+          </ActionIcon>
+
+          {/* Section Info */}
+          <div style={{flex: 1, minWidth: 0}}>
+            <Text
+              fw={600}
+              lineClamp={1}
+              size="md"
+            >
+              {sectionTitle || `Untitled ${sectionTypeLabel}`}
+            </Text>
+            <Group
+              gap="xs"
+              mt={2}
+            >
+              <Badge
+                color="gray"
+                size="xs"
+                variant="dot"
+              >
+                {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
+              </Badge>
+              {targetRounds > 0 && (
+                <Badge
+                  color="blue"
+                  size="xs"
+                  variant="dot"
+                >
+                  {targetRounds} {targetRounds === 1 ? 'round' : 'rounds'}
+                </Badge>
+              )}
+            </Group>
+          </div>
+        </Group>
+
+        {/* Action Buttons */}
+        <Group
+          gap="xs"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Tooltip label={`Delete ${sectionTypeLabel}`}>
+            <ActionIcon
+              color="red"
+              onClick={onRemove}
+              radius="xl"
+              size="sm"
+              variant="light"
+            >
+              <TrashIcon size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
+
+      {/* Section Content - Collapsible */}
+      <Collapse in={isExpanded}>
+        <Stack
+          gap="sm"
+          p="sm"
+          pt="md"
+        >
+          {/* Section Configuration */}
+          <SimpleGrid
+            cols={{base: 1, sm: 2}}
+            spacing="md"
+          >
+            <TextInput
+              {...control.register(`definition.sections.${sectionIndex}.title`)}
+              label="Title"
+              placeholder="e.g., Warm Up, Upper Body"
+              size="md"
+            />
+            <Controller
+              control={control}
+              name={`definition.sections.${sectionIndex}.target_rounds`}
+              render={({field}) => (
+                <NumberInput
+                  label="Rounds"
+                  min={0}
+                  onBlur={field.onBlur}
+                  onChange={(value) => field.onChange(typeof value === 'number' ? value : undefined)}
+                  placeholder="0 = no limit"
+                  ref={field.ref}
+                  size="md"
+                  value={field.value ?? undefined}
+                />
+              )}
+            />
+          </SimpleGrid>
+
+          {/* Exercises List */}
+          <Stack gap="sm">
+            {exercises.map((exercise, exerciseIndex) => (
+              <WorkoutExercise
+                contentsMap={contentsMap}
+                control={control}
+                exerciseIndex={exerciseIndex}
+                isExpanded={expandedExerciseIndex === exerciseIndex}
+                key={exercise.id}
+                onExpand={() => {
+                  // Toggle: if clicking on already expanded exercise, collapse it
+                  setExpandedExerciseIndex(expandedExerciseIndex === exerciseIndex ? null : exerciseIndex);
+                }}
+                onRemove={() => {
+                  removeExercise(exerciseIndex);
+                  // If removing the expanded exercise, expand the previous one or first
+                  if (expandedExerciseIndex === exerciseIndex) {
+                    setExpandedExerciseIndex(Math.max(0, exerciseIndex - 1));
+                  }
+                }}
+                sectionIndex={sectionIndex}
+                setContentsMap={setContentsMap}
+              />
+            ))}
+
+            {exercises.length === 0 && (
+              <Paper
+                p="xl"
+                radius="lg"
+                style={{
+                  backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+                  border: '2px dashed light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
+                }}
+              >
+                <Stack
+                  align="center"
+                  gap="md"
+                >
+                  <BarbellIcon
+                    size={40}
+                    style={{opacity: 0.25}}
+                    weight="duotone"
+                  />
+                  <Text
+                    c="dimmed"
+                    fw={500}
+                    size="sm"
+                    ta="center"
+                  >
+                    Add exercises
+                  </Text>
+                </Stack>
+              </Paper>
+            )}
+
+            {/* Add Exercise Button */}
+            <Button
+              fullWidth
+              leftSection={<PlusIcon size={18} />}
+              mt="md"
+              onClick={() => {
+                modals.open({
+                  children: (
+                    <ContentSelect
+                      onComplete={(ids, selectedContents) => {
+                        if (ids.length && selectedContents) {
+                          // Store the selected content details
+                          const newContentsMap = {...contentsMap};
+                          selectedContents.forEach((content) => {
+                            newContentsMap[content.id] = content;
+                          });
+                          setContentsMap(newContentsMap);
+
+                          addExercise({
+                            content_id: ids[0],
+                            each_side: false,
+                            id: `exercise-${Date.now()}`,
+                            sets: [],
+                            tempo: '',
+                          });
+                          // Expand the newly added exercise
+                          setExpandedExerciseIndex(exercises.length);
+                        }
+                        modals.closeAll();
+                      }}
+                    />
+                  ),
+                  centered: true,
+                  id: 'select-exercise',
+                  padding: 'lg',
+                  radius: 'md',
+                  size: 'xl',
+                  styles: {
+                    body: {
+                      height: '80vh',
+                      maxHeight: '800px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: 0,
+                    },
+                    content: {
+                      height: 'auto',
+                    },
+                    header: {
+                      display: 'none',
+                    },
+                  },
+                  title: 'Select Exercise',
+                });
+              }}
+              radius="lg"
+              size="lg"
+              variant={exercises.length === 0 ? 'filled' : 'light'}
+            >
+              {exercises.length === 0 ? 'Add First Exercise' : 'Add Exercise'}
+            </Button>
+          </Stack>
+        </Stack>
+      </Collapse>
+    </Paper>
+  );
 }

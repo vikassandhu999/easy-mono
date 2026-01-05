@@ -3,67 +3,67 @@ import {z} from 'zod';
 export type RecipeStatus = 'active' | 'archived' | 'draft';
 
 export type MeasurementUnit = {
-    name: string;
-    abbreviation: string;
-    system: 'imperial' | 'metric';
+  name: string;
+  abbreviation: string;
+  system: 'imperial' | 'metric';
 };
 
 export type Ingredient = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
 export type RecipeIngredient = {
-    id: string;
-    position: number | string;
-    quantity?: number;
-    quantity_as_text?: string;
-    ingredient_id: string;
-    ingredient?: Ingredient;
-    unit_id?: string;
-    unit?: MeasurementUnit;
+  id: string;
+  position: number | string;
+  quantity?: number;
+  quantity_as_text?: string;
+  ingredient_id: string;
+  ingredient?: Ingredient;
+  unit_id?: string;
+  unit?: MeasurementUnit;
 };
 
 export type Recipe = {
-    id: string;
-    name: string;
-    description: null | string;
-    instructions?: null | string[];
-    instructions_as_text: null | string;
-    image_url: null | string;
+  id: string;
+  name: string;
+  description: null | string;
+  instructions?: null | string[];
+  instructions_as_text: null | string;
+  image_url: null | string;
 
-    prep_time_minutes: null | number;
-    cook_time_minutes: null | number;
-    servings: null | number;
+  prep_time_minutes: null | number;
+  cook_time_minutes: null | number;
+  servings: null | number;
 
-    recipe_ingredients: RecipeIngredient[];
+  recipe_ingredients: RecipeIngredient[];
 
-    total_calories: null | string;
-    total_protein: null | string;
-    total_carbohydrates: null | string;
-    total_fats: null | string;
-    total_fiber: null | string;
-    status: RecipeStatus;
-    author_id: null | string;
+  total_calories: null | string;
+  total_protein: null | string;
+  total_carbohydrates: null | string;
+  total_fats: null | string;
+  total_fiber: null | string;
+  status: RecipeStatus;
+  author_id: null | string;
 
-    inserted_at: string;
-    updated_at: string;
+  inserted_at: string;
+  updated_at: string;
 };
 
 export type RecipesListOpts = {
-    page?: number;
-    per_page?: number;
-    search?: string;
-    status?: RecipeStatus;
+  page?: number;
+  per_page?: number;
+  search?: string;
+  status?: RecipeStatus;
 };
 
 export interface RecipesList {
-    meta: {
-        offset: number;
-        limit: number;
-        total: number;
-    };
-    records: Recipe[];
+  meta: {
+    offset: number;
+    limit: number;
+    total: number;
+  };
+  records: Recipe[];
 }
 
 // Explicit type for form usage (compatible with useFieldArray)
@@ -74,42 +74,42 @@ export type CreateRecipeForm = CreateRecipe;
 export type UpdateRecipe = Partial<CreateRecipe> & {id: string};
 
 export type DuplicateRecipe = {
-    id: string;
+  id: string;
 };
 
 export const IngredientItem_zod = z.object({
-    name: z.string().optional(), // will not be sent to api this is for fe and will be filtered
-    position: z.number(),
-    ingredient_id: z.string(),
-    quantity_as_text: z.string().min(0, 'Please Enter quanity.'),
+  name: z.string().optional(), // will not be sent to api this is for fe and will be filtered
+  position: z.number(),
+  ingredient_id: z.string(),
+  quantity_as_text: z.string().min(0, 'Please Enter quanity.'),
 });
 
 // Predefined recipe images available for selection
 export const RECIPE_IMAGE_OPTIONS = [
-    {id: '1', url: '/recipes/1.png', label: 'Recipe Image 1'},
-    {id: '2', url: '/recipes/2.png', label: 'Recipe Image 2'},
-    {id: '3', url: '/recipes/3.png', label: 'Recipe Image 3'},
-    {id: '4', url: '/recipes/4.png', label: 'Recipe Image 4'},
-    {id: '5', url: '/recipes/5.png', label: 'Recipe Image 5'},
+  {id: '1', url: '/recipes/1.png', label: 'Recipe Image 1'},
+  {id: '2', url: '/recipes/2.png', label: 'Recipe Image 2'},
+  {id: '3', url: '/recipes/3.png', label: 'Recipe Image 3'},
+  {id: '4', url: '/recipes/4.png', label: 'Recipe Image 4'},
+  {id: '5', url: '/recipes/5.png', label: 'Recipe Image 5'},
 ];
 
 export const CreateRecipe_zod = z.object({
-    name: z
-        .string()
-        .min(2, 'Recipe name must be at least 2 characters long')
-        .max(255, 'Recipe name must not exceed 255 characters'),
-    description: z.string().optional(),
-    instructions: z.array(z.string()).optional(),
-    instructions_as_text: z.string().optional(),
-    image_url: z.string().optional(),
-    prep_time_minutes: z.number().int().min(1, 'Prep time must be at least 1 minute').optional(),
-    cook_time_minutes: z.number().int().min(1, 'Cook time must be at least 1 minute').optional(),
-    servings: z.number().int().min(1, 'Servings must be at least 1').optional(),
-    recipe_ingredients: z.array(IngredientItem_zod).optional(),
-    total_calories: z.number().min(0, 'Calories must be non-negative').optional(),
-    total_protein: z.number().min(0, 'Protein must be non-negative').optional(),
-    total_carbohydrates: z.number().min(0, 'Carbohydrates must be non-negative').optional(),
-    total_fats: z.number().min(0, 'Fats must be non-negative').optional(),
-    total_fiber: z.number().min(0, 'Fiber must be non-negative').optional(),
-    status: z.enum(['active', 'archived', 'draft']).optional(),
+  name: z
+    .string()
+    .min(2, 'Recipe name must be at least 2 characters long')
+    .max(255, 'Recipe name must not exceed 255 characters'),
+  description: z.string().optional(),
+  instructions: z.array(z.string()).optional(),
+  instructions_as_text: z.string().optional(),
+  image_url: z.string().optional(),
+  prep_time_minutes: z.number().int().min(1, 'Prep time must be at least 1 minute').optional(),
+  cook_time_minutes: z.number().int().min(1, 'Cook time must be at least 1 minute').optional(),
+  servings: z.number().int().min(1, 'Servings must be at least 1').optional(),
+  recipe_ingredients: z.array(IngredientItem_zod).optional(),
+  total_calories: z.number().min(0, 'Calories must be non-negative').optional(),
+  total_protein: z.number().min(0, 'Protein must be non-negative').optional(),
+  total_carbohydrates: z.number().min(0, 'Carbohydrates must be non-negative').optional(),
+  total_fats: z.number().min(0, 'Fats must be non-negative').optional(),
+  total_fiber: z.number().min(0, 'Fiber must be non-negative').optional(),
+  status: z.enum(['active', 'archived', 'draft']).optional(),
 });

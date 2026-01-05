@@ -10,66 +10,68 @@ import {navItems} from './constants';
 import {useNavigationState} from './hooks/useNavigationState.ts';
 
 interface MainLayoutProps {
-    children: ReactNode;
-    disableTopMargin?: boolean;
-    showNavigation: boolean;
+  children: ReactNode;
+  disableTopMargin?: boolean;
+  showNavigation: boolean;
 }
 
 export function MainLayout({children, disableTopMargin, showNavigation}: MainLayoutProps) {
-    const [opened, {close}] = useDisclosure();
-    const isMobile = useMediaQuery(`(max-width: 998px)`);
-    const isKeyboardVisible = useKeyboardVisible();
+  const [opened, {close}] = useDisclosure();
+  const isMobile = useMediaQuery(`(max-width: 998px)`);
+  const isKeyboardVisible = useKeyboardVisible();
 
-    const {handleLogout, handleNavigation} = useNavigationState(isMobile ? close : undefined);
+  const {handleLogout, handleNavigation} = useNavigationState(isMobile ? close : undefined);
 
-    const navbarStyles = isMobile
-        ? undefined
-        : {
-              breakpoint: 'sm',
-              collapsed: {desktop: false, mobile: !opened},
-              width: {base: '100%', md: 220},
-          };
-    const showDesktopNavbar = !isMobile;
-    const showMobileNavbar = isMobile && showNavigation;
+  const navbarStyles = isMobile
+    ? undefined
+    : {
+        breakpoint: 'sm',
+        collapsed: {desktop: false, mobile: !opened},
+        width: {base: '100%', md: 220},
+      };
+  const showDesktopNavbar = !isMobile;
+  const showMobileNavbar = isMobile && showNavigation;
 
-    return (
-        <AppShell
-            navbar={navbarStyles}
-            padding={0}
+  return (
+    <AppShell
+      navbar={navbarStyles}
+      padding={0}
+    >
+      {showDesktopNavbar && (
+        <AppShell.Navbar
+          p="0"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            borderColor: 'var(--ce-stroke-weak)',
+            boxShadow: 'var(--ce-shadow-raised)',
+          }}
         >
-            {showDesktopNavbar && (
-                <AppShell.Navbar
-                    p="0"
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                    }}
-                >
-                    <DesktopNavbar
-                        navItems={navItems}
-                        onLogout={handleLogout}
-                        onNavigate={handleNavigation}
-                    />
-                </AppShell.Navbar>
-            )}
+          <DesktopNavbar
+            navItems={navItems}
+            onLogout={handleLogout}
+            onNavigate={handleNavigation}
+          />
+        </AppShell.Navbar>
+      )}
 
-            <AppShell.Main
-                style={{
-                    background: 'transparent',
-                    marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-space-16)',
-                }}
-            >
-                {children}
-            </AppShell.Main>
+      <AppShell.Main
+        style={{
+          background: 'transparent',
+          marginTop: isMobile || disableTopMargin ? 0 : 'var(--ce-space-16)',
+        }}
+      >
+        {children}
+      </AppShell.Main>
 
-            {showMobileNavbar && (
-                <MobileBottomNav
-                    isVisible={!isKeyboardVisible}
-                    navItems={navItems}
-                    onNavigate={handleNavigation}
-                />
-            )}
-        </AppShell>
-    );
+      {showMobileNavbar && (
+        <MobileBottomNav
+          isVisible={!isKeyboardVisible}
+          navItems={navItems}
+          onNavigate={handleNavigation}
+        />
+      )}
+    </AppShell>
+  );
 }

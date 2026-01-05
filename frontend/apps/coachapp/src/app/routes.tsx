@@ -15,71 +15,71 @@ import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
 
 const router = createBrowserRouter([
-    {
-        path: '*',
-        element: <NotFoundPage />,
-    },
-    {
-        element: <GuestGaurd />,
+  {
+    path: '*',
+    element: <NotFoundPage />,
+  },
+  {
+    element: <GuestGaurd />,
+    children: [
+      {
+        element: <RegisterPage />,
+        path: '/register',
+      },
+      {
+        element: <VerifyRegisterationPage />,
+        path: '/register/verify',
+      },
+      {
+        element: <LoginPage />,
+        path: '/login',
+      },
+      {
+        element: <VerifyLoginPage />,
+        path: '/login/verify',
+      },
+    ],
+  },
+  {
+    element: <PrivateGaurd />,
+    children: [
+      {
+        element: <ProtectedRouteLayout />,
         children: [
-            {
-                element: <RegisterPage />,
-                path: '/register',
-            },
-            {
-                element: <VerifyRegisterationPage />,
-                path: '/register/verify',
-            },
-            {
-                element: <LoginPage />,
-                path: '/login',
-            },
-            {
-                element: <VerifyLoginPage />,
-                path: '/login/verify',
-            },
+          {
+            element: <ClientListPage />,
+            path: '/',
+          },
+          {
+            element: <ClientsPage />,
+            path: '/clients',
+          },
+          // {
+          //     element: <ClientsPage />,
+          //     path: '/clients1',
+          // },
+          {
+            element: <ClientViewPage />,
+            path: '/clients/:id',
+          },
+          {
+            element: <LibraryListPage />,
+            path: '/library',
+          },
+          {
+            element: <MyPagePage />,
+            path: '/page',
+          },
+          {
+            element: <SettingsPage />,
+            path: '/settings',
+          },
         ],
-    },
-    {
-        element: <PrivateGaurd />,
-        children: [
-            {
-                element: <ProtectedRouteLayout />,
-                children: [
-                    {
-                        element: <ClientListPage />,
-                        path: '/',
-                    },
-                    {
-                        element: <ClientsPage />,
-                        path: '/clients',
-                    },
-                    // {
-                    //     element: <ClientsPage />,
-                    //     path: '/clients1',
-                    // },
-                    {
-                        element: <ClientViewPage />,
-                        path: '/clients/:id',
-                    },
-                    {
-                        element: <LibraryListPage />,
-                        path: '/library',
-                    },
-                    {
-                        element: <MyPagePage />,
-                        path: '/page',
-                    },
-                    {
-                        element: <SettingsPage />,
-                        path: '/settings',
-                    },
-                ],
-            },
-        ],
-    },
+      },
+    ],
+  },
 ]);
 
 export default function Routes() {
-    return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />;
 }

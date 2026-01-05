@@ -7,44 +7,44 @@ import {useListMuscles} from '@/services/muscles';
 import {capitalizeWords} from '@/utils/text';
 
 type MuscleFieldProps = {
-    form: UseFormReturn<CreateExercise, any, CreateExercise>;
+  form: UseFormReturn<CreateExercise, any, CreateExercise>;
 };
 
 const MuscleField: FC<MuscleFieldProps> = ({form}) => {
-    const {control, formState} = form;
-    const [search, setSearch] = useState('');
+  const {control, formState} = form;
+  const [search, setSearch] = useState('');
 
-    const {data} = useListMuscles({search});
+  const {data} = useListMuscles({search});
 
-    const muscles = useMemo(() => data?.data || [], [data]);
+  const muscles = useMemo(() => data?.data || [], [data]);
 
-    const selectData = useMemo(() => {
-        return muscles.map((muscle) => ({
-            value: muscle.id,
-            label: capitalizeWords(muscle.name),
-        }));
-    }, [muscles]);
+  const selectData = useMemo(() => {
+    return muscles.map((muscle) => ({
+      value: muscle.id,
+      label: capitalizeWords(muscle.name),
+    }));
+  }, [muscles]);
 
-    return (
-        <Controller
-            control={control}
-            name="muscle_ids"
-            render={({field}) => (
-                <MultiSelect
-                    {...field}
-                    data={selectData}
-                    error={formState.errors.muscle_ids?.message}
-                    label={'Target Muscles'}
-                    limit={20}
-                    onSearchChange={setSearch}
-                    placeholder="Select muscles"
-                    searchable
-                    size={'md'}
-                    value={field.value || []}
-                />
-            )}
+  return (
+    <Controller
+      control={control}
+      name="muscle_ids"
+      render={({field}) => (
+        <MultiSelect
+          {...field}
+          data={selectData}
+          error={formState.errors.muscle_ids?.message}
+          label={'Target Muscles'}
+          limit={20}
+          onSearchChange={setSearch}
+          placeholder="Select muscles"
+          searchable
+          size={'md'}
+          value={field.value || []}
         />
-    );
+      )}
+    />
+  );
 };
 
 export default MuscleField;

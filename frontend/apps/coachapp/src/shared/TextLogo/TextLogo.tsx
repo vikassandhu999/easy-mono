@@ -3,11 +3,11 @@ import React from 'react';
 import LogoSrc from '../../../public/logo.png';
 
 type TextLogoProps = React.HTMLAttributes<HTMLElement> & {
-    as?: React.ElementType;
-    className?: string;
-    href?: string;
-    onDark?: boolean;
-    size?: 'lg' | 'md' | 'sm';
+  as?: React.ElementType;
+  className?: string;
+  href?: string;
+  onDark?: boolean;
+  size?: 'lg' | 'md' | 'sm';
 };
 
 /**
@@ -22,37 +22,37 @@ type TextLogoProps = React.HTMLAttributes<HTMLElement> & {
  * @param {string} [props.className] - Allows passing additional CSS classes to the component.
  */
 export default function TextLogo({
-    as: Component = 'a', // Render as an 'a' tag by default
-    className = '',
-    href = '/',
-    onDark = false,
-    size = 'sm',
-    ...rest // Pass through any other props like aria-label, etc.
+  as: Component = 'a', // Render as an 'a' tag by default
+  className = '',
+  href = '/',
+  onDark = false,
+  size = 'sm',
+  ...rest // Pass through any other props like aria-label, etc.
 }: TextLogoProps) {
-    // Construct the CSS class string based on props
-    const logoClasses = ['logo', `logo-${size}`, onDark ? 'on-dark' : '', className].filter(Boolean).join(' '); // .filter(Boolean) removes any empty strings
+  // Construct the CSS class string based on props
+  const logoClasses = ['logo', `logo-${size}`, onDark ? 'on-dark' : '', className].filter(Boolean).join(' '); // .filter(Boolean) removes any empty strings
 
-    // Define image width based on size
-    const sizeToWidth = {
-        lg: '200px',
-        md: '160px',
-        sm: '120px',
-    };
+  // Define image width based on size
+  const sizeToWidth = {
+    lg: '200px',
+    md: '160px',
+    sm: '120px',
+  };
 
-    // Prepare props for the component, adding href only if it's a link
-    const componentProps: any = {
-        className: logoClasses,
-        ...(Component === 'a' && {href}),
-        ...rest,
-    };
+  // Prepare props for the component, adding href only if it's a link
+  const componentProps: any = {
+    className: logoClasses,
+    ...(Component === 'a' && {href}),
+    ...rest,
+  };
 
-    return (
-        <Component {...componentProps}>
-            <img
-                alt="Coach Easy Logo"
-                src={LogoSrc}
-                style={{verticalAlign: 'middle', width: sizeToWidth[size]}}
-            />
-        </Component>
-    );
+  return (
+    <Component {...componentProps}>
+      <img
+        alt="Coach Easy Logo"
+        src={LogoSrc}
+        style={{verticalAlign: 'middle', width: sizeToWidth[size]}}
+      />
+    </Component>
+  );
 }

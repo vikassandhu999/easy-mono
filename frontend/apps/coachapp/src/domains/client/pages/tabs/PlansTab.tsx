@@ -2,10 +2,10 @@ import {ActionIcon, Group, SegmentedControl, Stack} from '@mantine/core';
 import {IconPlus} from '@tabler/icons-react';
 import {useState} from 'react';
 
+import TrainingPlanList from '@/components/TrainingPlanList';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
-import {TrainingPlanList} from '@/shared/TrainingPlanList';
 
 type PlanTabValue = 'nutrition' | 'training';
 

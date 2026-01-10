@@ -3,7 +3,7 @@ import {IconPlus} from '@tabler/icons-react';
 import {useState} from 'react';
 
 import ClientsList from '@/components/ClientsList';
-import PageWrapper from '@/components/PageWrapper';
+import PageWrapper, {PageSection} from '@/components/PageWrapper';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 
@@ -20,7 +20,7 @@ const ClientsPage: React.FC = () => {
   const [search, setSearch] = useState<string>('');
   return (
     <PageWrapper>
-      <section className="w-full flex-1 sticky top-0 bg-background z-10 mb-4 flex flex-col gap-2">
+      <PageSection className="w-full flex-1 sticky top-0 bg-background z-10 mb-4 pt-4 md:pt-6 flex flex-col gap-2">
         <div className={'flex justify-between items-center'}>
           <h4 className={'text-2xl font-semibold m-0'}>Clients</h4>
           <Button
@@ -61,11 +61,13 @@ const ClientsPage: React.FC = () => {
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
-      </section>
-      <ClientsList
-        search={search}
-        status={status}
-      />
+      </PageSection>
+      <PageSection>
+        <ClientsList
+          search={search}
+          status={status}
+        />
+      </PageSection>
     </PageWrapper>
   );
 };

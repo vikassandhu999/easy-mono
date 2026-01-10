@@ -54,10 +54,6 @@ const router = createBrowserRouter([
             element: <ClientsPage />,
             path: '/clients',
           },
-          // {
-          //     element: <ClientsPage />,
-          //     path: '/clients1',
-          // },
           {
             element: <ClientViewPage />,
             path: '/clients/:id',

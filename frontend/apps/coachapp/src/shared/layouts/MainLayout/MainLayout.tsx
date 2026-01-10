@@ -41,7 +41,7 @@ export function MainLayout({children, showNavigation}: MainLayoutProps) {
         </nav>
       )}
 
-      <main className={'flex-1 md:mt-6'}>{children}</main>
+      <main className={'flex-1'}>{children}</main>
 
       {showMobileNavbar && (
         <MobileBottomNav

@@ -1,4 +1,5 @@
 import {humanizeError} from '@easy/error-parser';
+import {TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Button, Stack, Text, TextInput} from '@mantine/core';
 import {IconArrowRight} from '@tabler/icons-react';
@@ -49,7 +50,7 @@ const LoginPage: React.FC = () => {
     >
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Stack gap="md">
-          <TextInput
+          <TextField
             label={
               <Text
                 fw={500}

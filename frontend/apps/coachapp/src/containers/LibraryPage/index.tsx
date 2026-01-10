@@ -1,21 +1,20 @@
-import {SearchField, Tabs} from '@heroui/react';
-import {Button, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
+import {Button, ScrollShadow, SearchField, Tabs} from '@heroui/react';
 import {useDebouncedValue} from '@mantine/hooks';
-import {IconBarbell, IconChefHat, IconPlus, IconRun, IconSalad, IconX} from '@tabler/icons-react';
+import {IconBarbell, IconChefHat, IconPlus, IconRun, IconSalad} from '@tabler/icons-react';
 import {useEffect, useRef, useState} from 'react';
 
-import PageWrapper from '@/components/PageWrapper';
+import ExerciseList from '@/components/ExerciseList';
+import PageWrapper, {PageSection} from '@/components/PageWrapper';
+import TrainingPlanList from '@/components/TrainingPlanList';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import {ExerciseList} from '@/shared/ExerciseList';
 import {NutritionPlanList} from '@/shared/NutritionPlanList';
 import {RecipeList} from '@/shared/RecipeList';
-import {TrainingPlanList} from '@/shared/TrainingPlanList';
 
 export const LIBRARY_CATEGORIES = [
   {
     id: 'training_plan',
-    label: 'Training Plans',
+    label: 'Training',
     value: 'training_plan',
     color: 'blue',
     icon: IconRun,
@@ -28,7 +27,7 @@ export const LIBRARY_CATEGORIES = [
   },
   {
     id: 'plan',
-    label: 'Nutrition Plans',
+    label: 'Nutrition',
     value: 'plan',
     color: 'cyan',
     icon: IconSalad,
@@ -135,91 +134,93 @@ const LibraryListPage = () => {
 
   return (
     <PageWrapper>
-      <Group
-        align="center"
-        justify={'space-between'}
-      >
-        <ScrollArea type={'never'}>
-          <Tabs
-            className={'mb-4 w-full'}
-            onSelectionChange={(selection) => handleTabChange(selection?.toString())}
-            selectedKey={activeTab}
+      <PageSection className="w-full flex-1 sticky top-0 bg-background z-10 pt-4 md:pt-6 flex flex-col gap-2">
+        <div className={'flex justify-between items-center'}>
+          <ScrollShadow
+            className="max-w-[90vw]"
+            hideScrollBar
+            orientation="horizontal"
+            size={0}
           >
-            <Tabs.ListContainer>
-              <Tabs.List
-                aria-label="Options"
-                className={'w-fit'}
-              >
-                {CATEGORY_TABS.map((categoryTab) => (
-                  <Tabs.Tab
-                    className={'w-fit'}
-                    id={categoryTab.value}
-                    key={categoryTab.value}
-                  >
-                    {categoryTab.label}
-                    <Tabs.Indicator />
-                  </Tabs.Tab>
-                ))}
-              </Tabs.List>
-            </Tabs.ListContainer>
-          </Tabs>
-        </ScrollArea>
-        <Button
-          color={'blue'}
-          leftSection={<IconPlus size={20} />}
-          onClick={handleCreate}
-          size={'md'}
-          style={{
-            boxShadow: 'var(--ce-shadow-raised)',
-          }}
-          visibleFrom="sm"
-        >
-          {activeCategory.createLabel}
-        </Button>
-      </Group>
+            <Tabs
+              className={'w-full'}
+              onSelectionChange={(selection) => handleTabChange(selection?.toString())}
+              selectedKey={activeTab}
+            >
+              <Tabs.ListContainer>
+                <Tabs.List
+                  aria-label="Options"
+                  className={'w-fit'}
+                >
+                  {CATEGORY_TABS.map((categoryTab) => (
+                    <Tabs.Tab
+                      className={'w-fit'}
+                      id={categoryTab.value}
+                      key={categoryTab.value}
+                    >
+                      {categoryTab.label}
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+              </Tabs.ListContainer>
+            </Tabs>
+          </ScrollShadow>
+          <Button
+            className={'hidden sm:flex'}
+            onClick={handleCreate}
+            size={'md'}
+          >
+            <IconPlus size={24} />
+            {activeCategory.createLabel}
+          </Button>
+        </div>
 
-      <SearchField
-        className={'mb-6'}
-        name="search"
-        onChange={(change) => setSearchInput(change)}
-        value={searchInput}
-      >
-        <SearchField.Group className={'h-10'}>
-          <SearchField.SearchIcon />
-          <SearchField.Input placeholder="Search..." />
-          <SearchField.ClearButton />
-        </SearchField.Group>
-      </SearchField>
-      {/* Content Lists */}
-      {activeTab === 'recipe' && (
-        <RecipeList
-          onRecipeClick={handleRecipeView}
-          search={search}
-        />
-      )}
-      {activeTab === 'plan' && (
-        <NutritionPlanList
-          onPlanClick={handleNutritionPlanView}
-          search={search}
-        />
-      )}
-      {activeTab === 'exercise' && (
-        <ExerciseList
-          onExerciseClick={handleExerciseView}
-          search={search}
-        />
-      )}
-      {activeTab === 'training_plan' && (
-        <TrainingPlanList
-          onPlanClick={handleTrainingPlanView}
-          search={search}
-        />
-      )}
+        <SearchField
+          className={'mb-6'}
+          name="search"
+          onChange={(change) => setSearchInput(change)}
+          value={searchInput}
+        >
+          <SearchField.Group className={'h-10'}>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search..." />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+      </PageSection>
+
+      <PageSection>
+        {/* Content Lists */}
+        {activeTab === 'recipe' && (
+          <RecipeList
+            onRecipeClick={handleRecipeView}
+            search={search}
+          />
+        )}
+        {activeTab === 'plan' && (
+          <NutritionPlanList
+            onPlanClick={handleNutritionPlanView}
+            search={search}
+          />
+        )}
+        {activeTab === 'exercise' && (
+          <ExerciseList
+            onExerciseClick={handleExerciseView}
+            search={search}
+          />
+        )}
+        {activeTab === 'training_plan' && (
+          <TrainingPlanList
+            onPlanClick={handleTrainingPlanView}
+            search={search}
+          />
+        )}
+      </PageSection>
+
       <Button
         aria-label={`Create ${activeCategory.createLabel}`}
-        color="var(--ce-fill-brand-strong)"
-        hiddenFrom="sm"
-        leftSection={<IconPlus size={20} />}
+        className={'sm:hidden'}
         onClick={handleCreate}
         size={'md'}
         style={{
@@ -229,8 +230,8 @@ const LibraryListPage = () => {
           boxShadow: 'var(--ce-shadow-raised)',
           zIndex: 100,
         }}
-        variant="filled"
       >
+        <IconPlus size={24} />
         New
       </Button>
     </PageWrapper>

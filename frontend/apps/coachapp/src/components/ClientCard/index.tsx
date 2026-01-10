@@ -1,8 +1,12 @@
-import {Avatar, Badge} from '@mantine/core';
+import {Avatar, Chip} from '@heroui/react';
 
 import {Client} from '@/services/clients';
 
-import classes from './ClientCard.module.css';
+const getInitials = (name: string) => {
+  const names = name.split(' ');
+  const initials = names.map((n) => n.charAt(0).toUpperCase());
+  return initials.slice(0, 2).join('');
+};
 
 interface Props {
   client: Client;
@@ -12,27 +16,27 @@ interface Props {
 const ClientCard = ({client, onClick}: Props) => {
   return (
     <button
-      className={classes.root}
+      className={
+        'w-full flex gap-2 p-3 shadow rounded-2xl border border-gray-200 cursor-pointer bg-surface hover:shadow-md hover:bg-surface-hover'
+      }
       onClick={() => onClick?.(client.id)}
-      role={'row'}
     >
-      <Avatar
-        color="initials"
-        name={client.full_name}
-        radius="xl"
-        size="md"
-      />
-      <div className={classes.content}>
-        <div className={classes.contentTop}>
-          <p className={classes.title}>{client.full_name}</p>
-          <Badge
-            color={'dark'}
-            variant={'light'}
+      <Avatar color={'accent'}>
+        <Avatar.Fallback>{getInitials(client.full_name)}</Avatar.Fallback>
+      </Avatar>
+      <div className={'flex flex-col items-start justify-center flex-1'}>
+        <div className={'flex flex-1 w-full justify-between items-center'}>
+          <h3 className={'text-base font-semibold'}>{client.full_name}</h3>
+          <Chip
+            className={'capitalize'}
+            color={'accent'}
+            size={'md'}
+            variant={'soft'}
           >
             {client.status}
-          </Badge>
+          </Chip>
         </div>
-        <p className={classes.description}>{client.email}</p>
+        <p className={'text-sm text-gray-600'}>{client.email}</p>
       </div>
     </button>
   );

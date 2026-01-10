@@ -1,9 +1,9 @@
-import {ActionIcon, Button, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
+import {SearchField, Tabs} from '@heroui/react';
+import {Button, Group, ScrollArea, SegmentedControl, Stack, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconBarbell, IconChefHat, IconPlus, IconRun, IconSalad, IconX} from '@tabler/icons-react';
 import {useEffect, useRef, useState} from 'react';
 
-import PageContentWrapper from '@/components/PageContentWrapper';
 import PageWrapper from '@/components/PageWrapper';
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
@@ -109,14 +109,6 @@ const LibraryListPage = () => {
     }
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(event.currentTarget.value);
-  };
-
-  const handleClearSearch = () => {
-    setSearchInput('');
-  };
-
   const handleCreate = () => {
     openDrawer(activeCategory.createDrawerKey);
   };
@@ -143,92 +135,92 @@ const LibraryListPage = () => {
 
   return (
     <PageWrapper>
-      <PageContentWrapper>
-        <Stack
-          gap="md"
-          pb="xl"
-        >
-          <Group
-            align="center"
-            justify={'space-between'}
+      <Group
+        align="center"
+        justify={'space-between'}
+      >
+        <ScrollArea type={'never'}>
+          <Tabs
+            className={'mb-4 w-full'}
+            onSelectionChange={(selection) => handleTabChange(selection?.toString())}
+            selectedKey={activeTab}
           >
-            <ScrollArea type={'never'}>
-              <SegmentedControl
-                data={CATEGORY_TABS}
-                onChange={handleTabChange}
-                ref={segmentedControlRef}
-                size={'lg'}
-                value={activeTab}
-              />
-            </ScrollArea>
-            <Button
-              color={'var(--ce-fill-brand-strong)'}
-              leftSection={<IconPlus size={20} />}
-              onClick={handleCreate}
-              radius="xl"
-              size="md"
-              style={{
-                boxShadow: 'var(--ce-shadow-raised)',
-              }}
-              visibleFrom="sm"
-            >
-              {activeCategory.createLabel}
-            </Button>
-          </Group>
-          {/* Search Input */}
-          <TextInput
-            mb={'lg'}
-            onChange={handleSearchChange}
-            placeholder={activeCategory.searchPlaceholder}
-            radius="lg"
-            rightSection={
-              searchInput ? (
-                <IconX
-                  aria-label="Clear search"
-                  onClick={handleClearSearch}
-                  size={16}
-                  style={{cursor: 'pointer'}}
-                />
-              ) : null
-            }
-            size={'md'}
-            value={searchInput}
-          />
+            <Tabs.ListContainer>
+              <Tabs.List
+                aria-label="Options"
+                className={'w-fit'}
+              >
+                {CATEGORY_TABS.map((categoryTab) => (
+                  <Tabs.Tab
+                    className={'w-fit'}
+                    id={categoryTab.value}
+                    key={categoryTab.value}
+                  >
+                    {categoryTab.label}
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
+        </ScrollArea>
+        <Button
+          color={'blue'}
+          leftSection={<IconPlus size={20} />}
+          onClick={handleCreate}
+          size={'md'}
+          style={{
+            boxShadow: 'var(--ce-shadow-raised)',
+          }}
+          visibleFrom="sm"
+        >
+          {activeCategory.createLabel}
+        </Button>
+      </Group>
 
-          {/* Content Lists */}
-          {activeTab === 'recipe' && (
-            <RecipeList
-              onRecipeClick={handleRecipeView}
-              search={search}
-            />
-          )}
-          {activeTab === 'plan' && (
-            <NutritionPlanList
-              onPlanClick={handleNutritionPlanView}
-              search={search}
-            />
-          )}
-          {activeTab === 'exercise' && (
-            <ExerciseList
-              onExerciseClick={handleExerciseView}
-              search={search}
-            />
-          )}
-          {activeTab === 'training_plan' && (
-            <TrainingPlanList
-              onPlanClick={handleTrainingPlanView}
-              search={search}
-            />
-          )}
-        </Stack>
-      </PageContentWrapper>
+      <SearchField
+        className={'mb-6'}
+        name="search"
+        onChange={(change) => setSearchInput(change)}
+        value={searchInput}
+      >
+        <SearchField.Group className={'h-10'}>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder="Search..." />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
+      {/* Content Lists */}
+      {activeTab === 'recipe' && (
+        <RecipeList
+          onRecipeClick={handleRecipeView}
+          search={search}
+        />
+      )}
+      {activeTab === 'plan' && (
+        <NutritionPlanList
+          onPlanClick={handleNutritionPlanView}
+          search={search}
+        />
+      )}
+      {activeTab === 'exercise' && (
+        <ExerciseList
+          onExerciseClick={handleExerciseView}
+          search={search}
+        />
+      )}
+      {activeTab === 'training_plan' && (
+        <TrainingPlanList
+          onPlanClick={handleTrainingPlanView}
+          search={search}
+        />
+      )}
       <Button
         aria-label={`Create ${activeCategory.createLabel}`}
         color="var(--ce-fill-brand-strong)"
         hiddenFrom="sm"
         leftSection={<IconPlus size={20} />}
         onClick={handleCreate}
-        radius={'xl'}
         size={'md'}
         style={{
           position: 'fixed',

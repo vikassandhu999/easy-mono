@@ -1,7 +1,4 @@
-import {Box} from '@mantine/core';
 import {PropsWithChildren} from 'react';
-
-import PageContentWrapper from '../PageContentWrapper';
 
 type Props = PropsWithChildren<{
   bottomGutter?: boolean;
@@ -10,10 +7,8 @@ type Props = PropsWithChildren<{
 
 export default function PageWrapper({bottomGutter = true, children, topGutter = true}: Props) {
   return (
-    <Box
+    <div
       style={{
-        backgroundColor: 'white',
-        boxShadow: 'var(--ce-shadow-md)',
         marginBottom: `calc(var(--ce-space-12,0px) + env(safe-area-inset-bottom) + ${bottomGutter ? 'var(--ce-appbar-height,0px)' : 'var(--ce-space-md,0px)'})`,
         marginTop: topGutter ? `calc(env(safe-area-inset-top) + var(--ce-space-12,0px))` : 0,
         minHeight: '90vh',
@@ -23,7 +18,7 @@ export default function PageWrapper({bottomGutter = true, children, topGutter = 
         paddingTop: 'env(safe-area-inset-top)',
       }}
     >
-      <PageContentWrapper>{children}</PageContentWrapper>
-    </Box>
+      <div className={'max-w-4xl mx-auto w-full px-4 sm:px-6`'}>{children}</div>
+    </div>
   );
 }

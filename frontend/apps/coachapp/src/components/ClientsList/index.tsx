@@ -12,15 +12,22 @@ type Props = {
 };
 
 const ClientsList = ({search, status}: Props) => {
-  const {data, isLoading} = useListClients({search, status});
+  const {data, isLoading, hasNextPage, isFetchingNextPage} = useListClients({search, status});
   const items = useMemo(() => {
     return data?.pages?.flatMap((page) => page.records) ?? [];
   }, [data]);
   return (
     <ListView<Client>
-      emptyState={<EmptyState />}
+      emptyState={
+        <EmptyState
+          search={search}
+          status={status}
+        />
+      }
       getKey={(client) => client.id}
+      hasMore={hasNextPage}
       items={items}
+      loadingMore={isFetchingNextPage}
       querying={isLoading}
       render={(client) => <ClientCard client={client} />}
     />

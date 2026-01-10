@@ -1,21 +1,6 @@
 .wrapper {
     --input-color: var(--ce-text-strong);
-
-    outline: 2px solid transparent;
-    border-radius: var(--ce-space-8);
     box-sizing: border-box;
-
-    padding: 2px;
-
-    &:focus,
-    &:focus-within,
-    &:autofill,
-    &:autofill:hover,
-    &:autofill:focus,
-    &:autofill:focus-within,
-    &:autofill:active {
-        outline: 2px solid var(--ce-stroke-selected);
-    }
 }
 
 .input {
@@ -23,6 +8,7 @@
     border-radius: var(--ce-space-6);
     font-size: var(--ce-font-size-small);
     line-height: var(--ce-line-height-small);
+    margin-top: 2px;
 
     &::placeholder {
         color: var(--ce-text-weak);
@@ -35,6 +21,8 @@
     &:autofill:focus,
     &:autofill:focus-within,
     &:autofill:active {
+        outline: 2px solid var(--ce-stroke-selected);
+        outline-offset: 2px;
         background-color: var(--ce-fill-white) !important;
     }
 
@@ -62,22 +50,16 @@
     line-height: var(--ce-line-height-small);
     color: var(--ce-text-strong);
 
-    margin-left: 2px;
-
-
     &:disabled,
     &[data-disabled] {
         color: var(--ce-text-disabled)
     }
 }
 
-
 .description {
     color: var(--ce-text-weak);
     font-size: var(--ce-font-size-tiny);
     line-height: var(--ce-line-height-tiny);
-    margin-left: 2px;
-
 }
 
 .error {
@@ -85,6 +67,4 @@
     font-size: var(--ce-font-size-tiny);
     line-height: var(--ce-line-height-tiny);
     font-weight: 600;
-    margin-left: 2px;
-
 }

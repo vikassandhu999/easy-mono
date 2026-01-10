@@ -16,5 +16,6 @@
   "editor.formatOnSave": true,
   "editor.fontSize": 13,
   "window.zoomLevel": 1,
-  "eslint.format.enable": true
+  "eslint.format.enable": true,
+  "tailwindCSS.experimental.configFile": "apps/coachapp/src/index.css"
 }

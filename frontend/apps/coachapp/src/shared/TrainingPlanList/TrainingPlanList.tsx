@@ -31,7 +31,7 @@ const TrainingPlanListItem = ({plan, onClick}: TrainingPlanListItemProps) => {
       onKeyDown={handleKeyDown}
       style={{
         cursor: 'pointer',
-        borderRadius: 'var(--mantine-radius-xl)',
+        borderRadius: 'var(--ce-space-8)',
         border: '1px solid var(--ce-stroke-weak)',
         boxShadow: 'var(--ce-shadow-raised)',
       }}

@@ -1,5 +1,4 @@
-import {SegmentedControl, TextInput} from '@mantine/core';
-import {IconX} from '@tabler/icons-react';
+import {SearchField, Tabs} from '@heroui/react';
 import {useState} from 'react';
 
 import ClientsList from '../ClientsList';
@@ -16,32 +15,37 @@ const ClientsListWithFilters = () => {
   const [search, setSearch] = useState<string>('');
   return (
     <>
-      <SegmentedControl
-        data={STATUS_DATA}
-        fullWidth
-        mb={'xs'}
-        mx={'2px'}
-        onChange={setStatus}
-        size="lg"
-        value={status}
-      />
-      <TextInput
-        mb={'md'}
-        onChange={(event) => setSearch(event.currentTarget.value)}
-        placeholder="Search clients..."
-        rightSection={
-          search ? (
-            <IconX
-              aria-label="Clear search"
-              onClick={() => setSearch('')}
-              size={24}
-              style={{cursor: 'pointer'}}
-            />
-          ) : null
-        }
-        size="md"
+      <Tabs
+        className={'mb-4'}
+        onSelectionChange={(selection) => setStatus(selection?.toString())}
+        selectedKey={status}
+      >
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Options">
+            {STATUS_DATA.map((statusItem) => (
+              <Tabs.Tab
+                id={statusItem.value}
+                key={statusItem.value}
+              >
+                {statusItem.label}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </Tabs.ListContainer>
+      </Tabs>
+      <SearchField
+        className={'mb-6'}
+        name="search"
+        onChange={(change) => setSearch(change)}
         value={search}
-      />
+      >
+        <SearchField.Group className={'h-10'}>
+          <SearchField.SearchIcon />
+          <SearchField.Input placeholder="Search..." />
+          <SearchField.ClearButton />
+        </SearchField.Group>
+      </SearchField>
       <ClientsList
         search={search}
         status={status}

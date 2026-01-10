@@ -5,7 +5,7 @@
 }
 
 .listItem {
-    margin-bottom: var(--ce-space-8);
+    margin-bottom: 8px;
     padding: 0;
     display: flex;
 }

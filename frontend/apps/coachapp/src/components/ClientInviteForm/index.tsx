@@ -1,5 +1,5 @@
+import {FieldError, Input, Label, TextArea, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Stack, Textarea, TextInput} from '@mantine/core';
 import {notifications} from '@mantine/notifications';
 import {forwardRef, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
@@ -45,80 +45,72 @@ export const ClientInviteForm = forwardRef<ClientInviteFormHandle, ClientInviteF
   }));
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
-      <Stack gap="md">
-        <p
-          style={{
-            color: 'var(--ce-text-weak)',
-            fontSize: 'var(--ce-font-size-tiny)',
-            lineHeight: 'var(--ce-line-height-tiny)',
-            margin: 0,
-          }}
-        >
-          Your client will receive an email invitation to join your coaching program.
-        </p>
+    <form
+      className={'flex flex-col gap-4'}
+      onSubmit={handleSubmit(handleFormSubmit)}
+    >
+      <Controller
+        control={control}
+        name="full_name"
+        render={({field, fieldState}) => (
+          <TextField
+            {...field}
+            isInvalid={fieldState.invalid}
+            isRequired
+          >
+            <Label>Client name</Label>
+            <Input />
+            {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+          </TextField>
+        )}
+      />
 
-        <Controller
-          control={control}
-          name="full_name"
-          render={({field, fieldState}) => (
-            <TextInput
-              {...field}
-              error={fieldState.error?.message}
-              label="Client name"
-              size={'md'}
-              withAsterisk
-            />
-          )}
-        />
+      <Controller
+        control={control}
+        name="email"
+        render={({field, fieldState}) => (
+          <TextField
+            {...field}
+            isInvalid={fieldState.invalid}
+            isRequired
+          >
+            <Label>Email</Label>
+            <Input />
+            {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+          </TextField>
+        )}
+      />
 
-        <Controller
-          control={control}
-          name="email"
-          render={({field, fieldState}) => (
-            <TextInput
-              {...field}
-              error={fieldState.error?.message}
-              label="Email address"
-              size={'md'}
-              type="email"
-              withAsterisk
-            />
-          )}
-        />
+      <Controller
+        control={control}
+        name="phone"
+        render={({field, fieldState}) => (
+          <TextField
+            {...field}
+            isInvalid={fieldState.invalid}
+            type="tel"
+          >
+            <Label>Phone number</Label>
+            <Input />
+            {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+          </TextField>
+        )}
+      />
 
-        <Controller
-          control={control}
-          name="phone"
-          render={({field, fieldState}) => (
-            <TextInput
-              {...field}
-              error={fieldState.error?.message}
-              label="Phone number (optional)"
-              onChange={(e) => field.onChange(e.target.value || undefined)}
-              size={'md'}
-              type="tel"
-              value={field.value || ''}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="notes"
-          render={({field, fieldState}) => (
-            <Textarea
-              {...field}
-              error={fieldState.error?.message}
-              label="Notes (optional)"
-              onChange={(e) => field.onChange(e.target.value || undefined)}
-              rows={4}
-              size={'md'}
-              value={field.value || ''}
-            />
-          )}
-        />
-      </Stack>
+      <Controller
+        control={control}
+        name="notes"
+        render={({field, fieldState}) => (
+          <TextField
+            {...field}
+            isInvalid={fieldState.invalid}
+          >
+            <Label>Notes</Label>
+            <TextArea rows={6} />
+            {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+          </TextField>
+        )}
+      />
     </form>
   );
 });

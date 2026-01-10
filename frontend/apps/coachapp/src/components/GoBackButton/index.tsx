@@ -6,7 +6,7 @@ export default function GoBackButton({onBack}: {onBack: () => void}) {
     <ActionIcon
       color="dark"
       onClick={onBack}
-      radius="lg"
+      radius={'md'}
       size={'xl'}
       style={{cursor: 'pointer', flexShrink: 0}}
       variant={'subtle'}

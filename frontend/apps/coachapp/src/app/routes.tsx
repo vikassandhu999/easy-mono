@@ -1,6 +1,7 @@
 import {createBrowserRouter, RouterProvider} from 'react-router';
 
 import ClientsPage from '@/containers/ClientsPage';
+import LibraryListPage from '@/containers/LibraryPage';
 import LoginPage from '@/domains/auth/pages/LoginPage';
 import RegisterPage from '@/domains/auth/pages/RegisterPage';
 import VerifyLoginPage from '@/domains/auth/pages/VerifyLoginPage';
@@ -8,7 +9,6 @@ import VerifyRegisterationPage from '@/domains/auth/pages/VerifyRegisterationPag
 import ClientListPage from '@/domains/client/pages/ClientListPage';
 import ClientViewPage from '@/domains/client/pages/ClientViewPage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
-import LibraryListPage from '@/domains/library/pages/LibraryListPage';
 import MyPagePage from '@/domains/my_page/pages/FlowsListPage';
 import SettingsPage from '@/domains/profile/pages/SettingsPage';
 import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';

@@ -73,7 +73,7 @@ const Header = ({onClose, title, actions}: AutoModalProps) => {
   );
 };
 
-const AutoModal = (props: AutoModalProps) => {
+const ResponsiveModal = (props: AutoModalProps) => {
   const {content, onClose} = props;
   const theme = useMantineTheme();
   const isSmallScreen = useMediaQuery(`(max-width: ${theme.breakpoints.md})`);
@@ -137,4 +137,4 @@ const AutoModal = (props: AutoModalProps) => {
   );
 };
 
-export default AutoModal;
+export default ResponsiveModal;

@@ -1,5 +1,5 @@
 import {humanizeError} from '@easy/error-parser';
-import {Button, Group} from '@mantine/core';
+import {Button, Modal, Surface} from '@heroui/react';
 import {useRef} from 'react';
 
 import {ClientInviteForm, ClientInviteFormHandle} from '@/components/ClientInviteForm';
@@ -29,31 +29,45 @@ const ClientInviteDrawer = () => {
   };
 
   return (
-    <AutoDrawer
-      actions={
-        <Group w="100%">
-          <Button
-            color="green"
-            flex={1}
-            loading={isLoading}
-            onClick={handleSaveClick}
-            radius="xl"
-            size="sm"
-            variant="solid"
-          >
-            Send Invite
-          </Button>
-        </Group>
-      }
-      content={
-        <ClientInviteForm
-          onSubmit={handleInvite}
-          ref={formRef}
-        />
-      }
-      onClose={closeDrawer}
-      title="Invite Client"
-    />
+    <Modal>
+      <Modal.Backdrop
+        isDismissable
+        isOpen
+        onOpenChange={() => closeDrawer()}
+      >
+        <Modal.Container
+          placement={'top'}
+          scroll={'outside'}
+          size={'lg'}
+        >
+          <Modal.Dialog>
+            <Modal.Header>
+              <Modal.Heading className={'text-xl font-semibold'}>Invite Client</Modal.Heading>
+              <p className="text-sm leading-5 text-muted mb-2">
+                Your client will receive an email invitation to join your coaching program.
+              </p>
+            </Modal.Header>
+            <Modal.Body className="p-1">
+              <Surface variant="default">
+                <ClientInviteForm
+                  onSubmit={handleInvite}
+                  ref={formRef}
+                />
+              </Surface>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                slot="close"
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveClick}>Invite client</Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 };
 

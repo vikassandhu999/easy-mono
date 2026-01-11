@@ -1,9 +1,9 @@
 import {humanizeError} from '@easy/error-parser';
+import {Button, InputOTP} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Center, PinInput, Stack, Text} from '@mantine/core';
 import {IconArrowLeft, IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuthActions} from '@/hooks/useAuthActions';
@@ -55,69 +55,68 @@ const VerifyRegisterationPage: React.FC = () => {
       subtitle={`Enter the 6-digit code sent to ${emailFromParams}`}
       title="Verify your email"
     >
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Stack gap="md">
-          <Stack gap="xs">
-            <Center>
-              <PinInput
-                aria-label="6-digit verification code"
-                error={!!form.formState.errors.code}
-                length={6}
-                {...form.register('code')}
-                onChange={(value) => form.setValue('code', value)}
-                oneTimeCode
-                placeholder="○"
-                size="lg"
-                type="number"
-              />
-            </Center>
-            <div style={{minHeight: '24px'}}>
-              {form.formState.errors.code && (
-                <Text
-                  c="red"
-                  size="sm"
-                  ta="center"
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-center">
+            <Controller
+              control={form.control}
+              name="code"
+              render={({field, fieldState}) => (
+                <InputOTP
+                  aria-label="6-digit verification code"
+                  className="w-full max-w-md"
+                  isInvalid={fieldState.invalid}
+                  maxLength={6}
+                  onChange={field.onChange}
+                  value={field.value}
                 >
-                  {form.formState.errors.code.message}
-                </Text>
+                  <InputOTP.Group className="gap-2">
+                    {Array.from({length: 6}).map((_, index) => (
+                      <InputOTP.Slot
+                        index={index}
+                        key={index}
+                      />
+                    ))}
+                  </InputOTP.Group>
+                </InputOTP>
               )}
-            </div>
-          </Stack>
+            />
+          </div>
+          <div className="min-h-6">
+            {form.formState.errors.code && (
+              <p className="text-center text-sm text-red-500">{form.formState.errors.code.message}</p>
+            )}
+          </div>
+        </div>
 
+        <Button
+          className="w-full"
+          isDisabled={isLoading}
+          type="submit"
+        >
+          Verify Passcode
+          <IconArrowRight size={20} />
+        </Button>
+
+        <div className="flex items-center justify-center gap-4">
           <Button
-            disabled={isLoading}
-            fullWidth
-            loaderProps={{
-              type: 'bars',
-            }}
-            loading={isLoading}
-            rightSection={<IconArrowRight />}
-            size="lg"
-            type="submit"
+            onPress={() => navigate('/login')}
+            size="sm"
+            variant="secondary"
           >
-            Verify Passcode
+            <IconArrowLeft size={16} />
+            Back to sign in
           </Button>
+        </div>
 
-          <Stack
-            align="center"
-            gap="md"
-          >
-            <Button
-              leftSection={<IconArrowLeft size={16} />}
-              onClick={() => navigate('/login')}
-              size="sm"
-              variant="subtle"
-            >
-              Back to sign in
-            </Button>
-          </Stack>
-
-          {/* Hidden token_id field */}
-          <input
-            type="hidden"
-            {...form.register('token_id')}
-          />
-        </Stack>
+        {/* Hidden token_id field */}
+        <input
+          type="hidden"
+          {...form.register('token_id')}
+        />
       </form>
     </AuthLayout>
   );

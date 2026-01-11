@@ -1,4 +1,3 @@
-import {Center, Stack, Title} from '@mantine/core';
 import {ReactNode} from 'react';
 
 export default function EmptyState({search, status}: {search?: string; status?: any}) {
@@ -10,7 +9,7 @@ export default function EmptyState({search, status}: {search?: string; status?: 
     description = (
       <>
         We couldn&apos;t find any clients matching &quot;
-        <span style={{fontWeight: 600}}>{search}</span>&quot;.
+        <span className="font-semibold">{search}</span>&quot;.
       </>
     );
   } else if (status) {
@@ -18,26 +17,11 @@ export default function EmptyState({search, status}: {search?: string; status?: 
   }
 
   return (
-    <Center my={'xl'}>
-      <Stack gap={'0'}>
-        <Title
-          order={4}
-          style={{textAlign: 'center'}}
-        >
-          {title}
-        </Title>
-        <p
-          style={{
-            fontSize: 'var(--ce-font-size-small)',
-            lineHeight: 'var(--ce-line-height-small)',
-            margin: 0,
-            color: 'var(--ce-text-weak)',
-            textAlign: 'center',
-          }}
-        >
-          {description}
-        </p>
-      </Stack>
-    </Center>
+    <div className="flex justify-center my-6">
+      <div className="flex flex-col gap-0">
+        <h4 className="text-center text-lg font-semibold m-0">{title}</h4>
+        <p className="text-sm leading-5 text-muted text-center m-0">{description}</p>
+      </div>
+    </div>
   );
 }

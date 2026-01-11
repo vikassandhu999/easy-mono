@@ -1,10 +1,10 @@
 import {humanizeError} from '@easy/error-parser';
+import {Avatar, Button, FieldError, Input, Label, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Alert, Avatar, Button, Card, Group, Loader, Stack, Text, TextInput} from '@mantine/core';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconArrowRight, IconCheck, IconX} from '@tabler/icons-react';
 import React, {useEffect, useState} from 'react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
 import {
@@ -188,7 +188,7 @@ const RegisterPage: React.FC = () => {
   // Render availability indicator
   const renderAvailabilityIndicator = (checking: boolean, available: boolean | null) => {
     if (checking) {
-      return <Loader size={16} />;
+      return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />;
     }
     if (available === true) {
       return (
@@ -219,104 +219,99 @@ const RegisterPage: React.FC = () => {
         subtitle="Let's get started."
         title="Create Account"
       >
-        <form onSubmit={personalForm.handleSubmit(onPersonalSubmit)}>
-          <Stack gap="md">
-            <TextInput
-              label={
-                <Text
-                  fw={500}
-                  size="md"
-                >
-                  First Name
-                </Text>
-              }
-              placeholder="James"
-              size="lg"
-              {...personalForm.register('first_name')}
-              error={personalForm.formState?.errors?.first_name?.message}
-            />
-
-            <TextInput
-              label={
-                <Text
-                  fw={500}
-                  size="md"
-                >
-                  Last Name
-                </Text>
-              }
-              placeholder="Smith"
-              size="lg"
-              {...personalForm.register('last_name')}
-              error={personalForm.formState?.errors?.last_name?.message}
-            />
-
-            <TextInput
-              label={
-                <Text
-                  fw={500}
-                  size="md"
-                >
-                  Email Address
-                </Text>
-              }
-              placeholder="james@example.com"
-              size="lg"
-              {...personalForm.register('email')}
-              error={
-                personalForm.formState?.errors?.email?.message ||
-                (emailAvailable === false ? 'This email is already associated with an account' : undefined)
-              }
-              rightSection={renderAvailabilityIndicator(emailChecking, emailAvailable)}
-            />
-
-            {emailAvailable === false && (
-              <Alert
-                color="orange"
-                variant="light"
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={personalForm.handleSubmit(onPersonalSubmit)}
+        >
+          <Controller
+            control={personalForm.control}
+            name="first_name"
+            render={({field, fieldState}) => (
+              <TextField
+                {...field}
+                isInvalid={fieldState.invalid}
               >
-                <Text size="sm">
-                  An account already exists with this email.{' '}
-                  <Text
-                    c="blue"
-                    component="span"
-                    onClick={() => navigate('/login')}
-                    style={{cursor: 'pointer'}}
-                  >
-                    Login instead?
-                  </Text>
-                </Text>
-              </Alert>
+                <Label className="text-md font-medium">First Name</Label>
+                <Input placeholder="James" />
+                {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+              </TextField>
             )}
+          />
 
-            <Button
-              disabled={isPersonalFormLoading || emailAvailable !== true || emailChecking}
-              fullWidth
-              loaderProps={{type: 'bars'}}
-              loading={isPersonalFormLoading}
-              rightSection={<IconArrowRight />}
-              size="lg"
-              type="submit"
-            >
-              Continue
-            </Button>
-
-            <Text
-              c="dimmed"
-              size="md"
-              ta="center"
-            >
-              Already have an account?{' '}
-              <Text
-                c="blue"
-                onClick={() => navigate('/login')}
-                span={true}
-                style={{cursor: 'pointer'}}
+          <Controller
+            control={personalForm.control}
+            name="last_name"
+            render={({field, fieldState}) => (
+              <TextField
+                {...field}
+                isInvalid={fieldState.invalid}
               >
-                Login
-              </Text>
-            </Text>
-          </Stack>
+                <Label className="text-md font-medium">Last Name</Label>
+                <Input placeholder="Smith" />
+                {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+              </TextField>
+            )}
+          />
+
+          <div className="relative">
+            <Controller
+              control={personalForm.control}
+              name="email"
+              render={({field, fieldState}) => (
+                <TextField
+                  {...field}
+                  isInvalid={fieldState.invalid || emailAvailable === false}
+                >
+                  <Label className="text-md font-medium">Email Address</Label>
+                  <Input placeholder="james@example.com" />
+                  {(fieldState.error?.message ||
+                    (emailAvailable === false && 'This email is already associated with an account')) && (
+                    <FieldError>
+                      {fieldState.error?.message || 'This email is already associated with an account'}
+                    </FieldError>
+                  )}
+                </TextField>
+              )}
+            />
+            {emailChecking || emailAvailable !== null ? (
+              <div className="absolute right-3 top-9">{renderAvailabilityIndicator(emailChecking, emailAvailable)}</div>
+            ) : null}
+          </div>
+
+          {emailAvailable === false && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-sm text-gray-700">
+                An account already exists with this email.{' '}
+                <button
+                  className="text-primary cursor-pointer bg-transparent border-none p-0"
+                  onClick={() => navigate('/login')}
+                  type="button"
+                >
+                  Login instead?
+                </button>
+              </p>
+            </div>
+          )}
+
+          <Button
+            className="w-full"
+            isDisabled={isPersonalFormLoading || emailAvailable !== true || emailChecking}
+            type="submit"
+          >
+            Continue
+            <IconArrowRight size={20} />
+          </Button>
+
+          <p className="text-center text-md text-muted">
+            Already have an account?{' '}
+            <button
+              className="text-primary cursor-pointer bg-transparent border-none p-0"
+              onClick={() => navigate('/login')}
+              type="button"
+            >
+              Login
+            </button>
+          </p>
         </form>
       </AuthLayout>
     );
@@ -328,137 +323,104 @@ const RegisterPage: React.FC = () => {
       subtitle="Now let's set up your business"
       title="Business Details"
     >
-      <form onSubmit={businessForm.handleSubmit(onBusinessSubmit)}>
-        <Stack gap="md">
-          <Card
-            bg="gray.0"
-            padding="md"
-            radius="md"
-            withBorder
-          >
-            <Group
-              justify="space-between"
-              wrap="nowrap"
-            >
-              <Group
-                gap="sm"
-                wrap="nowrap"
-              >
-                <Avatar
-                  color="initials"
-                  name={`${storedFirstName} ${storedLastName}`}
-                  radius="xl"
-                  size={42}
-                />
-                <Stack gap={2}>
-                  <Text
-                    fw={600}
-                    size="sm"
-                  >
-                    {storedFirstName} {storedLastName}
-                  </Text>
-                  <Text
-                    c="dimmed"
-                    size="xs"
-                  >
-                    {storedEmail}
-                  </Text>
-                </Stack>
-              </Group>
-              <Text
-                c="blue"
-                onClick={handleBack}
-                size="xs"
-                style={{cursor: 'pointer'}}
-              >
-                Edit
-              </Text>
-            </Group>
-          </Card>
-          <TextInput
-            label={
-              <Text
-                fw={500}
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={businessForm.handleSubmit(onBusinessSubmit)}
+      >
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3 items-center">
+              <Avatar
+                className="shrink-0"
                 size="md"
               >
-                Business Name
-              </Text>
-            }
-            placeholder="Elite Fitness Coaching"
-            size="lg"
-            {...businessForm.register('business_name')}
-            error={businessForm.formState?.errors?.business_name?.message}
-          />
-
-          <TextInput
-            description={
-              <Text
-                c="dimmed"
-                size="sm"
-              >
-                Your unique URL: coacheasy.com/<strong>{watchedHandle || 'your-handle'}</strong>
-              </Text>
-            }
-            label={
-              <Text
-                fw={500}
-                size="md"
-              >
-                Business Handle
-              </Text>
-            }
-            placeholder="elite_fitness"
-            size="lg"
-            {...businessForm.register('business_handle')}
-            error={
-              businessForm.formState?.errors?.business_handle?.message ||
-              (handleAvailable === false ? 'This handle is already taken' : undefined)
-            }
-            rightSection={renderAvailabilityIndicator(handleChecking, handleAvailable)}
-          />
-
-          <Stack gap="xs">
-            <Button
-              disabled={isBusinessFormLoading || handleAvailable === false}
-              fullWidth
-              loaderProps={{type: 'bars'}}
-              loading={isBusinessFormLoading}
-              rightSection={<IconArrowRight />}
-              size="lg"
-              type="submit"
+                <Avatar.Fallback>
+                  {storedFirstName.charAt(0)}
+                  {storedLastName.charAt(0)}
+                </Avatar.Fallback>
+              </Avatar>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-sm font-semibold">
+                  {storedFirstName} {storedLastName}
+                </p>
+                <p className="text-xs text-muted">{storedEmail}</p>
+              </div>
+            </div>
+            <button
+              className="text-xs text-primary cursor-pointer bg-transparent border-none p-0"
+              onClick={handleBack}
+              type="button"
             >
-              Create Account
-            </Button>
-          </Stack>
+              Edit
+            </button>
+          </div>
+        </div>
 
-          <Text
-            c="dimmed"
-            fs="italic"
-            size="xs"
-            ta="center"
+        <Controller
+          control={businessForm.control}
+          name="business_name"
+          render={({field, fieldState}) => (
+            <TextField
+              {...field}
+              isInvalid={fieldState.invalid}
+            >
+              <Label className="text-md font-medium">Business Name</Label>
+              <Input placeholder="Elite Fitness Coaching" />
+              {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+            </TextField>
+          )}
+        />
+
+        <div className="relative">
+          <Controller
+            control={businessForm.control}
+            name="business_handle"
+            render={({field, fieldState}) => (
+              <TextField
+                {...field}
+                isInvalid={fieldState.invalid || handleAvailable === false}
+              >
+                <Label className="text-md font-medium">Business Handle</Label>
+                <Input placeholder="elite_fitness" />
+                <p className="text-sm text-muted mt-1">
+                  Your unique URL: coacheasy.com/<strong>{watchedHandle || 'your-handle'}</strong>
+                </p>
+                {(fieldState.error?.message || (handleAvailable === false && 'This handle is already taken')) && (
+                  <FieldError>{fieldState.error?.message || 'This handle is already taken'}</FieldError>
+                )}
+              </TextField>
+            )}
+          />
+          {handleChecking || handleAvailable !== null ? (
+            <div className="absolute right-3 top-9">{renderAvailabilityIndicator(handleChecking, handleAvailable)}</div>
+          ) : null}
+        </div>
+
+        <Button
+          className="w-full"
+          isDisabled={isBusinessFormLoading || handleAvailable === false}
+          type="submit"
+        >
+          Create Account
+          <IconArrowRight size={20} />
+        </Button>
+
+        <p className="text-xs italic text-muted text-center">
+          By continuing, you agree to our{' '}
+          <a
+            className="text-primary underline"
+            href="/terms"
           >
-            By continuing, you agree to our{' '}
-            <Text
-              c="blue"
-              component="a"
-              href="/terms"
-              span={true}
-              style={{textDecoration: 'underline'}}
-            >
-              Terms of Service
-            </Text>{' '}
-            and{' '}
-            <Text
-              c="blue"
-              component="a"
-              href="/privacy"
-              span={true}
-              style={{textDecoration: 'underline'}}
-            >
-              Privacy Policy
-            </Text>
-          </Text>
-        </Stack>
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            className="text-primary underline"
+            href="/privacy"
+          >
+            Privacy Policy
+          </a>
+        </p>
       </form>
     </AuthLayout>
   );

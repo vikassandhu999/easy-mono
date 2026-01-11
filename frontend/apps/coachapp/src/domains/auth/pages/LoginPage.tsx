@@ -1,10 +1,9 @@
 import {humanizeError} from '@easy/error-parser';
-import {TextField} from '@heroui/react';
+import {Button, FieldError, Input, Label, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Stack, Text, TextInput} from '@mantine/core';
 import {IconArrowRight} from '@tabler/icons-react';
 import React from 'react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
 import {SendLoginCode_zod, SendLoginCodeRequest, useSendLoginCodeMutation} from '@/services/auth';
@@ -48,59 +47,49 @@ const LoginPage: React.FC = () => {
       subtitle="Login to manage your coaching business"
       title="Welcome Back"
     >
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Stack gap="md">
-          <TextField
-            label={
-              <Text
-                fw={500}
-                size="md"
-              >
-                Email address
-              </Text>
-            }
-            placeholder="Enter your email"
-            size="lg"
-            type="email"
-            {...form.register('email')}
-            error={form.formState?.errors?.email?.message}
-          />
-
-          <Button
-            disabled={isLoading}
-            fullWidth
-            loaderProps={{
-              type: 'bars',
-            }}
-            loading={isLoading}
-            rightSection={<IconArrowRight />}
-            size="lg"
-            type="submit"
-          >
-            Continue
-          </Button>
-
-          <Stack
-            align="center"
-            gap="md"
-          >
-            <Text
-              c="dimmed"
-              size="md"
-              ta="center"
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
+        <Controller
+          control={form.control}
+          name="email"
+          render={({field, fieldState}) => (
+            <TextField
+              {...field}
+              isInvalid={fieldState.invalid}
             >
-              New to CoachEasy?{' '}
-              <Text
-                c="blue"
-                onClick={() => navigate('/register')}
-                span={true}
-                style={{cursor: 'pointer'}}
-              >
-                Create an account
-              </Text>
-            </Text>
-          </Stack>
-        </Stack>
+              <Label className="text-md font-medium">Email address</Label>
+              <Input
+                placeholder="Enter your email"
+                type="email"
+              />
+              {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+            </TextField>
+          )}
+        />
+
+        <Button
+          className="w-full"
+          isDisabled={isLoading}
+          type="submit"
+        >
+          Continue
+          <IconArrowRight size={20} />
+        </Button>
+
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-center text-md text-muted">
+            New to CoachEasy?{' '}
+            <button
+              className="text-primary cursor-pointer bg-transparent border-none p-0"
+              onClick={() => navigate('/register')}
+              type="button"
+            >
+              Create an account
+            </button>
+          </p>
+        </div>
       </form>
     </AuthLayout>
   );

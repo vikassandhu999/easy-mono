@@ -1,7 +1,7 @@
 import {Button, ScrollShadow, SearchField, Tabs} from '@heroui/react';
 import {useDebouncedValue} from '@mantine/hooks';
 import {IconBarbell, IconChefHat, IconPlus, IconRun, IconSalad} from '@tabler/icons-react';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 import ExerciseList from '@/components/ExerciseList';
 import PageWrapper, {PageSection} from '@/components/PageWrapper';
@@ -76,8 +76,6 @@ const CATEGORY_TABS = LIBRARY_CATEGORIES.map((cat) => ({
 
 const LibraryListPage = () => {
   const {openDrawer} = useParamsDrawer({});
-  const segmentedControlRef = useRef<HTMLDivElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<LibraryCategoryValue>('training_plan');
   const [searchInput, setSearchInput] = useState('');
@@ -93,18 +91,6 @@ const LibraryListPage = () => {
   const handleTabChange = (value: string) => {
     if (value) {
       setActiveTab(value as LibraryCategoryValue);
-      // Scroll the selected segment into view within ScrollArea viewport
-      const container = segmentedControlRef.current;
-      const viewport = scrollViewportRef.current;
-      if (container && viewport) {
-        // Find the input with the matching value, then get its parent label
-        const input = container.querySelector(`input[value="${value}"]`) as HTMLElement;
-        const selectedLabel = input?.closest('label') as HTMLElement;
-        if (selectedLabel) {
-          container.scrollIntoView({block: 'nearest', inline: 'center'});
-          selectedLabel.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
-        }
-      }
     }
   };
 

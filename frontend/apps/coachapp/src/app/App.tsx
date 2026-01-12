@@ -8,6 +8,7 @@ import AuthProvider from '@/providers/AuthProvider';
 import {cssVariablesResolver} from '@/theme/theme-with-css-modules.tsx';
 
 import {theme} from '../theme/index';
+import '../index.css';
 import Routes from './routes.tsx';
 
 const queryClient = new QueryClient({defaultOptions: {queries: {staleTime: 5 * 60 * 1000}}});

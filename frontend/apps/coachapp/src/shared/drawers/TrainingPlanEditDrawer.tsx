@@ -5,7 +5,7 @@ import {useRef} from 'react';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useUpdateTrainingPlan} from '@/services/training_plans';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {TrainingPlanForm, TrainingPlanFormHandle} from '@/shared/TrainingPlanForm';
+import {TrainingPlanForm, TrainingPlanFormHandle} from '@/components/TrainingPlanForm';
 import {notifyError} from '@/utils/notification';
 
 const TrainingPlanEditDrawer = () => {

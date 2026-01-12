@@ -1,3 +1,4 @@
+import TrainingPlanCreateDrawer from '@/components/TrainingPlanCreateDrawer';
 import {DRAWER_CONFIG, DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import AssignNutritionPlanDrawer from '@/shared/drawers/AssignNutritionPlanDrawer';
@@ -21,7 +22,6 @@ import RecipeCreateDrawer from '@/shared/drawers/RecipeCreateDrawer';
 import RecipeEditDrawer from '@/shared/drawers/RecipeEditDrawer';
 import RecipeViewDrawer from '@/shared/drawers/RecipeViewDrawer';
 import TrainingPlanBuildDrawer from '@/shared/drawers/TrainingPlanBuildDrawer';
-import TrainingPlanCreateDrawer from '@/shared/drawers/TrainingPlanCreateDrawer';
 import TrainingPlanEditDrawer from '@/shared/drawers/TrainingPlanEditDrawer';
 import TrainingPlanViewDrawer from '@/shared/drawers/TrainingPlanViewDrawer';
 

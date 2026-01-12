@@ -5,12 +5,11 @@ import {useRef} from 'react';
 import {ClientInviteForm, ClientInviteFormHandle} from '@/components/ClientInviteForm';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {InviteClientProps, useInviteClient} from '@/services/clients';
-import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import {notifyError} from '@/utils/notification';
 
 const ClientInviteDrawer = () => {
   const {closeDrawer} = useParamsDrawer({});
-  const [inviteClient, {isLoading}] = useInviteClient();
+  const [inviteClient] = useInviteClient();
   const formRef = useRef<ClientInviteFormHandle>(null);
 
   const handleInvite = async (values: InviteClientProps) => {

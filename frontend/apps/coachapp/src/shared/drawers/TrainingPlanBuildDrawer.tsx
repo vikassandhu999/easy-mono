@@ -1,33 +1,22 @@
 import {humanizeError} from '@easy/error-parser';
-import {ActionIcon, Group, Menu, Modal} from '@mantine/core';
+import {Button, Modal, Surface} from '@heroui/react';
 import {useDisclosure} from '@mantine/hooks';
-import {IconCopy, IconCopyPlus, IconDots, IconPencil, IconTrash} from '@tabler/icons-react';
-import {FC} from 'react';
+import {IconCopy, IconPencil, IconTrash} from '@tabler/icons-react';
 import {useSearchParams} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import useScreenSize from '@/hooks/useScreenSize';
 import {useDeleteTrainingPlan, useDuplicateTrainingPlan, useGetTrainingPlan} from '@/services/training_plans';
-import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
 import TrainingPlanBuilder from '@/shared/TrainingPlanBuilder/TrainingPlanBuilder';
 import {notifyError} from '@/utils/notification';
-
-type ActionMenuProps = {
-  trainingPlanId: string;
-  isTemplate: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
-  onAssign: () => void;
-};
 
 export default function TrainingPlanBuildDrawer() {
   const {openDrawer, closeDrawer} = useParamsDrawer({});
   const [searchParams] = useSearchParams();
   const {isMobile} = useScreenSize();
-  const [deleteModalOpened, {open: openDeleteModal, close: closeDeleteModal}] = useDisclosure(false);
-  const [deleteTrainingPlan, {isLoading: isDeleting}] = useDeleteTrainingPlan();
+  const [deleteModalOpened, {close: closeDeleteModal}] = useDisclosure(false);
+  const [deleteTrainingPlan] = useDeleteTrainingPlan();
   const [duplicateTrainingPlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlan();
 
   const trainingPlanId = searchParams.get('training_plan_id') ?? '';
@@ -36,11 +25,7 @@ export default function TrainingPlanBuildDrawer() {
     skip: !trainingPlanId,
   });
 
-  const planNameTitle = plan?.name
-    ? plan.name.length > 10 && isMobile
-      ? `${plan.name.substring(0, 20)}...`
-      : plan.name
-    : 'Build Training Plan';
+  const planNameTitle = plan?.name ? plan.name : 'Build Training Plan';
 
   const handleEdit = () => {
     if (trainingPlanId) {
@@ -78,33 +63,63 @@ export default function TrainingPlanBuildDrawer() {
     }
   };
 
-  const handleAssign = () => {
-    if (trainingPlanId) {
-      openDrawer(DRAWER_KEYS.ASSIGN_TRAINING_PLAN, {
-        training_plan_id: trainingPlanId,
-      });
-    }
-  };
-
   return (
     <>
-      <AutoDrawer
-        actions={
-          <ActionMenu
-            isTemplate={plan?.is_template ?? true}
-            onAssign={handleAssign}
-            onDelete={openDeleteModal}
-            onDuplicate={handleDuplicate}
-            onEdit={handleEdit}
-            trainingPlanId={trainingPlanId}
-          />
-        }
-        content={<TrainingPlanBuilder />}
-        onClose={closeDrawer}
-        title={planNameTitle}
-      />
+      <Modal>
+        <Modal.Backdrop
+          isDismissable
+          isOpen
+          onOpenChange={() => closeDrawer()}
+        >
+          <Modal.Container
+            placement={'top'}
+            size={'lg'}
+          >
+            <Modal.Dialog>
+              <Modal.Header className={'border-b border-gray-200'}>
+                <Modal.CloseTrigger />
+                <Modal.Heading className={'text-base font-semibold mt-4'}>{planNameTitle}</Modal.Heading>
+                <div className={'flex items-center justify-end gap-1.5 mb-3'}>
+                  <Button
+                    className={'h-8'}
+                    onClick={handleEdit}
+                    size={'sm'}
+                    variant={'tertiary'}
+                  >
+                    <IconPencil />
+                    Edit
+                  </Button>
+                  <Button
+                    className={'h-8'}
+                    isIconOnly
+                    onClick={handleDuplicate}
+                    size={'sm'}
+                    variant={'tertiary'}
+                  >
+                    <IconCopy />
+                  </Button>
+                  <Button
+                    className={'h-8'}
+                    isIconOnly
+                    onClick={handleDelete}
+                    size={'sm'}
+                    variant={'danger-soft'}
+                  >
+                    <IconTrash />
+                  </Button>
+                </div>
+              </Modal.Header>
+              <Modal.Body>
+                <Surface variant="default">
+                  <TrainingPlanBuilder />
+                </Surface>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
 
-      <Modal
+      {/* <Modal
         centered
         onClose={closeDeleteModal}
         opened={deleteModalOpened}
@@ -152,71 +167,7 @@ export default function TrainingPlanBuildDrawer() {
             </button>
           </div>
         </div>
-      </Modal>
+      </Modal> */}
     </>
   );
 }
-
-const ActionMenu: FC<ActionMenuProps> = ({trainingPlanId, isTemplate, onEdit, onDelete, onDuplicate, onAssign}) => {
-  if (!trainingPlanId) return null;
-
-  return (
-    <Group gap={'xs'}>
-      <ActionIcon
-        color="dark"
-        size={'lg'}
-        variant="subtle"
-      >
-        <IconPencil />
-      </ActionIcon>
-      <ActionIcon
-        color="dark"
-        size={'lg'}
-        variant="subtle"
-      >
-        <IconCopy />
-      </ActionIcon>
-      <Menu
-        position="bottom-end"
-        shadow="md"
-        width={200}
-      >
-        <Menu.Target>
-          <ActionIcon
-            color="dark"
-            size={'lg'}
-            variant="subtle"
-          >
-            <IconDots />
-          </ActionIcon>
-        </Menu.Target>
-
-        <Menu.Dropdown>
-          <Menu.Item
-            leftSection={<IconPencil size={14} />}
-            onClick={onEdit}
-          >
-            Edit
-          </Menu.Item>
-          {isTemplate && (
-            <Menu.Item
-              leftSection={<IconCopyPlus size={14} />}
-              onClick={onDuplicate}
-            >
-              Duplicate
-            </Menu.Item>
-          )}
-
-          <Menu.Divider />
-          <Menu.Item
-            color="red"
-            leftSection={<IconTrash size={14} />}
-            onClick={onDelete}
-          >
-            Delete Plan
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
-    </Group>
-  );
-};

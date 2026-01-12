@@ -1,14 +1,12 @@
-import {LoadingOverlay, Text} from '@mantine/core';
-import {IconPlus} from '@tabler/icons-react';
+import {Accordion, Button, Spinner, Surface} from '@heroui/react';
+import {IconBarbell, IconChevronDown, IconPlus} from '@tabler/icons-react';
 
 import {type DayOfWeek, PlannedWorkout, WEEKDAY_NAMES} from '@/services/training_plans';
 import {ExerciseSelectDrawer} from '@/shared/ExerciseSelect';
 
 import AddWorkoutModal from './AddWorkoutModal';
 import SetConfigModal from './SetConfigModal';
-import classes from './styles.module.css';
 import useDayWorkouts from './useDayWorkouts';
-import WorkoutCard from './WorkoutCard';
 
 type DayWorkoutsViewProps = {
   currentDay: DayOfWeek;
@@ -30,9 +28,7 @@ const DayWorkoutsView = ({
     isExerciseDrawerOpen,
     closeExerciseDrawer,
     handleExerciseSelect,
-    handleAddExercise,
     deleteExercise,
-    handleExerciseClick,
     selectedElement,
     selectedWorkoutId,
     closeElementEditor,
@@ -49,19 +45,15 @@ const DayWorkoutsView = ({
     workouts,
   });
 
-  // Merge exercise names from props and hook
   const exerciseNames = {...hookExerciseNames, ...externalExerciseNames};
 
   if (!effectivePlanId) return null;
 
-  const hasWorkouts = workoutsForDay.length > 0;
-
-  // Find the exercise name for the selected element
   const selectedExerciseName = selectedElement ? exerciseNames[selectedElement.exercise_id] || 'Exercise' : 'Exercise';
 
   return (
-    <div className={classes.loadingContainer}>
-      <LoadingOverlay visible={isLoading} />
+    <Surface>
+      {isLoading && <Spinner />}
 
       {isExerciseDrawerOpen && (
         <ExerciseSelectDrawer
@@ -73,7 +65,6 @@ const DayWorkoutsView = ({
         />
       )}
 
-      {/* Set Configuration Modal */}
       {selectedElement && (
         <SetConfigModal
           exerciseName={selectedExerciseName}
@@ -91,7 +82,6 @@ const DayWorkoutsView = ({
         />
       )}
 
-      {/* Add Workout Modal */}
       <AddWorkoutModal
         dayName={WEEKDAY_NAMES[currentDay]}
         onClose={closeAddWorkoutModal}
@@ -99,48 +89,56 @@ const DayWorkoutsView = ({
         opened={isAddWorkoutModalOpen}
       />
 
-      <div className={classes.workoutsContainer}>
-        {hasWorkouts ? (
+      <div className={'flex flex-col gap-4'}>
+        {workoutsForDay.length > 0 ? (
           <>
-            {workoutsForDay.map((workout) => (
-              <WorkoutCard
-                defaultExpanded={workoutsForDay.length === 1}
-                exerciseNames={exerciseNames}
-                key={workout.id}
-                onAddExercise={handleAddExercise}
-                onDeleteExercise={deleteExercise}
-                onExerciseClick={handleExerciseClick}
-                workout={workout}
-              />
-            ))}
+            <h4>Workouts</h4>
+            <Accordion className="w-full max-w-md shadow-md border border-gray-200 rounded-2xl">
+              {workoutsForDay.map((workout, index) => (
+                <Accordion.Item key={index}>
+                  {({isExpanded}) => (
+                    <>
+                      <Accordion.Heading>
+                        <Accordion.Trigger className="hover:bgsurface group flex items-center gap-4 transition-none  rounded-2xl">
+                          <IconBarbell
+                            className="text-primary/80 group-hover:text-primary block"
+                            size={28}
+                          />
+                          <div className="flex flex-col gap-0">
+                            <span className="leading-5 font-medium text-gray-900">{workout.name}</span>
+                            <span className="leading-6 font-normal text-muted/80">
+                              {workout.elements.length} Exercises
+                            </span>
+                          </div>
+                          <Accordion.Indicator>
+                            <IconChevronDown />
+                          </Accordion.Indicator>
+                        </Accordion.Trigger>
+                      </Accordion.Heading>
+                      <Accordion.Panel>
+                        <Accordion.Body>{isExpanded}</Accordion.Body>
+                      </Accordion.Panel>
+                    </>
+                  )}
+                </Accordion.Item>
+              ))}
+            </Accordion>
           </>
         ) : (
-          <div className={classes.emptyState}>
-            <Text className={classes.emptyStateText}>No workouts scheduled for this day</Text>
-          </div>
+          <h4 className={'text-center text-base mt-6'}>No Workouts for {WEEKDAY_NAMES[currentDay]}</h4>
         )}
 
-        {/* Add Workout Button */}
-        <div
-          className={classes.addWorkoutCard}
+        <Button
+          className={'mx-auto'}
           onClick={openAddWorkoutModal}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openAddWorkoutModal();
-            }
-          }}
-          role="button"
-          tabIndex={0}
+          size={'sm'}
+          variant={'secondary'}
         >
-          <IconPlus
-            color="var(--mantine-color-gray-5)"
-            size={20}
-          />
-          <Text className={classes.addWorkoutCardText}>Add Workout</Text>
-        </div>
+          <IconPlus size={20} />
+          Add Workout
+        </Button>
       </div>
-    </div>
+    </Surface>
   );
 };
 

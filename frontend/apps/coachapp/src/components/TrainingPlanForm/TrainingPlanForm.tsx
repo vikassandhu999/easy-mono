@@ -1,6 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
+import {FieldError, Input, Label, TextArea, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Loader, Stack, Text, Textarea, TextInput} from '@mantine/core';
+import {Stack, Textarea, TextInput} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -43,11 +44,7 @@ export type TrainingPlanFormProps =
     });
 
 const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFormProps) => {
-  const {
-    data: plan,
-    isLoading: planLoading,
-    error: planError,
-  } = useGetTrainingPlan(planId ?? '', {
+  const {data: plan} = useGetTrainingPlan(planId ?? '', {
     skip: !planId,
   });
 
@@ -103,42 +100,6 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
     }
   };
 
-  if (planLoading && planId) {
-    return (
-      <Stack
-        align="center"
-        gap="md"
-        p="xl"
-      >
-        <Loader size="lg" />
-        <Text c="dimmed">Loading plan...</Text>
-      </Stack>
-    );
-  }
-
-  if (planError && planId) {
-    return (
-      <Stack
-        align="center"
-        gap="md"
-        p="xl"
-      >
-        <Text
-          c="red"
-          size="lg"
-        >
-          Failed to load plan
-        </Text>
-        <Text
-          c="dimmed"
-          size="sm"
-        >
-          Please try again or contact support.
-        </Text>
-      </Stack>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit(onSubmitForm)}>
       <Stack
@@ -148,31 +109,30 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
         <Controller
           control={control}
           name="name"
-          render={({field}) => (
-            <TextInput
+          render={({field, fieldState}) => (
+            <TextField
               {...field}
-              description="A descriptive name for the training plan."
-              error={errors.name?.message}
-              label={'Plan Name'}
-              placeholder="e.g., 12-Week Marathon Training Plan"
-              required
-              size={'md'}
-            />
+              isInvalid={fieldState.invalid}
+              isRequired
+            >
+              <Label>Plan Name</Label>
+              <Input />
+              {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+            </TextField>
           )}
         />
         <Controller
           control={control}
           name="description"
-          render={({field}) => (
-            <Textarea
+          render={({field, fieldState}) => (
+            <TextField
               {...field}
-              error={errors.description?.message}
-              label={'Description'}
-              minRows={3}
-              rows={3}
-              size={'md'}
-              value={field.value || ''}
-            />
+              isInvalid={fieldState.invalid}
+            >
+              <Label>Description</Label>
+              <TextArea rows={6} />
+              {fieldState.error?.message && <FieldError>{fieldState.error?.message}</FieldError>}
+            </TextField>
           )}
         />
       </Stack>

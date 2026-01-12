@@ -1,6 +1,6 @@
 import {ActionIcon, Text} from '@mantine/core';
 import {useDisclosure} from '@mantine/hooks';
-import {IconBarbell, IconChevronDown, IconPlus} from '@tabler/icons-react';
+import {IconChevronDown, IconPlus} from '@tabler/icons-react';
 
 import {PlannedWorkout, WorkoutElement} from '@/services/training_plans';
 
@@ -68,7 +68,7 @@ const WorkoutCard = ({
   }
 
   return (
-    <div className={classes.workoutSection}>
+    <div className={'w-full flex-1 flex flex-col p-2 border-b border-gray-200 rounded-md bg-white'}>
       {/* Clickable Header */}
       <div
         aria-expanded={isOpen}
@@ -83,23 +83,18 @@ const WorkoutCard = ({
         role="button"
         tabIndex={0}
       >
-        {/* Left: Icon + Title + Count */}
-        <div className={classes.workoutSectionInfo}>
-          <div className={classes.workoutIcon}>
-            <IconBarbell size={20} />
-          </div>
-          <div className={classes.workoutTitleGroup}>
-            <Text className={classes.workoutTitle}>{workout.name}</Text>
+        <div className={'flex items-center gap-2'}>
+          <div className={'flex flex-col'}>
+            <h4 className={'text-base font-semibold'}>{workout.name}</h4>
             {!isOpen && hasElements && (
-              <Text className={classes.workoutSubtitle}>
-                {elementCount} {elementCount === 1 ? 'exercise' : 'exercises'}
-              </Text>
+              <p className={'text-sm text-gray-500'}>
+                {elementCount} {elementCount === 1 ? 'Exercise' : 'Exercises'}
+              </p>
             )}
-            {workout.notes && isOpen && <Text className={classes.workoutSubtitle}>{workout.notes}</Text>}
+            {workout.notes && isOpen && <p className={'text-sm text-gray-500'}>{workout.notes}</p>}
           </div>
         </div>
 
-        {/* Right: Actions */}
         <div className={classes.workoutSectionActions}>
           {hasElements && <span className={classes.itemCountActive}>{elementCount}</span>}
           <ActionIcon
@@ -120,7 +115,6 @@ const WorkoutCard = ({
         </div>
       </div>
 
-      {/* Collapsible Body */}
       <div className={isOpen ? classes.workoutSectionBodyOpen : classes.workoutSectionBody}>
         <div className={classes.workoutSectionBodyInner}>
           {hasElements ? (

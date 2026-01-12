@@ -2,7 +2,7 @@ import {humanizeError} from '@easy/error-parser';
 import {useMemo, useState} from 'react';
 
 import {CreatePlannedWorkout, useCreatePlannedWorkout, useDeletePlannedWorkout} from '@/services/planned_workouts';
-import {type DayOfWeek, type LoadUnit, PlannedWorkout, type SetType, WorkoutElement} from '@/services/training_plans';
+import {type DayOfWeek, PlannedWorkout, WorkoutElement} from '@/services/training_plans';
 import {
   CreateWorkoutElement,
   PlannedSet,

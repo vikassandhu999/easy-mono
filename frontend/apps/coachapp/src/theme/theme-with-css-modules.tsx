@@ -2,7 +2,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/roboto-mono';
 import '@fontsource-variable/nunito';
 import '@fontsource-variable/dm-sans';
-import '@mantine/core/styles.css';
+// import '@mantine/core/styles.css';
 import {
   Anchor,
   AppShell,

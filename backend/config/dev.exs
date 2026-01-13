@@ -8,7 +8,7 @@ config :easy, Easy.Repo,
   username: "admin",
   password: "L2KjxOH9al",
   hostname: "localhost",
-  database: "easy_dev",
+  database: "easy_dev_refactoring",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

@@ -6,13 +6,11 @@ defmodule Easy.Organizations.BusinessSettings do
   @foreign_key_type :binary_id
 
   schema "business_settings" do
-    # Public Join Settings
     field :public_join_enabled, :boolean, default: false
     field :public_join_approval_required, :boolean, default: true
     field :public_join_code, :string
     field :public_join_client_limit, :integer
 
-    # Public Page Branding
     field :tagline, :string
     field :cover_image_url, :string
     field :accent_color, :string

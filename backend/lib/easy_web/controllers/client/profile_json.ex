@@ -1,13 +1,6 @@
 defmodule EasyWeb.Client.ProfileJSON do
-  @moduledoc """
-  JSON views for client profile self-service endpoints.
-  """
-
   alias EasyWeb.ResponseHelpers
 
-  @doc """
-  Renders the client's own profile with business info.
-  """
   def show(%{client: client}) do
     %{
       data: %{
@@ -37,10 +30,6 @@ defmodule EasyWeb.Client.ProfileJSON do
       }
     }
   end
-
-  # ===========================================================================
-  # Private Helpers
-  # ===========================================================================
 
   defp format_business(nil), do: nil
 

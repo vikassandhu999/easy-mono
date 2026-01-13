@@ -61,6 +61,7 @@ defmodule EasyWeb.Endpoint do
       "http://192.168.1.3:2020",
       "http://192.168.1.6:2020",
       "http://192.168.1.8:2020",
+      "http://192.168.1.9:2020",
       "http://127.0.0.1:3000",
       "http://127.0.0.1:3001",
       "http://127.0.0.1:5173",
@@ -69,7 +70,8 @@ defmodule EasyWeb.Endpoint do
       "https://admin.coacheasy.app",
       "https://app.api.coacheasy.app",
       "https://coach.api.coacheasy.app",
-      "https://client.api.coacheasy.app"
+      "https://client.api.coacheasy.app",
+      "*"
     ],
     credentials: true,
     max_age: 86400,

@@ -9,16 +9,12 @@ defmodule Easy.Training.Programming do
   @plan_preloads [planned_workouts: [workout_elements: :exercise]]
   @workout_preloads [workout_elements: :exercise]
 
-  # Training Plans
-
-  @spec count_training_plans(String.t()) :: non_neg_integer()
   def count_training_plans(business_id) do
     TrainingPlan
     |> where([t], t.business_id == ^business_id)
     |> Repo.aggregate(:count, :id)
   end
 
-  @spec list_training_plans(String.t(), map()) :: {:ok, {list(TrainingPlan.t()), map()}}
   def list_training_plans(business_id, params \\ %{}) do
     limit =
       params
@@ -56,8 +52,6 @@ defmodule Easy.Training.Programming do
     {:ok, {plans, %{limit: limit, offset: offset, total: total}}}
   end
 
-  @spec fetch_training_plan(String.t(), String.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, :not_found}
   def fetch_training_plan(business_id, id) do
     TrainingPlan
     |> where([t], t.id == ^id and t.business_id == ^business_id)
@@ -66,7 +60,6 @@ defmodule Easy.Training.Programming do
     |> wrap_result()
   end
 
-  @spec get_training_plan!(String.t(), String.t()) :: TrainingPlan.t()
   def get_training_plan!(business_id, id) do
     TrainingPlan
     |> where([t], t.id == ^id and t.business_id == ^business_id)
@@ -74,8 +67,6 @@ defmodule Easy.Training.Programming do
     |> Repo.one!()
   end
 
-  @spec create_training_plan(String.t(), String.t(), map()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
   def create_training_plan(business_id, author_id, attrs) do
     %TrainingPlan{business_id: business_id, author_id: author_id}
     |> TrainingPlan.changeset(attrs)
@@ -83,8 +74,6 @@ defmodule Easy.Training.Programming do
     |> with_empty_workouts()
   end
 
-  @spec update_training_plan(TrainingPlan.t(), map()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
   def update_training_plan(%TrainingPlan{} = plan, attrs) do
     plan
     |> TrainingPlan.changeset(attrs)
@@ -92,12 +81,8 @@ defmodule Easy.Training.Programming do
     |> maybe_reload_preloads(plan, @plan_preloads)
   end
 
-  @spec delete_training_plan(TrainingPlan.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
   def delete_training_plan(%TrainingPlan{} = plan), do: Repo.delete(plan)
 
-  @spec duplicate_training_plan(String.t(), String.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_training_plan(business_id, id) do
     with {:ok, original} <- fetch_training_plan(business_id, id) do
       copy_name = generate_copy_name(original.name, business_id)
@@ -110,8 +95,6 @@ defmodule Easy.Training.Programming do
     end
   end
 
-  @spec assign_training_plan_to_client(String.t(), String.t(), String.t(), Date.t(), Date.t()) ::
-          {:ok, map()} | {:error, :not_found | any()}
   def assign_training_plan_to_client(business_id, template_id, client_id, start_date, end_date) do
     with {:ok, template} <- fetch_training_plan(business_id, template_id) do
       Multi.new()
@@ -121,9 +104,6 @@ defmodule Easy.Training.Programming do
     end
   end
 
-  # Planned Workouts
-
-  @spec list_planned_workouts(String.t(), String.t()) :: {:ok, list(PlannedWorkout.t())}
   def list_planned_workouts(business_id, training_plan_id) do
     workouts =
       PlannedWorkout
@@ -136,8 +116,6 @@ defmodule Easy.Training.Programming do
     {:ok, workouts}
   end
 
-  @spec fetch_planned_workout(String.t(), String.t()) ::
-          {:ok, PlannedWorkout.t()} | {:error, :not_found}
   def fetch_planned_workout(business_id, id) do
     PlannedWorkout
     |> join(:inner, [w], t in TrainingPlan, on: w.training_plan_id == t.id)
@@ -147,7 +125,6 @@ defmodule Easy.Training.Programming do
     |> wrap_result()
   end
 
-  @spec get_planned_workout!(String.t(), String.t()) :: PlannedWorkout.t()
   def get_planned_workout!(business_id, id) do
     PlannedWorkout
     |> where([w], w.id == ^id and w.business_id == ^business_id)
@@ -155,30 +132,20 @@ defmodule Easy.Training.Programming do
     |> Repo.one!()
   end
 
-  @spec create_planned_workout(String.t(), String.t(), map()) ::
-          {:ok, PlannedWorkout.t()} | {:error, Ecto.Changeset.t()}
   def create_planned_workout(business_id, training_plan_id, attrs) do
     %PlannedWorkout{business_id: business_id, training_plan_id: training_plan_id}
     |> PlannedWorkout.changeset(attrs)
     |> Repo.insert()
   end
 
-  @spec update_planned_workout(PlannedWorkout.t(), map()) ::
-          {:ok, PlannedWorkout.t()} | {:error, Ecto.Changeset.t()}
   def update_planned_workout(%PlannedWorkout{} = workout, attrs) do
     workout
     |> PlannedWorkout.changeset(attrs)
     |> Repo.update()
   end
 
-  @spec delete_planned_workout(PlannedWorkout.t()) ::
-          {:ok, PlannedWorkout.t()} | {:error, Ecto.Changeset.t()}
   def delete_planned_workout(%PlannedWorkout{} = workout), do: Repo.delete(workout)
 
-  # Workout Elements
-
-  @spec fetch_workout_element(String.t(), String.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found}
   def fetch_workout_element(business_id, id) do
     WorkoutElement
     |> join(:inner, [e], w in PlannedWorkout, on: e.planned_workout_id == w.id)
@@ -189,7 +156,6 @@ defmodule Easy.Training.Programming do
     |> wrap_result()
   end
 
-  @spec get_workout_element!(String.t(), String.t()) :: WorkoutElement.t()
   def get_workout_element!(business_id, id) do
     WorkoutElement
     |> where([e], e.id == ^id and e.business_id == ^business_id)
@@ -197,16 +163,12 @@ defmodule Easy.Training.Programming do
     |> Repo.one!()
   end
 
-  @spec create_workout_element(String.t(), String.t(), map()) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
   def create_workout_element(business_id, planned_workout_id, attrs) do
     %WorkoutElement{business_id: business_id, planned_workout_id: planned_workout_id}
     |> WorkoutElement.changeset(attrs)
     |> Repo.insert()
   end
 
-  @spec create_workout_element_with_sets(String.t(), String.t(), map(), list(map())) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
   def create_workout_element_with_sets(business_id, planned_workout_id, attrs, sets_attrs) do
     attrs = Map.put(attrs, "planned_sets", sets_attrs)
 
@@ -216,16 +178,12 @@ defmodule Easy.Training.Programming do
     |> reload_preload(:exercise)
   end
 
-  @spec update_workout_element(WorkoutElement.t(), map()) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
   def update_workout_element(%WorkoutElement{} = element, attrs) do
     element
     |> WorkoutElement.changeset(attrs)
     |> Repo.update()
   end
 
-  @spec update_workout_element_with_sets(WorkoutElement.t(), map(), list(map())) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
   def update_workout_element_with_sets(%WorkoutElement{} = element, attrs, sets_attrs) do
     attrs = Map.put(attrs, "planned_sets", sets_attrs)
 
@@ -235,11 +193,7 @@ defmodule Easy.Training.Programming do
     |> maybe_reload_preloads(element, [:exercise])
   end
 
-  @spec delete_workout_element(WorkoutElement.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
   def delete_workout_element(%WorkoutElement{} = element), do: Repo.delete(element)
-
-  # Private - Query Filters
 
   defp apply_template_filter(query, nil), do: query
 
@@ -251,8 +205,6 @@ defmodule Easy.Training.Programming do
 
   defp apply_search(query, nil), do: query
   defp apply_search(query, search), do: where(query, [t], ilike(t.name, ^"%#{search}%"))
-
-  # Private - Result Handling
 
   defp wrap_result(nil), do: {:error, :not_found}
   defp wrap_result(record), do: {:ok, record}

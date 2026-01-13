@@ -8,7 +8,6 @@ defmodule Easy.Training.Tracking do
 
   # Workout Sessions
 
-  @spec list_sessions(String.t(), keyword()) :: {:ok, list(WorkoutSession.t())}
   def list_sessions(business_id, opts \\ []) do
     client_id = Keyword.get(opts, :client_id)
     state = Keyword.get(opts, :state)
@@ -25,7 +24,6 @@ defmodule Easy.Training.Tracking do
     {:ok, sessions}
   end
 
-  @spec fetch_session(String.t(), String.t()) :: {:ok, WorkoutSession.t()} | {:error, :not_found}
   def fetch_session(business_id, id) do
     WorkoutSession
     |> where([s], s.id == ^id and s.business_id == ^business_id)
@@ -34,11 +32,8 @@ defmodule Easy.Training.Tracking do
     |> wrap_result()
   end
 
-  @spec get_session!(String.t()) :: WorkoutSession.t()
   def get_session!(id), do: Repo.get!(WorkoutSession, id) |> Repo.preload(@session_preloads)
 
-  @spec start_session(String.t(), String.t(), map()) ::
-          {:ok, WorkoutSession.t()} | {:error, Ecto.Changeset.t()}
   def start_session(business_id, client_id, attrs \\ %{}) do
     attrs = Map.put(attrs, "started_at", DateTime.utc_now())
 
@@ -48,8 +43,6 @@ defmodule Easy.Training.Tracking do
     |> reload_preloads(@session_preloads)
   end
 
-  @spec complete_session(WorkoutSession.t(), map()) ::
-          {:ok, WorkoutSession.t()} | {:error, Ecto.Changeset.t()}
   def complete_session(%WorkoutSession{} = session, attrs \\ %{}) do
     attrs =
       attrs
@@ -62,18 +55,12 @@ defmodule Easy.Training.Tracking do
     |> reload_preloads(@session_preloads, force: true)
   end
 
-  @spec discard_session(WorkoutSession.t()) ::
-          {:ok, WorkoutSession.t()} | {:error, Ecto.Changeset.t()}
   def discard_session(%WorkoutSession{} = session) do
     session
     |> WorkoutSession.changeset(%{state: :discarded})
     |> Repo.update()
   end
 
-  # Performed Sets
-
-  @spec fetch_performed_set(String.t(), String.t()) ::
-          {:ok, PerformedSet.t()} | {:error, :not_found}
   def fetch_performed_set(business_id, id) do
     PerformedSet
     |> join(:inner, [ps], ws in WorkoutSession, on: ps.workout_session_id == ws.id)
@@ -83,8 +70,6 @@ defmodule Easy.Training.Tracking do
     |> wrap_result()
   end
 
-  @spec create_performed_set(String.t(), map()) ::
-          {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
   def create_performed_set(business_id, attrs) do
     session_id = attrs[:workout_session_id] || attrs["workout_session_id"]
 
@@ -94,8 +79,6 @@ defmodule Easy.Training.Tracking do
     |> reload_preloads(:exercise)
   end
 
-  @spec update_performed_set(PerformedSet.t(), map()) ::
-          {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
   def update_performed_set(%PerformedSet{} = set, attrs) do
     set
     |> PerformedSet.changeset(attrs)
@@ -103,8 +86,6 @@ defmodule Easy.Training.Tracking do
     |> reload_preloads(:exercise, force: true)
   end
 
-  @spec delete_performed_set(PerformedSet.t()) ::
-          {:ok, PerformedSet.t()} | {:error, Ecto.Changeset.t()}
   def delete_performed_set(%PerformedSet{} = set), do: Repo.delete(set)
 
   # Private - Query Filters

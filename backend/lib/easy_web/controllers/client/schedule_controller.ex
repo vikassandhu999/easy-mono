@@ -1,31 +1,9 @@
 defmodule EasyWeb.Client.ScheduleController do
-  @moduledoc """
-  Client-facing schedule endpoints (computed on read for MVP).
-
-  Endpoints:
-  - GET /api/client/schedule/next
-    Returns the next actionable item for the client (prefers "today" if due).
-
-  - GET /api/client/schedule/week?week_start=YYYY-MM-DD
-    Returns a computed schedule for the requested week (Mon..Sun).
-
-  Notes:
-  - Controllers stay thin; all business logic is delegated to context modules.
-  - All tenant-sensitive queries must be scoped by `business_id`.
-  - For MVP, this can return training + nutrition sections; either can be empty.
-  """
-
   use EasyWeb, :controller
 
   alias Easy.Auth.Scope
   alias Easy.Scheduling
 
-  @doc """
-  GET /api/client/schedule/week?week_start=YYYY-MM-DD
-
-  Returns the schedule for a week starting at `week_start` (ISO date).
-  If absent, defaults to the current week start (Monday, UTC).
-  """
   def week(conn, params) do
     scope = conn.assigns.scope
 
@@ -39,8 +17,6 @@ defmodule EasyWeb.Client.ScheduleController do
     end
   end
 
-  # Private helpers
-
   defp parse_week_start(nil) do
     today = Date.utc_today()
     weekday = Date.day_of_week(today)
@@ -50,7 +26,6 @@ defmodule EasyWeb.Client.ScheduleController do
   defp parse_week_start(value) when is_binary(value) do
     case Date.from_iso8601(value) do
       {:ok, date} ->
-        # Normalize to Monday week start even if caller passes mid-week date
         weekday = Date.day_of_week(date)
         {:ok, Date.add(date, -(weekday - 1))}
 

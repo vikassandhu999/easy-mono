@@ -8,12 +8,6 @@ defmodule Easy.Organizations do
   alias Easy.Repo
   alias Easy.Organizations.{Business, BusinessSettings, Plan, Subscription, Coach}
 
-  ## Business Settings Management
-
-  @doc """
-  Gets the settings for a business.
-  Creates default settings if they don't exist.
-  """
   def get_business_settings(business_id) do
     case Repo.get_by(BusinessSettings, business_id: business_id) do
       nil -> create_business_settings(business_id)
@@ -182,9 +176,6 @@ defmodule Easy.Organizations do
     end
   end
 
-  @doc """
-  Creates business settings for a business.
-  """
   def create_business_settings(business_id) do
     %BusinessSettings{}
     |> BusinessSettings.create_changeset(%{business_id: business_id})
@@ -199,9 +190,6 @@ defmodule Easy.Organizations do
     |> Repo.insert()
   end
 
-  @doc """
-  Lists coaches for a business.
-  """
   def list_coaches(business_id) do
     coaches =
       from(c in Coach,
@@ -213,18 +201,12 @@ defmodule Easy.Organizations do
     {:ok, coaches}
   end
 
-  @doc """
-  Updates a coach profile.
-  """
   def update_coach(%Coach{} = coach, attrs) do
     coach
     |> Coach.update_changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Creates a coach for a business.
-  """
   def create_coach(business, user, attrs) do
     attrs_with_ids =
       attrs
@@ -238,16 +220,10 @@ defmodule Easy.Organizations do
 
   ## Plan Management
 
-  @doc """
-  Lists all available plans.
-  """
   def list_plans do
     {:ok, Repo.all(Plan)}
   end
 
-  @doc """
-  Gets the default plan for new businesses.
-  """
   def get_default_plan do
     case Repo.get_by(Plan, is_default: true) do
       nil -> {:error, :no_default_plan}
@@ -255,11 +231,6 @@ defmodule Easy.Organizations do
     end
   end
 
-  ## Subscription Management
-
-  @doc """
-  Gets the active subscription for a business.
-  """
   def get_subscription(business_id) do
     subscription =
       from(s in Subscription,
@@ -287,11 +258,6 @@ defmodule Easy.Organizations do
     |> Repo.insert()
   end
 
-  @doc """
-  Checks the subscription status for a business.
-
-  Returns the status as an atom: :active, :trial, :trial_expired, :cancelled, :expired, or :unknown
-  """
   def check_subscription_status(business_id) do
     case get_subscription(business_id) do
       {:ok, subscription} -> Subscription.status_atom(subscription)
@@ -299,11 +265,6 @@ defmodule Easy.Organizations do
     end
   end
 
-  @doc """
-  Checks if a subscription is within the specified limit.
-
-  Queries the database to count actual usage and compares against plan limits.
-  """
   def subscription_within_limits?(%Subscription{} = subscription, limit_type) do
     subscription = Repo.preload(subscription, :plan)
     plan_limits = subscription.plan.limits || %{}

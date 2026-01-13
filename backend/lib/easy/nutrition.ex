@@ -20,8 +20,7 @@ defmodule Easy.Nutrition do
   @max_limit 100
   @nutrition_plan_statuses Ecto.Enum.values(NutritionPlan, :status)
   @recipe_statuses Ecto.Enum.values(Recipe, :status)
-  @spec list_nutrition_plans(String.t(), map()) ::
-          {:ok, {list(NutritionPlan.t()), map()}}
+
   def list_nutrition_plans(business_id, params \\ %{}) do
     limit = params |> fetch_param(:limit) |> parse_integer() |> clamp_limit()
     offset = params |> fetch_param(:offset) |> parse_integer() |> normalize_offset()

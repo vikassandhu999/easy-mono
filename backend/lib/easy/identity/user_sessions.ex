@@ -4,7 +4,7 @@ defmodule Easy.Identity.UserSessions do
   alias Easy.Repo
 
   @refresh_token_expiration 7 * 24 * 60 * 60
-  @refresh_token_bytes 32
+  @refresh_token_bytes 64
 
   @spec create_session!(User.t(), String.t(), String.t()) :: UserSession.t()
   def create_session!(user, ip, user_agent) do
@@ -12,8 +12,7 @@ defmodule Easy.Identity.UserSessions do
       ip: ip,
       user_agent: user_agent,
       expires_at: DateTime.add(DateTime.utc_now(), @refresh_token_expiration, :second),
-      refresh_token:
-        :crypto.strong_rand_bytes(@refresh_token_bytes) |> Base.url_encode64(padding: false),
+      refresh_token: generate_refresh_token(),
       user_id: user.id,
       role: :guest
     }
@@ -34,5 +33,12 @@ defmodule Easy.Identity.UserSessions do
     session
     |> UserSession.touch_session()
     |> Repo.update()
+  end
+
+  @spec generate_refresh_token() :: String.t()
+  def generate_refresh_token() do
+    :crypto.strong_rand_bytes(@refresh_token_bytes)
+    |> Base.url_encode64(padding: false)
+    |> String.downcase()
   end
 end

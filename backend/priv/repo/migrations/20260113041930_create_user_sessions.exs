@@ -2,7 +2,7 @@ defmodule Easy.Repo.Migrations.CreateUserSessions do
   use Ecto.Migration
 
   def change do
-    create table(:sessions, primary_key: false) do
+    create table(:user_sessions, primary_key: false) do
       add :id, :binary_id, primary_key: true, autogenerate: true
 
       add :ip, :string
@@ -11,14 +11,14 @@ defmodule Easy.Repo.Migrations.CreateUserSessions do
       add :expires_at, :utc_datetime, null: false
       add :revoked_at, :utc_datetime
       add :refreshed_at, :utc_datetime
-      add :business_role, :string, null: false
-      add :business_id, :binary_id, null: false
+      add :role, :string, null: false
+      add :business_id, :binary_id
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
 
       timestamps()
     end
 
-    create unique_index(:sessions, [:refresh_token])
-    create index(:sessions, [:user_id])
+    create unique_index(:user_sessions, [:refresh_token])
+    create index(:user_sessions, [:user_id])
   end
 end

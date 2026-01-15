@@ -34,25 +34,23 @@ defmodule EasyWeb.Router do
     get "/health", HealthController, :index
   end
 
-  scope "/api/auth", EasyWeb do
+  scope "/v1/auth", EasyWeb do
     pipe_through :api
 
-    post "/register", AuthController, :register
+    post "/signup", AuthController, :signup
+    post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
-    post "/send-login-code", AuthController, :send_login_code
     post "/token", AuthController, :token
-    post "/check-email", AuthController, :check_email
-    post "/check-handle", AuthController, :check_handle
   end
 
-  scope "/api/auth/client", EasyWeb.Client do
-    pipe_through :api
+  # scope "/api/auth/client", EasyWeb.Client do
+  #   pipe_through :api
 
-    post "/login/code", AuthController, :send_login_code
-    post "/login", AuthController, :verify_login_code
-    post "/refresh", AuthController, :refresh_token
-    get "/me", AuthController, :me
-  end
+  #   post "/login/code", AuthController, :send_login_code
+  #   post "/login", AuthController, :verify_login_code
+  #   post "/refresh", AuthController, :refresh_token
+  #   get "/me", AuthController, :me
+  # end
 
   scope "/api/auth/client/invite", EasyWeb do
     pipe_through :api

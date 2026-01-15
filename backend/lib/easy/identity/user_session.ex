@@ -1,6 +1,10 @@
 defmodule Easy.Identity.UserSession do
   use Ecto.Schema
 
+  import Ecto.Changeset
+
+  @type t() :: %__MODULE__{}
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
@@ -12,12 +16,42 @@ defmodule Easy.Identity.UserSession do
     field :refresh_token, :string
     field :refreshed_at, :utc_datetime
 
-    # TODO: Change this to belongs_to association.
     field :business_id, :binary_id
-    field :business_role, Ecto.Enum, values: [:owner, :coach, :client]
+    field :role, Ecto.Enum, values: [:owner, :coach, :client, :guest]
 
     belongs_to :user, Easy.Identity.User
 
     timestamps()
+  end
+
+  @spec new_session(map()) :: Ecto.Changeset.t()
+  def new_session(attrs) do
+    %__MODULE__{}
+    |> cast(attrs, [
+      :ip,
+      :user_agent,
+      :expires_at,
+      :revoked_at,
+      :refresh_token,
+      :refreshed_at,
+      :user_id,
+      :business_id,
+      :role
+    ])
+    |> validate_required([:refresh_token, :expires_at, :user_id, :role])
+    |> unique_constraint(:refresh_token)
+  end
+
+  def is_expired?(%__MODULE__{expires_at: expires_at}) do
+    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+  end
+
+  def is_revoked?(%__MODULE__{revoked_at: nil}), do: false
+  def is_revoked?(%__MODULE__{revoked_at: _}), do: true
+
+  @spec touch_session(t()) :: Ecto.Changeset.t()
+  def touch_session(%__MODULE__{} = session) do
+    session
+    |> change(%{refreshed_at: DateTime.utc_now(:second)})
   end
 end

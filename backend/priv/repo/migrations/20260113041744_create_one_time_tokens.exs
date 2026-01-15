@@ -6,7 +6,6 @@ defmodule Easy.Repo.Migrations.CreateOneTimeTokens do
       add :id, :binary_id, primary_key: true, autogenerate: true
       add :token_hash, :string, null: false
       add :token_type, :string, null: false
-      add :expires_at, :utc_datetime, null: false
       add :relates_to, :string, null: false
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all)
 

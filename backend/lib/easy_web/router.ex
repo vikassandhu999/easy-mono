@@ -16,13 +16,13 @@ defmodule EasyWeb.Router do
   pipeline :require_coach do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
-    plug EasyWeb.Plugs.RequireRole, role: :coach
+    plug EasyWeb.Plugs.EnsureRole, role: :coach
   end
 
   pipeline :require_client do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
-    plug EasyWeb.Plugs.RequireRole, role: :client
+    plug EasyWeb.Plugs.EnsureRole, role: :client
   end
 
   scope "/api", EasyWeb do

@@ -1,4 +1,4 @@
-defmodule EasyWeb.Plugs.RequireRole do
+defmodule EasyWeb.Plugs.EnsureRole do
   require Logger
   alias EasyWeb.FallbackController
 

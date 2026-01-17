@@ -1,5 +1,4 @@
 defmodule EasyWeb.CoachJSON do
-  alias EasyWeb.ResponseHelpers
   alias Easy.Orgs.Coach
 
   @spec show(%{coach: Coach.t()}) :: %{data: map()}

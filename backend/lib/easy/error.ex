@@ -1,8 +1,4 @@
 defmodule Easy.Error do
-  @moduledoc "A factory for creating standardized application error structs."
-
-  # 1. Define the error struct.
-  #    We can add default values for safety.
   defexception [:code, :message, :detail, :status]
 
   @impl true
@@ -20,10 +16,6 @@ defmodule Easy.Error do
     }
   end
 
-  # 2. Alias the struct for convenience within this module
-  # alias __MODULE__
-
-  @doc "Builds the standardized error tuple with an %Error{} struct."
   def new(code, message, detail \\ %{}, status \\ :bad_request) do
     # 3. Return the error tuple with the struct
     %__MODULE__{
@@ -34,9 +26,6 @@ defmodule Easy.Error do
     }
   end
 
-  # --- Public-Facing Error Helpers ---
-
-  @doc "404 Not Found"
   def not_found(message \\ "The requested resource was not found.", detail_map \\ %{}) do
     new(
       :not_found,
@@ -46,7 +35,6 @@ defmodule Easy.Error do
     )
   end
 
-  @doc "403 Forbidden"
   def unauthorized(message \\ "Insufficient permissions to perform this action.") do
     new(
       :unauthorized,
@@ -56,7 +44,15 @@ defmodule Easy.Error do
     )
   end
 
-  @doc "422 Unprocessable Entity"
+  def unauthenticated(message \\ "You must be authenticated to access this resource.") do
+    new(
+      :unauthenticated,
+      message,
+      %{},
+      :unauthorized
+    )
+  end
+
   def unprocessable(changeset_or_detail) do
     data =
       case changeset_or_detail do
@@ -84,8 +80,6 @@ defmodule Easy.Error do
       :unprocessable_entity
     )
   end
-
-  # --- Core Builder Function ---
 
   defp traverse_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->

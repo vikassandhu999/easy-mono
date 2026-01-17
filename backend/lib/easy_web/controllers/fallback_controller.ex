@@ -41,6 +41,13 @@ defmodule EasyWeb.FallbackController do
     call(conn, {:error, Easy.Error.unauthorized(message)})
   end
 
+  def send_unauthenticated_response(
+        conn,
+        message \\ "You must be authenticated to access this resource."
+      ) do
+    call(conn, {:error, Easy.Error.unauthorized(message)})
+  end
+
   def not_found_response(conn, message \\ "The requested resource was not found.") do
     call(conn, {:error, Easy.Error.not_found(message)})
   end

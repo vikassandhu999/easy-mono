@@ -1,11 +1,13 @@
 defmodule Easy.Identity do
+  alias Easy.Orgs
   alias Easy.Identity.UserSessions
   alias Easy.Identity.UserSession
   alias Easy.Identity.User
   alias Easy.Identity.Users
   alias Easy.Identity.OneTimeTokens
+  alias Easy.Identity.Token
   alias Easy.Repo
-  alias Easy.Identity.AuthToken
+  alias Easy.Orgs
 
   # TODO: Add rate limiting to signup and otp sending
   @spec signup(map()) :: {:ok, User.t()} | {:error, any()}
@@ -28,13 +30,20 @@ defmodule Easy.Identity do
     end)
   end
 
-  @spec verify(String.t(), map()) :: {:ok, {AuthToken.t()}} | {:error, any()}
+  @spec verify(String.t(), map()) :: {:ok, auth_token()} | {:error, any()}
   def verify(token_hash, opts) do
     Repo.transaction(fn ->
       with {:ok, token} <- verify_confirmation_hash(token_hash),
            {:ok, user} <- Users.confirm_user_email(token.user),
            {:ok, _} <- OneTimeTokens.delete(token) do
-        session = UserSessions.create_session!(user, opts.ip || "", opts.user_agent || "")
+        session_attrs = %{
+          ip: opts.ip || "",
+          user_agent: opts.user_agent || "",
+          role: :guest
+        }
+
+        session = UserSessions.create_session!(user, session_attrs)
+
         generate_auth_token(user, session)
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -68,24 +77,47 @@ defmodule Easy.Identity do
     end)
   end
 
-  @spec token(atom(), map()) :: {:ok, AuthToken.t()} | {:error, any()}
+  @type auth_token :: %{
+          access_token: String.t(),
+          token_type: String.t(),
+          expires_in: pos_integer(),
+          refresh_token: String.t(),
+          scope: String.t()
+        }
 
-  def token(:refresh_token, refresh_token) do
-    with {:ok, session} <- UserSessions.get_by_refresh_token(refresh_token),
-         {:ok, _} <- validate_session(session),
-         {:ok, user} <- Users.get_by_id(session.user_id),
-         auth_token <- generate_auth_token(user, session),
-         {:ok, _} <- UserSessions.touch_session(session) do
-      {:ok, auth_token}
-    end
+  @type grant_type :: :refresh_token | :otp
+  @type token_opts :: %{
+          refresh_token: String.t(),
+          token_hash: String.t(),
+          ip: String.t(),
+          user_agent: String.t(),
+          role: atom() | nil
+        }
+
+  @spec token(grant_type(), token_opts()) :: {:ok, auth_token()} | {:error, any()}
+  def token(:refresh_token, %{refresh_token: refresh_token} = opts) do
+    require Logger
+
+    Logger.info("Generating token using refresh_token grant type #{inspect(opts)}")
+
+    Repo.transaction(fn ->
+      with {:ok, session} <- UserSessions.get_by_refresh_token(refresh_token),
+           {:ok, _} <- validate_session(session),
+           {:ok, user} <- Users.get_by_id(session.user_id),
+           {:ok, refreshed_session} <- refresh_session(user, session, opts) do
+        generate_auth_token(user, refreshed_session)
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
   end
 
-  def token(:otp, token_hash, opts \\ %{}) do
+  def token(:otp, %{token_hash: token_hash} = opts) do
     Repo.transaction(fn ->
       with {:ok, token} <- OneTimeTokens.get_by_hash(token_hash, :authentication),
            {:ok, _} <- validate_email_confirmed(token.user),
-           {:ok, _} <- OneTimeTokens.delete(token) do
-        session = UserSessions.create_session!(token.user, opts.ip || "", opts.user_agent || "")
+           {:ok, _} <- OneTimeTokens.delete(token),
+           {:ok, session} <- create_session(token.user, opts) do
         generate_auth_token(token.user, session)
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -93,16 +125,72 @@ defmodule Easy.Identity do
     end)
   end
 
+  @spec validate_session(UserSession.t()) :: {:ok, UserSession.t()} | {:error, any()}
   defp validate_session(session) do
-    if UserSession.is_expired?(session) do
-      {:error, Easy.Error.new("session_expired", "The session has expired")}
-    end
+    cond do
+      UserSession.is_expired?(session) ->
+        {:error, Easy.Error.new("session_expired", "The session has expired")}
 
-    if UserSession.is_revoked?(session) do
-      {:error, Easy.Error.new("session_revoked", "The session has been revoked")}
-    end
+      UserSession.is_revoked?(session) ->
+        {:error, Easy.Error.new("session_revoked", "The session has been revoked")}
 
-    {:ok, session}
+      true ->
+        {:ok, session}
+    end
+  end
+
+  defp validate_role(role, user) do
+    case role do
+      :coach ->
+        case Orgs.get_business_for_coach(user) do
+          %Orgs.Business{id: business_id} ->
+            {:ok, %{role: :coach, business_id: business_id}}
+
+          nil ->
+            {:error, Easy.Error.unauthorized("User is not associated with any business")}
+        end
+
+      _ ->
+        {:ok, %{role: :guest, business_id: nil}}
+    end
+  end
+
+  @spec create_session(User.t(), token_opts()) :: {:ok, UserSession.t()} | {:error, any()}
+  defp create_session(user, opts) do
+    with {:ok, attrs_with_role} <- validate_role(opts.role || :guest, user) do
+      attrs =
+        Map.merge(
+          %{
+            ip: opts.ip || "",
+            user_agent: opts.user_agent || ""
+          },
+          attrs_with_role
+        )
+
+      {:ok, UserSessions.create_session!(user, attrs)}
+    end
+  end
+
+  @spec refresh_session(User.t(), UserSession.t(), token_opts()) ::
+          {:ok, UserSession.t()} | {:error, any()}
+  defp refresh_session(user, session, opts) do
+    role =
+      case opts.role do
+        nil -> session.role
+        r -> r
+      end
+
+    with {:ok, attrs_with_role} <- validate_role(role || :guest, user),
+         attrs =
+           Map.merge(
+             %{
+               ip: opts.ip || "",
+               user_agent: opts.user_agent || ""
+             },
+             attrs_with_role
+           ) do
+      {:ok, UserSessions.refresh_session!(session, attrs)}
+    end
   end
 
   @spec validate_can_send_otp?(User.t(), atom()) :: {:ok, true} | {:error, any()}
@@ -144,12 +232,12 @@ defmodule Easy.Identity do
     end
   end
 
-  @spec generate_auth_token(User.t(), UserSession.t()) :: AuthToken.t()
+  @spec generate_auth_token(User.t(), UserSession.t()) :: auth_token()
   defp generate_auth_token(user, session) do
-    %AuthToken{
-      access_token: Easy.Identity.Token.generate_access_token(user, session),
+    %{
+      access_token: Token.generate_access_token(user, session),
       token_type: "Bearer",
-      expires_in: 86_400,
+      expires_in: 300,
       refresh_token: session.refresh_token,
       scope: session.role |> Atom.to_string()
     }

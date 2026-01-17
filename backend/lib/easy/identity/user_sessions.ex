@@ -6,16 +6,14 @@ defmodule Easy.Identity.UserSessions do
   @refresh_token_expiration 7 * 24 * 60 * 60
   @refresh_token_bytes 64
 
-  @spec create_session!(User.t(), String.t(), String.t()) :: UserSession.t()
-  def create_session!(user, ip, user_agent) do
-    %{
-      ip: ip,
-      user_agent: user_agent,
+  @spec create_session!(User.t(), map()) :: UserSession.t()
+  def create_session!(user, attrs) do
+    attrs
+    |> Map.merge(%{
       expires_at: DateTime.add(DateTime.utc_now(), @refresh_token_expiration, :second),
       refresh_token: generate_refresh_token(),
-      user_id: user.id,
-      role: :guest
-    }
+      user_id: user.id
+    })
     |> UserSession.new_session()
     |> Repo.insert!()
   end
@@ -28,11 +26,11 @@ defmodule Easy.Identity.UserSessions do
     end
   end
 
-  @spec touch_session(UserSession.t()) :: {:ok, UserSession.t()} | {:error, any()}
-  def touch_session(%UserSession{} = session) do
+  @spec refresh_session!(UserSession.t(), map()) :: UserSession.t()
+  def refresh_session!(%UserSession{} = session, attrs) do
     session
-    |> UserSession.touch_session()
-    |> Repo.update()
+    |> UserSession.refresh_changeset(attrs)
+    |> Repo.update!()
   end
 
   @spec generate_refresh_token() :: String.t()

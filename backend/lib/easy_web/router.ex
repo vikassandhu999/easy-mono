@@ -8,24 +8,21 @@ defmodule EasyWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :auth_user do
+  pipeline :require_user do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
-    plug EasyWeb.Plugs.PopulateScope
   end
 
-  pipeline :auth_coach do
+  pipeline :require_coach do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
-    plug EasyWeb.Plugs.PopulateScope
-    plug :ensure_coach_scope
+    plug EasyWeb.Plugs.RequireRole, role: :coach
   end
 
-  pipeline :auth_client do
+  pipeline :require_client do
     plug :accepts, ["json"]
     plug EasyWeb.Plugs.Authenticate
-    plug EasyWeb.Plugs.PopulateScope
-    plug :ensure_client_scope
+    plug EasyWeb.Plugs.RequireRole, role: :client
   end
 
   scope "/api", EasyWeb do
@@ -41,6 +38,22 @@ defmodule EasyWeb.Router do
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
+  end
+
+  scope "/v1/businesses", EasyWeb do
+    pipe_through :require_user
+    post "/", BusinessController, :create
+
+    pipe_through :require_coach
+    get "/me", BusinessController, :show
+    patch "/me", BusinessController, :update
+  end
+
+  scope "/v1/coaches", EasyWeb do
+    pipe_through :require_coach
+
+    get "/me", CoachController, :show
+    patch "/me", CoachController, :update
   end
 
   # scope "/api/auth/client", EasyWeb.Client do
@@ -72,20 +85,20 @@ defmodule EasyWeb.Router do
   end
 
   scope "/api/auth", EasyWeb do
-    pipe_through :auth_user
+    pipe_through :require_user
 
     get "/me", AuthController, :me
     post "/logout", AuthController, :logout
   end
 
   scope "/api/coach", EasyWeb do
-    pipe_through :auth_coach
+    pipe_through :require_coach
 
     patch "/profile", AuthController, :update_coach_profile
   end
 
   scope "/api/coach", EasyWeb.Coach do
-    pipe_through :auth_coach
+    pipe_through :require_coach
 
     # Organization management
     get "/organization", BusinessController, :show
@@ -195,7 +208,7 @@ defmodule EasyWeb.Router do
   end
 
   scope "/api/client", EasyWeb.Client do
-    pipe_through :auth_client
+    pipe_through :require_client
 
     get "/profile", ProfileController, :show
     patch "/profile", ProfileController, :update

@@ -1,5 +1,9 @@
 defmodule EasyWeb.AuthController do
+  alias Easy.Identity
+  alias Easy.Utils
   use EasyWeb, :controller
+
+  @allowed_roles ["owner", "coach", "client", "guest"]
 
   def signup(conn, params) do
     with {:ok, user} <- Easy.Identity.signup(params) do
@@ -19,7 +23,8 @@ defmodule EasyWeb.AuthController do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    with {:ok, token} <- Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent}) do
+    with {:ok, token} <-
+           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
       conn
       |> put_status(200)
       |> json(token)
@@ -46,7 +51,8 @@ defmodule EasyWeb.AuthController do
 
     token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
 
-    with {:ok, token} <- Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent}) do
+    with {:ok, token} <-
+           Easy.Identity.verify(token_hash, %{ip: ip, user_agent: user_agent, role: :guest}) do
       conn
       |> put_status(200)
       |> json(token)
@@ -67,22 +73,42 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def token(conn, %{"grant_type" => "refresh_token", "refresh_token" => refresh_token}) do
-    with {:ok, auth_token} <- Easy.Identity.token(:refresh_token, refresh_token) do
+  def token(conn, %{
+        "grant_type" => "refresh_token",
+        "refresh_token" => refresh_token,
+        "role" => role
+      }) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
+    opts = %{
+      refresh_token: refresh_token,
+      ip: ip,
+      user_agent: user_agent,
+      role: Utils.safe_to_atom(role, @allowed_roles)
+    }
+
+    with {:ok, auth_token} <- Identity.token(:refresh_token, opts) do
       conn
       |> put_status(200)
       |> json(auth_token)
     end
   end
 
-  def token(conn, %{"grant_type" => "otp", "email" => email, "otp" => otp}) do
+  def token(conn, %{"grant_type" => "otp", "email" => email, "otp" => otp, "role" => role}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
+    token_hash = Identity.OneTimeTokens.generate_token_hash(email <> otp)
 
-    with {:ok, auth_token} <-
-           Easy.Identity.token(:otp, token_hash, %{ip: ip, user_agent: user_agent}) do
+    opts = %{
+      token_hash: token_hash,
+      ip: ip,
+      user_agent: user_agent,
+      role: Utils.safe_to_atom(role, @allowed_roles)
+    }
+
+    with {:ok, auth_token} <- Identity.token(:otp, opts) do
       conn
       |> put_status(200)
       |> json(auth_token)

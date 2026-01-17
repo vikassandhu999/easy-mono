@@ -53,4 +53,8 @@ defmodule Easy.Identity.User do
 
   def is_email_confirmed?(%__MODULE__{email_confirmed_at: nil}), do: false
   def is_email_confirmed?(%__MODULE__{email_confirmed_at: _}), do: true
+
+  def full_name(%__MODULE__{first_name: first_name, last_name: last_name}) do
+    String.trim("#{first_name} #{last_name}")
+  end
 end

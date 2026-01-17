@@ -1,11 +1,11 @@
 defmodule Easy.Identity.OneTimeTokens do
-  alias Easy.Identity.OneTimeToken
+  alias Easy.Identity
   alias Easy.Repo
 
   import Ecto.Query
 
-  @spec create_token(Easy.Identity.User.t(), atom(), String.t()) ::
-          {:ok, OneTimeToken.t()}
+  @spec create_token(Identity.User.t(), atom(), String.t()) ::
+          {:ok, Identity.OneTimeToken.t()}
           | {:error, any()}
   def create_token(user, token_type, otp) do
     %{
@@ -14,16 +14,16 @@ defmodule Easy.Identity.OneTimeTokens do
       relates_to: user.email,
       user_id: user.id
     }
-    |> OneTimeToken.changeset()
+    |> Identity.OneTimeToken.changeset()
     |> Repo.insert()
   end
 
   @spec get_by_hash(String.t(), atom()) ::
-          {:ok, Easy.Identity.OneTimeToken.t()}
+          {:ok, Identity.OneTimeToken.t()}
           | {:error, any()}
   def get_by_hash(token_hash, token_type) do
     query =
-      from(t in OneTimeToken,
+      from(t in Identity.OneTimeToken,
         where:
           t.token_hash == ^token_hash and
             t.token_type == ^token_type,
@@ -41,10 +41,10 @@ defmodule Easy.Identity.OneTimeTokens do
     Repo.delete(token)
   end
 
-  @spec delete_all_for_user_and_type(Easy.Identity.User.t(), atom()) :: :ok
+  @spec delete_all_for_user_and_type(Identity.User.t(), atom()) :: :ok
   def delete_all_for_user_and_type(user, token_type) do
     Repo.delete_all(
-      from(t in OneTimeToken,
+      from(t in Identity.OneTimeToken,
         where: t.user_id == ^user.id and t.token_type == ^token_type
       )
     )

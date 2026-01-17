@@ -22,8 +22,8 @@ defmodule Easy.Orgs.Coaches do
     |> Repo.insert()
   end
 
-  def get_one(coach_id) do
-    case Repo.get(Coach, coach_id) do
+  def get_by_id(id) do
+    case Repo.get(Coach, id) do
       nil -> {:error, Easy.Error.not_found("Coach not found")}
       coach -> {:ok, coach}
     end

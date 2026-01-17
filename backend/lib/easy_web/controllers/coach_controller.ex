@@ -2,8 +2,6 @@ defmodule EasyWeb.CoachController do
   alias Easy.Orgs.Coaches
   use EasyWeb, :controller
 
-  alias Easy.Orgs
-
   def show(conn, _params) do
     user_id = conn.assigns.claims["user_id"]
     business_id = conn.assigns.claims["business_id"]

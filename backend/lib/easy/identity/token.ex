@@ -4,6 +4,13 @@ defmodule Easy.Identity.Token do
   alias Easy.Identity
   alias Easy.Identity
 
+  @type claims :: %{
+          user_id: String.t(),
+          session_id: String.t(),
+          role: String.t(),
+          business_id: String.t() | nil
+        }
+
   @impl true
   def token_config do
     default_claims(default_exp: 300, iss: "easy_app", aud: "easy_app")
@@ -33,7 +40,7 @@ defmodule Easy.Identity.Token do
     token
   end
 
-  @spec verify_access_token(String.t()) :: {:ok, map()} | {:error, any()}
+  @spec verify_access_token(String.t()) :: {:ok, claims()} | {:error, any()}
   def verify_access_token(token) do
     Joken.verify_and_validate(token_config(), token, signer())
   end

@@ -1,5 +1,6 @@
 defmodule EasyWeb.Plugs.EnsureRole do
   require Logger
+  alias Easy.Identity.Token
   alias EasyWeb.FallbackController
 
   @doc false
@@ -22,12 +23,11 @@ defmodule EasyWeb.Plugs.EnsureRole do
     end
   end
 
-  # 1. Validate the Role
-  defp validate_role(%{"role" => current_role}, required_role) do
+  @spec validate_role(Token.claims(), atom()) :: :ok | {:error, String.t()}
+  defp validate_role(%{role: current_role}, required_role) do
     # Convert atom option to string for comparison to avoid creating dynamic atoms
-    required_role_str = to_string(required_role)
 
-    if current_role == required_role_str do
+    if current_role == required_role do
       :ok
     else
       {:error, "Expected role #{required_role}, got #{current_role}"}
@@ -37,7 +37,7 @@ defmodule EasyWeb.Plugs.EnsureRole do
   defp validate_role(_claims, _required), do: {:error, "No role found in claims"}
 
   # 2. Validate Business ID (Only for Coach and Client)
-  defp validate_business_context(%{"business_id" => nil}, role) when role in [:coach, :client] do
+  defp validate_business_context(%{business_id: nil}, role) when role in [:coach, :client] do
     {:error, "Missing business_id in claims for role #{role}"}
   end
 

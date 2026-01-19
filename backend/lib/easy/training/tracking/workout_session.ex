@@ -2,7 +2,7 @@ defmodule Easy.Training.Tracking.WorkoutSession do
   use Easy.Training.Schema
 
   alias Easy.Clients.Client
-  alias Easy.Organizations.Business
+  alias Easy.Orgs.Business
   alias Easy.Training.Programming.PlannedWorkout
   alias Easy.Training.Tracking.PerformedSet
 

@@ -662,23 +662,23 @@ defmodule EasyWeb.AuthEndpointsTest do
 
       # Create a business and coach profile for the user using legacy functions
       {:ok, business} =
-        Easy.Organizations.create_business_legacy(user, %{
+        Easy.Orgs.create_business_legacy(user, %{
           name: "Test Business"
         })
 
       {:ok, coach} =
-        Easy.Organizations.create_coach_legacy(user.id, business.id, %{
+        Easy.Orgs.create_coach_legacy(user.id, business.id, %{
           status: "active"
         })
 
       # Create a second business for context switching
       {:ok, business2} =
-        Easy.Organizations.create_business_legacy(user, %{
+        Easy.Orgs.create_business_legacy(user, %{
           name: "Second Business"
         })
 
       {:ok, coach2} =
-        Easy.Organizations.create_coach_legacy(user.id, business2.id, %{
+        Easy.Orgs.create_coach_legacy(user.id, business2.id, %{
           status: "active"
         })
 

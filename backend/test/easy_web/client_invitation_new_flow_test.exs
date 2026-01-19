@@ -2,7 +2,7 @@ defmodule EasyWeb.ClientInvitationFlowNewTest do
   use Easy.ConnCase, async: true
 
   alias Easy.{Accounts, Repo, Organizations}
-  alias Easy.Organizations.Plan
+  alias Easy.Orgs.Plan
 
   describe "new client invitation flow" do
     setup do

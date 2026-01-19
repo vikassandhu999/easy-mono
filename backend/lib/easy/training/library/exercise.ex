@@ -2,7 +2,7 @@ defmodule Easy.Training.Library.Exercise do
   use Easy.Training.Schema
   import Ecto.Query, warn: false
 
-  alias Easy.Organizations.Business
+  alias Easy.Orgs.Business
 
   schema "exercises" do
     field :name, :string

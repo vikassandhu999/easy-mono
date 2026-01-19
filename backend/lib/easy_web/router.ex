@@ -170,14 +170,4 @@ defmodule EasyWeb.Router do
   #   get "/sessions/:id", WorkoutSessionController, :show
   #   put "/sessions/:id/complete", WorkoutSessionController, :complete
   # end
-
-  # scope "/api/client", EasyWeb.Clients do
-  #   pipe_through :require_client
-
-  #   get "/profile", ProfileController, :show
-  #   patch "/profile", ProfileController, :update
-  #   get "/business", BusinessController, :show
-
-  #   get "/schedule/week", ScheduleController, :week
-  # end
 end

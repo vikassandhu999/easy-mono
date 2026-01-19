@@ -2,8 +2,8 @@ defmodule Easy.NutritionDeletionProtectionTest do
   use Easy.DataCase, async: true
 
   alias Easy.Nutrition
-  alias Easy.Organizations
-  alias Easy.Organizations
+  alias Easy.Orgs
+  alias Easy.Orgs
   alias Easy.Accounts
 
   describe "ingredient deletion protection" do

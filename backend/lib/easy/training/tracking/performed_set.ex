@@ -43,7 +43,7 @@ defmodule Easy.Training.Tracking.PerformedSet do
 
     belongs_to :workout_session, WorkoutSession
     belongs_to :exercise, Exercise
-    belongs_to :business, Easy.Organizations.Business
+    belongs_to :business, Easy.Orgs.Business
 
     timestamps()
   end

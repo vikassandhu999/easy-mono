@@ -1,7 +1,7 @@
 defmodule Easy.Training.Programming.WorkoutElement do
   use Easy.Training.Schema
 
-  alias Easy.Organizations.Business
+  alias Easy.Orgs.Business
   alias Easy.Training.Programming.{PlannedWorkout, PlannedSet}
   alias Easy.Training.Library.Exercise
 

@@ -168,12 +168,12 @@ defmodule EasyWeb.Plugs.AuthenticateTokenTest do
     } do
       # Create a business and session with business context
       {:ok, business} =
-        Easy.Organizations.create_business_legacy(user, %{
+        Easy.Orgs.create_business_legacy(user, %{
           name: "Test Business"
         })
 
       {:ok, _coach} =
-        Easy.Organizations.create_coach_legacy(user.id, business.id, %{
+        Easy.Orgs.create_coach_legacy(user.id, business.id, %{
           status: "active"
         })
 

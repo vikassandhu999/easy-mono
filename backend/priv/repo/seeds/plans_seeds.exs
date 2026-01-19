@@ -3,7 +3,7 @@ defmodule Easy.Repo.Seeds.Plans do
   Seeds for subscription plans.
   """
   alias Easy.Repo
-  alias Easy.Organizations.Plan
+  alias Easy.Orgs.Plan
 
   import Ecto.Query
 

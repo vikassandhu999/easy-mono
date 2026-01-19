@@ -1,7 +1,9 @@
 defmodule Easy.Nutrition.NutritionPlan do
   use Easy.Nutrition.Schema
 
-  alias Easy.Organizations.{Business, Coach}
+  @type t :: %__MODULE__{}
+
+  alias Easy.Orgs.{Business, Coach}
   alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
 

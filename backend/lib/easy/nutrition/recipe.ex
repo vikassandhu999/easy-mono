@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.Recipe do
   use Easy.Nutrition.Schema
 
-  alias Easy.Organizations.{Business, Coach}
+  alias Easy.Orgs.{Business, Coach}
   alias Easy.Nutrition.RecipeIngredient
 
   schema "recipes" do

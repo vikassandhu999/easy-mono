@@ -387,23 +387,23 @@ defmodule EasyWeb.AuthIntegrationTest do
 
       # Create first business and coach profile
       {:ok, business1} =
-        Easy.Organizations.create_business_legacy(user, %{
+        Easy.Orgs.create_business_legacy(user, %{
           name: "First Business"
         })
 
       {:ok, _coach1} =
-        Easy.Organizations.create_coach_legacy(user.id, business1.id, %{
+        Easy.Orgs.create_coach_legacy(user.id, business1.id, %{
           status: "active"
         })
 
       # Create second business and coach profile
       {:ok, business2} =
-        Easy.Organizations.create_business_legacy(user, %{
+        Easy.Orgs.create_business_legacy(user, %{
           name: "Second Business"
         })
 
       {:ok, _coach2} =
-        Easy.Organizations.create_coach_legacy(user.id, business2.id, %{
+        Easy.Orgs.create_coach_legacy(user.id, business2.id, %{
           status: "active"
         })
 

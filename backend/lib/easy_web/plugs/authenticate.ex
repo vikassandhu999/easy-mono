@@ -8,7 +8,7 @@ defmodule EasyWeb.Plugs.Authenticate do
 
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, claims} <- Token.verify_access_token(token) do
+         {:ok, %{} = claims} <- Token.verify_access_token(token) do
       assign(conn, :claims, %{
         user_id: claims["user_id"],
         role: String.to_atom(claims["role"]),

@@ -279,8 +279,8 @@ defmodule Easy.Training.TrackingTest do
   # Helpers
   defp create_test_setup do
     # Ensure default plan exists
-    if Easy.Repo.aggregate(Easy.Organizations.Plan, :count) == 0 do
-      Easy.Repo.insert!(%Easy.Organizations.Plan{
+    if Easy.Repo.aggregate(Easy.Orgs.Plan, :count) == 0 do
+      Easy.Repo.insert!(%Easy.Orgs.Plan{
         name: "Free Trial",
         slug: "free-trial",
         price_cents: 0,
@@ -298,7 +298,7 @@ defmodule Easy.Training.TrackingTest do
       })
 
     {:ok, business} =
-      Easy.Organizations.create_business_with_owner(user, %{
+      Easy.Orgs.create_business_with_owner(user, %{
         name: "Test Business #{System.unique_integer()}",
         email: "business#{System.unique_integer()}@example.com",
         handle: "business-#{System.unique_integer()}"

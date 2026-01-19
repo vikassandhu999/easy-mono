@@ -1,7 +1,7 @@
 defmodule Easy.Training.Programming.TrainingPlan do
   use Easy.Training.Schema
 
-  alias Easy.Organizations.{Business, Coach}
+  alias Easy.Orgs.{Business, Coach}
   alias Easy.Clients.Client
   alias Easy.Training.Programming.PlannedWorkout
 

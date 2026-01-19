@@ -97,8 +97,8 @@ mix precommit
 The application follows Phoenix context-driven design:
 
 - **Easy.Accounts** - User identity, authentication, OTP, and session management
-- **Easy.Organizations** - Business and subscription management
-- **Easy.Organizations** - Coach profile management
+- **Easy.Orgs** - Business and subscription management
+- **Easy.Orgs** - Coach profile management
 - **Easy.Clients** - Client management and invitations
 
 ## Learn More

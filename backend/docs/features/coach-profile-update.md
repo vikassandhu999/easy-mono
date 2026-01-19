@@ -83,7 +83,7 @@ schema "coaches" do
   field :certifications, {:array, :string}
 
   belongs_to :user, Easy.Accounts.User
-  belongs_to :business, Easy.Organizations.Business
+  belongs_to :business, Easy.Orgs.Business
 
   timestamps()
 end

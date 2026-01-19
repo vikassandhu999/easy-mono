@@ -1,5 +1,5 @@
 defmodule Easy.Orgs do
-  alias Easy.Organizations.Business
+  alias Easy.Orgs.Business
   alias Easy.Orgs.Coaches
   alias Easy.Identity.User
   alias Easy.Orgs.Business

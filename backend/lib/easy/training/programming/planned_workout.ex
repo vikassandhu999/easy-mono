@@ -1,7 +1,7 @@
 defmodule Easy.Training.Programming.PlannedWorkout do
   use Easy.Training.Schema
 
-  alias Easy.Organizations.Business
+  alias Easy.Orgs.Business
   alias Easy.Training.Programming.{TrainingPlan, WorkoutElement}
 
   # Day of week: 1 = Monday through 7 = Sunday (ISO 8601)

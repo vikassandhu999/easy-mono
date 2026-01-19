@@ -174,7 +174,7 @@ defmodule Easy.Training.LibraryTest do
       })
 
     # Then create a business
-    Easy.Organizations.create_business(%{
+    Easy.Orgs.create_business(%{
       name: "Test Business #{System.unique_integer()}",
       email: "business#{System.unique_integer()}@example.com",
       owner_id: user.id

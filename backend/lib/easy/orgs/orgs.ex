@@ -36,7 +36,7 @@ defmodule Easy.Orgs do
   end
 
   def get_coach(coach_id) do
-    Coaches.get_one(coach_id)
+    Coaches.get_by_id(coach_id)
   end
 
   def update_coach(coach, attrs) when is_map(attrs) do

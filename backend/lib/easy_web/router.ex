@@ -59,6 +59,11 @@ defmodule EasyWeb.Router do
     post "/clients/invite", ClientController, :invite
     get "/clients/:id", ClientController, :show
     get "/clients", ClientController, :index
+
+    post "/foods", FoodController, :create
+    get "/foods/:id", FoodController, :show
+    patch "/foods/:id", FoodController, :update
+    get "/foods", FoodController, :index
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

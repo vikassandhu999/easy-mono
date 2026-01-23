@@ -8,8 +8,7 @@ defmodule Easy.Nutrition.Recipes do
   @type search_opts :: %{
           optional(:search) => String.t(),
           optional(:offset) => pos_integer(),
-          optional(:limit) => pos_integer(),
-          optional(:status) => String.t()
+          optional(:limit) => pos_integer()
         }
 
   @spec create(String.t(), String.t(), map()) :: {:ok, Recipe.t()} | {:error, any()}
@@ -48,6 +47,7 @@ defmodule Easy.Nutrition.Recipes do
 
     recipes =
       Repo.all(from c in q, order_by: [desc: c.inserted_at], limit: ^limit, offset: ^offset)
+      |> Repo.preload(recipe_ingredients: [:food])
 
     {:ok, total_count, recipes}
   end
@@ -59,6 +59,8 @@ defmodule Easy.Nutrition.Recipes do
 
   @spec get_by_id(String.t(), String.t()) :: Recipe.t() | nil
   def get_by_id(id, business_id) do
-    Repo.get(Recipe, id, business_id: business_id)
+    Recipe
+    |> Repo.get_by(id: id, business_id: business_id)
+    |> Repo.preload([:foods, recipe_ingredients: [:food]])
   end
 end

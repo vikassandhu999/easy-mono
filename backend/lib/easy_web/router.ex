@@ -64,6 +64,11 @@ defmodule EasyWeb.Router do
     get "/foods/:id", FoodController, :show
     patch "/foods/:id", FoodController, :update
     get "/foods", FoodController, :index
+
+    post "/recipes", RecipeController, :create
+    get "/recipes/:id", RecipeController, :show
+    patch "/recipes/:id", RecipeController, :update
+    get "/recipes", RecipeController, :index
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

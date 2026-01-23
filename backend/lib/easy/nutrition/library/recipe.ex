@@ -30,7 +30,8 @@ defmodule Easy.Nutrition.Library.Recipe do
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
-    has_many :recipe_ingredients, RecipeIngredient, on_delete: :delete_all
+    has_many :recipe_ingredients, RecipeIngredient, on_delete: :delete_all, on_replace: :delete
+    has_many :foods, through: [:recipe_ingredients, :food]
 
     timestamps(type: :utc_datetime)
   end
@@ -54,6 +55,7 @@ defmodule Easy.Nutrition.Library.Recipe do
     |> put_change(:creator_id, coach_id)
     |> validate_required([:name, :creator_id, :business_id])
     |> cast_embed(:serving_sizes, with: &Library.ServingSize.changeset/2)
+    |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
   end
 
   @spec update_changeset(t(), map()) :: t()
@@ -70,5 +72,6 @@ defmodule Easy.Nutrition.Library.Recipe do
       :service_size_type
     ])
     |> cast_embed(:serving_sizes, with: &Library.ServingSize.changeset/2)
+    |> cast_assoc(:recipe_ingredients, with: &RecipeIngredient.changeset/2)
   end
 end

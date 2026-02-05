@@ -3,6 +3,7 @@ defmodule Easy.Nutrition.Library.Recipe do
   alias Easy.Orgs
   alias Easy.Nutrition.Library
   alias Easy.Nutrition.Library.RecipeIngredient
+  import Ecto.Query
 
   import Ecto.Changeset
 
@@ -35,6 +36,18 @@ defmodule Easy.Nutrition.Library.Recipe do
 
     timestamps(type: :utc_datetime)
   end
+
+  def search(query \\ __MODULE__, term),
+    do: from(q in query, where: fragment("search_vector @@ plainto_tsquery('english', ?)", ^term))
+
+  def with_business(query \\ __MODULE__, business_id),
+    do: from(r in query, where: r.business_id == ^business_id)
+
+  def preload_ingredients(query \\ __MODULE__),
+    do: from(r in query, join(ri in assoc(r, :recipe_ingredients), preload: [food: ri.food]))
+
+  def newest_first(query \\ __MODULE__),
+    do: from(r in query, order_by: [desc: r.inserted_at])
 
   @spec new_changeset(String.t(), String.t(), map()) :: t()
   def new_changeset(business_id, coach_id, attrs) do

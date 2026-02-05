@@ -1,66 +1,65 @@
 defmodule Easy.Nutrition.Recipes do
   alias Easy.Nutrition.Library.Recipe
   alias Easy.Repo
-  alias Easy.Identity.Token
 
   import Ecto.Query
 
   @type search_opts :: %{
           optional(:search) => String.t(),
-          optional(:offset) => pos_integer(),
+          optional(:offset) => non_neg_integer(),
           optional(:limit) => pos_integer()
         }
 
-  @spec create(String.t(), String.t(), map()) :: {:ok, Recipe.t()} | {:error, any()}
+  @spec create(String.t(), String.t(), map()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, coach_id, attrs) do
     Recipe.new_changeset(business_id, coach_id, attrs)
     |> Repo.insert()
   end
 
-  @spec update(Recipe.t(), map()) :: {:ok, Recipe.t()} | {:error, any()}
-  def update(recipe, attrs) do
-    recipe
-    |> Recipe.update_changeset(attrs)
-    |> Repo.update()
+  @spec get(String.t(), String.t()) :: Recipe.t() | nil
+  def get(id, business_id) do
+    Recipe
+    |> Repo.get_by(id: id, business_id: business_id)
+    |> Repo.preload([:foods, recipe_ingredients: [:food]])
   end
 
-  @spec list_for_business(Token.claims(), search_opts()) ::
-          {:ok, non_neg_integer(), [Recipe.t()]} | {:error, any()}
-  def list_for_business(claims, opts \\ %{}) when is_map(claims) do
+  @spec list(String.t(), search_opts()) :: {:ok, non_neg_integer(), [Recipe.t()]}
+  def list(business_id, opts \\ %{}) do
     search_term = Map.get(opts, :search, "")
-    offset = Map.get(opts, :offset, 0) |> max(0)
-    limit = Map.get(opts, :limit, 20) |> min(100) |> max(1)
+    offset = opts |> Map.get(:offset, 0) |> max(0)
+    limit = opts |> Map.get(:limit, 20) |> min(100) |> max(1)
 
-    q =
-      from c in Recipe,
-        where: c.business_id == ^claims.business_id
+    base_query = from(r in Recipe, where: r.business_id == ^business_id)
 
-    q =
+    query =
       if search_term != "" do
-        from c in q,
-          where: ilike(c.name, ^"%#{search_term}%")
+        from(r in base_query, where: ilike(r.name, ^"%#{search_term}%"))
       else
-        q
+        base_query
       end
 
-    total_count = Repo.aggregate(q, :count, :id)
+    total_count = Repo.aggregate(query, :count, :id)
 
     recipes =
-      Repo.all(from c in q, order_by: [desc: c.inserted_at], limit: ^limit, offset: ^offset)
+      query
+      |> order_by([r], desc: r.inserted_at)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> Repo.all()
       |> Repo.preload(recipe_ingredients: [:food])
 
     {:ok, total_count, recipes}
   end
 
-  @spec get_by_id(String.t()) :: Recipe.t() | nil
-  def get_by_id(id) do
-    Repo.get(Recipe, id)
+  @spec update(Recipe.t(), map()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
+  def update(%Recipe{} = recipe, attrs) do
+    recipe
+    |> Recipe.update_changeset(attrs)
+    |> Repo.update()
   end
 
-  @spec get_by_id(String.t(), String.t()) :: Recipe.t() | nil
-  def get_by_id(id, business_id) do
-    Recipe
-    |> Repo.get_by(id: id, business_id: business_id)
-    |> Repo.preload([:foods, recipe_ingredients: [:food]])
+  @spec delete(Recipe.t()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
+  def delete(%Recipe{} = recipe) do
+    Repo.delete(recipe)
   end
 end

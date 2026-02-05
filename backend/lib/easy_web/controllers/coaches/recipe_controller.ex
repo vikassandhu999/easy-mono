@@ -1,10 +1,11 @@
 defmodule EasyWeb.Coaches.RecipeController do
-  alias Easy.Orgs.Coaches
+  alias Easy.Nutrition.Library.Recipe
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.Library.Recipe
+  alias Easy.Repo
+
+  alias Easy.Orgs.Coaches
   alias Easy.Nutrition.Recipes
-  alias EasyWeb.FallbackController
 
   def create(conn, params) do
     claims = conn.assigns.claims
@@ -18,48 +19,64 @@ defmodule EasyWeb.Coaches.RecipeController do
   end
 
   def show(conn, %{"id" => recipe_id}) do
-    claims = conn.assigns.claims
+    %{business_id: business_id} = conn.assigns.claims
 
-    case Recipes.get_by_id(recipe_id, claims.business_id) do
-      %Recipe{} = recipe ->
-        conn
-        |> put_status(:ok)
-        |> render(:show, recipe: recipe)
+    Recipe
+    |> Recipe.with_business(business_id)
+    |> Recipe.preload_ingredients()
+    |> Repo.one(recipe_id)
 
-      _ ->
-        FallbackController.not_found_response(conn, "Recipe not found.")
+    case Recipes.get(recipe_id, business_id) do
+      nil -> {:error, :not_found}
+      recipe -> render(conn, :show, recipe: recipe)
     end
   end
 
-  def update(conn, %{"id" => recipe_id}) do
-    claims = conn.assigns.claims
+  def update(conn, %{"id" => recipe_id} = _params) do
+    %{business_id: business_id} = conn.assigns.claims
 
-    case Recipes.get_by_id(recipe_id, claims.business_id) do
-      %Recipe{} = recipe ->
-        with {:ok, updated_recipe} <- Recipes.update(recipe, conn.body_params) do
-          conn
-          |> put_status(:ok)
-          |> render(:show, recipe: updated_recipe)
-        end
+    with recipe when not is_nil(recipe) <- Recipes.get(recipe_id, business_id),
+         {:ok, updated_recipe} <- Recipes.update(recipe, conn.body_params) do
+      render(conn, :show, recipe: updated_recipe)
+    else
+      nil -> {:error, :not_found}
+      error -> error
+    end
+  end
 
-      _ ->
-        FallbackController.not_found_response(conn, "Recipe not found.")
+  def delete(conn, %{"id" => recipe_id}) do
+    %{business_id: business_id} = conn.assigns.claims
+
+    with recipe when not is_nil(recipe) <- Recipes.get(recipe_id, business_id),
+         {:ok, _deleted} <- Recipes.delete(recipe) do
+      send_resp(conn, :no_content, "")
+    else
+      nil -> {:error, :not_found}
+      error -> error
     end
   end
 
   def index(conn, params) do
-    claims = conn.assigns.claims
+    %{business_id: business_id} = conn.assigns.claims
 
     search_opts = %{
       search: Map.get(params, "search", ""),
-      offset: String.to_integer(Map.get(params, "offset", "0")),
-      limit: String.to_integer(Map.get(params, "limit", "10"))
+      offset: parse_integer(params, "offset", 0),
+      limit: parse_integer(params, "limit", 10)
     }
 
-    with {:ok, count, recipes} <- Recipes.list_for_business(claims, search_opts) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, count: count, recipes: recipes)
+    {:ok, count, recipes} = Recipes.list(business_id, search_opts)
+
+    conn
+    |> put_status(:ok)
+    |> render(:index, count: count, recipes: recipes)
+  end
+
+  defp parse_integer(params, key, default) do
+    case Map.get(params, key) do
+      nil -> default
+      value when is_binary(value) -> String.to_integer(value)
+      value when is_integer(value) -> value
     end
   end
 end

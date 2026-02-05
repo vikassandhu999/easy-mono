@@ -22,7 +22,7 @@ defmodule Easy.Nutrition.Plans.Plan do
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
     belongs_to :client, Clients.Client
-    belongs_to :source_template, Easy.Nutrition.Plans.Plan, foreign_key: :source_template_id
+    belongs_to :source_template, Plans.Plan, foreign_key: :source_template_id
     has_many :meals, Plans.Meal
     has_many :plan_items, Plans.PlanItem
 

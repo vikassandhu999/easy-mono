@@ -7,6 +7,10 @@ defmodule Easy.Factory do
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Nutrition.Food
+  alias Easy.Nutrition.Meal
+  alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.Plan
+  alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
 
@@ -138,6 +142,99 @@ defmodule Easy.Factory do
       "serving_sizes" => [
         %{"unit" => "serving", "weight_g" => 200.0, "amount" => 1.0}
       ]
+    }
+  end
+
+  def plan_factory do
+    business = build(:business)
+    creator = build(:coach, business: business)
+
+    %Plan{
+      name: sequence(:plan_name, &"Plan #{&1}"),
+      description: "Weekly plan",
+      tags: ["balanced"],
+      macros_goal: %{"calories" => 2000, "protein" => 150, "carbs" => 200, "fat" => 60},
+      type: :template,
+      status: :draft,
+      creator: creator,
+      business: business
+    }
+  end
+
+  def plan_attrs_factory do
+    %{
+      "name" => sequence(:plan_attr_name, &"New Plan #{&1}"),
+      "description" => "Plan created via test",
+      "tags" => ["test"],
+      "macros_goal" => %{"calories" => 1800, "protein" => 120, "carbs" => 180, "fat" => 50},
+      "type" => "template",
+      "status" => "draft"
+    }
+  end
+
+  def meal_factory do
+    plan = build(:plan)
+
+    %Meal{
+      name: sequence(:meal_name, &"Meal #{&1}"),
+      macros: %{"calories" => 500, "protein" => 40, "carbs" => 50, "fat" => 15},
+      position: 0,
+      creator: plan.creator,
+      business: plan.business,
+      plan: plan
+    }
+  end
+
+  def meal_attrs_factory do
+    %{
+      "name" => sequence(:meal_attr_name, &"New Meal #{&1}"),
+      "macros" => %{"calories" => 450, "protein" => 35, "carbs" => 45, "fat" => 12},
+      "position" => 0
+    }
+  end
+
+  def plan_item_factory do
+    plan = build(:plan)
+    meal = build(:meal, plan: plan, creator: plan.creator)
+
+    %PlanItem{
+      day: "monday",
+      meal_type: "breakfast",
+      creator: plan.creator,
+      business: plan.business,
+      plan: plan,
+      meal: meal
+    }
+  end
+
+  def plan_item_attrs_factory do
+    %{
+      "day" => "monday",
+      "meal_type" => "breakfast"
+    }
+  end
+
+  def meal_item_factory do
+    meal = build(:meal)
+    food = build(:food, business: meal.plan.business, creator: meal.creator)
+
+    %MealItem{
+      weight_g: 100.0,
+      amount: 1.0,
+      unit: "cup",
+      position: 0,
+      food: food,
+      business: meal.plan.business,
+      meal: meal
+    }
+  end
+
+  def meal_item_attrs_factory do
+    %{
+      "weight_g" => 120.0,
+      "amount" => 1.0,
+      "unit" => "cup",
+      "position" => 0
     }
   end
 end

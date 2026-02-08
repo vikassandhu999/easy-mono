@@ -79,12 +79,4 @@ defmodule EasyWeb.Coaches.RecipeController do
     |> put_status(:ok)
     |> render(:index, count: count, recipes: recipes)
   end
-
-  defp parse_integer(params, key, default) do
-    case Map.get(params, key) do
-      nil -> default
-      value when is_binary(value) -> String.to_integer(value)
-      value when is_integer(value) -> value
-    end
-  end
 end

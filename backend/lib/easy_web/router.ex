@@ -71,6 +71,34 @@ defmodule EasyWeb.Router do
     patch "/recipes/:id", RecipeController, :update
     delete "/recipes/:id", RecipeController, :delete
     get "/recipes", RecipeController, :index
+
+    post "/nutrition_plans", NutritionPlanController, :create
+    get "/nutrition_plans/:id", NutritionPlanController, :show
+    patch "/nutrition_plans/:id", NutritionPlanController, :update
+    delete "/nutrition_plans/:id", NutritionPlanController, :delete
+    get "/nutrition_plans", NutritionPlanController, :index
+    post "/nutrition_plans/:id/assign", NutritionPlanController, :assign
+    post "/nutrition_plans/:id/duplicate", NutritionPlanController, :duplicate
+    post "/nutrition_plans/:id/copy-day", NutritionPlanController, :copy_day
+    get "/nutrition_plans/:id/shopping-list", NutritionPlanController, :shopping_list
+    post "/nutrition_plans/:id/reorder-meals", NutritionPlanController, :reorder_meals
+    get "/nutrition_plans/:id/macros", NutritionPlanController, :macros
+
+    post "/nutrition_plans/:plan_id/meals", MealController, :create
+    get "/nutrition_plans/:plan_id/meals", MealController, :index
+    get "/meals/:id", MealController, :show
+    patch "/meals/:id", MealController, :update
+    delete "/meals/:id", MealController, :delete
+
+    post "/nutrition_plans/:plan_id/plan_items", PlanItemController, :create
+    get "/nutrition_plans/:plan_id/plan_items", PlanItemController, :index
+    patch "/plan_items/:id", PlanItemController, :update
+    delete "/plan_items/:id", PlanItemController, :delete
+
+    post "/meals/:meal_id/items", MealItemController, :create
+    get "/meals/:meal_id/items", MealItemController, :index
+    patch "/meal_items/:id", MealItemController, :update
+    delete "/meal_items/:id", MealItemController, :delete
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

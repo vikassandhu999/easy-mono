@@ -1,16 +1,15 @@
 defmodule EasyWeb.Coaches.FoodController do
-  alias Easy.Orgs.Coaches
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.Foods
-  alias Easy.Nutrition.Library.Food
+  alias Easy.Nutrition.Food
+  alias Easy.Orgs.Coaches
   alias EasyWeb.FallbackController
 
   def create(conn, params) do
     claims = conn.assigns.claims
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, food} <- Foods.create(claims.business_id, coach.id, params) do
+         {:ok, food} <- Food.create(claims.business_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, food: food)
@@ -20,13 +19,13 @@ defmodule EasyWeb.Coaches.FoodController do
   def show(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Foods.get_by_id(food_id, claims.business_id) do
+    case Food.get(food_id, claims.business_id) do
       %Food{} = food ->
         conn
         |> put_status(:ok)
         |> render(:show, food: food)
 
-      _ ->
+      nil ->
         FallbackController.not_found_response(conn, "Food not found.")
     end
   end
@@ -34,16 +33,28 @@ defmodule EasyWeb.Coaches.FoodController do
   def update(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Foods.get_by_id(food_id, claims.business_id) do
+    case Food.get(food_id, claims.business_id) do
       %Food{} = food ->
-        with {:ok, updated_food} <- Foods.update(food, conn.body_params) do
+        with {:ok, updated_food} <- Food.update(food, conn.body_params) do
           conn
           |> put_status(:ok)
           |> render(:show, food: updated_food)
         end
 
-      _ ->
+      nil ->
         FallbackController.not_found_response(conn, "Food not found.")
+    end
+  end
+
+  def delete(conn, %{"id" => food_id}) do
+    claims = conn.assigns.claims
+
+    with food when not is_nil(food) <- Food.get(food_id, claims.business_id),
+         {:ok, _deleted} <- Food.delete(food) do
+      send_resp(conn, :no_content, "")
+    else
+      nil -> FallbackController.not_found_response(conn, "Food not found.")
+      error -> error
     end
   end
 
@@ -56,10 +67,10 @@ defmodule EasyWeb.Coaches.FoodController do
       limit: String.to_integer(Map.get(params, "limit", "10"))
     }
 
-    with {:ok, count, foods} <- Foods.list_for_business(claims, search_opts) do
-      conn
-      |> put_status(:ok)
-      |> render(:index, count: count, foods: foods)
-    end
+    {:ok, count, foods} = Food.list(claims.business_id, search_opts)
+
+    conn
+    |> put_status(:ok)
+    |> render(:index, count: count, foods: foods)
   end
 end

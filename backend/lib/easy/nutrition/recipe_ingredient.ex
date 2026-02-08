@@ -1,6 +1,6 @@
-defmodule Easy.Nutrition.Library.RecipeIngredient do
+defmodule Easy.Nutrition.RecipeIngredient do
   use Ecto.Schema
-  alias Easy.Nutrition.Library
+  alias Easy.Nutrition
 
   import Ecto.Changeset
 
@@ -10,8 +10,8 @@ defmodule Easy.Nutrition.Library.RecipeIngredient do
   @foreign_key_type :binary_id
 
   schema "recipe_ingredients" do
-    belongs_to :recipe, Library.Recipe, primary_key: true
-    belongs_to :food, Library.Food, primary_key: true
+    belongs_to :recipe, Nutrition.Recipe, primary_key: true
+    belongs_to :food, Nutrition.Food, primary_key: true
 
     field :weight_g, :float
     field :amount, :float

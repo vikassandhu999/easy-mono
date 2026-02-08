@@ -1,17 +1,14 @@
 defmodule EasyWeb.Coaches.RecipeController do
-  alias Easy.Nutrition.Library.Recipe
   use EasyWeb, :controller
 
-  alias Easy.Repo
-
+  alias Easy.Nutrition.Recipe
   alias Easy.Orgs.Coaches
-  alias Easy.Nutrition.Recipes
 
   def create(conn, params) do
     claims = conn.assigns.claims
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, recipe} <- Recipes.create(claims.business_id, coach.id, params) do
+         {:ok, recipe} <- Recipe.create(claims.business_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, recipe: recipe)
@@ -21,22 +18,17 @@ defmodule EasyWeb.Coaches.RecipeController do
   def show(conn, %{"id" => recipe_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    Recipe
-    |> Recipe.with_business(business_id)
-    |> Recipe.preload_ingredients()
-    |> Repo.one(recipe_id)
-
-    case Recipes.get(recipe_id, business_id) do
+    case Recipe.get(recipe_id, business_id) do
       nil -> {:error, :not_found}
       recipe -> render(conn, :show, recipe: recipe)
     end
   end
 
-  def update(conn, %{"id" => recipe_id} = _params) do
+  def update(conn, %{"id" => recipe_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with recipe when not is_nil(recipe) <- Recipes.get(recipe_id, business_id),
-         {:ok, updated_recipe} <- Recipes.update(recipe, conn.body_params) do
+    with recipe when not is_nil(recipe) <- Recipe.get(recipe_id, business_id),
+         {:ok, updated_recipe} <- Recipe.update(recipe, conn.body_params) do
       render(conn, :show, recipe: updated_recipe)
     else
       nil -> {:error, :not_found}
@@ -47,8 +39,8 @@ defmodule EasyWeb.Coaches.RecipeController do
   def delete(conn, %{"id" => recipe_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with recipe when not is_nil(recipe) <- Recipes.get(recipe_id, business_id),
-         {:ok, _deleted} <- Recipes.delete(recipe) do
+    with recipe when not is_nil(recipe) <- Recipe.get(recipe_id, business_id),
+         {:ok, _deleted} <- Recipe.delete(recipe) do
       send_resp(conn, :no_content, "")
     else
       nil -> {:error, :not_found}
@@ -65,7 +57,7 @@ defmodule EasyWeb.Coaches.RecipeController do
       limit: parse_integer(params, "limit", 10)
     }
 
-    {:ok, count, recipes} = Recipes.list(business_id, search_opts)
+    {:ok, count, recipes} = Recipe.list(business_id, search_opts)
 
     conn
     |> put_status(:ok)

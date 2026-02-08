@@ -1,7 +1,6 @@
-defmodule Easy.Nutrition.Library.MealItem do
+defmodule Easy.Nutrition.MealItem do
   use Ecto.Schema
-  alias Easy.Nutrition.Library
-  alias Easy.Nutrition.Plans
+  alias Easy.Nutrition
 
   @type t() :: %__MODULE__{}
 
@@ -13,9 +12,9 @@ defmodule Easy.Nutrition.Library.MealItem do
     field :amount, :float
     field :unit, :string
 
-    belongs_to :recipe, Library.Recipe
-    belongs_to :food, Library.Food
-    belongs_to :meal, Plans.Meal
+    belongs_to :recipe, Nutrition.Recipe
+    belongs_to :food, Nutrition.Food
+    belongs_to :meal, Nutrition.Meal
 
     timestamps(type: :utc_datetime)
   end

@@ -63,11 +63,13 @@ defmodule EasyWeb.Router do
     post "/foods", FoodController, :create
     get "/foods/:id", FoodController, :show
     patch "/foods/:id", FoodController, :update
+    delete "/foods/:id", FoodController, :delete
     get "/foods", FoodController, :index
 
     post "/recipes", RecipeController, :create
     get "/recipes/:id", RecipeController, :show
     patch "/recipes/:id", RecipeController, :update
+    delete "/recipes/:id", RecipeController, :delete
     get "/recipes", RecipeController, :index
   end
 

@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.Library.ServingSize do
+defmodule Easy.Nutrition.ServingSize do
   use Ecto.Schema
 
   embedded_schema do

@@ -1,7 +1,7 @@
-defmodule Easy.Nutrition.Plans.PlanItem do
+defmodule Easy.Nutrition.PlanItem do
   use Ecto.Schema
   alias Easy.Orgs
-  alias Easy.Nutrition.Plans
+  alias Easy.Nutrition
 
   @type t() :: %__MODULE__{}
 
@@ -13,8 +13,8 @@ defmodule Easy.Nutrition.Plans.PlanItem do
     field :meal_type, :string
 
     belongs_to :creator, Orgs.Coach
-    belongs_to :meal, Plans.Meal
-    belongs_to :plan, Plans.Plan
+    belongs_to :meal, Nutrition.Meal
+    belongs_to :plan, Nutrition.Plan
 
     timestamps(type: :utc_datetime)
   end

@@ -56,7 +56,8 @@ defmodule Easy.MixProject do
       {:nimble_totp, "~> 1.0"},
       {:ex_phone_number, "~> 0.4"},
       {:cors_plug, "~> 3.0"},
-      {:resend, "~> 0.4.4"}
+      {:resend, "~> 0.4.4"},
+      {:ex_machina, "~> 2.8", only: :test}
     ]
   end
 

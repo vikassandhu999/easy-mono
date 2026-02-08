@@ -1,7 +1,7 @@
-defmodule Easy.Nutrition.Plans.Meal do
+defmodule Easy.Nutrition.Meal do
   use Ecto.Schema
   alias Easy.Orgs
-  alias Easy.Nutrition.Plans
+  alias Easy.Nutrition
 
   @type t() :: %__MODULE__{}
 
@@ -14,8 +14,8 @@ defmodule Easy.Nutrition.Plans.Meal do
     field :macros, :map
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
-    belongs_to :plan, Plans.Plan
-    has_many :plan_items, Easy.Nutrition.Plans.PlanItem
+    belongs_to :plan, Nutrition.Plan
+    has_many :plan_items, Easy.Nutrition.PlanItem
 
     timestamps(type: :utc_datetime)
   end

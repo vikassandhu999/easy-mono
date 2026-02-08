@@ -45,7 +45,7 @@ def get_published_audio do
   Repo.all(from a in Article, where: a.type == :audio and a.status == :published)
 end
 
-# GOOD: composable query, returns Ecto.Query
+# GOOD: composable query, takes Ecto.Query as first arg, returns Ecto.Query
 def published(query \\ __MODULE__), do: from(q in query, where: q.status == ^:published)
 def audio(query \\ __MODULE__), do: from(q in query, where: q.type == ^:audio)
 # Article |> Article.audio() |> Article.published() |> Repo.all()

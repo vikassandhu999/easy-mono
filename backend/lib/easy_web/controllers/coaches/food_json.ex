@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.FoodJSON do
-  alias Easy.Nutrition.Library.Food
+  alias Easy.Nutrition.Food
 
   def show(%{food: food}) do
     %{data: data(food)}

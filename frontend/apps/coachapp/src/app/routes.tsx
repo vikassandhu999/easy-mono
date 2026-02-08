@@ -10,8 +10,9 @@ import ClientListPage from '@/domains/client/pages/ClientListPage';
 import ClientViewPage from '@/domains/client/pages/ClientViewPage';
 import {NotFoundPage} from '@/domains/errors/pages/NotFoundPage';
 import MyPagePage from '@/domains/my_page/pages/FlowsListPage';
+import OnboardingPage from '@/domains/onboarding/pages/OnboardingPage';
 import SettingsPage from '@/domains/profile/pages/SettingsPage';
-import {GuestGaurd, PrivateGaurd} from '@/shared/gaurds';
+import {GuestGaurd, OnboardingGuard, PrivateGaurd} from '@/shared/guards';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
 
 const router = createBrowserRouter([
@@ -44,31 +45,40 @@ const router = createBrowserRouter([
     element: <PrivateGaurd />,
     children: [
       {
-        element: <ProtectedRouteLayout />,
+        element: <OnboardingPage />,
+        path: '/onboarding',
+      },
+      {
+        element: <OnboardingGuard />,
         children: [
           {
-            element: <ClientListPage />,
-            path: '/',
-          },
-          {
-            element: <ClientsPage />,
-            path: '/clients',
-          },
-          {
-            element: <ClientViewPage />,
-            path: '/clients/:id',
-          },
-          {
-            element: <LibraryListPage />,
-            path: '/library',
-          },
-          {
-            element: <MyPagePage />,
-            path: '/page',
-          },
-          {
-            element: <SettingsPage />,
-            path: '/settings',
+            element: <ProtectedRouteLayout />,
+            children: [
+              {
+                element: <ClientListPage />,
+                path: '/',
+              },
+              {
+                element: <ClientsPage />,
+                path: '/clients',
+              },
+              {
+                element: <ClientViewPage />,
+                path: '/clients/:id',
+              },
+              {
+                element: <LibraryListPage />,
+                path: '/library',
+              },
+              {
+                element: <MyPagePage />,
+                path: '/page',
+              },
+              {
+                element: <SettingsPage />,
+                path: '/settings',
+              },
+            ],
           },
         ],
       },

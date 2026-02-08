@@ -61,6 +61,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration op
 - [Authorization Helpers](docs/AUTHORIZATION_HELPERS.md) - Authorization patterns
 - [Email Configuration](docs/EMAIL_CONFIGURATION.md) - Email setup guide
 - [OAuth Routes](docs/OAUTH_ROUTES.md) - OAuth 2.0 endpoint reference
+- [API Contract](docs/api_contract.yaml) - OpenAPI 3.0 contract for frontend integration
 
 ## Production Deployment
 

@@ -1,6 +1,7 @@
 defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
+  alias Easy.Clients.Client
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.Orgs.Business
@@ -39,6 +40,33 @@ defmodule Easy.Factory do
       refresh_token: sequence(:refresh_token, &"refresh-token-#{&1}"),
       expires_at: DateTime.add(DateTime.utc_now(:second), 86400, :second),
       user: build(:user)
+    }
+  end
+
+  def client_factory do
+    business = build(:business)
+    creator = build(:coach, business: business)
+
+    %Client{
+      email: sequence(:client_email, &"client-#{&1}@test.com"),
+      first_name: "Test",
+      last_name: "Client",
+      phone: "123-456-7890",
+      notes: "Test client",
+      status: :active,
+      user: build(:user),
+      business: business,
+      creator: creator
+    }
+  end
+
+  def client_attrs_factory do
+    %{
+      "email" => sequence(:client_invite_email, &"invite-#{&1}@test.com"),
+      "first_name" => "Invited",
+      "last_name" => "Client",
+      "phone" => "123-555-7890",
+      "notes" => "Invited via test"
     }
   end
 

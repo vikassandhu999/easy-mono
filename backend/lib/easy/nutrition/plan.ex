@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.Plan do
   use Ecto.Schema
   alias Easy.Orgs
   alias Easy.Nutrition
-  alias Easy.Clients
+  alias Easy.Clients.Client
 
   @type t() :: %__MODULE__{}
 
@@ -21,7 +21,7 @@ defmodule Easy.Nutrition.Plan do
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
-    belongs_to :client, Clients.Client
+    belongs_to :client, Client
     belongs_to :source_template, Nutrition.Plan, foreign_key: :source_template_id
     has_many :meals, Nutrition.Meal
     has_many :plan_items, Nutrition.PlanItem

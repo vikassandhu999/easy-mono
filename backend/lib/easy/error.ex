@@ -1,6 +1,8 @@
 defmodule Easy.Error do
   defexception [:code, :message, :detail, :status]
 
+  @type t :: %__MODULE__{}
+
   @impl true
   def exception(opts) do
     code = Keyword.get(opts, :code, :internal_error)

@@ -2,7 +2,7 @@ defmodule EasyWeb.Coaches.ClientController do
   use EasyWeb, :controller
 
   def invite(conn, params) do
-    with {:ok, client} <- Easy.Clients.invite(conn.assigns.claims, params) do
+    with {:ok, client} <- Easy.Clients.Client.invite(conn.assigns.claims, params) do
       conn
       |> put_status(:created)
       |> render(:show, client: client)
@@ -10,7 +10,7 @@ defmodule EasyWeb.Coaches.ClientController do
   end
 
   def show(conn, %{"id" => client_id}) do
-    with {:ok, client} <- Easy.Clients.get(conn.assigns.claims, client_id) do
+    with {:ok, client} <- Easy.Clients.Client.get(conn.assigns.claims.business_id, client_id) do
       conn
       |> put_status(:ok)
       |> render(:show, client: client)
@@ -25,7 +25,8 @@ defmodule EasyWeb.Coaches.ClientController do
       status: Map.get(params, "status", nil)
     }
 
-    with {:ok, count, clients} <- Easy.Clients.list_clients(conn.assigns.claims, search_opts) do
+    with {:ok, count, clients} <-
+           Easy.Clients.Client.list(conn.assigns.claims.business_id, search_opts) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, clients: clients)

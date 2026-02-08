@@ -44,7 +44,7 @@ defmodule Easy.Nutrition.Library.Recipe do
     do: from(r in query, where: r.business_id == ^business_id)
 
   def preload_ingredients(query \\ __MODULE__),
-    do: from(r in query, join(ri in assoc(r, :recipe_ingredients), preload: [food: ri.food]))
+    do: from(r in query, preload: [:recipe_ingredients])
 
   def newest_first(query \\ __MODULE__),
     do: from(r in query, order_by: [desc: r.inserted_at])

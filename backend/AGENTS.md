@@ -1,41 +1,93 @@
 # Coding Standards
 
-These rules exist to keep the API predictable, safe, and multi-tenant correct.
+## Must
 
-## Non-negotiables (MUST)
-- **Tenant isolation**: Every database query includes `business_id`.
-- **Context API contract**: All public context functions return `{:ok, result}` or `{:error, reason}`.
-- **Thin controllers**: Controllers call Context functions only (no business logic, no direct `Repo` usage).
-- **No N+1**: Preload associations in the Context layer before returning data.
-- **No atom leaks**: Never call `String.to_atom/1` on user input.
-- **No doc**: Don't add module document or function documentation, remove anywhere if you find any.
+- Every database query must include `business_id` for tenant isolation.
+- All public functions return `{:ok, result}` or `{:error, reason}` — never raise for expected failures.
+- Controllers only call schema/service functions — no business logic or `Repo` in controllers.
+- Preload associations before returning data — no N+1 queries.
+- Never call `String.to_atom/1` on user input.
+- No `@moduledoc` or `@doc` — remove any you find.
+- Use `Req` for HTTP — not HTTPoison, Tesla, or `:httpc`.
+- Never include `user_id` or `business_id` in `cast/3` — set them programmatically.
+- Add `@spec` for every public function.
 
-## Elixir & Phoenix
-- **HTTP**: Use `:req` (Req). Avoid `:httpoison`, `:tesla`, and `:httpc`.
-- **Date/Time**: Use stdlib (`Time`, `Date`, `DateTime`, `Calendar`). Do not add deps.
-- **Files/modules**: One module per file. Do not nest modules.
-- **Lists**: Elixir lists do not support index access (`list[0]`). Use `Enum.at/2`, pattern matching, or `List` functions.
+```elixir
+# BAD
+cast(attrs, [:name, :business_id, :user_id])
+
+# GOOD
+cast(attrs, [:name])
+|> put_change(:business_id, business_id)
+|> put_change(:user_id, user_id)
+```
+
+## Fat Schema Pattern
+
+All business logic, changesets, and queries live in the Schema module. Use a service module only for complex cross-schema workflows.
+
+- Name changesets per operation — never a generic `changeset/2`.
+- Query functions take optional queryable as first arg, return `Ecto.Query` — never call `Repo` inside.
+- Schema module ordering: fields → relationships → changesets → queries → actions.
+
+```elixir
+# BAD: generic changeset
+def changeset(struct, attrs), do: cast(struct, attrs, [:title, :status])
+
+# GOOD: operation-specific changesets
+def insert_changeset(attrs), do: %__MODULE__{} |> cast(attrs, [:title]) |> validate_required([:title])
+def update_changeset(struct, attrs), do: struct |> cast(attrs, [:title, :status])
+```
+
+```elixir
+# BAD: calls Repo inside query, not composable
+def get_published_audio do
+  Repo.all(from a in Article, where: a.type == :audio and a.status == :published)
+end
+
+# GOOD: composable query, returns Ecto.Query
+def published(query \\ __MODULE__), do: from(q in query, where: q.status == ^:published)
+def audio(query \\ __MODULE__), do: from(q in query, where: q.type == ^:audio)
+# Article |> Article.audio() |> Article.published() |> Repo.all()
+```
+
+```elixir
+# BAD: action logic in controller
+def publish(conn, %{"id" => id}) do
+  item = Repo.get!(Article, id)
+  item |> change(%{status: :published}) |> Repo.update!()
+end
+
+# GOOD: action logic in schema module
+def publish!(item) do
+  item |> change(%{status: :published, published_at: now_in_seconds()}) |> Repo.update!()
+end
+```
 
 ## Ecto
-- **Schema types**: Use `:string` for text columns.
-- **Changeset reads**: Use `Ecto.Changeset.get_field/2`.
-- **Restricted fields**: Do not include restricted fields (e.g., `user_id`, `business_id`) in `cast/3`; set them programmatically.
-- **Preloading**: If a view/serializer will access associations, preload them in the Context.
 
-## Function style (SHOULD)
-- **Typespecs**: Add `@spec` for every public function.
-- **Error handling**: Do not raise for expected failures. Prefer:
-  - `{:ok, value}`
-  - `{:error, :not_found}`
-  - `{:error, changeset}`
-- **Business logic shape**: Prefer small, single-purpose functions and use `with` to keep happy-paths flat.
-- **Functions places**: Public and important functions should be first and  private functions and unimportant functions go below public functions in the same module.
+- Read changeset fields with `Ecto.Changeset.get_field/2` — not `changeset.changes.field`.
 
-## Formatting & naming (SHOULD)
-- Run `mix format` (2-space indentation, no trailing whitespace).
-- Keep lines <= 98 chars (as configured in `.formatter.exs`).
-- Naming:
-  - Modules: `MyApp.Accounts.User`
-  - Functions/variables/atoms: `snake_case`
-  - Predicates: `active?/1`, `valid?/1`
-  - Context APIs: `create_*`, `update_*`, `get_*`, `list_*`
+```elixir
+# BAD
+changeset.changes.email
+
+# GOOD
+Ecto.Changeset.get_field(changeset, :email)
+```
+
+## Testing
+
+- Use `SchemaCase` for schema/model tests.
+- Use ExMachina factories (`insert/build`) — never `Repo.insert!` with raw structs.
+- Test changeset validity for both success and failure paths.
+
+```elixir
+# BAD: manual struct insertion
+host = Repo.insert!(%Person{name: "Host", email: "host@test.com", handle: "host"})
+
+# GOOD: factory-based setup
+host = insert(:person)
+episode = insert(:published_episode)
+insert(:episode_host, person: host, episode: episode)
+```

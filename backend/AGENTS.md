@@ -22,12 +22,14 @@ cast(attrs, [:name])
 |> put_change(:user_id, user_id)
 ```
 
-## Fat Schema Pattern
+## Fat Schema Pattern for CRUD operations
 
-All business logic, changesets, and queries live in the Schema module. Use a service module only for complex cross-schema workflows.
+All CRUD changesets, and queries live in the Schema module. Use a service module only for complex cross-schema workflows and business logic only.
 
 - Name changesets per operation — never a generic `changeset/2`.
 - Query functions take optional queryable as first arg, return `Ecto.Query` — never call `Repo` inside.
+- Only write **atomic, domain-specific** query functions — filters, scopes, ordering that encode business rules unique to this schema.
+- Don't put `list`, `get`, or `paginate` in the schema — these are trivially composed by the caller from basic queries + `Repo` + `Easy.Utils.paginate/3`.
 - Schema module ordering: fields → relationships → changesets → queries → actions.
 
 ```elixir
@@ -49,6 +51,21 @@ end
 def published(query \\ __MODULE__), do: from(q in query, where: q.status == ^:published)
 def audio(query \\ __MODULE__), do: from(q in query, where: q.type == ^:audio)
 # Article |> Article.audio() |> Article.published() |> Repo.all()
+```
+
+```elixir
+# BAD: list/get wrappers in schema — hides composition, hard to customise
+def list(business_id, opts) do
+  __MODULE__
+  |> for_business(business_id)
+  |> paginate(opts.offset, opts.limit)
+  |> Repo.all()
+end
+
+# GOOD: caller composes queries directly
+base = Article |> Article.for_business(business_id) |> Article.published()
+total = Repo.aggregate(base, :count, :id)
+items = base |> Article.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
 ```
 
 ```elixir

@@ -89,11 +89,6 @@ defmodule Easy.Nutrition.Recipe do
     from(r in query, order_by: [desc: r.inserted_at])
   end
 
-  @spec paginate(Ecto.Queryable.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
-  def paginate(query \\ __MODULE__, offset, limit) do
-    from(r in query, limit: ^limit, offset: ^offset)
-  end
-
   @spec with_ingredients(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_ingredients(query \\ __MODULE__) do
     from(r in query, preload: [recipe_ingredients: [:food]])
@@ -116,27 +111,5 @@ defmodule Easy.Nutrition.Recipe do
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(recipe) do
     Repo.delete(recipe)
-  end
-
-  @spec get(String.t(), String.t()) :: t() | nil
-  def get(id, business_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> with_ingredients()
-    |> Repo.get(id)
-  end
-
-  @spec list(String.t(), map()) :: {:ok, non_neg_integer(), [t()]}
-  def list(business_id, opts \\ %{}) do
-    search_term = Map.get(opts, :search, "")
-    offset = Map.get(opts, :offset, 0) |> max(0)
-    limit = Map.get(opts, :limit, 20) |> min(100) |> max(1)
-
-    base = __MODULE__ |> for_business(business_id) |> search(search_term)
-
-    total_count = Repo.aggregate(base, :count, :id)
-    recipes = base |> newest() |> paginate(offset, limit) |> with_ingredients() |> Repo.all()
-
-    {:ok, total_count, recipes}
   end
 end

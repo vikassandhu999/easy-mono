@@ -1,7 +1,6 @@
 defmodule Easy.Clients.Client do
   use Ecto.Schema
 
-  alias Easy.Error
   alias Easy.Orgs
   alias Easy.Orgs.Coaches
   alias Easy.Repo
@@ -82,9 +81,9 @@ defmodule Easy.Clients.Client do
     from(c in query, order_by: [desc: c.inserted_at])
   end
 
-  @spec paginate(Ecto.Queryable.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
-  def paginate(query \\ __MODULE__, offset, limit) do
-    from(c in query, limit: ^limit, offset: ^offset)
+  @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def with_preloads(query \\ __MODULE__) do
+    from(c in query, preload: [:user, :business, :creator])
   end
 
   # Actions
@@ -96,52 +95,6 @@ defmodule Easy.Clients.Client do
          :ok <- send_invitation_email(client, coach) do
       {:ok, client}
     end
-  end
-
-  @spec get(String.t(), String.t()) :: {:ok, t()} | {:error, Error.t()}
-  def get(business_id, id) do
-    Repo.get_by(__MODULE__, id: id, business_id: business_id)
-    |> case do
-      nil -> not_found_error()
-      client -> {:ok, client}
-    end
-  end
-
-  @spec list(String.t(), map()) :: {:ok, non_neg_integer(), [t()]}
-  def list(business_id, opts \\ %{}) do
-    search_term = Map.get(opts, :search, "")
-    offset = Map.get(opts, :offset, 0) |> max(0)
-    limit = Map.get(opts, :limit, 20) |> min(100) |> max(1)
-    status = Map.get(opts, :status, nil) |> to_status_atom()
-
-    base =
-      __MODULE__
-      |> for_business(business_id)
-      |> search(search_term)
-      |> with_status(status)
-
-    total_count = Repo.aggregate(base, :count, :id)
-    clients = base |> newest() |> paginate(offset, limit) |> Repo.all()
-
-    {:ok, total_count, clients}
-  end
-
-  @spec to_status_atom(String.t() | atom() | nil) :: atom() | nil
-  def to_status_atom(status) when is_binary(status) do
-    case String.downcase(status) do
-      "active" -> :active
-      "inactive" -> :inactive
-      "invited" -> :invited
-      _ -> nil
-    end
-  end
-
-  def to_status_atom(status) when is_atom(status) and status in @client_statuses, do: status
-  def to_status_atom(_), do: nil
-
-  @spec not_found_error() :: {:error, Error.t()}
-  def not_found_error do
-    {:error, Error.not_found("Client not found")}
   end
 
   defp create_invitation(coach, invite_attrs) do

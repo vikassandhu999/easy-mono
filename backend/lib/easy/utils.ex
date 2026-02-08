@@ -120,18 +120,9 @@ defmodule Easy.Utils do
     end
   end
 
-  def paginate(query, page, count) when is_integer(page) and page > 0 do
-    offset = (page - 1) * count
-
-    from(
-      var in query,
-      offset: ^offset,
-      limit: ^count
-    )
-  end
-
-  def paginate(query, _page, count) do
-    paginate(query, 1, count)
+  @spec paginate(Ecto.Queryable.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
+  def paginate(query, offset, limit) do
+    from(q in query, offset: ^offset, limit: ^limit)
   end
 
   def parse_ip(ip) do

@@ -3,6 +3,7 @@ defmodule EasyWeb.Coaches.FoodController do
 
   alias Easy.Nutrition.Food
   alias Easy.Orgs.Coaches
+  alias Easy.Repo
   alias EasyWeb.FallbackController
 
   def create(conn, params) do
@@ -19,7 +20,7 @@ defmodule EasyWeb.Coaches.FoodController do
   def show(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Food.get(food_id, claims.business_id) do
+    case Food |> Food.for_business(claims.business_id) |> Repo.get(food_id) do
       %Food{} = food ->
         conn
         |> put_status(:ok)
@@ -33,7 +34,7 @@ defmodule EasyWeb.Coaches.FoodController do
   def update(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Food.get(food_id, claims.business_id) do
+    case Food |> Food.for_business(claims.business_id) |> Repo.get(food_id) do
       %Food{} = food ->
         with {:ok, updated_food} <- Food.update(food, conn.body_params) do
           conn
@@ -49,7 +50,8 @@ defmodule EasyWeb.Coaches.FoodController do
   def delete(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    with food when not is_nil(food) <- Food.get(food_id, claims.business_id),
+    with food when not is_nil(food) <-
+           Food |> Food.for_business(claims.business_id) |> Repo.get(food_id),
          {:ok, _deleted} <- Food.delete(food) do
       send_resp(conn, :no_content, "")
     else
@@ -61,13 +63,14 @@ defmodule EasyWeb.Coaches.FoodController do
   def index(conn, params) do
     claims = conn.assigns.claims
 
-    search_opts = %{
-      search: Map.get(params, "search", ""),
-      offset: String.to_integer(Map.get(params, "offset", "0")),
-      limit: String.to_integer(Map.get(params, "limit", "10"))
-    }
+    search_term = Map.get(params, "search", "")
+    offset = params |> Map.get("offset", "0") |> String.to_integer()
+    limit = params |> Map.get("limit", "10") |> String.to_integer()
 
-    {:ok, count, foods} = Food.list(claims.business_id, search_opts)
+    base = Food |> Food.for_business(claims.business_id) |> Food.search(search_term)
+
+    count = Repo.aggregate(base, :count, :id)
+    foods = base |> Food.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
 
     conn
     |> put_status(:ok)

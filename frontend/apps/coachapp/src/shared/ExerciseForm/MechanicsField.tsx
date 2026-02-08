@@ -1,4 +1,4 @@
-import {Select, Title} from '@mantine/core';
+import {Select} from '@mantine/core';
 import {FC} from 'react';
 import {Controller, UseFormReturn} from 'react-hook-form';
 

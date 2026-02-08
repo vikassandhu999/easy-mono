@@ -28,7 +28,10 @@ const resolveBaseUrl = (): string => {
 
 const BASE_URL = resolveBaseUrl();
 
-logger.log('API Base URL configured', {url: BASE_URL, env: import.meta.env.VITE_APP_ENV || 'unknown'});
+logger.log('API Base URL configured', {
+  url: BASE_URL,
+  env: import.meta.env.VITE_APP_ENV || 'unknown',
+});
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -66,7 +69,10 @@ function redirectToLogin() {
 
 // Track if we're currently refreshing to prevent multiple refresh calls
 let isRefreshing = false;
-let failedQueue: Array<{resolve: (value?: unknown) => void; reject: (reason?: any) => void}> = [];
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
 
 const processQueue = (error: any = null) => {
   failedQueue.forEach((prom) => {
@@ -109,10 +115,10 @@ axiosInstance.interceptors.response.use(
     // 3. This is an auth endpoint (token, send-login-code, verify, etc.)
     if (
       originalRequest._retry ||
-      originalRequest.url?.includes('/api/auth/token') ||
-      originalRequest.url?.includes('/api/auth/send-login-code') ||
-      originalRequest.url?.includes('/api/auth/verify') ||
-      originalRequest.url?.includes('/api/auth/register')
+      originalRequest.url?.includes('/v1/auth/token') ||
+      originalRequest.url?.includes('/v1/auth/otp') ||
+      originalRequest.url?.includes('/v1/auth/verify') ||
+      originalRequest.url?.includes('/v1/auth/signup')
     ) {
       // Clear auth state and redirect to login
       clearAuthState();
@@ -142,7 +148,8 @@ axiosInstance.interceptors.response.use(
       }
 
       // Call refresh endpoint
-      const response = await axiosInstance.post('/api/auth/token', {
+      const response = await axiosInstance.post('/v1/auth/token', {
+        grant_type: 'refresh_token',
         refresh_token: refreshToken,
       });
 

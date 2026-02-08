@@ -1,7 +1,7 @@
 import {humanizeError} from '@easy/error-parser';
 import {FieldError, Input, Label, TextArea, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Stack, Textarea, TextInput} from '@mantine/core';
+import {Stack} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 
@@ -56,13 +56,7 @@ const TrainingPlanForm = ({initialValues, onSubmit, ref, planId}: TrainingPlanFo
     resolver: zodResolver(CreateTrainingPlan_zod),
   });
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    getValues,
-    formState: {errors},
-  } = form;
+  const {control, handleSubmit, reset, getValues} = form;
 
   useEffect(() => {
     if (plan && planId) {

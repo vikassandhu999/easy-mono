@@ -11,6 +11,7 @@ import {
   Loader,
   Modal,
   Paper,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Switch,
@@ -78,7 +79,7 @@ const MyPagePage = () => {
   const [enablePublicJoin, {isLoading: isEnabling}] = useEnablePublicJoinMutation();
   const [disablePublicJoin, {isLoading: isDisabling}] = useDisablePublicJoinMutation();
   const [regenerateCode, {isLoading: isRegenerating}] = useRegenerateJoinCodeMutation();
-  const [updateBranding, {isLoading: isUpdating}] = useUpdateBrandingSettingsMutation();
+  const [updateBranding] = useUpdateBrandingSettingsMutation();
 
   const [selectedColor, setSelectedColor] = useState<string>('#7C3AED');
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -116,7 +117,7 @@ const MyPagePage = () => {
         youtube: '',
       });
     }
-  }, [settings]);
+  }, [settings, form]);
 
   const handleToggleEnabled = async () => {
     try {

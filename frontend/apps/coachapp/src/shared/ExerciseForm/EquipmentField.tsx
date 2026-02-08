@@ -1,4 +1,4 @@
-import {MultiSelect, Title} from '@mantine/core';
+import {MultiSelect} from '@mantine/core';
 import {FC, useMemo, useState} from 'react';
 import {Controller, UseFormReturn} from 'react-hook-form';
 

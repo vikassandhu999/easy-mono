@@ -54,7 +54,6 @@ const AddWorkoutModal = ({opened, onClose, onSubmit, dayName}: AddWorkoutModalPr
     >
       <Stack gap="md">
         <TextInput
-          autoFocus
           disabled={isSubmitting}
           error={error}
           label="Workout Name"

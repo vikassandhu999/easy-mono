@@ -1,46 +1,59 @@
-import {baseAPISlice} from '../baseAPISlice';
+import { baseAPISlice } from "../baseAPISlice";
 import {
-  Business,
-  CreateBusinessOnboardingResponse,
-  CreateBusinessRequest,
-  UpdateBusinessProps,
-} from './business_definition';
+  type Business,
+  type BusinessCreateRequest,
+  type BusinessResponse,
+  type BusinessUpdateRequest,
+} from "./business_definition";
 
-interface BusinessResponse {
-  data: Business;
-}
-
-// RTK Query API for business onboarding
 export const businessApi = baseAPISlice.injectEndpoints({
   endpoints: (build) => ({
-    createBusiness: build.mutation<CreateBusinessOnboardingResponse, CreateBusinessRequest>({
+    /**
+     * POST /v1/businesses
+     * Create a new business. Used during onboarding.
+     */
+    createBusiness: build.mutation<Business, BusinessCreateRequest>({
       query: (body) => ({
-        url: '/api/onboarding/business',
-        method: 'post',
+        url: "/v1/businesses",
+        method: "post",
         data: body,
       }),
+      transformResponse: (response: BusinessResponse) => response.data,
+      invalidatesTags: ["Business"],
     }),
 
-    getBusiness: build.query<Business, void>({
+    /**
+     * GET /v1/businesses/me
+     * Returns the Business entity for the current user.
+     */
+    getMyBusiness: build.query<Business, void>({
       query: () => ({
-        url: '/api/coach/organization',
-        method: 'get',
+        url: "/v1/businesses/me",
+        method: "get",
       }),
       transformResponse: (response: BusinessResponse) => response.data,
-      providesTags: ['Business'],
+      providesTags: ["Business"],
     }),
 
-    updateBusiness: build.mutation<Business, UpdateBusinessProps>({
+    /**
+     * PATCH /v1/businesses/me
+     * Update current business. Accepts { name?, about? } per contract.
+     */
+    updateMyBusiness: build.mutation<Business, BusinessUpdateRequest>({
       query: (body) => ({
-        url: '/api/coach/organization',
-        method: 'patch',
-        data: {business: body},
+        url: "/v1/businesses/me",
+        method: "patch",
+        data: body,
       }),
       transformResponse: (response: BusinessResponse) => response.data,
-      invalidatesTags: ['Business'],
+      invalidatesTags: ["Business"],
     }),
   }),
   overrideExisting: false,
 });
 
-export const {useCreateBusinessMutation, useGetBusinessQuery, useUpdateBusinessMutation} = businessApi;
+export const {
+  useCreateBusinessMutation,
+  useGetMyBusinessQuery,
+  useUpdateMyBusinessMutation,
+} = businessApi;

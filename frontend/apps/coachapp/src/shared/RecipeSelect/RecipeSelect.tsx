@@ -1,6 +1,6 @@
 import {Loader, Text, TextInput} from '@mantine/core';
 import {useDebouncedCallback, useIntersection, useLocalStorage} from '@mantine/hooks';
-import {CheckIcon, MagnifyingGlassIcon, XIcon} from '@phosphor-icons/react';
+import {CheckIcon, XIcon} from '@phosphor-icons/react';
 import {IconBolt, IconClock, IconFlame, IconHistory, IconLeaf, IconPlus, IconUsers} from '@tabler/icons-react';
 import {useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 
@@ -13,7 +13,11 @@ import classes from './styles.module.css';
 // Quick filter definitions
 type QuickFilter = 'highProtein' | 'lowCal' | 'quick' | null;
 
-const QUICK_FILTERS: {id: QuickFilter; label: string; icon: React.ReactNode}[] = [
+const QUICK_FILTERS: {
+  id: QuickFilter;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
   {id: 'quick', label: 'Quick', icon: <IconBolt size={14} />},
   {id: 'lowCal', label: 'Low cal', icon: <IconLeaf size={14} />},
   {id: 'highProtein', label: 'High protein', icon: <IconFlame size={14} />},
@@ -215,7 +219,7 @@ export default function RecipeSelect(props: RecipeSelectProps) {
   );
 
   const handleSave = useCallback(() => {
-    const selectedRecipes = selectedIds.map((id) => recipesMap[id]).filter(Boolean);
+    const selectedRecipes = selectedIds.map((id) => recipesMap[id]).filter((recipe): recipe is Recipe => !!recipe);
     onComplete?.(selectedIds, selectedRecipes);
   }, [selectedIds, recipesMap, onComplete]);
 
@@ -240,7 +244,10 @@ export default function RecipeSelect(props: RecipeSelectProps) {
         case 'Enter':
           if (focusedIndex >= 0 && focusedIndex < recipes.length) {
             e.preventDefault();
-            handleSelect(recipes[focusedIndex].id);
+            const focused = recipes[focusedIndex];
+            if (focused) {
+              handleSelect(focused.id);
+            }
           }
           break;
         case 'Escape':
@@ -261,7 +268,10 @@ export default function RecipeSelect(props: RecipeSelectProps) {
       } else if (e.key === 'Enter' && recipes.length > 0 && focusedIndex === -1) {
         e.preventDefault();
         // Select first recipe on Enter if nothing focused
-        handleSelect(recipes[0].id);
+        const firstRecipe = recipes[0];
+        if (firstRecipe) {
+          handleSelect(firstRecipe.id);
+        }
       } else if (e.key === 'Escape') {
         setSearch('');
         onSearchChangeDebounced('');
@@ -318,7 +328,12 @@ export default function RecipeSelect(props: RecipeSelectProps) {
                       onSearchChangeDebounced('');
                       searchInputRef.current?.focus();
                     }}
-                    style={{background: 'none', border: 'none', cursor: 'pointer', padding: 4}}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 4,
+                    }}
                     type="button"
                   >
                     <XIcon size={16} />

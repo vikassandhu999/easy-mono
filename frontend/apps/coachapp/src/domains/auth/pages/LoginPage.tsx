@@ -6,36 +6,36 @@ import React from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router';
 
-import {SendLoginCode_zod, SendLoginCodeRequest, useSendLoginCodeMutation} from '@/services/auth';
+import {SendOtp_zod, type SendOtpRequest, useSendOtpMutation} from '@/services/auth';
 import {notifyError} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [sendOTP, {isLoading: reqLoading}] = useSendLoginCodeMutation();
+  const [sendOTP, {isLoading: reqLoading}] = useSendOtpMutation();
 
-  const form = useForm<SendLoginCodeRequest>({
+  const form = useForm<SendOtpRequest>({
     defaultValues: {
       email: '',
+      type: 'authentication',
     },
-    resolver: zodResolver(SendLoginCode_zod),
+    resolver: zodResolver(SendOtp_zod),
     mode: 'onBlur',
   });
 
-  const onSubmit = async (values: SendLoginCodeRequest) => {
+  const onSubmit = async (values: SendOtpRequest) => {
     try {
-      const response = await sendOTP(values).unwrap();
+      await sendOTP({
+        email: values.email,
+        type: 'authentication',
+      }).unwrap();
 
-      const params = new URLSearchParams([
-        ['token_id', response.token.token_id],
-        ['email', response.user.email],
-      ]);
+      const params = new URLSearchParams([['email', values.email]]);
 
       navigate('/login/verify?' + params.toString());
     } catch (err) {
       const errMsg = humanizeError(err);
-
       notifyError(errMsg);
     }
   };

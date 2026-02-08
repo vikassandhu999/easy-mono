@@ -1,385 +1,168 @@
-import {Anchor, Badge, Button, Divider, Group, Loader, Stack, Text, ThemeIcon} from '@mantine/core';
-import {
-  Icon,
-  IconAward,
-  IconBrandFacebook,
-  IconBrandInstagram,
-  IconBrandX,
-  IconBrandYoutube,
-  IconBriefcase,
-  IconExternalLink,
-  IconPencil,
-  IconProps,
-} from '@tabler/icons-react';
-import {FC} from 'react';
+import { IconPencil } from "@tabler/icons-react";
+import { FC } from "react";
 
-import {DRAWER_KEYS} from '@/configs';
-import useParamsDrawer from '@/hooks/useParamDrawer';
-import {useProfileQuery, UserProfileResponse} from '@/services/auth';
-import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
+import { Button, Modal, Spinner } from "@heroui/react";
+
+import { DRAWER_KEYS } from "@/configs";
+import useParamsDrawer from "@/hooks/useParamDrawer";
+import { type Coach, useGetMyCoachQuery } from "@/services/coach";
+import { selectUser } from "@/slices/authSlice";
+import { useAppSelector } from "@/store";
 
 const CoachProfileViewDrawer = () => {
-  const {closeDrawer, openDrawer} = useParamsDrawer({});
-
-  const {data: profile, isLoading: isLoadingProfile} = useProfileQuery();
+  const { closeDrawer, openDrawer } = useParamsDrawer({});
+  const user = useAppSelector(selectUser);
+  const { data: coach, isLoading: isLoadingCoach } = useGetMyCoachQuery();
 
   const handleEdit = () => {
     openDrawer(DRAWER_KEYS.COACH_PROFILE_EDIT);
   };
 
-  if (isLoadingProfile) {
+  if (isLoadingCoach) {
     return (
-      <AutoDrawer
-        content={
-          <Stack
-            align="center"
-            justify="center"
-            py="xl"
-          >
-            <Loader size="sm" />
-            <Text
-              c="dimmed"
-              size="sm"
-            >
-              Loading profile...
-            </Text>
-          </Stack>
-        }
-        onClose={closeDrawer}
-        title="My Profile"
-      />
+      <Modal>
+        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+          <Modal.Container placement="top" scroll="outside" size="lg">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading className="text-xl font-semibold">
+                  My Profile
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="flex flex-col items-center justify-center gap-3 py-8">
+                  <Spinner />
+                  <p className="text-sm text-default-500">Loading profile...</p>
+                </div>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     );
   }
 
-  if (!profile) {
+  if (!coach) {
     return (
-      <AutoDrawer
-        content={
-          <Text
-            c="red"
-            size="sm"
-          >
-            Profile not found
-          </Text>
-        }
-        onClose={closeDrawer}
-        title="My Profile"
-      />
+      <Modal>
+        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+          <Modal.Container placement="top" scroll="outside" size="lg">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading className="text-xl font-semibold">
+                  My Profile
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-sm text-danger-600 py-4">
+                  Profile not found
+                </p>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     );
   }
 
   return (
-    <AutoDrawer
-      actions={
-        <Group w="100%">
-          <Button
-            color="blue"
-            flex={1}
-            leftSection={<IconPencil size={16} />}
-            onClick={handleEdit}
-            radius="xl"
-            size="sm"
-            variant="filled"
-          >
-            Edit
-          </Button>
-        </Group>
-      }
-      content={<ProfileContent profile={profile} />}
-      onClose={closeDrawer}
-      title="My Profile"
-    />
+    <Modal>
+      <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+        <Modal.Container placement="top" scroll="outside" size="lg">
+          <Modal.Dialog>
+            <Modal.Header>
+              <Modal.Heading className="text-xl font-semibold">
+                My Profile
+              </Modal.Heading>
+            </Modal.Header>
+            <Modal.Body className="p-4">
+              <ProfileContent coach={coach} email={user?.email ?? ""} />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button slot="close" variant="secondary">
+                Close
+              </Button>
+              <Button onPress={handleEdit}>
+                <IconPencil size={16} />
+                Edit
+              </Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 };
 
+/* ---- Profile Content ---- */
+
 interface ProfileContentProps {
-  profile: UserProfileResponse;
+  coach: Coach;
+  email: string;
 }
 
-const ProfileContent: FC<ProfileContentProps> = ({profile}) => {
-  const coach = profile.coach;
-  const user = profile.user;
-
-  const fullName = `${user.first_name} ${user.last_name}`;
-  const hasSpecialties = coach?.specialties && coach.specialties.length > 0;
-  const hasCertifications = coach?.certifications && coach.certifications.length > 0;
-  const hasSocialLinks = coach?.instagram_url || coach?.facebook_url || coach?.youtube_url || coach?.x_url;
+const ProfileContent: FC<ProfileContentProps> = ({ coach, email }) => {
+  const fullName = coach.name || "No name set";
 
   return (
-    <Stack gap="lg">
-      {/* Personal Info Section */}
+    <div className="flex flex-col gap-6">
+      {/* Personal Info */}
       <Section title="Personal Information">
-        <InfoRow
-          label="Name"
-          value={fullName}
-        />
-        <InfoRow
-          label="Email"
-          value={user.email}
-        />
+        <InfoRow label="Name" value={fullName} />
+        {email && <InfoRow label="Email" value={email} />}
       </Section>
 
-      <Divider />
+      <hr className="border-default-200" />
 
-      {/* Coach Info Section */}
+      {/* Coach Profile */}
       <Section title="Coach Profile">
-        {coach?.bio ? (
-          <Stack gap={4}>
-            <Text
-              c="dimmed"
-              size="xs"
-            >
-              Bio
-            </Text>
-            <Text
-              size="sm"
-              style={{whiteSpace: 'pre-wrap'}}
-            >
+        {coach.title ? (
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-default-400">Title</p>
+            <p className="text-sm text-foreground">{coach.title}</p>
+          </div>
+        ) : (
+          <EmptyState text="No title added yet" />
+        )}
+
+        {coach.bio ? (
+          <div className="flex flex-col gap-1 mt-3">
+            <p className="text-xs text-default-400">Bio</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">
               {coach.bio}
-            </Text>
-          </Stack>
+            </p>
+          </div>
         ) : (
           <EmptyState text="No bio added yet" />
         )}
-
-        {coach?.years_of_experience !== null && coach?.years_of_experience !== undefined && (
-          <Group
-            gap="xs"
-            mt="sm"
-          >
-            <ThemeIcon
-              color="blue"
-              radius="md"
-              size="sm"
-              variant="light"
-            >
-              <IconBriefcase size={14} />
-            </ThemeIcon>
-            <Text size="sm">
-              {coach.years_of_experience} {coach.years_of_experience === 1 ? 'year' : 'years'} of experience
-            </Text>
-          </Group>
-        )}
       </Section>
-
-      <Divider />
-
-      {/* Specialties Section */}
-      <Section title="Specialties">
-        {hasSpecialties ? (
-          <Group
-            gap="xs"
-            wrap="wrap"
-          >
-            {coach.specialties.map((specialty) => (
-              <Badge
-                key={specialty}
-                size="lg"
-                variant="light"
-              >
-                {specialty}
-              </Badge>
-            ))}
-          </Group>
-        ) : (
-          <EmptyState text="No specialties added yet" />
-        )}
-      </Section>
-
-      <Divider />
-
-      {/* Certifications Section */}
-      <Section title="Certifications">
-        {hasCertifications ? (
-          <Stack gap="xs">
-            {coach.certifications.map((cert) => (
-              <Group
-                gap="xs"
-                key={cert}
-                wrap="nowrap"
-              >
-                <ThemeIcon
-                  color="green"
-                  radius="md"
-                  size="sm"
-                  variant="light"
-                >
-                  <IconAward size={14} />
-                </ThemeIcon>
-                <Text size="sm">{cert}</Text>
-              </Group>
-            ))}
-          </Stack>
-        ) : (
-          <EmptyState text="No certifications added yet" />
-        )}
-      </Section>
-
-      <Divider />
-
-      {/* Social Links Section */}
-      <Section title="Social Links">
-        {hasSocialLinks ? (
-          <Stack gap="xs">
-            {coach?.instagram_url && (
-              <SocialLink
-                color="#E4405F"
-                icon={IconBrandInstagram}
-                label="Instagram"
-                url={coach.instagram_url}
-              />
-            )}
-            {coach?.facebook_url && (
-              <SocialLink
-                color="#1877F2"
-                icon={IconBrandFacebook}
-                label="Facebook"
-                url={coach.facebook_url}
-              />
-            )}
-            {coach?.youtube_url && (
-              <SocialLink
-                color="#FF0000"
-                icon={IconBrandYoutube}
-                label="YouTube"
-                url={coach.youtube_url}
-              />
-            )}
-            {coach?.x_url && (
-              <SocialLink
-                color="#000000"
-                icon={IconBrandX}
-                label="X (Twitter)"
-                url={coach.x_url}
-              />
-            )}
-          </Stack>
-        ) : (
-          <EmptyState text="No social links added yet" />
-        )}
-      </Section>
-    </Stack>
+    </div>
   );
 };
 
-/* Helper Components */
+/* ---- Helper Components ---- */
 
-interface SectionProps {
-  children: React.ReactNode;
-  title: string;
-}
-
-const Section: FC<SectionProps> = ({title, children}) => (
-  <Stack gap="sm">
-    <Text
-      c="dimmed"
-      fw={600}
-      size="xs"
-      tt="uppercase"
-    >
+const Section: FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <div className="flex flex-col gap-3">
+    <p className="text-xs font-semibold uppercase tracking-wide text-default-400">
       {title}
-    </Text>
+    </p>
     {children}
-  </Stack>
+  </div>
 );
 
-interface InfoRowProps {
-  label: string;
-  value: string;
-}
-
-const InfoRow: FC<InfoRowProps> = ({label, value}) => (
-  <Group
-    justify="space-between"
-    wrap="nowrap"
-  >
-    <Text
-      c="dimmed"
-      size="sm"
-    >
-      {label}
-    </Text>
-    <Text
-      fw={500}
-      size="sm"
-    >
-      {value}
-    </Text>
-  </Group>
+const InfoRow: FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between">
+    <span className="text-sm text-default-500">{label}</span>
+    <span className="text-sm font-medium text-foreground">{value}</span>
+  </div>
 );
 
-interface EmptyStateProps {
-  text: string;
-}
-
-const EmptyState: FC<EmptyStateProps> = ({text}) => (
-  <Text
-    c="dimmed"
-    fs="italic"
-    size="sm"
-  >
-    {text}
-  </Text>
-);
-
-interface SocialLinkProps {
-  color: string;
-  icon: React.ForwardRefExoticComponent<IconProps & React.RefAttributes<Icon>>;
-  label: string;
-  url: string;
-}
-
-const SocialLink: FC<SocialLinkProps> = ({icon: Icon, label, url, color}) => (
-  <Group
-    gap="sm"
-    justify="space-between"
-    wrap="nowrap"
-  >
-    <Group
-      gap="xs"
-      wrap="nowrap"
-    >
-      <ThemeIcon
-        color={color}
-        radius="md"
-        size="sm"
-        variant="light"
-      >
-        <Icon size={14} />
-      </ThemeIcon>
-      <Text size="sm">{label}</Text>
-    </Group>
-    <Anchor
-      c="blue"
-      href={url}
-      size="sm"
-      style={{
-        maxWidth: 180,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}
-      target="_blank"
-    >
-      <Group
-        gap={4}
-        wrap="nowrap"
-      >
-        <Text
-          size="xs"
-          style={{
-            maxWidth: 150,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {url.replace(/^https?:\/\//, '')}
-        </Text>
-        <IconExternalLink size={12} />
-      </Group>
-    </Anchor>
-  </Group>
+const EmptyState: FC<{ text: string }> = ({ text }) => (
+  <p className="text-sm italic text-default-400">{text}</p>
 );
 
 export default CoachProfileViewDrawer;

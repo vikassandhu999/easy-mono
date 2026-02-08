@@ -1,67 +1,62 @@
-import {humanizeError} from '@easy/error-parser';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {Button, Group, Loader, Stack, Text, Textarea, TextInput} from '@mantine/core';
-import {useEffect} from 'react';
-import {Controller, useForm} from 'react-hook-form';
-
-import useParamsDrawer from '@/hooks/useParamDrawer';
+import { humanizeError } from "@easy/error-parser";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  UpdateBusiness_zod,
-  UpdateBusinessProps,
-  useGetBusinessQuery,
-  useUpdateBusinessMutation,
-} from '@/services/business';
-import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {notifyError} from '@/utils/notification';
+  Button,
+  FieldError,
+  Input,
+  Label,
+  Modal,
+  Spinner,
+  Surface,
+  TextArea,
+  TextField,
+} from "@heroui/react";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
+
+import useParamsDrawer from "@/hooks/useParamDrawer";
+import {
+  BusinessUpdateForm_zod,
+  BusinessUpdateFormValues,
+  useGetMyBusinessQuery,
+  useUpdateMyBusinessMutation,
+} from "@/services/business";
+import { notifyError, notifySuccess } from "@/utils/notification";
 
 const BusinessEditDrawer = () => {
-  const {closeDrawer} = useParamsDrawer({});
+  const { closeDrawer } = useParamsDrawer({});
 
-  const {data: business, isLoading: isLoadingBusiness} = useGetBusinessQuery();
-  const [updateBusiness, {isLoading: isUpdating}] = useUpdateBusinessMutation();
+  const { data: business, isLoading: isLoadingBusiness } =
+    useGetMyBusinessQuery();
+  const [updateBusiness, { isLoading: isUpdating }] =
+    useUpdateMyBusinessMutation();
 
-  const {control, handleSubmit, reset} = useForm<UpdateBusinessProps>({
+  const { control, handleSubmit, reset } = useForm<BusinessUpdateFormValues>({
     defaultValues: {
-      name: '',
-      description: '',
-      email: '',
-      phone: '',
-      website: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
-      postal_code: '',
-      timezone: '',
+      name: "",
+      about: "",
     },
-    resolver: zodResolver(UpdateBusiness_zod),
+    resolver: zodResolver(BusinessUpdateForm_zod),
   });
 
   useEffect(() => {
     if (business) {
       reset({
-        name: business.name || '',
-        description: business.description || '',
-        email: business.email || '',
-        phone: business.phone || '',
-        website: business.website || '',
-        address: business.address || '',
-        city: business.city || '',
-        state: business.state || '',
-        country: business.country || '',
-        postal_code: business.postal_code || '',
-        timezone: business.timezone || '',
+        name: business.name || "",
+        about: business.about || "",
       });
     }
   }, [business, reset]);
 
-  const handleFormSubmit = async (values: UpdateBusinessProps) => {
+  const handleFormSubmit = async (values: BusinessUpdateFormValues) => {
     try {
-      const cleanedValues = Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [key, value === '' ? null : value]),
-      ) as UpdateBusinessProps;
+      const payload = {
+        name: values.name,
+        about: values.about === "" ? undefined : (values.about ?? undefined),
+      };
 
-      await updateBusiness(cleanedValues).unwrap();
+      await updateBusiness(payload).unwrap();
+      notifySuccess("Business updated successfully");
       closeDrawer();
     } catch (error) {
       const errMsg = humanizeError(error);
@@ -71,280 +66,132 @@ const BusinessEditDrawer = () => {
 
   if (isLoadingBusiness) {
     return (
-      <AutoDrawer
-        content={
-          <Stack
-            align="center"
-            justify="center"
-            py="xl"
-          >
-            <Loader size="sm" />
-            <Text
-              c="dimmed"
-              size="sm"
-            >
-              Loading business...
-            </Text>
-          </Stack>
-        }
-        onClose={closeDrawer}
-        title="Edit Business Profile"
-      />
+      <Modal>
+        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+          <Modal.Container placement="top" scroll="outside" size="lg">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading className="text-xl font-semibold">
+                  Edit Business Profile
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="flex flex-col items-center justify-center gap-3 py-8">
+                  <Spinner />
+                  <p className="text-sm text-default-500">
+                    Loading business...
+                  </p>
+                </div>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     );
   }
 
   if (!business) {
     return (
-      <AutoDrawer
-        content={
-          <Text
-            c="red"
-            size="sm"
-          >
-            Business not found
-          </Text>
-        }
-        onClose={closeDrawer}
-        title="Edit Business Profile"
-      />
+      <Modal>
+        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+          <Modal.Container placement="top" scroll="outside" size="lg">
+            <Modal.Dialog>
+              <Modal.Header>
+                <Modal.Heading className="text-xl font-semibold">
+                  Edit Business Profile
+                </Modal.Heading>
+              </Modal.Header>
+              <Modal.Body>
+                <p className="py-4 text-sm text-danger-600">
+                  Business not found
+                </p>
+              </Modal.Body>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     );
   }
 
   return (
-    <AutoDrawer
-      actions={
-        <Group w="100%">
-          <Button
-            flex={1}
-            loading={isUpdating}
-            onClick={handleSubmit(handleFormSubmit)}
-            radius="xl"
-            size="sm"
-            variant="filled"
-          >
-            Save
-          </Button>
-        </Group>
-      }
-      content={
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <Stack gap="lg">
-            {/* Basic Info Section */}
-            <Stack gap="xs">
-              <Text
-                c="dimmed"
-                fw={600}
-                size="xs"
-                tt="uppercase"
+    <Modal>
+      <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
+        <Modal.Container placement="top" scroll="outside" size="lg">
+          <Modal.Dialog>
+            <Modal.Header>
+              <Modal.Heading className="text-xl font-semibold">
+                Edit Business Profile
+              </Modal.Heading>
+              {business.handle && (
+                <p className="text-sm text-default-400">@{business.handle}</p>
+              )}
+            </Modal.Header>
+            <Modal.Body className="p-1">
+              <Surface variant="default">
+                <form
+                  className="flex flex-col gap-6 p-4"
+                  onSubmit={handleSubmit(handleFormSubmit)}
+                >
+                  {/* Business Name */}
+                  <Controller
+                    control={control}
+                    name="name"
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        isInvalid={fieldState.invalid}
+                        isRequired
+                      >
+                        <Label className="text-sm font-medium">
+                          Business Name
+                        </Label>
+                        <Input placeholder="e.g., FitIndia Coaching" />
+                        {fieldState.error?.message && (
+                          <FieldError>{fieldState.error.message}</FieldError>
+                        )}
+                      </TextField>
+                    )}
+                  />
+
+                  {/* About */}
+                  <Controller
+                    control={control}
+                    name="about"
+                    render={({ field, fieldState }) => (
+                      <TextField
+                        {...field}
+                        isInvalid={fieldState.invalid}
+                        value={field.value ?? ""}
+                      >
+                        <Label className="text-sm font-medium">About</Label>
+                        <TextArea
+                          placeholder="Tell clients about your business..."
+                          rows={4}
+                        />
+                        {fieldState.error?.message && (
+                          <FieldError>{fieldState.error.message}</FieldError>
+                        )}
+                      </TextField>
+                    )}
+                  />
+                </form>
+              </Surface>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button slot="close" variant="secondary">
+                Cancel
+              </Button>
+              <Button
+                isDisabled={isUpdating}
+                onPress={() => handleSubmit(handleFormSubmit)()}
               >
-                Basic Information
-              </Text>
-
-              <Controller
-                control={control}
-                name="name"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Business Name"
-                    placeholder="e.g., FitIndia Coaching"
-                    required
-                  />
-                )}
-              />
-
-              <Controller
-                control={control}
-                name="description"
-                render={({field, fieldState}) => (
-                  <Textarea
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Description"
-                    placeholder="Tell clients about your business..."
-                    rows={3}
-                    value={field.value || ''}
-                  />
-                )}
-              />
-            </Stack>
-
-            {/* Contact Section */}
-            <Stack gap="xs">
-              <Text
-                c="dimmed"
-                fw={600}
-                size="xs"
-                tt="uppercase"
-              >
-                Contact Information
-              </Text>
-
-              <Controller
-                control={control}
-                name="email"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Business Email"
-                    placeholder="contact@fitindia.in"
-                    type="email"
-                    value={field.value || ''}
-                  />
-                )}
-              />
-
-              <Controller
-                control={control}
-                name="phone"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Business Phone"
-                    placeholder="+91 98765 43210"
-                    type="tel"
-                    value={field.value || ''}
-                  />
-                )}
-              />
-
-              <Controller
-                control={control}
-                name="website"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Website"
-                    placeholder="https://fitindia.in"
-                    type="url"
-                    value={field.value || ''}
-                  />
-                )}
-              />
-            </Stack>
-
-            {/* Address Section */}
-            <Stack gap="xs">
-              <Text
-                c="dimmed"
-                fw={600}
-                size="xs"
-                tt="uppercase"
-              >
-                Address
-              </Text>
-
-              <Controller
-                control={control}
-                name="address"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    error={fieldState.error?.message}
-                    label="Street Address"
-                    placeholder="42, MG Road, Indiranagar"
-                    value={field.value || ''}
-                  />
-                )}
-              />
-
-              <Group grow>
-                <Controller
-                  control={control}
-                  name="city"
-                  render={({field, fieldState}) => (
-                    <TextInput
-                      {...field}
-                      error={fieldState.error?.message}
-                      label="City"
-                      placeholder="Bengaluru"
-                      value={field.value || ''}
-                    />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="state"
-                  render={({field, fieldState}) => (
-                    <TextInput
-                      {...field}
-                      error={fieldState.error?.message}
-                      label="State/Province"
-                      placeholder="Karnataka"
-                      value={field.value || ''}
-                    />
-                  )}
-                />
-              </Group>
-
-              <Group grow>
-                <Controller
-                  control={control}
-                  name="country"
-                  render={({field, fieldState}) => (
-                    <TextInput
-                      {...field}
-                      error={fieldState.error?.message}
-                      label="Country"
-                      placeholder="India"
-                      value={field.value || ''}
-                    />
-                  )}
-                />
-
-                <Controller
-                  control={control}
-                  name="postal_code"
-                  render={({field, fieldState}) => (
-                    <TextInput
-                      {...field}
-                      error={fieldState.error?.message}
-                      label="Postal Code"
-                      placeholder="560038"
-                      value={field.value || ''}
-                    />
-                  )}
-                />
-              </Group>
-            </Stack>
-
-            {/* Settings Section */}
-            <Stack gap="xs">
-              <Text
-                c="dimmed"
-                fw={600}
-                size="xs"
-                tt="uppercase"
-              >
-                Settings
-              </Text>
-
-              <Controller
-                control={control}
-                name="timezone"
-                render={({field, fieldState}) => (
-                  <TextInput
-                    {...field}
-                    description="e.g., Asia/Kolkata, Asia/Mumbai"
-                    error={fieldState.error?.message}
-                    label="Timezone"
-                    placeholder="Asia/Kolkata"
-                    value={field.value || ''}
-                  />
-                )}
-              />
-            </Stack>
-          </Stack>
-        </form>
-      }
-      onClose={closeDrawer}
-      title="Edit Business Profile"
-    />
+                {isUpdating ? "Saving..." : "Save"}
+              </Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 };
 

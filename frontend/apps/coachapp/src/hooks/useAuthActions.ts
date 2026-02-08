@@ -1,6 +1,6 @@
-import {useCallback} from 'react';
+import { useCallback } from "react";
 
-import {useLogoutMutation, useRefreshTokenMutation} from '@/services/auth';
+import { useExchangeTokenMutation } from "@/services/auth";
 import {
   logout as logoutAction,
   selectAuth,
@@ -12,9 +12,9 @@ import {
   setAuthSuccess,
   setUser,
   tokenStorage,
-} from '@/slices/authSlice';
-import {useAppDispatch, useAppSelector} from '@/store';
-import {notifyError} from '@/utils/notification';
+  type User,
+} from "@/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 /**
  * Hook for auth operations
@@ -26,14 +26,13 @@ export const useAuthActions = () => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isAuthenticating = useAppSelector(selectIsAuthenticating);
 
-  const [refreshTokenMutation] = useRefreshTokenMutation();
-  const [logoutMutation] = useLogoutMutation();
+  const [exchangeToken] = useExchangeTokenMutation();
 
   /**
    * Save auth tokens and user data after login/register
    */
   const saveAuthTokens = useCallback(
-    (accessToken: string, refreshToken: string, userData?: any) => {
+    (accessToken: string, refreshToken: string, userData?: User) => {
       dispatch(
         setAuthSuccess({
           accessToken,
@@ -49,21 +48,25 @@ export const useAuthActions = () => {
    * Update user data
    */
   const updateUser = useCallback(
-    (userData: any) => {
+    (userData: User) => {
       dispatch(setUser(userData));
     },
     [dispatch],
   );
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token using refresh token.
+   *
+   * Note: The axios interceptor in baseAPISlice already handles 401 retry
+   * with token refresh automatically. This hook-level refresh is used by
+   * AuthProvider for the initial silent refresh on app load.
    */
   const refreshAccessToken = useCallback(
     async (silent = false): Promise<boolean> => {
       const refreshToken = tokenStorage.getRefreshToken();
 
       if (!refreshToken) {
-        dispatch(setAuthError('No refresh token available'));
+        dispatch(setAuthError("No refresh token available"));
         return false;
       }
 
@@ -72,11 +75,11 @@ export const useAuthActions = () => {
       }
 
       try {
-        const response = await refreshTokenMutation({
+        const response = await exchangeToken({
+          grant_type: "refresh_token",
           refresh_token: refreshToken,
         }).unwrap();
 
-        // Save new tokens
         dispatch(
           setAuthSuccess({
             accessToken: response.access_token,
@@ -85,43 +88,22 @@ export const useAuthActions = () => {
         );
 
         return true;
-      } catch (error: any) {
-        console.error('Token refresh failed:', error);
-        dispatch(setAuthError('Session expired. Please login again.'));
-
-        // Clear tokens on refresh failure
+      } catch (error) {
+        console.error("Token refresh failed:", error);
+        dispatch(setAuthError("Session expired. Please login again."));
         tokenStorage.clearTokens();
-
         return false;
       }
     },
-    [dispatch, refreshTokenMutation],
+    [dispatch, exchangeToken],
   );
 
   /**
    * Logout user
    */
-  const logout = useCallback(
-    async (showNotification = true) => {
-      try {
-        // Call backend logout endpoint
-        await logoutMutation().unwrap();
-
-        // Clear Redux state and localStorage
-        dispatch(logoutAction());
-      } catch (error) {
-        console.error('Logout error:', error);
-
-        // Force logout even if API call fails
-        dispatch(logoutAction());
-
-        if (showNotification) {
-          notifyError('Error while logging out');
-        }
-      }
-    },
-    [dispatch, logoutMutation],
-  );
+  const logout = useCallback(() => {
+    dispatch(logoutAction());
+  }, [dispatch]);
 
   /**
    * Check if user is authenticated and tokens exist
@@ -163,7 +145,7 @@ export const useAuthActions = () => {
 };
 
 /**
- * Simple hook to get auth state
+ * Simple hook to get auth state (no mutations)
  */
 export const useAuth = () => {
   const auth = useAppSelector(selectAuth);

@@ -1,78 +1,59 @@
-import {z} from 'zod';
+import { z } from "zod";
 
-// Zod schemas for validation
-export const UpdateCoach_zod = z.object({
-  bio: z.string().max(500).optional(),
-  specialties: z.array(z.string()).optional(),
-  credentials: z.record(z.any()).optional(),
-});
-
-// User interface (nested in coach response)
-export interface User {
-  created_at: string;
-  email: string;
-  email_verified: boolean;
-  email_verified_at: null | string;
-  full_name: string;
-  id: string;
-  updated_at: string;
-}
-
-// Coach interface
+/* --------- Coach entity (matches API contract GET /v1/coaches/me) */
 export interface Coach {
   bio: null | string;
-  business_id: string;
-  created_at: string;
-  credentials: Record<string, any>;
   id: string;
-  specialties: string[];
-  status: string;
-  updated_at: string;
-  user?: User;
-  user_id: string;
-}
-
-// Client interface
-export interface Client {
-  business_id: string;
-  created_at: string;
-  email: string;
-  full_name: string;
-  id: string;
-  notes: null | string;
-  phone: null | string;
-  status: string;
-  updated_at: string;
-  user_id: null | string;
-}
-
-// Coach-Client Assignment interface
-export interface CoachClientAssignment {
-  assigned_at: string;
-  assigned_by_id: null | string;
-  client_id: string;
-  coach_id: string;
-  created_at: string;
-  id: string;
+  inserted_at: string;
+  name: null | string;
+  title: null | string;
   updated_at: string;
 }
 
-// API Response types
+/* --------- API response wrapper */
 export interface CoachResponse {
-  coach: Coach;
+  data: Coach;
 }
 
-export interface ClientsResponse {
-  clients: Client[];
+/* --------- PATCH /v1/coaches/me */
+export interface CoachUpdateRequest {
+  bio?: string;
+  name?: string;
+  title?: string;
 }
 
-export interface AssignmentResponse {
-  assignment: CoachClientAssignment;
+/* --------- Helper: split a "First Last" name into parts */
+export function parseCoachName(name: null | string): {
+  firstName: string;
+  lastName: string;
+} {
+  if (!name) return { firstName: "", lastName: "" };
+  const parts = name.trim().split(/\s+/);
+  return {
+    firstName: parts[0] ?? "",
+    lastName: parts.slice(1).join(" "),
+  };
 }
 
-export interface MessageResponse {
-  message: string;
-}
+/* --------- Form validation schema (Zod for zodResolver only) */
+export const CoachProfileForm_zod = z.object({
+  name: z.string().min(1, "Name is required").max(255),
+  title: z.string().max(127).optional().nullable().or(z.literal("")),
+  bio: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        return val.trim().split(/\s+/).filter(Boolean).length <= 200;
+      },
+      { message: "Bio cannot exceed 200 words" },
+    ),
+});
 
-// Type exports
-export type UpdateCoachProps = z.infer<typeof UpdateCoach_zod>;
+export interface CoachProfileFormValues {
+  bio?: null | string;
+  name: string;
+  title?: null | string;
+}

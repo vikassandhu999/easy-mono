@@ -1,4 +1,4 @@
-import {useDisclosure, useMediaQuery} from '@mantine/hooks';
+import {useMediaQuery} from '@mantine/hooks';
 import {ReactNode} from 'react';
 
 import {useKeyboardVisible} from '@/hooks/useKeyboardVisible';
@@ -16,11 +16,10 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({children, showNavigation}: MainLayoutProps) {
-  const [opened, {close}] = useDisclosure();
   const isMobile = useMediaQuery(`(max-width: 998px)`);
   const isKeyboardVisible = useKeyboardVisible();
 
-  const {handleLogout, handleNavigation} = useNavigationState(isMobile ? close : undefined);
+  const {handleNavigation} = useNavigationState();
 
   const showDesktopNavbar = !isMobile;
   const showMobileNavbar = isMobile && showNavigation;

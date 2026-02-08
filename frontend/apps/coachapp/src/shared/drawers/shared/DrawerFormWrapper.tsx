@@ -29,7 +29,6 @@ export function DrawerFormWrapper<T extends FormHandle>({
   formComponent,
   formRef,
   isLoading = false,
-  successMessage = 'Saved successfully',
   saveButtonText = 'Save',
   showSaveAndClose = false,
   fullScreen = false,

@@ -1,321 +1,158 @@
-import {
-  ActionIcon,
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  Group,
-  LoadingOverlay,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-  useMantineTheme,
-} from '@mantine/core';
-import {useDisclosure} from '@mantine/hooks';
-import {IconBell, IconBellOff, IconCalendar, IconChevronRight, IconUsers} from '@tabler/icons-react';
-import {useMemo} from 'react';
-import {useNavigate} from 'react-router';
+import { IconBell, IconBellOff, IconChevronRight } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
 
-import PageContentWrapper from '@/components/PageContentWrapper';
-import PageWrapper from '@/components/PageWrapper';
-import {useProfileQuery} from '@/services/auth';
-import AutoDrawer from '@/shared/AutoDrawer';
+import { Avatar, Button, Modal, Spinner } from "@heroui/react";
 
-import {QUICK_ACTIONS, QuickActionConfig} from '../config';
+import PageContentWrapper from "@/components/PageContentWrapper";
+import PageWrapper from "@/components/PageWrapper";
+import { useGetMyCoachQuery, parseCoachName } from "@/services/coach";
+import { selectUser } from "@/slices/authSlice";
+import { useAppSelector } from "@/store";
 
-interface StatCardProps {
-  color: string;
-  icon: React.ComponentType<{size?: number | string}>;
-  label: string;
-  value: number | string;
-}
-
-interface QuickActionItemProps {
-  action: QuickActionConfig;
-  onNavigate: (path: string) => void;
-  theme: any;
-}
+import { QUICK_ACTIONS, QuickActionConfig } from "../config";
+import { useState } from "react";
 
 export default function HomePage() {
-  const theme = useMantineTheme();
   const navigate = useNavigate();
-  const {data: profile, isLoading: profileLoading, isError: profileErr, refetch} = useProfileQuery();
-  const [notificationDrawerOpened, {open: openNotificationDrawer, close: closeNotificationDrawer}] =
-    useDisclosure(false);
+  const user = useAppSelector(selectUser);
+  const {
+    data: coach,
+    isLoading: coachLoading,
+    isError: coachErr,
+    refetch,
+  } = useGetMyCoachQuery();
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
 
-  const coachFirstName = profile ? profile.user.first_name : 'Coach';
-  const coachNameInitial = coachFirstName[0];
-  const isLoading = profileLoading;
-  const isError = profileErr;
-
-  const stats = useMemo(() => {
-    const coachStats = profile?.coach?.stats;
-    return [
-      {
-        color: 'blue',
-        icon: IconCalendar,
-        label: 'Total Plans',
-        value: coachStats?.total_plans ?? 0,
-      },
-      {
-        color: 'green',
-        icon: IconUsers,
-        label: 'Total Clients',
-        value: coachStats?.total_clients ?? 0,
-      },
-    ];
-  }, [profile?.coach?.stats]);
+  const { firstName } = parseCoachName(coach?.name ?? null);
+  const coachFirstName = firstName || user?.first_name || "Coach";
+  const coachNameInitial = coachFirstName[0]?.toUpperCase() ?? "C";
 
   return (
     <PageWrapper>
-      <LoadingOverlay
-        loaderProps={{
-          type: 'bars',
-        }}
-        visible={isLoading}
-      />
+      {coachLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+          <Spinner />
+        </div>
+      )}
       <PageContentWrapper>
-        {isError && (
-          <Alert
-            color="red"
-            radius="xl"
-            title="Something went wrong!"
-            variant="light"
-            withCloseButton={true}
-          >
-            <Group wrap="nowrap">
-              <Text flex={2}>Error while loading user profile. Please check internet connection.</Text>
-              <Button
-                color="red"
-                flex={1}
-                onClick={refetch}
-                size="compact-sm"
-                variant="light"
-              >
-                Retry
-              </Button>
-            </Group>
-          </Alert>
-        )}
-        <Stack gap="lg">
-          <Group
-            gap="md"
-            justify="space-between"
-            mt="md"
-            wrap="nowrap"
-          >
-            <Group>
-              <Avatar
-                color="blue"
-                radius="xl"
-                size="lg"
-                variant="outline"
-              >
-                {coachNameInitial}
-              </Avatar>
-              <Stack gap={4}>
-                <Title
-                  order={2}
-                  size="h5"
-                >
-                  Hello, {coachFirstName}
-                </Title>
-                <Text
-                  c="dimmed"
-                  size="sm"
-                >
-                  Welcome back
-                </Text>
-              </Stack>
-            </Group>
-
-            <ActionIcon
-              color="cyan"
-              onClick={openNotificationDrawer}
-              size="xl"
-              variant="light"
+        {coachErr && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3">
+            <p className="flex-1 text-sm text-danger-700">
+              Error loading profile. Please check your connection.
+            </p>
+            <Button
+              className="shrink-0"
+              onPress={() => refetch()}
+              size="sm"
+              variant="secondary"
             >
-              <IconBell />
-            </ActionIcon>
-          </Group>
+              Retry
+            </Button>
+          </div>
+        )}
+        <div className="flex flex-col gap-6">
+          {/* Greeting */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar size="lg">
+                <Avatar.Fallback className="bg-blue-100 text-blue-700 font-semibold">
+                  {coachNameInitial}
+                </Avatar.Fallback>
+              </Avatar>
+              <div className="flex flex-col gap-0.5">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Hello, {coachFirstName}
+                </h2>
+                <p className="text-sm text-default-500">Welcome back</p>
+              </div>
+            </div>
 
-          <SimpleGrid
-            cols={{base: 2, md: 2, sm: 2}}
-            spacing="md"
-          >
-            {stats.map((stat) => (
-              <StatCard
-                color={stat.color}
-                icon={stat.icon}
-                key={stat.label}
-                label={stat.label}
-                value={stat.value}
-              />
-            ))}
-          </SimpleGrid>
+            <button
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition-colors hover:bg-cyan-100"
+              onClick={() => setNotificationDrawerOpen(true)}
+              type="button"
+            >
+              <IconBell size={22} />
+            </button>
+          </div>
 
-          <Card p="md">
-            <Stack gap="xs">
-              <Text
-                c="dimmed"
-                fw={600}
-                mb="xs"
-                size="xs"
-                tt="uppercase"
-              >
-                Quick actions
-              </Text>
-
+          {/* Quick Actions */}
+          <div className="rounded-xl border border-default-200 bg-white p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-default-400">
+              Quick actions
+            </p>
+            <div className="flex flex-col gap-1">
               {QUICK_ACTIONS.map((action) => (
                 <QuickActionItem
                   action={action}
                   key={action.id}
                   onNavigate={navigate}
-                  theme={theme}
                 />
               ))}
-            </Stack>
-          </Card>
-        </Stack>
+            </div>
+          </div>
+        </div>
       </PageContentWrapper>
 
       {/* Notification Drawer */}
-      {notificationDrawerOpened && (
-        <AutoDrawer
-          content={
-            <Stack
-              align="center"
-              gap="md"
-              justify="center"
-              py="xl"
-            >
-              <ThemeIcon
-                color="gray"
-                radius="xl"
-                size={64}
-                variant="light"
-              >
-                <IconBellOff size={32} />
-              </ThemeIcon>
-              <Text
-                c="dimmed"
-                size="sm"
-                ta="center"
-              >
-                No notifications yet
-              </Text>
-              <Text
-                c="dimmed"
-                size="xs"
-                ta="center"
-              >
-                We'll notify you when something important happens.
-              </Text>
-            </Stack>
-          }
-          onClose={closeNotificationDrawer}
-          title="Notifications"
-        />
+      {notificationDrawerOpen && (
+        <Modal>
+          <Modal.Backdrop
+            isDismissable
+            isOpen
+            onOpenChange={() => setNotificationDrawerOpen(false)}
+          >
+            <Modal.Container placement="top" scroll="outside" size="lg">
+              <Modal.Dialog>
+                <Modal.Header>
+                  <Modal.Heading className="text-xl font-semibold">
+                    Notifications
+                  </Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  <div className="flex flex-col items-center gap-4 py-8">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-default-100">
+                      <IconBellOff className="text-default-400" size={32} />
+                    </div>
+                    <p className="text-sm text-default-500 text-center">
+                      No notifications yet
+                    </p>
+                    <p className="text-xs text-default-400 text-center">
+                      We'll notify you when something important happens.
+                    </p>
+                  </div>
+                </Modal.Body>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
       )}
     </PageWrapper>
   );
 }
 
-function StatCard({color, icon: Icon, label, value}: StatCardProps) {
+function QuickActionItem({
+  action,
+  onNavigate,
+}: {
+  action: QuickActionConfig;
+  onNavigate: (path: string) => void;
+}) {
   return (
-    <Card
-      p="lg"
-      radius="lg"
-    >
-      <Stack gap="xs">
-        <ThemeIcon
-          color={color}
-          radius="md"
-          size="lg"
-          variant="light"
-        >
-          <Icon size={20} />
-        </ThemeIcon>
-        <div>
-          <Text
-            fw={700}
-            size="xl"
-          >
-            {value}
-          </Text>
-          <Text
-            c="dimmed"
-            mt={4}
-            size="sm"
-          >
-            {label}
-          </Text>
-        </div>
-      </Stack>
-    </Card>
-  );
-}
-
-function QuickActionItem({action, onNavigate, theme}: QuickActionItemProps) {
-  return (
-    <Box
-      component="button"
+    <button
+      className="flex w-full items-center justify-between rounded-lg bg-transparent px-3 py-3 text-left transition-colors hover:bg-default-100 active:bg-default-200"
       onClick={() => onNavigate(action.path)}
-      style={{
-        background: 'transparent',
-        cursor: 'pointer',
-        padding: 0,
-        textAlign: 'left',
-        width: '100%',
-        border: 'none',
-        color: theme.colors.gray[6],
-      }}
       type="button"
     >
-      <Group
-        gap="md"
-        justify="space-between"
-        p="md"
-        style={(themeObj) => ({
-          borderRadius: themeObj.radius.sm,
-          transition: 'background-color 150ms ease',
-        })}
-        styles={{
-          root: {
-            '&:hover': {
-              backgroundColor: 'var(--mantine-color-gray-0)',
-            },
-          },
-        }}
-        wrap="nowrap"
-      >
-        <Group
-          gap="md"
-          wrap="nowrap"
-        >
-          <ThemeIcon
-            color="gray"
-            radius="md"
-            size="md"
-            variant="light"
-          >
-            <action.icon size={18} />
-          </ThemeIcon>
-          <Text
-            fw={500}
-            size="sm"
-          >
-            {action.label}
-          </Text>
-        </Group>
-        <IconChevronRight
-          color="var(--mantine-color-gray-6)"
-          size={18}
-        />
-      </Group>
-    </Box>
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-default-100 text-default-500">
+          <action.icon size={18} />
+        </div>
+        <span className="text-sm font-medium text-foreground">
+          {action.label}
+        </span>
+      </div>
+      <IconChevronRight className="text-default-400" size={18} />
+    </button>
   );
 }

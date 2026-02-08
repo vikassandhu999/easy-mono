@@ -11,7 +11,7 @@ import {notifyError} from '@/utils/notification';
 const TrainingPlanCreateDrawer = () => {
   const {closeDrawer, openDrawer, isDrawerOpen} = useParamsDrawer({});
   const trainingPlanFormRef = useRef<TrainingPlanFormHandle<'create'>>(null);
-  const [createPlan, {isLoading}] = useCreateTrainingPlan();
+  const [createPlan] = useCreateTrainingPlan();
 
   const handleSubmit = async () => {
     await trainingPlanFormRef.current?.submit();

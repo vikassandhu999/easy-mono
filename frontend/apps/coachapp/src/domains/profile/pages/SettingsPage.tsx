@@ -1,21 +1,5 @@
 import {
-  ActionIcon,
-  Avatar,
-  Badge,
-  Box,
-  CopyButton,
-  Divider,
-  Group,
-  Stack,
-  Text,
-  ThemeIcon,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
-import {modals} from '@mantine/modals';
-import {
   IconBuilding,
-  IconCalendar,
   IconCheck,
   IconChevronRight,
   IconCopy,
@@ -23,403 +7,275 @@ import {
   IconExternalLink,
   IconShare,
   IconUser,
-  IconUsers,
-} from '@tabler/icons-react';
-import {FC, useMemo} from 'react';
-import {Link, useNavigate} from 'react-router';
+} from "@tabler/icons-react";
+import { FC, useState } from "react";
+import { Link } from "react-router";
 
-import PageContentWrapper from '@/components/PageContentWrapper';
-import PageWrapper from '@/components/PageWrapper';
-import {DRAWER_KEYS} from '@/configs';
-import {useAuthActions} from '@/hooks/useAuthActions';
-import useParamsDrawer from '@/hooks/useParamDrawer';
-import {useProfileQuery, UserProfileResponse} from '@/services/auth';
-import {useGetBusinessSettingsQuery} from '@/services/settings/settings';
-import {notifyInfo, notifySuccess} from '@/utils/notification';
+import { Avatar, Button, Spinner } from "@heroui/react";
 
-import {LEGAL_LINKS, LegalLink} from '../config/ui';
-import classes from './styles.module.css';
+import PageContentWrapper from "@/components/PageContentWrapper";
+import PageWrapper from "@/components/PageWrapper";
+import { DRAWER_KEYS } from "@/configs";
+import { useAuthActions } from "@/hooks/useAuthActions";
+import useParamsDrawer from "@/hooks/useParamDrawer";
+import { useGetMyCoachQuery } from "@/services/coach";
+import { useGetBusinessSettingsQuery } from "@/services/settings/settings";
+import { selectUser } from "@/slices/authSlice";
+import { useAppSelector } from "@/store";
+import { notifyInfo, notifySuccess } from "@/utils/notification";
+
+import { LEGAL_LINKS, LegalLink } from "../config/ui";
 
 export default function SettingsPage() {
-  const navigate = useNavigate();
-  const {logout} = useAuthActions();
-  const {openDrawer} = useParamsDrawer({});
-  const {data: profile, isLoading: profileLoading} = useProfileQuery();
-  const {data: settings} = useGetBusinessSettingsQuery();
+  const { logout } = useAuthActions();
+  const { openDrawer } = useParamsDrawer({});
+  const user = useAppSelector(selectUser);
+  const { data: coach, isLoading: coachLoading } = useGetMyCoachQuery();
+  const { data: settings } = useGetBusinessSettingsQuery();
+
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
-    modals.openConfirmModal({
-      title: 'Logout',
-      children: <Text size="sm">Are you sure you want to logout from your account?</Text>,
-      labels: {confirm: 'Logout', cancel: 'Cancel'},
-      confirmProps: {color: 'red'},
-      cancelProps: {variant: 'light'},
-      centered: true,
-      onConfirm: () => logout(),
-    });
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
   };
 
   const handleSettingClick = (id: string) => {
     switch (id) {
-      case 'profile':
+      case "profile":
         openDrawer(DRAWER_KEYS.COACH_PROFILE_VIEW);
         break;
-      case 'business':
+      case "business":
         openDrawer(DRAWER_KEYS.BUSINESS_EDIT);
         break;
       default:
-        notifyInfo('This feature is coming soon!', {title: 'Coming Soon'});
+        notifyInfo("This feature is coming soon!", { title: "Coming Soon" });
         break;
     }
   };
 
-  if (profileLoading) {
+  if (coachLoading) {
     return (
       <PageWrapper>
         <PageContentWrapper>
-          <div className={classes.loadingState}>
-            <Text c="dimmed">Loading profile...</Text>
+          <div className="flex items-center justify-center py-16">
+            <Spinner />
           </div>
         </PageContentWrapper>
       </PageWrapper>
     );
   }
 
+  const displayName =
+    coach?.name ?? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim();
+  const displayEmail = user?.email ?? "";
+  const initials = getInitials(displayName);
+
   return (
     <PageWrapper>
       <PageContentWrapper>
-        <Stack gap="lg">
+        <div className="flex flex-col gap-6">
           {/* Header */}
-          {profile && <Header profile={profile} />}
+          <div className="flex items-center gap-3">
+            <Avatar size="lg">
+              <Avatar.Fallback className="bg-blue-100 text-blue-700 font-semibold">
+                {initials}
+              </Avatar.Fallback>
+            </Avatar>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <p className="text-lg font-semibold text-foreground truncate">
+                {displayName}
+              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-default-500 truncate">
+                  {displayEmail}
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Share Page Card */}
-          {settings?.public_join_url && <SharePageCard joinUrl={settings.public_join_url} />}
-
-          {/* Stats Row */}
-          {profile && (
-            <StatsRow
-              navigate={navigate}
-              profile={profile}
-            />
+          {settings?.public_join_url && (
+            <SharePageCard joinUrl={settings.public_join_url} />
           )}
 
           {/* Settings List */}
           <SettingsList onItemClick={handleSettingClick} />
 
-          {/* Logout Button */}
-          <UnstyledButton
-            className={classes.logoutButton}
-            onClick={handleLogout}
-          >
-            Logout
-          </UnstyledButton>
+          {/* Logout */}
+          {showLogoutConfirm ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-danger-200 bg-danger-50 p-4">
+              <p className="text-sm text-danger-700 font-medium">
+                Are you sure you want to logout?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 bg-danger-600 text-white"
+                  onPress={confirmLogout}
+                  size="sm"
+                >
+                  Logout
+                </Button>
+                <Button
+                  className="flex-1"
+                  onPress={() => setShowLogoutConfirm(false)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="w-full rounded-xl border border-danger-300 bg-transparent px-4 py-3 text-sm font-semibold text-danger-600 transition-colors hover:bg-danger-50 active:bg-danger-100"
+              onClick={handleLogout}
+              type="button"
+            >
+              Logout
+            </button>
+          )}
 
-          <Divider />
+          <hr className="border-default-200" />
 
           {/* Legal Links */}
           <LegalLinks links={LEGAL_LINKS} />
-        </Stack>
+        </div>
       </PageContentWrapper>
     </PageWrapper>
   );
 }
 
-/*
-     PAGE SPECIFIC COMPONENTS
-*/
+/* ---- Helpers ---- */
 
-interface HeaderProps {
-  profile: UserProfileResponse;
+function getInitials(name: string): string {
+  const parts = name.trim().split(" ");
+  if (parts.length === 0 || !parts[0]) return "";
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  const firstInitial = parts[0]?.[0] ?? "";
+  const lastInitial = parts[parts.length - 1]?.[0] ?? "";
+  return (firstInitial + lastInitial).toUpperCase();
 }
 
-const Header: FC<HeaderProps> = ({profile}) => {
-  const getInitials = (name: string): string => {
-    const parts = name.trim().split(' ');
-    if (parts.length === 0 || !parts[0]) {
-      return '';
-    }
-    if (parts.length === 1) {
-      return parts[0].substring(0, 2).toUpperCase();
-    }
-    const firstInitial = parts[0]?.[0] ?? '';
-    const lastInitial = parts[parts.length - 1]?.[0] ?? '';
-    return (firstInitial + lastInitial).toUpperCase();
-  };
-
-  const fullName = `${profile.user.first_name} ${profile.user.last_name}`;
-
-  return (
-    <Group
-      gap="md"
-      wrap="nowrap"
-    >
-      <Avatar
-        color="blue"
-        name={fullName}
-        radius="xl"
-        size="lg"
-      >
-        {getInitials(profile.user.first_name)}
-      </Avatar>
-      <Stack gap={2}>
-        <Text
-          fw={600}
-          size="lg"
-        >
-          {fullName}
-        </Text>
-        <Group gap="xs">
-          <Text
-            c="dimmed"
-            size="sm"
-          >
-            {profile.user.email}
-          </Text>
-          <Badge
-            color={profile.user.email_verified ? 'green' : 'gray'}
-            size="xs"
-            variant="light"
-          >
-            {profile.user.email_verified ? 'Verified' : 'Not Verified'}
-          </Badge>
-        </Group>
-      </Stack>
-    </Group>
-  );
-};
-
-interface StatsRowProps {
-  navigate: (path: string) => void;
-  profile: UserProfileResponse;
-}
-
-const StatsRow: FC<StatsRowProps> = ({profile, navigate}) => {
-  const stats = useMemo(() => {
-    const coachStats = profile?.coach?.stats;
-    return [
-      {
-        color: 'blue',
-        icon: IconCalendar,
-        label: 'Plans',
-        value: coachStats?.total_plans ?? 0,
-        onClick: () => navigate('/plans'),
-      },
-      {
-        color: 'green',
-        icon: IconUsers,
-        label: 'Clients',
-        value: coachStats?.total_clients ?? 0,
-        onClick: () => navigate('/clients'),
-      },
-    ];
-  }, [profile?.coach?.stats, navigate]);
-
-  return (
-    <Group
-      gap="md"
-      grow
-    >
-      {stats.map((stat) => (
-        <UnstyledButton
-          key={stat.label}
-          onClick={stat.onClick}
-          style={{
-            padding: 'var(--mantine-spacing-md)',
-            borderRadius: 'var(--mantine-radius-md)',
-            border: '1px solid var(--mantine-color-gray-2)',
-            background: 'white',
-          }}
-        >
-          <Group
-            gap="sm"
-            wrap="nowrap"
-          >
-            <ThemeIcon
-              color={stat.color}
-              radius="md"
-              size="lg"
-              variant="light"
-            >
-              <stat.icon size={18} />
-            </ThemeIcon>
-            <Stack gap={0}>
-              <Text
-                fw={700}
-                lh={1.2}
-                size="lg"
-              >
-                {stat.value}
-              </Text>
-              <Text
-                c="dimmed"
-                size="xs"
-              >
-                {stat.label}
-              </Text>
-            </Stack>
-          </Group>
-        </UnstyledButton>
-      ))}
-    </Group>
-  );
-};
+/* ---- Sub-components ---- */
 
 const SETTINGS_ITEMS = [
-  {id: 'profile', label: ' My Profile', icon: IconUser, color: 'blue'},
-  {id: 'business', label: 'Business Profile', icon: IconBuilding, color: 'green'},
-  {id: 'subscription', label: 'Subscription', icon: IconCreditCard, color: 'violet'},
+  {
+    id: "profile",
+    label: "My Profile",
+    icon: IconUser,
+    color: "text-blue-600 bg-blue-100",
+  },
+  {
+    id: "business",
+    label: "Business Profile",
+    icon: IconBuilding,
+    color: "text-green-600 bg-green-100",
+  },
+  {
+    id: "subscription",
+    label: "Subscription",
+    icon: IconCreditCard,
+    color: "text-violet-600 bg-violet-100",
+  },
 ];
 
-interface SettingsListProps {
-  onItemClick: (id: string) => void;
-}
-
-const SettingsList: FC<SettingsListProps> = ({onItemClick}) => {
+const SettingsList: FC<{ onItemClick: (id: string) => void }> = ({
+  onItemClick,
+}) => {
   return (
-    <Box
-      style={{
-        borderRadius: 'var(--mantine-radius-md)',
-        border: '1px solid var(--mantine-color-gray-2)',
-        overflow: 'hidden',
-        background: 'white',
-      }}
-    >
+    <div className="rounded-xl border border-default-200 bg-white overflow-hidden">
       {SETTINGS_ITEMS.map((item, index) => (
-        <UnstyledButton
+        <button
+          className="flex w-full items-center justify-between px-4 py-3.5 bg-transparent border-none cursor-pointer transition-colors hover:bg-default-100 active:bg-default-200 text-left"
           key={item.id}
           onClick={() => onItemClick(item.id)}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            padding: 'var(--mantine-spacing-md)',
-            borderBottom: index < SETTINGS_ITEMS.length - 1 ? '1px solid var(--mantine-color-gray-2)' : 'none',
+            borderBottom:
+              index < SETTINGS_ITEMS.length - 1
+                ? "1px solid var(--heroui-default-200, #e4e4e7)"
+                : "none",
           }}
+          type="button"
         >
-          <Group
-            gap="sm"
-            wrap="nowrap"
-          >
-            <ThemeIcon
-              color={item.color}
-              radius="md"
-              size="md"
-              variant="light"
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.color}`}
             >
               <item.icon size={16} />
-            </ThemeIcon>
-            <Text
-              fw={500}
-              size="sm"
-            >
+            </div>
+            <span className="text-sm font-medium text-foreground">
               {item.label}
-            </Text>
-          </Group>
-          <IconChevronRight
-            color="var(--mantine-color-gray-5)"
-            size={16}
-          />
-        </UnstyledButton>
+            </span>
+          </div>
+          <IconChevronRight className="text-default-400" size={16} />
+        </button>
       ))}
-    </Box>
+    </div>
   );
 };
 
-const SharePageCard: FC<{joinUrl: string}> = ({joinUrl}) => {
-  const handleOpenPage = () => {
-    window.open(joinUrl, '_blank');
+const SharePageCard: FC<{ joinUrl: string }> = ({ joinUrl }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(joinUrl);
+      setCopied(true);
+      notifySuccess("Link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: silent fail
+    }
+  };
+
+  const handleOpen = () => {
+    window.open(joinUrl, "_blank");
   };
 
   return (
-    <Box
-      p="md"
-      style={{
-        borderRadius: 'var(--mantine-radius-md)',
-        background: 'linear-gradient(135deg, var(--mantine-color-violet-6) 0%, var(--mantine-color-indigo-6) 100%)',
-      }}
-    >
-      <Group
-        justify="space-between"
-        wrap="nowrap"
-      >
-        <Group
-          gap="sm"
-          wrap="nowrap"
-        >
-          <ThemeIcon
-            color="white"
-            radius="md"
-            size="lg"
-            variant="transparent"
+    <div className="rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center">
+            <IconShare className="text-white" size={20} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">Share Your Page</p>
+            <p className="text-xs text-white/70">Invite clients to join</p>
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-white transition-colors hover:bg-white/20"
+            onClick={handleCopy}
+            type="button"
           >
-            <IconShare size={20} />
-          </ThemeIcon>
-          <Stack gap={0}>
-            <Text
-              c="white"
-              fw={600}
-              size="sm"
-            >
-              Share Your Page
-            </Text>
-            <Text
-              c="rgba(255,255,255,0.7)"
-              size="xs"
-            >
-              Invite clients to join
-            </Text>
-          </Stack>
-        </Group>
-        <Group gap="xs">
-          <CopyButton
-            timeout={2000}
-            value={joinUrl}
+            {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+          </button>
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-white transition-colors hover:bg-white/20"
+            onClick={handleOpen}
+            type="button"
           >
-            {({copied, copy}) => (
-              <Tooltip label={copied ? 'Copied!' : 'Copy link'}>
-                <ActionIcon
-                  color="white"
-                  onClick={() => {
-                    copy();
-                    notifySuccess('Link copied to clipboard!');
-                  }}
-                  radius="md"
-                  size="lg"
-                  variant="subtle"
-                >
-                  {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </CopyButton>
-          <Tooltip label="Open page">
-            <ActionIcon
-              color="white"
-              onClick={handleOpenPage}
-              radius="md"
-              size="lg"
-              variant="subtle"
-            >
-              <IconExternalLink size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
-    </Box>
+            <IconExternalLink size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-interface LegalLinksProps {
-  links: LegalLink[];
-}
-
-const LegalLinks: FC<LegalLinksProps> = ({links}) => {
+const LegalLinks: FC<{ links: LegalLink[] }> = ({ links }) => {
   return (
-    <div className={classes.legalLinks}>
-      {links.map(({id, label, link}) => (
+    <div className="flex flex-wrap gap-3 py-2">
+      {links.map(({ id, label, link }) => (
         <Link
-          className={classes.legalLink}
+          className="text-xs font-medium uppercase tracking-wide text-default-400 no-underline transition-colors hover:text-default-600"
           key={id}
           to={link}
         >

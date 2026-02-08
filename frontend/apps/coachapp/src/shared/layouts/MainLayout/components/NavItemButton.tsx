@@ -1,4 +1,4 @@
-import {Box, Group} from '@mantine/core';
+import {Box} from '@mantine/core';
 import {useLocation} from 'react-router';
 
 import {NavItem} from '../types';

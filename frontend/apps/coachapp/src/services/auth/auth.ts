@@ -1,93 +1,71 @@
-import {baseAPISlice} from '../baseAPISlice';
+import { baseAPISlice } from "../baseAPISlice";
 import {
-  CheckEmailRequest,
-  CheckEmailResponse,
-  CheckHandleRequest,
-  CheckHandleResponse,
-  RefreshTokenRequest,
-  RefreshTokenResponse,
-  type RegisterRequest,
-  type RegisterResponse,
-  SendLoginCodeRequest,
-  SendLoginCodeResponse,
-  UpdateCoachProfileRequest,
-  UpdateCoachProfileResponse,
-  UserProfileResponse,
-  VerifyLoginRequest,
-  VerifyLoginResponse,
-  VerifyRegisterationRequest,
-  VerifyRegisterationResponse,
-} from './auth_definition';
+  type AuthTokenResponse,
+  type MessageResponse,
+  type SendOtpRequest,
+  type SignupRequest,
+  type SignupResponse,
+  type TokenOtpRequest,
+  type TokenRefreshRequest,
+  type VerifyOtpRequest,
+  type VerifyTokenRequest,
+} from "./auth_definition";
 
 export const authApi = baseAPISlice.injectEndpoints({
   endpoints: (build) => ({
-    sendLoginCode: build.mutation<SendLoginCodeResponse, SendLoginCodeRequest>({
+    /**
+     * POST /v1/auth/signup
+     * Sign up a new user. Returns user stub with confirmation_sent_at.
+     */
+    signup: build.mutation<SignupResponse, SignupRequest>({
       query: (body) => ({
-        url: '/api/auth/send-login-code',
-        method: 'post',
+        url: "/v1/auth/signup",
+        method: "post",
         data: body,
       }),
     }),
-    verifyLogin: build.mutation<VerifyLoginResponse, VerifyLoginRequest>({
+
+    /**
+     * POST /v1/auth/otp
+     * Send an OTP to the user's email for authentication or email confirmation.
+     */
+    sendOtp: build.mutation<MessageResponse, SendOtpRequest>({
       query: (body) => ({
-        url: '/api/auth/token',
-        method: 'post',
+        url: "/v1/auth/otp",
+        method: "post",
         data: body,
       }),
     }),
-    refreshToken: build.mutation<RefreshTokenResponse, RefreshTokenRequest>({
+
+    /**
+     * POST /v1/auth/verify
+     * Verify a token (email confirmation link) or OTP.
+     * Accepts either { token } or { email, otp }.
+     */
+    verify: build.mutation<
+      AuthTokenResponse,
+      VerifyTokenRequest | VerifyOtpRequest
+    >({
       query: (body) => ({
-        url: '/api/auth/token',
-        method: 'post',
+        url: "/v1/auth/verify",
+        method: "post",
         data: body,
       }),
     }),
-    register: build.mutation<RegisterResponse, RegisterRequest>({
+
+    /**
+     * POST /v1/auth/token
+     * Exchange credentials for access/refresh tokens.
+     * Accepts either TokenOtpRequest (grant_type: "otp") or
+     * TokenRefreshRequest (grant_type: "refresh_token").
+     */
+    exchangeToken: build.mutation<
+      AuthTokenResponse,
+      TokenOtpRequest | TokenRefreshRequest
+    >({
       query: (body) => ({
-        url: '/api/auth/register',
-        method: 'post',
-        data: body,
-      }),
-    }),
-    verifyRegiration: build.mutation<VerifyRegisterationResponse, VerifyRegisterationRequest>({
-      query: (body) => ({
-        url: '/api/auth/verify',
-        method: 'post',
-        data: body,
-      }),
-    }),
-    profile: build.query<UserProfileResponse, void>({
-      query: () => ({
-        url: '/api/auth/me',
-        method: 'get',
-      }),
-      providesTags: ['Profile'],
-    }),
-    logout: build.mutation<{status: string}, void>({
-      query: () => ({
-        url: '/api/auth/logout',
-        method: 'post',
-      }),
-    }),
-    updateCoachProfile: build.mutation<UpdateCoachProfileResponse, UpdateCoachProfileRequest>({
-      query: (body) => ({
-        url: '/api/coach/profile',
-        method: 'patch',
-        data: body,
-      }),
-      invalidatesTags: ['Coach', 'Profile'],
-    }),
-    checkEmail: build.mutation<CheckEmailResponse, CheckEmailRequest>({
-      query: (body) => ({
-        url: '/api/auth/check-email',
-        method: 'post',
-        data: body,
-      }),
-    }),
-    checkHandle: build.mutation<CheckHandleResponse, CheckHandleRequest>({
-      query: (body) => ({
-        url: '/api/auth/check-handle',
-        method: 'post',
+        url: "/v1/auth/token",
+        method: "post",
         data: body,
       }),
     }),
@@ -96,14 +74,8 @@ export const authApi = baseAPISlice.injectEndpoints({
 });
 
 export const {
-  useLogoutMutation,
-  useRefreshTokenMutation,
-  useRegisterMutation,
-  useVerifyRegirationMutation,
-  useSendLoginCodeMutation,
-  useVerifyLoginMutation,
-  useProfileQuery,
-  useUpdateCoachProfileMutation,
-  useCheckEmailMutation,
-  useCheckHandleMutation,
+  useExchangeTokenMutation,
+  useSendOtpMutation,
+  useSignupMutation,
+  useVerifyMutation,
 } = authApi;

@@ -1,6 +1,6 @@
 import {humanizeError} from '@easy/error-parser';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Loader, Stack, TagsInput, Text, Textarea, TextInput, Title} from '@mantine/core';
+import {Loader, Stack, TagsInput, Text, Textarea, TextInput} from '@mantine/core';
 import {useEffect, useImperativeHandle} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 

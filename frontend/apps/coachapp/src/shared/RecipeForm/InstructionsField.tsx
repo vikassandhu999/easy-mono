@@ -1,11 +1,9 @@
-import {ActionIcon, Text, TextInput} from '@mantine/core';
+import {Button, FieldError, Input, Text, TextField} from '@heroui/react';
 import {IconGripVertical, IconPlus, IconTrash} from '@tabler/icons-react';
-import {FC, useCallback, useEffect, useRef, useState} from 'react';
-import {UseFormReturn} from 'react-hook-form';
+import {FC, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Controller, UseFormReturn} from 'react-hook-form';
 
 import {CreateRecipeForm} from '@/services/recipes';
-
-import classes from './styles.module.css';
 
 type InstructionsFieldProps = {
   form: UseFormReturn<CreateRecipeForm, any, CreateRecipeForm>;
@@ -21,7 +19,8 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
     formState: {errors},
   } = form;
 
-  const instructions = watch('instructions') || [];
+  const watchedInstructions = watch('instructions');
+  const instructions = useMemo(() => watchedInstructions ?? [], [watchedInstructions]);
 
   // Helper functions to manage the string array
   const append = useCallback(
@@ -143,84 +142,84 @@ const InstructionsField: FC<InstructionsFieldProps> = ({form}) => {
   };
 
   return (
-    <div className={classes.section}>
-      <div className={classes.sectionHeader}>
-        <div className={classes.sectionTitleRow}>
-          <span className={classes.sectionTitle}>Instructions</span>
-          {instructions.length > 0 && (
-            <Text
-              c="dimmed"
-              size="xs"
-            >
-              {instructions.length} {instructions.length === 1 ? 'step' : 'steps'}
-            </Text>
-          )}
-        </div>
+    <div className="rounded-2xl border border-default-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <Text className="text-sm font-semibold text-default-900">Instructions</Text>
+        {instructions.length > 0 && (
+          <Text className="text-xs text-default-500">
+            {instructions.length} {instructions.length === 1 ? 'step' : 'steps'}
+          </Text>
+        )}
       </div>
 
-      <div className={classes.instructionsList}>
+      <div className="mt-4 space-y-3">
         {instructions.map((_, idx) => (
           <div
-            className={`${classes.instructionStep} ${draggedIndex === idx ? classes.instructionStepDragging : ''} ${dragOverIndex === idx ? classes.instructionStepDragOver : ''}`}
+            className={`flex items-start gap-3 rounded-xl border border-default-200 bg-default-50 p-3 transition ${
+              draggedIndex === idx ? 'border-default-400 bg-default-100' : ''
+            } ${dragOverIndex === idx ? 'ring-2 ring-default-300' : ''}`}
             draggable
             key={idx}
             onDragEnd={handleDragEnd}
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragStart={() => handleDragStart(idx)}
           >
-            <span className={classes.dragHandle}>
-              <IconGripVertical size={14} />
+            <span className="mt-2 text-default-400">
+              <IconGripVertical size={16} />
             </span>
-            <span className={classes.stepNumber}>{idx + 1}</span>
-            <TextInput
-              className={classes.stepInput}
-              error={Array.isArray(errors.instructions) ? (errors.instructions?.[idx] as any)?.message : undefined}
-              onChange={(e) => updateInstruction(idx, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, idx)}
-              placeholder={idx === 0 ? 'e.g. Preheat oven to 180°C' : 'Next step...'}
-              ref={(el) => {
-                inputRefs.current[idx] = el;
-              }}
-              size="sm"
-              value={instructions[idx] || ''}
-            />
+            <span className="mt-1 text-xs font-semibold text-default-500">{idx + 1}</span>
+            <div className="flex-1">
+              <Controller
+                control={form.control}
+                name={`instructions.${idx}` as const}
+                render={({field, fieldState}) => (
+                  <TextField isInvalid={Boolean(fieldState.error?.message)}>
+                    <Input
+                      className="w-full"
+                      onChange={(event) => {
+                        field.onChange(event);
+                        updateInstruction(idx, event.target.value);
+                      }}
+                      onKeyDown={(e) => handleKeyDown(e, idx)}
+                      placeholder={idx === 0 ? 'e.g. Preheat oven to 180°C' : 'Next step...'}
+                      ref={(el) => {
+                        inputRefs.current[idx] = el;
+                      }}
+                      value={field.value ?? ''}
+                    />
+                    {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
+                  </TextField>
+                )}
+              />
+            </div>
             {instructions.length > 1 && (
-              <ActionIcon
+              <Button
                 aria-label="Remove step"
-                className={classes.stepDelete}
-                color="gray"
-                onClick={() => remove(idx)}
+                className="h-9 w-9 min-w-9"
+                isIconOnly
+                onPress={() => remove(idx)}
                 size="sm"
-                variant="subtle"
+                variant="ghost"
               >
-                <IconTrash size={14} />
-              </ActionIcon>
+                <IconTrash size={16} />
+              </Button>
             )}
           </div>
         ))}
-        <button
-          className={classes.addStepButton}
-          onClick={() => append('')}
-          type="button"
+        <Button
+          className="h-11 justify-start gap-2 rounded-xl border border-dashed border-default-300 text-default-600"
+          onPress={() => append('')}
+          variant="ghost"
         >
-          <IconPlus size={14} />
-          <span>Add step</span>
-        </button>
+          <span className="flex items-center gap-2">
+            <IconPlus size={16} />
+            Add step
+          </span>
+        </Button>
         {errors.instructions?.message && (
-          <Text
-            c="red"
-            size="xs"
-          >
-            {errors.instructions.message as string}
-          </Text>
+          <Text className="text-xs text-danger-600">{errors.instructions.message as string}</Text>
         )}
-        <Text
-          c="dimmed"
-          className={classes.keyboardHint}
-          size="xs"
-        >
-          Enter: new step • Backspace: delete empty • Alt+↑↓: reorder
-        </Text>
+        <Text className="text-xs text-default-500">Enter: new step • Backspace: delete empty • Alt+↑↓: reorder</Text>
       </div>
     </div>
   );

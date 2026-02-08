@@ -2,10 +2,10 @@ import {humanizeError} from '@easy/error-parser';
 import {Button} from '@mantine/core';
 import {useRef} from 'react';
 
+import {TrainingPlanForm, TrainingPlanFormHandle} from '@/components/TrainingPlanForm';
 import useParamsDrawer from '@/hooks/useParamDrawer';
 import {useUpdateTrainingPlan} from '@/services/training_plans';
 import AutoDrawer from '@/shared/AutoDrawer/AutoDrawer';
-import {TrainingPlanForm, TrainingPlanFormHandle} from '@/components/TrainingPlanForm';
 import {notifyError} from '@/utils/notification';
 
 const TrainingPlanEditDrawer = () => {

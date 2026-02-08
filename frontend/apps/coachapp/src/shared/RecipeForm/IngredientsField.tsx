@@ -63,6 +63,8 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
       }, 100);
       return () => clearTimeout(timer);
     }
+
+    return undefined;
   }, [lastAddedId]);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -70,7 +72,11 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
       e.preventDefault();
       // Add focused result if available
       if (fetchedIngredients.length > 0 && focusedResultIndex < fetchedIngredients.length) {
-        addIngredient(fetchedIngredients[focusedResultIndex].id, fetchedIngredients[focusedResultIndex].name);
+        const focused = fetchedIngredients[focusedResultIndex];
+        if (!focused) {
+          return;
+        }
+        addIngredient(focused.id, focused.name);
       } else if (searchTerm && !isLoading && fetchedIngredients.length === 0) {
         // Create new ingredient if no results
         createIngredient();
@@ -90,11 +96,11 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
 
   const createIngredient = async () => {
     try {
-      const {
-        data: {name, id},
-      } = await createIngredientMutation({name: searchTerm});
+      const response = await createIngredientMutation({
+        name: searchTerm,
+      }).unwrap();
 
-      addIngredient(id, name);
+      addIngredient(response.id, response.name);
     } catch (err) {
       const errMsg = humanizeError(err);
       notifyError(errMsg);
@@ -160,9 +166,13 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
       }
       const newValue = [...prev];
       const [removed] = newValue.splice(fromIndex, 1);
+      if (!removed) return;
       newValue.splice(toIndex, 0, removed);
       // Update position values
-      const reordered = newValue.map((item, idx) => ({...item, position: idx}));
+      const reordered = newValue.map((item, idx) => ({
+        ...item,
+        position: idx,
+      }));
       setValue('recipe_ingredients', reordered, {
         shouldValidate: true,
         shouldDirty: true,
@@ -190,7 +200,7 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     setDragOverIndex(null);
   };
 
-  const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
+  const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
       e.preventDefault();
       // Focus search input to add more ingredients
@@ -206,7 +216,10 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
       if (idx === -1) return;
 
       const newValue = [...prev];
-      newValue[idx] = {...prev[idx], quantity_as_text: value};
+      const current = prev[idx];
+      if (!current) return;
+
+      newValue[idx] = {...current, quantity_as_text: value};
 
       setValue('recipe_ingredients', newValue, {
         shouldValidate: true,
@@ -221,18 +234,19 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
     name: 'recipe_ingredients',
     defaultValue: [],
   });
+  const safeIngredients = currentIngredients || [];
 
   return (
     <div className={classes.section}>
       <div className={classes.sectionHeader}>
         <div className={classes.sectionTitleRow}>
           <span className={classes.sectionTitle}>Ingredients</span>
-          {currentIngredients.length > 0 && (
+          {safeIngredients.length > 0 && (
             <Text
               c="dimmed"
               size="xs"
             >
-              {currentIngredients.length} added
+              {safeIngredients.length} added
             </Text>
           )}
         </div>
@@ -301,9 +315,9 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
         )}
 
         {/* Selected ingredients list */}
-        {currentIngredients.length > 0 && (
+        {safeIngredients.length > 0 && (
           <div className={classes.ingredientsList}>
-            {currentIngredients.map((ingredient, idx) => (
+            {safeIngredients.map((ingredient, idx) => (
               <div
                 className={`${classes.ingredientItem} ${draggedIndex === idx ? classes.ingredientItemDragging : ''} ${dragOverIndex === idx ? classes.ingredientItemDragOver : ''}`}
                 draggable
@@ -329,7 +343,7 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
                   onChange={(e) => {
                     updateIngredientQuntity(ingredient.ingredient_id, e.currentTarget.value);
                   }}
-                  onKeyDown={(e) => handleQuantityKeyDown(e, idx)}
+                  onKeyDown={handleQuantityKeyDown}
                   placeholder="e.g. 200g, 1 cup"
                   ref={(el) => {
                     if (el) quantityRefs.current.set(ingredient.ingredient_id, el);
@@ -361,7 +375,7 @@ const IngredientsField: FC<IngredientsFieldProps> = ({form}) => {
         )}
 
         {/* Empty state */}
-        {currentIngredients.length === 0 && !searchTerm && (
+        {safeIngredients.length === 0 && !searchTerm && (
           <div className={classes.emptyState}>
             <Text
               c="dimmed"

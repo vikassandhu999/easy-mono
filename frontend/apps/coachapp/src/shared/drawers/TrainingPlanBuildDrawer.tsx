@@ -1,12 +1,10 @@
 import {humanizeError} from '@easy/error-parser';
 import {Button, Modal, Surface} from '@heroui/react';
-import {useDisclosure} from '@mantine/hooks';
 import {IconCopy, IconPencil, IconTrash} from '@tabler/icons-react';
 import {useSearchParams} from 'react-router';
 
 import {DRAWER_KEYS} from '@/configs';
 import useParamsDrawer from '@/hooks/useParamDrawer';
-import useScreenSize from '@/hooks/useScreenSize';
 import {useDeleteTrainingPlan, useDuplicateTrainingPlan, useGetTrainingPlan} from '@/services/training_plans';
 import TrainingPlanBuilder from '@/shared/TrainingPlanBuilder/TrainingPlanBuilder';
 import {notifyError} from '@/utils/notification';
@@ -14,8 +12,7 @@ import {notifyError} from '@/utils/notification';
 export default function TrainingPlanBuildDrawer() {
   const {openDrawer, closeDrawer} = useParamsDrawer({});
   const [searchParams] = useSearchParams();
-  const {isMobile} = useScreenSize();
-  const [deleteModalOpened, {close: closeDeleteModal}] = useDisclosure(false);
+
   const [deleteTrainingPlan] = useDeleteTrainingPlan();
   const [duplicateTrainingPlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlan();
 
@@ -40,7 +37,6 @@ export default function TrainingPlanBuildDrawer() {
 
     try {
       await deleteTrainingPlan(trainingPlanId).unwrap();
-      closeDeleteModal();
       closeDrawer();
     } catch (error) {
       const errMsg = humanizeError(error);

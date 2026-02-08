@@ -7,8 +7,8 @@ import {Controller, useForm} from 'react-hook-form';
 import {useNavigate, useSearchParams} from 'react-router';
 
 import {useAuthActions} from '@/hooks/useAuthActions';
-import {useVerifyLoginMutation, VerifyLogin_zod, VerifyLoginRequest} from '@/services/auth';
-import {notifyError, notifyWarning} from '@/utils/notification';
+import {type TokenOtpRequest, useExchangeTokenMutation, VerifyOtp_zod} from '@/services/auth';
+import {notifyError} from '@/utils/notification';
 
 import AuthLayout from '../layouts/AuthLayout';
 
@@ -17,28 +17,23 @@ const VerifyLoginPage: React.FC = () => {
   const {saveAuthTokens} = useAuthActions();
   const [params] = useSearchParams();
 
-  const [verifyPasscode, {isLoading: reqLoading}] = useVerifyLoginMutation();
+  const [exchangeToken, {isLoading: reqLoading}] = useExchangeTokenMutation();
 
-  // Get email and token_id from search params
   const emailFromParams = params.get('email') || '';
-  const tokenIdFromParams = params.get('token_id') || '';
-
-  const form = useForm<VerifyLoginRequest>({
+  const form = useForm<TokenOtpRequest>({
     defaultValues: {
-      token_id: tokenIdFromParams,
-      code: '',
+      email: emailFromParams,
+      grant_type: 'otp',
+      otp: '',
+      role: 'coach',
     },
-    resolver: zodResolver(VerifyLogin_zod),
+    resolver: zodResolver(VerifyOtp_zod),
     mode: 'onBlur',
   });
 
-  const onSubmit = async (values: VerifyLoginRequest) => {
-    if (!tokenIdFromParams) {
-      notifyWarning('URL is for passcode verfication is currupted. Please request code from login page.');
-      return;
-    }
+  const onSubmit = async (values: TokenOtpRequest) => {
     try {
-      const resp = await verifyPasscode(values).unwrap();
+      const resp = await exchangeToken(values).unwrap();
 
       saveAuthTokens(resp.access_token, resp.refresh_token);
 
@@ -68,7 +63,7 @@ const VerifyLoginPage: React.FC = () => {
           <div className="flex justify-center">
             <Controller
               control={form.control}
-              name="code"
+              name="otp"
               render={({field, fieldState}) => (
                 <InputOTP
                   aria-label="6-digit verification code"
@@ -91,8 +86,8 @@ const VerifyLoginPage: React.FC = () => {
             />
           </div>
 
-          {form.formState.errors.code && (
-            <p className="text-center text-sm text-red-500">{form.formState.errors.code.message}</p>
+          {form.formState.errors.otp && (
+            <p className="text-center text-sm text-red-500">{form.formState.errors.otp.message}</p>
           )}
         </div>
 
@@ -107,7 +102,15 @@ const VerifyLoginPage: React.FC = () => {
 
         <input
           type="hidden"
-          {...form.register('token_id')}
+          {...form.register('email')}
+        />
+        <input
+          type="hidden"
+          {...form.register('grant_type')}
+        />
+        <input
+          type="hidden"
+          {...form.register('role')}
         />
       </form>
     </AuthLayout>

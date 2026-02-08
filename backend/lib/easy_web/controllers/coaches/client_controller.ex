@@ -29,8 +29,8 @@ defmodule EasyWeb.Coaches.ClientController do
     business_id = conn.assigns.claims.business_id
 
     search_term = Map.get(params, "search", "")
-    offset = Easy.Utils.parse_integer(params, "offset", 0)
-    limit = Easy.Utils.parse_integer(params, "limit", 10)
+    offset = parse_integer(params, "offset", 0)
+    limit = parse_integer(params, "limit", 10)
     status = Map.get(params, "status", nil)
 
     base =

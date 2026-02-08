@@ -64,8 +64,8 @@ defmodule EasyWeb.Coaches.FoodController do
     claims = conn.assigns.claims
 
     search_term = Map.get(params, "search", "")
-    offset = Easy.Utils.parse_integer(params, "offset", 0)
-    limit = Easy.Utils.parse_integer(params, "limit", 10)
+    offset = parse_integer(params, "offset", 0)
+    limit = parse_integer(params, "limit", 10)
 
     base = Food |> Food.for_business(claims.business_id) |> Food.search(search_term)
 

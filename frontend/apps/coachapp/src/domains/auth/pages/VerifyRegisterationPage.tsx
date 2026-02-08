@@ -1,39 +1,35 @@
-import { humanizeError } from "@easy/error-parser";
-import { Button, InputOTP } from "@heroui/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
-import React from "react";
-import { Controller, useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router";
+import {humanizeError} from '@easy/error-parser';
+import {Button, InputOTP} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {IconArrowLeft, IconArrowRight} from '@tabler/icons-react';
+import React from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {useNavigate, useSearchParams} from 'react-router';
 
-import { useAuthActions } from "@/hooks/useAuthActions";
-import {
-  type TokenOtpRequest,
-  useExchangeTokenMutation,
-  VerifyOtp_zod,
-} from "@/services/auth";
-import { notifyError } from "@/utils/notification";
+import {useAuthActions} from '@/hooks/useAuthActions';
+import {type TokenOtpRequest, useExchangeTokenMutation, VerifyOtp_zod} from '@/services/auth';
+import {notifyError} from '@/utils/notification';
 
-import AuthLayout from "../layouts/AuthLayout";
+import AuthLayout from '../layouts/AuthLayout';
 
 const VerifyRegisterationPage: React.FC = () => {
   const navigate = useNavigate();
-  const { saveAuthTokens } = useAuthActions();
+  const {saveAuthTokens} = useAuthActions();
   const [params] = useSearchParams();
 
-  const [exchangeToken, { isLoading: reqLoading }] = useExchangeTokenMutation();
+  const [exchangeToken, {isLoading: reqLoading}] = useExchangeTokenMutation();
 
   // Get email and token_id from search params
-  const emailFromParams = params.get("email") || "";
+  const emailFromParams = params.get('email') || '';
   const form = useForm<TokenOtpRequest>({
     defaultValues: {
       email: emailFromParams,
-      grant_type: "otp",
-      otp: "",
-      role: "coach",
+      grant_type: 'otp',
+      otp: '',
+      role: 'coach',
     },
     resolver: zodResolver(VerifyOtp_zod),
-    mode: "onBlur",
+    mode: 'onBlur',
   });
 
   const onSubmit = async (values: TokenOtpRequest) => {
@@ -44,7 +40,7 @@ const VerifyRegisterationPage: React.FC = () => {
       }).unwrap();
       saveAuthTokens(resp.access_token, resp.refresh_token);
 
-      navigate("/onboarding");
+      navigate('/onboarding');
     } catch (err) {
       const errMsg = humanizeError(err);
       notifyError(errMsg);
@@ -67,7 +63,7 @@ const VerifyRegisterationPage: React.FC = () => {
             <Controller
               control={form.control}
               name="otp"
-              render={({ field, fieldState }) => (
+              render={({field, fieldState}) => (
                 <InputOTP
                   aria-label="6-digit verification code"
                   className="w-full max-w-md"
@@ -77,8 +73,11 @@ const VerifyRegisterationPage: React.FC = () => {
                   value={field.value}
                 >
                   <InputOTP.Group className="gap-2">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <InputOTP.Slot index={index} key={index} />
+                    {Array.from({length: 6}).map((_, index) => (
+                      <InputOTP.Slot
+                        index={index}
+                        key={index}
+                      />
                     ))}
                   </InputOTP.Group>
                 </InputOTP>
@@ -87,21 +86,23 @@ const VerifyRegisterationPage: React.FC = () => {
           </div>
           <div className="min-h-6">
             {form.formState.errors.otp && (
-              <p className="text-center text-sm text-red-500">
-                {form.formState.errors.otp.message}
-              </p>
+              <p className="text-center text-sm text-red-500">{form.formState.errors.otp.message}</p>
             )}
           </div>
         </div>
 
-        <Button className="w-full" isDisabled={isLoading} type="submit">
+        <Button
+          className="w-full"
+          isDisabled={isLoading}
+          type="submit"
+        >
           Verify Passcode
           <IconArrowRight size={20} />
         </Button>
 
         <div className="flex items-center justify-center gap-4">
           <Button
-            onPress={() => navigate("/login")}
+            onPress={() => navigate('/login')}
             size="sm"
             variant="secondary"
           >
@@ -110,9 +111,18 @@ const VerifyRegisterationPage: React.FC = () => {
           </Button>
         </div>
 
-        <input type="hidden" {...form.register("email")} />
-        <input type="hidden" {...form.register("grant_type")} />
-        <input type="hidden" {...form.register("role")} />
+        <input
+          type="hidden"
+          {...form.register('email')}
+        />
+        <input
+          type="hidden"
+          {...form.register('grant_type')}
+        />
+        <input
+          type="hidden"
+          {...form.register('role')}
+        />
       </form>
     </AuthLayout>
   );

@@ -1,0 +1,37 @@
+{
+  "name": "@easy/coachapp-v2",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 2021 --host",
+    "build": "tsc --noEmit && vite build",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@heroui/react": "3.0.0-beta.6",
+    "@heroui/styles": "3.0.0-beta.6",
+    "@hookform/resolvers": "^3.9.1",
+    "@reduxjs/toolkit": "^2.9.0",
+    "framer-motion": "^11.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.1",
+    "react-hook-form": "^7.48.2",
+    "react-redux": "^9.2.0",
+    "react-router": "^7.8.2",
+    "tailwindcss": "^4.1.18",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@easy/eslint-config": "workspace:^",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "5.4.8",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

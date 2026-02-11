@@ -1048,11 +1048,11 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     UnprocessableEntity:
-      description: Unprocessable entity
+      description: Unprocessable entity - validation errors from Ecto changeset
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/ValidationErrorResponse"
   schemas:
     HealthResponse:
       type: object
@@ -1084,6 +1084,21 @@ components:
         error_detail:
           type: object
           nullable: true
+    ValidationErrorResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          description: Map of field names to arrays of error messages from Ecto changeset
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["has invalid format", "can't be blank"]
+            name: ["can't be blank"]
+            age: ["must be greater than 0"]
     SignupRequest:
       type: object
       required: [email]

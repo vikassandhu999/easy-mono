@@ -123,6 +123,7 @@ components/
 ## UI rules
 
 - HeroUI components only; do not add other UI libraries.
+- Must consult the HeroUI v3 beta docs before selecting components: https://v3.heroui.com/docs/react/components
 - Use Tailwind utility classes; no CSS Modules, no custom CSS classes.
 - No custom wrapper components around HeroUI unless explicitly asked.
 - Mobile-first layout and accessible touch targets (>= 44px).

@@ -4,15 +4,14 @@ defmodule Easy.Identity.Users do
 
   @spec create(map()) :: {:ok, User.t()} | {:error, any()}
   def create(attrs) do
-    %User{}
-    |> User.changeset(attrs)
+    User.insert_changeset(attrs)
     |> Repo.insert()
   end
 
   @spec touch_confirmation_sent_at(User.t()) :: {:ok, User.t()} | {:error, any()}
   def touch_confirmation_sent_at(%User{} = user) do
     user
-    |> User.confirm_email()
+    |> User.touch_confirmation_sent()
     |> Repo.update()
   end
 

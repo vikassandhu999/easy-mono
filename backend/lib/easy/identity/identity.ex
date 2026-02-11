@@ -25,7 +25,11 @@ defmodule Easy.Identity do
         send_otp_email(user.email, otp)
         user
       else
-        {:error, reason} -> Repo.rollback(reason)
+        {:error, %Ecto.Changeset{} = changeset} ->
+          handle_duplicate_email(changeset, otp)
+
+        {:error, reason} ->
+          Repo.rollback(reason)
       end
     end)
   end
@@ -269,5 +273,29 @@ defmodule Easy.Identity do
     |> rem(900_000)
     |> Kernel.+(100_000)
     |> Integer.to_string()
+  end
+
+  defp handle_duplicate_email(changeset, otp) do
+    email = Ecto.Changeset.get_field(changeset, :email)
+
+    with {:ok, user} <- Users.get_by_email(email),
+         false <- User.is_email_confirmed?(user) do
+      Users.touch_confirmation_sent_at(user)
+      OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation)
+      OneTimeTokens.create_token(user, :email_confirmation, otp)
+      send_otp_email(email, otp)
+
+      Repo.rollback(
+        Easy.Error.new("confirmation_resent", "Confirmation OTP has been sent to your email")
+      )
+    else
+      true ->
+        Repo.rollback(
+          Easy.Error.new("email_already_exists", "An account with this email already exists")
+        )
+
+      _ ->
+        Repo.rollback(changeset)
+    end
   end
 end

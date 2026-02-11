@@ -20,8 +20,8 @@ defmodule Easy.Identity.User do
     timestamps()
   end
 
-  def changeset(%Easy.Identity.User{} = user, attrs) do
-    user
+  def insert_changeset(attrs) do
+    %__MODULE__{}
     |> cast(attrs, [
       :email,
       :first_name,
@@ -41,6 +41,11 @@ defmodule Easy.Identity.User do
   def confirm_email(%__MODULE__{} = user) do
     user
     |> change(%{email_confirmed_at: DateTime.utc_now(:second)})
+  end
+
+  def touch_confirmation_sent(%__MODULE__{} = user) do
+    user
+    |> change(%{confirmation_sent_at: DateTime.utc_now(:second)})
   end
 
   def is_confirmation_expired?(%__MODULE__{confirmation_sent_at: nil}), do: true

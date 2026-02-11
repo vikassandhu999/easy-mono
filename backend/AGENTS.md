@@ -23,6 +23,47 @@ cast(attrs, [:name])
 |> put_change(:user_id, user_id)
 ```
 
+## Simplicity — The Elixir Way
+
+- More code means more bugs and more to manage — keep it minimal.
+- Things can always be simpler.
+- Embrace pattern matching over conditionals.
+- Use the pipe operator to build readable data transformations.
+- Let the standard library and abstractions do the work.
+- No defensive programming — trust the types and let it crash.
+- Delete code whenever possible — the best code is no code.
+
+```elixir
+# BAD: defensive with nested conditionals
+def process(data) do
+  if data != nil do
+    if is_map(data) do
+      if Map.has_key?(data, :items) do
+        items = Map.get(data, :items)
+        if is_list(items) do
+          Enum.map(items, fn item ->
+            if item.valid do
+              transform(item)
+            else
+              nil
+            end
+          end)
+          |> Enum.reject(&is_nil/1)
+        end
+      end
+    end
+  end
+end
+
+# GOOD: pattern matching, pipe operator, minimal code
+def process(%{items: items}) when is_list(items) do
+  items
+  |> Enum.filter(& &1.valid)
+  |> Enum.map(&transform/1)
+end
+def process(_), do: []
+```
+
 ## Fat Schema Pattern for CRUD operations
 
 All CRUD changesets, and queries live in the Schema module. Use a service module only for complex cross-schema workflows and business logic only.

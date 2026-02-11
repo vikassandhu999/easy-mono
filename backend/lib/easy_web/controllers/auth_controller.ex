@@ -73,11 +73,13 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def token(conn, %{
-        "grant_type" => "refresh_token",
-        "refresh_token" => refresh_token,
-        "role" => role
-      }) do
+  def token(
+        conn,
+        %{
+          "grant_type" => "refresh_token",
+          "refresh_token" => refresh_token
+        } = params
+      ) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
@@ -85,7 +87,7 @@ defmodule EasyWeb.AuthController do
       refresh_token: refresh_token,
       ip: ip,
       user_agent: user_agent,
-      role: Utils.safe_to_atom(role, @allowed_roles)
+      role: Utils.safe_to_atom(params["role"], @allowed_roles)
     }
 
     with {:ok, auth_token} <- Identity.token(:refresh_token, opts) do

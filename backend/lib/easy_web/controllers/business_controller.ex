@@ -5,7 +5,7 @@ defmodule EasyWeb.BusinessController do
   alias Easy.Orgs
 
   def create(conn, params) do
-    with {:ok, user} <- Users.get_by_id(conn.assigns.claims["user_id"]),
+    with {:ok, user} <- Users.get_by_id(conn.assigns.claims.user_id),
          {:ok, business} <- Orgs.create_business(user, params) do
       conn
       |> put_status(:created)
@@ -14,7 +14,7 @@ defmodule EasyWeb.BusinessController do
   end
 
   def show(conn, _params) do
-    with {:ok, business} <- Orgs.get_business(conn.assigns.claims["business_id"]) do
+    with {:ok, business} <- Orgs.get_business(conn.assigns.claims.business_id) do
       conn
       |> put_status(:ok)
       |> render(:show, business: business)
@@ -22,7 +22,7 @@ defmodule EasyWeb.BusinessController do
   end
 
   def update(conn, params) do
-    with {:ok, business} <- Orgs.update_business(conn.assigns.claims["business_id"], params) do
+    with {:ok, business} <- Orgs.update_business(conn.assigns.claims.business_id, params) do
       conn
       |> put_status(:ok)
       |> render(:show, business: business)

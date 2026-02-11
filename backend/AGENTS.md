@@ -11,6 +11,7 @@
 - Use `Req` for HTTP — not HTTPoison, Tesla, or `:httpc`.
 - Never include `user_id` or `business_id` in `cast/3` — set them programmatically.
 - Add `@spec` for every public function.
+- Update `docs/api_contract.yaml` when creating/updating/deleting endpoints or modifying schema types.
 
 ```elixir
 # BAD

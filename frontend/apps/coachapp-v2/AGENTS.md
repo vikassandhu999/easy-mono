@@ -120,15 +120,42 @@ components/
 - **No barrel `index.ts` files** unless a folder has 4+ exports that are always imported together.
 - **Flat over nested.** Prefer `pages/clients/ClientListPage.tsx` over `pages/clients/list/ClientListPage.tsx`. Add nesting only when a subfolder has 5+ files.
 
-## UI rules
+## UI/UX rules
 
-- HeroUI components only; do not add other UI libraries.
-- Must consult the HeroUI v3 beta docs before selecting components: https://v3.heroui.com/docs/react/components
-- Use Tailwind utility classes; no CSS Modules, no custom CSS classes.
-- No custom wrapper components around HeroUI unless explicitly asked.
-- Mobile-first layout and accessible touch targets (>= 44px).
-- Toasts: `toast()` / `toast.success()` / `toast.danger()` from `@heroui/react`. `<Toast.Provider />` is rendered at the app root.
-- Modals: HeroUI `Modal` compound component.
+HeroUI v3 beta (`@heroui/react`) + Tailwind v4. Docs: https://v3.heroui.com/docs/react/components
+Use Loom as the **layout efficiency benchmark** (structure and clarity), not as a visual clone.
+
+### Resource pages (mandatory)
+
+- When designing any **resource/index page** (Clients, Library, Plans, Foods, Recipes, Meals, etc.), you must follow `docs/resource-page-blueprint.md`.
+- Treat that file as the canonical implementation template for hierarchy, control placement, spacing rhythm, and CTA emphasis.
+- If a page intentionally deviates, document the reason in the PR/summary.
+
+1. **HeroUI-only, props-first.** Use HeroUI primitives + compound APIs (`Card.Header`, `TextField.Label`, etc.). Style via `variant`/`size`; `className` is for layout only (`gap`, `p`, `w`, `flex`, `grid`).
+
+2. **Loom-style information architecture.** Keep navigation persistent and predictable (mobile: compact/top-first, desktop: left rail), keep primary content in a focused center column, and place secondary actions in low-emphasis positions.
+
+3. **One clear page hierarchy.** Every page uses: title, short description, one primary CTA, then content. Wrapper: `flex flex-col gap-6`. Spacing: sections `gap-6`, forms/cards `gap-4`, label-input `gap-1`, mobile `px-4 py-5`, desktop `p-6`.
+
+3.1 **Group related controls.** Filters/tabs, sort, and data list must remain adjacent and visually grouped (same control rail or contiguous rows). Avoid separating related controls across distant sections.
+
+3.2 **Header action placement.** For resource pages, place the single primary CTA at header-right on desktop and below header content on mobile.
+
+4. **One primary action per view.** Only one `Button variant="primary"` per page/view. All other actions are `secondary`, `outline`, `ghost`, or `danger`.
+
+4.1 **Sort is secondary.** Sorting controls are never primary and should live with tabs/filters, not as a competing header action.
+
+5. **Use only approved tokens.** Colors: `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`, `text-foreground`, `text-muted`, `border-border`, `border-separator`, `bg-overlay`. Effects: `shadow-surface`, `shadow-overlay`, `rounded-md|lg|xl`. No v2/NextUI tokens.
+
+6. **Typography stays minimal.** Only `text-foreground` (primary) and `text-muted` (secondary). No opacity text variants (`/60`, `/75`, etc.).
+
+7. **Use standard feedback patterns.** Loading: `Spinner`/`Skeleton`. Inline persistent errors: `Alert`. Ephemeral updates/errors: `toast()`, `toast.success()`, `toast.danger()`. Destructive confirm: `AlertDialog`. Empty states: Card with title, description, and action.
+
+8. **Mobile-first, accessibility always on.** Start mobile, scale with `sm:`/`md:`/`lg:`. Minimum tap target `min-h-11` (44px+). Use semantic landmarks (`main`, `nav`, headings), `aria-label` for icon-only controls, and `isDisabled` (not CSS disabling).
+
+8.1 **No hierarchy regressions.** Any UI refactor must preserve: (a) one dominant action, (b) grouped list controls, and (c) immediate visibility of list context (segment label + count) above results.
+
+9. **Do not fight the system.** No custom CSS/CSS Modules/theme wrappers for HeroUI primitives, no hard-coded colors/shadows, and no borrowing UI patterns from `apps/coachapp`.
 
 ## Routing
 

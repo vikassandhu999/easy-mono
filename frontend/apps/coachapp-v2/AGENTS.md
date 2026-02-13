@@ -116,6 +116,7 @@ components/
 
 - **Do not create new top-level `src/` directories** (no `hooks/`, `utils/`, `shared/`, `providers/`, `configs/`, `theme/`, `slices/`, `containers/`). Everything fits in `api/`, `pages/`, or `components/`.
 - **Colocate by default.** A hook, helper, or sub-component used by one page stays in that page's folder.
+- **Localize logic with ownership.** If a page-specific component owns UI state (forms, modal state, submit/validation handlers), keep that logic inside that component; pages should orchestrate visibility/data refresh only.
 - **Promote to `components/` only when shared.** Move a component up only when a second page needs it.
 - **No barrel `index.ts` files** unless a folder has 4+ exports that are always imported together.
 - **Flat over nested.** Prefer `pages/clients/ClientListPage.tsx` over `pages/clients/list/ClientListPage.tsx`. Add nesting only when a subfolder has 5+ files.

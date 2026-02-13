@@ -2,15 +2,13 @@ import {
   Button,
   Card,
   Skeleton,
-  toast,
 } from '@heroui/react';
 import {ArrowUpDown, Plus, Search} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
-import {useInviteClientMutation, useListClientsQuery} from '@/api/clients';
-import type {Client, ClientInviteRequest} from '@/api/clients';
-import {handleFormError} from '@/api/shared';
+import {useListClientsQuery} from '@/api/clients';
+import type {Client} from '@/api/clients';
 import InviteClientModal from '@/pages/clients/InviteClientModal';
 import {CLIENT_STATUS_STYLES, formatDate, getClientInitial, getClientName} from '@/pages/clients/clientDisplay';
 
@@ -28,16 +26,6 @@ export default function ClientsPage() {
   const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]['key']>('recent');
   const [filterStatus, setFilterStatus] = useState<'all' | Client['status']>('all');
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [inviteValues, setInviteValues] = useState<ClientInviteRequest>({
-    email: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    notes: '',
-  });
-  const [inviteFormError, setInviteFormError] = useState<null | string>(null);
-  const [inviteFieldErrors, setInviteFieldErrors] = useState<null | Record<string, string[]>>(null);
-  const [inviteClient, {isLoading: isInviting}] = useInviteClientMutation();
 
   const {data, isError, isLoading, refetch} = useListClientsQuery({
     limit: 100,
@@ -47,11 +35,7 @@ export default function ClientsPage() {
 
   const activeSortLabel = SORT_OPTIONS.find((option) => option.key === sortBy)?.label ?? SORT_OPTIONS[0].label;
 
-  const inviteEmailError = inviteFieldErrors?.email?.[0];
-
   const openInviteModal = () => {
-    setInviteFormError(null);
-    setInviteFieldErrors(null);
     setIsInviteOpen(true);
   };
 
@@ -62,56 +46,6 @@ export default function ClientsPage() {
 
     if (nextOption) {
       setSortBy(nextOption.key);
-    }
-  };
-
-  const handleInviteChange = (key: keyof ClientInviteRequest, value: string) => {
-    setInviteValues((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const resetInviteForm = () => {
-    setInviteValues({
-      email: '',
-      first_name: '',
-      last_name: '',
-      phone: '',
-      notes: '',
-    });
-    setInviteFormError(null);
-    setInviteFieldErrors(null);
-  };
-
-  const handleInviteSubmit = async () => {
-    setInviteFormError(null);
-    setInviteFieldErrors(null);
-
-    if (!inviteValues.email) {
-      setInviteFieldErrors({email: ['Email is required.']});
-      return;
-    }
-
-    try {
-      await inviteClient({
-        email: inviteValues.email,
-        first_name: inviteValues.first_name?.trim() || undefined,
-        last_name: inviteValues.last_name?.trim() || undefined,
-        phone: inviteValues.phone?.trim() || undefined,
-        notes: inviteValues.notes?.trim() || undefined,
-      }).unwrap();
-      toast.success('Client invited successfully.');
-      resetInviteForm();
-      setIsInviteOpen(false);
-      refetch();
-    } catch (err) {
-      const result = handleFormError(err, 'Unable to invite client. Please try again.');
-      setInviteFieldErrors(result.fieldErrors);
-      setInviteFormError(result.formError);
-      if (!result.fieldErrors) {
-        toast.danger(result.formError);
-      }
     }
   };
 
@@ -312,23 +246,9 @@ export default function ClientsPage() {
       )}
 
       <InviteClientModal
-        emailError={inviteEmailError}
-        formError={inviteFormError}
         isOpen={isInviteOpen}
-        isSubmitting={isInviting}
-        onCancel={() => {
-          setIsInviteOpen(false);
-          resetInviteForm();
-        }}
-        onChange={handleInviteChange}
-        onOpenChange={(open) => {
-          setIsInviteOpen(open);
-          if (!open) {
-            resetInviteForm();
-          }
-        }}
-        onSubmit={handleInviteSubmit}
-        values={inviteValues}
+        onInvited={refetch}
+        onOpenChange={setIsInviteOpen}
       />
     </div>
   );

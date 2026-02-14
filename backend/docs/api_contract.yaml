@@ -263,6 +263,7 @@ paths:
   /v1/coach/foods:
     post:
       summary: Create food
+      description: Creates a reusable food entry for nutrition planning flows, typically from food-library create forms. Frontend pattern - optimistically add to current food list and reconcile details from the 201 response.
       operationId: createFood
       security:
         - bearerAuth: []
@@ -272,6 +273,27 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/FoodCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Greek Yogurt (2%)
+                  macros:
+                    protein: 10
+                    carbs: 4
+                    fats: 2
+                    calories: 73
+                  source: USDA
+                  category: dairy
+                  tags: [high-protein, breakfast]
+                  notes: Plain strained yogurt.
+                  image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                  serving_sizes:
+                    - unit: cup
+                      amount: 1
+                      weight_g: 245
+                    - unit: g
+                      amount: 100
+                      weight_g: 100
       responses:
         "201":
           description: Food created
@@ -279,12 +301,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FoodResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      name: Greek Yogurt (2%)
+                      macros:
+                        protein: 10
+                        carbs: 4
+                        fats: 2
+                        calories: 73
+                      source: USDA
+                      category: dairy
+                      tags: [high-protein, breakfast]
+                      notes: Plain strained yogurt.
+                      image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                      serving_sizes:
+                        - unit: cup
+                          amount: 1
+                          weight_g: 245
+                        - unit: g
+                          amount: 100
+                          weight_g: 100
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List foods
+      description: Lists food-library entries for search dialogs, picker modals, and food-management tables. Frontend pattern - cache by pagination/search params and invalidate after create, update, or delete.
       operationId: listFoods
       security:
         - bearerAuth: []
@@ -304,6 +353,7 @@ paths:
   /v1/coach/foods/{id}:
     get:
       summary: Get food
+      description: Fetches a single food record for details pages and edit forms. Frontend pattern - cache by id and refetch after successful food mutations.
       operationId: getFood
       security:
         - bearerAuth: []
@@ -322,6 +372,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update food
+      description: Updates food metadata used across meals and recipes when a coach edits library entries. Frontend pattern - apply optimistic field updates in the editor and rollback on validation failure.
       operationId: updateFood
       security:
         - bearerAuth: []
@@ -333,6 +384,13 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/FoodUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Greek Yogurt (2% Milkfat)
+                  category: dairy
+                  tags: [high-protein, snack]
+                  notes: Updated label from package.
       responses:
         "200":
           description: Food updated
@@ -348,6 +406,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete food
+      description: Removes a food from the custom library from destructive management actions. Frontend pattern - require confirmation, optimistically remove from local lists, and refetch if delete fails.
       operationId: deleteFood
       security:
         - bearerAuth: []
@@ -363,6 +422,7 @@ paths:
   /v1/coach/recipes:
     post:
       summary: Create recipe
+      description: Creates a reusable recipe with ingredients for nutrition builders and meal-item composition flows. Frontend pattern - optimistically insert into recipe lists and hydrate details from the 201 payload.
       operationId: createRecipe
       security:
         - bearerAuth: []
@@ -372,6 +432,26 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RecipeCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Overnight Oats Bowl
+                  source: Coach Library
+                  category: breakfast
+                  tags: [high-fiber, make-ahead]
+                  instructions: Mix and refrigerate overnight, then top and serve.
+                  image_url: "https://cdn.example.com/nutrition/recipes/overnight-oats.jpg"
+                  cooked_weight_g: 420
+                  service_size_type: serving_based
+                  serving_sizes:
+                    - unit: bowl
+                      amount: 1
+                      weight_g: 420
+                  recipe_ingredients:
+                    - food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      unit: g
+                      amount: 200
+                      weight_g: 200
       responses:
         "201":
           description: Recipe created
@@ -379,12 +459,79 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RecipeResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 28d1ea76-bd7b-4f61-80f0-a3c976a9f50a
+                      name: Overnight Oats Bowl
+                      macros: null
+                      source: Coach Library
+                      category: breakfast
+                      tags: [high-fiber, make-ahead]
+                      instructions: Mix and refrigerate overnight, then top and serve.
+                      image_url: "https://cdn.example.com/nutrition/recipes/overnight-oats.jpg"
+                      cooked_weight_g: 420
+                      service_size_type: serving_based
+                      serving_sizes:
+                        - unit: bowl
+                          amount: 1
+                          weight_g: 420
+                      recipe_ingredients:
+                        - food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                          food:
+                            id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                            name: Greek Yogurt (2%)
+                            macros:
+                              protein: 10
+                              carbs: 4
+                              fats: 2
+                              calories: 73
+                            source: USDA
+                            category: dairy
+                            tags: [high-protein, breakfast]
+                            notes: Plain strained yogurt.
+                            image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                            serving_sizes:
+                              - unit: cup
+                                amount: 1
+                                weight_g: 245
+                            creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                            inserted_at: "2026-02-14T10:00:00Z"
+                            updated_at: "2026-02-14T10:00:00Z"
+                          unit: g
+                          amount: 200
+                          weight_g: 200
+                      foods:
+                        - id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                          name: Greek Yogurt (2%)
+                          macros:
+                            protein: 10
+                            carbs: 4
+                            fats: 2
+                            calories: 73
+                          source: USDA
+                          category: dairy
+                          tags: [high-protein, breakfast]
+                          notes: Plain strained yogurt.
+                          image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                          serving_sizes:
+                            - unit: cup
+                              amount: 1
+                              weight_g: 245
+                          creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                          inserted_at: "2026-02-14T10:00:00Z"
+                          updated_at: "2026-02-14T10:00:00Z"
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List recipes
+      description: Lists recipes for recipe-library screens and ingredient pickers in meal planning UX. Frontend pattern - cache by search/page key and invalidate after recipe create, update, and delete.
       operationId: listRecipes
       security:
         - bearerAuth: []
@@ -404,6 +551,7 @@ paths:
   /v1/coach/recipes/{id}:
     get:
       summary: Get recipe
+      description: Retrieves one recipe with ingredient details for edit drawers and recipe details screens. Frontend pattern - fetch on open for editing and keep id-keyed cache in sync after save.
       operationId: getRecipe
       security:
         - bearerAuth: []
@@ -422,6 +570,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update recipe
+      description: Persists recipe edits and ingredient changes made in recipe-builder interfaces. Frontend pattern - patch local form state optimistically and reconcile nested ingredients from response.
       operationId: updateRecipe
       security:
         - bearerAuth: []
@@ -433,6 +582,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RecipeUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Overnight Oats Bowl (Cinnamon)
+                  instructions: Mix, refrigerate overnight, and top with cinnamon before serving.
+                  tags: [high-fiber, make-ahead, breakfast]
       responses:
         "200":
           description: Recipe updated
@@ -448,6 +603,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete recipe
+      description: Deletes a recipe from nutrition libraries, usually from recipe-management screens. Frontend pattern - confirm destructive action, remove list row optimistically, and invalidate recipe queries.
       operationId: deleteRecipe
       security:
         - bearerAuth: []
@@ -463,6 +619,7 @@ paths:
   /v1/coach/nutrition_plans:
     post:
       summary: Create nutrition plan
+      description: Creates a nutrition plan shell used as a template or client-facing plan in nutrition-programming flows. Frontend pattern - optimistically insert a new plan card and navigate to detail editor using the returned id.
       operationId: createNutritionPlan
       security:
         - bearerAuth: []
@@ -472,6 +629,19 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/NutritionPlanCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Lean Mass Phase 1
+                  description: High-protein template with repeatable weekday structure.
+                  tags: [mass-gain, high-protein]
+                  macros_goal:
+                    protein: 180
+                    carbs: 320
+                    fats: 80
+                    calories: 2720
+                  type: template
+                  status: draft
       responses:
         "201":
           description: Nutrition plan created
@@ -479,12 +649,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      name: Lean Mass Phase 1
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: template
+                      status: draft
+                      client_id: null
+                      source_template_id: null
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List nutrition plans
+      description: Lists nutrition plans for library tables and assignment workflows with pagination and optional status/type filtering. Frontend pattern - cache by filter key and invalidate after create, update, delete, assign, or duplicate.
       operationId: listNutritionPlans
       security:
         - bearerAuth: []
@@ -513,6 +707,7 @@ paths:
   /v1/coach/nutrition_plans/{id}:
     get:
       summary: Get nutrition plan
+      description: Returns one nutrition plan with nested meals and plan items for full plan-builder hydration. Frontend pattern - treat this endpoint as source of truth for the nutrition plan detail screen.
       operationId: getNutritionPlan
       security:
         - bearerAuth: []
@@ -531,6 +726,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update nutrition plan
+      description: Updates plan-level metadata from settings panels without changing nested meal entities directly. Frontend pattern - optimistic metadata patch and reconcile canonical payload from the 200 response.
       operationId: updateNutritionPlan
       security:
         - bearerAuth: []
@@ -542,6 +738,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/NutritionPlanUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Lean Mass Phase 1 (Updated)
+                  description: Revised carb targets for training days.
+                  status: active
       responses:
         "200":
           description: Nutrition plan updated
@@ -557,6 +759,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete nutrition plan
+      description: Deletes a nutrition plan from template or assigned-plan management screens. Frontend pattern - require confirmation, remove item optimistically, and refresh list queries.
       operationId: deleteNutritionPlan
       security:
         - bearerAuth: []
@@ -572,6 +775,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/assign:
     post:
       summary: Assign nutrition plan to client
+      description: Clones a template plan to a client-owned personal plan from assignment modals in coach UX. Frontend pattern - submit from assign dialog and append returned personal plan to the client plan list.
       operationId: assignNutritionPlan
       security:
         - bearerAuth: []
@@ -587,6 +791,10 @@ paths:
               properties:
                 client_id:
                   type: string
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
       responses:
         "201":
           description: Nutrition plan assigned
@@ -594,6 +802,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 1956fb35-50b9-4c33-a39f-95aa2f85f457
+                      name: Lean Mass Phase 1
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: personal
+                      status: draft
+                      client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                      source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:15:00Z"
+                      updated_at: "2026-02-14T10:15:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -603,6 +834,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/duplicate:
     post:
       summary: Duplicate nutrition plan
+      description: Creates a copy of an existing nutrition plan for quick iteration and versioning in template libraries. Frontend pattern - add duplicated plan to current collection and open rename/edit state.
       operationId: duplicateNutritionPlan
       security:
         - bearerAuth: []
@@ -615,6 +847,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 9b8d118e-bbd1-4b52-8a13-b8ad8124e18d
+                      name: Lean Mass Phase 1 (Copy)
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: template
+                      status: draft
+                      client_id: null
+                      source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:20:00Z"
+                      updated_at: "2026-02-14T10:20:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -622,6 +877,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/copy-day:
     post:
       summary: Copy nutrition plan day
+      description: Replaces a target day with items copied from a source day inside the same plan from day-management UX. Frontend pattern - trigger from copy-day action and replace local day items with returned payload.
       operationId: copyNutritionPlanDay
       security:
         - bearerAuth: []
@@ -633,6 +889,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/CopyDayRequest"
+            examples:
+              default:
+                value:
+                  source_day: monday
+                  target_day: thursday
       responses:
         "200":
           description: Plan items copied
@@ -649,6 +910,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/shopping-list:
     get:
       summary: Nutrition plan shopping list
+      description: Aggregates ingredient needs across a plan for grocery and prep views in nutrition coaching UX. Frontend pattern - fetch on demand from shopping-list tab and refresh after meal-item mutations.
       operationId: getNutritionPlanShoppingList
       security:
         - bearerAuth: []
@@ -668,6 +930,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/reorder-meals:
     post:
       summary: Reorder nutrition plan meals
+      description: Persists drag-and-drop meal ordering inside a nutrition plan editor. Frontend pattern - optimistically reorder locally, then reconcile canonical ordering from the response.
       operationId: reorderNutritionPlanMeals
       security:
         - bearerAuth: []
@@ -679,6 +942,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ReorderMealsRequest"
+            examples:
+              default:
+                value:
+                  meal_ids:
+                    - 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                    - 3295f5e6-f074-4eab-bb4d-54c9ad95d822
       responses:
         "200":
           description: Meals reordered
@@ -695,6 +964,7 @@ paths:
   /v1/coach/nutrition_plans/{id}/macros:
     get:
       summary: Nutrition plan macros
+      description: Returns aggregated macros from plan meals for summary cards and adherence dashboards. Frontend pattern - refetch this lightweight aggregate after meal or meal-item edits.
       operationId: getNutritionPlanMacros
       security:
         - bearerAuth: []
@@ -714,6 +984,7 @@ paths:
   /v1/coach/nutrition_plans/{plan_id}/meals:
     post:
       summary: Create meal
+      description: Creates a meal node within a nutrition plan from meal-builder add actions. Frontend pattern - optimistic insert into meal list and update order using returned meal payload.
       operationId: createMeal
       security:
         - bearerAuth: []
@@ -725,6 +996,16 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/MealCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Breakfast
+                  macros:
+                    protein: 45
+                    carbs: 70
+                    fats: 20
+                    calories: 640
+                  position: 0
       responses:
         "201":
           description: Meal created
@@ -732,6 +1013,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MealResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      name: Breakfast
+                      macros:
+                        protein: 45
+                        carbs: 70
+                        fats: 20
+                        calories: 640
+                      position: 0
+                      meal_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      plan_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      inserted_at: "2026-02-14T10:25:00Z"
+                      updated_at: "2026-02-14T10:25:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -740,6 +1039,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List meals for plan
+      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete/reorder.
       operationId: listMeals
       security:
         - bearerAuth: []
@@ -761,6 +1061,7 @@ paths:
   /v1/coach/meals/{id}:
     get:
       summary: Get meal
+      description: Fetches a meal with nested meal items for focused meal edit views. Frontend pattern - fetch on meal selection and reuse response as edit baseline state.
       operationId: getMeal
       security:
         - bearerAuth: []
@@ -779,6 +1080,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update meal
+      description: Updates meal metadata such as name, macros, and position from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
       operationId: updateMeal
       security:
         - bearerAuth: []
@@ -790,6 +1092,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/MealUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Breakfast (Training Day)
+                  position: 1
       responses:
         "200":
           description: Meal updated
@@ -805,6 +1112,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete meal
+      description: Deletes a meal from a nutrition plan, used by destructive actions in meal-management UI. Frontend pattern - confirm first, then remove from local list and invalidate plan detail query.
       operationId: deleteMeal
       security:
         - bearerAuth: []
@@ -820,6 +1128,7 @@ paths:
   /v1/coach/nutrition_plans/{plan_id}/plan_items:
     post:
       summary: Create plan item
+      description: Creates a day-to-meal mapping entry used by weekly plan schedule boards. Frontend pattern - optimistically add item to the selected day column and reconcile from 201 payload.
       operationId: createPlanItem
       security:
         - bearerAuth: []
@@ -831,6 +1140,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PlanItemCreateRequest"
+            examples:
+              default:
+                value:
+                  day: monday
+                  meal_type: breakfast
+                  meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
       responses:
         "201":
           description: Plan item created
@@ -838,6 +1153,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PlanItemResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: a55cae20-9cae-45d7-be74-c7a983945332
+                      day: monday
+                      meal_type: breakfast
+                      meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      plan_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:30:00Z"
+                      updated_at: "2026-02-14T10:30:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -846,6 +1174,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List plan items for plan
+      description: Returns all day assignments for a plan so frontend can render weekly schedule grids. Frontend pattern - refetch after plan-item create, update, delete, or copy-day actions.
       operationId: listPlanItems
       security:
         - bearerAuth: []
@@ -865,6 +1194,7 @@ paths:
   /v1/coach/plan_items/{id}:
     patch:
       summary: Update plan item
+      description: Updates day assignment, meal type label, or linked meal for a scheduled plan item. Frontend pattern - update dragged/edited item optimistically and rollback on validation errors.
       operationId: updatePlanItem
       security:
         - bearerAuth: []
@@ -876,6 +1206,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PlanItemUpdateRequest"
+            examples:
+              default:
+                value:
+                  day: tuesday
+                  meal_type: lunch
       responses:
         "200":
           description: Plan item updated
@@ -891,6 +1226,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete plan item
+      description: Removes a scheduled day mapping entry from plan calendars. Frontend pattern - remove from local day bucket immediately and invalidate plan item queries.
       operationId: deletePlanItem
       security:
         - bearerAuth: []
@@ -906,6 +1242,7 @@ paths:
   /v1/coach/meals/{meal_id}/items:
     post:
       summary: Create meal item
+      description: Adds a food or recipe reference to a meal from meal-composition builders. Frontend pattern - optimistically append to meal items and reconcile order/ids from the 201 response.
       operationId: createMealItem
       security:
         - bearerAuth: []
@@ -917,6 +1254,14 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/MealItemCreateRequest"
+            examples:
+              default:
+                value:
+                  food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                  amount: 200
+                  unit: g
+                  weight_g: 200
+                  position: 0
       responses:
         "201":
           description: Meal item created
@@ -924,6 +1269,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MealItemResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 2c4f52ed-fd7d-4d66-a709-3b2628a8fbfc
+                      weight_g: 200
+                      amount: 200
+                      unit: g
+                      position: 0
+                      recipe_id: null
+                      food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:35:00Z"
+                      updated_at: "2026-02-14T10:35:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -932,6 +1292,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List meal items
+      description: Lists all items inside a meal for composition editors and ingredient rollups. Frontend pattern - fetch per selected meal and refetch after meal-item mutations.
       operationId: listMealItems
       security:
         - bearerAuth: []
@@ -951,6 +1312,7 @@ paths:
   /v1/coach/meal_items/{id}:
     patch:
       summary: Update meal item
+      description: Updates quantity, unit, source food/recipe, or position for a single meal item. Frontend pattern - optimistic inline edit with rollback when backend validation fails.
       operationId: updateMealItem
       security:
         - bearerAuth: []
@@ -962,6 +1324,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/MealItemUpdateRequest"
+            examples:
+              default:
+                value:
+                  amount: 250
+                  weight_g: 250
+                  unit: g
       responses:
         "200":
           description: Meal item updated
@@ -977,6 +1345,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
       summary: Delete meal item
+      description: Deletes an item from a meal during nutrition-plan editing. Frontend pattern - remove row immediately after confirmation and refresh dependent macros or shopping-list views.
       operationId: deleteMealItem
       security:
         - bearerAuth: []

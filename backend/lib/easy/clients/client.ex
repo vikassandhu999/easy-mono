@@ -60,6 +60,7 @@ defmodule Easy.Clients.Client do
 
   @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def search(query \\ __MODULE__, term)
+  def search(query, nil), do: query
   def search(query, ""), do: query
 
   def search(query, term) do

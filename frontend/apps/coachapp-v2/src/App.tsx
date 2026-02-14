@@ -5,12 +5,15 @@ import GuestRoute from "@/components/GuestRoute";
 import MainLayout from "@/components/MainLayout";
 import PrivateRoute from "@/components/PrivateRoute";
 import AuthLayout from "@/pages/auth/AuthLayout";
-import ClientViewPage from '@/pages/clients/ClientViewPage';
+import ClientViewPage from "@/pages/clients/ClientViewPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import VerifyPage from "@/pages/auth/VerifyPage";
+import LibraryPage from "@/pages/library/LibraryPage";
+import FoodFormPage from "@/pages/library/FoodFormPage";
+import RecipeFormPage from "@/pages/library/RecipeFormPage";
 import OnboardingPage from "@/pages/onboarding/OnboardingPage";
-import ClientsPage from '@/pages/clients/ClientsPage';
+import ClientsPage from "./pages/clients/ClientsPage";
 
 export default function App() {
   return (
@@ -31,7 +34,14 @@ export default function App() {
             <Route element={<OnboardingPage />} path="/onboarding" />
             <Route element={<ClientsPage />} path="/clients" />
             <Route element={<ClientViewPage />} path="/clients/:id" />
-            <Route element={<span>Library</span>} path="/library" />
+            <Route element={<LibraryPage />} path="/library" />
+            <Route element={<FoodFormPage />} path="/library/foods/new" />
+            <Route element={<FoodFormPage />} path="/library/foods/:id/edit" />
+            <Route element={<RecipeFormPage />} path="/library/recipes/new" />
+            <Route
+              element={<RecipeFormPage />}
+              path="/library/recipes/:id/edit"
+            />
             <Route element={<span>My Page</span>} path="/page" />
             <Route element={<span>Settings</span>} path="/settings" />
           </Route>

@@ -42,7 +42,7 @@ export default function MainLayout() {
                 to={item.path}
               >
                 <Button
-                  className="w-full justify-start gap-3 transition-none data-[pressed]:scale-100"
+                  className="w-full justify-start gap-3 transition-none data-pressed:scale-100"
                   isDisabled={item.isDisabled}
                   size="lg"
                   variant={isActive ? "secondary" : "ghost"}
@@ -64,7 +64,7 @@ export default function MainLayout() {
               return (
                 <Button
                   aria-label={item.label}
-                  className="w-full justify-start gap-3 transition-none data-[pressed]:scale-100"
+                  className="w-full justify-start gap-3 transition-none data-pressed:scale-100"
                   key={item.label}
                   onPress={handleLogout}
                   size="lg"
@@ -85,7 +85,7 @@ export default function MainLayout() {
                 to={item.path}
               >
                 <Button
-                  className="w-full justify-start gap-3 transition-none data-[pressed]:scale-100"
+                  className="w-full justify-start gap-3 transition-none data-pressed:scale-100"
                   isDisabled={item.isDisabled}
                   size="lg"
                   variant={isActive ? "secondary" : "ghost"}
@@ -128,7 +128,7 @@ export default function MainLayout() {
                   to={item.path}
                 >
                   <Button
-                    className="transition-none data-[pressed]:scale-100"
+                    className="transition-none data-pressed:scale-100"
                     isDisabled={item.isDisabled}
                     isIconOnly
                     size="lg"

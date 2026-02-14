@@ -13,6 +13,13 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Training.Exercise
+  alias Easy.Training.Equipment
+  alias Easy.Training.Muscle
+  alias Easy.Training.PlannedWorkout
+  alias Easy.Training.TrainingPlan
+  alias Easy.Training.WorkoutElement
+  alias Easy.Training.WorkoutSession
 
   def user_factory do
     %User{
@@ -235,6 +242,121 @@ defmodule Easy.Factory do
       "amount" => 1.0,
       "unit" => "cup",
       "position" => 0
+    }
+  end
+
+  def exercise_factory do
+    %Exercise{
+      name: sequence(:exercise_name, &"Exercise #{&1}"),
+      description: "Exercise description",
+      instructions: "Exercise instructions",
+      mechanics: :compound,
+      force: :push,
+      images: [],
+      business: build(:business)
+    }
+  end
+
+  def muscle_factory do
+    %Muscle{
+      name: sequence(:muscle_name, &"Muscle #{&1}"),
+      description: "Primary target"
+    }
+  end
+
+  def equipment_factory do
+    %Equipment{
+      name: sequence(:equipment_name, &"Equipment #{&1}"),
+      description: "Gym equipment"
+    }
+  end
+
+  def exercise_attrs_factory do
+    %{
+      "name" => sequence(:exercise_attr_name, &"Exercise Attr #{&1}"),
+      "description" => "Created via test",
+      "instructions" => "Do it with control",
+      "mechanics" => "compound",
+      "force" => "push",
+      "images" => []
+    }
+  end
+
+  def training_plan_factory do
+    business = build(:business)
+    author = build(:coach, business: business)
+
+    %TrainingPlan{
+      name: sequence(:training_plan_name, &"Training Plan #{&1}"),
+      description: "Weekly strength plan",
+      is_template: true,
+      status: :active,
+      author: author,
+      business: business
+    }
+  end
+
+  def training_plan_attrs_factory do
+    %{
+      "name" => sequence(:training_plan_attr_name, &"Training Plan Attr #{&1}"),
+      "description" => "Created via test",
+      "is_template" => true,
+      "status" => "active"
+    }
+  end
+
+  def planned_workout_factory do
+    training_plan = build(:training_plan)
+
+    %PlannedWorkout{
+      name: sequence(:planned_workout_name, &"Planned Workout #{&1}"),
+      notes: "Push day",
+      day_number: 1,
+      training_plan: training_plan,
+      business: training_plan.business
+    }
+  end
+
+  def planned_workout_attrs_factory do
+    %{
+      "name" => sequence(:planned_workout_attr_name, &"Planned Workout Attr #{&1}"),
+      "notes" => "Workout from test",
+      "day_number" => 1
+    }
+  end
+
+  def workout_element_factory do
+    planned_workout = build(:planned_workout)
+    exercise = build(:exercise, business: planned_workout.business)
+
+    %WorkoutElement{
+      position: 0,
+      notes: "Top set",
+      planned_workout: planned_workout,
+      exercise: exercise,
+      business: planned_workout.business,
+      planned_sets: []
+    }
+  end
+
+  def workout_element_attrs_factory do
+    %{
+      "position" => 0,
+      "notes" => "Created via test"
+    }
+  end
+
+  def workout_session_factory do
+    business = build(:business)
+    creator = build(:coach, business: business)
+    client = build(:client, business: business, creator: creator)
+
+    %WorkoutSession{
+      started_at: DateTime.utc_now(),
+      state: :active,
+      notes: "Session note",
+      client: client,
+      business: business
     }
   end
 end

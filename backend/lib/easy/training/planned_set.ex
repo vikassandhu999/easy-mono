@@ -1,6 +1,9 @@
-defmodule Easy.Training.Programming.PlannedSet do
+defmodule Easy.Training.PlannedSet do
   use Ecto.Schema
+
   import Ecto.Changeset
+
+  @type t() :: %__MODULE__{}
 
   @primary_key false
   embedded_schema do
@@ -25,22 +28,24 @@ defmodule Easy.Training.Programming.PlannedSet do
     field :notes, :string
   end
 
-  @spec changeset(map() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  @cast_fields [
+    :target_reps,
+    :load_value,
+    :load_unit,
+    :intensity_target,
+    :tempo,
+    :rest_seconds,
+    :duration_seconds,
+    :distance_value,
+    :distance_unit,
+    :set_type,
+    :notes
+  ]
+
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(planned_set, attrs) do
     planned_set
-    |> cast(attrs, [
-      :target_reps,
-      :load_value,
-      :load_unit,
-      :intensity_target,
-      :tempo,
-      :rest_seconds,
-      :duration_seconds,
-      :distance_value,
-      :distance_unit,
-      :set_type,
-      :notes
-    ])
+    |> cast(attrs, @cast_fields)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)

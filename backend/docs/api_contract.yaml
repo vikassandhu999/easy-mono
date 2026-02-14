@@ -989,6 +989,821 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/coach/exercises:
+    post:
+      summary: Create exercise
+      description: Creates an exercise in the coach library so the frontend can immediately offer it in workout builders and exercise pickers. Frontend pattern - optimistic insert into local lists, then reconcile with the 201 payload.
+      operationId: createExercise
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Barbell Back Squat
+                  description: Main lower-body strength movement.
+                  instructions: Brace, descend to depth, drive up.
+                  mechanics: compound
+                  force: push
+                  images: ["https://cdn.example.com/exercises/back-squat.png"]
+                  muscle_ids: [8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0]
+                  equipment_ids: [7d72f2c3-8ed7-4b78-bf1f-c883df192772]
+      responses:
+        "201":
+          description: Exercise created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                      name: Barbell Back Squat
+                      description: Main lower-body strength movement.
+                      instructions: Brace, descend to depth, drive up.
+                      mechanics: compound
+                      force: push
+                      images: ["https://cdn.example.com/exercises/back-squat.png"]
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      muscles:
+                        - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+                          name: Quadriceps
+                          description: Front thigh
+                      equipment:
+                        - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+                          name: Barbell
+                          description: Standard olympic barbell
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List exercises
+      description: Powers exercise search and browse screens; frontend should call this for picker dialogs and filter chips while composing workouts. Frontend pattern - cache by query params and background-refetch on filter/search changes.
+      operationId: listExercises
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - name: muscle_ids
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+      responses:
+        "200":
+          description: Exercises
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/exercises/{id}:
+    get:
+      summary: Get exercise
+      description: Loads one exercise with related muscles and equipment for details pages and edit forms. Frontend pattern - cache by id and refetch after any edit mutation.
+      operationId: getExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Exercise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update exercise
+      description: Updates an existing exercise so frontend edits are reflected in all builders using that exercise reference. Frontend pattern - optimistic field patch in editor, rollback on 422, and refresh dependent lists if needed.
+      operationId: updateExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: High-Bar Back Squat
+                  description: Upright squat variation with reduced hip hinge.
+                  instructions: Stay upright and controlled.
+                  mechanics: compound
+      responses:
+        "200":
+          description: Exercise updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete exercise
+      description: Removes a custom exercise from the library; frontend can use this in admin/manage-library flows. Frontend pattern - confirm first, optimistically remove from list, and refetch if server rejects.
+      operationId: deleteExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Exercise deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/exercises/{id}/duplicate:
+    post:
+      summary: Duplicate exercise
+      description: Creates a copy for quick variants in UX, useful when coaches tweak only a few fields from an existing movement. Frontend pattern - append returned copy to current list and route to edit if user is in a clone flow.
+      operationId: duplicateExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "201":
+          description: Exercise duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/muscles:
+    get:
+      summary: List muscles
+      description: Provides canonical muscle options for autocomplete and tagging in exercise create/edit screens. Frontend pattern - preload once per session and reuse in local search components.
+      operationId: listMuscles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Muscles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MuscleListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/equipment:
+    get:
+      summary: List equipment
+      description: Provides canonical equipment options for frontend dropdowns and filters in exercise and programming workflows. Frontend pattern - preload once and keep cached unless manual refresh is requested.
+      operationId: listEquipment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Equipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/training_plans:
+    post:
+      summary: Create training plan
+      description: Creates a template or assigned training plan; frontend uses this as the entry point for plan-building UX. Frontend pattern - optimistic create in list view and navigate to detail editor using returned id.
+      operationId: createTrainingPlan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanCreateRequest"
+            examples:
+              default:
+                value:
+                  name: 12-Week Strength Base
+                  description: Structured novice strength cycle.
+                  is_template: true
+                  status: active
+      responses:
+        "201":
+          description: Training plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 28355076-c303-47d6-b595-a4a69f9ef50d
+                      name: 12-Week Strength Base
+                      description: Structured novice strength cycle.
+                      is_template: true
+                      status: active
+                      start_date: null
+                      end_date: null
+                      client_id: null
+                      author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      original_template_id: null
+                      planned_workouts: []
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List training plans
+      description: Drives plan list pages and client assignment dashboards with pagination, search, and status/template filters. Frontend pattern - cache by filter page key and invalidate after plan create/update/delete/assign.
+      operationId: listTrainingPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, draft, archived]
+        - name: is_template
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Training plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/training_plans/{id}:
+    get:
+      summary: Get training plan
+      description: Returns a plan with nested workouts/elements so frontend can render full plan detail and editor views. Frontend pattern - treat this as source of truth for the plan builder screen state.
+      operationId: getTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Training plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update training plan
+      description: Saves high-level plan metadata changes from plan settings panels. Frontend pattern - patch local plan state immediately and reconcile from response body.
+      operationId: updateTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: 12-Week Strength Base (Revised)
+                  description: Progressive overload with lighter deload weeks.
+                  status: active
+      responses:
+        "200":
+          description: Training plan updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete training plan
+      description: Deletes a plan and is typically used from destructive actions in plan management screens. Frontend pattern - require confirmation, optimistically remove card/row, then invalidate list query.
+      operationId: deleteTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Training plan deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/training_plans/{id}/assign:
+    post:
+      summary: Assign training plan
+      description: Copies a template to a client-specific plan with dates; frontend should use this from client onboarding and plan assignment UX. Frontend pattern - trigger from assign modal and redirect to returned assigned plan.
+      operationId: assignTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanAssignRequest"
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                  start_date: "2026-02-17"
+                  end_date: "2026-05-12"
+      responses:
+        "201":
+          description: Training plan assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/training_plans/{id}/duplicate:
+    post:
+      summary: Duplicate training plan
+      description: Creates a template copy for rapid iteration, commonly triggered by clone actions in plan libraries. Frontend pattern - add duplicated plan to current collection and optionally open rename/edit state.
+      operationId: duplicateTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "201":
+          description: Training plan duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/training_plans/{plan_id}/planned_workouts:
+    post:
+      summary: Create planned workout
+      description: Adds a day/workout block inside a plan; frontend uses this when users add training days in schedule builders. Frontend pattern - optimistic insert in day list, then reorder locally by day_number.
+      operationId: createPlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannedWorkoutCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Day 1 - Lower
+                  notes: Main squat session.
+                  day_number: 1
+      responses:
+        "201":
+          description: Planned workout created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List planned workouts
+      description: Fetches day blocks for a single plan to populate workout lists and reordering interfaces. Frontend pattern - refetch after create/update/delete of workouts in this plan.
+      operationId: listPlannedWorkouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Planned workouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/planned_workouts/{id}:
+    get:
+      summary: Get planned workout
+      description: Loads one planned workout with nested elements for workout detail/edit screens. Frontend pattern - use for drawer/detail hydration when opening a specific workout.
+      operationId: getPlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Planned workout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update planned workout
+      description: Updates workout-level metadata like name, notes, and day number from frontend editors. Frontend pattern - optimistic edit and refetch plan detail when day changes affect ordering.
+      operationId: updatePlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannedWorkoutUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Day 1 - Lower (Updated)
+                  notes: Added paused squats in accessories.
+                  day_number: 1
+      responses:
+        "200":
+          description: Planned workout updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete planned workout
+      description: Removes a workout day from the plan, used by planner delete actions. Frontend pattern - remove item from UI immediately after confirm, then invalidate parent plan query.
+      operationId: deletePlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Planned workout deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/workout_elements:
+    post:
+      summary: Create workout element
+      description: Adds an exercise block to a planned workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
+      operationId: createWorkoutElement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutElementCreateRequest"
+            examples:
+              default:
+                value:
+                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  position: 0
+                  exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                  planned_sets:
+                    - target_reps: 5
+                      load_unit: kg
+                      set_type: working
+      responses:
+        "201":
+          description: Workout element created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/workout_elements/{id}:
+    get:
+      summary: Get workout element
+      description: Retrieves one element with planned sets for focused editing side-panels or drawers. Frontend pattern - fetch on demand when opening element editor.
+      operationId: getWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout element
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update workout element
+      description: Saves changes to exercise selection, ordering, and planned sets from builder interactions. Frontend pattern - optimistic set-row editing with rollback on validation errors.
+      operationId: updateWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutElementUpdateRequest"
+            examples:
+              default:
+                value:
+                  notes: Top set at RPE 8, then back-off sets.
+                  planned_sets:
+                    - target_reps: 5
+                      load_unit: kg
+                      set_type: working
+                    - target_reps: 8
+                      load_unit: kg
+                      set_type: backoff
+      responses:
+        "200":
+          description: Workout element updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete workout element
+      description: Removes a movement block from a workout, typically called after UI confirmation. Frontend pattern - confirm, remove locally, then invalidate workout detail query.
+      operationId: deleteWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Workout element deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/sessions:
+    post:
+      summary: Start workout session
+      description: Starts a live or logged workout session for a client; frontend uses this when the coach or client begins tracking. Frontend pattern - create once and keep session id in client state for subsequent complete/discard actions.
+      operationId: createWorkoutSession
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionCreateRequest"
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  notes: Feeling strong today.
+      responses:
+        "201":
+          description: Workout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+                      started_at: "2026-02-14T10:15:00Z"
+                      ended_at: null
+                      state: active
+                      soreness_rating: null
+                      notes: Feeling strong today.
+                      client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                      performed_sets: []
+                      inserted_at: "2026-02-14T10:15:00Z"
+                      updated_at: "2026-02-14T10:15:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List workout sessions
+      description: Powers activity timelines and history screens with filters for client and session state. Frontend pattern - key cache by filter params and paginate/infinite-scroll safely.
+      operationId: listWorkoutSessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, completed, discarded]
+      responses:
+        "200":
+          description: Workout sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/sessions/{id}:
+    get:
+      summary: Get workout session
+      description: Returns a session and performed sets for recap, review, and post-session analytics UI. Frontend pattern - fetch by id for recap screen and refresh after completion state changes.
+      operationId: getWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Delete workout session
+      description: Hard-deletes an incorrectly created session; frontend should gate this behind explicit confirmation. Frontend pattern - hide destructive action behind role/permission and post-confirm dialog.
+      operationId: deleteWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Workout session deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/sessions/{id}/complete:
+    patch:
+      summary: Complete workout session
+      description: Transitions an active session to completed and stores end-of-session notes/ratings from finish flows. Frontend pattern - disable finish button while pending and replace active state with returned completed payload.
+      operationId: completeWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionCompleteRequest"
+            examples:
+              default:
+                value:
+                  soreness_rating: 3
+                  notes: Finished all prescribed sets.
+      responses:
+        "200":
+          description: Workout session completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/sessions/{id}/discard:
+    patch:
+      summary: Discard workout session
+      description: Marks a session as discarded for aborted workouts while preserving auditability in UX history. Frontend pattern - use from abort flow and immediately reflect discarded badge/state in timeline.
+      operationId: discardWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout session discarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
 components:
   securitySchemes:
     bearerAuth:
@@ -1951,6 +2766,754 @@ components:
         updated_at:
           type: string
           format: date-time
+    ExerciseCreateRequest:
+      type: object
+      required: [name]
+      example:
+        name: Barbell Back Squat
+        description: Main lower-body strength movement.
+        instructions: Brace, descend to depth, drive up.
+        mechanics: compound
+        force: push
+        images: ["https://cdn.example.com/exercises/back-squat.png"]
+        muscle_ids: [8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0]
+        equipment_ids: [7d72f2c3-8ed7-4b78-bf1f-c883df192772]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        mechanics:
+          type: string
+          enum: [compound, isolation, isometric]
+        force:
+          type: string
+          enum: [push, pull, static]
+        images:
+          type: array
+          items:
+            type: string
+        muscle_ids:
+          type: array
+          items:
+            type: string
+        equipment_ids:
+          type: array
+          items:
+            type: string
+    ExerciseUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        mechanics:
+          type: string
+          enum: [compound, isolation, isometric]
+        force:
+          type: string
+          enum: [push, pull, static]
+        images:
+          type: array
+          items:
+            type: string
+        muscle_ids:
+          type: array
+          items:
+            type: string
+        equipment_ids:
+          type: array
+          items:
+            type: string
+    ExerciseResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+          name: Barbell Back Squat
+          description: Main lower-body strength movement.
+          instructions: Brace, descend to depth, drive up.
+          mechanics: compound
+          force: push
+          images: ["https://cdn.example.com/exercises/back-squat.png"]
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          muscles:
+            - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+              name: Quadriceps
+              description: Front thigh
+          equipment:
+            - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+              name: Barbell
+              description: Standard olympic barbell
+          inserted_at: "2026-02-14T10:00:00Z"
+          updated_at: "2026-02-14T10:00:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/Exercise"
+    ExerciseListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+        count:
+          type: integer
+    Exercise:
+      type: object
+      required: [id, name, images, muscles, equipment, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        instructions:
+          type: string
+          nullable: true
+        mechanics:
+          type: string
+          nullable: true
+        force:
+          type: string
+          nullable: true
+        images:
+          type: array
+          items:
+            type: string
+        business_id:
+          type: string
+          nullable: true
+        muscles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Muscle"
+        equipment:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MuscleListResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+            name: Quadriceps
+            description: Front thigh
+          - id: 40dcf5f6-24d9-4d32-a2b4-7b7f7b0ee497
+            name: Glutes
+            description: Hip extensors
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Muscle"
+    Muscle:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    EquipmentListResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+            name: Barbell
+            description: Standard olympic barbell
+          - id: a14539d3-2d5a-4d28-b24e-cf0a3da24912
+            name: Bench
+            description: Flat training bench
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+    Equipment:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    TrainingPlanCreateRequest:
+      type: object
+      required: [name]
+      example:
+        name: 12-Week Strength Base
+        description: Structured novice strength cycle.
+        is_template: true
+        status: active
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        is_template:
+          type: boolean
+        status:
+          type: string
+          enum: [active, draft, archived]
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        original_template_id:
+          type: string
+    TrainingPlanUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        is_template:
+          type: boolean
+        status:
+          type: string
+          enum: [active, draft, archived]
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        original_template_id:
+          type: string
+    TrainingPlanAssignRequest:
+      type: object
+      required: [client_id]
+      example:
+        client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+        start_date: "2026-02-17"
+        end_date: "2026-05-12"
+      properties:
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    TrainingPlanResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: 28355076-c303-47d6-b595-a4a69f9ef50d
+          name: 12-Week Strength Base
+          description: Structured novice strength cycle.
+          is_template: true
+          status: active
+          start_date: null
+          end_date: null
+          client_id: null
+          author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          original_template_id: null
+          planned_workouts: []
+          inserted_at: "2026-02-14T10:00:00Z"
+          updated_at: "2026-02-14T10:00:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/TrainingPlan"
+    TrainingPlanListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingPlan"
+        count:
+          type: integer
+    TrainingPlan:
+      type: object
+      required:
+        [
+          id,
+          name,
+          is_template,
+          status,
+          planned_workouts,
+          author_id,
+          business_id,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_template:
+          type: boolean
+        status:
+          type: string
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        client_id:
+          type: string
+          nullable: true
+        author_id:
+          type: string
+        business_id:
+          type: string
+        original_template_id:
+          type: string
+          nullable: true
+        planned_workouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedWorkout"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlannedWorkoutCreateRequest:
+      type: object
+      required: [name, day_number]
+      example:
+        name: Day 1 - Lower
+        notes: Main squat session.
+        day_number: 1
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+        day_number:
+          type: integer
+          minimum: 1
+          maximum: 7
+    PlannedWorkoutUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+        day_number:
+          type: integer
+    PlannedWorkoutResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PlannedWorkout"
+    PlannedWorkoutListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedWorkout"
+        count:
+          type: integer
+    PlannedWorkout:
+      type: object
+      required:
+        [
+          id,
+          name,
+          day_number,
+          training_plan_id,
+          business_id,
+          workout_elements,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        day_number:
+          type: integer
+        training_plan_id:
+          type: string
+        business_id:
+          type: string
+        workout_elements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutElement"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkoutElementCreateRequest:
+      type: object
+      required: [planned_workout_id, position, exercise_id]
+      example:
+        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        position: 0
+        exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+        planned_sets:
+          - target_reps: 5
+            load_unit: kg
+            set_type: working
+      properties:
+        planned_workout_id:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+        superset_group_id:
+          type: string
+        notes:
+          type: string
+        exercise_id:
+          type: string
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+    WorkoutElementUpdateRequest:
+      type: object
+      properties:
+        position:
+          type: integer
+        superset_group_id:
+          type: string
+        notes:
+          type: string
+        exercise_id:
+          type: string
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+    WorkoutElementResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/WorkoutElement"
+    WorkoutElement:
+      type: object
+      required:
+        [
+          id,
+          position,
+          exercise_id,
+          planned_workout_id,
+          business_id,
+          planned_sets,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+        superset_group_id:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        exercise_id:
+          type: string
+        planned_workout_id:
+          type: string
+        business_id:
+          type: string
+        exercise:
+          $ref: "#/components/schemas/ExerciseBrief"
+          nullable: true
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlannedSet:
+      type: object
+      properties:
+        target_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_target:
+          type: string
+          nullable: true
+        tempo:
+          type: string
+          nullable: true
+        rest_seconds:
+          type: integer
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        set_type:
+          type: string
+          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
+        notes:
+          type: string
+          nullable: true
+    WorkoutSessionCreateRequest:
+      type: object
+      required: [client_id]
+      example:
+        client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        notes: Feeling strong today.
+      properties:
+        client_id:
+          type: string
+        state:
+          type: string
+          enum: [active, completed, discarded]
+        soreness_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+        planned_workout_id:
+          type: string
+    WorkoutSessionCompleteRequest:
+      type: object
+      example:
+        soreness_rating: 3
+        notes: Finished all prescribed sets.
+      properties:
+        soreness_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+    WorkoutSessionResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+          started_at: "2026-02-14T10:15:00Z"
+          ended_at: null
+          state: active
+          soreness_rating: null
+          notes: Feeling strong today.
+          client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+          performed_sets: []
+          inserted_at: "2026-02-14T10:15:00Z"
+          updated_at: "2026-02-14T10:15:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/WorkoutSession"
+    WorkoutSessionListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutSession"
+        count:
+          type: integer
+    WorkoutSession:
+      type: object
+      required:
+        [
+          id,
+          started_at,
+          state,
+          client_id,
+          business_id,
+          performed_sets,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        state:
+          type: string
+          enum: [active, completed, discarded]
+        soreness_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          nullable: true
+        client_id:
+          type: string
+        business_id:
+          type: string
+        planned_workout_id:
+          type: string
+          nullable: true
+        performed_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformedSet"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PerformedSet:
+      type: object
+      required:
+        [
+          id,
+          position,
+          exercise_id,
+          workout_session_id,
+          business_id,
+          completed,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+        actual_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_felt:
+          type: string
+          nullable: true
+        rpe:
+          type: number
+          nullable: true
+        rir:
+          type: integer
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        tempo_actual:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        exercise_id:
+          type: string
+        workout_session_id:
+          type: string
+        business_id:
+          type: string
+        exercise:
+          $ref: "#/components/schemas/ExerciseBrief"
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ExerciseBrief:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mechanics:
+          type: string
+          nullable: true
+        force:
+          type: string
+          nullable: true
     ServingSize:
       type: object
       required: [unit]

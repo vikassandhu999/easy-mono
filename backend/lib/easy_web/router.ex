@@ -99,6 +99,42 @@ defmodule EasyWeb.Router do
     get "/meals/:meal_id/items", MealItemController, :index
     patch "/meal_items/:id", MealItemController, :update
     delete "/meal_items/:id", MealItemController, :delete
+
+    get "/exercises", ExerciseController, :index
+    post "/exercises", ExerciseController, :create
+    get "/exercises/:id", ExerciseController, :show
+    patch "/exercises/:id", ExerciseController, :update
+    delete "/exercises/:id", ExerciseController, :delete
+    post "/exercises/:id/duplicate", ExerciseController, :duplicate
+
+    get "/muscles", MuscleController, :index
+    get "/equipment", EquipmentController, :index
+
+    get "/training_plans", TrainingPlanController, :index
+    post "/training_plans", TrainingPlanController, :create
+    get "/training_plans/:id", TrainingPlanController, :show
+    patch "/training_plans/:id", TrainingPlanController, :update
+    delete "/training_plans/:id", TrainingPlanController, :delete
+    post "/training_plans/:id/assign", TrainingPlanController, :assign
+    post "/training_plans/:id/duplicate", TrainingPlanController, :duplicate
+
+    get "/training_plans/:plan_id/planned_workouts", PlannedWorkoutController, :index
+    post "/training_plans/:plan_id/planned_workouts", PlannedWorkoutController, :create
+    get "/planned_workouts/:id", PlannedWorkoutController, :show
+    patch "/planned_workouts/:id", PlannedWorkoutController, :update
+    delete "/planned_workouts/:id", PlannedWorkoutController, :delete
+
+    post "/workout_elements", WorkoutElementController, :create
+    get "/workout_elements/:id", WorkoutElementController, :show
+    patch "/workout_elements/:id", WorkoutElementController, :update
+    delete "/workout_elements/:id", WorkoutElementController, :delete
+
+    get "/sessions", WorkoutSessionController, :index
+    post "/sessions", WorkoutSessionController, :create
+    get "/sessions/:id", WorkoutSessionController, :show
+    patch "/sessions/:id/complete", WorkoutSessionController, :complete
+    patch "/sessions/:id/discard", WorkoutSessionController, :discard
+    delete "/sessions/:id", WorkoutSessionController, :delete
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

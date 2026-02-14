@@ -35,4 +35,28 @@ defmodule Easy.ConnCase do
 
     Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
   end
+
+  @spec training_tables_ready?() :: boolean()
+  def training_tables_ready? do
+    required_tables = [
+      "training_plans",
+      "planned_workouts",
+      "workout_elements",
+      "exercises",
+      "workout_sessions"
+    ]
+
+    case Ecto.Adapters.SQL.query(
+           Easy.Repo,
+           "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
+           []
+         ) do
+      {:ok, %{rows: rows}} ->
+        existing = rows |> List.flatten() |> MapSet.new()
+        Enum.all?(required_tables, &MapSet.member?(existing, &1))
+
+      _ ->
+        false
+    end
+  end
 end

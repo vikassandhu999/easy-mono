@@ -1,0 +1,105 @@
+defmodule Easy.Training.PlannedWorkout do
+  use Ecto.Schema
+
+  alias Easy.Orgs
+  alias Easy.Repo
+  alias Easy.Training.{TrainingPlan, WorkoutElement}
+
+  import Ecto.Changeset
+  import Ecto.Query
+
+  @type t() :: %__MODULE__{}
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "planned_workouts" do
+    field :name, :string
+    field :notes, :string
+    field :day_number, :integer
+
+    belongs_to :business, Orgs.Business
+    belongs_to :training_plan, TrainingPlan
+
+    has_many :workout_elements, WorkoutElement,
+      preload_order: [asc: :position],
+      on_delete: :delete_all
+
+    timestamps(type: :utc_datetime_usec)
+  end
+
+  @cast_fields [:name, :notes, :day_number]
+
+  @spec day_name(integer()) :: String.t() | nil
+  def day_name(1), do: "Monday"
+  def day_name(2), do: "Tuesday"
+  def day_name(3), do: "Wednesday"
+  def day_name(4), do: "Thursday"
+  def day_name(5), do: "Friday"
+  def day_name(6), do: "Saturday"
+  def day_name(7), do: "Sunday"
+  def day_name(_), do: nil
+
+  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def insert_changeset(training_plan_id, business_id, attrs) do
+    %__MODULE__{}
+    |> cast(attrs, @cast_fields)
+    |> put_change(:training_plan_id, training_plan_id)
+    |> put_change(:business_id, business_id)
+    |> validate_required([:name, :day_number, :training_plan_id, :business_id])
+    |> validate_length(:notes, max: 5000)
+    |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
+    |> check_constraint(:day_number,
+      name: :day_number_valid_weekday,
+      message: "must be between 1 (Monday) and 7 (Sunday)"
+    )
+    |> foreign_key_constraint(:training_plan_id)
+    |> foreign_key_constraint(:business_id)
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(workout, attrs) do
+    workout
+    |> cast(attrs, @cast_fields)
+    |> validate_length(:notes, max: 5000)
+    |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
+    |> foreign_key_constraint(:training_plan_id)
+    |> foreign_key_constraint(:business_id)
+  end
+
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(w in query, where: w.business_id == ^business_id)
+  end
+
+  @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_plan(query \\ __MODULE__, plan_id) do
+    from(w in query, where: w.training_plan_id == ^plan_id)
+  end
+
+  @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def ordered(query \\ __MODULE__) do
+    from(w in query, order_by: [asc: w.day_number])
+  end
+
+  @spec with_elements(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def with_elements(query \\ __MODULE__) do
+    element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
+    from(w in query, preload: [workout_elements: ^element_query])
+  end
+
+  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def create(training_plan_id, business_id, attrs) do
+    insert_changeset(training_plan_id, business_id, attrs)
+    |> Repo.insert()
+  end
+
+  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def update(workout, attrs) do
+    update_changeset(workout, attrs)
+    |> Repo.update()
+  end
+
+  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def delete(workout), do: Repo.delete(workout)
+end

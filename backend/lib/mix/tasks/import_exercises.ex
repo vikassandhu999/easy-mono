@@ -4,7 +4,7 @@ defmodule Mix.Tasks.ImportExercises do
   import Ecto.Query, warn: false
 
   alias Easy.Repo
-  alias Easy.Training.Library.Exercise
+  alias Easy.Training.Exercise
 
   @shortdoc "Imports exercises from a JSON file into the database"
 
@@ -57,14 +57,12 @@ defmodule Mix.Tasks.ImportExercises do
   defp import_single_exercise({exercise_data, index}) do
     name = exercise_data["name"]
 
-    # Check if exercise already exists (system-level, business_id is nil)
     existing_query =
       from e in Exercise,
         where: e.name == ^name and is_nil(e.business_id)
 
     case Repo.one(existing_query) do
       nil ->
-        # Build the changeset and insert
         attrs = %{
           "name" => exercise_data["name"],
           "description" => exercise_data["description"],
@@ -72,11 +70,10 @@ defmodule Mix.Tasks.ImportExercises do
           "mechanics" => exercise_data["mechanics"],
           "force" => exercise_data["force"],
           "muscle_ids" => exercise_data["muscle_ids"] || [],
-          "equipment_ids" => exercise_data["equipment_ids"] || [],
-          "business_id" => nil
+          "equipment_ids" => exercise_data["equipment_ids"] || []
         }
 
-        case create_exercise(attrs) do
+        case Exercise.insert_changeset(nil, attrs) |> Repo.insert() do
           {:ok, _exercise} ->
             Mix.shell().info("#{index}. ✓ Imported: #{name}")
             {:ok, name}
@@ -91,12 +88,6 @@ defmodule Mix.Tasks.ImportExercises do
         Mix.shell().info("#{index}. ⊘ Skipped (exists): #{name}")
         {:skipped, name}
     end
-  end
-
-  defp create_exercise(attrs) do
-    %Exercise{}
-    |> Exercise.changeset(attrs)
-    |> Repo.insert()
   end
 
   defp format_changeset_errors(changeset) do

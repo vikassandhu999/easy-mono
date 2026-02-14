@@ -132,6 +132,11 @@ Use Loom as the **layout efficiency benchmark** (structure and clarity), not as 
 - Treat that file as the canonical implementation template for hierarchy, control placement, spacing rhythm, and CTA emphasis.
 - If a page intentionally deviates, document the reason in the PR/summary.
 
+### Global UI rules (mandatory)
+
+- For all UI work (not only resource/index pages), follow `docs/ui-design-rules.md`, should be treated as the practical default for hierarchy, accessibility, spacing, typography, forms, actions, and copy.
+- If a design decision conflicts with these rules, prefer the more accessible and lower cognitive-load option, and document the rationale in the PR/summary.
+
 1. **HeroUI-only, props-first.** Use HeroUI primitives + compound APIs (`Card.Header`, `TextField.Label`, etc.). Style via `variant`/`size`; `className` is for layout only (`gap`, `p`, `w`, `flex`, `grid`).
 
 2. **Loom-style information architecture.** Keep navigation persistent and predictable (mobile: compact/top-first, desktop: left rail), keep primary content in a focused center column, and place secondary actions in low-emphasis positions.
@@ -170,7 +175,7 @@ Use Loom as the **layout efficiency benchmark** (structure and clarity), not as 
 
 ## API contract and networking
 
-Primary contract: `apps/coachapp/docs/api_contract.yml` (OpenAPI 3.0.3).
+Primary contract: `apps/coachapp/docs/api_contract.yaml` (OpenAPI 3.0.3).
 
 ### Envelope types (defined in `api/shared.ts`)
 

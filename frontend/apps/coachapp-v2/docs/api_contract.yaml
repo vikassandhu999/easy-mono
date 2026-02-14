@@ -1,0 +1,3901 @@
+openapi: 3.0.3
+info:
+  title: Easy Coaching Platform API
+  version: 1.0.0
+  description: API contract for the Easy Coaching Platform.
+servers:
+  - url: http://localhost:4000
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /v1/auth/signup:
+    post:
+      summary: Sign up user
+      operationId: authSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/auth/otp:
+    post:
+      summary: Send OTP
+      operationId: authOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpRequest"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/auth/verify:
+    post:
+      summary: Verify OTP or token
+      operationId: authVerify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/VerifyTokenRequest"
+                - $ref: "#/components/schemas/VerifyOtpRequest"
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/auth/token:
+    post:
+      summary: Exchange token
+      operationId: authToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/TokenRefreshRequest"
+                - $ref: "#/components/schemas/TokenOtpRequest"
+      responses:
+        "200":
+          description: Token created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/businesses:
+    post:
+      summary: Create business
+      operationId: createBusiness
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessCreateRequest"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/businesses/me:
+    get:
+      summary: Get current business
+      operationId: getMyBusiness
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      summary: Update current business
+      operationId: updateMyBusiness
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdateRequest"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coaches/me:
+    get:
+      summary: Get current coach
+      operationId: getMyCoach
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Coach
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      summary: Update current coach
+      operationId: updateMyCoach
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoachUpdateRequest"
+      responses:
+        "200":
+          description: Coach updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/clients/invite:
+    post:
+      summary: Invite client
+      operationId: inviteClient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInviteRequest"
+      responses:
+        "201":
+          description: Client invited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/clients/{id}:
+    get:
+      summary: Get client
+      operationId: getClient
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/clients:
+    get:
+      summary: List clients
+      operationId: listClients
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Clients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/foods:
+    post:
+      summary: Create food
+      description: Creates a reusable food entry for nutrition planning flows, typically from food-library create forms. Frontend pattern - optimistically add to current food list and reconcile details from the 201 response.
+      operationId: createFood
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Greek Yogurt (2%)
+                  macros:
+                    protein: 10
+                    carbs: 4
+                    fats: 2
+                    calories: 73
+                  source: USDA
+                  category: dairy
+                  tags: [high-protein, breakfast]
+                  notes: Plain strained yogurt.
+                  image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                  serving_sizes:
+                    - unit: cup
+                      amount: 1
+                      weight_g: 245
+                    - unit: g
+                      amount: 100
+                      weight_g: 100
+      responses:
+        "201":
+          description: Food created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      name: Greek Yogurt (2%)
+                      macros:
+                        protein: 10
+                        carbs: 4
+                        fats: 2
+                        calories: 73
+                      source: USDA
+                      category: dairy
+                      tags: [high-protein, breakfast]
+                      notes: Plain strained yogurt.
+                      image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                      serving_sizes:
+                        - unit: cup
+                          amount: 1
+                          weight_g: 245
+                        - unit: g
+                          amount: 100
+                          weight_g: 100
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List foods
+      description: Lists food-library entries for search dialogs, picker modals, and food-management tables. Frontend pattern - cache by pagination/search params and invalidate after create, update, or delete.
+      operationId: listFoods
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Foods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/foods/{id}:
+    get:
+      summary: Get food
+      description: Fetches a single food record for details pages and edit forms. Frontend pattern - cache by id and refetch after successful food mutations.
+      operationId: getFood
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Food
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update food
+      description: Updates food metadata used across meals and recipes when a coach edits library entries. Frontend pattern - apply optimistic field updates in the editor and rollback on validation failure.
+      operationId: updateFood
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Greek Yogurt (2% Milkfat)
+                  category: dairy
+                  tags: [high-protein, snack]
+                  notes: Updated label from package.
+      responses:
+        "200":
+          description: Food updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete food
+      description: Removes a food from the custom library from destructive management actions. Frontend pattern - require confirmation, optimistically remove from local lists, and refetch if delete fails.
+      operationId: deleteFood
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Food deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/recipes:
+    post:
+      summary: Create recipe
+      description: Creates a reusable recipe with ingredients for nutrition builders and meal-item composition flows. Frontend pattern - optimistically insert into recipe lists and hydrate details from the 201 payload.
+      operationId: createRecipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Overnight Oats Bowl
+                  source: Coach Library
+                  category: breakfast
+                  tags: [high-fiber, make-ahead]
+                  instructions: Mix and refrigerate overnight, then top and serve.
+                  image_url: "https://cdn.example.com/nutrition/recipes/overnight-oats.jpg"
+                  cooked_weight_g: 420
+                  service_size_type: serving_based
+                  serving_sizes:
+                    - unit: bowl
+                      amount: 1
+                      weight_g: 420
+                  recipe_ingredients:
+                    - food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      unit: g
+                      amount: 200
+                      weight_g: 200
+      responses:
+        "201":
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 28d1ea76-bd7b-4f61-80f0-a3c976a9f50a
+                      name: Overnight Oats Bowl
+                      macros: null
+                      source: Coach Library
+                      category: breakfast
+                      tags: [high-fiber, make-ahead]
+                      instructions: Mix and refrigerate overnight, then top and serve.
+                      image_url: "https://cdn.example.com/nutrition/recipes/overnight-oats.jpg"
+                      cooked_weight_g: 420
+                      service_size_type: serving_based
+                      serving_sizes:
+                        - unit: bowl
+                          amount: 1
+                          weight_g: 420
+                      recipe_ingredients:
+                        - food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                          food:
+                            id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                            name: Greek Yogurt (2%)
+                            macros:
+                              protein: 10
+                              carbs: 4
+                              fats: 2
+                              calories: 73
+                            source: USDA
+                            category: dairy
+                            tags: [high-protein, breakfast]
+                            notes: Plain strained yogurt.
+                            image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                            serving_sizes:
+                              - unit: cup
+                                amount: 1
+                                weight_g: 245
+                            creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                            inserted_at: "2026-02-14T10:00:00Z"
+                            updated_at: "2026-02-14T10:00:00Z"
+                          unit: g
+                          amount: 200
+                          weight_g: 200
+                      foods:
+                        - id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                          name: Greek Yogurt (2%)
+                          macros:
+                            protein: 10
+                            carbs: 4
+                            fats: 2
+                            calories: 73
+                          source: USDA
+                          category: dairy
+                          tags: [high-protein, breakfast]
+                          notes: Plain strained yogurt.
+                          image_url: "https://cdn.example.com/nutrition/foods/greek-yogurt-2pct.jpg"
+                          serving_sizes:
+                            - unit: cup
+                              amount: 1
+                              weight_g: 245
+                          creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                          inserted_at: "2026-02-14T10:00:00Z"
+                          updated_at: "2026-02-14T10:00:00Z"
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List recipes
+      description: Lists recipes for recipe-library screens and ingredient pickers in meal planning UX. Frontend pattern - cache by search/page key and invalidate after recipe create, update, and delete.
+      operationId: listRecipes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Recipes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/recipes/{id}:
+    get:
+      summary: Get recipe
+      description: Retrieves one recipe with ingredient details for edit drawers and recipe details screens. Frontend pattern - fetch on open for editing and keep id-keyed cache in sync after save.
+      operationId: getRecipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update recipe
+      description: Persists recipe edits and ingredient changes made in recipe-builder interfaces. Frontend pattern - patch local form state optimistically and reconcile nested ingredients from response.
+      operationId: updateRecipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Overnight Oats Bowl (Cinnamon)
+                  instructions: Mix, refrigerate overnight, and top with cinnamon before serving.
+                  tags: [high-fiber, make-ahead, breakfast]
+      responses:
+        "200":
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete recipe
+      description: Deletes a recipe from nutrition libraries, usually from recipe-management screens. Frontend pattern - confirm destructive action, remove list row optimistically, and invalidate recipe queries.
+      operationId: deleteRecipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Recipe deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans:
+    post:
+      summary: Create nutrition plan
+      description: Creates a nutrition plan shell used as a template or client-facing plan in nutrition-programming flows. Frontend pattern - optimistically insert a new plan card and navigate to detail editor using the returned id.
+      operationId: createNutritionPlan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NutritionPlanCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Lean Mass Phase 1
+                  description: High-protein template with repeatable weekday structure.
+                  tags: [mass-gain, high-protein]
+                  macros_goal:
+                    protein: 180
+                    carbs: 320
+                    fats: 80
+                    calories: 2720
+                  type: template
+                  status: draft
+      responses:
+        "201":
+          description: Nutrition plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      name: Lean Mass Phase 1
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: template
+                      status: draft
+                      client_id: null
+                      source_template_id: null
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List nutrition plans
+      description: Lists nutrition plans for library tables and assignment workflows with pagination and optional status/type filtering. Frontend pattern - cache by filter key and invalidate after create, update, delete, assign, or duplicate.
+      operationId: listNutritionPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nutrition plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/nutrition_plans/{id}:
+    get:
+      summary: Get nutrition plan
+      description: Returns one nutrition plan with nested meals and plan items for full plan-builder hydration. Frontend pattern - treat this endpoint as source of truth for the nutrition plan detail screen.
+      operationId: getNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Nutrition plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update nutrition plan
+      description: Updates plan-level metadata from settings panels without changing nested meal entities directly. Frontend pattern - optimistic metadata patch and reconcile canonical payload from the 200 response.
+      operationId: updateNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NutritionPlanUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Lean Mass Phase 1 (Updated)
+                  description: Revised carb targets for training days.
+                  status: active
+      responses:
+        "200":
+          description: Nutrition plan updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete nutrition plan
+      description: Deletes a nutrition plan from template or assigned-plan management screens. Frontend pattern - require confirmation, remove item optimistically, and refresh list queries.
+      operationId: deleteNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Nutrition plan deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans/{id}/assign:
+    post:
+      summary: Assign nutrition plan to client
+      description: Clones a template plan to a client-owned personal plan from assignment modals in coach UX. Frontend pattern - submit from assign dialog and append returned personal plan to the client plan list.
+      operationId: assignNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id]
+              properties:
+                client_id:
+                  type: string
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+      responses:
+        "201":
+          description: Nutrition plan assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 1956fb35-50b9-4c33-a39f-95aa2f85f457
+                      name: Lean Mass Phase 1
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: personal
+                      status: draft
+                      client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                      source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:15:00Z"
+                      updated_at: "2026-02-14T10:15:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/nutrition_plans/{id}/duplicate:
+    post:
+      summary: Duplicate nutrition plan
+      description: Creates a copy of an existing nutrition plan for quick iteration and versioning in template libraries. Frontend pattern - add duplicated plan to current collection and open rename/edit state.
+      operationId: duplicateNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "201":
+          description: Nutrition plan duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 9b8d118e-bbd1-4b52-8a13-b8ad8124e18d
+                      name: Lean Mass Phase 1 (Copy)
+                      description: High-protein template with repeatable weekday structure.
+                      tags: [mass-gain, high-protein]
+                      macros_goal:
+                        protein: 180
+                        carbs: 320
+                        fats: 80
+                        calories: 2720
+                      type: template
+                      status: draft
+                      client_id: null
+                      source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      meals: []
+                      plan_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:20:00Z"
+                      updated_at: "2026-02-14T10:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans/{id}/copy-day:
+    post:
+      summary: Copy nutrition plan day
+      description: Replaces a target day with items copied from a source day inside the same plan from day-management UX. Frontend pattern - trigger from copy-day action and replace local day items with returned payload.
+      operationId: copyNutritionPlanDay
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopyDayRequest"
+            examples:
+              default:
+                value:
+                  source_day: monday
+                  target_day: thursday
+      responses:
+        "200":
+          description: Plan items copied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanItemListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/nutrition_plans/{id}/shopping-list:
+    get:
+      summary: Nutrition plan shopping list
+      description: Aggregates ingredient needs across a plan for grocery and prep views in nutrition coaching UX. Frontend pattern - fetch on demand from shopping-list tab and refresh after meal-item mutations.
+      operationId: getNutritionPlanShoppingList
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Shopping list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShoppingListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans/{id}/reorder-meals:
+    post:
+      summary: Reorder nutrition plan meals
+      description: Persists drag-and-drop meal ordering inside a nutrition plan editor. Frontend pattern - optimistically reorder locally, then reconcile canonical ordering from the response.
+      operationId: reorderNutritionPlanMeals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderMealsRequest"
+            examples:
+              default:
+                value:
+                  meal_ids:
+                    - 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                    - 3295f5e6-f074-4eab-bb4d-54c9ad95d822
+      responses:
+        "200":
+          description: Meals reordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/nutrition_plans/{id}/macros:
+    get:
+      summary: Nutrition plan macros
+      description: Returns aggregated macros from plan meals for summary cards and adherence dashboards. Frontend pattern - refetch this lightweight aggregate after meal or meal-item edits.
+      operationId: getNutritionPlanMacros
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Macros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MacrosResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans/{plan_id}/meals:
+    post:
+      summary: Create meal
+      description: Creates a meal node within a nutrition plan from meal-builder add actions. Frontend pattern - optimistic insert into meal list and update order using returned meal payload.
+      operationId: createMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Breakfast
+                  macros:
+                    protein: 45
+                    carbs: 70
+                    fats: 20
+                    calories: 640
+                  position: 0
+      responses:
+        "201":
+          description: Meal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      name: Breakfast
+                      macros:
+                        protein: 45
+                        carbs: 70
+                        fats: 20
+                        calories: 640
+                      position: 0
+                      meal_items: []
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      plan_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      inserted_at: "2026-02-14T10:25:00Z"
+                      updated_at: "2026-02-14T10:25:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List meals for plan
+      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete/reorder.
+      operationId: listMeals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Meals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/meals/{id}:
+    get:
+      summary: Get meal
+      description: Fetches a meal with nested meal items for focused meal edit views. Frontend pattern - fetch on meal selection and reuse response as edit baseline state.
+      operationId: getMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update meal
+      description: Updates meal metadata such as name, macros, and position from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
+      operationId: updateMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Breakfast (Training Day)
+                  position: 1
+      responses:
+        "200":
+          description: Meal updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete meal
+      description: Deletes a meal from a nutrition plan, used by destructive actions in meal-management UI. Frontend pattern - confirm first, then remove from local list and invalidate plan detail query.
+      operationId: deleteMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Meal deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/nutrition_plans/{plan_id}/plan_items:
+    post:
+      summary: Create plan item
+      description: Creates a day-to-meal mapping entry used by weekly plan schedule boards. Frontend pattern - optimistically add item to the selected day column and reconcile from 201 payload.
+      operationId: createPlanItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanItemCreateRequest"
+            examples:
+              default:
+                value:
+                  day: monday
+                  meal_type: breakfast
+                  meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+      responses:
+        "201":
+          description: Plan item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanItemResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: a55cae20-9cae-45d7-be74-c7a983945332
+                      day: monday
+                      meal_type: breakfast
+                      meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      plan_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:30:00Z"
+                      updated_at: "2026-02-14T10:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List plan items for plan
+      description: Returns all day assignments for a plan so frontend can render weekly schedule grids. Frontend pattern - refetch after plan-item create, update, delete, or copy-day actions.
+      operationId: listPlanItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      responses:
+        "200":
+          description: Plan items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanItemListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/plan_items/{id}:
+    patch:
+      summary: Update plan item
+      description: Updates day assignment, meal type label, or linked meal for a scheduled plan item. Frontend pattern - update dragged/edited item optimistically and rollback on validation errors.
+      operationId: updatePlanItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanItemUpdateRequest"
+            examples:
+              default:
+                value:
+                  day: tuesday
+                  meal_type: lunch
+      responses:
+        "200":
+          description: Plan item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanItemResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete plan item
+      description: Removes a scheduled day mapping entry from plan calendars. Frontend pattern - remove from local day bucket immediately and invalidate plan item queries.
+      operationId: deletePlanItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Plan item deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/meals/{meal_id}/items:
+    post:
+      summary: Create meal item
+      description: Adds a food or recipe reference to a meal from meal-composition builders. Frontend pattern - optimistically append to meal items and reconcile order/ids from the 201 response.
+      operationId: createMealItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/MealIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealItemCreateRequest"
+            examples:
+              default:
+                value:
+                  food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                  amount: 200
+                  unit: g
+                  weight_g: 200
+                  position: 0
+      responses:
+        "201":
+          description: Meal item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealItemResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 2c4f52ed-fd7d-4d66-a709-3b2628a8fbfc
+                      weight_g: 200
+                      amount: 200
+                      unit: g
+                      position: 0
+                      recipe_id: null
+                      food_id: 8c3ea016-df8b-4ea2-9248-aaf4c47e9a8c
+                      meal_id: 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:35:00Z"
+                      updated_at: "2026-02-14T10:35:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List meal items
+      description: Lists all items inside a meal for composition editors and ingredient rollups. Frontend pattern - fetch per selected meal and refetch after meal-item mutations.
+      operationId: listMealItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/MealIdPath"
+      responses:
+        "200":
+          description: Meal items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealItemListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/meal_items/{id}:
+    patch:
+      summary: Update meal item
+      description: Updates quantity, unit, source food/recipe, or position for a single meal item. Frontend pattern - optimistic inline edit with rollback when backend validation fails.
+      operationId: updateMealItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealItemUpdateRequest"
+            examples:
+              default:
+                value:
+                  amount: 250
+                  weight_g: 250
+                  unit: g
+      responses:
+        "200":
+          description: Meal item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealItemResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete meal item
+      description: Deletes an item from a meal during nutrition-plan editing. Frontend pattern - remove row immediately after confirmation and refresh dependent macros or shopping-list views.
+      operationId: deleteMealItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Meal item deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/exercises:
+    post:
+      summary: Create exercise
+      description: Creates an exercise in the coach library so the frontend can immediately offer it in workout builders and exercise pickers. Frontend pattern - optimistic insert into local lists, then reconcile with the 201 payload.
+      operationId: createExercise
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Barbell Back Squat
+                  description: Main lower-body strength movement.
+                  instructions: Brace, descend to depth, drive up.
+                  mechanics: compound
+                  force: push
+                  images: ["https://cdn.example.com/exercises/back-squat.png"]
+                  muscle_ids: [8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0]
+                  equipment_ids: [7d72f2c3-8ed7-4b78-bf1f-c883df192772]
+      responses:
+        "201":
+          description: Exercise created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                      name: Barbell Back Squat
+                      description: Main lower-body strength movement.
+                      instructions: Brace, descend to depth, drive up.
+                      mechanics: compound
+                      force: push
+                      images: ["https://cdn.example.com/exercises/back-squat.png"]
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      muscles:
+                        - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+                          name: Quadriceps
+                          description: Front thigh
+                      equipment:
+                        - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+                          name: Barbell
+                          description: Standard olympic barbell
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List exercises
+      description: Powers exercise search and browse screens; frontend should call this for picker dialogs and filter chips while composing workouts. Frontend pattern - cache by query params and background-refetch on filter/search changes.
+      operationId: listExercises
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - name: muscle_ids
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+      responses:
+        "200":
+          description: Exercises
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/exercises/{id}:
+    get:
+      summary: Get exercise
+      description: Loads one exercise with related muscles and equipment for details pages and edit forms. Frontend pattern - cache by id and refetch after any edit mutation.
+      operationId: getExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Exercise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update exercise
+      description: Updates an existing exercise so frontend edits are reflected in all builders using that exercise reference. Frontend pattern - optimistic field patch in editor, rollback on 422, and refresh dependent lists if needed.
+      operationId: updateExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: High-Bar Back Squat
+                  description: Upright squat variation with reduced hip hinge.
+                  instructions: Stay upright and controlled.
+                  mechanics: compound
+      responses:
+        "200":
+          description: Exercise updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete exercise
+      description: Removes a custom exercise from the library; frontend can use this in admin/manage-library flows. Frontend pattern - confirm first, optimistically remove from list, and refetch if server rejects.
+      operationId: deleteExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Exercise deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/exercises/{id}/duplicate:
+    post:
+      summary: Duplicate exercise
+      description: Creates a copy for quick variants in UX, useful when coaches tweak only a few fields from an existing movement. Frontend pattern - append returned copy to current list and route to edit if user is in a clone flow.
+      operationId: duplicateExercise
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "201":
+          description: Exercise duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/muscles:
+    get:
+      summary: List muscles
+      description: Provides canonical muscle options for autocomplete and tagging in exercise create/edit screens. Frontend pattern - preload once per session and reuse in local search components.
+      operationId: listMuscles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Muscles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MuscleListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/equipment:
+    get:
+      summary: List equipment
+      description: Provides canonical equipment options for frontend dropdowns and filters in exercise and programming workflows. Frontend pattern - preload once and keep cached unless manual refresh is requested.
+      operationId: listEquipment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        "200":
+          description: Equipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EquipmentListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/training_plans:
+    post:
+      summary: Create training plan
+      description: Creates a template or assigned training plan; frontend uses this as the entry point for plan-building UX. Frontend pattern - optimistic create in list view and navigate to detail editor using returned id.
+      operationId: createTrainingPlan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanCreateRequest"
+            examples:
+              default:
+                value:
+                  name: 12-Week Strength Base
+                  description: Structured novice strength cycle.
+                  is_template: true
+                  status: active
+      responses:
+        "201":
+          description: Training plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 28355076-c303-47d6-b595-a4a69f9ef50d
+                      name: 12-Week Strength Base
+                      description: Structured novice strength cycle.
+                      is_template: true
+                      status: active
+                      start_date: null
+                      end_date: null
+                      client_id: null
+                      author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      original_template_id: null
+                      planned_workouts: []
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List training plans
+      description: Drives plan list pages and client assignment dashboards with pagination, search, and status/template filters. Frontend pattern - cache by filter page key and invalidate after plan create/update/delete/assign.
+      operationId: listTrainingPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, draft, archived]
+        - name: is_template
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Training plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/training_plans/{id}:
+    get:
+      summary: Get training plan
+      description: Returns a plan with nested workouts/elements so frontend can render full plan detail and editor views. Frontend pattern - treat this as source of truth for the plan builder screen state.
+      operationId: getTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Training plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update training plan
+      description: Saves high-level plan metadata changes from plan settings panels. Frontend pattern - patch local plan state immediately and reconcile from response body.
+      operationId: updateTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: 12-Week Strength Base (Revised)
+                  description: Progressive overload with lighter deload weeks.
+                  status: active
+      responses:
+        "200":
+          description: Training plan updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete training plan
+      description: Deletes a plan and is typically used from destructive actions in plan management screens. Frontend pattern - require confirmation, optimistically remove card/row, then invalidate list query.
+      operationId: deleteTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Training plan deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/training_plans/{id}/assign:
+    post:
+      summary: Assign training plan
+      description: Copies a template to a client-specific plan with dates; frontend should use this from client onboarding and plan assignment UX. Frontend pattern - trigger from assign modal and redirect to returned assigned plan.
+      operationId: assignTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanAssignRequest"
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                  start_date: "2026-02-17"
+                  end_date: "2026-05-12"
+      responses:
+        "201":
+          description: Training plan assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/training_plans/{id}/duplicate:
+    post:
+      summary: Duplicate training plan
+      description: Creates a template copy for rapid iteration, commonly triggered by clone actions in plan libraries. Frontend pattern - add duplicated plan to current collection and optionally open rename/edit state.
+      operationId: duplicateTrainingPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "201":
+          description: Training plan duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/training_plans/{plan_id}/planned_workouts:
+    post:
+      summary: Create planned workout
+      description: Adds a day/workout block inside a plan; frontend uses this when users add training days in schedule builders. Frontend pattern - optimistic insert in day list, then reorder locally by day_number.
+      operationId: createPlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannedWorkoutCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Day 1 - Lower
+                  notes: Main squat session.
+                  day_number: 1
+      responses:
+        "201":
+          description: Planned workout created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List planned workouts
+      description: Fetches day blocks for a single plan to populate workout lists and reordering interfaces. Frontend pattern - refetch after create/update/delete of workouts in this plan.
+      operationId: listPlannedWorkouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Planned workouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/planned_workouts/{id}:
+    get:
+      summary: Get planned workout
+      description: Loads one planned workout with nested elements for workout detail/edit screens. Frontend pattern - use for drawer/detail hydration when opening a specific workout.
+      operationId: getPlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Planned workout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update planned workout
+      description: Updates workout-level metadata like name, notes, and day number from frontend editors. Frontend pattern - optimistic edit and refetch plan detail when day changes affect ordering.
+      operationId: updatePlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlannedWorkoutUpdateRequest"
+            examples:
+              default:
+                value:
+                  name: Day 1 - Lower (Updated)
+                  notes: Added paused squats in accessories.
+                  day_number: 1
+      responses:
+        "200":
+          description: Planned workout updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete planned workout
+      description: Removes a workout day from the plan, used by planner delete actions. Frontend pattern - remove item from UI immediately after confirm, then invalidate parent plan query.
+      operationId: deletePlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Planned workout deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/workout_elements:
+    post:
+      summary: Create workout element
+      description: Adds an exercise block to a planned workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
+      operationId: createWorkoutElement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutElementCreateRequest"
+            examples:
+              default:
+                value:
+                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  position: 0
+                  exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                  planned_sets:
+                    - target_reps: 5
+                      load_unit: kg
+                      set_type: working
+      responses:
+        "201":
+          description: Workout element created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/workout_elements/{id}:
+    get:
+      summary: Get workout element
+      description: Retrieves one element with planned sets for focused editing side-panels or drawers. Frontend pattern - fetch on demand when opening element editor.
+      operationId: getWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout element
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update workout element
+      description: Saves changes to exercise selection, ordering, and planned sets from builder interactions. Frontend pattern - optimistic set-row editing with rollback on validation errors.
+      operationId: updateWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutElementUpdateRequest"
+            examples:
+              default:
+                value:
+                  notes: Top set at RPE 8, then back-off sets.
+                  planned_sets:
+                    - target_reps: 5
+                      load_unit: kg
+                      set_type: working
+                    - target_reps: 8
+                      load_unit: kg
+                      set_type: backoff
+      responses:
+        "200":
+          description: Workout element updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutElementResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete workout element
+      description: Removes a movement block from a workout, typically called after UI confirmation. Frontend pattern - confirm, remove locally, then invalidate workout detail query.
+      operationId: deleteWorkoutElement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Workout element deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/sessions:
+    post:
+      summary: Start workout session
+      description: Starts a live or logged workout session for a client; frontend uses this when the coach or client begins tracking. Frontend pattern - create once and keep session id in client state for subsequent complete/discard actions.
+      operationId: createWorkoutSession
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionCreateRequest"
+            examples:
+              default:
+                value:
+                  client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  notes: Feeling strong today.
+      responses:
+        "201":
+          description: Workout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+                      started_at: "2026-02-14T10:15:00Z"
+                      ended_at: null
+                      state: active
+                      soreness_rating: null
+                      notes: Feeling strong today.
+                      client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                      performed_sets: []
+                      inserted_at: "2026-02-14T10:15:00Z"
+                      updated_at: "2026-02-14T10:15:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List workout sessions
+      description: Powers activity timelines and history screens with filters for client and session state. Frontend pattern - key cache by filter params and paginate/infinite-scroll safely.
+      operationId: listWorkoutSessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, completed, discarded]
+      responses:
+        "200":
+          description: Workout sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/sessions/{id}:
+    get:
+      summary: Get workout session
+      description: Returns a session and performed sets for recap, review, and post-session analytics UI. Frontend pattern - fetch by id for recap screen and refresh after completion state changes.
+      operationId: getWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Delete workout session
+      description: Hard-deletes an incorrectly created session; frontend should gate this behind explicit confirmation. Frontend pattern - hide destructive action behind role/permission and post-confirm dialog.
+      operationId: deleteWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Workout session deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/sessions/{id}/complete:
+    patch:
+      summary: Complete workout session
+      description: Transitions an active session to completed and stores end-of-session notes/ratings from finish flows. Frontend pattern - disable finish button while pending and replace active state with returned completed payload.
+      operationId: completeWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSessionCompleteRequest"
+            examples:
+              default:
+                value:
+                  soreness_rating: 3
+                  notes: Finished all prescribed sets.
+      responses:
+        "200":
+          description: Workout session completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/sessions/{id}/discard:
+    patch:
+      summary: Discard workout session
+      description: Marks a session as discarded for aborted workouts while preserving auditability in UX history. Frontend pattern - use from abort flow and immediately reflect discarded badge/state in timeline.
+      operationId: discardWorkoutSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout session discarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    PlanIdPath:
+      name: plan_id
+      in: path
+      required: true
+      schema:
+        type: string
+    MealIdPath:
+      name: meal_id
+      in: path
+      required: true
+      schema:
+        type: string
+    OffsetQuery:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 10
+    SearchQuery:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnprocessableEntity:
+      description: Unprocessable entity - validation errors from Ecto changeset
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, timestamp, version]
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error_code, error_message]
+      properties:
+        error_code:
+          type: string
+        error_message:
+          type: string
+        error_detail:
+          type: object
+          nullable: true
+    ValidationErrorResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          description: Map of field names to arrays of error messages from Ecto changeset
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: ["has invalid format", "can't be blank"]
+            name: ["can't be blank"]
+            age: ["must be greater than 0"]
+    SignupRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+    SignupResponse:
+      type: object
+      required: [id, email, confirmation_sent_at, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        confirmation_sent_at:
+          type: string
+          format: date-time
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OtpRequest:
+      type: object
+      required: [email, type]
+      properties:
+        email:
+          type: string
+          format: email
+        type:
+          type: string
+          enum: [email_confirmation, authentication]
+    VerifyTokenRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    VerifyOtpRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+    TokenRefreshRequest:
+      type: object
+      required: [grant_type, refresh_token]
+      properties:
+        grant_type:
+          type: string
+          enum: [refresh_token]
+        refresh_token:
+          type: string
+        role:
+          type: string
+          enum: [owner, coach, client, guest]
+    TokenOtpRequest:
+      type: object
+      required: [grant_type, email, otp, role]
+      properties:
+        grant_type:
+          type: string
+          enum: [otp]
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+        role:
+          type: string
+          enum: [owner, coach, client, guest]
+    AuthTokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in, refresh_token, scope]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        refresh_token:
+          type: string
+        scope:
+          type: string
+    BusinessCreateRequest:
+      type: object
+      required: [name, handle]
+      properties:
+        name:
+          type: string
+        handle:
+          type: string
+        about:
+          type: string
+    BusinessUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        about:
+          type: string
+    BusinessResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Business"
+    Business:
+      type: object
+      required: [id, name, handle, about, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        handle:
+          type: string
+        about:
+          type: string
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CoachUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        bio:
+          type: string
+    CoachResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Coach"
+    Coach:
+      type: object
+      required: [id, name, title, bio, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientInviteRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+    ClientResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Client"
+    ClientListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        count:
+          type: integer
+    Client:
+      type: object
+      required: [id, email, status, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    FoodCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        source:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        image_url:
+          type: string
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+    FoodUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        source:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        image_url:
+          type: string
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+    FoodResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Food"
+    FoodListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Food"
+        count:
+          type: integer
+    Food:
+      type: object
+      required: [id, name, serving_sizes, creator_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        source:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+        creator_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RecipeCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        source:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: string
+        image_url:
+          type: string
+        cooked_weight_g:
+          type: number
+        service_size_type:
+          type: string
+          enum: [serving_based, weight_based]
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+        recipe_ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredientInput"
+    RecipeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        source:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: string
+        image_url:
+          type: string
+        cooked_weight_g:
+          type: number
+        service_size_type:
+          type: string
+          enum: [serving_based, weight_based]
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+        recipe_ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredientInput"
+    RecipeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Recipe"
+    RecipeListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recipe"
+        count:
+          type: integer
+    Recipe:
+      type: object
+      required: [id, name, serving_sizes, recipe_ingredients, foods, creator_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        source:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+        cooked_weight_g:
+          type: number
+          nullable: true
+        service_size_type:
+          type: string
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+        recipe_ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+        foods:
+          type: array
+          items:
+            $ref: "#/components/schemas/Food"
+        creator_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RecipeIngredientInput:
+      type: object
+      required: [food_id]
+      properties:
+        food_id:
+          type: string
+        unit:
+          type: string
+        amount:
+          type: number
+        weight_g:
+          type: number
+    RecipeIngredient:
+      type: object
+      required: [food_id, food, unit, amount, weight_g]
+      properties:
+        food_id:
+          type: string
+        food:
+          $ref: "#/components/schemas/Food"
+        unit:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        weight_g:
+          type: number
+          nullable: true
+    NutritionPlanCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        macros_goal:
+          $ref: "#/components/schemas/Macros"
+        type:
+          type: string
+          enum: [template, personal]
+        status:
+          type: string
+          enum: [draft, active, archived]
+    NutritionPlanUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        macros_goal:
+          $ref: "#/components/schemas/Macros"
+        status:
+          type: string
+          enum: [draft, active, archived]
+    NutritionPlanResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/NutritionPlan"
+    NutritionPlanListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/NutritionPlan"
+        count:
+          type: integer
+    NutritionPlan:
+      type: object
+      required:
+        [
+          id,
+          name,
+          tags,
+          type,
+          status,
+          meals,
+          plan_items,
+          creator_id,
+          business_id,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        macros_goal:
+          $ref: "#/components/schemas/Macros"
+        type:
+          type: string
+        status:
+          type: string
+        client_id:
+          type: string
+          nullable: true
+        source_template_id:
+          type: string
+          nullable: true
+        meals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Meal"
+        plan_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanItem"
+        creator_id:
+          type: string
+        business_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CopyDayRequest:
+      type: object
+      required: [source_day, target_day]
+      properties:
+        source_day:
+          type: string
+        target_day:
+          type: string
+    ReorderMealsRequest:
+      type: object
+      required: [meal_ids]
+      properties:
+        meal_ids:
+          type: array
+          items:
+            type: string
+    ShoppingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShoppingListItem"
+    ShoppingListItem:
+      type: object
+      required: [type, name, food_id, recipe_id, unit, amount, weight_g]
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+          nullable: true
+        food_id:
+          type: string
+          nullable: true
+        recipe_id:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        weight_g:
+          type: number
+    MacrosResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Macros"
+    MealCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        position:
+          type: integer
+    MealUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        position:
+          type: integer
+    MealResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Meal"
+    MealListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Meal"
+        count:
+          type: integer
+    Meal:
+      type: object
+      required:
+        [id, name, position, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          $ref: "#/components/schemas/Macros"
+        position:
+          type: integer
+        meal_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealItem"
+        creator_id:
+          type: string
+        business_id:
+          type: string
+        plan_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlanItemCreateRequest:
+      type: object
+      required: [day, meal_type, meal_id]
+      properties:
+        day:
+          type: string
+        meal_type:
+          type: string
+        meal_id:
+          type: string
+    PlanItemUpdateRequest:
+      type: object
+      properties:
+        day:
+          type: string
+        meal_type:
+          type: string
+        meal_id:
+          type: string
+    PlanItemResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PlanItem"
+    PlanItemListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanItem"
+    PlanItem:
+      type: object
+      required: [id, day, meal_type, meal_id, plan_id, creator_id, business_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        day:
+          type: string
+        meal_type:
+          type: string
+        meal_id:
+          type: string
+        plan_id:
+          type: string
+        creator_id:
+          type: string
+        business_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MealItemCreateRequest:
+      type: object
+      properties:
+        weight_g:
+          type: number
+        amount:
+          type: number
+        unit:
+          type: string
+        position:
+          type: integer
+        recipe_id:
+          type: string
+        food_id:
+          type: string
+    MealItemUpdateRequest:
+      type: object
+      properties:
+        weight_g:
+          type: number
+        amount:
+          type: number
+        unit:
+          type: string
+        position:
+          type: integer
+        recipe_id:
+          type: string
+        food_id:
+          type: string
+    MealItemResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/MealItem"
+    MealItemListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealItem"
+    MealItem:
+      type: object
+      required:
+        [id, weight_g, amount, unit, position, recipe_id, food_id, meal_id, business_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        weight_g:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        recipe_id:
+          type: string
+          nullable: true
+        food_id:
+          type: string
+          nullable: true
+        meal_id:
+          type: string
+        business_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ExerciseCreateRequest:
+      type: object
+      required: [name]
+      example:
+        name: Barbell Back Squat
+        description: Main lower-body strength movement.
+        instructions: Brace, descend to depth, drive up.
+        mechanics: compound
+        force: push
+        images: ["https://cdn.example.com/exercises/back-squat.png"]
+        muscle_ids: [8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0]
+        equipment_ids: [7d72f2c3-8ed7-4b78-bf1f-c883df192772]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        mechanics:
+          type: string
+          enum: [compound, isolation, isometric]
+        force:
+          type: string
+          enum: [push, pull, static]
+        images:
+          type: array
+          items:
+            type: string
+        muscle_ids:
+          type: array
+          items:
+            type: string
+        equipment_ids:
+          type: array
+          items:
+            type: string
+    ExerciseUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        mechanics:
+          type: string
+          enum: [compound, isolation, isometric]
+        force:
+          type: string
+          enum: [push, pull, static]
+        images:
+          type: array
+          items:
+            type: string
+        muscle_ids:
+          type: array
+          items:
+            type: string
+        equipment_ids:
+          type: array
+          items:
+            type: string
+    ExerciseResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+          name: Barbell Back Squat
+          description: Main lower-body strength movement.
+          instructions: Brace, descend to depth, drive up.
+          mechanics: compound
+          force: push
+          images: ["https://cdn.example.com/exercises/back-squat.png"]
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          muscles:
+            - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+              name: Quadriceps
+              description: Front thigh
+          equipment:
+            - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+              name: Barbell
+              description: Standard olympic barbell
+          inserted_at: "2026-02-14T10:00:00Z"
+          updated_at: "2026-02-14T10:00:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/Exercise"
+    ExerciseListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+        count:
+          type: integer
+    Exercise:
+      type: object
+      required: [id, name, images, muscles, equipment, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        instructions:
+          type: string
+          nullable: true
+        mechanics:
+          type: string
+          nullable: true
+        force:
+          type: string
+          nullable: true
+        images:
+          type: array
+          items:
+            type: string
+        business_id:
+          type: string
+          nullable: true
+        muscles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Muscle"
+        equipment:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    MuscleListResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          - id: 8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0
+            name: Quadriceps
+            description: Front thigh
+          - id: 40dcf5f6-24d9-4d32-a2b4-7b7f7b0ee497
+            name: Glutes
+            description: Hip extensors
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Muscle"
+    Muscle:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    EquipmentListResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          - id: 7d72f2c3-8ed7-4b78-bf1f-c883df192772
+            name: Barbell
+            description: Standard olympic barbell
+          - id: a14539d3-2d5a-4d28-b24e-cf0a3da24912
+            name: Bench
+            description: Flat training bench
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Equipment"
+    Equipment:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    TrainingPlanCreateRequest:
+      type: object
+      required: [name]
+      example:
+        name: 12-Week Strength Base
+        description: Structured novice strength cycle.
+        is_template: true
+        status: active
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        is_template:
+          type: boolean
+        status:
+          type: string
+          enum: [active, draft, archived]
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        original_template_id:
+          type: string
+    TrainingPlanUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        is_template:
+          type: boolean
+        status:
+          type: string
+          enum: [active, draft, archived]
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        original_template_id:
+          type: string
+    TrainingPlanAssignRequest:
+      type: object
+      required: [client_id]
+      example:
+        client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+        start_date: "2026-02-17"
+        end_date: "2026-05-12"
+      properties:
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    TrainingPlanResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: 28355076-c303-47d6-b595-a4a69f9ef50d
+          name: 12-Week Strength Base
+          description: Structured novice strength cycle.
+          is_template: true
+          status: active
+          start_date: null
+          end_date: null
+          client_id: null
+          author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          original_template_id: null
+          planned_workouts: []
+          inserted_at: "2026-02-14T10:00:00Z"
+          updated_at: "2026-02-14T10:00:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/TrainingPlan"
+    TrainingPlanListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingPlan"
+        count:
+          type: integer
+    TrainingPlan:
+      type: object
+      required:
+        [
+          id,
+          name,
+          is_template,
+          status,
+          planned_workouts,
+          author_id,
+          business_id,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_template:
+          type: boolean
+        status:
+          type: string
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        client_id:
+          type: string
+          nullable: true
+        author_id:
+          type: string
+        business_id:
+          type: string
+        original_template_id:
+          type: string
+          nullable: true
+        planned_workouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedWorkout"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlannedWorkoutCreateRequest:
+      type: object
+      required: [name, day_number]
+      example:
+        name: Day 1 - Lower
+        notes: Main squat session.
+        day_number: 1
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+        day_number:
+          type: integer
+          minimum: 1
+          maximum: 7
+    PlannedWorkoutUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: string
+        day_number:
+          type: integer
+    PlannedWorkoutResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PlannedWorkout"
+    PlannedWorkoutListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedWorkout"
+        count:
+          type: integer
+    PlannedWorkout:
+      type: object
+      required:
+        [
+          id,
+          name,
+          day_number,
+          training_plan_id,
+          business_id,
+          workout_elements,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        day_number:
+          type: integer
+        training_plan_id:
+          type: string
+        business_id:
+          type: string
+        workout_elements:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutElement"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkoutElementCreateRequest:
+      type: object
+      required: [planned_workout_id, position, exercise_id]
+      example:
+        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        position: 0
+        exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+        planned_sets:
+          - target_reps: 5
+            load_unit: kg
+            set_type: working
+      properties:
+        planned_workout_id:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+        superset_group_id:
+          type: string
+        notes:
+          type: string
+        exercise_id:
+          type: string
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+    WorkoutElementUpdateRequest:
+      type: object
+      properties:
+        position:
+          type: integer
+        superset_group_id:
+          type: string
+        notes:
+          type: string
+        exercise_id:
+          type: string
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+    WorkoutElementResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/WorkoutElement"
+    WorkoutElement:
+      type: object
+      required:
+        [
+          id,
+          position,
+          exercise_id,
+          planned_workout_id,
+          business_id,
+          planned_sets,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+        superset_group_id:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        exercise_id:
+          type: string
+        planned_workout_id:
+          type: string
+        business_id:
+          type: string
+        exercise:
+          $ref: "#/components/schemas/ExerciseBrief"
+          nullable: true
+        planned_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedSet"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlannedSet:
+      type: object
+      properties:
+        target_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_target:
+          type: string
+          nullable: true
+        tempo:
+          type: string
+          nullable: true
+        rest_seconds:
+          type: integer
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        set_type:
+          type: string
+          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
+        notes:
+          type: string
+          nullable: true
+    WorkoutSessionCreateRequest:
+      type: object
+      required: [client_id]
+      example:
+        client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        notes: Feeling strong today.
+      properties:
+        client_id:
+          type: string
+        state:
+          type: string
+          enum: [active, completed, discarded]
+        soreness_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+        planned_workout_id:
+          type: string
+    WorkoutSessionCompleteRequest:
+      type: object
+      example:
+        soreness_rating: 3
+        notes: Finished all prescribed sets.
+      properties:
+        soreness_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+    WorkoutSessionResponse:
+      type: object
+      required: [data]
+      example:
+        data:
+          id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+          started_at: "2026-02-14T10:15:00Z"
+          ended_at: null
+          state: active
+          soreness_rating: null
+          notes: Feeling strong today.
+          client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+          business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+          planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+          performed_sets: []
+          inserted_at: "2026-02-14T10:15:00Z"
+          updated_at: "2026-02-14T10:15:00Z"
+      properties:
+        data:
+          $ref: "#/components/schemas/WorkoutSession"
+    WorkoutSessionListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutSession"
+        count:
+          type: integer
+    WorkoutSession:
+      type: object
+      required:
+        [
+          id,
+          started_at,
+          state,
+          client_id,
+          business_id,
+          performed_sets,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        state:
+          type: string
+          enum: [active, completed, discarded]
+        soreness_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          nullable: true
+        client_id:
+          type: string
+        business_id:
+          type: string
+        planned_workout_id:
+          type: string
+          nullable: true
+        performed_sets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerformedSet"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PerformedSet:
+      type: object
+      required:
+        [
+          id,
+          position,
+          exercise_id,
+          workout_session_id,
+          business_id,
+          completed,
+          inserted_at,
+          updated_at
+        ]
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+        actual_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_felt:
+          type: string
+          nullable: true
+        rpe:
+          type: number
+          nullable: true
+        rir:
+          type: integer
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        tempo_actual:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        exercise_id:
+          type: string
+        workout_session_id:
+          type: string
+        business_id:
+          type: string
+        exercise:
+          $ref: "#/components/schemas/ExerciseBrief"
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ExerciseBrief:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mechanics:
+          type: string
+          nullable: true
+        force:
+          type: string
+          nullable: true
+    ServingSize:
+      type: object
+      required: [unit]
+      properties:
+        unit:
+          type: string
+        weight_g:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+    Macros:
+      type: object
+      additionalProperties:
+        type: number

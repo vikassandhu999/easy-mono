@@ -1,10 +1,5 @@
-import { api } from "@/api";
-import {
-  ApiListResponse,
-  ApiResponse,
-  Macros,
-  ServingSize,
-} from "@/api/shared";
+import {api} from '@/api';
+import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
 export type Food = {
   id: string;
@@ -53,66 +48,58 @@ export const foodsApi = api.injectEndpoints({
   endpoints: (build) => ({
     createFood: build.mutation<ApiResponse<Food>, FoodCreateRequest>({
       query: (body) => ({
-        url: "/v1/coach/foods",
-        method: "POST",
+        url: '/v1/coach/foods',
+        method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: "Food", id: "LIST" }],
+      invalidatesTags: [{type: 'Food', id: 'LIST'}],
     }),
     getFood: build.query<ApiResponse<Food>, string>({
       query: (id) => `/v1/coach/foods/${id}`,
-      providesTags: (_, __, id) => [{ type: "Food", id }],
+      providesTags: (_, __, id) => [{type: 'Food', id}],
     }),
     listFoods: build.query<ApiListResponse<Food>, ListFoodsParams | void>({
       query: (params) =>
         params
           ? {
-              url: "/v1/coach/foods",
+              url: '/v1/coach/foods',
               params,
             }
-          : "/v1/coach/foods",
+          : '/v1/coach/foods',
       providesTags: (result) =>
         result
           ? [
               ...result.data.map((food) => ({
-                type: "Food" as const,
+                type: 'Food' as const,
                 id: food.id,
               })),
-              { type: "Food" as const, id: "LIST" },
+              {type: 'Food' as const, id: 'LIST'},
             ]
-          : [{ type: "Food" as const, id: "LIST" }],
+          : [{type: 'Food' as const, id: 'LIST'}],
     }),
     deleteFood: build.mutation<void, string>({
       query: (id) => ({
         url: `/v1/coach/foods/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (_, __, id) => [
-        { type: "Food", id },
-        { type: "Food", id: "LIST" },
+        {type: 'Food', id},
+        {type: 'Food', id: 'LIST'},
       ],
     }),
-    updateFood: build.mutation<
-      ApiResponse<Food>,
-      { body: FoodUpdateRequest; id: string }
-    >({
-      query: ({ id, body }) => ({
+    updateFood: build.mutation<ApiResponse<Food>, {body: FoodUpdateRequest; id: string}>({
+      query: ({id, body}) => ({
         url: `/v1/coach/foods/${id}`,
-        method: "PATCH",
+        method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_, __, { id }) => [
-        { type: "Food", id },
-        { type: "Food", id: "LIST" },
+      invalidatesTags: (_, __, {id}) => [
+        {type: 'Food', id},
+        {type: 'Food', id: 'LIST'},
       ],
     }),
   }),
 });
 
-export const {
-  useCreateFoodMutation,
-  useDeleteFoodMutation,
-  useGetFoodQuery,
-  useListFoodsQuery,
-  useUpdateFoodMutation,
-} = foodsApi;
+export const {useCreateFoodMutation, useDeleteFoodMutation, useGetFoodQuery, useListFoodsQuery, useUpdateFoodMutation} =
+  foodsApi;

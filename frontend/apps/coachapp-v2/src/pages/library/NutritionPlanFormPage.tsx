@@ -5,28 +5,32 @@ import {useEffect, useMemo, useState} from 'react';
 import {Controller, type FieldPath, useForm} from 'react-hook-form';
 import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
 
-import type {FoodFormValues} from '@/pages/library/foodFormTypes';
+import type {NutritionPlanFormValues} from '@/pages/library/nutritionPlanFormTypes';
 
-import {useCreateFoodMutation, useDeleteFoodMutation, useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
+import {
+  useCreateNutritionPlanMutation,
+  useDeleteNutritionPlanMutation,
+  useGetNutritionPlanQuery,
+  useUpdateNutritionPlanMutation,
+} from '@/api/nutritionPlans';
 import {handleFormError} from '@/api/shared';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import {
-  FOOD_FORM_SCHEMA,
-  FOOD_INITIAL_VALUES,
-  FOOD_NUMERIC_STEP,
-  mapFoodToFormValues,
-  parseOptionalMacroNumber,
-} from '@/pages/library/foodFormSchema';
-import ServingSizeRows from '@/pages/library/ServingSizeRows';
+  mapNutritionPlanToFormValues,
+  NUTRITION_PLAN_FORM_SCHEMA,
+  NUTRITION_PLAN_INITIAL_VALUES,
+  parseOptionalPlanNumber,
+} from '@/pages/library/nutritionPlanFormSchema';
 import TagsInput from '@/pages/library/TagsInput';
 
-export default function FoodFormPage() {
+export default function NutritionPlanFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const {id} = useParams();
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   const returnTo =
     typeof location.state === 'object' &&
     location.state &&
@@ -36,11 +40,11 @@ export default function FoodFormPage() {
       : '/library';
 
   const {
-    data: foodData,
-    isError: isFoodError,
-    isLoading: isFoodLoading,
-    refetch: refetchFood,
-  } = useGetFoodQuery(id ?? '', {
+    data: nutritionPlanData,
+    isError: isNutritionPlanError,
+    isLoading: isNutritionPlanLoading,
+    refetch: refetchNutritionPlan,
+  } = useGetNutritionPlanQuery(id ?? '', {
     skip: !id,
   });
 
@@ -51,26 +55,32 @@ export default function FoodFormPage() {
     register,
     reset,
     setError,
-  } = useForm<FoodFormValues>({
-    defaultValues: FOOD_INITIAL_VALUES,
-    resolver: zodResolver(FOOD_FORM_SCHEMA),
+    setValue,
+    watch,
+  } = useForm<NutritionPlanFormValues>({
+    defaultValues: NUTRITION_PLAN_INITIAL_VALUES,
+    resolver: zodResolver(NUTRITION_PLAN_FORM_SCHEMA),
   });
 
   useEffect(() => {
     if (!isEditing) {
-      reset(FOOD_INITIAL_VALUES);
+      reset(NUTRITION_PLAN_INITIAL_VALUES);
       return;
     }
-    if (foodData?.data) {
-      reset(mapFoodToFormValues(foodData.data));
-    }
-  }, [foodData?.data, isEditing, reset]);
 
-  const [createFood, {isLoading: isCreating}] = useCreateFoodMutation();
-  const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
-  const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
+    if (nutritionPlanData?.data) {
+      reset(mapNutritionPlanToFormValues(nutritionPlanData.data));
+    }
+  }, [isEditing, nutritionPlanData?.data, reset]);
+
+  const [createNutritionPlan, {isLoading: isCreating}] = useCreateNutritionPlanMutation();
+  const [deleteNutritionPlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
+  const [updateNutritionPlan, {isLoading: isUpdating}] = useUpdateNutritionPlanMutation();
+
   const isSubmitting = isCreating || isUpdating;
   const hasPendingChanges = isDirty && !isSubmitting;
+  const selectedType = watch('type');
+  const selectedStatus = watch('status');
 
   const attemptNavigate = (target: string) => {
     if (hasPendingChanges) {
@@ -92,20 +102,20 @@ export default function FoodFormPage() {
 
   const pageTitle = useMemo(() => {
     if (!isEditing) {
-      return 'Create Food';
+      return 'Create Nutrition Plan';
     }
-    return foodData?.data?.name ? `Edit ${foodData.data.name}` : 'Edit Food';
-  }, [foodData?.data?.name, isEditing]);
+    return nutritionPlanData?.data?.name ? `Edit ${nutritionPlanData.data.name}` : 'Edit Nutrition Plan';
+  }, [isEditing, nutritionPlanData?.data?.name]);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const calories = parseOptionalMacroNumber(values.calories);
-    const protein = parseOptionalMacroNumber(values.protein);
-    const carbs = parseOptionalMacroNumber(values.carbs);
-    const fat = parseOptionalMacroNumber(values.fat);
+    const calories = parseOptionalPlanNumber(values.calories);
+    const protein = parseOptionalPlanNumber(values.protein);
+    const carbs = parseOptionalPlanNumber(values.carbs);
+    const fat = parseOptionalPlanNumber(values.fat);
 
-    const macros =
+    const macrosGoal =
       calories !== undefined || protein !== undefined || carbs !== undefined || fat !== undefined
         ? {
             calories: calories ?? 0,
@@ -115,57 +125,54 @@ export default function FoodFormPage() {
           }
         : undefined;
 
-    const servingSizes = values.serving_sizes
-      .map((row) => ({
-        amount: parseOptionalMacroNumber(row.amount) ?? null,
-        unit: row.unit.trim(),
-        weight_g: parseOptionalMacroNumber(row.weight_g) ?? null,
-      }))
-      .filter((row) => row.unit || row.weight_g !== null || row.amount !== null)
-      .map((row) => ({
-        amount: row.amount,
-        unit: row.unit || 'serving',
-        weight_g: row.weight_g,
-      }));
-
     const payload = {
-      category: values.category.trim() || undefined,
-      image_url: values.image_url.trim() || undefined,
-      macros,
+      description: values.description.trim() || undefined,
+      macros_goal: macrosGoal,
       name: values.name.trim(),
-      notes: values.notes.trim() || undefined,
-      serving_sizes: servingSizes.length > 0 ? servingSizes : undefined,
-      source: values.source.trim() || undefined,
+      status: values.status,
       tags: values.tags.length > 0 ? values.tags : undefined,
+      ...(isEditing ? {} : {type: values.type}),
     };
 
     try {
-      if (id) {
-        await updateFood({body: payload, id}).unwrap();
-        toast.success(`Food "${values.name.trim()}" updated successfully.`);
-      } else {
-        await createFood(payload).unwrap();
-        toast.success(`Food "${values.name.trim()}" created successfully.`);
-      }
-      reset(values);
-      navigate(returnTo);
-    } catch (err) {
-      const result = handleFormError(
-        err,
-        id ? 'Unable to update food. Please try again.' : 'Unable to create food. Please try again.',
+      const response = id
+        ? await updateNutritionPlan({body: payload, id}).unwrap()
+        : await createNutritionPlan(payload).unwrap();
+
+      toast.success(
+        id
+          ? `Nutrition plan \"${values.name.trim()}\" updated successfully.`
+          : `Nutrition plan \"${values.name.trim()}\" created successfully.`,
       );
+      reset(values);
+
+      if (id) {
+        navigate(returnTo);
+        return;
+      }
+
+      navigate(`/library/nutrition-plans/${response.data.id}/builder`, {
+        state: {from: returnTo},
+      });
+    } catch (error) {
+      const result = handleFormError(
+        error,
+        id
+          ? 'Unable to update nutrition plan. Please try again.'
+          : 'Unable to create nutrition plan. Please try again.',
+      );
+
       if (result.fieldErrors) {
-        const namedFieldMap: Record<string, FieldPath<FoodFormValues>> = {
+        const namedFieldMap: Record<string, FieldPath<NutritionPlanFormValues>> = {
           calories: 'calories',
           carbs: 'carbs',
-          category: 'category',
-          image_url: 'image_url',
+          description: 'description',
           fat: 'fat',
           name: 'name',
-          notes: 'notes',
           protein: 'protein',
-          source: 'source',
+          status: 'status',
           tags: 'tags',
+          type: 'type',
         };
 
         Object.entries(result.fieldErrors).forEach(([key, messages]) => {
@@ -176,6 +183,7 @@ export default function FoodFormPage() {
           setError(path, {type: 'server', message: messages[0]});
         });
       }
+
       setFormError(result.formError);
       if (!result.fieldErrors) {
         toast.danger(result.formError);
@@ -184,38 +192,39 @@ export default function FoodFormPage() {
   });
 
   const handleDelete = async () => {
-    if (!id || !foodData?.data) {
+    if (!id || !nutritionPlanData?.data) {
       return;
     }
+
     try {
-      await deleteFood(id).unwrap();
-      toast.success(`Food "${foodData.data.name}" deleted successfully.`);
+      await deleteNutritionPlan(id).unwrap();
+      toast.success(`Nutrition plan \"${nutritionPlanData.data.name}\" deleted successfully.`);
       setIsDeleteOpen(false);
       navigate(returnTo);
-    } catch (err) {
-      const result = handleFormError(err, 'Unable to delete food. Please try again.');
+    } catch (error) {
+      const result = handleFormError(error, 'Unable to delete nutrition plan. Please try again.');
       toast.danger(result.formError);
     }
   };
 
-  if (isEditing && isFoodLoading) {
+  if (isEditing && isNutritionPlanLoading) {
     return (
       <Card className="border border-separator bg-surface p-6">
-        <p className="text-sm text-muted">Loading food details...</p>
+        <p className="text-sm text-muted">Loading nutrition plan details...</p>
       </Card>
     );
   }
 
-  if (isEditing && isFoodError) {
+  if (isEditing && isNutritionPlanError) {
     return (
       <Card className="border border-separator bg-surface p-6">
         <div className="flex flex-col gap-3">
-          <p className="font-semibold text-foreground">Could not load food</p>
+          <p className="font-semibold text-foreground">Could not load nutrition plan</p>
           <p className="text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
           <div className="flex gap-2">
             <Button
               className="min-h-11"
-              onPress={() => refetchFood()}
+              onPress={() => refetchNutritionPlan()}
               size="md"
               variant="outline"
             >
@@ -249,7 +258,9 @@ export default function FoodFormPage() {
         </Button>
         <p className="text-sm text-muted">Library</p>
         <h1 className="text-2xl font-semibold md:text-3xl">{pageTitle}</h1>
-        <p className="max-w-2xl text-sm text-muted">Add or update a shared food with optional macros and metadata.</p>
+        <p className="max-w-2xl text-sm text-muted">
+          Define plan metadata, intent, and macro goals before building meals and schedule.
+        </p>
       </div>
 
       <form
@@ -260,48 +271,72 @@ export default function FoodFormPage() {
           <p className="text-sm font-semibold text-foreground">Basics</p>
 
           <TextField isInvalid={Boolean(errors.name?.message)}>
-            <Label className="text-sm font-medium text-foreground">Food name</Label>
+            <Label className="text-sm font-medium text-foreground">Name</Label>
             <Input
-              placeholder="e.g. Rolled Oats"
+              placeholder="e.g. Fat Loss Starter"
               variant="secondary"
               {...register('name')}
             />
             {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
           </TextField>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField isInvalid={Boolean(errors.category?.message)}>
-              <Label className="text-sm font-medium text-foreground">Category</Label>
-              <Input
-                placeholder="e.g. Grain"
-                variant="secondary"
-                {...register('category')}
-              />
-              {errors.category?.message ? <FieldError>{errors.category.message}</FieldError> : null}
-            </TextField>
-
-            <TextField isInvalid={Boolean(errors.source?.message)}>
-              <Label className="text-sm font-medium text-foreground">Source</Label>
-              <Input
-                placeholder="e.g. USDA"
-                variant="secondary"
-                {...register('source')}
-              />
-              {errors.source?.message ? <FieldError>{errors.source.message}</FieldError> : null}
-            </TextField>
-          </div>
+          <TextField isInvalid={Boolean(errors.description?.message)}>
+            <Label className="text-sm font-medium text-foreground">Description</Label>
+            <TextArea
+              placeholder="Optional plan notes"
+              variant="secondary"
+              {...register('description')}
+            />
+            {errors.description?.message ? <FieldError>{errors.description.message}</FieldError> : null}
+          </TextField>
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <TextField isInvalid={Boolean(errors.notes?.message)}>
-            <Label className="text-sm font-medium text-foreground">Notes</Label>
-            <TextArea
-              placeholder="Optional notes"
-              variant="secondary"
-              {...register('notes')}
-            />
-            {errors.notes?.message ? <FieldError>{errors.notes.message}</FieldError> : null}
-          </TextField>
+          <p className="text-sm font-semibold text-foreground">Plan setup</p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium text-foreground">Type</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  className="min-h-11"
+                  isDisabled={isEditing}
+                  onPress={() => setValue('type', 'template')}
+                  type="button"
+                  variant={selectedType === 'template' ? 'secondary' : 'outline'}
+                >
+                  Template
+                </Button>
+                <Button
+                  className="min-h-11"
+                  isDisabled={isEditing}
+                  onPress={() => setValue('type', 'personal')}
+                  type="button"
+                  variant={selectedType === 'personal' ? 'secondary' : 'outline'}
+                >
+                  Personal
+                </Button>
+              </div>
+              {isEditing ? <p className="text-xs text-muted">Type is locked after creation.</p> : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium text-foreground">Status</Label>
+              <div className="flex flex-wrap gap-2">
+                {(['draft', 'active', 'archived'] as const).map((status) => (
+                  <Button
+                    className="min-h-11"
+                    key={status}
+                    onPress={() => setValue('status', status)}
+                    type="button"
+                    variant={selectedStatus === status ? 'secondary' : 'outline'}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
@@ -320,33 +355,13 @@ export default function FoodFormPage() {
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <TextField isInvalid={Boolean(errors.image_url?.message)}>
-            <Label className="text-sm font-medium text-foreground">Image URL</Label>
-            <Input
-              placeholder="https://example.com/food.jpg"
-              variant="secondary"
-              {...register('image_url')}
-            />
-            {errors.image_url?.message ? <FieldError>{errors.image_url.message}</FieldError> : null}
-          </TextField>
-        </section>
-
-        <ServingSizeRows
-          control={control}
-          errors={errors}
-          register={register}
-          title="Serving sizes"
-        />
-
-        <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <p className="text-sm font-semibold text-foreground">Macros</p>
+          <p className="text-sm font-semibold text-foreground">Macros goal</p>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.calories?.message)}>
               <Label className="text-sm font-medium text-foreground">Calories</Label>
               <Input
-                placeholder="e.g. 150"
-                step={FOOD_NUMERIC_STEP}
+                placeholder="e.g. 2200"
                 type="number"
                 variant="secondary"
                 {...register('calories')}
@@ -357,8 +372,7 @@ export default function FoodFormPage() {
             <TextField isInvalid={Boolean(errors.protein?.message)}>
               <Label className="text-sm font-medium text-foreground">Protein (g)</Label>
               <Input
-                placeholder="e.g. 12"
-                step={FOOD_NUMERIC_STEP}
+                placeholder="e.g. 180"
                 type="number"
                 variant="secondary"
                 {...register('protein')}
@@ -369,8 +383,7 @@ export default function FoodFormPage() {
             <TextField isInvalid={Boolean(errors.carbs?.message)}>
               <Label className="text-sm font-medium text-foreground">Carbs (g)</Label>
               <Input
-                placeholder="e.g. 27"
-                step={FOOD_NUMERIC_STEP}
+                placeholder="e.g. 220"
                 type="number"
                 variant="secondary"
                 {...register('carbs')}
@@ -381,8 +394,7 @@ export default function FoodFormPage() {
             <TextField isInvalid={Boolean(errors.fat?.message)}>
               <Label className="text-sm font-medium text-foreground">Fat (g)</Label>
               <Input
-                placeholder="e.g. 4.5"
-                step={FOOD_NUMERIC_STEP}
+                placeholder="e.g. 70"
                 type="number"
                 variant="secondary"
                 {...register('fat')}
@@ -408,7 +420,7 @@ export default function FoodFormPage() {
               type="button"
               variant="danger"
             >
-              Delete food
+              Delete nutrition plan
             </Button>
           ) : null}
           <Button
@@ -427,18 +439,19 @@ export default function FoodFormPage() {
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save food' : 'Create food'}
+            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save plan' : 'Create plan'}
           </Button>
         </div>
       </form>
+
       <ConfirmDialog
-        confirmLabel="Delete food"
-        description={`Are you sure you want to delete ${foodData?.data?.name ?? 'this food'}? This cannot be undone.`}
+        confirmLabel="Delete nutrition plan"
+        description={`Are you sure you want to delete ${nutritionPlanData?.data?.name ?? 'this nutrition plan'}? This cannot be undone.`}
         isLoading={isDeleting}
         isOpen={isDeleteOpen}
         onConfirm={handleDelete}
         onOpenChange={setIsDeleteOpen}
-        title="Delete food"
+        title="Delete nutrition plan"
       />
     </div>
   );

@@ -1,7 +1,7 @@
-import { Card } from "@heroui/react";
-import { Apple, MessageSquareText, Ruler, Tag } from "lucide-react";
+import {Card} from '@heroui/react';
+import {Apple, MessageSquareText, Ruler, Tag} from 'lucide-react';
 
-import type { Food } from "@/api/foods";
+import type {Food} from '@/api/foods';
 
 function formatMacros(macros: Record<string, number> | undefined) {
   if (!macros) return null;
@@ -10,7 +10,7 @@ function formatMacros(macros: Record<string, number> | undefined) {
   const fat = macros.fat ?? macros.fat_g ?? 0;
   const calories = macros.calories ?? macros.kcal ?? 0;
 
-  return { calories, carbs, fat, protein };
+  return {calories, carbs, fat, protein};
 }
 
 function formatDate(value: string) {
@@ -23,13 +23,13 @@ type FoodCardProps = {
   food: Food;
 };
 
-export default function FoodCard({ food, onEdit }: FoodCardProps) {
+export default function FoodCard({food, onEdit}: FoodCardProps) {
   const macros = formatMacros(food.macros);
   const servingCount = food.serving_sizes?.length ?? 1;
   const defaultServing = food.serving_sizes?.[0];
   const servingText = defaultServing
-    ? `${defaultServing.amount ?? 1} ${defaultServing.unit ?? "serving"}`.trim()
-    : "1 serving";
+    ? `${defaultServing.amount ?? 1} ${defaultServing.unit ?? 'serving'}`.trim()
+    : '1 serving';
 
   return (
     <Card
@@ -43,12 +43,8 @@ export default function FoodCard({ food, onEdit }: FoodCardProps) {
               <Apple className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-semibold text-foreground">
-                {food.name}
-              </span>
-              <span className="truncate text-sm text-muted">
-                Food / Ingredient
-              </span>
+              <span className="truncate font-semibold text-foreground">{food.name}</span>
+              <span className="truncate text-sm text-muted">Food / Ingredient</span>
             </div>
           </div>
         </div>
@@ -57,27 +53,19 @@ export default function FoodCard({ food, onEdit }: FoodCardProps) {
           <div className="grid grid-cols-4 gap-2 text-center">
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Cal</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.calories)}
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.calories)}</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Pro</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.protein)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.protein)}g</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Carb</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.carbs)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.carbs)}g</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Fat</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.fat)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.fat)}g</span>
             </div>
           </div>
         ) : null}
@@ -86,7 +74,7 @@ export default function FoodCard({ food, onEdit }: FoodCardProps) {
           <div className="flex items-center gap-1.5">
             <Ruler className="h-4 w-4" />
             <span>
-              {servingCount} serving{servingCount > 1 ? "s" : ""}
+              {servingCount} serving{servingCount > 1 ? 's' : ''}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -114,9 +102,7 @@ export default function FoodCard({ food, onEdit }: FoodCardProps) {
             </div>
           ) : food.category ? (
             <div className="flex flex-wrap gap-1">
-              <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-muted">
-                {food.category}
-              </span>
+              <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-muted">{food.category}</span>
             </div>
           ) : null}
         </div>

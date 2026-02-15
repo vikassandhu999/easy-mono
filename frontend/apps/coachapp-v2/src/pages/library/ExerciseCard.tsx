@@ -1,14 +1,15 @@
-import { Card } from "@heroui/react";
-import { Dumbbell } from "lucide-react";
+import {Card} from '@heroui/react';
+import {Dumbbell} from 'lucide-react';
 
-import { formatDate } from "@/pages/library/libraryData";
-import type { ExerciseResource } from "@/pages/library/libraryData";
+import type {ExerciseResource} from '@/pages/library/libraryData';
+
+import {formatDate} from '@/pages/library/libraryData';
 
 type ExerciseCardProps = {
   resource: ExerciseResource;
 };
 
-export default function ExerciseCard({ resource }: ExerciseCardProps) {
+export default function ExerciseCard({resource}: ExerciseCardProps) {
   return (
     <Card className="h-full border border-separator bg-surface p-4">
       <div className="flex h-full flex-col gap-4">
@@ -17,9 +18,7 @@ export default function ExerciseCard({ resource }: ExerciseCardProps) {
             <Dumbbell className="h-5 w-5 text-foreground" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate font-semibold text-foreground">
-              {resource.title}
-            </span>
+            <span className="truncate font-semibold text-foreground">{resource.title}</span>
             <span className="truncate text-sm text-muted">Exercises</span>
           </div>
         </div>

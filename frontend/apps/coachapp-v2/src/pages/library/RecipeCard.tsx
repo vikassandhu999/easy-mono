@@ -1,7 +1,7 @@
-import { Card } from "@heroui/react";
-import { ChefHat, Clock, Flame, Leaf } from "lucide-react";
+import {Card} from '@heroui/react';
+import {ChefHat, Clock, Flame, Leaf} from 'lucide-react';
 
-import type { Recipe } from "@/api/recipes";
+import type {Recipe} from '@/api/recipes';
 
 function formatMacros(macros: Record<string, number> | undefined) {
   if (!macros) return null;
@@ -10,7 +10,7 @@ function formatMacros(macros: Record<string, number> | undefined) {
   const fat = macros.fat ?? macros.fat_g ?? 0;
   const calories = macros.calories ?? macros.kcal ?? 0;
 
-  return { calories, carbs, fat, protein };
+  return {calories, carbs, fat, protein};
 }
 
 function formatDate(value: string) {
@@ -23,7 +23,7 @@ type RecipeCardProps = {
   recipe: Recipe;
 };
 
-export default function RecipeCard({ onEdit, recipe }: RecipeCardProps) {
+export default function RecipeCard({onEdit, recipe}: RecipeCardProps) {
   const macros = formatMacros(recipe.macros);
   const ingredientCount = recipe.recipe_ingredients?.length ?? 0;
   const ingredientNames = recipe.recipe_ingredients
@@ -32,8 +32,8 @@ export default function RecipeCard({ onEdit, recipe }: RecipeCardProps) {
     .slice(0, 2);
   const defaultServing = recipe.serving_sizes?.[0];
   const servingText = defaultServing
-    ? `${defaultServing.amount ?? ""} ${defaultServing.unit ?? "serving"}`.trim()
-    : "1 serving";
+    ? `${defaultServing.amount ?? ''} ${defaultServing.unit ?? 'serving'}`.trim()
+    : '1 serving';
 
   return (
     <Card
@@ -47,9 +47,7 @@ export default function RecipeCard({ onEdit, recipe }: RecipeCardProps) {
               <ChefHat className="h-5 w-5 text-accent" />
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-semibold text-foreground">
-                {recipe.name}
-              </span>
+              <span className="truncate font-semibold text-foreground">{recipe.name}</span>
               <span className="truncate text-sm text-muted">Recipe</span>
             </div>
           </div>
@@ -59,27 +57,19 @@ export default function RecipeCard({ onEdit, recipe }: RecipeCardProps) {
           <div className="grid grid-cols-4 gap-2 text-center">
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Cal</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.calories)}
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.calories)}</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Pro</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.protein)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.protein)}g</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Carb</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.carbs)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.carbs)}g</span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted">Fat</span>
-              <span className="font-semibold text-foreground">
-                {Math.round(macros.fat)}g
-              </span>
+              <span className="font-semibold text-foreground">{Math.round(macros.fat)}g</span>
             </div>
           </div>
         ) : null}
@@ -96,9 +86,7 @@ export default function RecipeCard({ onEdit, recipe }: RecipeCardProps) {
         </div>
 
         {ingredientNames && ingredientNames.length > 0 ? (
-          <p className="text-xs text-muted">
-            Includes: {ingredientNames.join(", ")}
-          </p>
+          <p className="text-xs text-muted">Includes: {ingredientNames.join(', ')}</p>
         ) : null}
 
         <div className="min-h-6">

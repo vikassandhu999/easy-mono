@@ -20,7 +20,11 @@ export default function ClientViewPage() {
           <p className="font-semibold text-foreground">Invalid client route</p>
           <p className="text-sm text-muted">The requested client id is missing.</p>
           <div>
-            <Button onPress={() => navigate('/clients')} size="md" variant="outline">
+            <Button
+              onPress={() => navigate('/clients')}
+              size="md"
+              variant="outline"
+            >
               Back to Clients
             </Button>
           </div>
@@ -32,7 +36,12 @@ export default function ClientViewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center">
-        <Button className="gap-2" onPress={() => navigate('/clients')} size="md" variant="ghost">
+        <Button
+          className="gap-2"
+          onPress={() => navigate('/clients')}
+          size="md"
+          variant="ghost"
+        >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Clients</span>
         </Button>
@@ -59,10 +68,18 @@ export default function ClientViewPage() {
             <p className="font-semibold text-foreground">Could not load client</p>
             <p className="text-sm text-muted">Please try again or return to the clients list.</p>
             <div className="flex gap-2">
-              <Button onPress={() => refetch()} size="md" variant="outline">
+              <Button
+                onPress={() => refetch()}
+                size="md"
+                variant="outline"
+              >
                 Retry
               </Button>
-              <Button onPress={() => navigate('/clients')} size="md" variant="ghost">
+              <Button
+                onPress={() => navigate('/clients')}
+                size="md"
+                variant="ghost"
+              >
                 Back
               </Button>
             </div>

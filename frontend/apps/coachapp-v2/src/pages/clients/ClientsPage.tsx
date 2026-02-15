@@ -1,16 +1,13 @@
-import {
-  Button,
-  Card,
-  Skeleton,
-} from '@heroui/react';
+import {Button, Card, Skeleton} from '@heroui/react';
 import {ArrowUpDown, Plus, Search} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router';
 
-import {useListClientsQuery} from '@/api/clients';
 import type {Client} from '@/api/clients';
-import InviteClientModal from '@/pages/clients/InviteClientModal';
+
+import {useListClientsQuery} from '@/api/clients';
 import {CLIENT_STATUS_STYLES, formatDate, getClientInitial, getClientName} from '@/pages/clients/clientDisplay';
+import InviteClientModal from '@/pages/clients/InviteClientModal';
 
 const SORT_OPTIONS = [
   {key: 'recent', label: 'Recently Active'},
@@ -140,7 +137,9 @@ export default function ClientsPage() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
-          {filterStatus === 'all' ? 'All Clients' : `${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} Clients`}
+          {filterStatus === 'all'
+            ? 'All Clients'
+            : `${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} Clients`}
         </h2>
         <p className="text-sm text-muted">{displayedClients.length} total</p>
       </div>
@@ -151,7 +150,11 @@ export default function ClientsPage() {
             <p className="font-semibold text-foreground">Could not load clients</p>
             <p className="text-sm text-muted">Please try again. If this continues, check API connectivity.</p>
             <div>
-              <Button onPress={() => refetch()} size="md" variant="outline">
+              <Button
+                onPress={() => refetch()}
+                size="md"
+                variant="outline"
+              >
                 Retry
               </Button>
             </div>
@@ -162,63 +165,66 @@ export default function ClientsPage() {
       {!isError ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading
-          ? [1, 2, 3, 4, 5, 6].map((index) => (
-              <Card className="border border-separator bg-surface p-4" key={index}>
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="flex flex-col gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-2/3" />
-                </div>
-              </Card>
-            ))
-          : displayedClients.map((client) => (
-              <Card
-                className="border border-separator bg-surface p-4 text-left transition-none"
-                key={client.id}
-                onClick={() => navigate(`/clients/${client.id}`)}
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start justify-between">
+            ? [1, 2, 3, 4, 5, 6].map((index) => (
+                <Card
+                  className="border border-separator bg-surface p-4"
+                  key={index}
+                >
+                  <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
-                        {getClientInitial(client)}
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex flex-col gap-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                </Card>
+              ))
+            : displayedClients.map((client) => (
+                <Card
+                  className="border border-separator bg-surface p-4 text-left transition-none"
+                  key={client.id}
+                  onClick={() => navigate(`/clients/${client.id}`)}
+                >
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
+                          {getClientInitial(client)}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground">{getClientName(client)}</span>
+                          <span className="text-sm text-muted">{client.email}</span>
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${CLIENT_STATUS_STYLES[client.status] ?? 'bg-default text-muted'}`}
+                      >
+                        {client.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-6 text-sm text-muted">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-foreground">{client.phone || '—'}</span>
+                        <span>Phone</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">{getClientName(client)}</span>
-                        <span className="text-sm text-muted">{client.email}</span>
+                        <span className="font-semibold text-foreground capitalize">{client.status}</span>
+                        <span>Status</span>
                       </div>
                     </div>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${CLIENT_STATUS_STYLES[client.status] ?? 'bg-default text-muted'}`}
-                    >
-                      {client.status}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center gap-6 text-sm text-muted">
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-foreground">{client.phone || '—'}</span>
-                      <span>Phone</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-foreground capitalize">{client.status}</span>
-                      <span>Status</span>
+                    <div className="flex items-center justify-between border-t border-separator pt-3 text-xs text-muted">
+                      <span>Joined {formatDate(client.inserted_at)}</span>
+                      <span>Updated {formatDate(client.updated_at)}</span>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between border-t border-separator pt-3 text-xs text-muted">
-                    <span>Joined {formatDate(client.inserted_at)}</span>
-                    <span>Updated {formatDate(client.updated_at)}</span>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
         </div>
       ) : null}
 

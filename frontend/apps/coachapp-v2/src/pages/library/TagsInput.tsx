@@ -1,6 +1,6 @@
-import { Button, Input, Label } from "@heroui/react";
-import { X } from "lucide-react";
-import { KeyboardEvent, useState } from "react";
+import {Button, Input, Label} from '@heroui/react';
+import {X} from 'lucide-react';
+import {KeyboardEvent, useState} from 'react';
 
 type TagsInputProps = {
   label: string;
@@ -11,16 +11,11 @@ type TagsInputProps = {
 
 const normalizeTag = (tag: string) => tag.trim();
 
-export default function TagsInput({
-  label,
-  onChange,
-  placeholder = "Add tags",
-  value,
-}: TagsInputProps) {
-  const [draft, setDraft] = useState("");
+export default function TagsInput({label, onChange, placeholder = 'Add tags', value}: TagsInputProps) {
+  const [draft, setDraft] = useState('');
 
   const appendTags = (rawValue: string) => {
-    const parts = rawValue.split(",").map(normalizeTag).filter(Boolean);
+    const parts = rawValue.split(',').map(normalizeTag).filter(Boolean);
 
     if (parts.length === 0) {
       return;
@@ -31,11 +26,11 @@ export default function TagsInput({
       unique.add(part);
     });
     onChange(Array.from(unique));
-    setDraft("");
+    setDraft('');
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter" && event.key !== ",") {
+    if (event.key !== 'Enter' && event.key !== ',') {
       return;
     }
     event.preventDefault();

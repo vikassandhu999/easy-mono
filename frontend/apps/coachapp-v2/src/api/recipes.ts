@@ -1,11 +1,6 @@
-import { api } from "@/api";
-import { Food } from "@/api/foods";
-import {
-  ApiListResponse,
-  ApiResponse,
-  Macros,
-  ServingSize,
-} from "@/api/shared";
+import {api} from '@/api';
+import {Food} from '@/api/foods';
+import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
 export type RecipeIngredient = {
   food_id: string;
@@ -79,59 +74,54 @@ export const recipesApi = api.injectEndpoints({
   endpoints: (build) => ({
     createRecipe: build.mutation<ApiResponse<Recipe>, RecipeCreateRequest>({
       query: (body) => ({
-        url: "/v1/coach/recipes",
-        method: "POST",
+        url: '/v1/coach/recipes',
+        method: 'POST',
         body,
       }),
-      invalidatesTags: [{ type: "Recipe", id: "LIST" }],
+      invalidatesTags: [{type: 'Recipe', id: 'LIST'}],
     }),
     getRecipe: build.query<ApiResponse<Recipe>, string>({
       query: (id) => `/v1/coach/recipes/${id}`,
-      providesTags: (_, __, id) => [{ type: "Recipe", id }],
+      providesTags: (_, __, id) => [{type: 'Recipe', id}],
     }),
-    listRecipes: build.query<ApiListResponse<Recipe>, ListRecipesParams | void>(
-      {
-        query: (params) =>
-          params
-            ? {
-                url: "/v1/coach/recipes",
-                params,
-              }
-            : "/v1/coach/recipes",
-        providesTags: (result) =>
-          result
-            ? [
-                ...result.data.map((recipe) => ({
-                  type: "Recipe" as const,
-                  id: recipe.id,
-                })),
-                { type: "Recipe" as const, id: "LIST" },
-              ]
-            : [{ type: "Recipe" as const, id: "LIST" }],
-      },
-    ),
+    listRecipes: build.query<ApiListResponse<Recipe>, ListRecipesParams | void>({
+      query: (params) =>
+        params
+          ? {
+              url: '/v1/coach/recipes',
+              params,
+            }
+          : '/v1/coach/recipes',
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((recipe) => ({
+                type: 'Recipe' as const,
+                id: recipe.id,
+              })),
+              {type: 'Recipe' as const, id: 'LIST'},
+            ]
+          : [{type: 'Recipe' as const, id: 'LIST'}],
+    }),
     deleteRecipe: build.mutation<void, string>({
       query: (id) => ({
         url: `/v1/coach/recipes/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (_, __, id) => [
-        { type: "Recipe", id },
-        { type: "Recipe", id: "LIST" },
+        {type: 'Recipe', id},
+        {type: 'Recipe', id: 'LIST'},
       ],
     }),
-    updateRecipe: build.mutation<
-      ApiResponse<Recipe>,
-      { body: RecipeUpdateRequest; id: string }
-    >({
-      query: ({ id, body }) => ({
+    updateRecipe: build.mutation<ApiResponse<Recipe>, {body: RecipeUpdateRequest; id: string}>({
+      query: ({id, body}) => ({
         url: `/v1/coach/recipes/${id}`,
-        method: "PATCH",
+        method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_, __, { id }) => [
-        { type: "Recipe", id },
-        { type: "Recipe", id: "LIST" },
+      invalidatesTags: (_, __, {id}) => [
+        {type: 'Recipe', id},
+        {type: 'Recipe', id: 'LIST'},
       ],
     }),
   }),

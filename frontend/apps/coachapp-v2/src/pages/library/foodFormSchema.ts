@@ -1,25 +1,25 @@
-import { z } from "zod";
+import {z} from 'zod';
 
-import type { Food } from "@/api/foods";
-import type { FoodFormValues } from "@/pages/library/foodFormTypes";
+import type {Food} from '@/api/foods';
+import type {FoodFormValues} from '@/pages/library/foodFormTypes';
 
 const CALORIES_MAX = 5000;
 const MACRO_GRAMS_MAX = 1000;
 
 const roundToOneDecimal = (value: number) => Math.round(value * 10) / 10;
 
-const URL_MESSAGE = "Image URL must be a valid URL.";
+const URL_MESSAGE = 'Image URL must be a valid URL.';
 
 const createEmptyServingSize = () => ({
-  amount: "",
-  unit: "",
-  weight_g: "",
+  amount: '',
+  unit: '',
+  weight_g: '',
 });
 
 const toStringValue = (value: null | number | string | undefined) =>
-  value === null || value === undefined ? "" : String(value);
+  value === null || value === undefined ? '' : String(value);
 
-export const FOOD_NUMERIC_STEP = "0.1";
+export const FOOD_NUMERIC_STEP = '0.1';
 
 export const FOOD_FORM_SCHEMA = z
   .object({
@@ -28,7 +28,7 @@ export const FOOD_FORM_SCHEMA = z
     category: z.string(),
     fat: z.string(),
     image_url: z.string(),
-    name: z.string().trim().min(1, "Food name is required."),
+    name: z.string().trim().min(1, 'Food name is required.'),
     notes: z.string(),
     protein: z.string(),
     serving_sizes: z.array(
@@ -42,11 +42,7 @@ export const FOOD_FORM_SCHEMA = z
     tags: z.array(z.string()),
   })
   .superRefine((values, ctx) => {
-    const validateMacroField = (
-      field: "calories" | "carbs" | "fat" | "protein",
-      label: string,
-      max: number,
-    ) => {
+    const validateMacroField = (field: 'calories' | 'carbs' | 'fat' | 'protein', label: string, max: number) => {
       const raw = values[field];
       if (!raw.trim()) {
         return;
@@ -78,21 +74,18 @@ export const FOOD_FORM_SCHEMA = z
       }
     };
 
-    validateMacroField("calories", "Calories", CALORIES_MAX);
-    validateMacroField("protein", "Protein", MACRO_GRAMS_MAX);
-    validateMacroField("carbs", "Carbs", MACRO_GRAMS_MAX);
-    validateMacroField("fat", "Fat", MACRO_GRAMS_MAX);
+    validateMacroField('calories', 'Calories', CALORIES_MAX);
+    validateMacroField('protein', 'Protein', MACRO_GRAMS_MAX);
+    validateMacroField('carbs', 'Carbs', MACRO_GRAMS_MAX);
+    validateMacroField('fat', 'Fat', MACRO_GRAMS_MAX);
 
     if (values.image_url.trim()) {
-      const result = z
-        .string()
-        .url(URL_MESSAGE)
-        .safeParse(values.image_url.trim());
+      const result = z.string().url(URL_MESSAGE).safeParse(values.image_url.trim());
       if (!result.success) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: URL_MESSAGE,
-          path: ["image_url"],
+          path: ['image_url'],
         });
       }
     }
@@ -110,7 +103,7 @@ export const FOOD_FORM_SCHEMA = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Serving size ${index + 1}: unit is required.`,
-          path: ["serving_sizes", index, "unit"],
+          path: ['serving_sizes', index, 'unit'],
         });
       }
 
@@ -120,7 +113,7 @@ export const FOOD_FORM_SCHEMA = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Serving size ${index + 1}: weight must be 0 or more.`,
-            path: ["serving_sizes", index, "weight_g"],
+            path: ['serving_sizes', index, 'weight_g'],
           });
         }
       }
@@ -131,7 +124,7 @@ export const FOOD_FORM_SCHEMA = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Serving size ${index + 1}: amount must be 0 or more.`,
-            path: ["serving_sizes", index, "amount"],
+            path: ['serving_sizes', index, 'amount'],
           });
         }
       }
@@ -139,27 +132,27 @@ export const FOOD_FORM_SCHEMA = z
   });
 
 export const FOOD_INITIAL_VALUES: FoodFormValues = {
-  calories: "",
-  carbs: "",
-  category: "",
-  fat: "",
-  image_url: "",
-  name: "",
-  notes: "",
-  protein: "",
+  calories: '',
+  carbs: '',
+  category: '',
+  fat: '',
+  image_url: '',
+  name: '',
+  notes: '',
+  protein: '',
   serving_sizes: [createEmptyServingSize()],
-  source: "",
+  source: '',
   tags: [],
 };
 
 export const mapFoodToFormValues = (food: Food): FoodFormValues => ({
   calories: toStringValue(food.macros?.calories ?? food.macros?.kcal),
   carbs: toStringValue(food.macros?.carbs ?? food.macros?.carbs_g),
-  category: food.category ?? "",
+  category: food.category ?? '',
   fat: toStringValue(food.macros?.fat ?? food.macros?.fat_g),
-  image_url: food.image_url ?? "",
+  image_url: food.image_url ?? '',
   name: food.name,
-  notes: food.notes ?? "",
+  notes: food.notes ?? '',
   protein: toStringValue(food.macros?.protein ?? food.macros?.protein_g),
   serving_sizes:
     food.serving_sizes.length > 0
@@ -169,7 +162,7 @@ export const mapFoodToFormValues = (food: Food): FoodFormValues => ({
           weight_g: toStringValue(servingSize.weight_g),
         }))
       : [createEmptyServingSize()],
-  source: food.source ?? "",
+  source: food.source ?? '',
   tags: food.tags,
 });
 

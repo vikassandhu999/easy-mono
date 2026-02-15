@@ -1,8 +1,9 @@
 import {Button, FieldError, Input, Label, Modal, Surface, TextField, toast} from '@heroui/react';
 import {useState} from 'react';
 
-import {useInviteClientMutation} from '@/api/clients';
 import type {ClientInviteRequest} from '@/api/clients';
+
+import {useInviteClientMutation} from '@/api/clients';
 import {handleFormError} from '@/api/shared';
 
 const INVITE_INPUT_CLASS =
@@ -22,11 +23,7 @@ const INITIAL_VALUES: ClientInviteRequest = {
   notes: '',
 };
 
-export default function InviteClientModal({
-  isOpen,
-  onInvited,
-  onOpenChange,
-}: InviteClientModalProps) {
+export default function InviteClientModal({isOpen, onInvited, onOpenChange}: InviteClientModalProps) {
   const [values, setValues] = useState<ClientInviteRequest>(INITIAL_VALUES);
   const [formError, setFormError] = useState<null | string>(null);
   const [fieldErrors, setFieldErrors] = useState<null | Record<string, string[]>>(null);
@@ -165,10 +162,21 @@ export default function InviteClientModal({
               </Surface>
             </Modal.Body>
             <Modal.Footer>
-              <Button className="min-h-11" onPress={handleClose} size="md" variant="ghost">
+              <Button
+                className="min-h-11"
+                onPress={handleClose}
+                size="md"
+                variant="ghost"
+              >
                 Cancel
               </Button>
-              <Button className="min-h-11" isDisabled={isInviting} onPress={handleSubmit} size="md" variant="secondary">
+              <Button
+                className="min-h-11"
+                isDisabled={isInviting}
+                onPress={handleSubmit}
+                size="md"
+                variant="secondary"
+              >
                 {isInviting ? 'Sending...' : 'Send Invite'}
               </Button>
             </Modal.Footer>

@@ -1,4 +1,4 @@
-import { Button, Modal } from "@heroui/react";
+import {Button, Modal} from '@heroui/react';
 
 type ConfirmDialogProps = {
   confirmLabel: string;
@@ -20,7 +20,10 @@ export default function ConfirmDialog({
   title,
 }: ConfirmDialogProps) {
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+    >
       <Modal.Backdrop>
         <Modal.Container>
           <Modal.Dialog>
@@ -44,7 +47,7 @@ export default function ConfirmDialog({
                 size="md"
                 variant="danger"
               >
-                {isLoading ? "Deleting..." : confirmLabel}
+                {isLoading ? 'Deleting...' : confirmLabel}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

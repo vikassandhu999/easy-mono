@@ -1,9 +1,9 @@
-import { Button } from "@heroui/react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import {Button} from '@heroui/react';
+import {NavLink, Outlet, useLocation, useNavigate} from 'react-router';
 
-import { clearTokens } from "@/api/authStorage";
+import {clearTokens} from '@/api/authStorage';
 
-import { NAV_ITEMS, UTILITY_ITEMS } from "./navConfig";
+import {NAV_ITEMS, UTILITY_ITEMS} from './navConfig';
 
 export default function MainLayout() {
   const location = useLocation();
@@ -11,7 +11,7 @@ export default function MainLayout() {
 
   const handleLogout = () => {
     clearTokens();
-    navigate("/login");
+    navigate('/login');
   };
 
   return (
@@ -23,19 +23,21 @@ export default function MainLayout() {
       >
         {/* App Logo/Identity */}
         <div className="flex h-16 items-center border-b border-separator px-6">
-          <img alt="Coach Easy" className="h-8 w-auto" src="/logo.png" />
+          <img
+            alt="Coach Easy"
+            className="h-8 w-auto"
+            src="/logo.png"
+          />
         </div>
 
         {/* Primary Navigation */}
         <div className="flex flex-1 flex-col gap-1 p-3">
           {NAV_ITEMS.map((item) => {
-            const isActive =
-              location.pathname === item.path ||
-              location.pathname.startsWith(`${item.path}/`);
+            const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
 
             return (
               <NavLink
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 aria-label={item.label}
                 className="flex"
                 key={item.path}
@@ -45,9 +47,12 @@ export default function MainLayout() {
                   className="w-full justify-start gap-3 transition-none data-pressed:scale-100"
                   isDisabled={item.isDisabled}
                   size="lg"
-                  variant={isActive ? "secondary" : "ghost"}
+                  variant={isActive ? 'secondary' : 'ghost'}
                 >
-                  <item.icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                  <item.icon
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
                   <span>{item.label}</span>
                 </Button>
               </NavLink>
@@ -70,7 +75,10 @@ export default function MainLayout() {
                   size="lg"
                   variant="outline"
                 >
-                  <item.icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                  <item.icon
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
                   <span>{item.label}</span>
                 </Button>
               );
@@ -78,7 +86,7 @@ export default function MainLayout() {
 
             return (
               <NavLink
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 aria-label={item.label}
                 className="flex"
                 key={item.path}
@@ -88,9 +96,12 @@ export default function MainLayout() {
                   className="w-full justify-start gap-3 transition-none data-pressed:scale-100"
                   isDisabled={item.isDisabled}
                   size="lg"
-                  variant={isActive ? "secondary" : "ghost"}
+                  variant={isActive ? 'secondary' : 'ghost'}
                 >
-                  <item.icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                  <item.icon
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0"
+                  />
                   <span>{item.label}</span>
                 </Button>
               </NavLink>
@@ -115,13 +126,11 @@ export default function MainLayout() {
         >
           <div className="flex items-center justify-around px-4 py-2 pb-safe">
             {NAV_ITEMS.filter((item) => item.showInMobile).map((item) => {
-              const isActive =
-                location.pathname === item.path ||
-                location.pathname.startsWith(`${item.path}/`);
+              const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
 
               return (
                 <NavLink
-                  aria-current={isActive ? "page" : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                   aria-label={item.label}
                   className="flex min-h-11 flex-col items-center justify-center"
                   key={item.path}
@@ -132,13 +141,14 @@ export default function MainLayout() {
                     isDisabled={item.isDisabled}
                     isIconOnly
                     size="lg"
-                    variant={isActive ? "secondary" : "ghost"}
+                    variant={isActive ? 'secondary' : 'ghost'}
                   >
-                    <item.icon aria-hidden="true" className="h-5 w-5" />
+                    <item.icon
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                    />
                   </Button>
-                  <span
-                    className={`mt-1 text-xs ${isActive ? "text-foreground" : "text-muted"}`}
-                  >
+                  <span className={`mt-1 text-xs ${isActive ? 'text-foreground' : 'text-muted'}`}>
                     {item.shortLabel || item.label}
                   </span>
                 </NavLink>

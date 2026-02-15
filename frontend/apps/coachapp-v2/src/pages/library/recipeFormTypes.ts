@@ -16,7 +16,7 @@ export type RecipeFormValues = {
   instructions: string;
   name: string;
   protein: string;
-  service_size_type: "serving_based" | "weight_based";
+  service_size_type: 'serving_based' | 'weight_based';
   serving_sizes: {
     amount: string;
     unit: string;

@@ -1,20 +1,20 @@
-import { Card } from "@heroui/react";
-import { Dumbbell } from "lucide-react";
+import {Card} from '@heroui/react';
+import {Dumbbell} from 'lucide-react';
 
-import type { Exercise } from "@/api/exercises";
-import type { LibraryResourceExercise } from "@/pages/library/libraryData";
+import type {Exercise} from '@/api/exercises';
+import type {LibraryResourceExercise} from '@/pages/library/libraryData';
 
-import { formatDate } from "@/pages/library/libraryData";
+import {formatDate} from '@/pages/library/libraryData';
 
 const toLabel = (value: null | string | undefined) => {
   if (!value) {
-    return "Not set";
+    return 'Not set';
   }
 
   return value
-    .split("_")
+    .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+    .join(' ');
 };
 
 type ExerciseCardProps = {
@@ -22,7 +22,7 @@ type ExerciseCardProps = {
   resource: LibraryResourceExercise;
 };
 
-export default function ExerciseCard({ onEdit, resource }: ExerciseCardProps) {
+export default function ExerciseCard({onEdit, resource}: ExerciseCardProps) {
   const description = resource.data.description?.trim();
 
   return (
@@ -36,16 +36,12 @@ export default function ExerciseCard({ onEdit, resource }: ExerciseCardProps) {
             <Dumbbell className="h-5 w-5 text-foreground" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate font-semibold text-foreground">
-              {resource.data.name}
-            </span>
+            <span className="truncate font-semibold text-foreground">{resource.data.name}</span>
             <span className="truncate text-sm text-muted">Exercises</span>
           </div>
         </div>
 
-        {description ? (
-          <p className="line-clamp-2 text-sm text-muted">{description}</p>
-        ) : null}
+        {description ? <p className="line-clamp-2 text-sm text-muted">{description}</p> : null}
 
         <div className="flex items-center justify-between gap-3 text-sm text-muted">
           <span>{toLabel(resource.data.mechanics)} mechanics</span>

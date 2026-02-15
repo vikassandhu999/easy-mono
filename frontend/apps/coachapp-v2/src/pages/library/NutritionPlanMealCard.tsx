@@ -1,10 +1,10 @@
-import { Button, Card } from "@heroui/react";
-import { Copy, Pencil, SquarePen, Trash2 } from "lucide-react";
+import {Button, Card} from '@heroui/react';
+import {Copy, Pencil, SquarePen, Trash2} from 'lucide-react';
 
-import type { Meal } from "@/api/meals";
-import type { PlanItem } from "@/api/nutritionPlans";
+import type {Meal} from '@/api/meals';
+import type {PlanItem} from '@/api/nutritionPlans';
 
-import { toSentenceLabel } from "@/pages/library/nutritionPlanBuilderShared";
+import {toSentenceLabel} from '@/pages/library/nutritionPlanBuilderShared';
 
 type NutritionPlanMealCardProps = {
   meal: Meal | undefined;
@@ -22,11 +22,7 @@ const getCalories = (meal: Meal | undefined) => {
 
   const caloriesEntry = Object.entries(meal.macros).find(([key]) => {
     const normalized = key.trim().toLowerCase();
-    return (
-      normalized === "calories" ||
-      normalized === "kcal" ||
-      normalized === "energy"
-    );
+    return normalized === 'calories' || normalized === 'kcal' || normalized === 'energy';
   });
 
   return caloriesEntry?.[1] ?? null;
@@ -49,15 +45,10 @@ export default function NutritionPlanMealCard({
       <div className="flex flex-col gap-4">
         <div>
           <p className="text-xs font-medium text-muted">{mealTypeLabel}</p>
-          <p className="mt-1 text-base font-semibold text-foreground">
-            {meal?.name ?? "Untitled meal"}
-          </p>
+          <p className="mt-1 text-base font-semibold text-foreground">{meal?.name ?? 'Untitled meal'}</p>
           <p className="mt-1 text-sm text-muted">
-            {calories !== null
-              ? `${Math.round(calories)} kcal`
-              : "Calories unavailable"}{" "}
-            · {itemCount} item
-            {itemCount === 1 ? "" : "s"}
+            {calories !== null ? `${Math.round(calories)} kcal` : 'Calories unavailable'} · {itemCount} item
+            {itemCount === 1 ? '' : 's'}
           </p>
         </div>
 

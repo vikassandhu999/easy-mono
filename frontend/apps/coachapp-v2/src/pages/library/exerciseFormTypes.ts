@@ -1,4 +1,4 @@
-import type { ExerciseForce, ExerciseMechanics } from "@/api/exercises";
+import type {ExerciseForce, ExerciseMechanics} from '@/api/exercises';
 
 export type ExerciseImageField = {
   url: string;
@@ -7,10 +7,10 @@ export type ExerciseImageField = {
 export type ExerciseFormValues = {
   description: string;
   equipment_ids: string[];
-  force: "" | ExerciseForce;
+  force: '' | ExerciseForce;
   images: ExerciseImageField[];
   instructions: string;
-  mechanics: "" | ExerciseMechanics;
+  mechanics: '' | ExerciseMechanics;
   muscle_ids: string[];
   name: string;
 };

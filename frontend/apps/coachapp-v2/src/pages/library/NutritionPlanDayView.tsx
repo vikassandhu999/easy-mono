@@ -1,11 +1,11 @@
-import { Button, Card } from "@heroui/react";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import {Button, Card} from '@heroui/react';
+import {Copy, Plus, Trash2} from 'lucide-react';
 
-import type { Meal } from "@/api/meals";
-import type { PlanItem } from "@/api/nutritionPlans";
+import type {Meal} from '@/api/meals';
+import type {PlanItem} from '@/api/nutritionPlans';
 
-import { toSentenceLabel } from "@/pages/library/nutritionPlanBuilderShared";
-import NutritionPlanMealCard from "@/pages/library/NutritionPlanMealCard";
+import {toSentenceLabel} from '@/pages/library/nutritionPlanBuilderShared';
+import NutritionPlanMealCard from '@/pages/library/NutritionPlanMealCard';
 
 type NutritionPlanDayViewProps = {
   dayMealCount: number;
@@ -23,17 +23,17 @@ type NutritionPlanDayViewProps = {
 
 const getPlanItemSortWeight = (mealType: string) => {
   switch (mealType) {
-    case "breakfast":
+    case 'breakfast':
       return 0;
-    case "pre_workout":
+    case 'pre_workout':
       return 1;
-    case "lunch":
+    case 'lunch':
       return 2;
-    case "snack":
+    case 'snack':
       return 3;
-    case "post_workout":
+    case 'post_workout':
       return 4;
-    case "dinner":
+    case 'dinner':
       return 5;
     default:
       return 99;
@@ -54,8 +54,7 @@ export default function NutritionPlanDayView({
   planItems,
 }: NutritionPlanDayViewProps) {
   const sortedPlanItems = [...planItems].sort((a, b) => {
-    const typeSort =
-      getPlanItemSortWeight(a.meal_type) - getPlanItemSortWeight(b.meal_type);
+    const typeSort = getPlanItemSortWeight(a.meal_type) - getPlanItemSortWeight(b.meal_type);
     if (typeSort !== 0) {
       return typeSort;
     }
@@ -70,11 +69,9 @@ export default function NutritionPlanDayView({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              {toSentenceLabel(day)}
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">{toSentenceLabel(day)}</h2>
             <p className="text-sm text-muted">
-              {dayMealCount} day assignment{dayMealCount === 1 ? "" : "s"}
+              {dayMealCount} day assignment{dayMealCount === 1 ? '' : 's'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -111,9 +108,7 @@ export default function NutritionPlanDayView({
 
         {sortedPlanItems.length === 0 ? (
           <Card className="border border-dashed border-separator bg-background p-5">
-            <p className="text-sm text-muted">
-              No meals scheduled yet. Add a meal to build this day.
-            </p>
+            <p className="text-sm text-muted">No meals scheduled yet. Add a meal to build this day.</p>
           </Card>
         ) : (
           <div className="flex flex-col gap-3">

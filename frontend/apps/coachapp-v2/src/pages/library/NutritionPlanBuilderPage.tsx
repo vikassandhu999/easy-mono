@@ -1,13 +1,11 @@
-import { Button, Card, toast } from "@heroui/react";
-import { ArrowLeft, Copy } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import {Button, Card, toast} from '@heroui/react';
+import {ArrowLeft, Copy} from 'lucide-react';
+import {useEffect, useMemo, useState} from 'react';
+import {useLocation, useNavigate, useParams} from 'react-router';
 
-import {
-  useCreateMealItemMutation,
-  useCreateMealMutation,
-  useListMealsQuery,
-} from "@/api/meals";
+import type {PlanItem} from '@/api/nutritionPlans';
+
+import {useCreateMealItemMutation, useCreateMealMutation, useListMealsQuery} from '@/api/meals';
 import {
   useCopyNutritionPlanDayMutation,
   useDeletePlanItemMutation,
@@ -15,53 +13,45 @@ import {
   useGetNutritionPlanQuery,
   useListPlanItemsQuery,
   useUpdatePlanItemMutation,
-} from "@/api/nutritionPlans";
-import type { PlanItem } from "@/api/nutritionPlans";
-import NutritionPlanDayView from "@/pages/library/NutritionPlanDayView";
+} from '@/api/nutritionPlans';
 import {
   DAYS,
   getDayMealCounts,
   getItemsByDay,
   getMealUsageCountByMealId,
   toSentenceLabel,
-} from "@/pages/library/nutritionPlanBuilderShared";
+} from '@/pages/library/nutritionPlanBuilderShared';
+import NutritionPlanDayView from '@/pages/library/NutritionPlanDayView';
 
 export default function NutritionPlanBuilderPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id } = useParams();
-  const planId = id ?? "";
+  const {id} = useParams();
+  const planId = id ?? '';
 
   const returnTo =
-    typeof location.state === "object" &&
+    typeof location.state === 'object' &&
     location.state &&
-    "from" in location.state &&
-    typeof location.state.from === "string"
+    'from' in location.state &&
+    typeof location.state.from === 'string'
       ? location.state.from
-      : "/library";
+      : '/library';
 
-  const [planItemsOverride, setPlanItemsOverride] = useState<null | PlanItem[]>(
-    null,
-  );
-  const [duplicatingAssignmentId, setDuplicatingAssignmentId] = useState<
-    null | string
-  >(null);
+  const [planItemsOverride, setPlanItemsOverride] = useState<null | PlanItem[]>(null);
+  const [duplicatingAssignmentId, setDuplicatingAssignmentId] = useState<null | string>(null);
 
   const {
     data: planData,
     isError: isPlanError,
     isLoading: isPlanLoading,
-  } = useGetNutritionPlanQuery(planId, { skip: !planId });
+  } = useGetNutritionPlanQuery(planId, {skip: !planId});
 
-  const { data: mealsData } = useListMealsQuery({ planId }, { skip: !planId });
-  const { data: planItemsData } = useListPlanItemsQuery(planId, {
+  const {data: mealsData} = useListMealsQuery({planId}, {skip: !planId});
+  const {data: planItemsData} = useListPlanItemsQuery(planId, {
     skip: !planId,
   });
 
-  const meals = useMemo(
-    () => [...(mealsData?.data ?? [])].sort((a, b) => a.position - b.position),
-    [mealsData?.data],
-  );
+  const meals = useMemo(() => [...(mealsData?.data ?? [])].sort((a, b) => a.position - b.position), [mealsData?.data]);
   const mealsById = useMemo(
     () =>
       meals.reduce<Record<string, (typeof meals)[number]>>((acc, meal) => {
@@ -80,25 +70,13 @@ export default function NutritionPlanBuilderPage() {
     }
   }, [planItems]);
 
-  const itemsByDay = useMemo(
-    () => getItemsByDay(effectivePlanItems),
-    [effectivePlanItems],
-  );
-  const dayMealCounts = useMemo(
-    () => getDayMealCounts(itemsByDay),
-    [itemsByDay],
-  );
-  const mealUsageCountByMealId = useMemo(
-    () => getMealUsageCountByMealId(effectivePlanItems),
-    [effectivePlanItems],
-  );
+  const itemsByDay = useMemo(() => getItemsByDay(effectivePlanItems), [effectivePlanItems]);
+  const dayMealCounts = useMemo(() => getDayMealCounts(itemsByDay), [itemsByDay]);
+  const mealUsageCountByMealId = useMemo(() => getMealUsageCountByMealId(effectivePlanItems), [effectivePlanItems]);
 
-  const [duplicateNutritionPlan, { isLoading: isDuplicatingPlan }] =
-    useDuplicateNutritionPlanMutation();
-  const [copyNutritionPlanDay, { isLoading: isCopyingDay }] =
-    useCopyNutritionPlanDayMutation();
-  const [deletePlanItem, { isLoading: isDeletingPlanItem }] =
-    useDeletePlanItemMutation();
+  const [duplicateNutritionPlan, {isLoading: isDuplicatingPlan}] = useDuplicateNutritionPlanMutation();
+  const [copyNutritionPlanDay, {isLoading: isCopyingDay}] = useCopyNutritionPlanDayMutation();
+  const [deletePlanItem, {isLoading: isDeletingPlanItem}] = useDeletePlanItemMutation();
   const [createMeal] = useCreateMealMutation();
   const [createMealItem] = useCreateMealItemMutation();
   const [updatePlanItem] = useUpdatePlanItemMutation();
@@ -110,12 +88,12 @@ export default function NutritionPlanBuilderPage() {
 
     try {
       const response = await duplicateNutritionPlan(planId).unwrap();
-      toast.success("Plan duplicated.");
+      toast.success('Plan duplicated.');
       navigate(`/library/nutrition-plans/${response.data.id}/builder`, {
-        state: { from: returnTo },
+        state: {from: returnTo},
       });
     } catch {
-      toast.danger("Unable to duplicate plan. Please try again.");
+      toast.danger('Unable to duplicate plan. Please try again.');
     }
   };
 
@@ -125,14 +103,9 @@ export default function NutritionPlanBuilderPage() {
     }
 
     const targetInput = window.prompt(
-      `Copy from ${toSentenceLabel(sourceDay)} to which day?\n${DAYS.filter(
-        (day) => day !== sourceDay,
-      )
-        .map(
-          (day) =>
-            `- ${toSentenceLabel(day)} (${dayMealCounts[day] ?? 0} assignments)`,
-        )
-        .join("\n")}`,
+      `Copy from ${toSentenceLabel(sourceDay)} to which day?\n${DAYS.filter((day) => day !== sourceDay)
+        .map((day) => `- ${toSentenceLabel(day)} (${dayMealCounts[day] ?? 0} assignments)`)
+        .join('\n')}`,
       DAYS.find((day) => day !== sourceDay) ?? DAYS[0],
     );
     if (!targetInput) {
@@ -140,11 +113,8 @@ export default function NutritionPlanBuilderPage() {
     }
 
     const targetDay = targetInput.trim().toLowerCase();
-    if (
-      !DAYS.includes(targetDay as (typeof DAYS)[number]) ||
-      targetDay === sourceDay
-    ) {
-      toast.danger("Invalid target day.");
+    if (!DAYS.includes(targetDay as (typeof DAYS)[number]) || targetDay === sourceDay) {
+      toast.danger('Invalid target day.');
       return;
     }
 
@@ -157,12 +127,12 @@ export default function NutritionPlanBuilderPage() {
 
     try {
       await copyNutritionPlanDay({
-        body: { source_day: sourceDay, target_day: targetDay },
+        body: {source_day: sourceDay, target_day: targetDay},
         id: planId,
       }).unwrap();
-      toast.success("Day assignments replaced successfully.");
+      toast.success('Day assignments replaced successfully.');
     } catch {
-      toast.danger("Unable to copy day assignments. Please try again.");
+      toast.danger('Unable to copy day assignments. Please try again.');
     }
   };
 
@@ -171,9 +141,7 @@ export default function NutritionPlanBuilderPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Remove this day assignment? This does not delete the meal.",
-    );
+    const confirmed = window.confirm('Remove this day assignment? This does not delete the meal.');
     if (!confirmed) {
       return;
     }
@@ -182,11 +150,11 @@ export default function NutritionPlanBuilderPage() {
     setPlanItemsOverride(previous.filter((item) => item.id !== planItemId));
 
     try {
-      await deletePlanItem({ id: planItemId, planId }).unwrap();
-      toast.success("Day assignment removed.");
+      await deletePlanItem({id: planItemId, planId}).unwrap();
+      toast.success('Day assignment removed.');
     } catch {
       setPlanItemsOverride(previous);
-      toast.danger("Unable to remove assignment. Changes were rolled back.");
+      toast.danger('Unable to remove assignment. Changes were rolled back.');
     }
   };
 
@@ -207,22 +175,16 @@ export default function NutritionPlanBuilderPage() {
       return;
     }
 
-    const targetIds = effectivePlanItems
-      .filter((item) => item.day === day)
-      .map((item) => item.id);
+    const targetIds = effectivePlanItems.filter((item) => item.day === day).map((item) => item.id);
     const previous = effectivePlanItems;
     setPlanItemsOverride(effectivePlanItems.filter((item) => item.day !== day));
 
     try {
-      await Promise.all(
-        targetIds.map((id) => deletePlanItem({ id, planId }).unwrap()),
-      );
+      await Promise.all(targetIds.map((id) => deletePlanItem({id, planId}).unwrap()));
       toast.success(`Cleared ${toSentenceLabel(day)} assignments only.`);
     } catch {
       setPlanItemsOverride(previous);
-      toast.danger(
-        "Unable to clear day assignments. Changes were rolled back.",
-      );
+      toast.danger('Unable to clear day assignments. Changes were rolled back.');
     }
   };
 
@@ -233,7 +195,7 @@ export default function NutritionPlanBuilderPage() {
 
     const sourceMeal = mealsById[assignment.meal_id];
     if (!sourceMeal) {
-      toast.danger("Unable to duplicate meal. Source meal was not found.");
+      toast.danger('Unable to duplicate meal. Source meal was not found.');
       return;
     }
 
@@ -268,28 +230,24 @@ export default function NutritionPlanBuilderPage() {
 
       const previous = effectivePlanItems;
       const next = previous.map((item) =>
-        item.id === assignment.id
-          ? { ...item, meal_id: newMealResponse.data.id }
-          : item,
+        item.id === assignment.id ? {...item, meal_id: newMealResponse.data.id} : item,
       );
       setPlanItemsOverride(next);
 
       try {
         await updatePlanItem({
-          body: { meal_id: newMealResponse.data.id },
+          body: {meal_id: newMealResponse.data.id},
           id: assignment.id,
           planId,
         }).unwrap();
       } catch {
         setPlanItemsOverride(previous);
-        throw new Error("repoint_failed");
+        throw new Error('repoint_failed');
       }
 
-      toast.success(
-        "Duplicated for this day. Local changes are isolated to this assignment.",
-      );
+      toast.success('Duplicated for this day. Local changes are isolated to this assignment.');
     } catch {
-      toast.danger("Unable to duplicate for this day. Please try again.");
+      toast.danger('Unable to duplicate for this day. Please try again.');
     } finally {
       setDuplicatingAssignmentId(null);
     }
@@ -330,8 +288,7 @@ export default function NutritionPlanBuilderPage() {
           <p className="text-sm text-muted">Library</p>
           <h1 className="text-2xl font-semibold md:text-3xl">{plan.name}</h1>
           <p className="max-w-2xl text-sm text-muted">
-            {plan.type} plan · {plan.status} · Build and manage weekly meal
-            schedule
+            {plan.type} plan · {plan.status} · Build and manage weekly meal schedule
           </p>
         </div>
 
@@ -340,7 +297,7 @@ export default function NutritionPlanBuilderPage() {
             className="min-h-11"
             onPress={() =>
               navigate(`/library/nutrition-plans/${plan.id}/edit`, {
-                state: { from: returnTo },
+                state: {from: returnTo},
               })
             }
             size="md"
@@ -356,7 +313,7 @@ export default function NutritionPlanBuilderPage() {
             variant="secondary"
           >
             <Copy className="h-4 w-4" />
-            {isDuplicatingPlan ? "Duplicating..." : "Duplicate"}
+            {isDuplicatingPlan ? 'Duplicating...' : 'Duplicate'}
           </Button>
         </div>
       </div>
@@ -369,31 +326,22 @@ export default function NutritionPlanBuilderPage() {
             key={day}
             mealsById={mealsById}
             onAddMeal={(targetDay) =>
-              navigate(
-                `/library/nutrition-plans/${planId}/builder/add-assignment?day=${targetDay}`,
-                {
-                  state: { from: `/library/nutrition-plans/${planId}/builder` },
-                },
-              )
+              navigate(`/library/nutrition-plans/${planId}/builder/add-assignment?day=${targetDay}`, {
+                state: {from: `/library/nutrition-plans/${planId}/builder`},
+              })
             }
             onClearDay={clearDayHandler}
             onCopyDay={copyDayHandler}
             onDuplicateForDay={duplicateForDayHandler}
             onEditAssignment={(assignment) =>
-              navigate(
-                `/library/nutrition-plans/${planId}/builder/assignments/${assignment.id}/edit`,
-                {
-                  state: { from: `/library/nutrition-plans/${planId}/builder` },
-                },
-              )
+              navigate(`/library/nutrition-plans/${planId}/builder/assignments/${assignment.id}/edit`, {
+                state: {from: `/library/nutrition-plans/${planId}/builder`},
+              })
             }
             onEditMeal={(mealId) =>
-              navigate(
-                `/library/nutrition-plans/${planId}/builder/meals/${mealId}/edit`,
-                {
-                  state: { from: `/library/nutrition-plans/${planId}/builder` },
-                },
-              )
+              navigate(`/library/nutrition-plans/${planId}/builder/meals/${mealId}/edit`, {
+                state: {from: `/library/nutrition-plans/${planId}/builder`},
+              })
             }
             onRemoveMealFromDay={removeAssignmentHandler}
             planItems={itemsByDay[day] ?? []}
@@ -403,17 +351,14 @@ export default function NutritionPlanBuilderPage() {
 
       {duplicatingAssignmentId ? (
         <Card className="border border-separator bg-surface p-4">
-          <p className="text-sm text-muted">
-            Duplicating assignment for local day changes...
-          </p>
+          <p className="text-sm text-muted">Duplicating assignment for local day changes...</p>
         </Card>
       ) : null}
 
       <Card className="border border-separator bg-background p-4">
         <p className="text-sm text-muted">
-          Edit meal opens full-page meal editing (global). Edit assignment opens
-          full-page assignment editing (local). Used in current plan:{" "}
-          {Object.keys(mealUsageCountByMealId).length} meals.
+          Edit meal opens full-page meal editing (global). Edit assignment opens full-page assignment editing (local).
+          Used in current plan: {Object.keys(mealUsageCountByMealId).length} meals.
         </p>
       </Card>
     </div>

@@ -1,6 +1,6 @@
-import { Button, Input, Label, Skeleton } from "@heroui/react";
-import { X } from "lucide-react";
-import { useMemo, useState } from "react";
+import {Button, Input, Label, Skeleton} from '@heroui/react';
+import {X} from 'lucide-react';
+import {useMemo, useState} from 'react';
 
 type SelectorItem = {
   id: string;
@@ -26,14 +26,11 @@ export default function ExerciseTagSelector({
   searchPlaceholder,
   selectedIds,
 }: ExerciseTagSelectorProps) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const normalizedSearch = search.trim().toLowerCase();
 
   const filteredItems = useMemo(
-    () =>
-      items.filter((item) =>
-        item.name.toLowerCase().includes(normalizedSearch),
-      ),
+    () => items.filter((item) => item.name.toLowerCase().includes(normalizedSearch)),
     [items, normalizedSearch],
   );
 
@@ -75,7 +72,10 @@ export default function ExerciseTagSelector({
       {isLoading ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((item) => (
-            <Skeleton className="h-11 rounded-lg" key={item} />
+            <Skeleton
+              className="h-11 rounded-lg"
+              key={item}
+            />
           ))}
         </div>
       ) : null}
@@ -98,7 +98,7 @@ export default function ExerciseTagSelector({
                 onPress={() => toggleSelection(item.id)}
                 size="sm"
                 type="button"
-                variant={isSelected ? "secondary" : "outline"}
+                variant={isSelected ? 'secondary' : 'outline'}
               >
                 {item.name}
               </Button>

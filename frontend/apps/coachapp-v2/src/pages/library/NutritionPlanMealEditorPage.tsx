@@ -7,14 +7,14 @@ import {
   ListBox,
   SearchField,
   TextField,
-  useFilter,
   toast,
-} from "@heroui/react";
-import { ArrowLeft, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+  useFilter,
+} from '@heroui/react';
+import {ArrowLeft, Trash2} from 'lucide-react';
+import {useEffect, useMemo, useState} from 'react';
+import {useLocation, useNavigate, useParams} from 'react-router';
 
-import { useListFoodsQuery } from "@/api/foods";
+import {useListFoodsQuery} from '@/api/foods';
 import {
   useCreateMealItemMutation,
   useDeleteMealItemMutation,
@@ -22,9 +22,9 @@ import {
   useListMealItemsQuery,
   useUpdateMealItemMutation,
   useUpdateMealMutation,
-} from "@/api/meals";
-import { useListPlanItemsQuery } from "@/api/nutritionPlans";
-import { useListRecipesQuery } from "@/api/recipes";
+} from '@/api/meals';
+import {useListPlanItemsQuery} from '@/api/nutritionPlans';
+import {useListRecipesQuery} from '@/api/recipes';
 
 type MealItemDraft = {
   amount: string;
@@ -42,90 +42,76 @@ const toNumber = (value: string) => {
 export default function NutritionPlanMealEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id, mealId } = useParams();
-  const planId = id ?? "";
-  const editingMealId = mealId ?? "";
+  const {id, mealId} = useParams();
+  const planId = id ?? '';
+  const editingMealId = mealId ?? '';
 
   const returnTo =
-    typeof location.state === "object" &&
+    typeof location.state === 'object' &&
     location.state &&
-    "from" in location.state &&
-    typeof location.state.from === "string"
+    'from' in location.state &&
+    typeof location.state.from === 'string'
       ? location.state.from
       : `/library/nutrition-plans/${planId}/builder`;
 
-  const { contains } = useFilter({ sensitivity: "base" });
+  const {contains} = useFilter({sensitivity: 'base'});
 
-  const [mealNameDraft, setMealNameDraft] = useState("");
-  const [newItemType, setNewItemType] = useState<"food" | "recipe">("food");
-  const [newItemSourceId, setNewItemSourceId] = useState("");
-  const [newItemAmount, setNewItemAmount] = useState("");
-  const [newItemUnit, setNewItemUnit] = useState("");
-  const [newItemWeight, setNewItemWeight] = useState("");
-  const [itemDrafts, setItemDrafts] = useState<Record<string, MealItemDraft>>(
-    {},
-  );
+  const [mealNameDraft, setMealNameDraft] = useState('');
+  const [newItemType, setNewItemType] = useState<'food' | 'recipe'>('food');
+  const [newItemSourceId, setNewItemSourceId] = useState('');
+  const [newItemAmount, setNewItemAmount] = useState('');
+  const [newItemUnit, setNewItemUnit] = useState('');
+  const [newItemWeight, setNewItemWeight] = useState('');
+  const [itemDrafts, setItemDrafts] = useState<Record<string, MealItemDraft>>({});
 
-  const { data: selectedMealData, isLoading: isMealLoading } = useGetMealQuery(
-    editingMealId,
-    {
-      skip: !editingMealId,
-    },
-  );
-  const { data: mealItemsData } = useListMealItemsQuery(editingMealId, {
+  const {data: selectedMealData, isLoading: isMealLoading} = useGetMealQuery(editingMealId, {
     skip: !editingMealId,
   });
-  const { data: foodsData } = useListFoodsQuery({ limit: 100, offset: 0 });
-  const { data: recipesData } = useListRecipesQuery({ limit: 100, offset: 0 });
-  const { data: planItemsData } = useListPlanItemsQuery(planId, {
+  const {data: mealItemsData} = useListMealItemsQuery(editingMealId, {
+    skip: !editingMealId,
+  });
+  const {data: foodsData} = useListFoodsQuery({limit: 100, offset: 0});
+  const {data: recipesData} = useListRecipesQuery({limit: 100, offset: 0});
+  const {data: planItemsData} = useListPlanItemsQuery(planId, {
     skip: !planId,
   });
 
-  const [updateMeal, { isLoading: isUpdatingMeal }] = useUpdateMealMutation();
-  const [createMealItem, { isLoading: isCreatingMealItem }] =
-    useCreateMealItemMutation();
-  const [updateMealItem, { isLoading: isUpdatingMealItem }] =
-    useUpdateMealItemMutation();
-  const [deleteMealItem, { isLoading: isDeletingMealItem }] =
-    useDeleteMealItemMutation();
+  const [updateMeal, {isLoading: isUpdatingMeal}] = useUpdateMealMutation();
+  const [createMealItem, {isLoading: isCreatingMealItem}] = useCreateMealItemMutation();
+  const [updateMealItem, {isLoading: isUpdatingMealItem}] = useUpdateMealItemMutation();
+  const [deleteMealItem, {isLoading: isDeletingMealItem}] = useDeleteMealItemMutation();
 
   const meal = selectedMealData?.data;
   const mealItems = mealItemsData?.data ?? [];
   const foods = foodsData?.data ?? [];
   const recipes = recipesData?.data ?? [];
-  const mealUsageCount = (planItemsData?.data ?? []).filter(
-    (item) => item.meal_id === editingMealId,
-  ).length;
+  const mealUsageCount = (planItemsData?.data ?? []).filter((item) => item.meal_id === editingMealId).length;
 
   useEffect(() => {
-    setMealNameDraft(meal?.name ?? "");
+    setMealNameDraft(meal?.name ?? '');
   }, [meal?.name]);
 
   useEffect(() => {
     const drafts: Record<string, MealItemDraft> = {};
     mealItems.forEach((item) => {
       drafts[item.id] = {
-        amount: item.amount === null ? "" : String(item.amount),
-        unit: item.unit ?? "",
-        weight_g: item.weight_g === null ? "" : String(item.weight_g),
+        amount: item.amount === null ? '' : String(item.amount),
+        unit: item.unit ?? '',
+        weight_g: item.weight_g === null ? '' : String(item.weight_g),
       };
     });
     setItemDrafts(drafts);
   }, [mealItems]);
 
   const availableItems = useMemo(() => {
-    if (newItemType === "food") {
-      return foods.map((food) => ({ id: food.id, name: food.name }));
+    if (newItemType === 'food') {
+      return foods.map((food) => ({id: food.id, name: food.name}));
     }
 
-    return recipes.map((recipe) => ({ id: recipe.id, name: recipe.name }));
+    return recipes.map((recipe) => ({id: recipe.id, name: recipe.name}));
   }, [foods, newItemType, recipes]);
 
-  const isLoading =
-    isUpdatingMeal ||
-    isCreatingMealItem ||
-    isUpdatingMealItem ||
-    isDeletingMealItem;
+  const isLoading = isUpdatingMeal || isCreatingMealItem || isUpdatingMealItem || isDeletingMealItem;
 
   if (isMealLoading) {
     return (
@@ -163,25 +149,21 @@ export default function NutritionPlanMealEditorPage() {
           Back to builder
         </Button>
         <h1 className="text-2xl font-semibold md:text-3xl">Edit meal</h1>
-        <p className="text-sm text-muted">
-          Global meal changes apply to all linked assignments.
-        </p>
+        <p className="text-sm text-muted">Global meal changes apply to all linked assignments.</p>
       </div>
 
       <Card className="border border-separator bg-background p-4">
         <p className="text-sm font-medium text-foreground">
           Used in {mealUsageCount} day assignment
-          {mealUsageCount === 1 ? "" : "s"}.
+          {mealUsageCount === 1 ? '' : 's'}.
         </p>
         {mealUsageCount > 1 ? (
           <p className="mt-1 text-sm text-muted">
-            Changes here update every linked assignment. Use Duplicate for this
-            day in the planner when you need local changes.
+            Changes here update every linked assignment. Use Duplicate for this day in the planner when you need local
+            changes.
           </p>
         ) : (
-          <p className="mt-1 text-sm text-muted">
-            Changes here apply to this meal across the planner.
-          </p>
+          <p className="mt-1 text-sm text-muted">Changes here apply to this meal across the planner.</p>
         )}
       </Card>
 
@@ -196,20 +178,18 @@ export default function NutritionPlanMealEditorPage() {
 
             try {
               await updateMeal({
-                body: { name: mealNameDraft.trim(), position: meal.position },
+                body: {name: mealNameDraft.trim(), position: meal.position},
                 id: editingMealId,
                 planId,
               }).unwrap();
-              toast.success("Meal updated.");
+              toast.success('Meal updated.');
             } catch {
-              toast.danger("Unable to update meal. Please try again.");
+              toast.danger('Unable to update meal. Please try again.');
             }
           }}
         >
           <TextField className="flex-1">
-            <Label className="text-sm font-medium text-foreground">
-              Meal name
-            </Label>
+            <Label className="text-sm font-medium text-foreground">Meal name</Label>
             <Input
               className="min-h-11"
               onChange={(event) => setMealNameDraft(event.target.value)}
@@ -233,16 +213,14 @@ export default function NutritionPlanMealEditorPage() {
       <Card className="border border-separator bg-surface p-4 sm:p-5">
         <p className="mb-3 text-sm font-semibold text-foreground">Items</p>
         {mealItems.length === 0 ? (
-          <p className="text-sm text-muted">
-            No items yet. Add food or recipe below.
-          </p>
+          <p className="text-sm text-muted">No items yet. Add food or recipe below.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {mealItems.map((item) => {
               const draft = itemDrafts[item.id] ?? {
-                amount: "",
-                unit: "",
-                weight_g: "",
+                amount: '',
+                unit: '',
+                weight_g: '',
               };
               return (
                 <div
@@ -250,15 +228,11 @@ export default function NutritionPlanMealEditorPage() {
                   key={item.id}
                 >
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
-                      {item.food_id ? "Food" : "Recipe"} item
-                    </p>
+                    <p className="text-sm font-medium text-foreground">{item.food_id ? 'Food' : 'Recipe'} item</p>
                     <Button
                       className="min-h-11"
                       onPress={async () => {
-                        const confirmed = window.confirm(
-                          "Delete this meal item? This cannot be undone.",
-                        );
+                        const confirmed = window.confirm('Delete this meal item? This cannot be undone.');
                         if (!confirmed) {
                           return;
                         }
@@ -269,11 +243,9 @@ export default function NutritionPlanMealEditorPage() {
                             mealId: editingMealId,
                             planId,
                           }).unwrap();
-                          toast.success("Meal item deleted.");
+                          toast.success('Meal item deleted.');
                         } catch {
-                          toast.danger(
-                            "Unable to delete meal item. Please try again.",
-                          );
+                          toast.danger('Unable to delete meal item. Please try again.');
                         }
                       }}
                       size="sm"
@@ -286,15 +258,13 @@ export default function NutritionPlanMealEditorPage() {
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <TextField>
-                      <Label className="text-xs font-medium text-foreground">
-                        Amount
-                      </Label>
+                      <Label className="text-xs font-medium text-foreground">Amount</Label>
                       <Input
                         min="0"
                         onChange={(event) =>
                           setItemDrafts((prev) => ({
                             ...prev,
-                            [item.id]: { ...draft, amount: event.target.value },
+                            [item.id]: {...draft, amount: event.target.value},
                           }))
                         }
                         type="number"
@@ -303,14 +273,12 @@ export default function NutritionPlanMealEditorPage() {
                       />
                     </TextField>
                     <TextField>
-                      <Label className="text-xs font-medium text-foreground">
-                        Unit
-                      </Label>
+                      <Label className="text-xs font-medium text-foreground">Unit</Label>
                       <Input
                         onChange={(event) =>
                           setItemDrafts((prev) => ({
                             ...prev,
-                            [item.id]: { ...draft, unit: event.target.value },
+                            [item.id]: {...draft, unit: event.target.value},
                           }))
                         }
                         value={draft.unit}
@@ -318,9 +286,7 @@ export default function NutritionPlanMealEditorPage() {
                       />
                     </TextField>
                     <TextField>
-                      <Label className="text-xs font-medium text-foreground">
-                        Weight (g)
-                      </Label>
+                      <Label className="text-xs font-medium text-foreground">Weight (g)</Label>
                       <Input
                         min="0"
                         onChange={(event) =>
@@ -355,11 +321,9 @@ export default function NutritionPlanMealEditorPage() {
                             mealId: editingMealId,
                             planId,
                           }).unwrap();
-                          toast.success("Meal item updated.");
+                          toast.success('Meal item updated.');
                         } catch {
-                          toast.danger(
-                            "Unable to update meal item. Please try again.",
-                          );
+                          toast.danger('Unable to update meal item. Please try again.');
                         }
                       }}
                       size="sm"
@@ -389,23 +353,22 @@ export default function NutritionPlanMealEditorPage() {
               await createMealItem({
                 body: {
                   amount: toNumber(newItemAmount),
-                  food_id: newItemType === "food" ? newItemSourceId : undefined,
+                  food_id: newItemType === 'food' ? newItemSourceId : undefined,
                   position: mealItems.length,
-                  recipe_id:
-                    newItemType === "recipe" ? newItemSourceId : undefined,
+                  recipe_id: newItemType === 'recipe' ? newItemSourceId : undefined,
                   unit: newItemUnit.trim() || undefined,
                   weight_g: toNumber(newItemWeight),
                 },
                 mealId: editingMealId,
                 planId,
               }).unwrap();
-              toast.success("Meal item added.");
-              setNewItemSourceId("");
-              setNewItemAmount("");
-              setNewItemUnit("");
-              setNewItemWeight("");
+              toast.success('Meal item added.');
+              setNewItemSourceId('');
+              setNewItemAmount('');
+              setNewItemUnit('');
+              setNewItemWeight('');
             } catch {
-              toast.danger("Unable to add meal item. Please try again.");
+              toast.danger('Unable to add meal item. Please try again.');
             }
           }}
         >
@@ -413,24 +376,24 @@ export default function NutritionPlanMealEditorPage() {
             <Button
               className="min-h-11"
               onPress={() => {
-                setNewItemType("food");
-                setNewItemSourceId("");
+                setNewItemType('food');
+                setNewItemSourceId('');
               }}
               size="sm"
               type="button"
-              variant={newItemType === "food" ? "secondary" : "ghost"}
+              variant={newItemType === 'food' ? 'secondary' : 'ghost'}
             >
               Food
             </Button>
             <Button
               className="min-h-11"
               onPress={() => {
-                setNewItemType("recipe");
-                setNewItemSourceId("");
+                setNewItemType('recipe');
+                setNewItemSourceId('');
               }}
               size="sm"
               type="button"
-              variant={newItemType === "recipe" ? "secondary" : "ghost"}
+              variant={newItemType === 'recipe' ? 'secondary' : 'ghost'}
             >
               Recipe
             </Button>
@@ -439,13 +402,11 @@ export default function NutritionPlanMealEditorPage() {
           <Autocomplete
             allowsEmptyCollection
             fullWidth
-            onChange={(value) => setNewItemSourceId(value?.toString() ?? "")}
+            onChange={(value) => setNewItemSourceId(value?.toString() ?? '')}
             value={newItemSourceId || null}
             variant="secondary"
           >
-            <Label className="text-xs font-medium text-foreground">
-              {newItemType === "food" ? "Food" : "Recipe"}
-            </Label>
+            <Label className="text-xs font-medium text-foreground">{newItemType === 'food' ? 'Food' : 'Recipe'}</Label>
             <Autocomplete.Trigger className="min-h-11">
               <Autocomplete.Value />
               <Autocomplete.ClearButton />
@@ -456,13 +417,7 @@ export default function NutritionPlanMealEditorPage() {
                 <SearchField>
                   <SearchField.Group>
                     <SearchField.SearchIcon />
-                    <SearchField.Input
-                      placeholder={
-                        newItemType === "food"
-                          ? "Search food..."
-                          : "Search recipe..."
-                      }
-                    />
+                    <SearchField.Input placeholder={newItemType === 'food' ? 'Search food...' : 'Search recipe...'} />
                   </SearchField.Group>
                 </SearchField>
                 <ListBox>
@@ -482,9 +437,7 @@ export default function NutritionPlanMealEditorPage() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <TextField>
-              <Label className="text-xs font-medium text-foreground">
-                Amount
-              </Label>
+              <Label className="text-xs font-medium text-foreground">Amount</Label>
               <Input
                 min="0"
                 onChange={(event) => setNewItemAmount(event.target.value)}
@@ -494,9 +447,7 @@ export default function NutritionPlanMealEditorPage() {
               />
             </TextField>
             <TextField>
-              <Label className="text-xs font-medium text-foreground">
-                Unit
-              </Label>
+              <Label className="text-xs font-medium text-foreground">Unit</Label>
               <Input
                 onChange={(event) => setNewItemUnit(event.target.value)}
                 value={newItemUnit}
@@ -504,9 +455,7 @@ export default function NutritionPlanMealEditorPage() {
               />
             </TextField>
             <TextField>
-              <Label className="text-xs font-medium text-foreground">
-                Weight (g)
-              </Label>
+              <Label className="text-xs font-medium text-foreground">Weight (g)</Label>
               <Input
                 min="0"
                 onChange={(event) => setNewItemWeight(event.target.value)}

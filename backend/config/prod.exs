@@ -9,20 +9,6 @@ config :swoosh, local: false
 # Do not print debug messages in production
 config :logger, level: :info
 
-# CORS configuration for production - restrict to specific domains
-config :cors_plug,
-  origin: [
-    "https://api.coacheasy.app",
-    "https://app.api.coacheasy.app",
-    "https://coach.api.coacheasy.app",
-    "https://client.api.coacheasy.app"
-  ],
-  credentials: true
-
-# Authentication configuration for production
-config :easy, Easy.Accounts.Token,
-  secret_key: System.get_env("JWT_SECRET_KEY") || "change-me-in-production"
-
 # Cookie configuration for production - enforce Secure flag for HTTPS
 config :easy, EasyWeb.CookieHelper, secure: true
 

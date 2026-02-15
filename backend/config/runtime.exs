@@ -37,6 +37,11 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  cors_origins =
+    System.get_env("CORS_ALLOWED_ORIGINS", "")
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -49,7 +54,8 @@ if config_env() == :prod do
   config :easy, Easy.Repo,
     # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_size: 5,
+    connect_timeout: 10_000,
     # For machines with several cores, consider starting multiple pools of `pool_size`
     # pool_count: 4,
     socket_options: maybe_ipv6
@@ -77,6 +83,10 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :easy, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+
+  config :cors_plug,
+    origin: cors_origins,
+    credentials: true
 
   config :easy, EasyWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
@@ -129,14 +139,9 @@ if config_env() == :prod do
   #
   # In production you need to configure the mailer to use a different adapter.
   # Configure Swoosh adapter based on environment variables
-  mailer_adapter = System.get_env("MAILER_ADAPTER")
+  mailer_adapter = System.get_env("MAILER_ADAPTER", "resend")
 
   case mailer_adapter do
-    "resend" ->
-      config :easy, Easy.Mailer,
-        adapter: Resend.Swoosh.Adapter,
-        api_key: System.get_env("RESEND_API_KEY")
-
     "smtp" ->
       config :easy, Easy.Mailer,
         adapter: Swoosh.Adapters.SMTP,
@@ -147,7 +152,6 @@ if config_env() == :prod do
         tls: :always
 
     _ ->
-      # Default to Resend
       config :easy, Easy.Mailer,
         adapter: Resend.Swoosh.Adapter,
         api_key: System.get_env("RESEND_API_KEY")

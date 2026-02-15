@@ -1,42 +1,43 @@
 defmodule Easy.Release do
-  @moduledoc """
-  Release tasks for database migrations and other release-time operations.
-
-  Usage:
-    bin/easy eval "Easy.Release.migrate"
-    bin/easy eval "Easy.Release.rollback(Easy.Repo, 20210101000000)"
-  """
-
   @app :easy
 
+  @spec migrate() :: {:ok, [term()]}
   def migrate do
     load_app()
 
-    for repo <- repos() do
-      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
-    end
+    migration_results =
+      for repo <- repos() do
+        {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+      end
 
-    seed()
+    {:ok, seed_results} = seed()
+    {:ok, migration_results ++ seed_results}
   end
 
+  @spec seed() :: {:ok, [term()]}
   def seed do
     load_app()
 
-    for repo <- repos() do
-      {:ok, _, _} =
-        Ecto.Migrator.with_repo(repo, fn _repo ->
-          seed_file = Path.join([:code.priv_dir(@app), "repo", "seeds.exs"])
+    results =
+      for repo <- repos() do
+        {:ok, _, _} =
+          Ecto.Migrator.with_repo(repo, fn _repo ->
+            seed_file = Path.join([:code.priv_dir(@app), "repo", "seeds.exs"])
 
-          if File.exists?(seed_file) do
-            Code.eval_file(seed_file)
-          end
-        end)
-    end
+            if File.exists?(seed_file) do
+              Code.eval_file(seed_file)
+            end
+          end)
+      end
+
+    {:ok, results}
   end
 
+  @spec rollback(module(), integer()) :: {:ok, [integer()]}
   def rollback(repo, version) do
     load_app()
-    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+    {:ok, _, result} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+    {:ok, result}
   end
 
   defp repos do

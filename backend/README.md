@@ -63,21 +63,41 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for detailed configuration op
 - [OAuth Routes](docs/OAUTH_ROUTES.md) - OAuth 2.0 endpoint reference
 - [API Contract](docs/api_contract.yaml) - OpenAPI 3.0 contract for frontend integration
 
-## Production Deployment
+## Fly.io Deployment
 
-Before deploying to production:
-
-1. Set required environment variables (see [Configuration Guide](docs/CONFIGURATION.md))
-2. Generate secrets:
+1. Install and authenticate Fly CLI:
    ```bash
-   mix phx.gen.secret
+   fly auth login
    ```
-3. Configure your email provider
-4. Update CORS origins in `config/prod.exs`
-5. Set up SSL/HTTPS
-6. Configure background jobs for cleanup tasks
+2. Create the app once (skip if `easy-backend` already exists):
+   ```bash
+   fly apps create easy-backend
+   ```
+3. Create a Fly Postgres cluster and attach it:
+   ```bash
+   fly postgres create
+   fly postgres attach --app easy-backend <postgres-app-name>
+   ```
+4. Set required secrets:
+   ```bash
+   fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret) JWT_SECRET=$(mix phx.gen.secret)
+   ```
+5. Set CORS origins for your production frontends:
+   ```bash
+   fly secrets set CORS_ALLOWED_ORIGINS="https://app.coacheasy.app,https://client.coacheasy.app"
+   ```
+   Resend is the default production mailer; set its API key:
+   ```bash
+   fly secrets set RESEND_API_KEY="<resend-api-key>"
+   ```
+6. Deploy:
+   ```bash
+   fly deploy
+   ```
 
-See the [Configuration Checklist](docs/CONFIGURATION.md#configuration-checklist) for a complete deployment checklist.
+The repository includes `fly.toml` and a production release `Dockerfile` configured for Fly.io.
+
+Detailed runbook: `docs/FLY_DEPLOY.md`.
 
 ## Testing
 

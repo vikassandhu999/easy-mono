@@ -9,6 +9,7 @@ import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import VerifyPage from "@/pages/auth/VerifyPage";
 import ClientViewPage from "@/pages/clients/ClientViewPage";
+import ExerciseFormPage from "@/pages/library/ExerciseFormPage";
 import FoodFormPage from "@/pages/library/FoodFormPage";
 import LibraryPage from "@/pages/library/LibraryPage";
 import NutritionPlanAddAssignmentPage from "@/pages/library/NutritionPlanAddAssignmentPage";
@@ -67,6 +68,14 @@ export default function App() {
             />
             <Route element={<FoodFormPage />} path="/library/foods/new" />
             <Route element={<FoodFormPage />} path="/library/foods/:id/edit" />
+            <Route
+              element={<ExerciseFormPage />}
+              path="/library/exercises/new"
+            />
+            <Route
+              element={<ExerciseFormPage />}
+              path="/library/exercises/:id/edit"
+            />
             <Route element={<RecipeFormPage />} path="/library/recipes/new" />
             <Route
               element={<RecipeFormPage />}

@@ -10,8 +10,6 @@ import RegisterPage from '@/pages/auth/RegisterPage';
 import VerifyPage from '@/pages/auth/VerifyPage';
 import ClientViewPage from '@/pages/clients/ClientViewPage';
 import AddExercisePage from '@/pages/library/AddExercisePage';
-import AddTrainingDayPage from '@/pages/library/AddTrainingDayPage';
-import EditTrainingDayPage from '@/pages/library/EditTrainingDayPage';
 import ExerciseFormPage from '@/pages/library/ExerciseFormPage';
 import FoodFormPage from '@/pages/library/FoodFormPage';
 import LibraryPage from '@/pages/library/LibraryPage';
@@ -21,7 +19,6 @@ import NutritionPlanBuilderPage from '@/pages/library/NutritionPlanBuilderPage';
 import NutritionPlanFormPage from '@/pages/library/NutritionPlanFormPage';
 import NutritionPlanMealEditorPage from '@/pages/library/NutritionPlanMealEditorPage';
 import RecipeFormPage from '@/pages/library/RecipeFormPage';
-import TrainingDayEditorPage from '@/pages/library/TrainingDayEditorPage';
 import TrainingPlanBuilderPage from '@/pages/library/TrainingPlanBuilderPage';
 import TrainingPlanFormPage from '@/pages/library/TrainingPlanFormPage';
 import OnboardingPage from '@/pages/onboarding/OnboardingPage';
@@ -97,20 +94,8 @@ export default function App() {
               path="/library/training-plans/:id/builder"
             />
             <Route
-              element={<TrainingDayEditorPage />}
-              path="/library/training-plans/:id/builder/days/:dayId/exercises"
-            />
-            <Route
               element={<AddExercisePage />}
               path="/library/training-plans/:id/builder/days/:dayId/exercises/new"
-            />
-            <Route
-              element={<AddTrainingDayPage />}
-              path="/library/training-plans/:id/builder/days/new"
-            />
-            <Route
-              element={<EditTrainingDayPage />}
-              path="/library/training-plans/:id/builder/days/:dayId/edit"
             />
             <Route
               element={<NutritionPlanAddAssignmentPage />}

@@ -86,28 +86,43 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
     onChange({...setDraft, [field]: value});
   };
 
+  const setTypeColor =
+    setDraft.set_type === 'warmup'
+      ? 'bg-amber-50 text-amber-700 border-amber-200'
+      : setDraft.set_type === 'working'
+        ? 'bg-blue-50 text-blue-700 border-blue-200'
+        : 'bg-gray-50 text-gray-600 border-gray-200';
+
   return (
-    <Card className="rounded-lg border border-separator bg-background p-3">
+    <Card className="rounded-xl border border-separator bg-background p-4">
       <div className="flex flex-col gap-3">
+        {/* Set header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-secondary text-xs font-medium text-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-secondary text-xs font-bold text-foreground">
               {setIndex + 1}
             </span>
-            <span className="text-xs font-medium text-muted capitalize">{setDraft.set_type}</span>
+            <span
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${setTypeColor}`}
+            >
+              {setDraft.set_type.replace('_', ' ')}
+            </span>
           </div>
           <Button
-            className="min-h-8 px-2"
+            className="min-h-8 min-w-8"
+            isIconOnly
             onPress={onRemove}
             size="sm"
             variant="ghost"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+
+        {/* Fields grid */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <TextField>
-            <Label className="text-xs text-muted">Reps</Label>
+            <Label className="text-xs font-medium text-muted">Reps</Label>
             <Input
               className="min-h-10"
               onChange={(e) => updateField('target_reps', e.target.value)}
@@ -118,7 +133,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
           </TextField>
           <div className="flex gap-2">
             <TextField className="flex-1">
-              <Label className="text-xs text-muted">Load</Label>
+              <Label className="text-xs font-medium text-muted">Load</Label>
               <Input
                 className="min-h-10"
                 onChange={(e) => updateField('load_value', e.target.value)}
@@ -131,7 +146,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
               onChange={(value) => updateField('load_unit', value?.toString() ?? 'none')}
               selectedKey={setDraft.load_unit}
             >
-              <Label className="text-xs text-muted">Unit</Label>
+              <Label className="text-xs font-medium text-muted">Unit</Label>
               <Select.Trigger className="min-h-10 w-20" />
               <Select.Popover>
                 <ListBox>
@@ -151,7 +166,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
             onChange={(value) => updateField('set_type', value?.toString() ?? 'working')}
             selectedKey={setDraft.set_type}
           >
-            <Label className="text-xs text-muted">Type</Label>
+            <Label className="text-xs font-medium text-muted">Type</Label>
             <Select.Trigger className="min-h-10 w-full" />
             <Select.Popover>
               <ListBox>
@@ -168,7 +183,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
           </Select>
           <div className="flex gap-2">
             <TextField className="flex-1">
-              <Label className="text-xs text-muted">Rest</Label>
+              <Label className="text-xs font-medium text-muted">Rest</Label>
               <Input
                 className="min-h-10"
                 onChange={(e) => updateField('rest_seconds', e.target.value)}
@@ -179,7 +194,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
               />
             </TextField>
             <TextField className="flex-1">
-              <Label className="text-xs text-muted">Tempo</Label>
+              <Label className="text-xs font-medium text-muted">Tempo</Label>
               <Input
                 className="min-h-10"
                 onChange={(e) => updateField('tempo', e.target.value)}

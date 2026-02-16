@@ -1,13 +1,13 @@
 import {Autocomplete, Button, Card, Input, Label, ListBox, SearchField, toast, useFilter} from '@heroui/react';
-import {ArrowLeft, Plus, Save, Trash2} from 'lucide-react';
+import {ArrowLeft, ChevronRight, Plus, Save, Trash2} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router';
 
-import type {SetDraft} from '@/pages/library/WorkoutSetRow';
+import type {SetDraft} from '@/components/training-plan/WorkoutSetRow';
 
 import {useListExercisesQuery} from '@/api/exercises';
 import {useCreateWorkoutElementMutation, useGetPlannedWorkoutQuery, useGetTrainingPlanQuery} from '@/api/trainingPlans';
-import {EMPTY_SET, fromSetDraft, SetRow} from '@/pages/library/WorkoutSetRow';
+import {EMPTY_SET, fromSetDraft, SetRow} from '@/components/training-plan/WorkoutSetRow';
 
 const integerFromString = (value: string) => {
   if (!value.trim()) return undefined;
@@ -42,7 +42,7 @@ export default function AddExercisePage() {
     'from' in location.state &&
     typeof location.state.from === 'string'
       ? location.state.from
-      : `/library/training-plans/${planId}/builder/days/${plannedWorkoutId}/exercises`;
+      : `/library/training-plans/${planId}/builder`;
 
   const {contains} = useFilter({sensitivity: 'base'});
 
@@ -94,51 +94,76 @@ export default function AddExercisePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6">
-        <p className="text-sm text-muted">Loading...</p>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-surface-secondary" />
+          <div className="h-6 w-48 animate-pulse rounded-md bg-surface-secondary" />
+        </div>
+        <div className="h-40 animate-pulse rounded-xl bg-surface-secondary" />
       </div>
     );
   }
 
   if (!plan || !workout) {
     return (
-      <div className="flex flex-col gap-6 p-6">
-        <Card className="rounded-xl border border-separator bg-surface p-6">
-          <p className="font-semibold text-foreground">Day not found</p>
-          <Button
-            className="mt-4 min-h-11"
-            onPress={() => navigate(returnTo)}
-            variant="outline"
-          >
-            Back
-          </Button>
+      <div className="flex flex-col gap-6">
+        <Card className="rounded-xl border border-separator bg-surface p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+              <span className="text-xl">🏋️</span>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-foreground">Day not found</p>
+              <p className="mt-1 text-sm text-muted">This workout day may have been removed.</p>
+            </div>
+            <Button
+              className="min-h-11"
+              onPress={() => navigate(returnTo)}
+              variant="primary"
+            >
+              Go back
+            </Button>
+          </div>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      {/* Breadcrumb navigation */}
       <Button
-        className="min-h-11 w-fit gap-2 px-2"
+        className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
         onPress={() => navigate(returnTo)}
         size="sm"
         variant="ghost"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to exercises
+        Back to builder
       </Button>
 
-      <div className="flex flex-col gap-1">
-        <p className="text-sm text-muted">Training plan</p>
-        <h1 className="text-2xl font-semibold text-foreground">Add exercise</h1>
+      {/* Hero header */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-sm text-muted">
+          <span>{plan.name}</span>
+          <ChevronRight className="h-3 w-3" />
+          <span>Day {workout.day_number}</span>
+          <ChevronRight className="h-3 w-3" />
+          <span>Add exercise</span>
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Add exercise</h1>
         <p className="text-sm text-muted">
-          {plan.name} · Day {workout.day_number}: {workout.name}
+          {workout.name} · Day {workout.day_number}
         </p>
       </div>
 
-      <Card className="rounded-xl border border-separator bg-surface p-5">
-        <div className="flex flex-col gap-4">
+      {/* Separator */}
+      <div className="border-t border-separator" />
+
+      {/* Exercise form card */}
+      <Card className="rounded-xl border border-separator bg-surface p-5 sm:p-6">
+        <div className="flex flex-col gap-5">
+          {/* Exercise picker */}
           <Autocomplete
             allowsEmptyCollection
             fullWidth
@@ -151,7 +176,7 @@ export default function AddExercisePage() {
             value={draft.exerciseId || null}
             variant="secondary"
           >
-            <Label className="text-xs text-muted">Exercise</Label>
+            <Label className="text-sm font-medium text-foreground">Exercise</Label>
             <Autocomplete.Trigger className="min-h-11">
               <Autocomplete.Value />
               <Autocomplete.ClearButton />
@@ -180,11 +205,12 @@ export default function AddExercisePage() {
             </Autocomplete.Popover>
           </Autocomplete>
 
+          {/* Conditional fields when exercise selected */}
           {draft.exerciseId && (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-xs text-muted">Order</Label>
+                  <Label className="text-sm font-medium text-foreground">Order</Label>
                   <Input
                     className="min-h-11"
                     min={1}
@@ -201,7 +227,7 @@ export default function AddExercisePage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted">Notes (optional)</Label>
+                  <Label className="text-sm font-medium text-foreground">Notes (optional)</Label>
                   <Input
                     className="min-h-11"
                     onChange={(e) =>
@@ -217,10 +243,19 @@ export default function AddExercisePage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <p className="text-sm font-medium text-foreground">Sets ({draft.sets.length})</p>
+              {/* Separator */}
+              <div className="border-t border-separator" />
+
+              {/* Sets section */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Sets</p>
+                  <p className="text-xs text-muted">
+                    {draft.sets.length} set{draft.sets.length === 1 ? '' : 's'} configured
+                  </p>
+                </div>
                 <Button
-                  className="min-h-11"
+                  className="min-h-9"
                   onPress={() =>
                     setDraft((prev) => ({
                       ...prev,
@@ -259,9 +294,10 @@ export default function AddExercisePage() {
             </>
           )}
 
-          <div className="flex justify-between pt-4">
+          {/* Action footer */}
+          <div className="flex justify-between border-t border-separator pt-4">
             <Button
-              className="min-h-11"
+              className="min-h-11 text-muted"
               onPress={() => setDraft(emptyExerciseDraft())}
               size="md"
               variant="ghost"
@@ -274,7 +310,7 @@ export default function AddExercisePage() {
                 className="min-h-11"
                 onPress={() => navigate(returnTo)}
                 size="md"
-                variant="outline"
+                variant="ghost"
               >
                 Cancel
               </Button>

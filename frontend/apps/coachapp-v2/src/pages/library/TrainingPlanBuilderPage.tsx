@@ -1,9 +1,10 @@
-import {Button, Card, toast} from '@heroui/react';
-import {ArrowLeft, Copy, Dumbbell, Plus, Settings} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {Button, Card, Input, toast} from '@heroui/react';
+import {ArrowLeft, Calendar, Copy, Dumbbell, Layers, Plus, Settings, X} from 'lucide-react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router';
 
 import {
+  useCreatePlannedWorkoutMutation,
   useDeletePlannedWorkoutMutation,
   useDuplicateTrainingPlanMutation,
   useGetTrainingPlanQuery,
@@ -26,6 +27,13 @@ export default function TrainingPlanBuilderPage() {
       : '/library';
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [isAddingDay, setIsAddingDay] = useState(false);
+  const [newDayName, setNewDayName] = useState('');
+  const addDayInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isAddingDay) addDayInputRef.current?.focus();
+  }, [isAddingDay]);
 
   const {
     data: planData,
@@ -36,6 +44,7 @@ export default function TrainingPlanBuilderPage() {
 
   const [deletePlannedWorkout, {isLoading: isDeletingDay}] = useDeletePlannedWorkoutMutation();
   const [duplicateTrainingPlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlanMutation();
+  const [createPlannedWorkout, {isLoading: isCreatingDay}] = useCreatePlannedWorkoutMutation();
 
   const plan = planData?.data;
 
@@ -46,15 +55,17 @@ export default function TrainingPlanBuilderPage() {
     [plan?.planned_workouts],
   );
 
+  const nextDayNumber = sortedWorkouts.length > 0 ? Math.max(...sortedWorkouts.map((w) => w.day_number)) + 1 : 1;
+
   const handleDeleteDay = async (plannedWorkoutId: string) => {
     if (!planId) return;
-    const confirmed = window.confirm('Delete this day?');
+    const confirmed = window.confirm('Delete this workout?');
     if (!confirmed) return;
     try {
       await deletePlannedWorkout({id: plannedWorkoutId, planId}).unwrap();
-      toast.success('Day deleted');
+      toast.success('Workout deleted');
     } catch {
-      toast.danger('Failed to delete day');
+      toast.danger('Failed to delete workout');
     }
   };
 
@@ -71,47 +82,85 @@ export default function TrainingPlanBuilderPage() {
     }
   };
 
+  const handleAddDay = async () => {
+    if (!newDayName.trim()) return;
+    try {
+      await createPlannedWorkout({
+        body: {
+          day_number: nextDayNumber,
+          name: newDayName.trim(),
+        },
+        planId,
+      }).unwrap();
+      toast.success(`Workout added`);
+      setNewDayName('');
+      setIsAddingDay(false);
+    } catch {
+      toast.danger('Failed to add workout');
+    }
+  };
+
   if (isPlanLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6">
-        <p className="text-sm text-muted">Loading plan...</p>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-surface-secondary" />
+          <div className="h-6 w-48 animate-pulse rounded-md bg-surface-secondary" />
+        </div>
+        <div className="h-32 animate-pulse rounded-xl bg-surface-secondary" />
+        <div className="h-32 animate-pulse rounded-xl bg-surface-secondary" />
       </div>
     );
   }
 
   if (isPlanError || !plan) {
     return (
-      <div className="flex flex-col gap-6 p-6">
-        <Card className="rounded-xl border border-separator bg-surface p-6">
-          <p className="font-semibold text-foreground">Failed to load plan</p>
-          <p className="mt-1 text-sm text-muted">Try again or return to library</p>
-          <div className="mt-4 flex gap-2">
-            <Button
-              className="min-h-11"
-              onPress={() => refetchPlan()}
-              size="md"
-              variant="outline"
-            >
-              Retry
-            </Button>
-            <Button
-              className="min-h-11"
-              onPress={() => navigate(returnTo)}
-              size="md"
-              variant="ghost"
-            >
-              Back
-            </Button>
+      <div className="flex flex-col gap-6">
+        <Card className="rounded-xl border border-separator bg-surface p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+              <Layers className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-foreground">Failed to load plan</p>
+              <p className="mt-1 text-sm text-muted">Something went wrong. Try again or return to library.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="min-h-11"
+                onPress={() => refetchPlan()}
+                size="md"
+                variant="primary"
+              >
+                Retry
+              </Button>
+              <Button
+                className="min-h-11"
+                onPress={() => navigate(returnTo)}
+                size="md"
+                variant="ghost"
+              >
+                Back to library
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
     );
   }
 
+  const statusBadgeClass =
+    plan.status === 'active'
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : plan.status === 'draft'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-gray-50 text-gray-600 border-gray-200';
+
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
+      {/* Breadcrumb navigation */}
       <Button
-        className="min-h-11 w-fit gap-2 px-2"
+        className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
         onPress={() => navigate(returnTo)}
         size="sm"
         variant="ghost"
@@ -120,113 +169,173 @@ export default function TrainingPlanBuilderPage() {
         Library
       </Button>
 
-      <div className="flex flex-col gap-1">
-        <p className="text-sm text-muted">Training plan</p>
-        <h1 className="text-2xl font-semibold text-foreground">{plan.name}</h1>
-        <p className="text-sm text-muted">
-          {plan.is_template ? 'Template' : 'Personal'} · {plan.status} · {sortedWorkouts.length} day
-          {sortedWorkouts.length === 1 ? '' : 's'}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {plan.is_template ? (
-          <Button
-            className="min-h-11"
-            onPress={() => setIsAssignOpen(true)}
-            size="md"
-            variant="primary"
-          >
-            Assign to client
-          </Button>
-        ) : null}
-        <Button
-          className="min-h-11"
-          onPress={() =>
-            navigate(`/library/training-plans/${plan.id}/edit`, {
-              state: {from: returnTo},
-            })
-          }
-          size="md"
-          variant="outline"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
-        <Button
-          className="min-h-11"
-          isDisabled={isDuplicating}
-          onPress={handleDuplicatePlan}
-          size="md"
-          variant="ghost"
-        >
-          <Copy className="h-4 w-4" />
-          Duplicate
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Days</p>
-            <p className="text-xs text-muted">
-              {sortedWorkouts.length} day
-              {sortedWorkouts.length === 1 ? '' : 's'} in this plan
-            </p>
+      {/* Hero header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-muted">Training plan</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{plan.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass}`}
+            >
+              {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+            </span>
+            <span className="inline-flex items-center gap-1 text-sm text-muted">
+              <Layers className="h-3.5 w-3.5" />
+              {plan.is_template ? 'Template' : 'Personal'}
+            </span>
+            <span className="text-sm text-muted">·</span>
+            <span className="inline-flex items-center gap-1 text-sm text-muted">
+              <Calendar className="h-3.5 w-3.5" />
+              {sortedWorkouts.length} workout
+              {sortedWorkouts.length === 1 ? '' : 's'}
+            </span>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {plan.is_template ? (
+            <Button
+              className="min-h-11"
+              onPress={() => setIsAssignOpen(true)}
+              size="md"
+              variant="primary"
+            >
+              Assign to client
+            </Button>
+          ) : null}
           <Button
             className="min-h-11"
             onPress={() =>
-              navigate(`/library/training-plans/${planId}/builder/days/new`, {
-                state: {from: location.pathname},
+              navigate(`/library/training-plans/${plan.id}/edit`, {
+                state: {from: returnTo},
               })
             }
-            size="sm"
-            variant="primary"
+            size="md"
+            variant="outline"
           >
-            <Plus className="h-4 w-4" />
-            Add day
+            <Settings className="h-4 w-4" />
+            Settings
+          </Button>
+          <Button
+            className="min-h-11"
+            isDisabled={isDuplicating}
+            onPress={handleDuplicatePlan}
+            size="md"
+            variant="ghost"
+          >
+            <Copy className="h-4 w-4" />
+            Duplicate
           </Button>
         </div>
-
-        {sortedWorkouts.length === 0 ? (
-          <Card className="rounded-xl border border-dashed border-separator bg-surface p-8">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary">
-                <Dumbbell className="h-6 w-6 text-muted" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">No training days</p>
-                <p className="text-sm text-muted">Add a day to start building your plan</p>
-              </div>
-              <Button
-                className="mt-2 min-h-11"
-                onPress={() =>
-                  navigate(`/library/training-plans/${planId}/builder/days/new`, {
-                    state: {from: location.pathname},
-                  })
-                }
-                size="md"
-                variant="primary"
-              >
-                <Plus className="h-4 w-4" />
-                Add day
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {sortedWorkouts.map((plannedWorkout) => (
-              <TrainingPlanDayCard
-                isMutating={isMutating}
-                key={plannedWorkout.id}
-                onDeleteDay={handleDeleteDay}
-                plannedWorkout={plannedWorkout}
-              />
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Separator */}
+      <div className="border-t border-separator" />
+
+      {/* Workouts section header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-base font-semibold text-foreground">Workouts</p>
+          <p className="text-sm text-muted">
+            {sortedWorkouts.length} workout{sortedWorkouts.length === 1 ? '' : 's'} in this plan
+          </p>
+        </div>
+        <Button
+          className="min-h-11"
+          onPress={() => {
+            setIsAddingDay(true);
+            setNewDayName('');
+          }}
+          size="sm"
+          variant="primary"
+        >
+          <Plus className="h-4 w-4" />
+          Add workout
+        </Button>
+      </div>
+
+      {/* Inline add workout form */}
+      {isAddingDay && (
+        <Card className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+              <span className="text-sm font-bold">{nextDayNumber}</span>
+            </div>
+            <Input
+              className="min-h-10 flex-1"
+              onChange={(e) => setNewDayName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddDay();
+                if (e.key === 'Escape') setIsAddingDay(false);
+              }}
+              placeholder="Workout name, e.g. Push Day, Leg Day..."
+              ref={addDayInputRef}
+              value={newDayName}
+              variant="secondary"
+            />
+            <Button
+              className="min-h-10"
+              isDisabled={isCreatingDay || !newDayName.trim()}
+              onPress={handleAddDay}
+              size="sm"
+              variant="primary"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </Button>
+            <Button
+              className="min-h-10 min-w-10"
+              isIconOnly
+              onPress={() => setIsAddingDay(false)}
+              size="sm"
+              variant="ghost"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Workout days list or empty state */}
+      {sortedWorkouts.length === 0 && !isAddingDay ? (
+        <Card className="rounded-xl border border-dashed border-separator bg-surface p-10">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-secondary">
+              <Dumbbell className="h-8 w-8 text-muted" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-foreground">No workouts yet</p>
+              <p className="mt-1 max-w-sm text-sm text-muted">
+                Start building your plan by adding workouts. Each workout contains exercises with sets and rep schemes.
+              </p>
+            </div>
+            <Button
+              className="mt-2 min-h-11"
+              onPress={() => {
+                setIsAddingDay(true);
+                setNewDayName('');
+              }}
+              size="md"
+              variant="primary"
+            >
+              <Plus className="h-4 w-4" />
+              Add first workout
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {sortedWorkouts.map((plannedWorkout) => (
+            <TrainingPlanDayCard
+              isMutating={isMutating}
+              key={plannedWorkout.id}
+              onDeleteDay={handleDeleteDay}
+              plannedWorkout={plannedWorkout}
+            />
+          ))}
+        </div>
+      )}
 
       <AssignTrainingPlanModal
         isOpen={isAssignOpen}

@@ -1,6 +1,6 @@
 import {Button, Card, FieldError, Input, Label, TextArea, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {AlertCircle, ChevronLeft} from 'lucide-react';
+import {AlertCircle, ChevronLeft, FileText, Layers, Settings2} from 'lucide-react';
 import {useEffect, useMemo, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
 import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
@@ -192,66 +192,88 @@ export default function TrainingPlanFormPage() {
 
   if (isEditing && isTrainingPlanLoading) {
     return (
-      <Card className="border border-separator bg-surface p-6">
-        <p className="text-sm text-muted">Loading training plan details...</p>
-      </Card>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-surface-secondary" />
+          <div className="h-6 w-48 animate-pulse rounded-md bg-surface-secondary" />
+        </div>
+        <div className="h-40 animate-pulse rounded-xl bg-surface-secondary" />
+        <div className="h-40 animate-pulse rounded-xl bg-surface-secondary" />
+      </div>
     );
   }
 
   if (isEditing && isTrainingPlanError) {
     return (
-      <Card className="border border-separator bg-surface p-6">
-        <div className="flex flex-col gap-3">
-          <p className="font-semibold text-foreground">Could not load training plan</p>
-          <p className="text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
-          <div className="flex gap-2">
-            <Button
-              className="min-h-11"
-              onPress={() => refetchTrainingPlan()}
-              size="md"
-              variant="outline"
-            >
-              Retry
-            </Button>
-            <Button
-              className="min-h-11"
-              onPress={() => attemptNavigate(returnTo)}
-              size="md"
-              variant="ghost"
-            >
-              Back
-            </Button>
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+        <Card className="rounded-xl border border-separator bg-surface p-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+              <Layers className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-foreground">Could not load training plan</p>
+              <p className="mt-1 text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="min-h-11"
+                onPress={() => refetchTrainingPlan()}
+                size="md"
+                variant="primary"
+              >
+                Retry
+              </Button>
+              <Button
+                className="min-h-11"
+                onPress={() => attemptNavigate(returnTo)}
+                size="md"
+                variant="ghost"
+              >
+                Back to library
+              </Button>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      {/* Breadcrumb navigation */}
+      <Button
+        className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
+        onPress={() => attemptNavigate(returnTo)}
+        size="sm"
+        variant="ghost"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to library
+      </Button>
+
+      {/* Hero header */}
       <div className="flex flex-col gap-2">
-        <Button
-          className="min-h-11 w-fit gap-2 px-2"
-          onPress={() => attemptNavigate(returnTo)}
-          size="sm"
-          variant="ghost"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Back to library</span>
-        </Button>
-        <p className="text-sm text-muted">Library</p>
-        <h1 className="text-2xl font-semibold md:text-3xl">{pageTitle}</h1>
-        <p className="max-w-2xl text-sm text-muted">
+        <p className="text-sm font-medium text-muted">Library</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{pageTitle}</h1>
+        <p className="max-w-lg text-sm text-muted">
           Define plan metadata before building day blocks and workout elements.
         </p>
       </div>
+
+      {/* Separator */}
+      <div className="border-t border-separator" />
 
       <form
         className="flex flex-col gap-6"
         onSubmit={onSubmit}
       >
-        <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <p className="text-sm font-semibold text-foreground">Basics</p>
+        {/* Basics section */}
+        <section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface p-5 sm:p-6">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted" />
+            <p className="text-sm font-semibold text-foreground">Basics</p>
+          </div>
 
           <TextField isInvalid={Boolean(errors.name?.message)}>
             <Label className="text-sm font-medium text-foreground">Name</Label>
@@ -274,59 +296,87 @@ export default function TrainingPlanFormPage() {
           </TextField>
         </section>
 
-        <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <p className="text-sm font-semibold text-foreground">Plan setup</p>
+        {/* Plan setup section */}
+        <section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface p-5 sm:p-6">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-muted" />
+            <p className="text-sm font-semibold text-foreground">Plan setup</p>
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label className="text-sm font-medium text-foreground">Type</Label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="min-h-11"
-                  onPress={() => setValue('is_template', true)}
+              <div className="flex gap-2">
+                <button
+                  className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                    isTemplate
+                      ? 'border-blue-200 bg-blue-50 text-blue-700'
+                      : 'border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground'
+                  }`}
+                  onClick={() => setValue('is_template', true)}
                   type="button"
-                  variant={isTemplate ? 'secondary' : 'outline'}
                 >
                   Template
-                </Button>
-                <Button
-                  className="min-h-11"
-                  onPress={() => setValue('is_template', false)}
+                </button>
+                <button
+                  className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                    !isTemplate
+                      ? 'border-blue-200 bg-blue-50 text-blue-700'
+                      : 'border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground'
+                  }`}
+                  onClick={() => setValue('is_template', false)}
                   type="button"
-                  variant={!isTemplate ? 'secondary' : 'outline'}
                 >
                   Personal
-                </Button>
+                </button>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
               <Label className="text-sm font-medium text-foreground">Status</Label>
               <div className="flex flex-wrap gap-2">
-                {(['draft', 'active', 'archived'] as const).map((status) => (
-                  <Button
-                    className="min-h-11"
-                    key={status}
-                    onPress={() => setValue('status', status)}
-                    type="button"
-                    variant={selectedStatus === status ? 'secondary' : 'outline'}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </Button>
-                ))}
+                {(['draft', 'active', 'archived'] as const).map((status) => {
+                  const isSelected = selectedStatus === status;
+                  const statusColors = {
+                    active: isSelected
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : 'border-separator bg-background text-muted hover:border-green-200',
+                    archived: isSelected
+                      ? 'border-gray-300 bg-gray-100 text-gray-700'
+                      : 'border-separator bg-background text-muted hover:border-gray-300',
+                    draft: isSelected
+                      ? 'border-amber-200 bg-amber-50 text-amber-700'
+                      : 'border-separator bg-background text-muted hover:border-amber-200',
+                  };
+
+                  return (
+                    <button
+                      className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${statusColors[status]}`}
+                      key={status}
+                      onClick={() => setValue('status', status)}
+                      type="button"
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
         </section>
 
+        {/* Assignment metadata section */}
         {!isTemplate ? (
-          <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-            <p className="text-sm font-semibold text-foreground">Assignment metadata</p>
+          <section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface p-5 sm:p-6">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-muted" />
+              <p className="text-sm font-semibold text-foreground">Assignment metadata</p>
+            </div>
 
             <TextField isInvalid={Boolean(errors.client_id?.message)}>
               <Label className="text-sm font-medium text-foreground">Client</Label>
               <select
-                className="min-h-11 rounded-md border border-separator bg-background px-3 text-sm text-foreground"
+                className="min-h-11 w-full rounded-lg border border-separator bg-background px-3 text-sm text-foreground transition-colors focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 {...register('client_id')}
               >
                 <option value="">Select client</option>
@@ -346,7 +396,7 @@ export default function TrainingPlanFormPage() {
               {errors.client_id?.message ? <FieldError>{errors.client_id.message}</FieldError> : null}
             </TextField>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <TextField isInvalid={Boolean(errors.start_date?.message)}>
                 <Label className="text-sm font-medium text-foreground">Start date</Label>
                 <Input
@@ -370,14 +420,16 @@ export default function TrainingPlanFormPage() {
           </section>
         ) : null}
 
+        {/* Form error */}
         {formError ? (
-          <div className="flex items-start gap-2 rounded-lg border border-separator bg-surface-secondary p-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-            <p className="text-sm text-foreground">{formError}</p>
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+            <p className="text-sm font-medium text-red-700">{formError}</p>
           </div>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-3 border-t border-separator pt-4 sm:flex-row sm:justify-end">
+        {/* Action footer */}
+        <div className="flex flex-col-reverse gap-3 border-t border-separator pt-5 sm:flex-row sm:justify-end">
           {isEditing ? (
             <Button
               className="min-h-11 sm:mr-auto"

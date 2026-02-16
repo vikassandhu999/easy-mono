@@ -126,6 +126,10 @@ components/
 HeroUI v3 beta (`@heroui/react`) + Tailwind v4. Docs: https://v3.heroui.com/docs/react/components
 Use Loom as the **layout efficiency benchmark** (structure and clarity), not as a visual clone.
 
+### Design reference
+
+When implementing new UI or refactoring existing pages, reference `apps/coachapp-v2/design-examples/` for Loom's proven patterns.
+
 ### Resource pages (mandatory)
 
 - When designing any **resource/index page** (Clients, Library, Plans, Foods, Recipes, Meals, etc.), you must follow `docs/resource-page-blueprint.md`.
@@ -273,3 +277,12 @@ Formatting is enforced by `@easy/eslint-config` (shared workspace package). Key 
 - Colocate state with the smallest possible subtree.
 - Prefer derived values over duplicated state.
 - Keep local state shape minimal; avoid deep object state.
+- No component file may exceed 200 lines; extract logic into custom hooks and split sub-components into their own files.
+- If a component's JSX return contains more than 10 lines of conditional logic or complex mapping, extract those segments into dedicated components.
+- A component must not accept more than 6 props; group related data into objects or use context instead.
+- Never define a component function inside another component function — it causes re-creation on every render.
+- State must live in the lowest possible component; never use global state for UI toggles, modals, or single-view form data.
+- Use React Query (or RTK Query) for all server data; manual `useEffect` + `useState` synchronization of server data is prohibited.
+- Use Context API for dependency injection (auth, theme), not for high-frequency state updates.
+- Extract any side-effect, complex calculation, or state-transition logic into a custom hook; components should be ~80% presentation, ~20% hook orchestration.
+- Prefer the `satisfies` operator for object initialization to retain the narrowest inferred type while ensuring type conformance.

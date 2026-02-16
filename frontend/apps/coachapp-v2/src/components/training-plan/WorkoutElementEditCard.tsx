@@ -1,5 +1,5 @@
 import {Autocomplete, Button, Card, Input, Label, ListBox, SearchField, toast, useFilter} from '@heroui/react';
-import {Plus, Trash2} from 'lucide-react';
+import {Plus, Save, Trash2} from 'lucide-react';
 import {useState} from 'react';
 
 import type {Exercise} from '@/api/exercises';
@@ -45,7 +45,6 @@ export function WorkoutElementEditCard({
   const [updateWorkoutElement, {isLoading: isUpdating}] = useUpdateWorkoutElementMutation();
   const [deleteWorkoutElement, {isLoading: isDeleting}] = useDeleteWorkoutElementMutation();
 
-  // Initialize draft state
   const [draft, setDraft] = useState<ExerciseDraft>(() => ({
     exerciseId: element.exercise_id,
     notes: element.notes ?? '',
@@ -96,21 +95,28 @@ export function WorkoutElementEditCard({
   const isMutating = isUpdating || isDeleting;
 
   return (
-    <Card className="rounded-xl border border-separator bg-surface p-4">
-      <div className="flex flex-col gap-4">
+    <Card className="rounded-xl border-2 border-blue-200 bg-surface p-5 shadow-sm">
+      <div className="flex flex-col gap-5">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-foreground">Edit {exerciseName}</p>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
+              <span className="text-xs font-bold text-blue-600">✎</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">Editing {exerciseName}</p>
+          </div>
           <Button
-            className="min-h-11"
+            className="min-h-9 text-xs"
             onPress={onDone}
             size="sm"
             variant="ghost"
           >
-            Done
+            Cancel
           </Button>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        {/* Fields */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Autocomplete
             allowsEmptyCollection
             fullWidth
@@ -123,7 +129,7 @@ export function WorkoutElementEditCard({
             selectedKey={draft.exerciseId}
             variant="secondary"
           >
-            <Label className="text-xs text-muted">Exercise</Label>
+            <Label className="text-sm font-medium text-foreground">Exercise</Label>
             <Autocomplete.Trigger className="min-h-11">
               <Autocomplete.Value />
               <Autocomplete.ClearButton />
@@ -153,7 +159,7 @@ export function WorkoutElementEditCard({
           </Autocomplete>
 
           <div>
-            <Label className="text-xs text-muted">Order</Label>
+            <Label className="text-sm font-medium text-foreground">Order</Label>
             <Input
               className="min-h-11"
               min={1}
@@ -171,7 +177,7 @@ export function WorkoutElementEditCard({
         </div>
 
         <div>
-          <Label className="text-xs text-muted">Notes</Label>
+          <Label className="text-sm font-medium text-foreground">Notes</Label>
           <Input
             className="min-h-11"
             onChange={(e) =>
@@ -186,10 +192,19 @@ export function WorkoutElementEditCard({
           />
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm font-medium text-foreground">Sets ({draft.sets.length})</p>
+        {/* Separator */}
+        <div className="border-t border-separator" />
+
+        {/* Sets section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Sets</p>
+            <p className="text-xs text-muted">
+              {draft.sets.length} set{draft.sets.length === 1 ? '' : 's'} configured
+            </p>
+          </div>
           <Button
-            className="min-h-11"
+            className="min-h-9"
             onPress={() =>
               setDraft((prev) => ({
                 ...prev,
@@ -226,9 +241,10 @@ export function WorkoutElementEditCard({
           ))}
         </div>
 
-        <div className="flex justify-between pt-2">
+        {/* Action footer */}
+        <div className="flex justify-between border-t border-separator pt-4">
           <Button
-            className="min-h-11"
+            className="min-h-11 text-muted"
             isDisabled={isMutating}
             onPress={handleDelete}
             size="md"
@@ -244,6 +260,7 @@ export function WorkoutElementEditCard({
             size="md"
             variant="primary"
           >
+            <Save className="h-4 w-4" />
             Save changes
           </Button>
         </div>

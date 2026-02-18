@@ -1,8 +1,25 @@
-import type {PlanItem} from '@/api/nutritionPlans';
+import type { PlanItem } from "@/api/nutritionPlans";
 
-export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+import { toSentenceCase } from "@/pages/library/libraryShared";
 
-export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'] as const;
+export const DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+export const MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "pre_workout",
+  "post_workout",
+] as const;
 
 export type MealItemDraft = {
   amount: string;
@@ -17,10 +34,7 @@ export type PlanItemDraft = {
 };
 
 export const toSentenceLabel = (value: string) => {
-  return value
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  return toSentenceCase(value);
 };
 
 export const getItemsByDay = (planItems: PlanItem[]) => {

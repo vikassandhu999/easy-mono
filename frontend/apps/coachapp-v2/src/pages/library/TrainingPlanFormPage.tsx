@@ -1,57 +1,72 @@
-import {Button, Card, FieldError, Input, Label, TextArea, TextField, toast} from '@heroui/react';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {AlertCircle, ChevronLeft, FileText, Layers, Settings2} from 'lucide-react';
-import {useEffect, useMemo, useState} from 'react';
-import {type FieldPath, useForm} from 'react-hook-form';
-import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
+import {
+  Button,
+  Card,
+  FieldError,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+  toast,
+} from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertCircle,
+  ChevronLeft,
+  FileText,
+  Layers,
+  Settings2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { type FieldPath, useForm } from "react-hook-form";
+import {
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 
-import type {TrainingPlanFormValues} from '@/pages/library/trainingPlanFormTypes';
+import type { TrainingPlanFormValues } from "@/pages/library/trainingPlanFormTypes";
 
-import {useListClientsQuery} from '@/api/clients';
-import {handleFormError} from '@/api/shared';
+import { useListClientsQuery } from "@/api/clients";
+import { handleFormError } from "@/api/shared";
 import {
   useCreateTrainingPlanMutation,
   useDeleteTrainingPlanMutation,
   useGetTrainingPlanQuery,
   useUpdateTrainingPlanMutation,
-} from '@/api/trainingPlans';
-import ConfirmDialog from '@/components/ConfirmDialog';
+} from "@/api/trainingPlans";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   mapTrainingPlanToFormValues,
   TRAINING_PLAN_FORM_SCHEMA,
   TRAINING_PLAN_INITIAL_VALUES,
-} from '@/pages/library/trainingPlanFormSchema';
+} from "@/pages/library/trainingPlanFormSchema";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
 
 export default function TrainingPlanFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const { id } = useParams();
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : '/library';
+  const returnTo = getReturnTo(location, "/library");
 
   const {
     data: trainingPlanData,
     isError: isTrainingPlanError,
     isLoading: isTrainingPlanLoading,
     refetch: refetchTrainingPlan,
-  } = useGetTrainingPlanQuery(id ?? '', {
+  } = useGetTrainingPlanQuery(id ?? "", {
     skip: !id,
   });
 
-  const {data: clientsData} = useListClientsQuery({limit: 200, offset: 0});
+  const { data: clientsData } = useListClientsQuery({ limit: 200, offset: 0 });
   const clients = clientsData?.data ?? [];
 
   const {
-    formState: {errors, isDirty},
+    formState: { errors, isDirty },
     handleSubmit,
     register,
     reset,
@@ -74,18 +89,23 @@ export default function TrainingPlanFormPage() {
     }
   }, [isEditing, trainingPlanData?.data, reset]);
 
-  const [createTrainingPlan, {isLoading: isCreating}] = useCreateTrainingPlanMutation();
-  const [deleteTrainingPlan, {isLoading: isDeleting}] = useDeleteTrainingPlanMutation();
-  const [updateTrainingPlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
+  const [createTrainingPlan, { isLoading: isCreating }] =
+    useCreateTrainingPlanMutation();
+  const [deleteTrainingPlan, { isLoading: isDeleting }] =
+    useDeleteTrainingPlanMutation();
+  const [updateTrainingPlan, { isLoading: isUpdating }] =
+    useUpdateTrainingPlanMutation();
 
   const isSubmitting = isCreating || isUpdating;
   const hasPendingChanges = isDirty && !isSubmitting;
-  const isTemplate = watch('is_template');
-  const selectedStatus = watch('status');
+  const isTemplate = watch("is_template");
+  const selectedStatus = watch("status");
 
   const attemptNavigate = (target: string) => {
     if (hasPendingChanges) {
-      const shouldLeave = window.confirm('You have unsaved changes. Leave without saving?');
+      const shouldLeave = window.confirm(
+        "You have unsaved changes. Leave without saving?",
+      );
       if (!shouldLeave) {
         return;
       }
@@ -98,14 +118,16 @@ export default function TrainingPlanFormPage() {
       return;
     }
     event.preventDefault();
-    event.returnValue = '';
+    event.returnValue = "";
   });
 
   const pageTitle = useMemo(() => {
     if (!isEditing) {
-      return 'Create Training Plan';
+      return "Create Training Plan";
     }
-    return trainingPlanData?.data?.name ? `Edit ${trainingPlanData.data.name}` : 'Edit Training Plan';
+    return trainingPlanData?.data?.name
+      ? `Edit ${trainingPlanData.data.name}`
+      : "Edit Training Plan";
   }, [isEditing, trainingPlanData?.data?.name]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -113,17 +135,23 @@ export default function TrainingPlanFormPage() {
 
     const payload = {
       description: values.description.trim() || undefined,
-      end_date: !values.is_template && values.end_date.trim() ? values.end_date : undefined,
+      end_date:
+        !values.is_template && values.end_date.trim()
+          ? values.end_date
+          : undefined,
       is_template: values.is_template,
       name: values.name.trim(),
-      start_date: !values.is_template && values.start_date.trim() ? values.start_date : undefined,
+      start_date:
+        !values.is_template && values.start_date.trim()
+          ? values.start_date
+          : undefined,
       status: values.status,
-      ...(values.is_template ? {} : {client_id: values.client_id.trim()}),
+      ...(values.is_template ? {} : { client_id: values.client_id.trim() }),
     };
 
     try {
       const response = id
-        ? await updateTrainingPlan({body: payload, id}).unwrap()
+        ? await updateTrainingPlan({ body: payload, id }).unwrap()
         : await createTrainingPlan(payload).unwrap();
 
       toast.success(
@@ -139,23 +167,28 @@ export default function TrainingPlanFormPage() {
       }
 
       navigate(`/library/training-plans/${response.data.id}/builder`, {
-        state: {from: returnTo},
+        state: { from: returnTo },
       });
     } catch (error) {
       const result = handleFormError(
         error,
-        id ? 'Unable to update training plan. Please try again.' : 'Unable to create training plan. Please try again.',
+        id
+          ? "Unable to update training plan. Please try again."
+          : "Unable to create training plan. Please try again.",
       );
 
       if (result.fieldErrors) {
-        const namedFieldMap: Record<string, FieldPath<TrainingPlanFormValues>> = {
-          client_id: 'client_id',
-          description: 'description',
-          end_date: 'end_date',
-          is_template: 'is_template',
-          name: 'name',
-          start_date: 'start_date',
-          status: 'status',
+        const namedFieldMap: Record<
+          string,
+          FieldPath<TrainingPlanFormValues>
+        > = {
+          client_id: "client_id",
+          description: "description",
+          end_date: "end_date",
+          is_template: "is_template",
+          name: "name",
+          start_date: "start_date",
+          status: "status",
         };
 
         Object.entries(result.fieldErrors).forEach(([key, messages]) => {
@@ -163,7 +196,7 @@ export default function TrainingPlanFormPage() {
           if (!path || messages.length === 0) {
             return;
           }
-          setError(path, {type: 'server', message: messages[0]});
+          setError(path, { type: "server", message: messages[0] });
         });
       }
 
@@ -181,11 +214,16 @@ export default function TrainingPlanFormPage() {
 
     try {
       await deleteTrainingPlan(id).unwrap();
-      toast.success(`Training plan "${trainingPlanData.data.name}" deleted successfully.`);
+      toast.success(
+        `Training plan "${trainingPlanData.data.name}" deleted successfully.`,
+      );
       setIsDeleteOpen(false);
       navigate(returnTo);
     } catch (error) {
-      const result = handleFormError(error, 'Unable to delete training plan. Please try again.');
+      const result = handleFormError(
+        error,
+        "Unable to delete training plan. Please try again.",
+      );
       toast.danger(result.formError);
     }
   };
@@ -212,8 +250,12 @@ export default function TrainingPlanFormPage() {
               <Layers className="h-7 w-7 text-muted" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-foreground">Could not load training plan</p>
-              <p className="mt-1 text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
+              <p className="text-lg font-semibold text-foreground">
+                Could not load training plan
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Please retry. If this continues, check API connectivity.
+              </p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -255,7 +297,9 @@ export default function TrainingPlanFormPage() {
       {/* Hero header */}
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium text-muted">Library</p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{pageTitle}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          {pageTitle}
+        </h1>
         <p className="max-w-lg text-sm text-muted">
           Define plan metadata before building day blocks and workout elements.
         </p>
@@ -264,10 +308,7 @@ export default function TrainingPlanFormPage() {
       {/* Separator */}
       <div className="border-t border-separator" />
 
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={onSubmit}
-      >
+      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
         {/* Basics section */}
         <section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface p-5 sm:p-6">
           <div className="flex items-center gap-2">
@@ -280,19 +321,25 @@ export default function TrainingPlanFormPage() {
             <Input
               placeholder="e.g. 12-Week Strength Base"
               variant="secondary"
-              {...register('name')}
+              {...register("name")}
             />
-            {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
+            {errors.name?.message ? (
+              <FieldError>{errors.name.message}</FieldError>
+            ) : null}
           </TextField>
 
           <TextField isInvalid={Boolean(errors.description?.message)}>
-            <Label className="text-sm font-medium text-foreground">Description</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Description
+            </Label>
             <TextArea
               placeholder="Optional plan notes"
               variant="secondary"
-              {...register('description')}
+              {...register("description")}
             />
-            {errors.description?.message ? <FieldError>{errors.description.message}</FieldError> : null}
+            {errors.description?.message ? (
+              <FieldError>{errors.description.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
@@ -305,15 +352,17 @@ export default function TrainingPlanFormPage() {
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-foreground">Type</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Type
+              </Label>
               <div className="flex gap-2">
                 <button
                   className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
                     isTemplate
-                      ? 'border-blue-200 bg-blue-50 text-blue-700'
-                      : 'border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground'
+                      ? "border-blue-200 bg-blue-50 text-blue-700"
+                      : "border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground"
                   }`}
-                  onClick={() => setValue('is_template', true)}
+                  onClick={() => setValue("is_template", true)}
                   type="button"
                 >
                   Template
@@ -321,10 +370,10 @@ export default function TrainingPlanFormPage() {
                 <button
                   className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
                     !isTemplate
-                      ? 'border-blue-200 bg-blue-50 text-blue-700'
-                      : 'border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground'
+                      ? "border-blue-200 bg-blue-50 text-blue-700"
+                      : "border-separator bg-background text-muted hover:border-blue-200 hover:text-foreground"
                   }`}
-                  onClick={() => setValue('is_template', false)}
+                  onClick={() => setValue("is_template", false)}
                   type="button"
                 >
                   Personal
@@ -333,27 +382,29 @@ export default function TrainingPlanFormPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-foreground">Status</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Status
+              </Label>
               <div className="flex flex-wrap gap-2">
-                {(['draft', 'active', 'archived'] as const).map((status) => {
+                {(["draft", "active", "archived"] as const).map((status) => {
                   const isSelected = selectedStatus === status;
                   const statusColors = {
                     active: isSelected
-                      ? 'border-green-200 bg-green-50 text-green-700'
-                      : 'border-separator bg-background text-muted hover:border-green-200',
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-separator bg-background text-muted hover:border-green-200",
                     archived: isSelected
-                      ? 'border-gray-300 bg-gray-100 text-gray-700'
-                      : 'border-separator bg-background text-muted hover:border-gray-300',
+                      ? "border-gray-300 bg-gray-100 text-gray-700"
+                      : "border-separator bg-background text-muted hover:border-gray-300",
                     draft: isSelected
-                      ? 'border-amber-200 bg-amber-50 text-amber-700'
-                      : 'border-separator bg-background text-muted hover:border-amber-200',
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : "border-separator bg-background text-muted hover:border-amber-200",
                   };
 
                   return (
                     <button
                       className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${statusColors[status]}`}
                       key={status}
-                      onClick={() => setValue('status', status)}
+                      onClick={() => setValue("status", status)}
                       type="button"
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -370,51 +421,63 @@ export default function TrainingPlanFormPage() {
           <section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface p-5 sm:p-6">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-muted" />
-              <p className="text-sm font-semibold text-foreground">Assignment metadata</p>
+              <p className="text-sm font-semibold text-foreground">
+                Assignment metadata
+              </p>
             </div>
 
             <TextField isInvalid={Boolean(errors.client_id?.message)}>
-              <Label className="text-sm font-medium text-foreground">Client</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Client
+              </Label>
               <select
                 className="min-h-11 w-full rounded-lg border border-separator bg-background px-3 text-sm text-foreground transition-colors focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                {...register('client_id')}
+                {...register("client_id")}
               >
                 <option value="">Select client</option>
                 {clients.map((client) => {
-                  const fullName = `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim();
+                  const fullName =
+                    `${client.first_name ?? ""} ${client.last_name ?? ""}`.trim();
                   const label = fullName || client.email;
                   return (
-                    <option
-                      key={client.id}
-                      value={client.id}
-                    >
+                    <option key={client.id} value={client.id}>
                       {label}
                     </option>
                   );
                 })}
               </select>
-              {errors.client_id?.message ? <FieldError>{errors.client_id.message}</FieldError> : null}
+              {errors.client_id?.message ? (
+                <FieldError>{errors.client_id.message}</FieldError>
+              ) : null}
             </TextField>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField isInvalid={Boolean(errors.start_date?.message)}>
-                <Label className="text-sm font-medium text-foreground">Start date</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  Start date
+                </Label>
                 <Input
                   type="date"
                   variant="secondary"
-                  {...register('start_date')}
+                  {...register("start_date")}
                 />
-                {errors.start_date?.message ? <FieldError>{errors.start_date.message}</FieldError> : null}
+                {errors.start_date?.message ? (
+                  <FieldError>{errors.start_date.message}</FieldError>
+                ) : null}
               </TextField>
 
               <TextField isInvalid={Boolean(errors.end_date?.message)}>
-                <Label className="text-sm font-medium text-foreground">End date</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  End date
+                </Label>
                 <Input
                   type="date"
                   variant="secondary"
-                  {...register('end_date')}
+                  {...register("end_date")}
                 />
-                {errors.end_date?.message ? <FieldError>{errors.end_date.message}</FieldError> : null}
+                {errors.end_date?.message ? (
+                  <FieldError>{errors.end_date.message}</FieldError>
+                ) : null}
               </TextField>
             </div>
           </section>
@@ -457,14 +520,20 @@ export default function TrainingPlanFormPage() {
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save plan' : 'Create plan'}
+            {isSubmitting
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save plan"
+                : "Create plan"}
           </Button>
         </div>
       </form>
 
       <ConfirmDialog
         confirmLabel="Delete training plan"
-        description={`Are you sure you want to delete ${trainingPlanData?.data?.name ?? 'this training plan'}? This cannot be undone.`}
+        description={`Are you sure you want to delete ${trainingPlanData?.data?.name ?? "this training plan"}? This cannot be undone.`}
         isLoading={isDeleting}
         isOpen={isDeleteOpen}
         onConfirm={handleDelete}

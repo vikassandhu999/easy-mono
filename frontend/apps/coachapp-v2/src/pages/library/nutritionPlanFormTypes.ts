@@ -1,11 +1,16 @@
+import type {
+  MacroFormFields,
+  ResourceStatus,
+} from "@/pages/library/libraryFormShared";
+
 export type NutritionPlanFormValues = {
-  calories: string;
-  carbs: string;
+  calories: MacroFormFields["calories"];
+  carbs: MacroFormFields["carbs"];
   description: string;
-  fat: string;
+  fat: MacroFormFields["fat"];
   name: string;
-  protein: string;
-  status: 'active' | 'archived' | 'draft';
+  protein: MacroFormFields["protein"];
+  status: ResourceStatus;
   tags: string[];
-  type: 'personal' | 'template';
+  type: "personal" | "template";
 };

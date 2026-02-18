@@ -1,3 +1,8 @@
+import type {
+  MacroFormFields,
+  ServingSizeFormRow,
+} from "@/pages/library/libraryFormShared";
+
 export type RecipeFormIngredient = {
   amount: string;
   food_id: string;
@@ -6,22 +11,18 @@ export type RecipeFormIngredient = {
 };
 
 export type RecipeFormValues = {
-  calories: string;
-  carbs: string;
+  calories: MacroFormFields["calories"];
+  carbs: MacroFormFields["carbs"];
   category: string;
   cooked_weight_g: string;
-  fat: string;
+  fat: MacroFormFields["fat"];
   image_url: string;
   ingredients: RecipeFormIngredient[];
   instructions: string;
   name: string;
-  protein: string;
-  service_size_type: 'serving_based' | 'weight_based';
-  serving_sizes: {
-    amount: string;
-    unit: string;
-    weight_g: string;
-  }[];
+  protein: MacroFormFields["protein"];
+  service_size_type: "serving_based" | "weight_based";
+  serving_sizes: ServingSizeFormRow[];
   source: string;
   tags: string[];
 };

@@ -1,32 +1,32 @@
-import {z} from 'zod';
+import { z } from "zod";
 
-import type {Recipe} from '@/api/recipes';
-import type {RecipeFormIngredient, RecipeFormValues} from '@/pages/library/recipeFormTypes';
+import type { Recipe } from "@/api/recipes";
+import type {
+  RecipeFormIngredient,
+  RecipeFormValues,
+} from "@/pages/library/recipeFormTypes";
 
-const CALORIES_MAX = 5000;
-const MACRO_GRAMS_MAX = 1000;
+import {
+  parseOptionalNumber,
+  toStringValue,
+} from "@/pages/library/libraryShared";
+import {
+  CALORIES_MAX,
+  createEmptyServingSize,
+  MACRO_GRAMS_MAX,
+  validateImageUrl,
+  validateMacroField,
+  validateServingSizes,
+} from "@/pages/library/libraryFormSchemaShared";
 
-const roundToOneDecimal = (value: number) => Math.round(value * 10) / 10;
-
-const URL_MESSAGE = 'Image URL must be a valid URL.';
-
-const createEmptyServingSize = () => ({
-  amount: '',
-  unit: '',
-  weight_g: '',
+export const createEmptyIngredient = (): RecipeFormIngredient => ({
+  amount: "",
+  food_id: "",
+  unit: "",
+  weight_g: "",
 });
 
-const createEmptyIngredient = (): RecipeFormIngredient => ({
-  amount: '',
-  food_id: '',
-  unit: '',
-  weight_g: '',
-});
-
-const toStringValue = (value: null | number | string | undefined) =>
-  value === null || value === undefined ? '' : String(value);
-
-export const RECIPE_NUMERIC_STEP = '0.1';
+export const RECIPE_NUMERIC_STEP = "0.1";
 
 export const RECIPE_FORM_SCHEMA = z
   .object({
@@ -45,9 +45,9 @@ export const RECIPE_FORM_SCHEMA = z
       }),
     ),
     instructions: z.string(),
-    name: z.string().trim().min(1, 'Recipe name is required.'),
+    name: z.string().trim().min(1, "Recipe name is required."),
     protein: z.string(),
-    service_size_type: z.enum(['serving_based', 'weight_based']),
+    service_size_type: z.enum(["serving_based", "weight_based"]),
     serving_sizes: z.array(
       z.object({
         amount: z.string(),
@@ -59,61 +59,20 @@ export const RECIPE_FORM_SCHEMA = z
     tags: z.array(z.string()),
   })
   .superRefine((values, ctx) => {
-    const validateMacroField = (field: 'calories' | 'carbs' | 'fat' | 'protein', label: string, max: number) => {
-      const raw = values[field];
-      if (!raw.trim()) {
-        return;
-      }
+    validateMacroField(ctx, values, "calories", "Calories", CALORIES_MAX);
+    validateMacroField(ctx, values, "protein", "Protein", MACRO_GRAMS_MAX);
+    validateMacroField(ctx, values, "carbs", "Carbs", MACRO_GRAMS_MAX);
+    validateMacroField(ctx, values, "fat", "Fat", MACRO_GRAMS_MAX);
 
-      const parsed = Number(raw);
-      if (!Number.isFinite(parsed)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${label} must be a valid number.`,
-          path: [field],
-        });
-        return;
-      }
-      if (parsed < 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${label} must be 0 or more.`,
-          path: [field],
-        });
-        return;
-      }
-      if (parsed > max) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `${label} seems too high (max ${max}).`,
-          path: [field],
-        });
-      }
-    };
-
-    validateMacroField('calories', 'Calories', CALORIES_MAX);
-    validateMacroField('protein', 'Protein', MACRO_GRAMS_MAX);
-    validateMacroField('carbs', 'Carbs', MACRO_GRAMS_MAX);
-    validateMacroField('fat', 'Fat', MACRO_GRAMS_MAX);
-
-    if (values.image_url.trim()) {
-      const result = z.string().url(URL_MESSAGE).safeParse(values.image_url.trim());
-      if (!result.success) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: URL_MESSAGE,
-          path: ['image_url'],
-        });
-      }
-    }
+    validateImageUrl(ctx, values.image_url);
 
     if (values.cooked_weight_g.trim()) {
       const cookedWeight = Number(values.cooked_weight_g);
       if (!Number.isFinite(cookedWeight) || cookedWeight < 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Cooked weight must be 0 or more.',
-          path: ['cooked_weight_g'],
+          message: "Cooked weight must be 0 or more.",
+          path: ["cooked_weight_g"],
         });
       }
     }
@@ -128,7 +87,7 @@ export const RECIPE_FORM_SCHEMA = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Ingredient ${index + 1}: select a food when adding amount, unit, or weight.`,
-          path: ['ingredients', index, 'food_id'],
+          path: ["ingredients", index, "food_id"],
         });
       }
 
@@ -138,7 +97,7 @@ export const RECIPE_FORM_SCHEMA = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Ingredient ${index + 1}: amount must be 0 or more.`,
-            path: ['ingredients', index, 'amount'],
+            path: ["ingredients", index, "amount"],
           });
         }
       }
@@ -149,90 +108,55 @@ export const RECIPE_FORM_SCHEMA = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Ingredient ${index + 1}: weight must be 0 or more.`,
-            path: ['ingredients', index, 'weight_g'],
+            path: ["ingredients", index, "weight_g"],
           });
         }
       }
     });
 
-    values.serving_sizes.forEach((servingSize, index) => {
-      const hasUnit = Boolean(servingSize.unit.trim());
-      const hasWeight = Boolean(servingSize.weight_g.trim());
-      const hasAmount = Boolean(servingSize.amount.trim());
-
-      if (!hasUnit && !hasWeight && !hasAmount) {
-        return;
-      }
-
-      if (!hasUnit) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Serving size ${index + 1}: unit is required.`,
-          path: ['serving_sizes', index, 'unit'],
-        });
-      }
-
-      if (hasWeight) {
-        const weight = Number(servingSize.weight_g);
-        if (!Number.isFinite(weight) || weight < 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Serving size ${index + 1}: weight must be 0 or more.`,
-            path: ['serving_sizes', index, 'weight_g'],
-          });
-        }
-      }
-
-      if (hasAmount) {
-        const amount = Number(servingSize.amount);
-        if (!Number.isFinite(amount) || amount < 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Serving size ${index + 1}: amount must be 0 or more.`,
-            path: ['serving_sizes', index, 'amount'],
-          });
-        }
-      }
-    });
+    validateServingSizes(ctx, values.serving_sizes);
   });
 
 export const RECIPE_INITIAL_VALUES: RecipeFormValues = {
-  calories: '',
-  carbs: '',
-  category: '',
-  cooked_weight_g: '',
-  fat: '',
-  image_url: '',
+  calories: "",
+  carbs: "",
+  category: "",
+  cooked_weight_g: "",
+  fat: "",
+  image_url: "",
   ingredients: [createEmptyIngredient()],
-  instructions: '',
-  name: '',
-  protein: '',
-  service_size_type: 'serving_based',
+  instructions: "",
+  name: "",
+  protein: "",
+  service_size_type: "serving_based",
   serving_sizes: [createEmptyServingSize()],
-  source: '',
+  source: "",
   tags: [],
 };
 
 export const mapRecipeToFormValues = (recipe: Recipe): RecipeFormValues => ({
   calories: toStringValue(recipe.macros?.calories ?? recipe.macros?.kcal),
   carbs: toStringValue(recipe.macros?.carbs ?? recipe.macros?.carbs_g),
-  category: recipe.category ?? '',
+  category: recipe.category ?? "",
   cooked_weight_g: toStringValue(recipe.cooked_weight_g),
   fat: toStringValue(recipe.macros?.fat ?? recipe.macros?.fat_g),
-  image_url: recipe.image_url ?? '',
+  image_url: recipe.image_url ?? "",
   ingredients:
     recipe.recipe_ingredients.length > 0
       ? recipe.recipe_ingredients.map((ingredient) => ({
           amount: toStringValue(ingredient.amount),
           food_id: ingredient.food_id,
-          unit: ingredient.unit ?? '',
+          unit: ingredient.unit ?? "",
           weight_g: toStringValue(ingredient.weight_g),
         }))
       : [createEmptyIngredient()],
-  instructions: recipe.instructions ?? '',
+  instructions: recipe.instructions ?? "",
   name: recipe.name,
   protein: toStringValue(recipe.macros?.protein ?? recipe.macros?.protein_g),
-  service_size_type: recipe.service_size_type === 'weight_based' ? 'weight_based' : 'serving_based',
+  service_size_type:
+    recipe.service_size_type === "weight_based"
+      ? "weight_based"
+      : "serving_based",
   serving_sizes:
     recipe.serving_sizes.length > 0
       ? recipe.serving_sizes.map((servingSize) => ({
@@ -241,14 +165,12 @@ export const mapRecipeToFormValues = (recipe: Recipe): RecipeFormValues => ({
           weight_g: toStringValue(servingSize.weight_g),
         }))
       : [createEmptyServingSize()],
-  source: recipe.source ?? '',
+  source: recipe.source ?? "",
   tags: recipe.tags,
 });
 
-export const parseOptionalRecipeNumber = (value: string): number | undefined => {
-  if (!value.trim()) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? roundToOneDecimal(parsed) : undefined;
+export const parseOptionalRecipeNumber = (
+  value: string,
+): number | undefined => {
+  return parseOptionalNumber(value);
 };

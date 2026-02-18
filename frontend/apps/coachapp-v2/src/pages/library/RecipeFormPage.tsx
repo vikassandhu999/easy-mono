@@ -1,48 +1,65 @@
-import {Button, Card, FieldError, Input, Label, TextArea, TextField, toast} from '@heroui/react';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {AlertCircle, ChevronLeft} from 'lucide-react';
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {Controller, type FieldErrors, type FieldPath, useFieldArray, useForm} from 'react-hook-form';
-import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
+import {
+  Button,
+  Card,
+  FieldError,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+  toast,
+} from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Controller,
+  type FieldErrors,
+  type FieldPath,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
+import {
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 
-import type {RecipeFormIngredient, RecipeFormValues} from '@/pages/library/recipeFormTypes';
+import type { RecipeFormValues } from "@/pages/library/recipeFormTypes";
 
-import {useListFoodsQuery} from '@/api/foods';
+import { useListFoodsQuery } from "@/api/foods";
 import {
   useCreateRecipeMutation,
   useDeleteRecipeMutation,
   useGetRecipeQuery,
   useUpdateRecipeMutation,
-} from '@/api/recipes';
-import {handleFormError} from '@/api/shared';
-import ConfirmDialog from '@/components/ConfirmDialog';
+} from "@/api/recipes";
+import { handleFormError } from "@/api/shared";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
+  createEmptyIngredient,
   mapRecipeToFormValues,
   parseOptionalRecipeNumber,
   RECIPE_FORM_SCHEMA,
   RECIPE_INITIAL_VALUES,
   RECIPE_NUMERIC_STEP,
-} from '@/pages/library/recipeFormSchema';
-import RecipeIngredientRow from '@/pages/library/RecipeIngredientRow';
-import ServingSizeRows from '@/pages/library/ServingSizeRows';
-import TagsInput from '@/pages/library/TagsInput';
+} from "@/pages/library/recipeFormSchema";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
+import RecipeIngredientRow from "@/pages/library/RecipeIngredientRow";
+import ServingSizeRows from "@/pages/library/ServingSizeRows";
+import TagsInput from "@/pages/library/TagsInput";
 
-const createEmptyIngredient = (): RecipeFormIngredient => ({
-  amount: '',
-  food_id: '',
-  unit: '',
-  weight_g: '',
-});
-
-const getFirstErrorPath = (formErrors: FieldErrors<RecipeFormValues>): FieldPath<RecipeFormValues> | null => {
-  if (formErrors.name?.message) return 'name';
-  if (formErrors.calories?.message) return 'calories';
-  if (formErrors.protein?.message) return 'protein';
-  if (formErrors.carbs?.message) return 'carbs';
-  if (formErrors.fat?.message) return 'fat';
-  if (formErrors.category?.message) return 'category';
-  if (formErrors.source?.message) return 'source';
-  if (formErrors.instructions?.message) return 'instructions';
+const getFirstErrorPath = (
+  formErrors: FieldErrors<RecipeFormValues>,
+): FieldPath<RecipeFormValues> | null => {
+  if (formErrors.name?.message) return "name";
+  if (formErrors.calories?.message) return "calories";
+  if (formErrors.protein?.message) return "protein";
+  if (formErrors.carbs?.message) return "carbs";
+  if (formErrors.fat?.message) return "fat";
+  if (formErrors.category?.message) return "category";
+  if (formErrors.source?.message) return "source";
+  if (formErrors.instructions?.message) return "instructions";
 
   const ingredientErrors = formErrors.ingredients;
   if (!ingredientErrors) {
@@ -50,13 +67,16 @@ const getFirstErrorPath = (formErrors: FieldErrors<RecipeFormValues>): FieldPath
   }
 
   type IngredientFieldError = {
-    amount?: {message?: string};
-    food_id?: {message?: string};
-    unit?: {message?: string};
-    weight_g?: {message?: string};
+    amount?: { message?: string };
+    food_id?: { message?: string };
+    unit?: { message?: string };
+    weight_g?: { message?: string };
   };
 
-  const indexedIngredientErrors = ingredientErrors as unknown as Record<string, IngredientFieldError>;
+  const indexedIngredientErrors = ingredientErrors as unknown as Record<
+    string,
+    IngredientFieldError
+  >;
 
   for (const [rawIndex, error] of Object.entries(indexedIngredientErrors)) {
     const index = Number(rawIndex);
@@ -78,15 +98,9 @@ const getFirstErrorPath = (formErrors: FieldErrors<RecipeFormValues>): FieldPath
 export default function RecipeFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const { id } = useParams();
   const isEditing = Boolean(id);
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : '/library';
+  const returnTo = getReturnTo(location, "/library");
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [formError, setFormError] = useState<null | string>(null);
 
@@ -95,13 +109,13 @@ export default function RecipeFormPage() {
     isError: isRecipeError,
     isLoading: isRecipeLoading,
     refetch: refetchRecipe,
-  } = useGetRecipeQuery(id ?? '', {
+  } = useGetRecipeQuery(id ?? "", {
     skip: !id,
   });
 
   const {
     control,
-    formState: {errors, isDirty},
+    formState: { errors, isDirty },
     handleSubmit,
     register,
     reset,
@@ -124,24 +138,26 @@ export default function RecipeFormPage() {
     }
   }, [isEditing, recipeData?.data, reset]);
 
-  const {fields, append, remove} = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
-    name: 'ingredients',
+    name: "ingredients",
   });
 
-  const [createRecipe, {isLoading: isCreating}] = useCreateRecipeMutation();
-  const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
-  const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
-  const {data: foodsData} = useListFoodsQuery({limit: 100, offset: 0});
+  const [createRecipe, { isLoading: isCreating }] = useCreateRecipeMutation();
+  const [deleteRecipe, { isLoading: isDeleting }] = useDeleteRecipeMutation();
+  const [updateRecipe, { isLoading: isUpdating }] = useUpdateRecipeMutation();
+  const { data: foodsData } = useListFoodsQuery({ limit: 100, offset: 0 });
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const serviceSizeType = watch('service_size_type');
+  const serviceSizeType = watch("service_size_type");
 
   const isSubmitting = isCreating || isUpdating;
   const hasPendingChanges = isDirty && !isSubmitting;
 
   const attemptNavigate = (target: string) => {
     if (hasPendingChanges) {
-      const shouldLeave = window.confirm('You have unsaved changes. Leave without saving?');
+      const shouldLeave = window.confirm(
+        "You have unsaved changes. Leave without saving?",
+      );
       if (!shouldLeave) {
         return;
       }
@@ -154,14 +170,16 @@ export default function RecipeFormPage() {
       return;
     }
     event.preventDefault();
-    event.returnValue = '';
+    event.returnValue = "";
   });
 
   const pageTitle = useMemo(() => {
     if (!isEditing) {
-      return 'Create Recipe';
+      return "Create Recipe";
     }
-    return recipeData?.data?.name ? `Edit ${recipeData.data.name}` : 'Edit Recipe';
+    return recipeData?.data?.name
+      ? `Edit ${recipeData.data.name}`
+      : "Edit Recipe";
   }, [isEditing, recipeData?.data?.name]);
 
   const focusErrorPath = (path: FieldPath<RecipeFormValues>) => {
@@ -171,8 +189,8 @@ export default function RecipeFormPage() {
       if (match?.[1]) {
         const index = Number(match[1]);
         rowRefs.current[index]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
+          behavior: "smooth",
+          block: "center",
         });
       }
     });
@@ -202,15 +220,20 @@ export default function RecipeFormPage() {
           unit: row.unit.trim(),
           weight_g: parseOptionalRecipeNumber(row.weight_g) ?? null,
         }))
-        .filter((row) => row.unit || row.weight_g !== null || row.amount !== null)
+        .filter(
+          (row) => row.unit || row.weight_g !== null || row.amount !== null,
+        )
         .map((row) => ({
           amount: row.amount,
-          unit: row.unit || 'serving',
+          unit: row.unit || "serving",
           weight_g: row.weight_g,
         }));
 
       const macros =
-        calories !== undefined || protein !== undefined || carbs !== undefined || fat !== undefined
+        calories !== undefined ||
+        protein !== undefined ||
+        carbs !== undefined ||
+        fat !== undefined
           ? {
               calories: calories ?? 0,
               carbs: carbs ?? 0,
@@ -222,12 +245,15 @@ export default function RecipeFormPage() {
       const payload = {
         category: values.category.trim() || undefined,
         cooked_weight_g:
-          values.service_size_type === 'weight_based' ? parseOptionalRecipeNumber(values.cooked_weight_g) : undefined,
+          values.service_size_type === "weight_based"
+            ? parseOptionalRecipeNumber(values.cooked_weight_g)
+            : undefined,
         image_url: values.image_url.trim() || undefined,
         instructions: values.instructions.trim() || undefined,
         macros,
         name: values.name.trim(),
-        recipe_ingredients: recipeIngredients.length > 0 ? recipeIngredients : undefined,
+        recipe_ingredients:
+          recipeIngredients.length > 0 ? recipeIngredients : undefined,
         service_size_type: values.service_size_type,
         serving_sizes: servingSizes.length > 0 ? servingSizes : undefined,
         source: values.source.trim() || undefined,
@@ -236,7 +262,7 @@ export default function RecipeFormPage() {
 
       try {
         if (id) {
-          await updateRecipe({body: payload, id}).unwrap();
+          await updateRecipe({ body: payload, id }).unwrap();
           toast.success(`Recipe "${values.name.trim()}" updated successfully.`);
         } else {
           await createRecipe(payload).unwrap();
@@ -247,22 +273,24 @@ export default function RecipeFormPage() {
       } catch (err) {
         const result = handleFormError(
           err,
-          id ? 'Unable to update recipe. Please try again.' : 'Unable to create recipe. Please try again.',
+          id
+            ? "Unable to update recipe. Please try again."
+            : "Unable to create recipe. Please try again.",
         );
         if (result.fieldErrors) {
           const namedFieldMap: Record<string, FieldPath<RecipeFormValues>> = {
-            calories: 'calories',
-            carbs: 'carbs',
-            category: 'category',
-            cooked_weight_g: 'cooked_weight_g',
-            fat: 'fat',
-            image_url: 'image_url',
-            instructions: 'instructions',
-            name: 'name',
-            protein: 'protein',
-            service_size_type: 'service_size_type',
-            source: 'source',
-            tags: 'tags',
+            calories: "calories",
+            carbs: "carbs",
+            category: "category",
+            cooked_weight_g: "cooked_weight_g",
+            fat: "fat",
+            image_url: "image_url",
+            instructions: "instructions",
+            name: "name",
+            protein: "protein",
+            service_size_type: "service_size_type",
+            source: "source",
+            tags: "tags",
           };
 
           Object.entries(result.fieldErrors).forEach(([key, messages]) => {
@@ -270,7 +298,7 @@ export default function RecipeFormPage() {
             if (!path || messages.length === 0) {
               return;
             }
-            setError(path, {type: 'server', message: messages[0]});
+            setError(path, { type: "server", message: messages[0] });
           });
         }
         setFormError(result.formError);
@@ -280,7 +308,7 @@ export default function RecipeFormPage() {
       }
     },
     (invalidValues) => {
-      setFormError('Please fix the highlighted fields before saving.');
+      setFormError("Please fix the highlighted fields before saving.");
       const firstErrorPath = getFirstErrorPath(invalidValues);
       if (firstErrorPath) {
         focusErrorPath(firstErrorPath);
@@ -298,7 +326,10 @@ export default function RecipeFormPage() {
       setIsDeleteOpen(false);
       navigate(returnTo);
     } catch (err) {
-      const result = handleFormError(err, 'Unable to delete recipe. Please try again.');
+      const result = handleFormError(
+        err,
+        "Unable to delete recipe. Please try again.",
+      );
       toast.danger(result.formError);
     }
   };
@@ -316,7 +347,9 @@ export default function RecipeFormPage() {
       <Card className="border border-separator bg-surface p-6">
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-foreground">Could not load recipe</p>
-          <p className="text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
+          <p className="text-sm text-muted">
+            Please retry. If this continues, check API connectivity.
+          </p>
           <div className="flex gap-2">
             <Button
               className="min-h-11"
@@ -359,42 +392,51 @@ export default function RecipeFormPage() {
         </p>
       </div>
 
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={onSubmit}
-      >
+      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
           <p className="text-sm font-semibold text-foreground">Basics</p>
 
           <TextField isInvalid={Boolean(errors.name?.message)}>
-            <Label className="text-sm font-medium text-foreground">Recipe name</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Recipe name
+            </Label>
             <Input
               placeholder="e.g. High Protein Pancakes"
               variant="secondary"
-              {...register('name')}
+              {...register("name")}
             />
-            {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
+            {errors.name?.message ? (
+              <FieldError>{errors.name.message}</FieldError>
+            ) : null}
           </TextField>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.category?.message)}>
-              <Label className="text-sm font-medium text-foreground">Category</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Category
+              </Label>
               <Input
                 placeholder="e.g. Breakfast"
                 variant="secondary"
-                {...register('category')}
+                {...register("category")}
               />
-              {errors.category?.message ? <FieldError>{errors.category.message}</FieldError> : null}
+              {errors.category?.message ? (
+                <FieldError>{errors.category.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.source?.message)}>
-              <Label className="text-sm font-medium text-foreground">Source</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Source
+              </Label>
               <Input
                 placeholder="e.g. Internal"
                 variant="secondary"
-                {...register('source')}
+                {...register("source")}
               />
-              {errors.source?.message ? <FieldError>{errors.source.message}</FieldError> : null}
+              {errors.source?.message ? (
+                <FieldError>{errors.source.message}</FieldError>
+              ) : null}
             </TextField>
           </div>
         </section>
@@ -404,51 +446,67 @@ export default function RecipeFormPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.calories?.message)}>
-              <Label className="text-sm font-medium text-foreground">Calories</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Calories
+              </Label>
               <Input
                 placeholder="e.g. 450"
                 step={RECIPE_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('calories')}
+                {...register("calories")}
               />
-              {errors.calories?.message ? <FieldError>{errors.calories.message}</FieldError> : null}
+              {errors.calories?.message ? (
+                <FieldError>{errors.calories.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.protein?.message)}>
-              <Label className="text-sm font-medium text-foreground">Protein (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Protein (g)
+              </Label>
               <Input
                 placeholder="e.g. 30"
                 step={RECIPE_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('protein')}
+                {...register("protein")}
               />
-              {errors.protein?.message ? <FieldError>{errors.protein.message}</FieldError> : null}
+              {errors.protein?.message ? (
+                <FieldError>{errors.protein.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.carbs?.message)}>
-              <Label className="text-sm font-medium text-foreground">Carbs (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Carbs (g)
+              </Label>
               <Input
                 placeholder="e.g. 40"
                 step={RECIPE_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('carbs')}
+                {...register("carbs")}
               />
-              {errors.carbs?.message ? <FieldError>{errors.carbs.message}</FieldError> : null}
+              {errors.carbs?.message ? (
+                <FieldError>{errors.carbs.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.fat?.message)}>
-              <Label className="text-sm font-medium text-foreground">Fat (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Fat (g)
+              </Label>
               <Input
                 placeholder="e.g. 12"
                 step={RECIPE_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('fat')}
+                {...register("fat")}
               />
-              {errors.fat?.message ? <FieldError>{errors.fat.message}</FieldError> : null}
+              {errors.fat?.message ? (
+                <FieldError>{errors.fat.message}</FieldError>
+              ) : null}
             </TextField>
           </div>
         </section>
@@ -457,7 +515,7 @@ export default function RecipeFormPage() {
           <Controller
             control={control}
             name="tags"
-            render={({field}) => (
+            render={({ field }) => (
               <TagsInput
                 label="Tags"
                 onChange={(nextTags) => field.onChange(nextTags)}
@@ -470,47 +528,61 @@ export default function RecipeFormPage() {
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
           <TextField isInvalid={Boolean(errors.image_url?.message)}>
-            <Label className="text-sm font-medium text-foreground">Image URL</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Image URL
+            </Label>
             <Input
               placeholder="https://example.com/recipe.jpg"
               variant="secondary"
-              {...register('image_url')}
+              {...register("image_url")}
             />
-            {errors.image_url?.message ? <FieldError>{errors.image_url.message}</FieldError> : null}
+            {errors.image_url?.message ? (
+              <FieldError>{errors.image_url.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
-          <p className="text-sm font-semibold text-foreground">Serving configuration</p>
+          <p className="text-sm font-semibold text-foreground">
+            Serving configuration
+          </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               className="min-h-11"
-              onPress={() => setValue('service_size_type', 'serving_based')}
+              onPress={() => setValue("service_size_type", "serving_based")}
               type="button"
-              variant={serviceSizeType === 'serving_based' ? 'secondary' : 'outline'}
+              variant={
+                serviceSizeType === "serving_based" ? "secondary" : "outline"
+              }
             >
               Serving based
             </Button>
             <Button
               className="min-h-11"
-              onPress={() => setValue('service_size_type', 'weight_based')}
+              onPress={() => setValue("service_size_type", "weight_based")}
               type="button"
-              variant={serviceSizeType === 'weight_based' ? 'secondary' : 'outline'}
+              variant={
+                serviceSizeType === "weight_based" ? "secondary" : "outline"
+              }
             >
               Weight based
             </Button>
           </div>
-          {serviceSizeType === 'weight_based' ? (
+          {serviceSizeType === "weight_based" ? (
             <TextField isInvalid={Boolean(errors.cooked_weight_g?.message)}>
-              <Label className="text-sm font-medium text-foreground">Cooked weight (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Cooked weight (g)
+              </Label>
               <Input
                 placeholder="e.g. 800"
                 step={RECIPE_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('cooked_weight_g')}
+                {...register("cooked_weight_g")}
               />
-              {errors.cooked_weight_g?.message ? <FieldError>{errors.cooked_weight_g.message}</FieldError> : null}
+              {errors.cooked_weight_g?.message ? (
+                <FieldError>{errors.cooked_weight_g.message}</FieldError>
+              ) : null}
             </TextField>
           ) : null}
         </section>
@@ -526,13 +598,17 @@ export default function RecipeFormPage() {
           <p className="text-sm font-semibold text-foreground">Instructions</p>
 
           <TextField isInvalid={Boolean(errors.instructions?.message)}>
-            <Label className="text-sm font-medium text-foreground">Instructions</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Instructions
+            </Label>
             <TextArea
               placeholder="Optional prep instructions"
               variant="secondary"
-              {...register('instructions')}
+              {...register("instructions")}
             />
-            {errors.instructions?.message ? <FieldError>{errors.instructions.message}</FieldError> : null}
+            {errors.instructions?.message ? (
+              <FieldError>{errors.instructions.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
@@ -544,7 +620,7 @@ export default function RecipeFormPage() {
               <p className="text-sm font-medium text-foreground">Ingredients</p>
               <p className="text-xs text-muted">
                 {fields.length} ingredient
-                {fields.length !== 1 ? 's' : ''}
+                {fields.length !== 1 ? "s" : ""}
               </p>
             </div>
             <Button
@@ -562,8 +638,12 @@ export default function RecipeFormPage() {
           {fields.length === 0 ? (
             <div className="rounded-lg border border-dashed border-separator bg-surface-secondary p-4">
               <div className="flex flex-col items-center gap-2 text-center">
-                <p className="text-sm font-medium text-foreground">No ingredients yet</p>
-                <p className="text-xs text-muted">Add your first ingredient to build this recipe.</p>
+                <p className="text-sm font-medium text-foreground">
+                  No ingredients yet
+                </p>
+                <p className="text-xs text-muted">
+                  Add your first ingredient to build this recipe.
+                </p>
                 <Button
                   className="min-h-11 gap-1 px-3"
                   onPress={() => append(createEmptyIngredient())}
@@ -581,7 +661,7 @@ export default function RecipeFormPage() {
           {fields.map((field, index) => (
             <RecipeIngredientRow
               foods={foodsData?.data ?? []}
-              form={{control, errors, register}}
+              form={{ control, errors, register }}
               initialFood={recipeData?.data?.recipe_ingredients?.[index]?.food}
               key={field.id}
               numericStep={RECIPE_NUMERIC_STEP}
@@ -633,13 +713,19 @@ export default function RecipeFormPage() {
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save recipe' : 'Create recipe'}
+            {isSubmitting
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save recipe"
+                : "Create recipe"}
           </Button>
         </div>
       </form>
       <ConfirmDialog
         confirmLabel="Delete recipe"
-        description={`Are you sure you want to delete ${recipeData?.data?.name ?? 'this recipe'}? This cannot be undone.`}
+        description={`Are you sure you want to delete ${recipeData?.data?.name ?? "this recipe"}? This cannot be undone.`}
         isLoading={isDeleting}
         isOpen={isDeleteOpen}
         onConfirm={handleDelete}

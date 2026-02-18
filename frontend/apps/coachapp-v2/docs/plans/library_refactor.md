@@ -31,7 +31,7 @@
 
 Extract pure helper functions that are duplicated across library pages. These are stateless, testable, and safe to extract without any behavioral change.
 
-### Task 1.1: Extract shared formatting utilities to `pages/library/libraryShared.ts`
+### [x] Task 1.1: Extract shared formatting utilities to `pages/library/libraryShared.ts`
 
 Create `pages/library/libraryShared.ts` and move shared pure utilities there:
 
@@ -46,7 +46,7 @@ Create `pages/library/libraryShared.ts` and move shared pure utilities there:
 
 **What to verify:** All cards still render dates/macros correctly. All form submissions still parse numbers correctly. Build passes.
 
-### Task 1.2: Extract shared form validation helpers
+### [x] Task 1.2: Extract shared form validation helpers
 
 Add to `pages/library/libraryFormSchemaShared.ts`:
 
@@ -60,7 +60,7 @@ Add to `pages/library/libraryFormSchemaShared.ts`:
 
 **What to verify:** All form validations still trigger correctly. Build passes.
 
-### Task 1.3: Extract shared form types + navigation helper
+### [x] Task 1.3: Extract shared form types + navigation helper
 
 Create `pages/library/libraryFormShared.ts` and add:
 

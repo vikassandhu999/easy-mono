@@ -1,3 +1,5 @@
+import type { ResourceStatus } from "@/pages/library/libraryFormShared";
+
 export type TrainingPlanFormValues = {
   client_id: string;
   description: string;
@@ -5,5 +7,5 @@ export type TrainingPlanFormValues = {
   is_template: boolean;
   name: string;
   start_date: string;
-  status: 'active' | 'archived' | 'draft';
+  status: ResourceStatus;
 };

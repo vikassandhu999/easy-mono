@@ -1,56 +1,65 @@
-import {Button, Card, FieldError, Input, Label, TextArea, TextField, toast} from '@heroui/react';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {AlertCircle, ChevronLeft} from 'lucide-react';
-import {useEffect, useMemo, useState} from 'react';
-import {Controller, type FieldPath, useForm} from 'react-hook-form';
-import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
+import {
+  Button,
+  Card,
+  FieldError,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+  toast,
+} from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, type FieldPath, useForm } from "react-hook-form";
+import {
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 
-import type {NutritionPlanFormValues} from '@/pages/library/nutritionPlanFormTypes';
+import type { NutritionPlanFormValues } from "@/pages/library/nutritionPlanFormTypes";
 
 import {
   useCreateNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
   useGetNutritionPlanQuery,
   useUpdateNutritionPlanMutation,
-} from '@/api/nutritionPlans';
-import {handleFormError} from '@/api/shared';
-import ConfirmDialog from '@/components/ConfirmDialog';
+} from "@/api/nutritionPlans";
+import { handleFormError } from "@/api/shared";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   mapNutritionPlanToFormValues,
   NUTRITION_PLAN_FORM_SCHEMA,
   NUTRITION_PLAN_INITIAL_VALUES,
   parseOptionalPlanNumber,
-} from '@/pages/library/nutritionPlanFormSchema';
-import TagsInput from '@/pages/library/TagsInput';
+} from "@/pages/library/nutritionPlanFormSchema";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
+import TagsInput from "@/pages/library/TagsInput";
 
 export default function NutritionPlanFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const { id } = useParams();
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : '/library';
+  const returnTo = getReturnTo(location, "/library");
 
   const {
     data: nutritionPlanData,
     isError: isNutritionPlanError,
     isLoading: isNutritionPlanLoading,
     refetch: refetchNutritionPlan,
-  } = useGetNutritionPlanQuery(id ?? '', {
+  } = useGetNutritionPlanQuery(id ?? "", {
     skip: !id,
   });
 
   const {
     control,
-    formState: {errors, isDirty},
+    formState: { errors, isDirty },
     handleSubmit,
     register,
     reset,
@@ -73,18 +82,23 @@ export default function NutritionPlanFormPage() {
     }
   }, [isEditing, nutritionPlanData?.data, reset]);
 
-  const [createNutritionPlan, {isLoading: isCreating}] = useCreateNutritionPlanMutation();
-  const [deleteNutritionPlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
-  const [updateNutritionPlan, {isLoading: isUpdating}] = useUpdateNutritionPlanMutation();
+  const [createNutritionPlan, { isLoading: isCreating }] =
+    useCreateNutritionPlanMutation();
+  const [deleteNutritionPlan, { isLoading: isDeleting }] =
+    useDeleteNutritionPlanMutation();
+  const [updateNutritionPlan, { isLoading: isUpdating }] =
+    useUpdateNutritionPlanMutation();
 
   const isSubmitting = isCreating || isUpdating;
   const hasPendingChanges = isDirty && !isSubmitting;
-  const selectedType = watch('type');
-  const selectedStatus = watch('status');
+  const selectedType = watch("type");
+  const selectedStatus = watch("status");
 
   const attemptNavigate = (target: string) => {
     if (hasPendingChanges) {
-      const shouldLeave = window.confirm('You have unsaved changes. Leave without saving?');
+      const shouldLeave = window.confirm(
+        "You have unsaved changes. Leave without saving?",
+      );
       if (!shouldLeave) {
         return;
       }
@@ -97,14 +111,16 @@ export default function NutritionPlanFormPage() {
       return;
     }
     event.preventDefault();
-    event.returnValue = '';
+    event.returnValue = "";
   });
 
   const pageTitle = useMemo(() => {
     if (!isEditing) {
-      return 'Create Nutrition Plan';
+      return "Create Nutrition Plan";
     }
-    return nutritionPlanData?.data?.name ? `Edit ${nutritionPlanData.data.name}` : 'Edit Nutrition Plan';
+    return nutritionPlanData?.data?.name
+      ? `Edit ${nutritionPlanData.data.name}`
+      : "Edit Nutrition Plan";
   }, [isEditing, nutritionPlanData?.data?.name]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -116,7 +132,10 @@ export default function NutritionPlanFormPage() {
     const fat = parseOptionalPlanNumber(values.fat);
 
     const macrosGoal =
-      calories !== undefined || protein !== undefined || carbs !== undefined || fat !== undefined
+      calories !== undefined ||
+      protein !== undefined ||
+      carbs !== undefined ||
+      fat !== undefined
         ? {
             calories: calories ?? 0,
             carbs: carbs ?? 0,
@@ -131,12 +150,12 @@ export default function NutritionPlanFormPage() {
       name: values.name.trim(),
       status: values.status,
       tags: values.tags.length > 0 ? values.tags : undefined,
-      ...(isEditing ? {} : {type: values.type}),
+      ...(isEditing ? {} : { type: values.type }),
     };
 
     try {
       const response = id
-        ? await updateNutritionPlan({body: payload, id}).unwrap()
+        ? await updateNutritionPlan({ body: payload, id }).unwrap()
         : await createNutritionPlan(payload).unwrap();
 
       toast.success(
@@ -152,27 +171,30 @@ export default function NutritionPlanFormPage() {
       }
 
       navigate(`/library/nutrition-plans/${response.data.id}/builder`, {
-        state: {from: returnTo},
+        state: { from: returnTo },
       });
     } catch (error) {
       const result = handleFormError(
         error,
         id
-          ? 'Unable to update nutrition plan. Please try again.'
-          : 'Unable to create nutrition plan. Please try again.',
+          ? "Unable to update nutrition plan. Please try again."
+          : "Unable to create nutrition plan. Please try again.",
       );
 
       if (result.fieldErrors) {
-        const namedFieldMap: Record<string, FieldPath<NutritionPlanFormValues>> = {
-          calories: 'calories',
-          carbs: 'carbs',
-          description: 'description',
-          fat: 'fat',
-          name: 'name',
-          protein: 'protein',
-          status: 'status',
-          tags: 'tags',
-          type: 'type',
+        const namedFieldMap: Record<
+          string,
+          FieldPath<NutritionPlanFormValues>
+        > = {
+          calories: "calories",
+          carbs: "carbs",
+          description: "description",
+          fat: "fat",
+          name: "name",
+          protein: "protein",
+          status: "status",
+          tags: "tags",
+          type: "type",
         };
 
         Object.entries(result.fieldErrors).forEach(([key, messages]) => {
@@ -180,7 +202,7 @@ export default function NutritionPlanFormPage() {
           if (!path || messages.length === 0) {
             return;
           }
-          setError(path, {type: 'server', message: messages[0]});
+          setError(path, { type: "server", message: messages[0] });
         });
       }
 
@@ -198,11 +220,16 @@ export default function NutritionPlanFormPage() {
 
     try {
       await deleteNutritionPlan(id).unwrap();
-      toast.success(`Nutrition plan \"${nutritionPlanData.data.name}\" deleted successfully.`);
+      toast.success(
+        `Nutrition plan \"${nutritionPlanData.data.name}\" deleted successfully.`,
+      );
       setIsDeleteOpen(false);
       navigate(returnTo);
     } catch (error) {
-      const result = handleFormError(error, 'Unable to delete nutrition plan. Please try again.');
+      const result = handleFormError(
+        error,
+        "Unable to delete nutrition plan. Please try again.",
+      );
       toast.danger(result.formError);
     }
   };
@@ -219,8 +246,12 @@ export default function NutritionPlanFormPage() {
     return (
       <Card className="border border-separator bg-surface p-6">
         <div className="flex flex-col gap-3">
-          <p className="font-semibold text-foreground">Could not load nutrition plan</p>
-          <p className="text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
+          <p className="font-semibold text-foreground">
+            Could not load nutrition plan
+          </p>
+          <p className="text-sm text-muted">
+            Please retry. If this continues, check API connectivity.
+          </p>
           <div className="flex gap-2">
             <Button
               className="min-h-11"
@@ -259,14 +290,12 @@ export default function NutritionPlanFormPage() {
         <p className="text-sm text-muted">Library</p>
         <h1 className="text-2xl font-semibold md:text-3xl">{pageTitle}</h1>
         <p className="max-w-2xl text-sm text-muted">
-          Define plan metadata, intent, and macro goals before building meals and schedule.
+          Define plan metadata, intent, and macro goals before building meals
+          and schedule.
         </p>
       </div>
 
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={onSubmit}
-      >
+      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
           <p className="text-sm font-semibold text-foreground">Basics</p>
 
@@ -275,19 +304,25 @@ export default function NutritionPlanFormPage() {
             <Input
               placeholder="e.g. Fat Loss Starter"
               variant="secondary"
-              {...register('name')}
+              {...register("name")}
             />
-            {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
+            {errors.name?.message ? (
+              <FieldError>{errors.name.message}</FieldError>
+            ) : null}
           </TextField>
 
           <TextField isInvalid={Boolean(errors.description?.message)}>
-            <Label className="text-sm font-medium text-foreground">Description</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Description
+            </Label>
             <TextArea
               placeholder="Optional plan notes"
               variant="secondary"
-              {...register('description')}
+              {...register("description")}
             />
-            {errors.description?.message ? <FieldError>{errors.description.message}</FieldError> : null}
+            {errors.description?.message ? (
+              <FieldError>{errors.description.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
@@ -296,40 +331,54 @@ export default function NutritionPlanFormPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-foreground">Type</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Type
+              </Label>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   className="min-h-11"
                   isDisabled={isEditing}
-                  onPress={() => setValue('type', 'template')}
+                  onPress={() => setValue("type", "template")}
                   type="button"
-                  variant={selectedType === 'template' ? 'secondary' : 'outline'}
+                  variant={
+                    selectedType === "template" ? "secondary" : "outline"
+                  }
                 >
                   Template
                 </Button>
                 <Button
                   className="min-h-11"
                   isDisabled={isEditing}
-                  onPress={() => setValue('type', 'personal')}
+                  onPress={() => setValue("type", "personal")}
                   type="button"
-                  variant={selectedType === 'personal' ? 'secondary' : 'outline'}
+                  variant={
+                    selectedType === "personal" ? "secondary" : "outline"
+                  }
                 >
                   Personal
                 </Button>
               </div>
-              {isEditing ? <p className="text-xs text-muted">Type is locked after creation.</p> : null}
+              {isEditing ? (
+                <p className="text-xs text-muted">
+                  Type is locked after creation.
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label className="text-sm font-medium text-foreground">Status</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Status
+              </Label>
               <div className="flex flex-wrap gap-2">
-                {(['draft', 'active', 'archived'] as const).map((status) => (
+                {(["draft", "active", "archived"] as const).map((status) => (
                   <Button
                     className="min-h-11"
                     key={status}
-                    onPress={() => setValue('status', status)}
+                    onPress={() => setValue("status", status)}
                     type="button"
-                    variant={selectedStatus === status ? 'secondary' : 'outline'}
+                    variant={
+                      selectedStatus === status ? "secondary" : "outline"
+                    }
                   >
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                   </Button>
@@ -343,7 +392,7 @@ export default function NutritionPlanFormPage() {
           <Controller
             control={control}
             name="tags"
-            render={({field}) => (
+            render={({ field }) => (
               <TagsInput
                 label="Tags"
                 onChange={(nextTags) => field.onChange(nextTags)}
@@ -359,47 +408,63 @@ export default function NutritionPlanFormPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.calories?.message)}>
-              <Label className="text-sm font-medium text-foreground">Calories</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Calories
+              </Label>
               <Input
                 placeholder="e.g. 2200"
                 type="number"
                 variant="secondary"
-                {...register('calories')}
+                {...register("calories")}
               />
-              {errors.calories?.message ? <FieldError>{errors.calories.message}</FieldError> : null}
+              {errors.calories?.message ? (
+                <FieldError>{errors.calories.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.protein?.message)}>
-              <Label className="text-sm font-medium text-foreground">Protein (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Protein (g)
+              </Label>
               <Input
                 placeholder="e.g. 180"
                 type="number"
                 variant="secondary"
-                {...register('protein')}
+                {...register("protein")}
               />
-              {errors.protein?.message ? <FieldError>{errors.protein.message}</FieldError> : null}
+              {errors.protein?.message ? (
+                <FieldError>{errors.protein.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.carbs?.message)}>
-              <Label className="text-sm font-medium text-foreground">Carbs (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Carbs (g)
+              </Label>
               <Input
                 placeholder="e.g. 220"
                 type="number"
                 variant="secondary"
-                {...register('carbs')}
+                {...register("carbs")}
               />
-              {errors.carbs?.message ? <FieldError>{errors.carbs.message}</FieldError> : null}
+              {errors.carbs?.message ? (
+                <FieldError>{errors.carbs.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.fat?.message)}>
-              <Label className="text-sm font-medium text-foreground">Fat (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Fat (g)
+              </Label>
               <Input
                 placeholder="e.g. 70"
                 type="number"
                 variant="secondary"
-                {...register('fat')}
+                {...register("fat")}
               />
-              {errors.fat?.message ? <FieldError>{errors.fat.message}</FieldError> : null}
+              {errors.fat?.message ? (
+                <FieldError>{errors.fat.message}</FieldError>
+              ) : null}
             </TextField>
           </div>
         </section>
@@ -439,14 +504,20 @@ export default function NutritionPlanFormPage() {
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save plan' : 'Create plan'}
+            {isSubmitting
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save plan"
+                : "Create plan"}
           </Button>
         </div>
       </form>
 
       <ConfirmDialog
         confirmLabel="Delete nutrition plan"
-        description={`Are you sure you want to delete ${nutritionPlanData?.data?.name ?? 'this nutrition plan'}? This cannot be undone.`}
+        description={`Are you sure you want to delete ${nutritionPlanData?.data?.name ?? "this nutrition plan"}? This cannot be undone.`}
         isLoading={isDeleting}
         isOpen={isDeleteOpen}
         onConfirm={handleDelete}

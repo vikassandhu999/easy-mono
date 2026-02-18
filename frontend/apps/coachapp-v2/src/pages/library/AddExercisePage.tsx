@@ -1,13 +1,32 @@
-import {Autocomplete, Button, Card, Input, Label, ListBox, SearchField, toast, useFilter} from '@heroui/react';
-import {ArrowLeft, ChevronRight, Plus, Save, Trash2} from 'lucide-react';
-import {useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
+import {
+  Autocomplete,
+  Button,
+  Card,
+  Input,
+  Label,
+  ListBox,
+  SearchField,
+  toast,
+  useFilter,
+} from "@heroui/react";
+import { ArrowLeft, ChevronRight, Plus, Save, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router";
 
-import type {SetDraft} from '@/components/training-plan/WorkoutSetRow';
+import type { SetDraft } from "@/components/training-plan/WorkoutSetRow";
 
-import {useListExercisesQuery} from '@/api/exercises';
-import {useCreateWorkoutElementMutation, useGetPlannedWorkoutQuery, useGetTrainingPlanQuery} from '@/api/trainingPlans';
-import {EMPTY_SET, fromSetDraft, SetRow} from '@/components/training-plan/WorkoutSetRow';
+import { useListExercisesQuery } from "@/api/exercises";
+import {
+  useCreateWorkoutElementMutation,
+  useGetPlannedWorkoutQuery,
+  useGetTrainingPlanQuery,
+} from "@/api/trainingPlans";
+import {
+  EMPTY_SET,
+  fromSetDraft,
+  SetRow,
+} from "@/components/training-plan/WorkoutSetRow";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
 
 const integerFromString = (value: string) => {
   if (!value.trim()) return undefined;
@@ -23,53 +42,56 @@ type ExerciseDraft = {
 };
 
 const emptyExerciseDraft = (): ExerciseDraft => ({
-  exerciseId: '',
-  notes: '',
-  position: '',
-  sets: [{...EMPTY_SET}],
+  exerciseId: "",
+  notes: "",
+  position: "",
+  sets: [{ ...EMPTY_SET }],
 });
 
 export default function AddExercisePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id, dayId} = useParams();
-  const planId = id ?? '';
-  const plannedWorkoutId = dayId ?? '';
+  const { id, dayId } = useParams();
+  const planId = id ?? "";
+  const plannedWorkoutId = dayId ?? "";
 
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : `/library/training-plans/${planId}/builder`;
+  const returnTo = getReturnTo(
+    location,
+    `/library/training-plans/${planId}/builder`,
+  );
 
-  const {contains} = useFilter({sensitivity: 'base'});
+  const { contains } = useFilter({ sensitivity: "base" });
 
   const [draft, setDraft] = useState<ExerciseDraft>(emptyExerciseDraft());
 
-  const {data: planData, isLoading: isPlanLoading} = useGetTrainingPlanQuery(planId, {skip: !planId});
-  const {data: workoutData, isLoading: isWorkoutLoading} = useGetPlannedWorkoutQuery(plannedWorkoutId, {
-    skip: !plannedWorkoutId,
-  });
-  const {data: exercisesData, isLoading: isExercisesLoading} = useListExercisesQuery(
-    {limit: 250, offset: 0},
-    {skip: !planId},
+  const { data: planData, isLoading: isPlanLoading } = useGetTrainingPlanQuery(
+    planId,
+    { skip: !planId },
   );
+  const { data: workoutData, isLoading: isWorkoutLoading } =
+    useGetPlannedWorkoutQuery(plannedWorkoutId, {
+      skip: !plannedWorkoutId,
+    });
+  const { data: exercisesData, isLoading: isExercisesLoading } =
+    useListExercisesQuery({ limit: 250, offset: 0 }, { skip: !planId });
 
-  const [createWorkoutElement, {isLoading: isCreating}] = useCreateWorkoutElementMutation();
+  const [createWorkoutElement, { isLoading: isCreating }] =
+    useCreateWorkoutElementMutation();
 
   const plan = planData?.data;
   const workout = workoutData?.data;
   const exercises = exercisesData?.data ?? [];
 
-  const existingElements = useMemo(() => workout?.workout_elements ?? [], [workout?.workout_elements]);
+  const existingElements = useMemo(
+    () => workout?.workout_elements ?? [],
+    [workout?.workout_elements],
+  );
 
   const nextPosition = existingElements.length + 1;
 
   const handleSave = async () => {
     if (!planId || !plannedWorkoutId || !draft.exerciseId) {
-      toast.danger('Choose an exercise');
+      toast.danger("Choose an exercise");
       return;
     }
     try {
@@ -78,15 +100,16 @@ export default function AddExercisePage() {
           exercise_id: draft.exerciseId,
           planned_sets: draft.sets.map(fromSetDraft),
           planned_workout_id: plannedWorkoutId,
-          position: integerFromString(draft.position) ?? existingElements.length,
+          position:
+            integerFromString(draft.position) ?? existingElements.length,
         },
         planId,
         plannedWorkoutId,
       }).unwrap();
-      toast.success('Exercise added');
+      toast.success("Exercise added");
       navigate(returnTo);
     } catch {
-      toast.danger('Failed to add exercise');
+      toast.danger("Failed to add exercise");
     }
   };
 
@@ -113,8 +136,12 @@ export default function AddExercisePage() {
               <span className="text-xl">🏋️</span>
             </div>
             <div>
-              <p className="text-lg font-semibold text-foreground">Day not found</p>
-              <p className="mt-1 text-sm text-muted">This workout day may have been removed.</p>
+              <p className="text-lg font-semibold text-foreground">
+                Day not found
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                This workout day may have been removed.
+              </p>
             </div>
             <Button
               className="min-h-11"
@@ -151,7 +178,9 @@ export default function AddExercisePage() {
           <ChevronRight className="h-3 w-3" />
           <span>Add exercise</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Add exercise</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          Add exercise
+        </h1>
         <p className="text-sm text-muted">
           {workout.name} · Day {workout.day_number}
         </p>
@@ -170,13 +199,15 @@ export default function AddExercisePage() {
             onChange={(value) =>
               setDraft((prev) => ({
                 ...prev,
-                exerciseId: value?.toString() ?? '',
+                exerciseId: value?.toString() ?? "",
               }))
             }
             value={draft.exerciseId || null}
             variant="secondary"
           >
-            <Label className="text-sm font-medium text-foreground">Exercise</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Exercise
+            </Label>
             <Autocomplete.Trigger className="min-h-11">
               <Autocomplete.Value />
               <Autocomplete.ClearButton />
@@ -210,7 +241,9 @@ export default function AddExercisePage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-sm font-medium text-foreground">Order</Label>
+                  <Label className="text-sm font-medium text-foreground">
+                    Order
+                  </Label>
                   <Input
                     className="min-h-11"
                     min={1}
@@ -227,7 +260,9 @@ export default function AddExercisePage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-foreground">Notes (optional)</Label>
+                  <Label className="text-sm font-medium text-foreground">
+                    Notes (optional)
+                  </Label>
                   <Input
                     className="min-h-11"
                     onChange={(e) =>
@@ -251,7 +286,8 @@ export default function AddExercisePage() {
                 <div>
                   <p className="text-sm font-semibold text-foreground">Sets</p>
                   <p className="text-xs text-muted">
-                    {draft.sets.length} set{draft.sets.length === 1 ? '' : 's'} configured
+                    {draft.sets.length} set{draft.sets.length === 1 ? "" : "s"}{" "}
+                    configured
                   </p>
                 </div>
                 <Button
@@ -259,7 +295,7 @@ export default function AddExercisePage() {
                   onPress={() =>
                     setDraft((prev) => ({
                       ...prev,
-                      sets: [...prev.sets, {...EMPTY_SET}],
+                      sets: [...prev.sets, { ...EMPTY_SET }],
                     }))
                   }
                   size="sm"
@@ -277,13 +313,14 @@ export default function AddExercisePage() {
                     onChange={(next) => {
                       const nextSets = [...draft.sets];
                       nextSets[index] = next;
-                      setDraft((prev) => ({...prev, sets: nextSets}));
+                      setDraft((prev) => ({ ...prev, sets: nextSets }));
                     }}
                     onRemove={() => {
                       const nextSets = draft.sets.filter((_, i) => i !== index);
                       setDraft((prev) => ({
                         ...prev,
-                        sets: nextSets.length > 0 ? nextSets : [{...EMPTY_SET}],
+                        sets:
+                          nextSets.length > 0 ? nextSets : [{ ...EMPTY_SET }],
                       }));
                     }}
                     setDraft={currentSetDraft}

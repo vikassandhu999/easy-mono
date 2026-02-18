@@ -1,7 +1,9 @@
-import {Button, Card} from '@heroui/react';
-import {CopyPlus, Salad, UserPlus} from 'lucide-react';
+import { Button, Card } from "@heroui/react";
+import { CopyPlus, Salad, UserPlus } from "lucide-react";
 
-import type {NutritionPlan} from '@/api/nutritionPlans';
+import type { NutritionPlan } from "@/api/nutritionPlans";
+
+import { formatDate } from "@/pages/library/libraryShared";
 
 type NutritionPlanCardProps = {
   onAssign: (plan: NutritionPlan) => void;
@@ -9,13 +11,17 @@ type NutritionPlanCardProps = {
   resource: NutritionPlan;
 };
 
-export default function NutritionPlanCard({onAssign, onOpenBuilder, resource}: NutritionPlanCardProps) {
+export default function NutritionPlanCard({
+  onAssign,
+  onOpenBuilder,
+  resource,
+}: NutritionPlanCardProps) {
   const statusTone =
-    resource.status === 'active'
-      ? 'bg-green-500/10 text-green-700'
-      : resource.status === 'archived'
-        ? 'bg-surface-secondary text-muted'
-        : 'bg-amber-500/10 text-amber-700';
+    resource.status === "active"
+      ? "bg-green-500/10 text-green-700"
+      : resource.status === "archived"
+        ? "bg-surface-secondary text-muted"
+        : "bg-amber-500/10 text-amber-700";
 
   const topTags = resource.tags.slice(0, 3);
 
@@ -31,20 +37,26 @@ export default function NutritionPlanCard({onAssign, onOpenBuilder, resource}: N
               <Salad className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-semibold text-foreground">{resource.name}</span>
+              <span className="truncate font-semibold text-foreground">
+                {resource.name}
+              </span>
               <span className="truncate text-sm text-muted">
-                {resource.type === 'template' ? 'Template' : 'Personal'}
+                {resource.type === "template" ? "Template" : "Personal"}
               </span>
             </div>
           </div>
-          <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusTone}`}>{resource.status}</span>
+          <span
+            className={`rounded-full px-2 py-1 text-xs font-medium ${statusTone}`}
+          >
+            {resource.status}
+          </span>
         </div>
 
         <div className="flex items-center justify-between text-sm text-muted">
           <span>
-            {resource.meals.length} meal{resource.meals.length === 1 ? '' : 's'}
+            {resource.meals.length} meal{resource.meals.length === 1 ? "" : "s"}
           </span>
-          <span>Updated {new Date(resource.updated_at).toLocaleDateString()}</span>
+          <span>Updated {formatDate(resource.updated_at)}</span>
         </div>
 
         {topTags.length > 0 ? (
@@ -81,7 +93,7 @@ export default function NutritionPlanCard({onAssign, onOpenBuilder, resource}: N
               <CopyPlus className="h-4 w-4" />
               Builder
             </Button>
-            {resource.type === 'template' ? (
+            {resource.type === "template" ? (
               <Button
                 className="min-h-11"
                 onPress={() => onAssign(resource)}

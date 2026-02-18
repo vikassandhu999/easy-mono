@@ -1,52 +1,66 @@
-import {Button, Card, FieldError, Input, Label, TextArea, TextField, toast} from '@heroui/react';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {AlertCircle, ChevronLeft} from 'lucide-react';
-import {useEffect, useMemo, useState} from 'react';
-import {Controller, type FieldPath, useForm} from 'react-hook-form';
-import {useBeforeUnload, useLocation, useNavigate, useParams} from 'react-router';
+import {
+  Button,
+  Card,
+  FieldError,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+  toast,
+} from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, type FieldPath, useForm } from "react-hook-form";
+import {
+  useBeforeUnload,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 
-import type {FoodFormValues} from '@/pages/library/foodFormTypes';
+import type { FoodFormValues } from "@/pages/library/foodFormTypes";
 
-import {useCreateFoodMutation, useDeleteFoodMutation, useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
-import {handleFormError} from '@/api/shared';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import {
+  useCreateFoodMutation,
+  useDeleteFoodMutation,
+  useGetFoodQuery,
+  useUpdateFoodMutation,
+} from "@/api/foods";
+import { handleFormError } from "@/api/shared";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   FOOD_FORM_SCHEMA,
   FOOD_INITIAL_VALUES,
   FOOD_NUMERIC_STEP,
   mapFoodToFormValues,
   parseOptionalMacroNumber,
-} from '@/pages/library/foodFormSchema';
-import ServingSizeRows from '@/pages/library/ServingSizeRows';
-import TagsInput from '@/pages/library/TagsInput';
+} from "@/pages/library/foodFormSchema";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
+import ServingSizeRows from "@/pages/library/ServingSizeRows";
+import TagsInput from "@/pages/library/TagsInput";
 
 export default function FoodFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const { id } = useParams();
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : '/library';
+  const returnTo = getReturnTo(location, "/library");
 
   const {
     data: foodData,
     isError: isFoodError,
     isLoading: isFoodLoading,
     refetch: refetchFood,
-  } = useGetFoodQuery(id ?? '', {
+  } = useGetFoodQuery(id ?? "", {
     skip: !id,
   });
 
   const {
     control,
-    formState: {errors, isDirty},
+    formState: { errors, isDirty },
     handleSubmit,
     register,
     reset,
@@ -66,15 +80,17 @@ export default function FoodFormPage() {
     }
   }, [foodData?.data, isEditing, reset]);
 
-  const [createFood, {isLoading: isCreating}] = useCreateFoodMutation();
-  const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
-  const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
+  const [createFood, { isLoading: isCreating }] = useCreateFoodMutation();
+  const [deleteFood, { isLoading: isDeleting }] = useDeleteFoodMutation();
+  const [updateFood, { isLoading: isUpdating }] = useUpdateFoodMutation();
   const isSubmitting = isCreating || isUpdating;
   const hasPendingChanges = isDirty && !isSubmitting;
 
   const attemptNavigate = (target: string) => {
     if (hasPendingChanges) {
-      const shouldLeave = window.confirm('You have unsaved changes. Leave without saving?');
+      const shouldLeave = window.confirm(
+        "You have unsaved changes. Leave without saving?",
+      );
       if (!shouldLeave) {
         return;
       }
@@ -87,14 +103,14 @@ export default function FoodFormPage() {
       return;
     }
     event.preventDefault();
-    event.returnValue = '';
+    event.returnValue = "";
   });
 
   const pageTitle = useMemo(() => {
     if (!isEditing) {
-      return 'Create Food';
+      return "Create Food";
     }
-    return foodData?.data?.name ? `Edit ${foodData.data.name}` : 'Edit Food';
+    return foodData?.data?.name ? `Edit ${foodData.data.name}` : "Edit Food";
   }, [foodData?.data?.name, isEditing]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -106,7 +122,10 @@ export default function FoodFormPage() {
     const fat = parseOptionalMacroNumber(values.fat);
 
     const macros =
-      calories !== undefined || protein !== undefined || carbs !== undefined || fat !== undefined
+      calories !== undefined ||
+      protein !== undefined ||
+      carbs !== undefined ||
+      fat !== undefined
         ? {
             calories: calories ?? 0,
             carbs: carbs ?? 0,
@@ -124,7 +143,7 @@ export default function FoodFormPage() {
       .filter((row) => row.unit || row.weight_g !== null || row.amount !== null)
       .map((row) => ({
         amount: row.amount,
-        unit: row.unit || 'serving',
+        unit: row.unit || "serving",
         weight_g: row.weight_g,
       }));
 
@@ -141,7 +160,7 @@ export default function FoodFormPage() {
 
     try {
       if (id) {
-        await updateFood({body: payload, id}).unwrap();
+        await updateFood({ body: payload, id }).unwrap();
         toast.success(`Food "${values.name.trim()}" updated successfully.`);
       } else {
         await createFood(payload).unwrap();
@@ -152,20 +171,22 @@ export default function FoodFormPage() {
     } catch (err) {
       const result = handleFormError(
         err,
-        id ? 'Unable to update food. Please try again.' : 'Unable to create food. Please try again.',
+        id
+          ? "Unable to update food. Please try again."
+          : "Unable to create food. Please try again.",
       );
       if (result.fieldErrors) {
         const namedFieldMap: Record<string, FieldPath<FoodFormValues>> = {
-          calories: 'calories',
-          carbs: 'carbs',
-          category: 'category',
-          image_url: 'image_url',
-          fat: 'fat',
-          name: 'name',
-          notes: 'notes',
-          protein: 'protein',
-          source: 'source',
-          tags: 'tags',
+          calories: "calories",
+          carbs: "carbs",
+          category: "category",
+          image_url: "image_url",
+          fat: "fat",
+          name: "name",
+          notes: "notes",
+          protein: "protein",
+          source: "source",
+          tags: "tags",
         };
 
         Object.entries(result.fieldErrors).forEach(([key, messages]) => {
@@ -173,7 +194,7 @@ export default function FoodFormPage() {
           if (!path || messages.length === 0) {
             return;
           }
-          setError(path, {type: 'server', message: messages[0]});
+          setError(path, { type: "server", message: messages[0] });
         });
       }
       setFormError(result.formError);
@@ -193,7 +214,10 @@ export default function FoodFormPage() {
       setIsDeleteOpen(false);
       navigate(returnTo);
     } catch (err) {
-      const result = handleFormError(err, 'Unable to delete food. Please try again.');
+      const result = handleFormError(
+        err,
+        "Unable to delete food. Please try again.",
+      );
       toast.danger(result.formError);
     }
   };
@@ -211,7 +235,9 @@ export default function FoodFormPage() {
       <Card className="border border-separator bg-surface p-6">
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-foreground">Could not load food</p>
-          <p className="text-sm text-muted">Please retry. If this continues, check API connectivity.</p>
+          <p className="text-sm text-muted">
+            Please retry. If this continues, check API connectivity.
+          </p>
           <div className="flex gap-2">
             <Button
               className="min-h-11"
@@ -249,45 +275,56 @@ export default function FoodFormPage() {
         </Button>
         <p className="text-sm text-muted">Library</p>
         <h1 className="text-2xl font-semibold md:text-3xl">{pageTitle}</h1>
-        <p className="max-w-2xl text-sm text-muted">Add or update a shared food with optional macros and metadata.</p>
+        <p className="max-w-2xl text-sm text-muted">
+          Add or update a shared food with optional macros and metadata.
+        </p>
       </div>
 
-      <form
-        className="flex flex-col gap-6"
-        onSubmit={onSubmit}
-      >
+      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
           <p className="text-sm font-semibold text-foreground">Basics</p>
 
           <TextField isInvalid={Boolean(errors.name?.message)}>
-            <Label className="text-sm font-medium text-foreground">Food name</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Food name
+            </Label>
             <Input
               placeholder="e.g. Rolled Oats"
               variant="secondary"
-              {...register('name')}
+              {...register("name")}
             />
-            {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
+            {errors.name?.message ? (
+              <FieldError>{errors.name.message}</FieldError>
+            ) : null}
           </TextField>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.category?.message)}>
-              <Label className="text-sm font-medium text-foreground">Category</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Category
+              </Label>
               <Input
                 placeholder="e.g. Grain"
                 variant="secondary"
-                {...register('category')}
+                {...register("category")}
               />
-              {errors.category?.message ? <FieldError>{errors.category.message}</FieldError> : null}
+              {errors.category?.message ? (
+                <FieldError>{errors.category.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.source?.message)}>
-              <Label className="text-sm font-medium text-foreground">Source</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Source
+              </Label>
               <Input
                 placeholder="e.g. USDA"
                 variant="secondary"
-                {...register('source')}
+                {...register("source")}
               />
-              {errors.source?.message ? <FieldError>{errors.source.message}</FieldError> : null}
+              {errors.source?.message ? (
+                <FieldError>{errors.source.message}</FieldError>
+              ) : null}
             </TextField>
           </div>
         </section>
@@ -298,9 +335,11 @@ export default function FoodFormPage() {
             <TextArea
               placeholder="Optional notes"
               variant="secondary"
-              {...register('notes')}
+              {...register("notes")}
             />
-            {errors.notes?.message ? <FieldError>{errors.notes.message}</FieldError> : null}
+            {errors.notes?.message ? (
+              <FieldError>{errors.notes.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
@@ -308,7 +347,7 @@ export default function FoodFormPage() {
           <Controller
             control={control}
             name="tags"
-            render={({field}) => (
+            render={({ field }) => (
               <TagsInput
                 label="Tags"
                 onChange={(nextTags) => field.onChange(nextTags)}
@@ -321,13 +360,17 @@ export default function FoodFormPage() {
 
         <section className="flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5">
           <TextField isInvalid={Boolean(errors.image_url?.message)}>
-            <Label className="text-sm font-medium text-foreground">Image URL</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Image URL
+            </Label>
             <Input
               placeholder="https://example.com/food.jpg"
               variant="secondary"
-              {...register('image_url')}
+              {...register("image_url")}
             />
-            {errors.image_url?.message ? <FieldError>{errors.image_url.message}</FieldError> : null}
+            {errors.image_url?.message ? (
+              <FieldError>{errors.image_url.message}</FieldError>
+            ) : null}
           </TextField>
         </section>
 
@@ -343,51 +386,67 @@ export default function FoodFormPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <TextField isInvalid={Boolean(errors.calories?.message)}>
-              <Label className="text-sm font-medium text-foreground">Calories</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Calories
+              </Label>
               <Input
                 placeholder="e.g. 150"
                 step={FOOD_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('calories')}
+                {...register("calories")}
               />
-              {errors.calories?.message ? <FieldError>{errors.calories.message}</FieldError> : null}
+              {errors.calories?.message ? (
+                <FieldError>{errors.calories.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.protein?.message)}>
-              <Label className="text-sm font-medium text-foreground">Protein (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Protein (g)
+              </Label>
               <Input
                 placeholder="e.g. 12"
                 step={FOOD_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('protein')}
+                {...register("protein")}
               />
-              {errors.protein?.message ? <FieldError>{errors.protein.message}</FieldError> : null}
+              {errors.protein?.message ? (
+                <FieldError>{errors.protein.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.carbs?.message)}>
-              <Label className="text-sm font-medium text-foreground">Carbs (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Carbs (g)
+              </Label>
               <Input
                 placeholder="e.g. 27"
                 step={FOOD_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('carbs')}
+                {...register("carbs")}
               />
-              {errors.carbs?.message ? <FieldError>{errors.carbs.message}</FieldError> : null}
+              {errors.carbs?.message ? (
+                <FieldError>{errors.carbs.message}</FieldError>
+              ) : null}
             </TextField>
 
             <TextField isInvalid={Boolean(errors.fat?.message)}>
-              <Label className="text-sm font-medium text-foreground">Fat (g)</Label>
+              <Label className="text-sm font-medium text-foreground">
+                Fat (g)
+              </Label>
               <Input
                 placeholder="e.g. 4.5"
                 step={FOOD_NUMERIC_STEP}
                 type="number"
                 variant="secondary"
-                {...register('fat')}
+                {...register("fat")}
               />
-              {errors.fat?.message ? <FieldError>{errors.fat.message}</FieldError> : null}
+              {errors.fat?.message ? (
+                <FieldError>{errors.fat.message}</FieldError>
+              ) : null}
             </TextField>
           </div>
         </section>
@@ -427,13 +486,19 @@ export default function FoodFormPage() {
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save food' : 'Create food'}
+            {isSubmitting
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save food"
+                : "Create food"}
           </Button>
         </div>
       </form>
       <ConfirmDialog
         confirmLabel="Delete food"
-        description={`Are you sure you want to delete ${foodData?.data?.name ?? 'this food'}? This cannot be undone.`}
+        description={`Are you sure you want to delete ${foodData?.data?.name ?? "this food"}? This cannot be undone.`}
         isLoading={isDeleting}
         isOpen={isDeleteOpen}
         onConfirm={handleDelete}

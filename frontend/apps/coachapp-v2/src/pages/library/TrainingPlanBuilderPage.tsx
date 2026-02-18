@@ -1,34 +1,38 @@
-import {Button, Card, Input, toast} from '@heroui/react';
-import {ArrowLeft, Calendar, Copy, Dumbbell, Layers, Plus, Settings, X} from 'lucide-react';
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
+import { Button, Card, Input, toast } from "@heroui/react";
+import {
+  ArrowLeft,
+  Calendar,
+  Copy,
+  Dumbbell,
+  Layers,
+  Plus,
+  Settings,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router";
 
 import {
   useCreatePlannedWorkoutMutation,
   useDeletePlannedWorkoutMutation,
   useDuplicateTrainingPlanMutation,
   useGetTrainingPlanQuery,
-} from '@/api/trainingPlans';
-import TrainingPlanDayCard from '@/components/training-plan/TrainingPlanDayCard';
-import AssignTrainingPlanModal from '@/pages/library/AssignTrainingPlanModal';
+} from "@/api/trainingPlans";
+import TrainingPlanDayCard from "@/components/training-plan/TrainingPlanDayCard";
+import AssignTrainingPlanModal from "@/pages/library/AssignTrainingPlanModal";
+import { getReturnTo } from "@/pages/library/libraryFormShared";
 
 export default function TrainingPlanBuilderPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
-  const planId = id ?? '';
+  const { id } = useParams();
+  const planId = id ?? "";
 
-  const returnTo =
-    typeof location.state === 'object' &&
-    location.state &&
-    'from' in location.state &&
-    typeof location.state.from === 'string'
-      ? location.state.from
-      : '/library';
+  const returnTo = getReturnTo(location, "/library");
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isAddingDay, setIsAddingDay] = useState(false);
-  const [newDayName, setNewDayName] = useState('');
+  const [newDayName, setNewDayName] = useState("");
   const addDayInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,32 +44,41 @@ export default function TrainingPlanBuilderPage() {
     isError: isPlanError,
     isLoading: isPlanLoading,
     refetch: refetchPlan,
-  } = useGetTrainingPlanQuery(planId, {skip: !planId});
+  } = useGetTrainingPlanQuery(planId, { skip: !planId });
 
-  const [deletePlannedWorkout, {isLoading: isDeletingDay}] = useDeletePlannedWorkoutMutation();
-  const [duplicateTrainingPlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlanMutation();
-  const [createPlannedWorkout, {isLoading: isCreatingDay}] = useCreatePlannedWorkoutMutation();
+  const [deletePlannedWorkout, { isLoading: isDeletingDay }] =
+    useDeletePlannedWorkoutMutation();
+  const [duplicateTrainingPlan, { isLoading: isDuplicating }] =
+    useDuplicateTrainingPlanMutation();
+  const [createPlannedWorkout, { isLoading: isCreatingDay }] =
+    useCreatePlannedWorkoutMutation();
 
   const plan = planData?.data;
 
   const isMutating = isDeletingDay || isDuplicating;
 
   const sortedWorkouts = useMemo(
-    () => [...(plan?.planned_workouts ?? [])].sort((a, b) => a.day_number - b.day_number),
+    () =>
+      [...(plan?.planned_workouts ?? [])].sort(
+        (a, b) => a.day_number - b.day_number,
+      ),
     [plan?.planned_workouts],
   );
 
-  const nextDayNumber = sortedWorkouts.length > 0 ? Math.max(...sortedWorkouts.map((w) => w.day_number)) + 1 : 1;
+  const nextDayNumber =
+    sortedWorkouts.length > 0
+      ? Math.max(...sortedWorkouts.map((w) => w.day_number)) + 1
+      : 1;
 
   const handleDeleteDay = async (plannedWorkoutId: string) => {
     if (!planId) return;
-    const confirmed = window.confirm('Delete this workout?');
+    const confirmed = window.confirm("Delete this workout?");
     if (!confirmed) return;
     try {
-      await deletePlannedWorkout({id: plannedWorkoutId, planId}).unwrap();
-      toast.success('Workout deleted');
+      await deletePlannedWorkout({ id: plannedWorkoutId, planId }).unwrap();
+      toast.success("Workout deleted");
     } catch {
-      toast.danger('Failed to delete workout');
+      toast.danger("Failed to delete workout");
     }
   };
 
@@ -73,12 +86,12 @@ export default function TrainingPlanBuilderPage() {
     if (!planId) return;
     try {
       const response = await duplicateTrainingPlan(planId).unwrap();
-      toast.success('Plan duplicated');
+      toast.success("Plan duplicated");
       navigate(`/library/training-plans/${response.data.id}/builder`, {
-        state: {from: returnTo},
+        state: { from: returnTo },
       });
     } catch {
-      toast.danger('Failed to duplicate plan');
+      toast.danger("Failed to duplicate plan");
     }
   };
 
@@ -93,10 +106,10 @@ export default function TrainingPlanBuilderPage() {
         planId,
       }).unwrap();
       toast.success(`Workout added`);
-      setNewDayName('');
+      setNewDayName("");
       setIsAddingDay(false);
     } catch {
-      toast.danger('Failed to add workout');
+      toast.danger("Failed to add workout");
     }
   };
 
@@ -122,8 +135,12 @@ export default function TrainingPlanBuilderPage() {
               <Layers className="h-7 w-7 text-muted" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-foreground">Failed to load plan</p>
-              <p className="mt-1 text-sm text-muted">Something went wrong. Try again or return to library.</p>
+              <p className="text-lg font-semibold text-foreground">
+                Failed to load plan
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Something went wrong. Try again or return to library.
+              </p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -150,11 +167,11 @@ export default function TrainingPlanBuilderPage() {
   }
 
   const statusBadgeClass =
-    plan.status === 'active'
-      ? 'bg-green-50 text-green-700 border-green-200'
-      : plan.status === 'draft'
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-gray-50 text-gray-600 border-gray-200';
+    plan.status === "active"
+      ? "bg-green-50 text-green-700 border-green-200"
+      : plan.status === "draft"
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-gray-50 text-gray-600 border-gray-200";
 
   return (
     <div className="flex flex-col gap-6">
@@ -173,7 +190,9 @@ export default function TrainingPlanBuilderPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-muted">Training plan</p>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{plan.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            {plan.name}
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass}`}
@@ -182,13 +201,13 @@ export default function TrainingPlanBuilderPage() {
             </span>
             <span className="inline-flex items-center gap-1 text-sm text-muted">
               <Layers className="h-3.5 w-3.5" />
-              {plan.is_template ? 'Template' : 'Personal'}
+              {plan.is_template ? "Template" : "Personal"}
             </span>
             <span className="text-sm text-muted">·</span>
             <span className="inline-flex items-center gap-1 text-sm text-muted">
               <Calendar className="h-3.5 w-3.5" />
               {sortedWorkouts.length} workout
-              {sortedWorkouts.length === 1 ? '' : 's'}
+              {sortedWorkouts.length === 1 ? "" : "s"}
             </span>
           </div>
         </div>
@@ -208,7 +227,7 @@ export default function TrainingPlanBuilderPage() {
             className="min-h-11"
             onPress={() =>
               navigate(`/library/training-plans/${plan.id}/edit`, {
-                state: {from: returnTo},
+                state: { from: returnTo },
               })
             }
             size="md"
@@ -238,14 +257,15 @@ export default function TrainingPlanBuilderPage() {
         <div>
           <p className="text-base font-semibold text-foreground">Workouts</p>
           <p className="text-sm text-muted">
-            {sortedWorkouts.length} workout{sortedWorkouts.length === 1 ? '' : 's'} in this plan
+            {sortedWorkouts.length} workout
+            {sortedWorkouts.length === 1 ? "" : "s"} in this plan
           </p>
         </div>
         <Button
           className="min-h-11"
           onPress={() => {
             setIsAddingDay(true);
-            setNewDayName('');
+            setNewDayName("");
           }}
           size="sm"
           variant="primary"
@@ -266,8 +286,8 @@ export default function TrainingPlanBuilderPage() {
               className="min-h-10 flex-1"
               onChange={(e) => setNewDayName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddDay();
-                if (e.key === 'Escape') setIsAddingDay(false);
+                if (e.key === "Enter") handleAddDay();
+                if (e.key === "Escape") setIsAddingDay(false);
               }}
               placeholder="Workout name, e.g. Push Day, Leg Day..."
               ref={addDayInputRef}
@@ -305,16 +325,19 @@ export default function TrainingPlanBuilderPage() {
               <Dumbbell className="h-8 w-8 text-muted" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-foreground">No workouts yet</p>
+              <p className="text-lg font-semibold text-foreground">
+                No workouts yet
+              </p>
               <p className="mt-1 max-w-sm text-sm text-muted">
-                Start building your plan by adding workouts. Each workout contains exercises with sets and rep schemes.
+                Start building your plan by adding workouts. Each workout
+                contains exercises with sets and rep schemes.
               </p>
             </div>
             <Button
               className="mt-2 min-h-11"
               onPress={() => {
                 setIsAddingDay(true);
-                setNewDayName('');
+                setNewDayName("");
               }}
               size="md"
               variant="primary"
@@ -341,7 +364,7 @@ export default function TrainingPlanBuilderPage() {
         isOpen={isAssignOpen}
         onAssigned={(assignedPlanId) => {
           navigate(`/library/training-plans/${assignedPlanId}/builder`, {
-            state: {from: returnTo},
+            state: { from: returnTo },
           });
         }}
         onOpenChange={setIsAssignOpen}

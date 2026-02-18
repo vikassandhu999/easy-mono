@@ -1,17 +1,18 @@
+import type {
+  MacroFormFields,
+  ServingSizeFormRow,
+} from "@/pages/library/libraryFormShared";
+
 export type FoodFormValues = {
-  calories: string;
-  carbs: string;
+  calories: MacroFormFields["calories"];
+  carbs: MacroFormFields["carbs"];
   category: string;
-  fat: string;
+  fat: MacroFormFields["fat"];
   image_url: string;
   name: string;
   notes: string;
-  protein: string;
-  serving_sizes: {
-    amount: string;
-    unit: string;
-    weight_g: string;
-  }[];
+  protein: MacroFormFields["protein"];
+  serving_sizes: ServingSizeFormRow[];
   source: string;
   tags: string[];
 };

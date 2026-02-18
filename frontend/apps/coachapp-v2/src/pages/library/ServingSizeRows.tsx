@@ -1,5 +1,5 @@
-import {Button, FieldError, Input, Label, TextField} from '@heroui/react';
-import {Minus} from 'lucide-react';
+import { Button, FieldError, Input, Label, TextField } from "@heroui/react";
+import { Minus } from "lucide-react";
 import {
   type Control,
   type FieldArrayPath,
@@ -8,13 +8,9 @@ import {
   type Path,
   useFieldArray,
   type UseFormRegister,
-} from 'react-hook-form';
+} from "react-hook-form";
 
-type ServingRow = {
-  amount: string;
-  unit: string;
-  weight_g: string;
-};
+import type { ServingSizeFormRow } from "@/pages/library/libraryFormShared";
 
 type ServingSizeRowsProps<TFormValues extends FieldValues> = {
   control: Control<TFormValues>;
@@ -23,10 +19,10 @@ type ServingSizeRowsProps<TFormValues extends FieldValues> = {
   title: string;
 };
 
-const createEmptyServingSize = (): ServingRow => ({
-  amount: '',
-  unit: '',
-  weight_g: '',
+const createEmptyServingSize = (): ServingSizeFormRow => ({
+  amount: "",
+  unit: "",
+  weight_g: "",
 });
 
 export default function ServingSizeRows<TFormValues extends FieldValues>({
@@ -35,17 +31,17 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
   register,
   title,
 }: ServingSizeRowsProps<TFormValues>) {
-  const {fields, append, remove} = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
-    name: 'serving_sizes' as FieldArrayPath<TFormValues>,
+    name: "serving_sizes" as FieldArrayPath<TFormValues>,
   });
 
   const servingSizeErrors = errors.serving_sizes as
     | undefined
     | {
-        amount?: {message?: string};
-        unit?: {message?: string};
-        weight_g?: {message?: string};
+        amount?: { message?: string };
+        unit?: { message?: string };
+        weight_g?: { message?: string };
       }[];
 
   return (
@@ -54,7 +50,7 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="text-xs text-muted">
-            {fields.length} size{fields.length === 1 ? '' : 's'}
+            {fields.length} size{fields.length === 1 ? "" : "s"}
           </p>
         </div>
         <Button
@@ -71,8 +67,12 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
 
       {fields.length === 0 ? (
         <div className="rounded-lg border border-dashed border-separator bg-surface-secondary p-4 text-center">
-          <p className="text-sm font-medium text-foreground">No serving sizes yet</p>
-          <p className="mt-1 text-xs text-muted">Add a serving size to make portions easier to track.</p>
+          <p className="text-sm font-medium text-foreground">
+            No serving sizes yet
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Add a serving size to make portions easier to track.
+          </p>
           <div className="mt-3">
             <Button
               className="min-h-11"
@@ -93,7 +93,9 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
           key={field.id}
         >
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-muted">Serving size {index + 1}</span>
+            <span className="text-xs font-medium text-muted">
+              Serving size {index + 1}
+            </span>
             <Button
               aria-label="Remove serving size"
               className="min-h-11 px-3"
@@ -106,39 +108,63 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.unit?.message)}>
-              <Label className="text-xs font-medium text-foreground">Unit</Label>
+            <TextField
+              isInvalid={Boolean(servingSizeErrors?.[index]?.unit?.message)}
+            >
+              <Label className="text-xs font-medium text-foreground">
+                Unit
+              </Label>
               <Input
                 placeholder="e.g. cup"
                 variant="secondary"
-                {...register(`serving_sizes.${index}.unit` as Path<TFormValues>)}
+                {...register(
+                  `serving_sizes.${index}.unit` as Path<TFormValues>,
+                )}
               />
               {servingSizeErrors?.[index]?.unit?.message ? (
-                <FieldError>{servingSizeErrors[index]?.unit?.message}</FieldError>
+                <FieldError>
+                  {servingSizeErrors[index]?.unit?.message}
+                </FieldError>
               ) : null}
             </TextField>
-            <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.weight_g?.message)}>
-              <Label className="text-xs font-medium text-foreground">Weight (g)</Label>
+            <TextField
+              isInvalid={Boolean(servingSizeErrors?.[index]?.weight_g?.message)}
+            >
+              <Label className="text-xs font-medium text-foreground">
+                Weight (g)
+              </Label>
               <Input
                 placeholder="e.g. 120"
                 type="number"
                 variant="secondary"
-                {...register(`serving_sizes.${index}.weight_g` as Path<TFormValues>)}
+                {...register(
+                  `serving_sizes.${index}.weight_g` as Path<TFormValues>,
+                )}
               />
               {servingSizeErrors?.[index]?.weight_g?.message ? (
-                <FieldError>{servingSizeErrors[index]?.weight_g?.message}</FieldError>
+                <FieldError>
+                  {servingSizeErrors[index]?.weight_g?.message}
+                </FieldError>
               ) : null}
             </TextField>
-            <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.amount?.message)}>
-              <Label className="text-xs font-medium text-foreground">Amount</Label>
+            <TextField
+              isInvalid={Boolean(servingSizeErrors?.[index]?.amount?.message)}
+            >
+              <Label className="text-xs font-medium text-foreground">
+                Amount
+              </Label>
               <Input
                 placeholder="e.g. 1"
                 type="number"
                 variant="secondary"
-                {...register(`serving_sizes.${index}.amount` as Path<TFormValues>)}
+                {...register(
+                  `serving_sizes.${index}.amount` as Path<TFormValues>,
+                )}
               />
               {servingSizeErrors?.[index]?.amount?.message ? (
-                <FieldError>{servingSizeErrors[index]?.amount?.message}</FieldError>
+                <FieldError>
+                  {servingSizeErrors[index]?.amount?.message}
+                </FieldError>
               ) : null}
             </TextField>
           </div>

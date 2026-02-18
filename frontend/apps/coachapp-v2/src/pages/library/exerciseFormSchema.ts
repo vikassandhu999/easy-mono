@@ -1,65 +1,58 @@
-import {z} from 'zod';
+import { z } from "zod";
 
-import type {Exercise} from '@/api/exercises';
-import type {ExerciseFormValues} from '@/pages/library/exerciseFormTypes';
+import type { Exercise } from "@/api/exercises";
+import type { ExerciseFormValues } from "@/pages/library/exerciseFormTypes";
 
-const URL_MESSAGE = 'Image URL must be a valid URL.';
+import { validateImageUrl } from "@/pages/library/libraryFormSchemaShared";
 
 const createEmptyImageField = () => ({
-  url: '',
+  url: "",
 });
 
 export const EXERCISE_FORM_SCHEMA = z
   .object({
     description: z.string(),
     equipment_ids: z.array(z.string()),
-    force: z.enum(['', 'pull', 'push', 'static']),
+    force: z.enum(["", "pull", "push", "static"]),
     images: z.array(
       z.object({
         url: z.string(),
       }),
     ),
     instructions: z.string(),
-    mechanics: z.enum(['', 'compound', 'isolation', 'isometric']),
+    mechanics: z.enum(["", "compound", "isolation", "isometric"]),
     muscle_ids: z.array(z.string()),
-    name: z.string().trim().min(1, 'Exercise name is required.'),
+    name: z.string().trim().min(1, "Exercise name is required."),
   })
   .superRefine((values, ctx) => {
     values.images.forEach((image, index) => {
-      const trimmed = image.url.trim();
-      if (!trimmed) {
-        return;
-      }
-
-      const result = z.string().url(URL_MESSAGE).safeParse(trimmed);
-      if (!result.success) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: URL_MESSAGE,
-          path: ['images', index, 'url'],
-        });
-      }
+      validateImageUrl(ctx, image.url, ["images", index, "url"]);
     });
   });
 
 export const EXERCISE_INITIAL_VALUES: ExerciseFormValues = {
-  description: '',
+  description: "",
   equipment_ids: [],
-  force: '',
+  force: "",
   images: [createEmptyImageField()],
-  instructions: '',
-  mechanics: '',
+  instructions: "",
+  mechanics: "",
   muscle_ids: [],
-  name: '',
+  name: "",
 };
 
-export const mapExerciseToFormValues = (exercise: Exercise): ExerciseFormValues => ({
-  description: exercise.description ?? '',
+export const mapExerciseToFormValues = (
+  exercise: Exercise,
+): ExerciseFormValues => ({
+  description: exercise.description ?? "",
   equipment_ids: exercise.equipment.map((item) => item.id),
-  force: exercise.force ?? '',
-  images: exercise.images.length > 0 ? exercise.images.map((url) => ({url})) : [createEmptyImageField()],
-  instructions: exercise.instructions ?? '',
-  mechanics: exercise.mechanics ?? '',
+  force: exercise.force ?? "",
+  images:
+    exercise.images.length > 0
+      ? exercise.images.map((url) => ({ url }))
+      : [createEmptyImageField()],
+  instructions: exercise.instructions ?? "",
+  mechanics: exercise.mechanics ?? "",
   muscle_ids: exercise.muscles.map((muscle) => muscle.id),
   name: exercise.name,
 });

@@ -86,13 +86,6 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
     onChange({...setDraft, [field]: value});
   };
 
-  const setTypeColor =
-    setDraft.set_type === 'warmup'
-      ? 'bg-amber-50 text-amber-700 border-amber-200'
-      : setDraft.set_type === 'working'
-        ? 'bg-blue-50 text-blue-700 border-blue-200'
-        : 'bg-gray-50 text-gray-600 border-gray-200';
-
   return (
     <Card className="rounded-xl border border-separator bg-background p-4">
       <div className="flex flex-col gap-3">
@@ -103,7 +96,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
               {setIndex + 1}
             </span>
             <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${setTypeColor}`}
+              className="inline-flex items-center rounded-full border border-separator bg-surface-secondary px-2 py-0.5 text-xs font-medium capitalize text-foreground"
             >
               {setDraft.set_type.replace('_', ' ')}
             </span>

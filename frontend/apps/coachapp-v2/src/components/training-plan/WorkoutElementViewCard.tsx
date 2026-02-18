@@ -39,11 +39,11 @@ export function WorkoutElementViewCard({
   };
 
   return (
-    <Card className="group rounded-xl border border-separator bg-surface p-0 transition-all duration-200 hover:border-blue-200 hover:shadow-sm">
+    <Card className="group rounded-xl border border-separator bg-surface p-0 transition-all duration-200 hover:border-border">
       <div className="flex items-center gap-0">
         {/* Position badge */}
         <div className="flex items-center justify-center border-r border-separator px-4 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-foreground">
             <span className="text-xs font-bold">{index + 1}</span>
           </div>
         </div>

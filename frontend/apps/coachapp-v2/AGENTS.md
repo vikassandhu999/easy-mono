@@ -1,52 +1,86 @@
 ## Stack
 
-- Vite + React 19 + TypeScript (strict)
-- UI: **HeroUI 3.0.0-beta.6** (`@heroui/react`) + Tailwind v4
-- State: Redux Toolkit + RTK Query
-- Forms: react-hook-form + zod (validation only) + Controller pattern
-- Routing: react-router
+Vite + React 19 + TypeScript (strict) | HeroUI 3.0.0-beta + Tailwind v4 | Redux Toolkit + RTK Query | react-hook-form + zod | react-router
 
 ## Commands
 
 ```sh
-pnpm -C apps/coachapp-v2 dev          # Vite dev server on port 2021
-pnpm -C apps/coachapp-v2 build        # tsc --noEmit + vite build
-pnpm -C apps/coachapp-v2 lint         # eslint with auto-fix
-pnpm -C apps/coachapp-v2 format       # prettier
+pnpm -C apps/coachapp-v2 dev
+pnpm -C apps/coachapp-v2 build
+pnpm -C apps/coachapp-v2 lint
+pnpm -C apps/coachapp-v2 format
 ```
 
-After any change, run `build` to verify. TypeScript errors are build failures.
+**MUST run `build` after changes.** TypeScript errors = build failures.
 
-## Engineering values
+---
 
-- Minimize code. More code means more bugs, more management, and more tech debt.
-- Supreme simplicity: "things can always be simpler." Prefer the simplest working solution.
-- Prefer deleting code over adding abstractions. If a change can be done by removing logic, do that.
+## MANDATORY RULES (Never Violate)
 
-## Folder structure
+### Architecture
 
-Three directories under `src/`. No others unless explicitly approved.
+1. **Only 3 directories under `src/`:** `api/`, `pages/`, `components/`. No exceptions.
+2. **No barrel files** (`index.ts`) unless 4+ exports always imported together.
+3. **Colocate helpers/hooks.** Page-specific helpers and hooks stay in that page's folder.
+4. **Promote components to `components/` when:** used by 2+ pages OR extracted from a page (complex sub-components).
+5. **Flat over nested.** Add subfolders only when 5+ files exist.
+
+### TypeScript
+
+6. **Types are source of truth.** Avoid `any`; use `unknown` or `Record<string, unknown>`.
+7. **Never derive types from Zod** (`z.infer` prohibited).
+8. **Strict mode enabled:** `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`.
+
+### React
+
+9. **No side effects during render.**
+10. **Complete hook dependency arrays** — never suppress lint rules.
+11. **Components < 200 lines.** Extract into hooks/sub-components when exceeded.
+12. **Max 6 props per component.** Group related data into objects.
+13. **Never define components inside components.**
+14. **No class components.** Only pure function components.
+15. **Use RTK Query for server data.** Manual `useEffect` + `useState` sync prohibited.
+
+### API
+
+16. **Every endpoint typed:** `query<ResponseType, ArgType>` / `mutation<ResponseType, ArgType>`.
+17. **Types at file top.** No inline shapes in endpoint definitions.
+18. **Tag invalidation with `{ type, id }` only.** No broad tags like `'Clients'`.
+19. **Use `fetchBaseQuery` only.** No axios.
+20. **Never add endpoints not in contract** (`apps/coachapp/docs/api_contract.yaml`).
+
+### UI
+
+21. **Follow `docs/ui-design-rules.md` for all UI work.**
+22. **Resource/index pages MUST follow `docs/resource-page-blueprint.md`.**
+23. **One primary action per view.** Only one `Button variant="primary"`.
+24. **Approved tokens only:** `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`, `text-foreground`, `text-muted`, `border-border`, `border-separator`, `bg-overlay`, `shadow-surface`, `shadow-overlay`.
+25. **No custom CSS/theme wrappers for HeroUI.** No hard-coded colors.
+
+---
+
+## Folder Structure
 
 ```
 src/
-  api/            — RTK Query endpoints + contract types (one file per domain)
-  pages/          — route-level components grouped by feature
-  components/     — shared UI components used by 2+ pages
-  main.tsx        — entry point
-  App.tsx         — router + providers
+  api/            — RTK Query endpoints + types (one file per domain)
+  pages/          — Route components grouped by feature (XxxPage.tsx)
+  components/     — Shared or complex multi-file components
+  main.tsx        — Entry point
+  App.tsx         — Router + providers
   store.ts        — Redux store
-  api.ts          — base createApi
-  index.css       — global styles
+  api.ts          — Base createApi
+  index.css       — Global styles
 ```
 
-### `api/` — endpoints and types
+### api/
 
-One file per API domain. Each file exports contract-derived types **and** `injectEndpoints` for that domain. Types and endpoints live together because they are always used together.
+One file per domain. Types + endpoints together. No `_definition.ts` files.
 
 ```
 api/
-  shared.ts         — ApiResponse<T>, ApiListResponse<T>, ErrorResponse, Macros, ServingSize
-  auth.ts           — Auth types + endpoints (signup, otp, verify, token)
+  shared.ts         — ApiResponse<T>, ApiListResponse<T>, ErrorResponse, Macros
+  auth.ts           — Auth types + endpoints
   business.ts       — Business types + endpoints
   coach.ts          — Coach types + endpoints
   clients.ts        — Client types + endpoints
@@ -56,233 +90,123 @@ api/
   meals.ts          — Meal + MealItem types + endpoints
 ```
 
-- No barrel `index.ts` files. Import directly from the file: `import { useGetClientsQuery, Client } from '@/api/clients'`.
-- No separate `_definition.ts` files. Types go at the top of the same file, endpoints below.
-- Child resources fold into their parent file: `PlanItem` types and endpoints live in `nutritionPlans.ts`, `MealItem` in `meals.ts`.
-- Redux slices (if needed) live here too: `api/authSlice.ts`.
+Import directly: `import { useGetClientsQuery, Client } from '@/api/clients'`
 
-### `pages/` — route pages grouped by feature
+### pages/
 
-Each feature gets a subfolder. Page components are the route-level entry points.
+Feature folders. Page files: `XxxPage.tsx`. Helpers and hooks colocate with their page.
 
 ```
 pages/
   auth/
-    LoginPage.tsx
-    RegisterPage.tsx
-    VerifyPage.tsx
-  clients/
-    ClientListPage.tsx
-    ClientViewPage.tsx
-  library/
-    LibraryPage.tsx
-  onboarding/
-    OnboardingPage.tsx
-  settings/
-    SettingsPage.tsx
-```
-
-- Page files are named `XxxPage.tsx`.
-- Page-specific components (only used by that one page) live **next to the page** in the same folder — not in `components/`.
-- Page-specific hooks live next to the page too.
-- Layouts that wrap a group of pages (e.g., `AuthLayout.tsx`) live in the page group folder.
-
-```
-pages/
-  auth/
-    AuthLayout.tsx       — layout wrapping all auth pages
+    AuthLayout.tsx
     LoginPage.tsx
     RegisterPage.tsx
   clients/
     ClientListPage.tsx
-    ClientStatusFilter.tsx  — only used by ClientListPage
 ```
 
-### `components/` — shared components only
+### components/
 
-A component goes here **only when it is used by 2+ pages**. Until then, it stays colocated with its page.
+Shared components + extracted sub-components. Guards (`PrivateRoute.tsx`) go here.
 
 ```
 components/
-  MainLayout.tsx       — app shell (nav, header, sidebar)
-  PageWrapper.tsx      — common page padding/structure
-  ConfirmDialog.tsx    — reusable confirmation modal
+  MainLayout.tsx
+  PageWrapper.tsx
+  ConfirmDialog.tsx
+  ClientStatusFilter.tsx    — extracted from ClientListPage
 ```
 
-- No nested folder per component unless a component has helper files. A single-file component is just `ComponentName.tsx`.
-- Guards (e.g., `PrivateRoute.tsx`, `GuestRoute.tsx`) live here — they are shared across page groups.
+---
 
-### Rules
+## UI/UX
 
-- **Do not create new top-level `src/` directories** (no `hooks/`, `utils/`, `shared/`, `providers/`, `configs/`, `theme/`, `slices/`, `containers/`). Everything fits in `api/`, `pages/`, or `components/`.
-- **Colocate by default.** A hook, helper, or sub-component used by one page stays in that page's folder.
-- **Localize logic with ownership.** If a page-specific component owns UI state (forms, modal state, submit/validation handlers), keep that logic inside that component; pages should orchestrate visibility/data refresh only.
-- **Promote to `components/` only when shared.** Move a component up only when a second page needs it.
-- **No barrel `index.ts` files** unless a folder has 4+ exports that are always imported together.
-- **Flat over nested.** Prefer `pages/clients/ClientListPage.tsx` over `pages/clients/list/ClientListPage.tsx`. Add nesting only when a subfolder has 5+ files.
+HeroUI v3 beta + Tailwind v4. Docs: https://v3.heroui.com/docs/react/components
 
-## UI/UX rules
+### Design Reference
 
-HeroUI v3 beta (`@heroui/react`) + Tailwind v4. Docs: https://v3.heroui.com/docs/react/components
-Use Loom as the **layout efficiency benchmark** (structure and clarity), not as a visual clone.
+- Reference `apps/coachapp-v2/design-examples/` for Loom patterns.
+- Use Loom for layout efficiency benchmark, not visual clone.
 
-### Design reference
+### Hierarchy
 
-When implementing new UI or refactoring existing pages, reference `apps/coachapp-v2/design-examples/` for Loom's proven patterns.
+- **Page structure:** Title → description → primary CTA → content.
+- **Wrapper:** `flex flex-col gap-6`
+- **Spacing:** sections `gap-6`, forms/cards `gap-4`, label-input `gap-1`
+- **Mobile:** `px-4 py-5` | **Desktop:** `p-6`
 
-### Resource pages (mandatory)
+### Controls
 
-- When designing any **resource/index page** (Clients, Library, Plans, Foods, Recipes, Meals, etc.), you must follow `docs/resource-page-blueprint.md`.
-- Treat that file as the canonical implementation template for hierarchy, control placement, spacing rhythm, and CTA emphasis.
-- If a page intentionally deviates, document the reason in the PR/summary.
+- **Group related controls.** Filters/tabs/sort/data list stay adjacent.
+- **Sort is secondary.** Lives with tabs/filters, never as header action.
+- **Primary CTA:** Header-right on desktop, below header on mobile.
 
-### Global UI rules (mandatory)
+### Feedback
 
-- For all UI work (not only resource/index pages), follow `docs/ui-design-rules.md`, should be treated as the practical default for hierarchy, accessibility, spacing, typography, forms, actions, and copy.
-- If a design decision conflicts with these rules, prefer the more accessible and lower cognitive-load option, and document the rationale in the PR/summary.
+- Loading: `Spinner` / `Skeleton`
+- Persistent errors: `Alert`
+- Ephemeral: `toast()`, `toast.success()`, `toast.danger()`
+- Destructive: `AlertDialog`
+- Empty state: Card with title, description, action
 
-1. **HeroUI-only, props-first.** Use HeroUI primitives + compound APIs (`Card.Header`, `TextField.Label`, etc.). Style via `variant`/`size`; `className` is for layout only (`gap`, `p`, `w`, `flex`, `grid`).
+### Accessibility
 
-2. **Loom-style information architecture.** Keep navigation persistent and predictable (mobile: compact/top-first, desktop: left rail), keep primary content in a focused center column, and place secondary actions in low-emphasis positions.
+- Mobile-first, scale with `sm:`/`md:`/`lg:`
+- Min tap target: `min-h-11` (44px+)
+- Semantic landmarks: `main`, `nav`, headings
+- `aria-label` for icon-only controls
+- Use `isDisabled` prop, not CSS disabling
 
-3. **One clear page hierarchy.** Every page uses: title, short description, one primary CTA, then content. Wrapper: `flex flex-col gap-6`. Spacing: sections `gap-6`, forms/cards `gap-4`, label-input `gap-1`, mobile `px-4 py-5`, desktop `p-6`.
+---
 
-3.1 **Group related controls.** Filters/tabs, sort, and data list must remain adjacent and visually grouped (same control rail or contiguous rows). Avoid separating related controls across distant sections.
+## State
 
-3.2 **Header action placement.** For resource pages, place the single primary CTA at header-right on desktop and below header content on mobile.
-
-4. **One primary action per view.** Only one `Button variant="primary"` per page/view. All other actions are `secondary`, `outline`, `ghost`, or `danger`.
-
-4.1 **Sort is secondary.** Sorting controls are never primary and should live with tabs/filters, not as a competing header action.
-
-5. **Use only approved tokens.** Colors: `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`, `text-foreground`, `text-muted`, `border-border`, `border-separator`, `bg-overlay`. Effects: `shadow-surface`, `shadow-overlay`, `rounded-md|lg|xl`. No v2/NextUI tokens.
-
-6. **Typography stays minimal.** Only `text-foreground` (primary) and `text-muted` (secondary). No opacity text variants (`/60`, `/75`, etc.).
-
-7. **Use standard feedback patterns.** Loading: `Spinner`/`Skeleton`. Inline persistent errors: `Alert`. Ephemeral updates/errors: `toast()`, `toast.success()`, `toast.danger()`. Destructive confirm: `AlertDialog`. Empty states: Card with title, description, and action.
-
-8. **Mobile-first, accessibility always on.** Start mobile, scale with `sm:`/`md:`/`lg:`. Minimum tap target `min-h-11` (44px+). Use semantic landmarks (`main`, `nav`, headings), `aria-label` for icon-only controls, and `isDisabled` (not CSS disabling).
-
-8.1 **No hierarchy regressions.** Any UI refactor must preserve: (a) one dominant action, (b) grouped list controls, and (c) immediate visibility of list context (segment label + count) above results.
-
-9. **Do not fight the system.** No custom CSS/CSS Modules/theme wrappers for HeroUI primitives, no hard-coded colors/shadows, and no borrowing UI patterns from `apps/coachapp`.
-
-## Routing
-
-- Route components should be lazy-loaded only when there is a clear performance need.
-
-## State management
-
-- Server data: RTK Query only.
-- UI state: Redux slices when needed (slices live in `api/`).
-- Avoid global state unless multiple unrelated components need it.
-
-## API contract and networking
-
-Primary contract: `apps/coachapp/docs/api_contract.yaml` (OpenAPI 3.0.3).
-
-### Envelope types (defined in `api/shared.ts`)
-
-```ts
-type ApiResponse<T> = { data: T };
-type ApiListResponse<T> = { data: T[]; count: number };
-type ErrorResponse = {
-  error_code: string;
-  error_message: string;
-  error_detail?: Record<string, unknown> | null;
-};
-type Macros = Record<string, number>; // open map, not fixed fields
-```
-
-Auth responses (`SignupResponse`, `AuthTokenResponse`) are **flat** — they do not use `ApiResponse<T>`. All other single-entity responses use `ApiResponse<T>`. All paginated list responses use `ApiListResponse<T>`.
-
-### RTK Query rules
-
-- Single base `createApi` in `src/api.ts`; `injectEndpoints` per domain in `api/*.ts`.
-- Every endpoint must be typed: `query<ResponseType, ArgType>` and `mutation<ResponseType, ArgType>`.
-- Response and request types come from contract-derived TypeScript types, not ad-hoc shapes.
-- Define request/response types once per domain at the top of the file; reuse everywhere.
-- Do not inline request/response shapes inside endpoint definitions.
-- Tag invalidation: `{ type, id }` only. No broad invalidation like `'Clients'`.
-- Do not add axios; use `fetchBaseQuery` only.
-- Keep `baseQuery` in `src/api.ts`; do not re-create base queries per feature.
-- Do not transform responses unless the contract requires it; prefer returning contract shapes.
-- Pagination parameters must match contract names (`offset`, `limit`) exactly.
-- Never add endpoints not present in the contract without updating the contract first.
-- If a contract field is ambiguous, ask for clarification before implementing.
-
-### Auth
-
-- Token handling is centralized in `prepareHeaders` inside `src/api.ts`.
-- Do not put side effects (localStorage reads/writes) in Redux reducers. Token persistence belongs in the hook/middleware layer.
+- **Server data:** RTK Query only
+- **UI state:** Redux slices in `api/` when needed
+- **Avoid global state** unless multiple components need it
 
 ## Forms
 
-- Use `react-hook-form` with `Controller` for non-native inputs.
-- Use `zodResolver` for schema validation only.
-- Do not derive TypeScript types from Zod (`z.infer` is not allowed).
-- Prefer minimal schemas and reuse contract types for field names.
+- Use `react-hook-form` with `Controller` for non-native inputs
+- `zodResolver` for validation only
+- Minimal schemas; reuse contract types for field names
 
-## TypeScript rules
+## Error Handling
 
-- Types are the source of truth.
-- Avoid `any`; use `unknown` or `Record<string, unknown>` where appropriate.
-- `strict` mode is enabled with `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`.
+- API returns `ErrorResponse`: `{ error_code, error_message, error_detail? }`
+- Extract `error_message` for user display
+- Surface via `toast.danger()`
 
-## Error handling
+## Imports & Formatting
 
-- The API returns `ErrorResponse` (`{ error_code, error_message, error_detail? }`).
-- Normalize errors before showing them to users; extract `error_message` from the response body.
-- Surface user-facing errors via `toast.danger()`.
+Enforced by `@easy/eslint-config`:
 
-## Imports and formatting
+- Prettier: single quotes, trailing commas, `bracketSpacing: false`, `printWidth: 120`, `singleAttributePerLine: true`
+- Import ordering: `perfectionist/sort-imports` (auto-sorted)
+- Use `@/` path alias for all `src/` imports
+- One component per file
 
-Formatting is enforced by `@easy/eslint-config` (shared workspace package). Key settings:
+## Naming
 
-- **Prettier**: single quotes, trailing commas, `bracketSpacing: false`, `printWidth: 120`, `singleAttributePerLine: true`, `tabWidth: 2`.
-- **Import ordering**: `perfectionist/sort-imports` (natural ascending, alphabetical). Do not manually group — the linter handles it.
-- One component per file unless components are tightly coupled.
-- Use `@/` path alias for all `src/` imports.
+- Components: `PascalCase` files/names
+- Hooks: `useSomething`
+- Types: `PascalCase`
+- Constants: `SCREAMING_SNAKE_CASE` (globals only)
+- Pages: `XxxPage.tsx`
+- API files: `camelCase.ts` (e.g., `nutritionPlans.ts`)
 
-## Naming conventions
+---
 
-- Components: `PascalCase` files and names.
-- Hooks: `useSomething`.
-- Types/interfaces: `PascalCase`.
-- Constants: `SCREAMING_SNAKE_CASE` only for true globals.
-- RTK Query hooks: `useXQuery` / `useXMutation`.
-- Pages: `XxxPage.tsx`.
-- API domain files: `camelCase.ts` matching the domain noun (e.g., `nutritionPlans.ts`).
+## Engineering Values
 
-## When changing code
+1. **Minimize code.** More code = more bugs + more tech debt.
+2. **Supreme simplicity.** Prefer the simplest working solution.
+3. **Delete over abstract.** If change can be done by removing logic, do that.
 
-- Update types and validation schemas together.
-- Do not introduce additional UI or state libraries.
-- Avoid premature abstractions; refactor only when duplication is proven and stable.
+## When Changing Code
 
-## React best practices (strict)
-
-- No side effects during render.
-- All hooks must have complete dependency arrays; never suppress lint rules.
-- Keep components small: target <150 lines; split when logic or JSX grows.
-- Prefer composition over prop-drilling helpers and configuration-heavy components.
-- Avoid premature memoization; use `useMemo`/`useCallback` only with measured need.
-
-## React component structure
-
-- Components must be pure functions; no class components.
-- Props are explicitly typed; no implicit `any` props.
-- Destructure props at the top; avoid nested destructuring in JSX.
-- Keep render blocks shallow; extract complex JSX into smaller components.
-- Colocate state with the smallest possible subtree.
-- Prefer derived values over duplicated state.
-- Keep local state shape minimal; avoid deep object state.
-- No component file may exceed 200 lines; extract logic into custom hooks and split sub-components into their own files.
-- If a component's JSX return contains more than 10 lines of conditional logic or complex mapping, extract those segments into dedicated components.
-- A component must not accept more than 6 props; group related data into objects or use context instead.
-- Never define a component function inside another component function — it causes re-creation on every render.
-- State must live in the lowest possible component; never use global state for UI toggles, modals, or single-view form data.
-- Use React Query (or RTK Query) for all server data; manual `useEffect` + `useState` synchronization of server data is prohibited.
-- Use Context API for dependency injection (auth, theme), not for high-frequency state updates.
-- Extract any side-effect, complex calculation, or state-transition logic into a custom hook; components should be ~80% presentation, ~20% hook orchestration.
-- Prefer the `satisfies` operator for object initialization to retain the narrowest inferred type while ensuring type conformance.
+- Update types and schemas together
+- No new UI/state libraries
+- Refactor only when duplication is proven and stable
+- Avoid premature memoization; use `useMemo`/`useCallback` with measured need

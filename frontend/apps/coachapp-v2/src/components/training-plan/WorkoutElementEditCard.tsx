@@ -3,6 +3,7 @@ import {Plus, Save, Trash2} from 'lucide-react';
 import {useState} from 'react';
 
 import type {Exercise} from '@/api/exercises';
+import type {ErrorResponse} from '@/api/shared';
 
 import {
   useDeleteWorkoutElementMutation,
@@ -24,6 +25,13 @@ type ExerciseDraft = {
   notes: string;
   position: string;
   sets: SetDraft[];
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object' && 'data' in error) {
+    return (error as {data?: ErrorResponse}).data?.error_message ?? fallback;
+  }
+  return fallback;
 };
 
 interface WorkoutElementEditCardProps {
@@ -71,8 +79,8 @@ export function WorkoutElementEditCard({
       }).unwrap();
       toast.success('Exercise updated');
       onDone();
-    } catch {
-      toast.danger('Failed to update exercise');
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, 'Failed to update exercise'));
     }
   };
 
@@ -87,21 +95,21 @@ export function WorkoutElementEditCard({
       }).unwrap();
       toast.success('Exercise deleted');
       onDone();
-    } catch {
-      toast.danger('Failed to delete exercise');
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, 'Failed to delete exercise'));
     }
   };
 
   const isMutating = isUpdating || isDeleting;
 
   return (
-    <Card className="rounded-xl border-2 border-blue-200 bg-surface p-5 shadow-sm">
+    <Card className="rounded-xl border border-separator bg-surface p-5">
       <div className="flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
-              <span className="text-xs font-bold text-blue-600">✎</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-secondary">
+              <span className="text-xs font-bold text-foreground">✎</span>
             </div>
             <p className="text-sm font-semibold text-foreground">Editing {exerciseName}</p>
           </div>

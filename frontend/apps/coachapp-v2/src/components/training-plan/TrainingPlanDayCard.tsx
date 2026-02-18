@@ -4,6 +4,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router';
 
 import {useListExercisesQuery} from '@/api/exercises';
+import type {ErrorResponse} from '@/api/shared';
 import {
   type PlannedWorkout,
   useDeleteWorkoutElementMutation,
@@ -17,6 +18,13 @@ type TrainingPlanDayCardProps = {
   isMutating: boolean;
   onDeleteDay: (plannedWorkoutId: string) => Promise<void>;
   plannedWorkout: PlannedWorkout;
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object' && 'data' in error) {
+    return (error as {data?: ErrorResponse}).data?.error_message ?? fallback;
+  }
+  return fallback;
 };
 
 export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWorkout}: TrainingPlanDayCardProps) {
@@ -73,8 +81,8 @@ export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWor
       }).unwrap();
       toast.success('Workout renamed');
       setIsEditingName(false);
-    } catch {
-      toast.danger('Failed to rename workout');
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, 'Failed to rename workout'));
     }
   };
 
@@ -88,18 +96,18 @@ export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWor
         plannedWorkoutId: plannedWorkout.id,
       }).unwrap();
       toast.success('Exercise deleted');
-    } catch {
-      toast.danger('Failed to delete exercise');
+    } catch (error) {
+      toast.danger(getApiErrorMessage(error, 'Failed to delete exercise'));
     }
   };
 
   return (
-    <Card className="rounded-xl border border-separator bg-surface p-0 transition-all duration-200 hover:border-blue-200/60">
+    <Card className="rounded-xl border border-separator bg-surface p-0 transition-all duration-200 hover:border-border">
       {/* Header row — always visible */}
       <div className="flex items-center gap-0">
         {/* Day number badge */}
         <div className="flex items-center justify-center border-r border-separator px-4 py-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-secondary text-foreground">
             <span className="text-sm font-bold">{plannedWorkout.day_number}</span>
           </div>
         </div>

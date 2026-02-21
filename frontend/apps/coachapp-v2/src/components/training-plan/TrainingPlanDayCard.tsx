@@ -3,14 +3,16 @@ import {ChevronDown, ChevronRight, Dumbbell, Pencil, Plus, Save, Trash2, X} from
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router';
 
-import {useListExercisesQuery} from '@/api/exercises';
 import type {ErrorResponse} from '@/api/shared';
+
+import {useListExercisesQuery} from '@/api/exercises';
 import {
   type PlannedWorkout,
   useDeleteWorkoutElementMutation,
   useGetPlannedWorkoutQuery,
   useUpdatePlannedWorkoutMutation,
 } from '@/api/trainingPlans';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import {WorkoutElementEditCard} from '@/components/training-plan/WorkoutElementEditCard';
 import {WorkoutElementViewCard} from '@/components/training-plan/WorkoutElementViewCard';
 
@@ -37,6 +39,7 @@ export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWor
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(plannedWorkout.name);
   const [editingElementId, setEditingElementId] = useState<null | string>(null);
+  const [elementToDelete, setElementToDelete] = useState<null | string>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -86,12 +89,17 @@ export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWor
     }
   };
 
-  const handleDeleteElement = async (elementId: string) => {
-    const confirmed = window.confirm('Delete this exercise?');
-    if (!confirmed) return;
+  const handleDeleteElement = (elementId: string) => {
+    setElementToDelete(elementId);
+  };
+
+  const confirmDeleteElement = async () => {
+    if (!elementToDelete) return;
+    const id = elementToDelete;
+    setElementToDelete(null);
     try {
       await deleteWorkoutElement({
-        id: elementId,
+        id,
         planId,
         plannedWorkoutId: plannedWorkout.id,
       }).unwrap();
@@ -295,6 +303,18 @@ export default function TrainingPlanDayCard({isMutating, onDeleteDay, plannedWor
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        confirmLabel="Delete"
+        description="Delete this exercise? This cannot be undone."
+        isLoading={isDeletingElement}
+        isOpen={elementToDelete !== null}
+        onConfirm={confirmDeleteElement}
+        onOpenChange={(open) => {
+          if (!open) setElementToDelete(null);
+        }}
+        title="Delete exercise"
+      />
     </Card>
   );
 }

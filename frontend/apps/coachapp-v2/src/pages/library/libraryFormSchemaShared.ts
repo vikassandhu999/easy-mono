@@ -1,6 +1,6 @@
-import { z } from "zod";
+import {z} from 'zod';
 
-type MacroField = "calories" | "carbs" | "fat" | "protein";
+type MacroField = 'calories' | 'carbs' | 'fat' | 'protein';
 
 type MacroValues = {
   calories: string;
@@ -17,7 +17,7 @@ type ServingSizeValue = {
 
 export const CALORIES_MAX = 5000;
 export const MACRO_GRAMS_MAX = 1000;
-export const URL_MESSAGE = "Image URL must be a valid URL.";
+export const URL_MESSAGE = 'Image URL must be a valid URL.';
 
 export const validateMacroField = (
   ctx: z.RefinementCtx,
@@ -59,11 +59,7 @@ export const validateMacroField = (
   }
 };
 
-export const validateImageUrl = (
-  ctx: z.RefinementCtx,
-  url: string,
-  path: Array<number | string> = ["image_url"],
-) => {
+export const validateImageUrl = (ctx: z.RefinementCtx, url: string, path: Array<number | string> = ['image_url']) => {
   const trimmedUrl = url.trim();
   if (!trimmedUrl) {
     return;
@@ -79,10 +75,7 @@ export const validateImageUrl = (
   }
 };
 
-export const validateServingSizes = (
-  ctx: z.RefinementCtx,
-  servingSizes: ServingSizeValue[],
-) => {
+export const validateServingSizes = (ctx: z.RefinementCtx, servingSizes: ServingSizeValue[]) => {
   servingSizes.forEach((servingSize, index) => {
     const hasUnit = Boolean(servingSize.unit.trim());
     const hasWeight = Boolean(servingSize.weight_g.trim());
@@ -96,7 +89,7 @@ export const validateServingSizes = (
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Serving size ${index + 1}: unit is required.`,
-        path: ["serving_sizes", index, "unit"],
+        path: ['serving_sizes', index, 'unit'],
       });
     }
 
@@ -106,7 +99,7 @@ export const validateServingSizes = (
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Serving size ${index + 1}: weight must be 0 or more.`,
-          path: ["serving_sizes", index, "weight_g"],
+          path: ['serving_sizes', index, 'weight_g'],
         });
       }
     }
@@ -117,7 +110,7 @@ export const validateServingSizes = (
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Serving size ${index + 1}: amount must be 0 or more.`,
-          path: ["serving_sizes", index, "amount"],
+          path: ['serving_sizes', index, 'amount'],
         });
       }
     }
@@ -125,7 +118,7 @@ export const validateServingSizes = (
 };
 
 export const createEmptyServingSize = () => ({
-  amount: "",
-  unit: "",
-  weight_g: "",
+  amount: '',
+  unit: '',
+  weight_g: '',
 });

@@ -10,9 +10,7 @@ export type FormattedMacros = {
   protein: number;
 };
 
-export const formatMacros = (
-  macros: Record<string, number> | undefined,
-): FormattedMacros | null => {
+export const formatMacros = (macros: Record<string, number> | undefined): FormattedMacros | null => {
   if (!macros) {
     return null;
   }
@@ -27,9 +25,9 @@ export const formatMacros = (
 
 export const toSentenceCase = (snake: string): string => {
   return snake
-    .split("_")
+    .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+    .join(' ');
 };
 
 const roundToDecimals = (value: number, decimals: number): number => {
@@ -37,10 +35,7 @@ const roundToDecimals = (value: number, decimals: number): number => {
   return Math.round(value * factor) / factor;
 };
 
-export const parseOptionalNumber = (
-  value: string,
-  decimals = 1,
-): number | undefined => {
+export const parseOptionalNumber = (value: string, decimals = 1): number | undefined => {
   if (!value.trim()) {
     return undefined;
   }
@@ -53,10 +48,8 @@ export const parseOptionalNumber = (
   return roundToDecimals(parsed, decimals);
 };
 
-export const toStringValue = (
-  value: null | number | string | undefined,
-): string => {
-  return value === null || value === undefined ? "" : String(value);
+export const toStringValue = (value: null | number | string | undefined): string => {
+  return value === null || value === undefined ? '' : String(value);
 };
 
 export const roundToOneDecimal = (value: number): number => {

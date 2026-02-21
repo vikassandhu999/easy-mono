@@ -1,4 +1,4 @@
-import type { Location } from "react-router";
+import type {Location} from 'react-router';
 
 export type ServingSizeFormRow = {
   amount: string;
@@ -13,15 +13,15 @@ export type MacroFormFields = {
   protein: string;
 };
 
-export type ResourceStatus = "active" | "archived" | "draft";
+export type ResourceStatus = 'active' | 'archived' | 'draft';
 
 type ReturnToState = {
   from?: unknown;
 };
 
 export const getReturnTo = (location: Location, fallback: string): string => {
-  const state = location.state as ReturnToState | null;
-  if (state && typeof state.from === "string") {
+  const state = location.state as null | ReturnToState;
+  if (state && typeof state.from === 'string') {
     return state.from;
   }
 

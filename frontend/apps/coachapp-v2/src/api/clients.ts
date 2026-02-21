@@ -21,6 +21,14 @@ export type ClientInviteRequest = {
   notes?: string;
 };
 
+export type ClientUpdateRequest = {
+  first_name?: string;
+  last_name?: string;
+  notes?: string;
+  phone?: string;
+  status?: string;
+};
+
 export type ListClientsParams = {
   offset?: number;
   limit?: number;
@@ -36,9 +44,11 @@ export const clientsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      invalidatesTags: [{type: 'Client', id: 'LIST'}],
     }),
     getClient: build.query<ApiResponse<Client>, string>({
       query: (id) => `/v1/coach/clients/${id}`,
+      providesTags: (_, __, id) => [{type: 'Client', id}],
     }),
     listClients: build.query<ApiListResponse<Client>, ListClientsParams | void>({
       query: (params) =>
@@ -48,8 +58,26 @@ export const clientsApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/clients',
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((client) => ({type: 'Client' as const, id: client.id})),
+              {type: 'Client' as const, id: 'LIST'},
+            ]
+          : [{type: 'Client' as const, id: 'LIST'}],
+    }),
+    updateClient: build.mutation<ApiResponse<Client>, {body: ClientUpdateRequest; id: string}>({
+      query: ({body, id}) => ({
+        url: `/v1/coach/clients/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_, __, {id}) => [
+        {type: 'Client', id},
+        {type: 'Client', id: 'LIST'},
+      ],
     }),
   }),
 });
 
-export const {useGetClientQuery, useInviteClientMutation, useListClientsQuery} = clientsApi;
+export const {useGetClientQuery, useInviteClientMutation, useListClientsQuery, useUpdateClientMutation} = clientsApi;

@@ -1,14 +1,12 @@
-import {Button, Card, Input, Label, Modal, SearchField, TextField, toast} from '@heroui/react';
-import {Check, Search, X} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {Button, Card, Input, Label, Modal, TextField, toast} from '@heroui/react';
+import {Check, X} from 'lucide-react';
+import {useState} from 'react';
 
-import type {Client} from '@/api/clients';
 import type {TrainingPlan} from '@/api/trainingPlans';
 
-import {useListClientsQuery} from '@/api/clients';
 import {handleFormError} from '@/api/shared';
 import {useAssignTrainingPlanMutation} from '@/api/trainingPlans';
-import {CLIENT_STATUS_STYLES, getClientInitial, getClientName} from '@/pages/clients/clientDisplay';
+import ClientPicker, {type PickedClient} from '@/components/ClientPicker';
 
 type AssignTrainingPlanModalProps = {
   isOpen: boolean;
@@ -23,35 +21,14 @@ export default function AssignTrainingPlanModal({
   onOpenChange,
   plan,
 }: AssignTrainingPlanModalProps) {
-  const [query, setQuery] = useState('');
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClient, setSelectedClient] = useState<null | PickedClient>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [formError, setFormError] = useState<null | string>(null);
 
   const [assignTrainingPlan, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
 
-  const {data: clientsData, isLoading: isClientsLoading} = useListClientsQuery({
-    limit: 200,
-    offset: 0,
-    search: query.trim() || undefined,
-  });
-
-  const clients = clientsData?.data ?? [];
-
-  const filteredClients = useMemo(() => {
-    if (!query.trim()) {
-      return clients;
-    }
-    const normalized = query.trim().toLowerCase();
-    return clients.filter((client) => {
-      const name = getClientName(client).toLowerCase();
-      return client.email.toLowerCase().includes(normalized) || name.includes(normalized);
-    });
-  }, [clients, query]);
-
   const resetState = () => {
-    setQuery('');
     setSelectedClient(null);
     setStartDate('');
     setEndDate('');
@@ -64,9 +41,7 @@ export default function AssignTrainingPlanModal({
   };
 
   const handleAssign = async () => {
-    if (!plan) {
-      return;
-    }
+    if (!plan) return;
     if (!selectedClient) {
       setFormError('Please choose a client to assign this plan.');
       return;
@@ -82,7 +57,7 @@ export default function AssignTrainingPlanModal({
         },
         id: plan.id,
       }).unwrap();
-      toast.success(`Assigned "${plan.name}" to ${getClientName(selectedClient)}`);
+      toast.success(`Assigned "${plan.name}" to ${selectedClient.name}`);
       onAssigned(response.data.id);
       handleClose();
     } catch (error) {
@@ -97,9 +72,7 @@ export default function AssignTrainingPlanModal({
       isOpen={isOpen}
       onOpenChange={(open) => {
         onOpenChange(open);
-        if (!open) {
-          resetState();
-        }
+        if (!open) resetState();
       }}
     >
       <Modal.Backdrop>
@@ -117,10 +90,10 @@ export default function AssignTrainingPlanModal({
                   <Card className="border border-accent bg-accent/5 p-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
-                        {getClientInitial(selectedClient)}
+                        {selectedClient.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground">{getClientName(selectedClient)}</p>
+                        <p className="font-medium text-foreground">{selectedClient.name}</p>
                         <p className="text-sm text-muted">{selectedClient.email}</p>
                       </div>
                       <Button
@@ -135,76 +108,13 @@ export default function AssignTrainingPlanModal({
                     </div>
                   </Card>
                 ) : (
-                  <>
-                    <SearchField>
-                      <SearchField.Group>
-                        <SearchField.SearchIcon />
-                        <SearchField.Input
-                          onChange={(event) => setQuery(event.target.value)}
-                          placeholder="Search by name or email..."
-                          value={query}
-                        />
-                      </SearchField.Group>
-                    </SearchField>
-
-                    <div className="max-h-60 overflow-y-auto rounded-lg border border-separator bg-surface">
-                      {isClientsLoading ? (
-                        <div className="flex flex-col gap-2 p-3">
-                          {[1, 2, 3].map((i) => (
-                            <div
-                              className="flex items-center gap-3 p-2"
-                              key={i}
-                            >
-                              <div className="h-10 w-10 animate-pulse rounded-full bg-surface-secondary" />
-                              <div className="flex-1 space-y-1">
-                                <div className="h-4 w-32 animate-pulse rounded bg-surface-secondary" />
-                                <div className="h-3 w-24 animate-pulse rounded bg-surface-secondary" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : filteredClients.length === 0 ? (
-                        <div className="flex flex-col items-center gap-2 p-6 text-center">
-                          <Search className="h-8 w-8 text-muted" />
-                          <p className="font-medium text-foreground">
-                            {query.trim() ? 'No clients found' : 'No clients available'}
-                          </p>
-                          <p className="text-sm text-muted">
-                            {query.trim() ? 'Try a different search term' : 'Add clients first to assign plans'}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col">
-                          {filteredClients.map((client) => (
-                            <button
-                              className="group flex items-center gap-3 border-b border-separator p-3 text-left transition-colors hover:bg-surface-secondary last:border-b-0"
-                              key={client.id}
-                              onClick={() => {
-                                setSelectedClient(client);
-                                setFormError(null);
-                              }}
-                              type="button"
-                            >
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
-                                {getClientInitial(client)}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium text-foreground">{getClientName(client)}</p>
-                                <p className="truncate text-sm text-muted">{client.email}</p>
-                              </div>
-                              <span
-                                className={`shrink-0 rounded-full px-2 py-0.5 text-xs capitalize ${
-                                  CLIENT_STATUS_STYLES[client.status] ?? 'bg-surface-secondary text-muted'
-                                }`}
-                              >
-                                {client.status}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  <ClientPicker
+                    onSelect={(client) => {
+                      setSelectedClient(client);
+                      setFormError(null);
+                    }}
+                    selectedId=""
+                  />
                 )}
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -230,7 +140,7 @@ export default function AssignTrainingPlanModal({
                   </TextField>
                 </div>
 
-                {formError ? <p className="text-sm text-red-500">{formError}</p> : null}
+                {formError ? <p className="text-sm text-foreground">{formError}</p> : null}
               </div>
             </Modal.Body>
             <Modal.Footer>

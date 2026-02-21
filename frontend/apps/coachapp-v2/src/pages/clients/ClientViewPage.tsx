@@ -1,17 +1,46 @@
 import {Button, Card, Skeleton} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router';
+import {useCallback, useState} from 'react';
+import {useNavigate, useParams, useSearchParams} from 'react-router';
 
 import {useGetClientQuery} from '@/api/clients';
-import {CLIENT_STATUS_STYLES, formatDateTime, getClientName} from '@/pages/clients/clientDisplay';
+import {useListNutritionPlansQuery} from '@/api/nutritionPlans';
+import {useListTrainingPlansQuery} from '@/api/trainingPlans';
+import {getClientName} from '@/pages/clients/clientDisplay';
+import ClientNutritionTab from '@/pages/clients/ClientNutritionTab';
+import ClientOverviewTab from '@/pages/clients/ClientOverviewTab';
+import ClientTrainingTab from '@/pages/clients/ClientTrainingTab';
+
+import AssignTemplatePicker from './AssignTemplatePicker';
+import EditClientModal from './EditClientModal';
+
+const TABS = ['overview', 'training', 'nutrition'] as const;
+type TabKey = (typeof TABS)[number];
+
+const TAB_LABELS: Record<TabKey, string> = {
+  nutrition: 'Nutrition',
+  overview: 'Overview',
+  training: 'Training',
+};
 
 export default function ClientViewPage() {
   const navigate = useNavigate();
   const {id} = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const {data, isError, isLoading, refetch} = useGetClientQuery(id ?? '', {
-    skip: !id,
-  });
+  const activeTab = (searchParams.get('tab') as TabKey) || 'overview';
+  const setActiveTab = useCallback((tab: TabKey) => setSearchParams({tab}, {replace: true}), [setSearchParams]);
+
+  const {data: clientData, isError, isLoading: clientLoading} = useGetClientQuery(id ?? '', {skip: !id});
+  const {data: trainingData, isLoading: trainingLoading} = useListTrainingPlansQuery({client_id: id}, {skip: !id});
+  const {data: nutritionData, isLoading: nutritionLoading} = useListNutritionPlansQuery({client_id: id}, {skip: !id});
+
+  const [assignType, setAssignType] = useState<'nutrition' | 'training' | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  const client = clientData?.data;
+  const trainingPlans = trainingData?.data ?? [];
+  const nutritionPlans = nutritionData?.data ?? [];
 
   if (!id) {
     return (
@@ -35,7 +64,7 @@ export default function ClientViewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <Button
           className="gap-2"
           onPress={() => navigate('/clients')}
@@ -45,89 +74,88 @@ export default function ClientViewPage() {
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Clients</span>
         </Button>
+        {!clientLoading && client ? (
+          <h1 className="text-xl font-semibold text-foreground">{getClientName(client)}</h1>
+        ) : null}
       </div>
 
-      {isLoading ? (
-        <Card className="border border-separator bg-surface p-6">
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-7 w-56" />
-            <Skeleton className="h-4 w-72" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          </div>
-        </Card>
-      ) : null}
-
-      {isError ? (
+      {clientLoading ? (
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      ) : isError ? (
         <Card className="border border-separator bg-surface p-6">
           <div className="flex flex-col gap-3">
             <p className="font-semibold text-foreground">Could not load client</p>
             <p className="text-sm text-muted">Please try again or return to the clients list.</p>
             <div className="flex gap-2">
               <Button
-                onPress={() => refetch()}
+                onPress={() => navigate('/clients')}
                 size="md"
                 variant="outline"
               >
-                Retry
-              </Button>
-              <Button
-                onPress={() => navigate('/clients')}
-                size="md"
-                variant="ghost"
-              >
-                Back
+                Back to Clients
               </Button>
             </div>
           </div>
         </Card>
-      ) : null}
-
-      {!isLoading && !isError && data?.data ? (
-        <Card className="border border-separator bg-surface p-6">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-muted">Client</p>
-                <h1 className="text-2xl font-semibold text-foreground">{getClientName(data.data)}</h1>
-                <p className="text-sm text-muted">{data.data.email}</p>
-              </div>
-              <span
-                className={`w-fit rounded-full px-2 py-1 text-xs font-medium capitalize ${CLIENT_STATUS_STYLES[data.data.status.toLowerCase()] ?? 'bg-default text-muted'}`}
+      ) : client ? (
+        <>
+          <div className="flex gap-1 border-b border-separator">
+            {TABS.map((tab) => (
+              <button
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === tab ? 'border-b-2 border-accent text-foreground' : 'text-muted hover:text-foreground'
+                }`}
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                type="button"
               >
-                {data.data.status}
-              </span>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Card className="border border-separator bg-background p-4">
-                <p className="text-xs text-muted">Phone</p>
-                <p className="text-sm font-medium text-foreground">{data.data.phone || 'Not provided'}</p>
-              </Card>
-              <Card className="border border-separator bg-background p-4">
-                <p className="text-xs text-muted">Joined</p>
-                <p className="text-sm font-medium text-foreground">{formatDateTime(data.data.inserted_at)}</p>
-              </Card>
-              <Card className="border border-separator bg-background p-4">
-                <p className="text-xs text-muted">Last Updated</p>
-                <p className="text-sm font-medium text-foreground">{formatDateTime(data.data.updated_at)}</p>
-              </Card>
-              <Card className="border border-separator bg-background p-4">
-                <p className="text-xs text-muted">Status</p>
-                <p className="text-sm font-medium capitalize text-foreground">{data.data.status}</p>
-              </Card>
-            </div>
-
-            <Card className="border border-separator bg-background p-4">
-              <p className="text-xs text-muted">Notes</p>
-              <p className="text-sm text-foreground">{data.data.notes || 'No notes yet.'}</p>
-            </Card>
+                {TAB_LABELS[tab]}
+              </button>
+            ))}
           </div>
-        </Card>
+
+          {activeTab === 'overview' ? (
+            <ClientOverviewTab
+              client={client}
+              nutritionPlans={nutritionPlans}
+              onAssignNutrition={() => setAssignType('nutrition')}
+              onAssignTraining={() => setAssignType('training')}
+              onEditClient={() => setEditOpen(true)}
+              trainingPlans={trainingPlans}
+            />
+          ) : activeTab === 'training' ? (
+            <ClientTrainingTab
+              isLoading={trainingLoading}
+              onAssign={() => setAssignType('training')}
+              plans={trainingPlans}
+            />
+          ) : (
+            <ClientNutritionTab
+              isLoading={nutritionLoading}
+              onAssign={() => setAssignType('nutrition')}
+              plans={nutritionPlans}
+            />
+          )}
+
+          <AssignTemplatePicker
+            clientId={id}
+            clientName={getClientName(client)}
+            isOpen={assignType !== null}
+            onOpenChange={(open) => {
+              if (!open) setAssignType(null);
+            }}
+            planType={assignType ?? 'training'}
+          />
+
+          <EditClientModal
+            client={client}
+            isOpen={editOpen}
+            onOpenChange={setEditOpen}
+          />
+        </>
       ) : null}
     </div>
   );

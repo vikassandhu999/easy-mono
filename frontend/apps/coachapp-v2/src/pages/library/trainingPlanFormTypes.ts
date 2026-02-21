@@ -1,4 +1,4 @@
-import type { ResourceStatus } from "@/pages/library/libraryFormShared";
+import type {ResourceStatus} from '@/pages/library/libraryFormShared';
 
 export type TrainingPlanFormValues = {
   client_id: string;

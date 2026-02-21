@@ -7,18 +7,17 @@ import type {PlanItem} from '@/api/nutritionPlans';
 import {toSentenceLabel} from '@/pages/library/nutritionPlanBuilderShared';
 import NutritionPlanMealCard from '@/pages/library/NutritionPlanMealCard';
 
-type NutritionPlanDayViewProps = {
-  dayMealCount: number;
-  day: string;
-  mealsById: Record<string, Meal>;
+type DayActions = {
   onAddMeal: (day: string) => void;
   onClearDay: (day: string) => void;
   onCopyDay: (day: string) => void;
+};
+
+type ItemActions = {
   onDuplicateForDay: (planItem: PlanItem) => void;
   onEditAssignment: (planItem: PlanItem) => void;
   onEditMeal: (mealId: string) => void;
-  onRemoveMealFromDay: (planItemId: string) => void;
-  planItems: PlanItem[];
+  onRemoveFromDay: (planItemId: string) => void;
 };
 
 const getPlanItemSortWeight = (mealType: string) => {
@@ -40,28 +39,25 @@ const getPlanItemSortWeight = (mealType: string) => {
   }
 };
 
+type NutritionPlanDayViewProps = {
+  day: string;
+  dayActions: DayActions;
+  itemActions: ItemActions;
+  mealsById: Record<string, Meal>;
+  planItems: PlanItem[];
+};
+
 export default function NutritionPlanDayView({
-  dayMealCount,
   day,
+  dayActions,
+  itemActions,
   mealsById,
-  onAddMeal,
-  onClearDay,
-  onCopyDay,
-  onDuplicateForDay,
-  onEditAssignment,
-  onEditMeal,
-  onRemoveMealFromDay,
   planItems,
 }: NutritionPlanDayViewProps) {
   const sortedPlanItems = [...planItems].sort((a, b) => {
     const typeSort = getPlanItemSortWeight(a.meal_type) - getPlanItemSortWeight(b.meal_type);
-    if (typeSort !== 0) {
-      return typeSort;
-    }
-
-    const mealA = mealsById[a.meal_id];
-    const mealB = mealsById[b.meal_id];
-    return (mealA?.position ?? 0) - (mealB?.position ?? 0);
+    if (typeSort !== 0) return typeSort;
+    return (mealsById[a.meal_id]?.position ?? 0) - (mealsById[b.meal_id]?.position ?? 0);
   });
 
   return (
@@ -71,13 +67,13 @@ export default function NutritionPlanDayView({
           <div>
             <h2 className="text-lg font-semibold text-foreground">{toSentenceLabel(day)}</h2>
             <p className="text-sm text-muted">
-              {dayMealCount} day assignment{dayMealCount === 1 ? '' : 's'}
+              {planItems.length} day assignment{planItems.length === 1 ? '' : 's'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
               className="min-h-11"
-              onPress={() => onCopyDay(day)}
+              onPress={() => dayActions.onCopyDay(day)}
               size="sm"
               variant="outline"
             >
@@ -86,8 +82,8 @@ export default function NutritionPlanDayView({
             </Button>
             <Button
               className="min-h-11"
-              isDisabled={dayMealCount === 0}
-              onPress={() => onClearDay(day)}
+              isDisabled={planItems.length === 0}
+              onPress={() => dayActions.onClearDay(day)}
               size="sm"
               variant="outline"
             >
@@ -96,7 +92,7 @@ export default function NutritionPlanDayView({
             </Button>
             <Button
               className="min-h-11"
-              onPress={() => onAddMeal(day)}
+              onPress={() => dayActions.onAddMeal(day)}
               size="sm"
               variant="secondary"
             >
@@ -116,10 +112,10 @@ export default function NutritionPlanDayView({
               <NutritionPlanMealCard
                 key={planItem.id}
                 meal={mealsById[planItem.meal_id]}
-                onDuplicateForDay={onDuplicateForDay}
-                onEditAssignment={onEditAssignment}
-                onEditMeal={onEditMeal}
-                onRemoveFromDay={onRemoveMealFromDay}
+                onDuplicateForDay={itemActions.onDuplicateForDay}
+                onEditAssignment={itemActions.onEditAssignment}
+                onEditMeal={itemActions.onEditMeal}
+                onRemoveFromDay={itemActions.onRemoveFromDay}
                 planItem={planItem}
               />
             ))}

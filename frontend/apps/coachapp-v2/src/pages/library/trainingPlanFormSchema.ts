@@ -54,3 +54,23 @@ export const mapTrainingPlanToFormValues = (plan: TrainingPlan): TrainingPlanFor
   start_date: plan.start_date ?? '',
   status: plan.status === 'active' || plan.status === 'archived' ? plan.status : 'draft',
 });
+
+type TrainingPlanPayload = {
+  client_id?: string;
+  description?: string;
+  end_date?: string;
+  is_template: boolean;
+  name: string;
+  start_date?: string;
+  status: string;
+};
+
+export const buildTrainingPlanPayload = (values: TrainingPlanFormValues): TrainingPlanPayload => ({
+  description: values.description.trim() || undefined,
+  end_date: !values.is_template && values.end_date.trim() ? values.end_date : undefined,
+  is_template: values.is_template,
+  name: values.name.trim(),
+  start_date: !values.is_template && values.start_date.trim() ? values.start_date : undefined,
+  status: values.status,
+  ...(values.is_template ? {} : {client_id: values.client_id.trim()}),
+});

@@ -95,9 +95,7 @@ export function SetRow({onChange, onRemove, setDraft, setIndex}: SetRowProps) {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-secondary text-xs font-bold text-foreground">
               {setIndex + 1}
             </span>
-            <span
-              className="inline-flex items-center rounded-full border border-separator bg-surface-secondary px-2 py-0.5 text-xs font-medium capitalize text-foreground"
-            >
+            <span className="inline-flex items-center rounded-full border border-separator bg-surface-secondary px-2 py-0.5 text-xs font-medium capitalize text-foreground">
               {setDraft.set_type.replace('_', ' ')}
             </span>
           </div>

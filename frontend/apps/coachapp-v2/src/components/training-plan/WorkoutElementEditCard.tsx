@@ -11,6 +11,7 @@ import {
   type WorkoutElement,
   type WorkoutElementUpdateRequest,
 } from '@/api/trainingPlans';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 import {EMPTY_SET, fromSetDraft, type SetDraft, SetRow, toSetDraft} from './WorkoutSetRow';
 
@@ -53,6 +54,8 @@ export function WorkoutElementEditCard({
   const [updateWorkoutElement, {isLoading: isUpdating}] = useUpdateWorkoutElementMutation();
   const [deleteWorkoutElement, {isLoading: isDeleting}] = useDeleteWorkoutElementMutation();
 
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   const [draft, setDraft] = useState<ExerciseDraft>(() => ({
     exerciseId: element.exercise_id,
     notes: element.notes ?? '',
@@ -85,8 +88,7 @@ export function WorkoutElementEditCard({
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm('Delete this exercise?');
-    if (!confirmed) return;
+    setIsDeleteOpen(false);
     try {
       await deleteWorkoutElement({
         id: element.id,
@@ -254,7 +256,7 @@ export function WorkoutElementEditCard({
           <Button
             className="min-h-11 text-muted"
             isDisabled={isMutating}
-            onPress={handleDelete}
+            onPress={() => setIsDeleteOpen(true)}
             size="md"
             variant="ghost"
           >
@@ -273,6 +275,16 @@ export function WorkoutElementEditCard({
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        confirmLabel="Delete"
+        description="Delete this exercise? This cannot be undone."
+        isLoading={isDeleting}
+        isOpen={isDeleteOpen}
+        onConfirm={handleDelete}
+        onOpenChange={setIsDeleteOpen}
+        title="Delete exercise"
+      />
     </Card>
   );
 }

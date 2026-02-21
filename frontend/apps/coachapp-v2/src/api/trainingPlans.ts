@@ -204,6 +204,7 @@ export const trainingPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, {id}) => [
         {type: 'TrainingPlan', id},
         {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'Client', id: 'LIST'},
       ],
     }),
     duplicateTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, string>({

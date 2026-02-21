@@ -2,9 +2,11 @@ import {Button, Modal} from '@heroui/react';
 
 type ConfirmDialogProps = {
   confirmLabel: string;
+  confirmVariant?: 'danger' | 'primary' | 'secondary';
   description: string;
   isLoading?: boolean;
   isOpen: boolean;
+  loadingLabel?: string;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -12,9 +14,11 @@ type ConfirmDialogProps = {
 
 export default function ConfirmDialog({
   confirmLabel,
+  confirmVariant = 'danger',
   description,
   isLoading = false,
   isOpen,
+  loadingLabel,
   onConfirm,
   onOpenChange,
   title,
@@ -45,9 +49,9 @@ export default function ConfirmDialog({
                 isDisabled={isLoading}
                 onPress={onConfirm}
                 size="md"
-                variant="danger"
+                variant={confirmVariant}
               >
-                {isLoading ? 'Deleting...' : confirmLabel}
+                {isLoading ? (loadingLabel ?? confirmLabel) : confirmLabel}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

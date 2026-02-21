@@ -1,37 +1,10 @@
-import type { PlanItem } from "@/api/nutritionPlans";
+import type {PlanItem} from '@/api/nutritionPlans';
 
-import { toSentenceCase } from "@/pages/library/libraryShared";
+import {toSentenceCase} from '@/pages/library/libraryShared';
 
-export const DAYS = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-] as const;
+export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-export const MEAL_TYPES = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "pre_workout",
-  "post_workout",
-] as const;
-
-export type MealItemDraft = {
-  amount: string;
-  unit: string;
-  weight_g: string;
-};
-
-export type PlanItemDraft = {
-  day: string;
-  meal_id: string;
-  meal_type: string;
-};
+export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'] as const;
 
 export const toSentenceLabel = (value: string) => {
   return toSentenceCase(value);

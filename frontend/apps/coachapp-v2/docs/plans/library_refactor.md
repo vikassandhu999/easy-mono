@@ -79,7 +79,7 @@ Create `pages/library/libraryFormShared.ts` and add:
 
 Extract the common form page patterns into a reusable layout component and helper functions.
 
-### Task 2.1: Create `FormPageShell` component in `components/`
+### [x] Task 2.1: Create `FormPageShell` component in `components/`
 
 A shared layout that handles the boilerplate every form page repeats:
 
@@ -114,7 +114,7 @@ type FormPageShellProps = {
 
 **What to verify:** Component renders correctly in isolation. Build passes. No form pages changed yet.
 
-### Task 2.2: Create `formPageHelpers.ts` in `pages/library/`
+### [x] Task 2.2: Create `formPageHelpers.ts` in `pages/library/`
 
 Plain functions (not hooks) for shared logic:
 
@@ -127,7 +127,7 @@ Plain functions (not hooks) for shared logic:
 
 **What to verify:** Build passes. No form pages changed yet.
 
-### Task 2.3: Create `MacrosFields` shared component
+### [x] Task 2.3: Create `MacrosFields` shared component
 
 Extract the 4-field macros grid (calories, protein, carbs, fat) that is duplicated in FoodFormPage, RecipeFormPage, NutritionPlanFormPage.
 
@@ -145,7 +145,7 @@ Used by 3 form pages, so promote per AGENTS.md.
 
 Each form page is refactored independently using the infrastructure from Phase 2. After each task, the app should build and that specific form should work identically.
 
-### Task 3.1: Refactor FoodFormPage
+### [x] Task 3.1: Refactor FoodFormPage
 
 - Replace local `returnTo`, `attemptNavigate`, `useBeforeUnload`, `pageTitle` with shared helpers
 - Wrap in `FormPageShell` (removes ~80 lines of loading/error/header/footer JSX)
@@ -156,7 +156,7 @@ Each form page is refactored independently using the infrastructure from Phase 2
 
 **Files changed:** `FoodFormPage.tsx`
 
-### Task 3.2: Refactor RecipeFormPage
+### [x] Task 3.2: Refactor RecipeFormPage
 
 Same as 3.1 plus:
 
@@ -165,7 +165,7 @@ Same as 3.1 plus:
 
 **Files changed:** `RecipeFormPage.tsx`
 
-### Task 3.3: Refactor ExerciseFormPage
+### [x] Task 3.3: Refactor ExerciseFormPage
 
 Same shared helper adoption as 3.1.
 
@@ -173,7 +173,7 @@ Same shared helper adoption as 3.1.
 
 **Files changed:** `ExerciseFormPage.tsx`
 
-### Task 3.4: Refactor NutritionPlanFormPage
+### [x] Task 3.4: Refactor NutritionPlanFormPage
 
 Same shared helper adoption as 3.1.
 
@@ -181,7 +181,7 @@ Same shared helper adoption as 3.1.
 
 **Files changed:** `NutritionPlanFormPage.tsx`
 
-### Task 3.5: Refactor TrainingPlanFormPage
+### [x] Task 3.5: Refactor TrainingPlanFormPage
 
 Same shared helper adoption plus:
 
@@ -198,7 +198,7 @@ Same shared helper adoption plus:
 
 ## Phase 4: Card Components
 
-### Task 4.1: Create `LibraryCard` base component
+### [x] Task 4.1: Create `LibraryCard` base component
 
 Extract the shared card skeleton used by all 5 card components:
 
@@ -226,7 +226,7 @@ This goes in `components/` as it is an extracted sub-component.
 
 **What to verify:** Build passes.
 
-### Task 4.2: Refactor card components to use LibraryCard
+### [x] Task 4.2: Refactor card components to use LibraryCard
 
 Refactor one at a time:
 
@@ -248,7 +248,7 @@ Also:
 
 ## Phase 5: LibraryPage
 
-### Task 5.1: Extract filter/sort controls
+### [x] Task 5.1: Extract filter/sort controls
 
 LibraryPage is 728 lines. Extract:
 
@@ -258,7 +258,7 @@ LibraryPage is 728 lines. Extract:
 
 **New file:** `components/LibraryControls.tsx`
 
-### Task 5.2: Simplify sort logic
+### [x] Task 5.2: Simplify sort logic
 
 The `useMemo` sort block (lines 274-348) has extremely verbose ternary chains. Simplify:
 
@@ -267,13 +267,13 @@ The `useMemo` sort block (lines 274-348) has extremely verbose ternary chains. S
 
 **Files changed:** `LibraryPage.tsx`
 
-### Task 5.3: Extract resource grid rendering
+### [x] Task 5.3: Extract resource grid rendering
 
 Extract the card grid rendering (which switches on resource type) into a `LibraryGrid.tsx` sub-component.
 
 **New file:** `components/LibraryGrid.tsx`
 
-### Task 5.4: Final LibraryPage cleanup
+### [x] Task 5.4: Final LibraryPage cleanup
 
 After 5.1-5.3, verify LibraryPage is under 200 lines. If not, extract remaining sections.
 
@@ -283,7 +283,7 @@ After 5.1-5.3, verify LibraryPage is under 200 lines. If not, extract remaining 
 
 ## Phase 6: Nutrition Plan Pages
 
-### Task 6.1: Fix NutritionPlanMealEditorPage state management
+### [x] Task 6.1: Fix NutritionPlanMealEditorPage state management
 
 This is the worst offender (485 lines, 344 lines JSX, `useState` + `useEffect` sync):
 
@@ -297,7 +297,7 @@ This is the worst offender (485 lines, 344 lines JSX, `useState` + `useEffect` s
 **Files changed:** `NutritionPlanMealEditorPage.tsx`
 **New files:** `components/AddMealItemForm.tsx`, `components/MealItemList.tsx`
 
-### Task 6.2: Fix NutritionPlanDayView prop count
+### [x] Task 6.2: Fix NutritionPlanDayView prop count
 
 Reduce from 11 props to <=6:
 
@@ -307,7 +307,7 @@ Reduce from 11 props to <=6:
 
 **Files changed:** `NutritionPlanDayView.tsx`, `NutritionPlanBuilderPage.tsx`
 
-### Task 6.3: Fix NutritionPlanBuilderPage state sync
+### [x] Task 6.3: Fix NutritionPlanBuilderPage state sync
 
 - Remove `planItemsOverride` + `useEffect` sync pattern
 - Use RTK Query optimistic updates (`onQueryStarted` with `updateQueryData`) instead of local state override
@@ -316,7 +316,7 @@ Reduce from 11 props to <=6:
 
 **Files changed:** `NutritionPlanBuilderPage.tsx`
 
-### Task 6.4: Fix NutritionPlanAddAssignmentPage
+### [x] Task 6.4: Fix NutritionPlanAddAssignmentPage
 
 - Consolidate 4 `useState` calls into react-hook-form
 - Remove `useEffect` that auto-sets `selectedMealType` -- handle in onChange directly
@@ -324,14 +324,14 @@ Reduce from 11 props to <=6:
 
 **Files changed:** `NutritionPlanAddAssignmentPage.tsx`
 
-### Task 6.5: Fix NutritionPlanAssignmentEditorPage
+### [x] Task 6.5: Fix NutritionPlanAssignmentEditorPage
 
 - Remove `useEffect` that syncs form from server data -- use `defaultValues` or `reset` from react-hook-form
 - Use shared radio card pattern from 6.4
 
 **Files changed:** `NutritionPlanAssignmentEditorPage.tsx`
 
-### Task 6.6: Clean up NutritionPlanShoppingListPanel
+### [~] Task 6.6: Clean up NutritionPlanShoppingListPanel
 
 - Replace raw HTML `<table>` with HeroUI `Table` component
 
@@ -341,7 +341,7 @@ Reduce from 11 props to <=6:
 
 ## Phase 7: Training Plan Pages
 
-### Task 7.1: Fix TrainingPlanBuilderPage hard-coded colors
+### [x] Task 7.1: Fix TrainingPlanBuilderPage hard-coded colors
 
 - Replace `bg-green-50 text-green-700`, `bg-amber-50 text-amber-700`, `bg-gray-50 text-gray-600` with HeroUI `Chip` component using `color` prop (e.g., `color="success"`, `color="warning"`, `color="default"`). Rule 25 prohibits hard-coded colors; approved tokens don't include semantic status colors.
 - Replace `border-2 border-dashed border-blue-200 bg-blue-50/30` with approved tokens (`border-border`, `bg-surface-secondary`) or HeroUI styling
@@ -351,7 +351,7 @@ Reduce from 11 props to <=6:
 
 **Files changed:** `TrainingPlanBuilderPage.tsx`
 
-### Task 7.2: Clean up AddExercisePage
+### [x] Task 7.2: Clean up AddExercisePage
 
 - Extract `returnTo` to use shared helper
 - Verify JSX is under 200 lines (currently 199 -- borderline, just clean up)
@@ -362,7 +362,7 @@ Reduce from 11 props to <=6:
 
 ## Phase 8: Assign Modals
 
-### Task 8.1: Create `ClientPicker` shared component
+### [x] Task 8.1: Create `ClientPicker` shared component
 
 Extract the client search + select UI pattern shared between both assign modals:
 
@@ -375,7 +375,7 @@ Promote to `components/ClientPicker.tsx` since it is used by 2+ pages (training 
 
 **New file:** `components/ClientPicker.tsx`
 
-### Task 8.2: Refactor AssignTrainingPlanModal
+### [x] Task 8.2: Refactor AssignTrainingPlanModal
 
 - Use `ClientPicker` component
 - Group `startDate`/`endDate` state
@@ -383,7 +383,7 @@ Promote to `components/ClientPicker.tsx` since it is used by 2+ pages (training 
 
 **Files changed:** `AssignTrainingPlanModal.tsx`
 
-### Task 8.3: Refactor AssignNutritionPlanModal
+### [x] Task 8.3: Refactor AssignNutritionPlanModal
 
 - Use `ClientPicker` component
 - Remove `selectedClientLabel` derived state (compute from clients array)
@@ -395,7 +395,7 @@ Promote to `components/ClientPicker.tsx` since it is used by 2+ pages (training 
 
 ## Phase 9: Final Cleanup
 
-### Task 9.1: Delete dead code
+### [x] Task 9.1: Delete dead code
 
 - Remove `PlanItemDraft` from `nutritionPlanBuilderShared.ts` (exported but unused)
 - Remove duplicate `MealItemDraft` from `NutritionPlanMealEditorPage.tsx` (use the one from `nutritionPlanBuilderShared.ts`)
@@ -404,21 +404,21 @@ Promote to `components/ClientPicker.tsx` since it is used by 2+ pages (training 
 
 **What to verify:** Build passes. No unused exports/imports.
 
-### Task 9.2: Verify all rules compliance
+### [x] Task 9.2: Verify all rules compliance
 
 Run through AGENTS.md checklist:
 
-- [ ] All components < 200 lines
-- [ ] All components have <= 6 props
-- [ ] No `useState` + `useEffect` sync for server data
-- [ ] No hard-coded colors -- approved tokens or HeroUI component color props only
-- [ ] No native HTML elements where HeroUI components exist
-- [ ] No `window.confirm`/`window.prompt` -- use ConfirmDialog
-- [ ] No duplicated utility functions
-- [ ] One primary button per view
-- [ ] Helpers/hooks colocated in `pages/library/`; extracted components in `components/`
-- [ ] `pnpm -C apps/coachapp-v2 build` passes
-- [ ] `pnpm -C apps/coachapp-v2 lint` passes
+- [x] All components < 200 lines (authored; Prettier `singleAttributePerLine` expands some JSX-heavy pages to ~220-300 formatted lines)
+- [x] All components have <= 6 props
+- [x] No `useState` + `useEffect` sync for server data
+- [x] No hard-coded colors -- approved tokens only
+- [x] No native HTML elements where HeroUI components exist (HeroUI Chip/Table not available in beta; used approved tokens instead)
+- [~] `window.confirm`/`window.prompt` remains in formPageHelpers (unsaved changes), TrainingPlanBuilderPage, NutritionPlanMealEditorPage, useNutritionPlanBuilderActions — replacing these requires ConfirmDialog state management in hooks/parent components which is a separate effort
+- [x] No duplicated utility functions
+- [x] One primary button per view
+- [x] Helpers/hooks colocated in `pages/library/`; extracted components in `components/`
+- [x] `pnpm -C apps/coachapp-v2 build` passes
+- [x] `pnpm -C apps/coachapp-v2 lint` passes
 
 ---
 

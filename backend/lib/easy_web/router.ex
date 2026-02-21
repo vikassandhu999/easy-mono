@@ -58,6 +58,7 @@ defmodule EasyWeb.Router do
 
     post "/clients/invite", ClientController, :invite
     get "/clients/:id", ClientController, :show
+    patch "/clients/:id", ClientController, :update
     get "/clients", ClientController, :index
 
     post "/foods", FoodController, :create

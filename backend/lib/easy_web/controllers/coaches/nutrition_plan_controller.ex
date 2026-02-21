@@ -61,12 +61,14 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     limit = parse_integer(params, "limit", 10)
     status = parse_enum(params, "status", Plan.statuses())
     type = parse_enum(params, "type", Plan.types())
+    client_id = Map.get(params, "client_id")
 
     base =
       Plan
       |> Plan.for_business(business_id)
       |> Plan.with_status(status)
       |> Plan.with_type(type)
+      |> Plan.with_client(client_id)
 
     count = Repo.aggregate(base, :count, :id)
 

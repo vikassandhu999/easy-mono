@@ -39,6 +39,24 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
     end
   end
 
+  describe "GET /v1/coach/nutrition_plans" do
+    test "lists plans and filters by client_id", %{conn: conn, coach: coach, business: business} do
+      client1 = insert(:client, creator: coach, business: business)
+      client2 = insert(:client, creator: coach, business: business)
+
+      insert(:plan, creator: coach, business: business, client_id: client1.id, type: :personal)
+      insert(:plan, creator: coach, business: business, client_id: client2.id, type: :personal)
+      insert(:plan, creator: coach, business: business, type: :template)
+
+      conn_all = get(conn, "/v1/coach/nutrition_plans")
+      assert %{"data" => _data_all, "count" => 3} = json_response(conn_all, 200)
+
+      conn_filtered = get(conn, "/v1/coach/nutrition_plans", %{"client_id" => client1.id})
+      assert %{"data" => data_filtered, "count" => 1} = json_response(conn_filtered, 200)
+      assert hd(data_filtered)["client_id"] == client1.id
+    end
+  end
+
   describe "GET /v1/coach/nutrition_plans/:id" do
     test "returns a plan by id", %{conn: conn, coach: coach, business: business} do
       plan = insert(:plan, creator: coach, business: business)

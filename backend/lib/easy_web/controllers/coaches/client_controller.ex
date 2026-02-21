@@ -25,6 +25,22 @@ defmodule EasyWeb.Coaches.ClientController do
     end
   end
 
+  def update(conn, %{"id" => client_id}) do
+    business_id = conn.assigns.claims.business_id
+
+    with client when not is_nil(client) <-
+           Client
+           |> Client.for_business(business_id)
+           |> Client.with_preloads()
+           |> Repo.get(client_id),
+         {:ok, updated_client} <- Client.update(client, conn.body_params) do
+      render(conn, :show, client: updated_client)
+    else
+      nil -> {:error, Error.not_found("Client not found")}
+      error -> error
+    end
+  end
+
   def index(conn, params) do
     business_id = conn.assigns.claims.business_id
 

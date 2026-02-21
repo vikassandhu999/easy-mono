@@ -28,6 +28,33 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
     end
+
+    test "filters plans by client_id", %{conn: conn, coach: coach, business: business} do
+      client1 = insert(:client, creator: coach, business: business)
+      client2 = insert(:client, creator: coach, business: business)
+
+      insert(:training_plan,
+        author: coach,
+        business: business,
+        client_id: client1.id,
+        is_template: false,
+        start_date: ~D[2026-01-01],
+        end_date: ~D[2026-01-31]
+      )
+
+      insert(:training_plan,
+        author: coach,
+        business: business,
+        client_id: client2.id,
+        is_template: false,
+        start_date: ~D[2026-01-01],
+        end_date: ~D[2026-01-31]
+      )
+
+      conn = get(conn, "/v1/coach/training_plans", %{"client_id" => client1.id})
+      assert %{"data" => data, "count" => 1} = json_response(conn, 200)
+      assert hd(data)["client_id"] == client1.id
+    end
   end
 
   describe "GET /v1/coach/training_plans/:id" do

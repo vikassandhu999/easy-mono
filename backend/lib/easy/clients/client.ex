@@ -51,6 +51,12 @@ defmodule Easy.Clients.Client do
     |> put_assoc(:creator, coach)
   end
 
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(client, attrs) do
+    client
+    |> cast(attrs, [:first_name, :last_name, :phone, :notes, :status])
+  end
+
   # Queries
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -96,6 +102,13 @@ defmodule Easy.Clients.Client do
          :ok <- send_invitation_email(client, coach) do
       {:ok, client}
     end
+  end
+
+  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def update(client, attrs) do
+    client
+    |> update_changeset(attrs)
+    |> Repo.update()
   end
 
   defp create_invitation(coach, invite_attrs) do

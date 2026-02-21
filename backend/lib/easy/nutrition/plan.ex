@@ -76,6 +76,14 @@ defmodule Easy.Nutrition.Plan do
     from(p in query, where: p.client_id == ^client_id)
   end
 
+  @spec with_client(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def with_client(query \\ __MODULE__, client_id)
+  def with_client(query, nil), do: query
+
+  def with_client(query, client_id) do
+    from(p in query, where: p.client_id == ^client_id)
+  end
+
   @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def with_status(query \\ __MODULE__, status)
   def with_status(query, nil), do: query

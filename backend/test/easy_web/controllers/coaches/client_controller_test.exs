@@ -63,6 +63,23 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     end
   end
 
+  describe "PATCH /v1/coach/clients/:id" do
+    test "updates a client", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"first_name" => "Updated Name"})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["id"] == client.id
+      assert data["first_name"] == "Updated Name"
+    end
+
+    test "returns 404 for non-existent client", %{conn: conn} do
+      conn = patch(conn, "/v1/coach/clients/#{Ecto.UUID.generate()}", %{"first_name" => "Foo"})
+      assert json_response(conn, 404)
+    end
+  end
+
   describe "GET /v1/coach/clients" do
     test "returns paginated list of clients", %{conn: conn, coach: coach, business: business} do
       for _ <- 1..3, do: insert(:client, creator: coach, business: business)

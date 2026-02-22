@@ -19,42 +19,48 @@ pnpm -C apps/coachapp-v2 lint
 ### Architecture
 
 1. **Only 3 directories under `src/`:** `api/`, `pages/`, `components/`. No exceptions.
-2. **No barrel files** (`index.ts`) unless 4+ exports always imported together.
-3. **Colocate helpers/hooks.** Page-specific helpers and hooks stay in that page's folder.
-4. **Promote components to `components/` when:** used by 2+ pages OR extracted from a page (complex sub-components).
-5. **Flat over nested.** Add subfolders only when 5+ files exist.
+2. **Strict import direction.**
+   - `api/` → no imports from `pages/` or `components/`
+   - `components/` → imports from `api/` and `components/` only
+   - `pages/` → imports from `api/`, `components/`, and own feature folder
+   - **NEVER:** `components/` → `pages/`. **NEVER:** `pages/feature-a/` → `pages/feature-b/` (cross-feature page imports).
+3. **`components/` is for cross-feature shared components ONLY.** A component belongs in `components/` when 2+ separate features import it. Single-use extracted sub-components stay colocated with their page folder — even if extracted for size reasons. When a colocated component gains a second consumer in a different feature → move it to `components/`.
+4. **Feature subfolders in `pages/`.** Within a feature folder (e.g., `pages/library/`), create domain subfolders when a domain has 3+ files. Each subfolder contains: pages, sub-components, form schemas, form types, hooks, and helpers for that domain. Shared cross-domain utilities stay at the feature root.
+5. **Domain subfolders in `components/`.** Group related shared components into domain subfolders when 3+ related components exist. Keep truly generic components (ConfirmDialog, FormPageShell) at the root.
+6. **No barrel files** (`index.ts`) unless 4+ exports always imported together.
+7. **Colocate helpers/hooks.** Page-specific helpers and hooks stay in that page's folder.
 
 ### TypeScript
 
-6. **Types are source of truth.** Avoid `any`; use `unknown` or `Record<string, unknown>`.
-7. **Never derive types from Zod** (`z.infer` prohibited).
-8. **Strict mode enabled:** `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`.
+8. **Types are source of truth.** Avoid `any`; use `unknown` or `Record<string, unknown>`.
+9. **Never derive types from Zod** (`z.infer` prohibited).
+10. **Strict mode enabled:** `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`.
 
 ### React
 
-9. **No side effects during render.**
-10. **Complete hook dependency arrays** — never suppress lint rules.
-11. **Components < 200 lines.** Extract into hooks/sub-components when exceeded.
-12. **Max 6 props per component.** Group related data into objects.
-13. **Never define components inside components.**
-14. **No class components.** Only pure function components.
-15. **Use RTK Query for server data.** Manual `useEffect` + `useState` sync prohibited.
+11. **No side effects during render.**
+12. **Complete hook dependency arrays** — never suppress lint rules.
+13. **Components < 200 lines.** Extract into hooks/sub-components when exceeded.
+14. **Max 6 props per component.** Group related data into objects.
+15. **Never define components inside components.**
+16. **No class components.** Only pure function components.
+17. **Use RTK Query for server data.** Manual `useEffect` + `useState` sync prohibited.
 
 ### API
 
-16. **Every endpoint typed:** `query<ResponseType, ArgType>` / `mutation<ResponseType, ArgType>`.
-17. **Types at file top.** No inline shapes in endpoint definitions.
-18. **Tag invalidation with `{ type, id }` only.** No broad tags like `'Clients'`.
-19. **Use `fetchBaseQuery` only.** No axios.
-20. **Never add endpoints not in contract** (`apps/coachapp/docs/api_contract.yaml`).
+18. **Every endpoint typed:** `query<ResponseType, ArgType>` / `mutation<ResponseType, ArgType>`.
+19. **Types at file top.** No inline shapes in endpoint definitions.
+20. **Tag invalidation with `{ type, id }` only.** No broad tags like `'Clients'`.
+21. **Use `fetchBaseQuery` only.** No axios.
+22. **Never add endpoints not in contract** (`apps/coachapp/docs/api_contract.yaml`).
 
 ### UI
 
-21. **Follow `docs/ui-design-rules.md` for all UI work.**
-22. **Resource/index pages MUST follow `docs/resource-page-blueprint.md`.**
-23. **One primary action per view.** Only one `Button variant="primary"`.
-24. **Approved tokens only:** `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`, `text-foreground`, `text-muted`, `border-border`, `border-separator`, `bg-overlay`, `shadow-surface`, `shadow-overlay`.
-25. **No custom CSS/theme wrappers for HeroUI.** No hard-coded colors.
+23. **Follow `docs/ui-design-rules.md` for all UI work.**
+24. **Resource/index pages MUST follow `docs/resource-page-blueprint.md`.**
+25. **One primary action per view.** Only one `Button variant="primary"`.
+26. **Approved tokens only:** `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`, `text-foreground`, `text-muted`, `border-border`, `border-separator`, `bg-overlay`, `shadow-surface`, `shadow-overlay`.
+27. **No custom CSS/theme wrappers for HeroUI.** No hard-coded colors.
 
 ---
 
@@ -64,7 +70,7 @@ pnpm -C apps/coachapp-v2 lint
 src/
   api/            — RTK Query endpoints + types (one file per domain)
   pages/          — Route components grouped by feature (XxxPage.tsx)
-  components/     — Shared or complex multi-file components
+  components/     — Cross-feature shared components only
   main.tsx        — Entry point
   App.tsx         — Router + providers
   store.ts        — Redux store
@@ -93,29 +99,61 @@ Import directly: `import { useGetClientsQuery, Client } from '@/api/clients'`
 
 ### pages/
 
-Feature folders. Page files: `XxxPage.tsx`. Helpers and hooks colocate with their page.
+Feature folders with domain subfolders. Page files: `XxxPage.tsx`. Shared cross-domain utilities stay at the feature root.
 
 ```
 pages/
   auth/
-    AuthLayout.tsx
-    LoginPage.tsx
-    RegisterPage.tsx
+    AuthLayout.tsx, LoginPage.tsx, RegisterPage.tsx
   clients/
-    ClientListPage.tsx
+    ClientsPage.tsx, ClientViewPage.tsx, ...
+  library/
+    LibraryPage.tsx               — Main index page
+    LibraryControls.tsx           — Filter tabs, search, sort
+    LibraryGrid.tsx               — Resource card grid
+    LibraryCard.tsx               — Shared card shell component
+    FoodCard.tsx, RecipeCard.tsx, ExerciseCard.tsx, NutritionPlanCard.tsx, WorkoutPlanCard.tsx
+    libraryData.ts                — Resource types, filter tabs, sort options
+    libraryShared.ts              — Library-specific helpers (parseOptionalNumber, toStringValue)
+    libraryFormSchemaShared.ts    — Shared Zod validators
+    libraryFormShared.ts          — Re-exports form types + getReturnTo()
+    formPageHelpers.ts            — Form page utilities
+    useLibraryResources.ts        — Library query hook
+    exercises/                    — Exercise pages, forms, helpers
+    foods/                        — Food pages, forms, helpers
+    recipes/                      — Recipe pages, forms, helpers
+    nutrition-plans/              — Nutrition plan pages, builder, forms
+    training-plans/               — Training plan pages, builder, workout detail
 ```
 
 ### components/
 
-Shared components + extracted sub-components. Guards (`PrivateRoute.tsx`) go here.
+Cross-feature shared components only. A component belongs here when 2+ separate features import it.
 
 ```
 components/
-  MainLayout.tsx
-  PageWrapper.tsx
-  ConfirmDialog.tsx
-  ClientStatusFilter.tsx    — extracted from ClientListPage
+  layout/                         — App shell & routing guards
+    AppShell.tsx, MainLayout.tsx, navConfig.ts, PrivateRoute.tsx, GuestRoute.tsx
+  formatHelpers.ts                — Cross-feature formatters (formatDate, formatMacros, toSentenceCase)
+  formTypes.ts                    — Cross-feature form types (MacroFormFields, ServingSizeFormRow)
+  ConfirmDialog.tsx               — 5+ consumers
+  FormPageShell.tsx               — All form pages
+  MacrosFields.tsx                — 3 form pages
+  ClientPicker.tsx                — 2 assign modals
+  TagsInput.tsx                   — 3 form pages
+  ServingSizeRows.tsx             — 2 form pages
 ```
+
+### File naming conventions
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Pages | `XxxPage.tsx` | `FoodFormPage.tsx` |
+| Components | `PascalCase.tsx` | `LibraryCard.tsx` |
+| Hooks | `useXxx.ts` | `useLibraryResources.ts` |
+| Form schemas | `xxxFormSchema.ts` | `foodFormSchema.ts` |
+| Form types | `xxxFormTypes.ts` | `foodFormTypes.ts` |
+| Helpers | `xxxHelpers.ts` or `xxxShared.ts` | `formPageHelpers.ts` |
 
 ---
 

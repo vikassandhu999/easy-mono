@@ -2,8 +2,8 @@ import {Salad} from 'lucide-react';
 
 import type {NutritionPlan} from '@/api/nutritionPlans';
 
-import LibraryCard from '@/components/LibraryCard';
-import {formatDate, toSentenceCase} from '@/pages/library/libraryShared';
+import {formatDate, toSentenceCase} from '@/components/formatHelpers';
+import LibraryCard from '@/pages/library/LibraryCard';
 
 type NutritionPlanCardProps = {
   onOpenBuilder: (plan: NutritionPlan) => void;

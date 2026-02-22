@@ -4,8 +4,8 @@ import {useNavigate} from 'react-router';
 
 import type {TrainingPlan} from '@/api/trainingPlans';
 
+import {formatDate} from '@/components/formatHelpers';
 import ClientPlanCard from '@/pages/clients/ClientPlanCard';
-import {formatDate} from '@/pages/library/libraryShared';
 
 type ClientTrainingTabProps = {
   isLoading: boolean;

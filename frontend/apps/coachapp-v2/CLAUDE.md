@@ -21,7 +21,7 @@ Read and follow `AGENTS.md` — it is the mandatory ruleset for this app. Key co
 - RTK Query for all server data (no `useState` + `useEffect` sync)
 - No `z.infer`, no `any`, strict TypeScript
 - HeroUI components only (no native `<select>`, `<button>` where HeroUI exists)
-- Approved Tailwind tokens only (see AGENTS.md rule 24) — no hard-coded colors
+- Approved Tailwind tokens only (see AGENTS.md rule 26) — no hard-coded colors
 - One primary button per view
 - Read `docs/ui-design-rules.md` before any UI work
 - Read `docs/resource-page-blueprint.md` before building list/index pages
@@ -41,26 +41,29 @@ Tag types for cache invalidation: Food, Recipe, NutritionPlan, Meal, PlanItem, M
 
 ### Pages (`src/pages/`)
 
-Feature folders with `XxxPage.tsx` naming. Page-specific helpers and hooks colocate with their page folder.
+Feature folders with domain subfolders. `pages/library/` is organized into: `exercises/`, `foods/`, `recipes/`, `nutrition-plans/`, `training-plans/`. Shared cross-domain utilities stay at the feature root (`libraryShared.ts`, `libraryFormShared.ts`, `formPageHelpers.ts`, etc.).
 
 ### Shared Components (`src/components/`)
 
-Promoted when used by 2+ pages or extracted from a page as a complex sub-component:
+Cross-feature shared components only. Organized into domain subfolders:
 
-- **FormPageShell** — Shared form page layout (back button, header, loading/error states, form error banner, action footer with delete confirmation). All form pages should use this.
-- **MacrosFields** — 4-field macros grid (calories, protein, carbs, fat) for react-hook-form.
-- **ConfirmDialog** — Reusable confirmation modal for destructive actions.
-- **MainLayout** — App shell with desktop sidebar + mobile bottom nav.
-- **PrivateRoute / GuestRoute** — Auth guards.
+- **`layout/`** — AppShell, MainLayout, navConfig, PrivateRoute, GuestRoute
+- **Root** — FormPageShell, MacrosFields, ConfirmDialog, ClientPicker, TagsInput, ServingSizeRows, formatHelpers.ts, formTypes.ts
+
+Single-use extracted sub-components stay colocated with their page folder (e.g., `ExerciseFormFields.tsx` lives in `pages/library/exercises/`).
 
 ### Library Feature (`src/pages/library/`)
 
-This is the largest feature area. Shared utilities are colocated here:
+The largest feature area. Cross-domain shared utilities at the root:
 
-- `libraryShared.ts` — Pure formatting helpers: `formatDate`, `formatMacros`, `toSentenceCase`, `parseOptionalNumber`, `toStringValue`, `roundToOneDecimal`
+- `libraryShared.ts` — Library-specific helpers: `parseOptionalNumber`, `toStringValue`, `roundToOneDecimal`
 - `libraryFormSchemaShared.ts` — Shared Zod validation helpers: `validateMacroField`, `validateImageUrl`, `validateServingSizes`, `createEmptyServingSize`, plus constants (`CALORIES_MAX`, `MACRO_GRAMS_MAX`)
-- `libraryFormShared.ts` — Shared form types (`ServingSizeFormRow`, `MacroFormFields`, `ResourceStatus`) and `getReturnTo()` nav helper
+- `libraryFormShared.ts` — Re-exports form types from `@/components/formTypes` + `ResourceStatus` type + `getReturnTo()` nav helper
+
+Cross-feature formatters (`formatDate`, `formatMacros`, `toSentenceCase`) live in `@/components/formatHelpers.ts`. Cross-feature form types (`MacroFormFields`, `ServingSizeFormRow`) live in `@/components/formTypes.ts`.
 - `formPageHelpers.ts` — Form page utilities: `attemptNavigate`, `getPageTitle`, `applyServerErrors`, `useUnsavedChangesWarning`
+
+Domain subfolders contain pages, sub-components, form schemas, form types, hooks, and helpers for that domain.
 
 ### Form Page Pattern
 
@@ -74,11 +77,11 @@ Every form page follows this structure:
 6. Wrap everything in `FormPageShell`
 7. Map API validation errors with `handleFormError()` + `applyServerErrors()`
 
-Each form entity has 3 colocated files: `xxxFormSchema.ts` (Zod schema, initial values, mappers, payload builder), `xxxFormTypes.ts` (form value types), `XxxFormPage.tsx` (the page component).
+Each form entity has 3+ colocated files in its domain subfolder: `xxxFormSchema.ts` (Zod schema, initial values, mappers, payload builder), `xxxFormTypes.ts` (form value types), `XxxFormPage.tsx` (the page component), and `XxxFormFields.tsx` (form field sub-component).
 
 ## Active Refactoring
 
-`docs/plans/library_refactor.md` tracks a 9-phase refactoring effort. Phases 1-2 and Task 3.1 are complete. Remaining work: refactoring the other form pages, extracting card components into a shared `LibraryCard`, breaking down `LibraryPage` (728 lines), fixing nutrition plan state management, and replacing hard-coded colors in training plan pages.
+`docs/plans/library_refactor.md` tracks a 9-phase refactoring effort. Remaining work: breaking down `LibraryPage` (728 lines), fixing nutrition plan state management, and replacing hard-coded colors in training plan pages.
 
 ## Code Style
 

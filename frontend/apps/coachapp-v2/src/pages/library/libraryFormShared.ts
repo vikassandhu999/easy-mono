@@ -1,17 +1,6 @@
 import type {Location} from 'react-router';
 
-export type ServingSizeFormRow = {
-  amount: string;
-  unit: string;
-  weight_g: string;
-};
-
-export type MacroFormFields = {
-  calories: string;
-  carbs: string;
-  fat: string;
-  protein: string;
-};
+export type {MacroFormFields, ServingSizeFormRow} from '@/components/formTypes';
 
 export type ResourceStatus = 'active' | 'archived' | 'draft';
 

@@ -2,8 +2,8 @@ import {ChefHat, Clock, Leaf} from 'lucide-react';
 
 import type {Recipe} from '@/api/recipes';
 
-import LibraryCard from '@/components/LibraryCard';
-import {formatMacros} from '@/pages/library/libraryShared';
+import {formatMacros} from '@/components/formatHelpers';
+import LibraryCard from '@/pages/library/LibraryCard';
 
 type RecipeCardProps = {
   onEdit: (recipe: Recipe) => void;

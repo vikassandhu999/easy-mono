@@ -2,7 +2,7 @@ import type {FieldErrors, UseFormRegister} from 'react-hook-form';
 
 import {FieldError, Input, Label, TextField} from '@heroui/react';
 
-import type {MacroFormFields} from '@/pages/library/libraryFormShared';
+import type {MacroFormFields} from '@/components/formTypes';
 
 type MacrosFieldsProps = {
   errors: FieldErrors<MacroFormFields>;

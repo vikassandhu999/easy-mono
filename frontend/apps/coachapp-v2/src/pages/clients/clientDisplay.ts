@@ -1,6 +1,6 @@
 import type {Client} from '@/api/clients';
 
-export {formatDate} from '@/pages/library/libraryShared';
+export {formatDate} from '@/components/formatHelpers';
 
 export const CLIENT_STATUS_STYLES: Record<string, string> = {
   active: 'bg-accent text-foreground',

@@ -6,8 +6,8 @@ import type {Client} from '@/api/clients';
 import type {NutritionPlan} from '@/api/nutritionPlans';
 import type {TrainingPlan} from '@/api/trainingPlans';
 
+import {formatDate} from '@/components/formatHelpers';
 import {CLIENT_STATUS_STYLES, formatDateTime, getClientName} from '@/pages/clients/clientDisplay';
-import {formatDate} from '@/pages/library/libraryShared';
 
 type ClientOverviewTabProps = {
   client: Client;

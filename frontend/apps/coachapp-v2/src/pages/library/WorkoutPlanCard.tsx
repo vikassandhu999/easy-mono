@@ -2,8 +2,8 @@ import {Dumbbell} from 'lucide-react';
 
 import type {TrainingPlan} from '@/api/trainingPlans';
 
-import LibraryCard from '@/components/LibraryCard';
-import {formatDate, toSentenceCase} from '@/pages/library/libraryShared';
+import {formatDate, toSentenceCase} from '@/components/formatHelpers';
+import LibraryCard from '@/pages/library/LibraryCard';
 
 type WorkoutPlanCardProps = {
   onOpenBuilder: (plan: TrainingPlan) => void;

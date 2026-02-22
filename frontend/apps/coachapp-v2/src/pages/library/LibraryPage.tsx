@@ -2,9 +2,9 @@ import {Button, Card, Skeleton} from '@heroui/react';
 import {Plus, Search} from 'lucide-react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import LibraryControls from '@/components/LibraryControls';
-import LibraryGrid from '@/components/LibraryGrid';
+import LibraryControls from '@/pages/library/LibraryControls';
 import {FILTER_TABS, RESOURCE_TYPE_LABEL, SORT_OPTIONS} from '@/pages/library/libraryData';
+import LibraryGrid from '@/pages/library/LibraryGrid';
 import useLibraryResources from '@/pages/library/useLibraryResources';
 
 const CREATE_META: Record<string, {label: string; route: string}> = {

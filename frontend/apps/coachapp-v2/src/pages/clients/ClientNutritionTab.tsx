@@ -4,8 +4,8 @@ import {useNavigate} from 'react-router';
 
 import type {NutritionPlan} from '@/api/nutritionPlans';
 
+import {formatMacros} from '@/components/formatHelpers';
 import ClientPlanCard from '@/pages/clients/ClientPlanCard';
-import {formatMacros} from '@/pages/library/libraryShared';
 
 type ClientNutritionTabProps = {
   isLoading: boolean;

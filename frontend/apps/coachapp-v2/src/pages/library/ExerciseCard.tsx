@@ -3,8 +3,8 @@ import {Dumbbell} from 'lucide-react';
 import type {Exercise} from '@/api/exercises';
 import type {LibraryResourceExercise} from '@/pages/library/libraryData';
 
-import LibraryCard from '@/components/LibraryCard';
-import {toSentenceCase} from '@/pages/library/libraryShared';
+import {toSentenceCase} from '@/components/formatHelpers';
+import LibraryCard from '@/pages/library/LibraryCard';
 
 type ExerciseCardProps = {
   onEdit?: (exercise: Exercise) => void;

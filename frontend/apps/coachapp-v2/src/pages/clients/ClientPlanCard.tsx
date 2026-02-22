@@ -1,7 +1,7 @@
 import {Button, Card} from '@heroui/react';
 import {ExternalLink} from 'lucide-react';
 
-import {toSentenceCase} from '@/pages/library/libraryShared';
+import {toSentenceCase} from '@/components/formatHelpers';
 
 type ClientPlanCardProps = {
   dateRange?: string;

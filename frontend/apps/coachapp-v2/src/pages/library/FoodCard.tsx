@@ -2,8 +2,8 @@ import {Apple, Ruler, Tag} from 'lucide-react';
 
 import type {Food} from '@/api/foods';
 
-import LibraryCard from '@/components/LibraryCard';
-import {formatMacros} from '@/pages/library/libraryShared';
+import {formatMacros} from '@/components/formatHelpers';
+import LibraryCard from '@/pages/library/LibraryCard';
 
 type FoodCardProps = {
   food: Food;

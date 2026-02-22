@@ -4,7 +4,7 @@ import type {NutritionPlan} from '@/api/nutritionPlans';
 import type {Recipe} from '@/api/recipes';
 import type {TrainingPlan} from '@/api/trainingPlans';
 
-export {formatDate} from '@/pages/library/libraryShared';
+export {formatDate} from '@/components/formatHelpers';
 
 export type ResourceType = 'exercise' | 'food' | 'nutrition_plan' | 'recipe' | 'workout_plan';
 

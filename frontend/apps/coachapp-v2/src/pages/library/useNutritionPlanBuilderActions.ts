@@ -74,7 +74,9 @@ export default function useNutritionPlanBuilderActions(
   const [pendingCopyDay, setPendingCopyDay] = useState<null | PendingCopyDay>(null);
 
   const {data: mealsData} = useListMealsQuery({planId}, {skip: !planId});
-  const {data: planItemsData} = useListPlanItemsQuery(planId, {skip: !planId});
+  const {data: planItemsData} = useListPlanItemsQuery(planId, {
+    skip: !planId,
+  });
 
   const meals = useMemo(() => [...(mealsData?.data ?? [])].sort((a, b) => a.position - b.position), [mealsData?.data]);
   const mealsById = useMemo(
@@ -126,7 +128,10 @@ export default function useNutritionPlanBuilderActions(
   const performCopyDay = useCallback(
     async (sourceDay: string, targetDay: string) => {
       try {
-        await copyNutritionPlanDay({body: {source_day: sourceDay, target_day: targetDay}, id: planId}).unwrap();
+        await copyNutritionPlanDay({
+          body: {source_day: sourceDay, target_day: targetDay},
+          id: planId,
+        }).unwrap();
         toast.success('Day assignments replaced successfully.');
       } catch {
         toast.danger('Unable to copy day assignments. Please try again.');
@@ -223,7 +228,11 @@ export default function useNutritionPlanBuilderActions(
       setDuplicatingAssignment(true);
       try {
         const newMeal = await createMeal({
-          body: {macros: sourceMeal.macros, name: `${sourceMeal.name} (Copy)`, position: meals.length},
+          body: {
+            macros: sourceMeal.macros,
+            name: `${sourceMeal.name} (Copy)`,
+            position: meals.length,
+          },
           planId,
         }).unwrap();
         await Promise.all(
@@ -245,7 +254,11 @@ export default function useNutritionPlanBuilderActions(
         const previous = effectivePlanItems;
         setPlanItemsOverride(previous.map((i) => (i.id === assignment.id ? {...i, meal_id: newMeal.data.id} : i)));
         try {
-          await updatePlanItem({body: {meal_id: newMeal.data.id}, id: assignment.id, planId}).unwrap();
+          await updatePlanItem({
+            body: {meal_id: newMeal.data.id},
+            id: assignment.id,
+            planId,
+          }).unwrap();
         } catch {
           setPlanItemsOverride(previous);
           throw new Error('repoint_failed');
@@ -313,7 +326,12 @@ export default function useNutritionPlanBuilderActions(
     duplicatePlan,
     isDuplicatingAssignment,
     isDuplicatingPlan,
-    itemActions: {onDuplicateForDay, onEditAssignment, onEditMeal, onRemoveFromDay},
+    itemActions: {
+      onDuplicateForDay,
+      onEditAssignment,
+      onEditMeal,
+      onRemoveFromDay,
+    },
     itemsByDay,
     mealsById,
     mealUsageCount,

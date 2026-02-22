@@ -61,7 +61,10 @@ export const clientsApi = api.injectEndpoints({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((client) => ({type: 'Client' as const, id: client.id})),
+              ...result.data.map((client) => ({
+                type: 'Client' as const,
+                id: client.id,
+              })),
               {type: 'Client' as const, id: 'LIST'},
             ]
           : [{type: 'Client' as const, id: 'LIST'}],

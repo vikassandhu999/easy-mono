@@ -9,7 +9,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import VerifyPage from '@/pages/auth/VerifyPage';
 import ClientViewPage from '@/pages/clients/ClientViewPage';
-import AddExercisePage from '@/pages/library/AddExercisePage';
+import ExerciseEditorPage from '@/pages/library/ExerciseEditorPage';
 import ExerciseFormPage from '@/pages/library/ExerciseFormPage';
 import FoodFormPage from '@/pages/library/FoodFormPage';
 import LibraryPage from '@/pages/library/LibraryPage';
@@ -21,6 +21,7 @@ import NutritionPlanMealEditorPage from '@/pages/library/NutritionPlanMealEditor
 import RecipeFormPage from '@/pages/library/RecipeFormPage';
 import TrainingPlanBuilderPage from '@/pages/library/TrainingPlanBuilderPage';
 import TrainingPlanFormPage from '@/pages/library/TrainingPlanFormPage';
+import WorkoutDetailPage from '@/pages/library/WorkoutDetailPage';
 import OnboardingPage from '@/pages/onboarding/OnboardingPage';
 
 import ClientsPage from './pages/clients/ClientsPage';
@@ -94,8 +95,16 @@ export default function App() {
               path="/library/training-plans/:id/builder"
             />
             <Route
-              element={<AddExercisePage />}
-              path="/library/training-plans/:id/builder/days/:dayId/exercises/new"
+              element={<WorkoutDetailPage />}
+              path="/library/training-plans/:id/builder/workouts/:workoutId"
+            />
+            <Route
+              element={<ExerciseEditorPage />}
+              path="/library/training-plans/:id/builder/workouts/:workoutId/exercises/new"
+            />
+            <Route
+              element={<ExerciseEditorPage />}
+              path="/library/training-plans/:id/builder/workouts/:workoutId/exercises/:elementId"
             />
             <Route
               element={<NutritionPlanAddAssignmentPage />}

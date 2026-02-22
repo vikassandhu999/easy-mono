@@ -7,8 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm -C apps/coachapp-v2 dev      # Vite dev server on port 2021
 pnpm -C apps/coachapp-v2 build    # tsc --noEmit && vite build (MUST pass after every change)
-pnpm -C apps/coachapp-v2 lint     # eslint --fix
-pnpm -C apps/coachapp-v2 format   # prettier --write
+pnpm -C apps/coachapp-v2 lint     # eslint --fix (includes prettier rules via @easy/eslint-config)
 ```
 
 No tests are configured. Build is the primary verification gate.
@@ -66,6 +65,7 @@ This is the largest feature area. Shared utilities are colocated here:
 ### Form Page Pattern
 
 Every form page follows this structure:
+
 1. `useParams()` to determine create vs edit mode
 2. RTK Query hook to fetch data (skip if creating)
 3. `useForm()` with Zod schema + `zodResolver`
@@ -83,6 +83,7 @@ Each form entity has 3 colocated files: `xxxFormSchema.ts` (Zod schema, initial 
 ## Code Style
 
 Enforced by `@easy/eslint-config`:
+
 - Prettier: 120 char width, 2-space indent, single quotes, trailing commas, `singleAttributePerLine`, no bracket spacing
 - Imports sorted by `eslint-plugin-perfectionist` (natural ascending) — JSX props also sorted alphabetically
 - Path alias `@/` for all `src/` imports

@@ -8,7 +8,6 @@ Vite + React 19 + TypeScript (strict) | HeroUI 3.0.0-beta + Tailwind v4 | Redux 
 pnpm -C apps/coachapp-v2 dev
 pnpm -C apps/coachapp-v2 build
 pnpm -C apps/coachapp-v2 lint
-pnpm -C apps/coachapp-v2 format
 ```
 
 **MUST run `build` after changes.** TypeScript errors = build failures.

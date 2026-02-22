@@ -43,11 +43,8 @@ pnpm -C apps/coachapp-v2 preview
 ### Linting & Formatting
 
 ```bash
-# Run ESLint with auto-fix
+# Run ESLint with auto-fix (includes Prettier rules from @easy/eslint-config)
 pnpm -C apps/coachapp-v2 lint
-
-# Run Prettier
-pnpm -C apps/coachapp-v2 format
 ```
 
 ## 🏗️ Architecture
@@ -58,7 +55,7 @@ pnpm -C apps/coachapp-v2 format
 | ---------------- | ----------------------------------- |
 | Framework        | Vite + React 19                     |
 | Language         | TypeScript (strict mode)            |
-| UI Components    | HeroUI 3.0.0-beta.6 (@heroui/react) |
+| UI Components    | HeroUI 3.0.0-beta.7 (@heroui/react) |
 | Styling          | Tailwind v4                         |
 | State Management | Redux Toolkit + RTK Query           |
 | Routing          | React Router v7                     |
@@ -193,8 +190,7 @@ All errors are normalized and surfaced via `toast.danger()`.
 | ---------------------------------- | ----------------------------------- |
 | `pnpm -C apps/coachapp-v2 dev`     | Start dev server on port 2021       |
 | `pnpm -C apps/coachapp-v2 build`   | Type-check and build for production |
-| `pnpm -C apps/coachapp-v2 lint`    | Run ESLint with auto-fix            |
-| `pnpm -C apps/coachapp-v2 format`  | Format with Prettier                |
+| `pnpm -C apps/coachapp-v2 lint`    | Lint and format via ESLint config   |
 | `pnpm -C apps/coachapp-v2 preview` | Preview production build            |
 
 ## 📁 Documentation

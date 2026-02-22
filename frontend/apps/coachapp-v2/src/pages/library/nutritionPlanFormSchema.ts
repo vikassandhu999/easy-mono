@@ -57,7 +57,12 @@ export const parseOptionalPlanNumber = (value: string): number | undefined => {
 
 type NutritionPlanPayload = {
   description?: string;
-  macros_goal?: {calories: number; carbs: number; fat: number; protein: number};
+  macros_goal?: {
+    calories: number;
+    carbs: number;
+    fat: number;
+    protein: number;
+  };
   name: string;
   status: string;
   tags?: string[];

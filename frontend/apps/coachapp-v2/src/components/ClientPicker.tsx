@@ -89,7 +89,13 @@ export default function ClientPicker({onSelect, selectedId}: ClientPickerProps) 
                     isSelected ? 'bg-surface-secondary' : 'hover:bg-surface-secondary'
                   }`}
                   key={client.id}
-                  onClick={() => onSelect({email: client.email, id: client.id, name: label})}
+                  onClick={() =>
+                    onSelect({
+                      email: client.email,
+                      id: client.id,
+                      name: label,
+                    })
+                  }
                   type="button"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-foreground">

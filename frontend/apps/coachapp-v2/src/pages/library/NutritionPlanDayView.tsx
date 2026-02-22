@@ -67,7 +67,8 @@ export default function NutritionPlanDayView({
           <div>
             <h2 className="text-lg font-semibold text-foreground">{toSentenceLabel(day)}</h2>
             <p className="text-sm text-muted">
-              {planItems.length} day assignment{planItems.length === 1 ? '' : 's'}
+              {planItems.length} day assignment
+              {planItems.length === 1 ? '' : 's'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

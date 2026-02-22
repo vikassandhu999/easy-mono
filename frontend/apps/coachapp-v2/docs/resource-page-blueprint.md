@@ -5,6 +5,7 @@ Use this blueprint for list/index screens such as Clients, Library, Plans, Recip
 ## Purpose
 
 Create repeatable, production-ready resource pages with:
+
 - clean hierarchy,
 - predictable control placement,
 - one dominant action,
@@ -56,11 +57,13 @@ Create repeatable, production-ready resource pages with:
 ## Token + Styling Rules
 
 Allowed semantic tokens only:
+
 - Backgrounds: `bg-background`, `bg-surface`, `bg-surface-secondary`, `bg-accent`, `bg-default`
 - Text: `text-foreground`, `text-muted`
 - Borders: `border-border`, `border-separator`
 
 Do not introduce:
+
 - ad-hoc color classes,
 - opacity text classes,
 - custom CSS modules,

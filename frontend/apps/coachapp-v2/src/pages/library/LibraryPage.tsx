@@ -17,9 +17,15 @@ import useLibraryResources from '@/pages/library/useLibraryResources';
 const CREATE_META: Record<string, {label: string; route: string}> = {
   exercise: {label: 'Add exercise', route: '/library/exercises/new'},
   food: {label: 'Add food', route: '/library/foods/new'},
-  nutrition_plan: {label: 'Add nutrition plan', route: '/library/nutrition-plans/new'},
+  nutrition_plan: {
+    label: 'Add nutrition plan',
+    route: '/library/nutrition-plans/new',
+  },
   recipe: {label: 'Add recipe', route: '/library/recipes/new'},
-  workout_plan: {label: 'Add workout plan', route: '/library/training-plans/new'},
+  workout_plan: {
+    label: 'Add workout plan',
+    route: '/library/training-plans/new',
+  },
 };
 
 export default function LibraryPage() {

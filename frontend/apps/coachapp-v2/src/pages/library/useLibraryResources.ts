@@ -132,13 +132,33 @@ export default function useLibraryResources(
   const displayedResources = useMemo(() => {
     const all: LibraryResource[] = [
       ...(nutritionPlansData?.data ?? []).map(
-        (d): LibraryResource => ({id: `nutrition_plan-${d.id}`, type: 'nutrition_plan', data: d}),
+        (d): LibraryResource => ({
+          id: `nutrition_plan-${d.id}`,
+          type: 'nutrition_plan',
+          data: d,
+        }),
       ),
       ...(foodsData?.data ?? []).map((d): LibraryResource => ({id: `food-${d.id}`, type: 'food', data: d})),
-      ...(recipesData?.data ?? []).map((d): LibraryResource => ({id: `recipe-${d.id}`, type: 'recipe', data: d})),
-      ...(exercisesData?.data ?? []).map((d): LibraryResource => ({id: `exercise-${d.id}`, type: 'exercise', data: d})),
+      ...(recipesData?.data ?? []).map(
+        (d): LibraryResource => ({
+          id: `recipe-${d.id}`,
+          type: 'recipe',
+          data: d,
+        }),
+      ),
+      ...(exercisesData?.data ?? []).map(
+        (d): LibraryResource => ({
+          id: `exercise-${d.id}`,
+          type: 'exercise',
+          data: d,
+        }),
+      ),
       ...(trainingPlansData?.data ?? []).map(
-        (d): LibraryResource => ({id: `workout_plan-${d.id}`, type: 'workout_plan', data: d}),
+        (d): LibraryResource => ({
+          id: `workout_plan-${d.id}`,
+          type: 'workout_plan',
+          data: d,
+        }),
       ),
     ];
 

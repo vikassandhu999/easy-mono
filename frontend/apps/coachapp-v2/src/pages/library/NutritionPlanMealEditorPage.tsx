@@ -31,10 +31,14 @@ export default function NutritionPlanMealEditorPage() {
   const [itemToDelete, setItemToDelete] = useState<null | string>(null);
 
   const {data: selectedMealData, isLoading: isMealLoading} = useGetMealQuery(editingMealId, {skip: !editingMealId});
-  const {data: mealItemsData} = useListMealItemsQuery(editingMealId, {skip: !editingMealId});
+  const {data: mealItemsData} = useListMealItemsQuery(editingMealId, {
+    skip: !editingMealId,
+  });
   const {data: foodsData} = useListFoodsQuery({limit: 100, offset: 0});
   const {data: recipesData} = useListRecipesQuery({limit: 100, offset: 0});
-  const {data: planItemsData} = useListPlanItemsQuery(planId, {skip: !planId});
+  const {data: planItemsData} = useListPlanItemsQuery(planId, {
+    skip: !planId,
+  });
 
   const [updateMeal, {isLoading: isUpdatingMeal}] = useUpdateMealMutation();
   const [createMealItem, {isLoading: isCreatingMealItem}] = useCreateMealItemMutation();
@@ -43,8 +47,14 @@ export default function NutritionPlanMealEditorPage() {
 
   const meal = selectedMealData?.data;
   const mealItems = mealItemsData?.data ?? [];
-  const foods = (foodsData?.data ?? []).map((f) => ({id: f.id, name: f.name}));
-  const recipes = (recipesData?.data ?? []).map((r) => ({id: r.id, name: r.name}));
+  const foods = (foodsData?.data ?? []).map((f) => ({
+    id: f.id,
+    name: f.name,
+  }));
+  const recipes = (recipesData?.data ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+  }));
   const mealUsageCount = (planItemsData?.data ?? []).filter((item) => item.meal_id === editingMealId).length;
   const isLoading = isUpdatingMeal || isCreatingMealItem || isUpdatingMealItem || isDeletingMealItem;
 
@@ -85,7 +95,12 @@ export default function NutritionPlanMealEditorPage() {
 
   const handleUpdateItem = async (itemId: string, body: {amount?: number; unit?: string; weight_g?: number}) => {
     try {
-      await updateMealItem({body, id: itemId, mealId: editingMealId, planId}).unwrap();
+      await updateMealItem({
+        body,
+        id: itemId,
+        mealId: editingMealId,
+        planId,
+      }).unwrap();
       toast.success('Meal item updated.');
     } catch {
       toast.danger('Unable to update meal item. Please try again.');
@@ -100,7 +115,11 @@ export default function NutritionPlanMealEditorPage() {
     weight_g?: number;
   }) => {
     try {
-      await createMealItem({body: {...body, position: mealItems.length}, mealId: editingMealId, planId}).unwrap();
+      await createMealItem({
+        body: {...body, position: mealItems.length},
+        mealId: editingMealId,
+        planId,
+      }).unwrap();
       toast.success('Meal item added.');
     } catch {
       toast.danger('Unable to add meal item. Please try again.');
@@ -148,7 +167,8 @@ export default function NutritionPlanMealEditorPage() {
 
       <Card className="border border-separator bg-background p-4">
         <p className="text-sm font-medium text-foreground">
-          Used in {mealUsageCount} day assignment{mealUsageCount === 1 ? '' : 's'}.
+          Used in {mealUsageCount} day assignment
+          {mealUsageCount === 1 ? '' : 's'}.
         </p>
         <p className="mt-1 text-sm text-muted">
           {mealUsageCount > 1

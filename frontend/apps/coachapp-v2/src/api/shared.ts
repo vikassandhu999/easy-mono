@@ -52,6 +52,13 @@ export const handleFormError = (error: unknown, fallbackMessage: string): FormEr
   return {formError, fieldErrors};
 };
 
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  if (error && typeof error === 'object' && 'data' in error) {
+    return (error as {data?: ErrorResponse}).data?.error_message ?? fallback;
+  }
+  return fallback;
+};
+
 export type Macros = Record<string, number>;
 
 export type ServingSize = {

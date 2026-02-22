@@ -4,12 +4,9 @@
   "search.useIgnoreFiles": false,
   "explorer.excludeGitIgnore": false,
   "search.exclude": {
-    // Avoid polluting search results with lockfile content
     "pnpm-lock.yaml": true
   },
-  // Ensure VSCode uses pnpm instead of npm
   "npm.packageManager": "pnpm",
-  // For those using file-nesting, nest the new files. E.g.:
   "explorer.fileNesting.patterns": {
     "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml"
   },
@@ -17,5 +14,8 @@
   "editor.fontSize": 13,
   "window.zoomLevel": 1,
   "eslint.format.enable": true,
-  "tailwindCSS.experimental.configFile": "apps/coachapp/src/index.css"
+  "tailwindCSS.experimental.configFile": [
+    "apps/coachapp/src/index.css",
+    "apps/coachapp-v2/src/index.css"
+  ],
 }

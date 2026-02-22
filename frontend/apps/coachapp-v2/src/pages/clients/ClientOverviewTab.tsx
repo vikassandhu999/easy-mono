@@ -130,7 +130,8 @@ export default function ClientOverviewTab({
             <div className="flex flex-col gap-2">
               <p className="font-medium text-foreground">{activeNutrition.name}</p>
               <p className="text-xs text-muted">
-                {activeNutrition.meals.length} meal{activeNutrition.meals.length !== 1 ? 's' : ''}
+                {activeNutrition.meals.length} meal
+                {activeNutrition.meals.length !== 1 ? 's' : ''}
               </p>
               <Button
                 className="mt-1 w-fit"

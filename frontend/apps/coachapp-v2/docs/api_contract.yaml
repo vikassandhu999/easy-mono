@@ -236,6 +236,39 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update client
+      description: Updates client metadata such as contact info and status. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response.
+      operationId: updateClient
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdateRequest"
+            examples:
+              default:
+                value:
+                  first_name: "Jane"
+                  last_name: "Doe"
+                  status: active
+      responses:
+        "200":
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/clients:
     get:
       summary: List clients
@@ -691,6 +724,11 @@ paths:
           schema:
             type: string
         - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: client_id
           in: query
           required: false
           schema:
@@ -2471,6 +2509,20 @@ components:
           type: string
         notes:
           type: string
+    ClientUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, onboarding]
     ClientResponse:
       type: object
       required: [data]

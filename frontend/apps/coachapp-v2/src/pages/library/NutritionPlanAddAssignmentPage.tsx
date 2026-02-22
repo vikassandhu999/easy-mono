@@ -25,7 +25,9 @@ export default function NutritionPlanAddAssignmentPage() {
   const [selectedMealType, setSelectedMealType] = useState<string>(MEAL_TYPES[0]);
 
   const {data: mealsData} = useListMealsQuery({planId}, {skip: !planId});
-  const {data: planItemsData} = useListPlanItemsQuery(planId, {skip: !planId});
+  const {data: planItemsData} = useListPlanItemsQuery(planId, {
+    skip: !planId,
+  });
   const [createMeal, {isLoading: isCreatingMeal}] = useCreateMealMutation();
   const [createPlanItem, {isLoading: isCreatingPlanItem}] = useCreatePlanItemMutation();
 
@@ -60,10 +62,19 @@ export default function NutritionPlanAddAssignmentPage() {
     if (!planId) return;
     try {
       if (newMealName.trim()) {
-        const res = await createMeal({body: {name: newMealName.trim(), position: meals.length}, planId}).unwrap();
-        await createPlanItem({body: {day, meal_id: res.data.id, meal_type: selectedMealType}, planId}).unwrap();
+        const res = await createMeal({
+          body: {name: newMealName.trim(), position: meals.length},
+          planId,
+        }).unwrap();
+        await createPlanItem({
+          body: {day, meal_id: res.data.id, meal_type: selectedMealType},
+          planId,
+        }).unwrap();
       } else if (selectedMealId) {
-        await createPlanItem({body: {day, meal_id: selectedMealId, meal_type: selectedMealType}, planId}).unwrap();
+        await createPlanItem({
+          body: {day, meal_id: selectedMealId, meal_type: selectedMealType},
+          planId,
+        }).unwrap();
       }
       toast.success(`Meal assignment added to ${toSentenceLabel(day)}.`);
       navigate(returnTo);

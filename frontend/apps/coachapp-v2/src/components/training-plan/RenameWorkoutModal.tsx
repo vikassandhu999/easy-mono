@@ -1,5 +1,5 @@
-import {Button, Input, Modal} from '@heroui/react';
-import {useEffect, useRef, useState} from 'react';
+import {Button, FieldError, Input, Label, Modal, TextField} from '@heroui/react';
+import {useEffect, useState} from 'react';
 
 type RenameWorkoutModalProps = {
   currentName: string;
@@ -11,12 +11,10 @@ type RenameWorkoutModalProps = {
 
 export function RenameWorkoutModal({currentName, isLoading, isOpen, onOpenChange, onSave}: RenameWorkoutModalProps) {
   const [name, setName] = useState(currentName);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setName(currentName);
-      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, currentName]);
 
@@ -37,19 +35,22 @@ export function RenameWorkoutModal({currentName, isLoading, isOpen, onOpenChange
       <Modal.Backdrop>
         <Modal.Container>
           <Modal.Dialog>
-            <Modal.Header>Rename workout</Modal.Header>
-            <Modal.Body>
-              <Input
-                className="min-h-11"
-                onChange={(e) => setName(e.target.value)}
+            <Modal.Header>
+              <h4 className="text-xl font-bold">Rename workout</h4>
+            </Modal.Header>
+            <Modal.Body className="p-4">
+              <TextField
+                onChange={(value) => setName(value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSave();
                 }}
-                placeholder="Workout name..."
-                ref={inputRef}
                 value={name}
                 variant="secondary"
-              />
+              >
+                <Label>Name</Label>
+                <Input placeholder="Workout name..." />
+                <FieldError />
+              </TextField>
             </Modal.Body>
             <Modal.Footer>
               <Button

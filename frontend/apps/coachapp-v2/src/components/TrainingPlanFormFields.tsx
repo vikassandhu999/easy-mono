@@ -1,12 +1,18 @@
-import {Button, FieldError, Input, Label, ListBox, Select, TextArea, TextField} from '@heroui/react';
 import {
-  type Control,
-  Controller,
-  type FieldErrors,
-  type UseFormRegister,
-  type UseFormSetValue,
-  useWatch,
-} from 'react-hook-form';
+  Button,
+  Calendar,
+  DateField,
+  DatePicker,
+  FieldError,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  TextArea,
+  TextField,
+} from '@heroui/react';
+import {parseDate} from '@internationalized/date';
+import {type Control, Controller, type FieldErrors, type UseFormSetValue, useWatch} from 'react-hook-form';
 
 import type {Client} from '@/api/clients';
 import type {TrainingPlanFormValues} from '@/pages/library/trainingPlanFormTypes';
@@ -15,56 +21,133 @@ type TrainingPlanFormFieldsProps = {
   clients: Client[];
   control: Control<TrainingPlanFormValues>;
   errors: FieldErrors<TrainingPlanFormValues>;
-  register: UseFormRegister<TrainingPlanFormValues>;
+  isEditing: boolean;
   setValue: UseFormSetValue<TrainingPlanFormValues>;
 };
-
-const SECTION = 'flex flex-col gap-3 rounded-lg border border-separator bg-surface p-4 sm:p-5';
 
 const getClientLabel = (client: Client): string => {
   const fullName = `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim();
   return fullName || client.email;
 };
 
+const DatePickerCalendar = (
+  <Calendar>
+    <Calendar.Header>
+      <Calendar.YearPickerTrigger>
+        <Calendar.YearPickerTriggerHeading />
+        <Calendar.YearPickerTriggerIndicator />
+      </Calendar.YearPickerTrigger>
+      <Calendar.NavButton slot="previous" />
+      <Calendar.NavButton slot="next" />
+    </Calendar.Header>
+    <Calendar.Grid>
+      <Calendar.GridHeader>{(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}</Calendar.GridHeader>
+      <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+    </Calendar.Grid>
+    <Calendar.YearPickerGrid>
+      <Calendar.YearPickerGridBody>{({year}) => <Calendar.YearPickerCell year={year} />}</Calendar.YearPickerGridBody>
+    </Calendar.YearPickerGrid>
+  </Calendar>
+);
+
 export default function TrainingPlanFormFields({
   clients,
   control,
   errors,
-  register,
+  isEditing,
   setValue,
 }: TrainingPlanFormFieldsProps) {
   const isTemplate = useWatch({control, name: 'is_template'});
-  const selectedStatus = useWatch({control, name: 'status'});
+
+  const statusSelect = (
+    <Controller
+      control={control}
+      name="status"
+      render={({field}) => (
+        <Select
+          onSelectionChange={(key) => {
+            if (key !== null) field.onChange(key.toString());
+          }}
+          selectedKey={field.value}
+          variant="secondary"
+        >
+          <Label className="text-sm font-medium text-foreground">Status</Label>
+          <Select.Trigger className="min-h-11 w-full">
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item
+                id="draft"
+                textValue="Draft"
+              >
+                Draft
+              </ListBox.Item>
+              <ListBox.Item
+                id="active"
+                textValue="Active"
+              >
+                Active
+              </ListBox.Item>
+              <ListBox.Item
+                id="archived"
+                textValue="Archived"
+              >
+                Archived
+              </ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
+      )}
+    />
+  );
 
   return (
     <>
-      <section className={SECTION}>
-        <p className="text-sm font-semibold text-foreground">Basics</p>
+      <Controller
+        control={control}
+        name="name"
+        render={({field}) => (
+          <TextField
+            isInvalid={Boolean(errors.name?.message)}
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value}
+          >
+            <Label className="text-sm font-medium text-foreground">Name</Label>
+            <Input
+              placeholder="e.g. 12-Week Strength Base"
+              variant="secondary"
+            />
+            {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
+          </TextField>
+        )}
+      />
 
-        <TextField isInvalid={Boolean(errors.name?.message)}>
-          <Label className="text-sm font-medium text-foreground">Name</Label>
-          <Input
-            placeholder="e.g. 12-Week Strength Base"
-            variant="secondary"
-            {...register('name')}
-          />
-          {errors.name?.message ? <FieldError>{errors.name.message}</FieldError> : null}
-        </TextField>
+      <Controller
+        control={control}
+        name="description"
+        render={({field}) => (
+          <TextField
+            isInvalid={Boolean(errors.description?.message)}
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value}
+          >
+            <Label className="text-sm font-medium text-foreground">Description</Label>
+            <TextArea
+              placeholder="Optional plan notes"
+              variant="secondary"
+            />
+            {errors.description?.message ? <FieldError>{errors.description.message}</FieldError> : null}
+          </TextField>
+        )}
+      />
 
-        <TextField isInvalid={Boolean(errors.description?.message)}>
-          <Label className="text-sm font-medium text-foreground">Description</Label>
-          <TextArea
-            placeholder="Optional plan notes"
-            variant="secondary"
-            {...register('description')}
-          />
-          {errors.description?.message ? <FieldError>{errors.description.message}</FieldError> : null}
-        </TextField>
-      </section>
+      <div className="border-t border-separator" />
 
-      <section className={SECTION}>
-        <p className="text-sm font-semibold text-foreground">Plan setup</p>
-
+      {!isEditing ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium text-foreground">Type</Label>
@@ -87,29 +170,17 @@ export default function TrainingPlanFormFields({
               </Button>
             </div>
           </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">Status</Label>
-            <div className="flex flex-wrap gap-2">
-              {(['draft', 'active', 'archived'] as const).map((status) => (
-                <Button
-                  className="min-h-11 flex-1"
-                  key={status}
-                  onPress={() => setValue('status', status)}
-                  type="button"
-                  variant={selectedStatus === status ? 'secondary' : 'outline'}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Button>
-              ))}
-            </div>
-          </div>
+          {statusSelect}
         </div>
-      </section>
+      ) : (
+        statusSelect
+      )}
 
       {!isTemplate ? (
-        <section className={SECTION}>
-          <p className="text-sm font-semibold text-foreground">Assignment metadata</p>
+        <>
+          <div className="border-t border-separator" />
+
+          <p className="text-sm font-semibold text-foreground">Assignment</p>
 
           <Controller
             control={control}
@@ -148,27 +219,65 @@ export default function TrainingPlanFormFields({
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField isInvalid={Boolean(errors.start_date?.message)}>
-              <Label className="text-sm font-medium text-foreground">Start date</Label>
-              <Input
-                type="date"
-                variant="secondary"
-                {...register('start_date')}
-              />
-              {errors.start_date?.message ? <FieldError>{errors.start_date.message}</FieldError> : null}
-            </TextField>
+            <Controller
+              control={control}
+              name="start_date"
+              render={({field}) => (
+                <div className="flex flex-col gap-1">
+                  <DatePicker
+                    isInvalid={Boolean(errors.start_date?.message)}
+                    onChange={(date) => field.onChange(date?.toString() ?? '')}
+                    value={field.value ? parseDate(field.value) : null}
+                  >
+                    <Label className="text-sm font-medium text-foreground">Start date</Label>
+                    <DateField.Group
+                      fullWidth
+                      variant={'secondary'}
+                    >
+                      <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+                      <DateField.Suffix>
+                        <DatePicker.Trigger>
+                          <DatePicker.TriggerIndicator />
+                        </DatePicker.Trigger>
+                      </DateField.Suffix>
+                    </DateField.Group>
+                    <DatePicker.Popover>{DatePickerCalendar}</DatePicker.Popover>
+                  </DatePicker>
+                  {errors.start_date?.message ? <FieldError>{errors.start_date.message}</FieldError> : null}
+                </div>
+              )}
+            />
 
-            <TextField isInvalid={Boolean(errors.end_date?.message)}>
-              <Label className="text-sm font-medium text-foreground">End date</Label>
-              <Input
-                type="date"
-                variant="secondary"
-                {...register('end_date')}
-              />
-              {errors.end_date?.message ? <FieldError>{errors.end_date.message}</FieldError> : null}
-            </TextField>
+            <Controller
+              control={control}
+              name="end_date"
+              render={({field}) => (
+                <div className="flex flex-col gap-1">
+                  <DatePicker
+                    isInvalid={Boolean(errors.end_date?.message)}
+                    onChange={(date) => field.onChange(date?.toString() ?? '')}
+                    value={field.value ? parseDate(field.value) : null}
+                  >
+                    <Label className="text-sm font-medium text-foreground">End date</Label>
+                    <DateField.Group
+                      fullWidth
+                      variant={'secondary'}
+                    >
+                      <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+                      <DateField.Suffix>
+                        <DatePicker.Trigger>
+                          <DatePicker.TriggerIndicator />
+                        </DatePicker.Trigger>
+                      </DateField.Suffix>
+                    </DateField.Group>
+                    <DatePicker.Popover>{DatePickerCalendar}</DatePicker.Popover>
+                  </DatePicker>
+                  {errors.end_date?.message ? <FieldError>{errors.end_date.message}</FieldError> : null}
+                </div>
+              )}
+            />
           </div>
-        </section>
+        </>
       ) : null}
     </>
   );

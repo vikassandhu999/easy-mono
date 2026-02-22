@@ -1,15 +1,17 @@
-import {Button, Card, Skeleton, toast} from '@heroui/react';
-import {ArrowLeft, Dumbbell, Pencil, Plus, Trash2} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {Button, Card, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {ArrowLeft, Dumbbell, EllipsisVertical, Pencil, Plus, Trash2} from 'lucide-react';
+import {Fragment, useMemo, useState} from 'react';
 import {useNavigate, useParams} from 'react-router';
 
-import {getApiErrorMessage} from '@/api/shared';
+import type {WorkoutElement} from '@/api/trainingPlans';
+
 import {useListExercisesQuery} from '@/api/exercises';
+import {getApiErrorMessage} from '@/api/shared';
 import {
   useDeletePlannedWorkoutMutation,
-  useDeleteWorkoutElementMutation,
   useGetPlannedWorkoutQuery,
   useUpdatePlannedWorkoutMutation,
+  useUpdateWorkoutElementMutation,
 } from '@/api/trainingPlans';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import {RenameWorkoutModal} from '@/components/training-plan/RenameWorkoutModal';
@@ -28,7 +30,7 @@ export default function WorkoutDetailPage() {
 
   const [updatePlannedWorkout, {isLoading: isRenaming}] = useUpdatePlannedWorkoutMutation();
   const [deletePlannedWorkout, {isLoading: isDeletingWorkout}] = useDeletePlannedWorkoutMutation();
-  const [deleteWorkoutElement, {isLoading: isDeletingElement}] = useDeleteWorkoutElementMutation();
+  const [updateWorkoutElement] = useUpdateWorkoutElementMutation();
 
   const workout = workoutData?.data;
   const exercisesList = exercisesData?.data;
@@ -40,7 +42,6 @@ export default function WorkoutDetailPage() {
 
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteWorkoutOpen, setIsDeleteWorkoutOpen] = useState(false);
-  const [elementToDelete, setElementToDelete] = useState<null | string>(null);
 
   const exerciseNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -50,6 +51,17 @@ export default function WorkoutDetailPage() {
 
   const getExerciseName = (exerciseId: string, fallbackName?: null | string) =>
     fallbackName ?? exerciseNameMap.get(exerciseId) ?? 'Exercise';
+
+  const handleAction = (key: React.Key) => {
+    switch (key) {
+      case 'rename':
+        setIsRenameOpen(true);
+        break;
+      case 'delete':
+        setIsDeleteWorkoutOpen(true);
+        break;
+    }
+  };
 
   const handleRename = async (name: string) => {
     try {
@@ -76,19 +88,29 @@ export default function WorkoutDetailPage() {
     }
   };
 
-  const handleDeleteElement = async () => {
-    if (!elementToDelete) return;
-    const id = elementToDelete;
-    setElementToDelete(null);
+  const handleMoveExercise = async (element: WorkoutElement, direction: 'down' | 'up') => {
+    const currentIndex = sortedElements.findIndex((el) => el.id === element.id);
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const targetElement = sortedElements[targetIndex];
+    if (!targetElement) return;
+
     try {
-      await deleteWorkoutElement({
-        id,
-        planId,
-        plannedWorkoutId: workoutId,
-      }).unwrap();
-      toast.success('Exercise deleted');
+      await Promise.all([
+        updateWorkoutElement({
+          body: {position: targetElement.position},
+          id: element.id,
+          planId,
+          plannedWorkoutId: workoutId,
+        }).unwrap(),
+        updateWorkoutElement({
+          body: {position: element.position},
+          id: targetElement.id,
+          planId,
+          plannedWorkoutId: workoutId,
+        }).unwrap(),
+      ]);
     } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to delete exercise'));
+      toast.danger(getApiErrorMessage(error, 'Failed to reorder exercises'));
     }
   };
 
@@ -123,62 +145,63 @@ export default function WorkoutDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Button
-        className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
-        size="sm"
-        variant="ghost"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to plan
-      </Button>
+      {/* Header row: back + overflow menu */}
+      <div className="flex items-center justify-between">
+        <Button
+          className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
+          onPress={() => navigate(backTo)}
+          size="sm"
+          variant="ghost"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Plan
+        </Button>
+        <Dropdown>
+          <Dropdown.Trigger>
+            <Button
+              className="min-h-11 min-w-11"
+              size="md"
+              variant="ghost"
+            >
+              <EllipsisVertical className="h-5 w-5" />
+            </Button>
+          </Dropdown.Trigger>
+          <Dropdown.Popover placement="bottom left">
+            <Dropdown.Menu
+              aria-label="Workout actions"
+              onAction={handleAction}
+            >
+              <Dropdown.Item
+                id="rename"
+                textValue="Rename"
+              >
+                <Pencil className="h-4 w-4" />
+                <Label>Rename</Label>
+              </Dropdown.Item>
+              <Dropdown.Item
+                className="text-danger"
+                id="delete"
+                textValue="Delete workout"
+              >
+                <Trash2 className="h-4 w-4" />
+                <Label>Delete workout</Label>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+      </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{workout.name}</h1>
-          <p className="text-sm text-muted">
-            Day {workout.day_number} · {sortedElements.length} exercise
-            {sortedElements.length === 1 ? '' : 's'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            className="min-h-11"
-            onPress={() => setIsRenameOpen(true)}
-            size="md"
-            variant="outline"
-          >
-            <Pencil className="h-4 w-4" />
-            Rename
-          </Button>
-          <Button
-            className="min-h-11"
-            isDisabled={isDeletingWorkout}
-            onPress={() => setIsDeleteWorkoutOpen(true)}
-            size="md"
-            variant="ghost"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
+      {/* Title area */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{workout.name}</h1>
+        <p className="mt-1 text-sm text-muted">
+          Day {workout.day_number} · {sortedElements.length} exercise{sortedElements.length === 1 ? '' : 's'}
+        </p>
       </div>
 
       <div className="border-t border-separator" />
 
-      <div className="flex items-center justify-between">
-        <p className="text-base font-semibold text-foreground">Exercises</p>
-        <Button
-          className="min-h-11"
-          onPress={() => navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`)}
-          size="sm"
-          variant="secondary"
-        >
-          <Plus className="h-4 w-4" />
-          Add exercise
-        </Button>
-      </div>
-
+      {/* Exercise list */}
       {sortedElements.length === 0 ? (
         <Card className="border border-dashed border-separator bg-surface p-10">
           <div className="flex flex-col items-center gap-4 text-center">
@@ -201,19 +224,32 @@ export default function WorkoutDetailPage() {
           </div>
         </Card>
       ) : (
-        <div className="flex flex-col gap-3">
-          {sortedElements.map((el) => (
-            <WorkoutExerciseCard
-              element={el}
-              exerciseName={getExerciseName(el.exercise_id, el.exercise?.name)}
-              key={el.id}
-              onTap={() =>
-                navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/${el.id}`)
-              }
-            />
+        <Card className="overflow-hidden rounded-xl border border-separator bg-surface p-0">
+          {sortedElements.map((el, i) => (
+            <Fragment key={el.id}>
+              {i > 0 && <div className="border-t border-separator" />}
+              <WorkoutExerciseCard
+                canMove={{down: i < sortedElements.length - 1, up: i > 0}}
+                element={el}
+                exerciseName={getExerciseName(el.exercise_id, el.exercise?.name)}
+                onMove={(dir) => handleMoveExercise(el, dir)}
+                onTap={() =>
+                  navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/${el.id}`)
+                }
+              />
+            </Fragment>
           ))}
-        </div>
+        </Card>
       )}
+
+      <Button
+        className="min-h-11 w-full"
+        onPress={() => navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`)}
+        variant="secondary"
+      >
+        <Plus className="h-4 w-4" />
+        Add exercise
+      </Button>
 
       <RenameWorkoutModal
         currentName={workout.name}
@@ -231,18 +267,6 @@ export default function WorkoutDetailPage() {
         onConfirm={handleDeleteWorkout}
         onOpenChange={setIsDeleteWorkoutOpen}
         title="Delete workout"
-      />
-
-      <ConfirmDialog
-        confirmLabel="Delete"
-        description="Delete this exercise? This cannot be undone."
-        isLoading={isDeletingElement}
-        isOpen={elementToDelete !== null}
-        onConfirm={handleDeleteElement}
-        onOpenChange={(open) => {
-          if (!open) setElementToDelete(null);
-        }}
-        title="Delete exercise"
       />
     </div>
   );

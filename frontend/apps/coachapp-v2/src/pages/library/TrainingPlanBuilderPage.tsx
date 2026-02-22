@@ -1,4 +1,17 @@
-import {Button, Card, Dropdown, FieldError, Input, Label, ListBox, Modal, Select, Skeleton, TextField, toast} from '@heroui/react';
+import {
+  Button,
+  Card,
+  Dropdown,
+  FieldError,
+  Input,
+  Label,
+  ListBox,
+  Modal,
+  Select,
+  Skeleton,
+  TextField,
+  toast,
+} from '@heroui/react';
 import {ArrowLeft, ArrowUpRight, Copy, Dumbbell, EllipsisVertical, Pencil, Plus, UserPlus} from 'lucide-react';
 import {Fragment, useMemo, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams} from 'react-router';
@@ -328,19 +341,16 @@ export default function TrainingPlanBuilderPage() {
           <Modal.Container>
             <Modal.Dialog>
               <Modal.Header>
-                <h4 className={"font-bold text-xl"}>
-                Add workout
-                </h4>
-                
-                </Modal.Header>
-              <Modal.Body className={"p-4"}>
+                <h4 className={'font-bold text-xl'}>Add workout</h4>
+              </Modal.Header>
+              <Modal.Body className={'p-4'}>
                 <div className="flex flex-col gap-4">
                   <Select
-                      onChange={(value) => {
+                    onChange={(value) => {
                       if (value !== null) setSelectedDay(value?.toString() ?? 'Mon');
                     }}
                     value={selectedDay}
-                     variant="secondary"
+                    variant="secondary"
                   >
                     <Label className="text-sm font-medium text-foreground">Day</Label>
                     <Select.Trigger className="min-h-11 w-full">
@@ -360,24 +370,23 @@ export default function TrainingPlanBuilderPage() {
                       </ListBox>
                     </Select.Popover>
                   </Select>
-                  
-                   <TextField
-        isRequired
-        name="Name"
-        autoFocus
-          className="min-h-11"
-        type="text"
-         onChange={(value) => setNewDayName(value)}
+
+                  <TextField
+                    className="min-h-11"
+                    isRequired
+                    name="Name"
+                    onChange={(value) => setNewDayName(value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAddDay();
                     }}
+                    type="text"
                     value={newDayName}
                     variant="secondary"
-      >
-        <Label>Name</Label>
-        <Input placeholder="e.g. Push Day, Leg Day..." />
-        <FieldError />
-      </TextField>
+                  >
+                    <Label>Name</Label>
+                    <Input placeholder="e.g. Push Day, Leg Day..." />
+                    <FieldError />
+                  </TextField>
                 </div>
               </Modal.Body>
               <Modal.Footer>

@@ -1,12 +1,12 @@
 import {Button, Card} from '@heroui/react';
-import {AlertCircle, ChevronLeft} from 'lucide-react';
+import {AlertCircle, ArrowLeft} from 'lucide-react';
 import {type FormEvent, type ReactNode, useState} from 'react';
 
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 type HeaderProps = {
   breadcrumb: string;
-  description: string;
+  description?: string;
   title: string;
 };
 
@@ -101,19 +101,18 @@ export default function FormPageShell({actions, children, formError, header, sta
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <Button
           className="min-h-11 w-fit gap-2 px-2"
           onPress={handleBack}
           size="sm"
           variant="ghost"
         >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Back to {breadcrumb}</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span>{breadcrumb}</span>
         </Button>
-        <p className="text-sm text-muted">{breadcrumb}</p>
         <h1 className="text-2xl font-semibold md:text-3xl">{title}</h1>
-        <p className="max-w-2xl text-sm text-muted">{description}</p>
+        {description ? <p className="max-w-2xl text-sm text-muted">{description}</p> : null}
       </div>
 
       <form
@@ -129,10 +128,28 @@ export default function FormPageShell({actions, children, formError, header, sta
           </div>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-3 border-t border-separator pt-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col gap-3 border-t border-separator pt-4 sm:flex-row sm:justify-end">
+          <Button
+            className="min-h-11 w-full sm:order-last sm:w-auto"
+            isDisabled={isSubmitting}
+            size="md"
+            type="submit"
+            variant="primary"
+          >
+            {isSubmitting ? (submitLabel.startsWith('Save') ? 'Saving...' : 'Creating...') : submitLabel}
+          </Button>
+          <Button
+            className="min-h-11 w-full sm:w-auto"
+            onPress={handleBack}
+            size="md"
+            type="button"
+            variant="ghost"
+          >
+            Cancel
+          </Button>
           {onDelete ? (
             <Button
-              className="min-h-11 sm:mr-auto"
+              className="min-h-11 w-full sm:order-first sm:mr-auto sm:w-auto"
               onPress={() => setIsDeleteOpen(true)}
               size="md"
               type="button"
@@ -141,24 +158,6 @@ export default function FormPageShell({actions, children, formError, header, sta
               {deleteLabel}
             </Button>
           ) : null}
-          <Button
-            className="min-h-11"
-            onPress={handleBack}
-            size="md"
-            type="button"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-          <Button
-            className="min-h-11"
-            isDisabled={isSubmitting}
-            size="md"
-            type="submit"
-            variant="primary"
-          >
-            {isSubmitting ? (submitLabel.startsWith('Save') ? 'Saving...' : 'Creating...') : submitLabel}
-          </Button>
         </div>
       </form>
 

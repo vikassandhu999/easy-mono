@@ -12,6 +12,7 @@ import VerifyPage from '@/pages/auth/VerifyPage';
 import ClientViewPage from '@/pages/clients/ClientViewPage';
 import ExerciseEditorPage from '@/pages/library/ExerciseEditorPage';
 import ExerciseFormPage from '@/pages/library/ExerciseFormPage';
+import ExercisePickerPage from '@/pages/library/ExercisePickerPage';
 import FoodFormPage from '@/pages/library/FoodFormPage';
 import LibraryPage from '@/pages/library/LibraryPage';
 import NutritionPlanAddAssignmentPage from '@/pages/library/NutritionPlanAddAssignmentPage';
@@ -126,8 +127,12 @@ export default function App() {
               path="/library/training-plans/:id/builder/workouts/:workoutId"
             />
             <Route
-              element={<ExerciseEditorPage />}
+              element={<ExercisePickerPage />}
               path="/library/training-plans/:id/builder/workouts/:workoutId/exercises/new"
+            />
+            <Route
+              element={<ExerciseEditorPage />}
+              path="/library/training-plans/:id/builder/workouts/:workoutId/exercises/new/:exerciseId"
             />
             <Route
               element={<ExerciseEditorPage />}

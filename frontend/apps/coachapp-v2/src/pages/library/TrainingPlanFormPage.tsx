@@ -56,7 +56,6 @@ export default function TrainingPlanFormPage() {
     control,
     formState: {errors, isDirty},
     handleSubmit,
-    register,
     reset,
     setError,
     setValue,
@@ -150,7 +149,6 @@ export default function TrainingPlanFormPage() {
       formError={formError}
       header={{
         breadcrumb: 'Library',
-        description: 'Define plan metadata before building day blocks and workout elements.',
         title: pageTitle,
       }}
       state={{
@@ -164,7 +162,7 @@ export default function TrainingPlanFormPage() {
         clients={clientsData?.data ?? []}
         control={control}
         errors={errors}
-        register={register}
+        isEditing={isEditing}
         setValue={setValue}
       />
     </FormPageShell>

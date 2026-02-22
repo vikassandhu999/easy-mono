@@ -3,7 +3,7 @@ import {ChefHat, Clock, Leaf} from 'lucide-react';
 import type {Recipe} from '@/api/recipes';
 
 import LibraryCard from '@/components/LibraryCard';
-import {formatDate, formatMacros} from '@/pages/library/libraryShared';
+import {formatMacros} from '@/pages/library/libraryShared';
 
 type RecipeCardProps = {
   onEdit: (recipe: Recipe) => void;
@@ -25,10 +25,6 @@ export default function RecipeCard({onEdit, recipe}: RecipeCardProps) {
   return (
     <LibraryCard
       icon={<ChefHat className="h-5 w-5 text-accent" />}
-      meta={{
-        date: formatDate(recipe.updated_at),
-        hint: 'Tap to edit',
-      }}
       onPress={() => onEdit(recipe)}
       subtitle="Recipe"
       title={recipe.name}
@@ -54,7 +50,7 @@ export default function RecipeCard({onEdit, recipe}: RecipeCardProps) {
         </div>
       ) : null}
 
-      <div className="flex items-center gap-4 text-sm text-muted">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
         <div className="flex items-center gap-1.5">
           <Leaf className="h-4 w-4" />
           <span>{ingredientCount} ingredients</span>

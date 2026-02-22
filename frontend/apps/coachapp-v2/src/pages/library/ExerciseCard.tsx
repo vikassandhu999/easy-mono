@@ -4,7 +4,7 @@ import type {Exercise} from '@/api/exercises';
 import type {LibraryResourceExercise} from '@/pages/library/libraryData';
 
 import LibraryCard from '@/components/LibraryCard';
-import {formatDate, toSentenceCase} from '@/pages/library/libraryShared';
+import {toSentenceCase} from '@/pages/library/libraryShared';
 
 type ExerciseCardProps = {
   onEdit?: (exercise: Exercise) => void;
@@ -17,22 +17,18 @@ export default function ExerciseCard({onEdit, resource}: ExerciseCardProps) {
   return (
     <LibraryCard
       icon={<Dumbbell className="h-5 w-5 text-foreground" />}
-      meta={{
-        date: formatDate(resource.data.updated_at),
-        hint: 'Tap to edit',
-      }}
       onPress={() => onEdit?.(resource.data)}
       subtitle="Exercises"
       title={resource.data.name}
     >
       {description ? <p className="line-clamp-2 text-sm text-muted">{description}</p> : null}
 
-      <div className="flex items-center justify-between gap-3 text-sm text-muted">
+      <div className="flex min-w-0 items-center justify-between gap-2 text-sm text-muted">
         <span>{resource.data.mechanics ? toSentenceCase(resource.data.mechanics) : 'Not set'} mechanics</span>
         <span>{resource.data.force ? toSentenceCase(resource.data.force) : 'Not set'} force</span>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted">
+      <div className="flex min-w-0 items-center justify-between gap-2 text-sm text-muted">
         <span>{resource.data.muscles.length} muscles</span>
         <span>{resource.data.equipment.length} equipment</span>
       </div>

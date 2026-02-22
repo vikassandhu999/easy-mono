@@ -1,16 +1,9 @@
-import {Button, Card, Skeleton, toast} from '@heroui/react';
+import {Button, Card, Skeleton} from '@heroui/react';
 import {Plus, Search} from 'lucide-react';
-import {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router';
 
-import type {NutritionPlan} from '@/api/nutritionPlans';
-import type {TrainingPlan} from '@/api/trainingPlans';
-
-import {useDuplicateTrainingPlanMutation} from '@/api/trainingPlans';
 import LibraryControls from '@/components/LibraryControls';
 import LibraryGrid from '@/components/LibraryGrid';
-import AssignNutritionPlanModal from '@/pages/library/AssignNutritionPlanModal';
-import AssignTrainingPlanModal from '@/pages/library/AssignTrainingPlanModal';
 import {FILTER_TABS, RESOURCE_TYPE_LABEL, SORT_OPTIONS} from '@/pages/library/libraryData';
 import useLibraryResources from '@/pages/library/useLibraryResources';
 
@@ -31,10 +24,6 @@ const CREATE_META: Record<string, {label: string; route: string}> = {
 export default function LibraryPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [assignPlan, setAssignPlan] = useState<null | NutritionPlan>(null);
-  const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [assignTrainingPlan, setAssignTrainingPlan] = useState<null | TrainingPlan>(null);
-  const [isTrainingAssignOpen, setIsTrainingAssignOpen] = useState(false);
 
   const filterType = FILTER_TABS.find((t) => t.value === searchParams.get('filter'))?.value ?? 'nutrition_plan';
   const sortBy = SORT_OPTIONS.find((o) => o.key === searchParams.get('sort'))?.key ?? 'recent';
@@ -45,7 +34,6 @@ export default function LibraryPage() {
   const createMeta = CREATE_META[filterType] ?? CREATE_META.nutrition_plan;
 
   const {displayedResources, isError, isLoading, onRetry} = useLibraryResources(filterType, queryParam, sortBy);
-  const [duplicateTrainingPlan] = useDuplicateTrainingPlanMutation();
 
   const updateParams = (fn: (p: URLSearchParams) => void) => {
     const next = new URLSearchParams(searchParams);
@@ -55,26 +43,10 @@ export default function LibraryPage() {
 
   const navTo = (path: string) => navigate(path, {state: {from: returnTo}});
 
-  const handleDuplicate = async (plan: TrainingPlan) => {
-    try {
-      const res = await duplicateTrainingPlan(plan.id).unwrap();
-      toast.success(`Duplicated "${plan.name}".`);
-      navTo(`/library/training-plans/${res.data.id}/builder`);
-    } catch {
-      toast.danger('Unable to duplicate training plan. Please try again.');
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted">Manage</p>
-          <h1 className="text-2xl font-semibold md:text-3xl">Library</h1>
-          <p className="max-w-2xl text-sm text-muted">
-            Manage reusable nutrition and training resources for faster client programming.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold md:text-3xl">Library</h1>
         <Button
           className="min-h-11 w-full gap-2 sm:w-auto"
           onPress={() => navTo(createMeta.route)}
@@ -147,15 +119,6 @@ export default function LibraryPage() {
       {displayedResources.length > 0 && !isLoading ? (
         <LibraryGrid
           actions={{
-            onAssignNutritionPlan: (plan) => {
-              setAssignPlan(plan);
-              setIsAssignOpen(true);
-            },
-            onAssignTrainingPlan: (plan) => {
-              setAssignTrainingPlan(plan);
-              setIsTrainingAssignOpen(true);
-            },
-            onDuplicateTrainingPlan: handleDuplicate,
             onEditExercise: (ex) => navTo(`/library/exercises/${ex.id}/edit`),
             onEditFood: (food) => navTo(`/library/foods/${food.id}/edit`),
             onEditRecipe: (recipe) => navTo(`/library/recipes/${recipe.id}/edit`),
@@ -206,25 +169,6 @@ export default function LibraryPage() {
         </Card>
       ) : null}
 
-      <AssignNutritionPlanModal
-        isOpen={isAssignOpen}
-        onAssigned={(id) => navTo(`/library/nutrition-plans/${id}/builder`)}
-        onOpenChange={(open) => {
-          setIsAssignOpen(open);
-          if (!open) setAssignPlan(null);
-        }}
-        plan={assignPlan}
-      />
-
-      <AssignTrainingPlanModal
-        isOpen={isTrainingAssignOpen}
-        onAssigned={(id) => navTo(`/library/training-plans/${id}/builder`)}
-        onOpenChange={(open) => {
-          setIsTrainingAssignOpen(open);
-          if (!open) setAssignTrainingPlan(null);
-        }}
-        plan={assignTrainingPlan}
-      />
     </div>
   );
 }

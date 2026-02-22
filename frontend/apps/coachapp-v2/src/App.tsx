@@ -1,6 +1,7 @@
 import {Toast} from '@heroui/react';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router';
 
+import AppShell from '@/components/AppShell';
 import GuestRoute from '@/components/GuestRoute';
 import MainLayout from '@/components/MainLayout';
 import PrivateRoute from '@/components/PrivateRoute';
@@ -53,23 +54,37 @@ export default function App() {
         </Route>
 
         <Route element={<PrivateRoute />}>
-          <Route element={<MainLayout />}>
-            <Route
-              element={<OnboardingPage />}
-              path="/onboarding"
-            />
-            <Route
-              element={<ClientsPage />}
-              path="/clients"
-            />
-            <Route
-              element={<ClientViewPage />}
-              path="/clients/:id"
-            />
-            <Route
-              element={<LibraryPage />}
-              path="/library"
-            />
+          {/* AppShell provides the persistent desktop sidebar for all authenticated pages */}
+          <Route element={<AppShell />}>
+            {/* Top-level pages — MainLayout adds the mobile bottom nav */}
+            <Route element={<MainLayout />}>
+              <Route
+                element={<OnboardingPage />}
+                path="/onboarding"
+              />
+              <Route
+                element={<ClientsPage />}
+                path="/clients"
+              />
+              <Route
+                element={<ClientViewPage />}
+                path="/clients/:id"
+              />
+              <Route
+                element={<LibraryPage />}
+                path="/library"
+              />
+              <Route
+                element={<span>My Page</span>}
+                path="/page"
+              />
+              <Route
+                element={<span>Settings</span>}
+                path="/settings"
+              />
+            </Route>
+
+            {/* Internal pages — desktop sidebar only, no mobile bottom nav */}
             <Route
               element={<NutritionPlanFormPage />}
               path="/library/nutrition-plans/new"
@@ -81,6 +96,18 @@ export default function App() {
             <Route
               element={<NutritionPlanBuilderPage />}
               path="/library/nutrition-plans/:id/builder"
+            />
+            <Route
+              element={<NutritionPlanAddAssignmentPage />}
+              path="/library/nutrition-plans/:id/builder/add-assignment"
+            />
+            <Route
+              element={<NutritionPlanAssignmentEditorPage />}
+              path="/library/nutrition-plans/:id/builder/assignments/:planItemId/edit"
+            />
+            <Route
+              element={<NutritionPlanMealEditorPage />}
+              path="/library/nutrition-plans/:id/builder/meals/:mealId/edit"
             />
             <Route
               element={<TrainingPlanFormPage />}
@@ -107,18 +134,6 @@ export default function App() {
               path="/library/training-plans/:id/builder/workouts/:workoutId/exercises/:elementId"
             />
             <Route
-              element={<NutritionPlanAddAssignmentPage />}
-              path="/library/nutrition-plans/:id/builder/add-assignment"
-            />
-            <Route
-              element={<NutritionPlanAssignmentEditorPage />}
-              path="/library/nutrition-plans/:id/builder/assignments/:planItemId/edit"
-            />
-            <Route
-              element={<NutritionPlanMealEditorPage />}
-              path="/library/nutrition-plans/:id/builder/meals/:mealId/edit"
-            />
-            <Route
               element={<FoodFormPage />}
               path="/library/foods/new"
             />
@@ -141,14 +156,6 @@ export default function App() {
             <Route
               element={<RecipeFormPage />}
               path="/library/recipes/:id/edit"
-            />
-            <Route
-              element={<span>My Page</span>}
-              path="/page"
-            />
-            <Route
-              element={<span>Settings</span>}
-              path="/settings"
             />
           </Route>
         </Route>

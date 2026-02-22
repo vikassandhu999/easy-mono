@@ -1,6 +1,6 @@
 import {Button, Input} from '@heroui/react';
 import {ArrowUpDown} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import type {ResourceType} from '@/pages/library/libraryData';
 
@@ -24,7 +24,15 @@ export default function LibraryControls({
   searchQuery,
 }: LibraryControlsProps) {
   const [searchInput, setSearchInput] = useState(searchQuery);
+  const searchRowRef = useRef<HTMLDivElement>(null);
   const sectionLabel = FILTER_TABS.find((t) => t.value === filterType)?.label ?? 'Resources';
+
+  const handleSearchFocus = useCallback(() => {
+    const isMobile = window.matchMedia('(max-width: 639px)').matches;
+    if (isMobile && searchRowRef.current) {
+      searchRowRef.current.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+  }, []);
 
   useEffect(() => {
     setSearchInput(searchQuery);
@@ -41,7 +49,7 @@ export default function LibraryControls({
 
   return (
     <div className="flex min-w-0 flex-col gap-3 border-b border-separator pb-3">
-      <div className="scrollbar-hide flex min-w-0 items-center gap-2 overflow-x-auto">
+      <div className="scrollbar-hide flex min-w-0 items-center gap-2 overflow-x-auto p-1">
         {FILTER_TABS.map((tab) => (
           <Button
             className="min-h-11 shrink-0"
@@ -56,11 +64,15 @@ export default function LibraryControls({
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4"
+        ref={searchRowRef}
+      >
         <Input
           aria-label={`Search ${sectionLabel.toLowerCase()}`}
           className="min-h-11 w-full sm:max-w-sm"
           onChange={(e) => setSearchInput(e.target.value)}
+          onFocus={handleSearchFocus}
           placeholder={`Search ${sectionLabel.toLowerCase()}`}
           type="search"
           value={searchInput}

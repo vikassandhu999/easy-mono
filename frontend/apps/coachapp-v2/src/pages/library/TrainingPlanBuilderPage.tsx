@@ -1,8 +1,9 @@
-import {Button, Card, FieldError, Input, Label, ListBox, Modal, Select, Skeleton, TextField, toast} from '@heroui/react';
-import {ArrowLeft, Copy, Dumbbell, Layers, Plus, Settings} from 'lucide-react';
+import {Button, Card, Dropdown, FieldError, Input, Label, ListBox, Modal, Select, Skeleton, TextField, toast} from '@heroui/react';
+import {ArrowLeft, ArrowUpRight, Copy, Dumbbell, EllipsisVertical, Pencil, Plus, UserPlus} from 'lucide-react';
 import {Fragment, useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
+import {Link, useLocation, useNavigate, useParams} from 'react-router';
 
+import {useGetClientQuery} from '@/api/clients';
 import {
   useCreatePlannedWorkoutMutation,
   useDuplicateTrainingPlanMutation,
@@ -39,6 +40,11 @@ export default function TrainingPlanBuilderPage() {
   const [createPlannedWorkout, {isLoading: isCreatingDay}] = useCreatePlannedWorkoutMutation();
 
   const plan = planData?.data;
+
+  const {data: clientData} = useGetClientQuery(plan?.client_id ?? '', {skip: !plan?.client_id});
+  const client = clientData?.data;
+  const clientName = client ? [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email : null;
+
   const sortedWorkouts = useMemo(
     () => [...(plan?.planned_workouts ?? [])].sort((a, b) => a.day_number - b.day_number),
     [plan?.planned_workouts],
@@ -64,6 +70,20 @@ export default function TrainingPlanBuilderPage() {
       navigate(`/library/training-plans/${res.data.id}/builder`, {state: {from: returnTo}});
     } catch {
       toast.danger('Failed to duplicate plan');
+    }
+  };
+
+  const handleAction = (key: React.Key) => {
+    switch (key) {
+      case 'edit':
+        navigate(`/library/training-plans/${plan.id}/edit`, {state: {from: returnTo}});
+        break;
+      case 'duplicate':
+        handleDuplicatePlan();
+        break;
+      case 'assign':
+        setIsAssignOpen(true);
+        break;
     }
   };
 
@@ -97,7 +117,7 @@ export default function TrainingPlanBuilderPage() {
       <Card className="border border-separator bg-surface p-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
-            <Layers className="h-7 w-7 text-muted" />
+            <Dumbbell className="h-7 w-7 text-muted" />
           </div>
           <div>
             <p className="text-lg font-semibold text-foreground">Failed to load plan</p>
@@ -128,61 +148,116 @@ export default function TrainingPlanBuilderPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Button
-        className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(returnTo)}
-        size="sm"
-        variant="ghost"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Library
-      </Button>
+      <div className="flex flex-col gap-1">
+        {/* Row 1: back + actions */}
+        <div className="flex items-center justify-between">
+          <Button
+            className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
+            onPress={() => navigate(returnTo)}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Library
+          </Button>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-muted">Training plan</p>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{plan.name}</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-muted">
-              {toSentenceCase(plan.status)}
-            </span>
-            <span className="inline-flex items-center gap-1 text-sm text-muted">
-              <Layers className="h-3.5 w-3.5" />
-              {plan.is_template ? 'Template' : 'Personal'}
-            </span>
+          {/* Desktop: labeled buttons */}
+          <div className="hidden items-center gap-2 sm:flex">
+            <Button
+              className="min-h-11 gap-2"
+              onPress={() => navigate(`/library/training-plans/${plan.id}/edit`, {state: {from: returnTo}})}
+              size="md"
+              variant="outline"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit details
+            </Button>
+            <Button
+              className="min-h-11 gap-2"
+              isDisabled={isDuplicating}
+              onPress={handleDuplicatePlan}
+              size="md"
+              variant="ghost"
+            >
+              <Copy className="h-4 w-4" />
+              Duplicate
+            </Button>
+            {plan.is_template ? (
+              <Button
+                className="min-h-11 gap-2"
+                onPress={() => setIsAssignOpen(true)}
+                size="md"
+                variant="secondary"
+              >
+                <UserPlus className="h-4 w-4" />
+                Assign
+              </Button>
+            ) : null}
+          </div>
+
+          {/* Mobile: overflow menu */}
+          <div className="sm:hidden">
+            <Dropdown>
+              <Dropdown.Trigger>
+                <Button
+                  className="min-h-11 min-w-11"
+                  size="md"
+                  variant="ghost"
+                >
+                  <EllipsisVertical className="h-5 w-5" />
+                </Button>
+              </Dropdown.Trigger>
+              <Dropdown.Popover placement="bottom left">
+                <Dropdown.Menu
+                  aria-label="Plan actions"
+                  disabledKeys={isDuplicating ? new Set(['duplicate']) : new Set()}
+                  onAction={handleAction}
+                >
+                  <Dropdown.Item
+                    id="edit"
+                    textValue="Edit details"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <Label>Edit details</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="duplicate"
+                    textValue="Duplicate plan"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <Label>Duplicate plan</Label>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="assign"
+                    isDisabled={!plan.is_template}
+                    textValue="Assign to client"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <Label>Assign to client</Label>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {plan.is_template ? (
-            <Button
-              className="min-h-11"
-              onPress={() => setIsAssignOpen(true)}
-              size="md"
-              variant="primary"
-            >
-              Assign to client
-            </Button>
-          ) : null}
-          <Button
-            className="min-h-11"
-            onPress={() => navigate(`/library/training-plans/${plan.id}/edit`, {state: {from: returnTo}})}
-            size="md"
-            variant="outline"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-          <Button
-            className="min-h-11"
-            isDisabled={isDuplicating}
-            onPress={handleDuplicatePlan}
-            size="md"
-            variant="ghost"
-          >
-            <Copy className="h-4 w-4" />
-            Duplicate
-          </Button>
+        {/* Row 2: plan name + status + client */}
+        <div className="flex items-start justify-between gap-3 px-2">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold tracking-tight text-foreground md:text-2xl">{plan.name}</h1>
+            {clientName && plan.client_id ? (
+              <Link
+                className="inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
+                to={`/clients/${plan.client_id}`}
+              >
+                {clientName}
+                <ArrowUpRight className="h-3 w-3 shrink-0" />
+              </Link>
+            ) : null}
+          </div>
+          <span className="mt-1.5 shrink-0 rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-muted">
+            {toSentenceCase(plan.status)}
+          </span>
         </div>
       </div>
 

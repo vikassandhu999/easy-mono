@@ -12,9 +12,6 @@ import RecipeCard from '@/pages/library/RecipeCard';
 import WorkoutPlanCard from '@/pages/library/WorkoutPlanCard';
 
 type LibraryGridActions = {
-  onAssignNutritionPlan: (plan: NutritionPlan) => void;
-  onAssignTrainingPlan: (plan: TrainingPlan) => void;
-  onDuplicateTrainingPlan: (plan: TrainingPlan) => void;
   onEditExercise: (exercise: Exercise) => void;
   onEditFood: (food: Food) => void;
   onEditRecipe: (recipe: Recipe) => void;
@@ -53,7 +50,6 @@ export default function LibraryGrid({actions, resources}: LibraryGridProps) {
           return (
             <NutritionPlanCard
               key={resource.id}
-              onAssign={actions.onAssignNutritionPlan}
               onOpenBuilder={actions.onOpenNutritionBuilder}
               resource={resource.data}
             />
@@ -63,8 +59,6 @@ export default function LibraryGrid({actions, resources}: LibraryGridProps) {
           return (
             <WorkoutPlanCard
               key={resource.id}
-              onAssign={actions.onAssignTrainingPlan}
-              onDuplicate={actions.onDuplicateTrainingPlan}
               onOpenBuilder={actions.onOpenTrainingBuilder}
               resource={resource.data}
             />

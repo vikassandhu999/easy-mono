@@ -3,7 +3,7 @@ import {Apple, Ruler, Tag} from 'lucide-react';
 import type {Food} from '@/api/foods';
 
 import LibraryCard from '@/components/LibraryCard';
-import {formatDate, formatMacros} from '@/pages/library/libraryShared';
+import {formatMacros} from '@/pages/library/libraryShared';
 
 type FoodCardProps = {
   food: Food;
@@ -21,10 +21,6 @@ export default function FoodCard({food, onEdit}: FoodCardProps) {
   return (
     <LibraryCard
       icon={<Apple className="h-5 w-5 text-accent" />}
-      meta={{
-        date: formatDate(food.updated_at),
-        hint: 'Tap to edit',
-      }}
       onPress={() => onEdit(food)}
       subtitle="Food / Ingredient"
       title={food.name}
@@ -50,7 +46,7 @@ export default function FoodCard({food, onEdit}: FoodCardProps) {
         </div>
       ) : null}
 
-      <div className="flex items-center gap-4 text-sm text-muted">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
         <div className="flex items-center gap-1.5">
           <Ruler className="h-4 w-4" />
           <span>

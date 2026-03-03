@@ -1,7 +1,13 @@
 import {toast} from '@heroui/react';
 import {BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError} from '@reduxjs/toolkit/query/react';
 
-import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  getTokenExpiresAt,
+  setTokens,
+} from '@/entities/auth/model/authStorage';
 
 let baseURL = import.meta.env.API_BASE_URL || 'http://localhost:4000';
 

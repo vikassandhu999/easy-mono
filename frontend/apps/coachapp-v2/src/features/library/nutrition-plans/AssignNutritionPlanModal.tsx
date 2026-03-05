@@ -1,4 +1,5 @@
-import {Button, Card, FieldError, Modal, toast} from '@heroui/react';
+import {Button, Card, Modal, toast} from '@heroui/react';
+import {Check, X} from 'lucide-react';
 import {useState} from 'react';
 
 import type {NutritionPlan} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -48,7 +49,7 @@ export default function AssignNutritionPlanModal({
         body: {client_id: selectedClient.id},
         id: plan.id,
       }).unwrap();
-      toast.success(`Assigned "${plan.name}" to ${selectedClient.name}.`);
+      toast.success(`Assigned "${plan.name}" to ${selectedClient.name}`);
       onAssigned(response.data.id);
       handleClose();
     } catch (error) {
@@ -68,25 +69,48 @@ export default function AssignNutritionPlanModal({
     >
       <Modal.Backdrop>
         <Modal.Container>
-          <Modal.Dialog>
-            <Modal.Header>Assign nutrition plan</Modal.Header>
-            <Modal.Body className="p-2">
-              <Card className="border border-separator bg-surface p-4">
-                <div className="flex flex-col gap-4">
-                  <p className="text-sm text-muted">
-                    Assign {plan ? `"${plan.name}" ` : 'this nutrition plan '}
-                    to a client. Templates create a personal copy on assign.
-                  </p>
+          <Modal.Dialog className="max-w-lg">
+            <Modal.Header>
+              <div>
+                <h4 className="text-xl font-bold">Assign &ldquo;{plan?.name}&rdquo;</h4>
+                <p className="text-sm font-normal text-muted">A personal copy will be created</p>
+              </div>
+            </Modal.Header>
+            <Modal.Body className="p-4">
+              <div className="flex flex-col gap-4">
+                {selectedClient ? (
+                  <Card className="border border-accent bg-accent/5 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
+                        {selectedClient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground">{selectedClient.name}</p>
+                        <p className="text-sm text-muted">{selectedClient.email}</p>
+                      </div>
+                      <Button
+                        aria-label="Remove selection"
+                        className="min-h-8 min-w-8"
+                        onPress={() => setSelectedClient(null)}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ) : (
                   <ClientPicker
                     onSelect={(client) => {
                       setSelectedClient(client);
                       setFormError(null);
                     }}
-                    selectedId={selectedClient?.id ?? ''}
+                    selectedId=""
                   />
-                  {formError ? <FieldError>{formError}</FieldError> : null}
-                </div>
-              </Card>
+                )}
+
+                {formError ? <p className="text-sm text-foreground">{formError}</p> : null}
+              </div>
             </Modal.Body>
             <Modal.Footer>
               <Button
@@ -102,9 +126,16 @@ export default function AssignNutritionPlanModal({
                 isDisabled={isAssigning || !selectedClient}
                 onPress={handleAssign}
                 size="md"
-                variant="secondary"
+                variant="primary"
               >
-                {isAssigning ? 'Assigning...' : 'Assign plan'}
+                {isAssigning ? (
+                  'Assigning...'
+                ) : (
+                  <>
+                    <Check className="mr-1 h-4 w-4" />
+                    Assign
+                  </>
+                )}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

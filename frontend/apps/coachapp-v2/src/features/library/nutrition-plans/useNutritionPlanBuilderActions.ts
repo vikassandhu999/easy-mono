@@ -7,6 +7,7 @@ import type {PlanItem} from '@/entities/nutritionPlans/api/nutritionPlans';
 import {useCreateMealItemMutation, useCreateMealMutation, useListMealsQuery} from '@/entities/meals/api/meals';
 import {
   useCopyNutritionPlanDayMutation,
+  useCreatePlanItemMutation,
   useDeletePlanItemMutation,
   useDuplicateNutritionPlanMutation,
   useListPlanItemsQuery,
@@ -35,9 +36,10 @@ type UseNutritionPlanBuilderActionsResult = {
   confirmDialog: ConfirmDialogState | null;
   copyDayDialog: CopyDayDialogState | null;
   dayActions: {
-    onAddMeal: (day: string) => void;
     onClearDay: (day: string) => void;
     onCopyDay: (day: string) => void;
+    onCreateMealForDay: (day: string, mealName: string, mealType: string) => Promise<void>;
+    onLinkMealToDay: (day: string, mealId: string, mealType: string) => Promise<void>;
   };
   duplicatePlan: () => void;
   isDuplicatingAssignment: boolean;
@@ -49,6 +51,7 @@ type UseNutritionPlanBuilderActionsResult = {
     onRemoveFromDay: (planItemId: string) => void;
   };
   itemsByDay: Record<string, PlanItem[]>;
+  meals: Meal[];
   mealsById: Record<string, Meal>;
   mealUsageCount: number;
 };
@@ -105,6 +108,7 @@ export default function useNutritionPlanBuilderActions(
   const [createMeal] = useCreateMealMutation();
   const [createMealItem] = useCreateMealItemMutation();
   const [updatePlanItem] = useUpdatePlanItemMutation();
+  const [createPlanItem] = useCreatePlanItemMutation();
 
   const builderPath = `/library/nutrition-plans/${planId}/builder`;
 
@@ -273,11 +277,40 @@ export default function useNutritionPlanBuilderActions(
     [createMeal, createMealItem, effectivePlanItems, meals.length, mealsById, planId, updatePlanItem],
   );
 
-  const onAddMeal = useCallback(
-    (day: string) => {
-      navigateTo(`${builderPath}/add-assignment?day=${day}`);
+  const onCreateMealForDay = useCallback(
+    async (day: string, mealName: string, mealType: string) => {
+      if (!planId) return;
+      try {
+        const res = await createMeal({
+          body: {name: mealName.trim(), position: meals.length},
+          planId,
+        }).unwrap();
+        await createPlanItem({
+          body: {day, meal_id: res.data.id, meal_type: mealType},
+          planId,
+        }).unwrap();
+        toast.success(`Meal added to ${toSentenceLabel(day)}.`);
+      } catch {
+        toast.danger('Unable to add meal. Please try again.');
+      }
     },
-    [builderPath, navigateTo],
+    [createMeal, createPlanItem, meals.length, planId],
+  );
+
+  const onLinkMealToDay = useCallback(
+    async (day: string, mealId: string, mealType: string) => {
+      if (!planId) return;
+      try {
+        await createPlanItem({
+          body: {day, meal_id: mealId, meal_type: mealType},
+          planId,
+        }).unwrap();
+        toast.success(`Meal assigned to ${toSentenceLabel(day)}.`);
+      } catch {
+        toast.danger('Unable to assign meal. Please try again.');
+      }
+    },
+    [createPlanItem, planId],
   );
 
   const onEditAssignment = useCallback(
@@ -322,7 +355,7 @@ export default function useNutritionPlanBuilderActions(
   return {
     confirmDialog,
     copyDayDialog,
-    dayActions: {onAddMeal, onClearDay, onCopyDay},
+    dayActions: {onClearDay, onCopyDay, onCreateMealForDay, onLinkMealToDay},
     duplicatePlan,
     isDuplicatingAssignment,
     isDuplicatingPlan,
@@ -333,6 +366,7 @@ export default function useNutritionPlanBuilderActions(
       onRemoveFromDay,
     },
     itemsByDay,
+    meals,
     mealsById,
     mealUsageCount,
   };

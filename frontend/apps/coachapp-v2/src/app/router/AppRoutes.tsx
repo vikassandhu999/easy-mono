@@ -15,9 +15,12 @@ import ExerciseFormPage from '@/features/library/exercises/ExerciseFormPage';
 import ExercisePickerPage from '@/features/library/exercises/ExercisePickerPage';
 import FoodFormPage from '@/features/library/foods/FoodFormPage';
 import LibraryPage from '@/features/library/LibraryPage';
-import NutritionPlanAddAssignmentPage from '@/features/library/nutrition-plans/NutritionPlanAddAssignmentPage';
+import AddMealPage from '@/features/library/nutrition-plans/AddMealPage';
+import MealItemEditorPage from '@/features/library/nutrition-plans/MealItemEditorPage';
+import MealItemPickerPage from '@/features/library/nutrition-plans/MealItemPickerPage';
 import NutritionPlanAssignmentEditorPage from '@/features/library/nutrition-plans/NutritionPlanAssignmentEditorPage';
 import NutritionPlanBuilderPage from '@/features/library/nutrition-plans/NutritionPlanBuilderPage';
+import NutritionPlanDayDetailPage from '@/features/library/nutrition-plans/NutritionPlanDayDetailPage';
 import NutritionPlanFormPage from '@/features/library/nutrition-plans/NutritionPlanFormPage';
 import NutritionPlanMealEditorPage from '@/features/library/nutrition-plans/NutritionPlanMealEditorPage';
 import RecipeFormPage from '@/features/library/recipes/RecipeFormPage';
@@ -92,16 +95,32 @@ export default function AppRoutes() {
             path="/library/nutrition-plans/:id/builder"
           />
           <Route
-            element={<NutritionPlanAddAssignmentPage />}
-            path="/library/nutrition-plans/:id/builder/add-assignment"
+            element={<NutritionPlanDayDetailPage />}
+            path="/library/nutrition-plans/:id/builder/days/:day"
           />
           <Route
             element={<NutritionPlanAssignmentEditorPage />}
             path="/library/nutrition-plans/:id/builder/assignments/:planItemId/edit"
           />
           <Route
+            element={<AddMealPage />}
+            path="/library/nutrition-plans/:id/builder/days/:day/meals/new"
+          />
+          <Route
             element={<NutritionPlanMealEditorPage />}
             path="/library/nutrition-plans/:id/builder/meals/:mealId/edit"
+          />
+          <Route
+            element={<MealItemPickerPage />}
+            path="/library/nutrition-plans/:id/builder/meals/:mealId/items/new"
+          />
+          <Route
+            element={<MealItemEditorPage />}
+            path="/library/nutrition-plans/:id/builder/meals/:mealId/items/new/:sourceType/:sourceId"
+          />
+          <Route
+            element={<MealItemEditorPage />}
+            path="/library/nutrition-plans/:id/builder/meals/:mealId/items/:itemId"
           />
           <Route
             element={<TrainingPlanFormPage />}

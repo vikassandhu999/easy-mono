@@ -10,10 +10,10 @@
     "format": "pnpm --recursive format",
     "clean": "pnpm --recursive clean",
     "dev:clientapp": "pnpm --filter @easy/clientapp dev",
-    "dev:coachapp": "pnpm --filter @easy/coachapp dev",
+    "dev:coachapp": "pnpm --filter @easy/coachapp-v2 dev",
     "dev:website": "pnpm --filter @easy/website dev",
     "build:clientapp": "pnpm --filter @easy/clientapp build",
-    "build:coachapp": "pnpm --filter @easy/coachapp build",
+    "build:coachapp": "pnpm --filter @easy/coachapp-v2 build",
     "build:website": "pnpm --filter @easy/website build"
   },
   "devDependencies": {

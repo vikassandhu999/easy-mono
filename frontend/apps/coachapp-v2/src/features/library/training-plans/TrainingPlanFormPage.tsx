@@ -1,8 +1,8 @@
 import {toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {TrainingPlanFormValues} from '@/features/library/training-plans/trainingPlanFormTypes';
 
@@ -38,10 +38,10 @@ const FIELD_MAP: Record<string, FieldPath<TrainingPlanFormValues>> = {
 export default function TrainingPlanFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const {
     data: trainingPlanData,
@@ -81,7 +81,7 @@ export default function TrainingPlanFormPage() {
   const hasPendingChanges = isDirty && !isSubmitting;
 
   useUnsavedChangesWarning(hasPendingChanges);
-  const onBack = () => navigate(returnTo);
+  const onBack = () => navigate({to: returnTo});
   const pageTitle = getPageTitle(isEditing, 'Training Plan', trainingPlanData?.data?.name);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -100,13 +100,11 @@ export default function TrainingPlanFormPage() {
       reset(values);
 
       if (id) {
-        navigate(returnTo);
+        navigate({to: returnTo});
         return;
       }
 
-      navigate(`/library/training-plans/${response.data.id}/builder`, {
-        state: {from: returnTo},
-      });
+      navigate({to: `/library/training-plans/${response.data.id}/builder`, state: {from: returnTo}});
     } catch (err) {
       const result = handleFormError(
         err,
@@ -127,7 +125,7 @@ export default function TrainingPlanFormPage() {
     try {
       await deleteTrainingPlan(id).unwrap();
       toast.success(`Training plan "${trainingPlanData.data.name}" deleted successfully.`);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(err, 'Unable to delete training plan. Please try again.');
       toast.danger(result.formError);

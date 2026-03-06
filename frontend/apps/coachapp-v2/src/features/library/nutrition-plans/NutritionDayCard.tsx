@@ -1,5 +1,5 @@
+import {useNavigate} from '@tanstack/react-router';
 import {ChevronRight} from 'lucide-react';
-import {useNavigate} from 'react-router';
 
 import type {Meal} from '@/entities/meals/api/meals';
 import type {PlanItem} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -31,7 +31,7 @@ export function NutritionDayCard({day, mealsById, planId, planItems}: NutritionD
   return (
     <button
       className="flex w-full cursor-pointer items-center border-none bg-transparent text-left outline-none transition-colors hover:bg-surface-secondary"
-      onClick={() => navigate(`/library/nutrition-plans/${planId}/builder/days/${day}`)}
+      onClick={() => navigate({to: `/library/nutrition-plans/${planId}/builder/days/${day}`})}
       type="button"
     >
       <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-separator">

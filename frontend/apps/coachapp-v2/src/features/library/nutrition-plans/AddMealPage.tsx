@@ -1,7 +1,7 @@
 import {Button, Card, Input, Skeleton, TextField, toast} from '@heroui/react';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, ChevronRight, UtensilsCrossed} from 'lucide-react';
 import {Fragment, useCallback, useMemo, useState} from 'react';
-import {useNavigate, useParams} from 'react-router';
 
 import {useCreateMealMutation, useListMealsQuery} from '@/entities/meals/api/meals';
 import {useCreatePlanItemMutation} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -14,7 +14,7 @@ type Tab = 'existing' | 'new';
 
 export default function AddMealPage() {
   const navigate = useNavigate();
-  const {day = '', id: planId = ''} = useParams();
+  const {day = '', id: planId = ''} = useParams({strict: false});
   const backTo = `/library/nutrition-plans/${planId}/builder/days/${day}`;
 
   const {data: mealsData, isLoading: isMealsLoading} = useListMealsQuery({planId}, {skip: !planId});
@@ -47,7 +47,7 @@ export default function AddMealPage() {
         planId,
       }).unwrap();
       toast.success(`Meal added to ${toSentenceLabel(day)}`);
-      navigate(backTo);
+      navigate({to: backTo});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, 'Failed to add meal'));
     } finally {
@@ -65,7 +65,7 @@ export default function AddMealPage() {
           planId,
         }).unwrap();
         toast.success(`Meal assigned to ${toSentenceLabel(day)}`);
-        navigate(backTo);
+        navigate({to: backTo});
       } catch (error) {
         toast.danger(getApiErrorMessage(error, 'Failed to assign meal'));
       } finally {
@@ -89,7 +89,7 @@ export default function AddMealPage() {
     <div className="flex flex-col gap-6">
       <Button
         className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
+        onPress={() => navigate({to: backTo})}
         size="sm"
         variant="ghost"
       >

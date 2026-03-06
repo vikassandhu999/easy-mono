@@ -1,7 +1,7 @@
 import {Button, Card, Input, Label, Skeleton, TextField, toast} from '@heroui/react';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Save, Trash2} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import {useListFoodsQuery} from '@/entities/foods/api/foods';
 import {
@@ -18,7 +18,7 @@ import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 export default function MealItemEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id: planId = '', mealId = '', itemId, sourceType, sourceId: newSourceId} = useParams();
+  const {id: planId = '', mealId = '', itemId, sourceType, sourceId: newSourceId} = useParams({strict: false});
   const isEditMode = Boolean(itemId);
   const mealDetailUrl = `/library/nutrition-plans/${planId}/builder/meals/${mealId}/edit`;
   const backTo = isEditMode ? mealDetailUrl : `/library/nutrition-plans/${planId}/builder/meals/${mealId}/items/new`;
@@ -54,10 +54,10 @@ export default function MealItemEditorPage() {
     return map;
   }, [recipesData?.data]);
 
-  const locationState = location.state as null | {itemName?: string};
+  const locationState = location.state as Record<string, unknown>;
 
   const resolvedName = useMemo(() => {
-    if (!isEditMode && locationState?.itemName) return locationState.itemName;
+    if (!isEditMode && locationState?.itemName) return locationState.itemName as string;
     if (existingItem?.food_id) return foodNameMap.get(existingItem.food_id) ?? 'Food item';
     if (existingItem?.recipe_id) return recipeNameMap.get(existingItem.recipe_id) ?? 'Recipe item';
     return '';
@@ -116,7 +116,7 @@ export default function MealItemEditorPage() {
         }).unwrap();
         toast.success('Item added');
       }
-      navigate(mealDetailUrl);
+      navigate({to: mealDetailUrl});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, isEditMode ? 'Failed to update item' : 'Failed to add item'));
     }
@@ -143,7 +143,7 @@ export default function MealItemEditorPage() {
     try {
       await deleteMealItem({id: itemId, mealId, planId}).unwrap();
       toast.success('Item deleted');
-      navigate(mealDetailUrl);
+      navigate({to: mealDetailUrl});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, 'Failed to delete item'));
     }
@@ -167,7 +167,7 @@ export default function MealItemEditorPage() {
           <p className="text-sm text-muted">This meal may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(`/library/nutrition-plans/${planId}/builder`)}
+            onPress={() => navigate({to: `/library/nutrition-plans/${planId}/builder`})}
             variant="secondary"
           >
             Back to plan
@@ -181,7 +181,7 @@ export default function MealItemEditorPage() {
     <div className="flex w-full flex-col gap-6">
       <Button
         className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
+        onPress={() => navigate({to: backTo})}
         size="sm"
         variant="ghost"
       >
@@ -251,7 +251,7 @@ export default function MealItemEditorPage() {
         <Button
           className="min-h-11 w-full sm:w-auto"
           isDisabled={isMutating}
-          onPress={() => navigate(backTo)}
+          onPress={() => navigate({to: backTo})}
           size="md"
           variant="ghost"
         >

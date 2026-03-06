@@ -1,7 +1,7 @@
 import {Button, Card, Input, Label, Skeleton, TextField, toast} from '@heroui/react';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Save, Trash2} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import {
   useCreateWorkoutElementMutation,
@@ -24,7 +24,7 @@ import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 export default function ExerciseEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id: planId = '', workoutId = '', elementId, exerciseId: newExerciseId} = useParams();
+  const {id: planId = '', workoutId = '', elementId, exerciseId: newExerciseId} = useParams({strict: false});
   const isEditMode = Boolean(elementId);
   const workoutDetailUrl = `/library/training-plans/${planId}/builder/workouts/${workoutId}`;
   const backTo = isEditMode ? workoutDetailUrl : `${workoutDetailUrl}/exercises/new`;
@@ -43,8 +43,8 @@ export default function ExerciseEditorPage() {
   const isLoading = isWorkoutLoading || (isEditMode && isElementLoading);
 
   const exerciseId = isEditMode ? (element?.exercise_id ?? '') : (newExerciseId ?? '');
-  const locationState = location.state as null | {exerciseName?: string};
-  const exerciseName = isEditMode ? (element?.exercise?.name ?? '') : (locationState?.exerciseName ?? '');
+  const locationState = location.state as Record<string, unknown>;
+  const exerciseName = isEditMode ? (element?.exercise?.name ?? '') : ((locationState?.exerciseName as string) ?? '');
 
   const [initialized, setInitialized] = useState(!isEditMode);
   const [notes, setNotes] = useState('');
@@ -106,7 +106,7 @@ export default function ExerciseEditorPage() {
         }).unwrap();
         toast.success('Exercise added');
       }
-      navigate(workoutDetailUrl);
+      navigate({to: workoutDetailUrl});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, isEditMode ? 'Failed to update exercise' : 'Failed to add exercise'));
     }
@@ -137,7 +137,7 @@ export default function ExerciseEditorPage() {
         plannedWorkoutId: workoutId,
       }).unwrap();
       toast.success('Exercise deleted');
-      navigate(workoutDetailUrl);
+      navigate({to: workoutDetailUrl});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, 'Failed to delete exercise'));
     }
@@ -161,7 +161,7 @@ export default function ExerciseEditorPage() {
           <p className="text-sm text-muted">This workout may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(`/library/training-plans/${planId}/builder`)}
+            onPress={() => navigate({to: `/library/training-plans/${planId}/builder`})}
             variant="secondary"
           >
             Back to plan
@@ -175,7 +175,7 @@ export default function ExerciseEditorPage() {
     <div className="flex w-full flex-col gap-6">
       <Button
         className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
+        onPress={() => navigate({to: backTo})}
         size="sm"
         variant="ghost"
       >
@@ -242,7 +242,7 @@ export default function ExerciseEditorPage() {
         <Button
           className="min-h-11 w-full sm:w-auto"
           isDisabled={isMutating}
-          onPress={() => navigate(backTo)}
+          onPress={() => navigate({to: backTo})}
           size="md"
           variant="ghost"
         >

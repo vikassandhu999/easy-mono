@@ -1,7 +1,7 @@
 import {Button, Card, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Dumbbell, EllipsisVertical, Pencil, Plus, Trash2} from 'lucide-react';
 import {Fragment, useMemo, useState} from 'react';
-import {useNavigate, useParams} from 'react-router';
 
 import type {WorkoutElement} from '@/entities/trainingPlans/api/trainingPlans';
 
@@ -19,7 +19,7 @@ import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 
 export default function WorkoutDetailPage() {
   const navigate = useNavigate();
-  const {id: planId = '', workoutId = ''} = useParams();
+  const {id: planId = '', workoutId = ''} = useParams({strict: false});
   const backTo = `/library/training-plans/${planId}/builder`;
 
   const {data: workoutData, isLoading} = useGetPlannedWorkoutQuery(workoutId, {skip: !workoutId});
@@ -82,7 +82,7 @@ export default function WorkoutDetailPage() {
     try {
       await deletePlannedWorkout({id: workoutId, planId}).unwrap();
       toast.success('Workout deleted');
-      navigate(backTo);
+      navigate({to: backTo});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, 'Failed to delete workout'));
     }
@@ -133,7 +133,7 @@ export default function WorkoutDetailPage() {
           <p className="text-sm text-muted">This workout may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(backTo)}
+            onPress={() => navigate({to: backTo})}
             variant="secondary"
           >
             Back to plan
@@ -149,7 +149,7 @@ export default function WorkoutDetailPage() {
       <div className="flex items-center justify-between">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-          onPress={() => navigate(backTo)}
+          onPress={() => navigate({to: backTo})}
           size="sm"
           variant="ghost"
         >
@@ -215,7 +215,9 @@ export default function WorkoutDetailPage() {
             </div>
             <Button
               className="mt-2 min-h-11"
-              onPress={() => navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`)}
+              onPress={() =>
+                navigate({to: `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`})
+              }
               size="md"
               variant="primary"
             >
@@ -235,7 +237,7 @@ export default function WorkoutDetailPage() {
                 exerciseName={getExerciseName(el.exercise_id, el.exercise?.name)}
                 onMove={(dir) => handleMoveExercise(el, dir)}
                 onTap={() =>
-                  navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/${el.id}`)
+                  navigate({to: `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/${el.id}`})
                 }
               />
             </Fragment>
@@ -245,7 +247,7 @@ export default function WorkoutDetailPage() {
 
       <Button
         className="min-h-11 w-full"
-        onPress={() => navigate(`/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`)}
+        onPress={() => navigate({to: `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new`})}
         variant="secondary"
       >
         <Plus className="h-4 w-4" />

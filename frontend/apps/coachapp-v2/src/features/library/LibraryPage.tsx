@@ -1,6 +1,6 @@
 import {Button, Card, Skeleton} from '@heroui/react';
+import {useNavigate, useSearch} from '@tanstack/react-router';
 import {Plus, Search} from 'lucide-react';
-import {useNavigate, useSearchParams} from 'react-router';
 
 import LibraryControls from '@/features/library/LibraryControls';
 import {FILTER_TABS, RESOURCE_TYPE_LABEL, SORT_OPTIONS} from '@/features/library/libraryData';
@@ -23,25 +23,40 @@ const CREATE_META: Record<string, {label: string; route: string}> = {
 
 export default function LibraryPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const search = useSearch({strict: false}) as Record<string, string | undefined>;
 
-  const filterType = FILTER_TABS.find((t) => t.value === searchParams.get('filter'))?.value ?? 'nutrition_plan';
-  const sortBy = SORT_OPTIONS.find((o) => o.key === searchParams.get('sort'))?.key ?? 'recent';
-  const queryParam = searchParams.get('q') ?? '';
+  const filterType = FILTER_TABS.find((t) => t.value === search.filter)?.value ?? 'nutrition_plan';
+  const sortBy = SORT_OPTIONS.find((o) => o.key === search.sort)?.key ?? 'recent';
+  const queryParam = search.q ?? '';
   const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sortBy)?.label ?? SORT_OPTIONS[0].label;
-  const returnTo = `/library${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  const searchStr = Object.entries(search)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
+    .join('&');
+  const returnTo = `/library${searchStr ? `?${searchStr}` : ''}`;
   const sectionLabel = RESOURCE_TYPE_LABEL[filterType];
   const createMeta = CREATE_META[filterType] ?? CREATE_META.nutrition_plan;
 
   const {displayedResources, isError, isLoading, onRetry} = useLibraryResources(filterType, queryParam, sortBy);
 
-  const updateParams = (fn: (p: URLSearchParams) => void) => {
-    const next = new URLSearchParams(searchParams);
-    fn(next);
-    setSearchParams(next, {replace: true});
+  const updateParams = (updates: Record<string, string | undefined>) => {
+    navigate({
+      search: (prev: Record<string, unknown>) => {
+        const next = {...prev};
+        Object.entries(updates).forEach(([k, v]) => {
+          if (v === undefined) {
+            delete next[k];
+          } else {
+            next[k] = v;
+          }
+        });
+        return next;
+      },
+      replace: true,
+    });
   };
 
-  const navTo = (path: string) => navigate(path, {state: {from: returnTo}});
+  const navTo = (path: string) => navigate({to: path, state: {from: returnTo}});
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,12 +76,12 @@ export default function LibraryPage() {
       <LibraryControls
         activeSortLabel={activeSortLabel}
         filterType={filterType}
-        onFilterChange={(v) => updateParams((p) => (v === 'nutrition_plan' ? p.delete('filter') : p.set('filter', v)))}
-        onSearchCommit={(v) => updateParams((p) => (v ? p.set('q', v) : p.delete('q')))}
+        onFilterChange={(v) => updateParams({filter: v === 'nutrition_plan' ? undefined : v})}
+        onSearchCommit={(v) => updateParams({q: v || undefined})}
         onSortRotate={() => {
           const idx = SORT_OPTIONS.findIndex((o) => o.key === sortBy);
           const next = SORT_OPTIONS[idx === SORT_OPTIONS.length - 1 ? 0 : idx + 1]?.key;
-          if (next) updateParams((p) => (next === 'recent' ? p.delete('sort') : p.set('sort', next)));
+          if (next) updateParams({sort: next === 'recent' ? undefined : next});
         }}
         searchQuery={queryParam}
       />
@@ -148,7 +163,7 @@ export default function LibraryPage() {
             {queryParam.trim() ? (
               <Button
                 className="min-h-11"
-                onPress={() => updateParams((p) => p.delete('q'))}
+                onPress={() => updateParams({q: undefined})}
                 size="md"
                 variant="outline"
               >

@@ -12,9 +12,9 @@ import {
   TextField,
   toast,
 } from '@heroui/react';
+import {Link, useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, ArrowUpRight, Copy, Dumbbell, EllipsisVertical, Pencil, Plus, UserPlus} from 'lucide-react';
 import {Fragment, useMemo, useState} from 'react';
-import {Link, useLocation, useNavigate, useParams} from 'react-router';
 
 import {useGetClientQuery} from '@/entities/clients/api/clients';
 import {
@@ -34,9 +34,9 @@ const getDayLabel = (dayNumber: number): string => DAY_LABELS[(dayNumber - 1) % 
 export default function TrainingPlanBuilderPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const planId = id ?? '';
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isAddingDay, setIsAddingDay] = useState(false);
@@ -82,9 +82,7 @@ export default function TrainingPlanBuilderPage() {
     try {
       const res = await duplicateTrainingPlan(planId).unwrap();
       toast.success('Plan duplicated');
-      navigate(`/library/training-plans/${res.data.id}/builder`, {
-        state: {from: returnTo},
-      });
+      navigate({to: `/library/training-plans/${res.data.id}/builder`, state: {from: returnTo}});
     } catch {
       toast.danger('Failed to duplicate plan');
     }
@@ -93,9 +91,7 @@ export default function TrainingPlanBuilderPage() {
   const handleAction = (key: React.Key) => {
     switch (key) {
       case 'edit':
-        navigate(`/library/training-plans/${plan.id}/edit`, {
-          state: {from: returnTo},
-        });
+        navigate({to: `/library/training-plans/${plan.id}/edit`, state: {from: returnTo}});
         break;
       case 'duplicate':
         handleDuplicatePlan();
@@ -156,7 +152,7 @@ export default function TrainingPlanBuilderPage() {
             </Button>
             <Button
               className="min-h-11"
-              onPress={() => navigate(returnTo)}
+              onPress={() => navigate({to: returnTo})}
               size="md"
               variant="ghost"
             >
@@ -175,7 +171,7 @@ export default function TrainingPlanBuilderPage() {
         <div className="flex items-center justify-between">
           <Button
             className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-            onPress={() => navigate(returnTo)}
+            onPress={() => navigate({to: returnTo})}
             size="sm"
             variant="ghost"
           >
@@ -187,11 +183,7 @@ export default function TrainingPlanBuilderPage() {
           <div className="hidden items-center gap-2 sm:flex">
             <Button
               className="min-h-11 gap-2"
-              onPress={() =>
-                navigate(`/library/training-plans/${plan.id}/edit`, {
-                  state: {from: returnTo},
-                })
-              }
+              onPress={() => navigate({to: `/library/training-plans/${plan.id}/edit`, state: {from: returnTo}})}
               size="md"
               variant="outline"
             >
@@ -429,9 +421,7 @@ export default function TrainingPlanBuilderPage() {
       <AssignTrainingPlanModal
         isOpen={isAssignOpen}
         onAssigned={(assignedId) =>
-          navigate(`/library/training-plans/${assignedId}/builder`, {
-            state: {from: returnTo},
-          })
+          navigate({to: `/library/training-plans/${assignedId}/builder`, state: {from: returnTo}})
         }
         onOpenChange={setIsAssignOpen}
         plan={plan}

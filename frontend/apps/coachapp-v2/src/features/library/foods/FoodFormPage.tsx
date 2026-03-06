@@ -1,8 +1,8 @@
 import {toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {FoodFormValues} from '@/features/library/foods/foodFormTypes';
 
@@ -40,10 +40,10 @@ const FIELD_MAP: Record<string, FieldPath<FoodFormValues>> = {
 export default function FoodFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const {
     data: foodData,
@@ -81,7 +81,7 @@ export default function FoodFormPage() {
   const hasPendingChanges = isDirty && !isSubmitting;
 
   useUnsavedChangesWarning(hasPendingChanges);
-  const onBack = () => navigate(returnTo);
+  const onBack = () => navigate({to: returnTo});
   const pageTitle = getPageTitle(isEditing, 'Food', foodData?.data?.name);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -96,7 +96,7 @@ export default function FoodFormPage() {
         toast.success(`Food "${values.name.trim()}" created successfully.`);
       }
       reset(values);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(
         err,
@@ -117,7 +117,7 @@ export default function FoodFormPage() {
     try {
       await deleteFood(id).unwrap();
       toast.success(`Food "${foodData.data.name}" deleted successfully.`);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(err, 'Unable to delete food. Please try again.');
       toast.danger(result.formError);

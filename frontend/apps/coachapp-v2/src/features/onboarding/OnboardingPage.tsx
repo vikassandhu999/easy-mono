@@ -1,8 +1,8 @@
 import {Button, FieldError, Input, Label, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import {getRefreshToken, setTokens, useExchangeTokenMutation} from '@/entities/auth/api/auth';
@@ -71,7 +71,7 @@ export default function OnboardingPage() {
     }).unwrap();
     setPendingCoachProfile(null);
     setNeedsTokenRefresh(false);
-    navigate('/clients', {replace: true});
+    navigate({to: '/clients', replace: true});
   };
 
   const onSubmit = handleSubmit(async (values) => {

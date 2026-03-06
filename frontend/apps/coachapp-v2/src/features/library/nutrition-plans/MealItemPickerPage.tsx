@@ -1,7 +1,7 @@
 import {Button, Card, Input, Skeleton, TextField} from '@heroui/react';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import {Apple, ArrowLeft, ChevronRight, CookingPot, UtensilsCrossed} from 'lucide-react';
 import {Fragment, useMemo, useState} from 'react';
-import {useNavigate, useParams} from 'react-router';
 
 import {useListFoodsQuery} from '@/entities/foods/api/foods';
 import {useGetMealQuery} from '@/entities/meals/api/meals';
@@ -9,7 +9,7 @@ import {useListRecipesQuery} from '@/entities/recipes/api/recipes';
 
 export default function MealItemPickerPage() {
   const navigate = useNavigate();
-  const {id: planId = '', mealId = ''} = useParams();
+  const {id: planId = '', mealId = ''} = useParams({strict: false});
   const backTo = `/library/nutrition-plans/${planId}/builder/meals/${mealId}/edit`;
 
   const {data: mealData, isLoading: isMealLoading} = useGetMealQuery(mealId, {
@@ -52,7 +52,7 @@ export default function MealItemPickerPage() {
     <div className="flex flex-col gap-6">
       <Button
         className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
+        onPress={() => navigate({to: backTo})}
         size="sm"
         variant="ghost"
       >
@@ -117,7 +117,8 @@ export default function MealItemPickerPage() {
                 <button
                   className="flex w-full cursor-pointer items-center gap-3 border-none bg-transparent px-4 py-3 text-left outline-none hover:bg-surface-secondary"
                   onClick={() =>
-                    navigate(`/library/nutrition-plans/${planId}/builder/meals/${mealId}/items/new/${tab}/${item.id}`, {
+                    navigate({
+                      to: `/library/nutrition-plans/${planId}/builder/meals/${mealId}/items/new/${tab}/${item.id}`,
                       state: {itemName: item.name},
                     })
                   }

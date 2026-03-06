@@ -1,6 +1,6 @@
 import {Button, Card} from '@heroui/react';
+import {useNavigate} from '@tanstack/react-router';
 import {Dumbbell, Pencil, UtensilsCrossed} from 'lucide-react';
-import {useNavigate} from 'react-router';
 
 import type {Client} from '@/entities/clients/api/clients';
 import type {NutritionPlan} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -99,7 +99,7 @@ export default function ClientOverviewTab({
               </p>
               <Button
                 className="mt-1 w-fit"
-                onPress={() => navigate(`/library/training-plans/${activeTraining.id}/builder`)}
+                onPress={() => navigate({to: `/library/training-plans/${activeTraining.id}/builder`})}
                 size="sm"
                 variant="ghost"
               >
@@ -135,7 +135,7 @@ export default function ClientOverviewTab({
               </p>
               <Button
                 className="mt-1 w-fit"
-                onPress={() => navigate(`/library/nutrition-plans/${activeNutrition.id}/builder`)}
+                onPress={() => navigate({to: `/library/nutrition-plans/${activeNutrition.id}/builder`})}
                 size="sm"
                 variant="ghost"
               >

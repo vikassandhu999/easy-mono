@@ -1,5 +1,5 @@
+import {useNavigate} from '@tanstack/react-router';
 import {ChevronRight} from 'lucide-react';
-import {useNavigate} from 'react-router';
 
 import type {PlannedWorkout} from '@/entities/trainingPlans/api/trainingPlans';
 
@@ -17,7 +17,7 @@ export function WorkoutDayCard({dayLabel, plannedWorkout}: WorkoutDayCardProps) 
   return (
     <button
       className="flex w-full cursor-pointer items-center border-none bg-transparent text-left outline-none transition-colors hover:bg-surface-secondary"
-      onClick={() => navigate(`/library/training-plans/${planId}/builder/workouts/${plannedWorkout.id}`)}
+      onClick={() => navigate({to: `/library/training-plans/${planId}/builder/workouts/${plannedWorkout.id}`})}
       type="button"
     >
       <div className="flex w-12 shrink-0 items-center justify-center self-stretch border-r border-separator">

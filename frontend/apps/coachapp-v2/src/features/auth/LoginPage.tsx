@@ -1,8 +1,8 @@
 import {Button, FieldError, Input, Label, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {useLocation, useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import {OtpRequest, useSendOtpMutation} from '@/entities/auth/api/auth';
@@ -18,7 +18,7 @@ const schema = z.object({
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const prefilledEmail = (location.state as null | {email?: string})?.email ?? '';
+  const prefilledEmail = ((location.state as Record<string, unknown>)?.email as string) ?? '';
   const [sendOtp, {isLoading}] = useSendOtpMutation();
   const {
     handleSubmit,
@@ -39,7 +39,7 @@ export default function LoginPage() {
     setValue('type', 'authentication');
     try {
       await sendOtp({email: values.email, type: 'authentication'}).unwrap();
-      navigate('/login/verify', {state: {email: values.email}});
+      navigate({to: '/login/verify', state: {email: values.email}});
     } catch (err) {
       const result = handleFormError(err, 'Unable to send code. Please try again.');
       setFieldErrors(result.fieldErrors);
@@ -83,7 +83,7 @@ export default function LoginPage() {
         New here?{' '}
         <button
           className="text-primary underline-offset-4 hover:underline"
-          onClick={() => navigate('/register')}
+          onClick={() => navigate({to: '/register'})}
           type="button"
         >
           Create an account

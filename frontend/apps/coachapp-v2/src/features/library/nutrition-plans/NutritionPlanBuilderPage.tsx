@@ -1,7 +1,7 @@
 import {Button, Card, Dropdown, Label, Skeleton} from '@heroui/react';
+import {Link, useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, ArrowUpRight, Copy, EllipsisVertical, Pencil, UserPlus, UtensilsCrossed} from 'lucide-react';
 import {Fragment, useState} from 'react';
-import {Link, useLocation, useNavigate, useParams} from 'react-router';
 
 import {useGetClientQuery} from '@/entities/clients/api/clients';
 import {useGetNutritionPlanQuery} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -17,9 +17,9 @@ import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 export default function NutritionPlanBuilderPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const planId = id ?? '';
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const [isAssignOpen, setIsAssignOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export default function NutritionPlanBuilderPage() {
     refetch: refetchPlan,
   } = useGetNutritionPlanQuery(planId, {skip: !planId});
 
-  const navTo = (path: string) => navigate(path, {state: {from: returnTo}});
+  const navTo = (path: string) => navigate({to: path, state: {from: returnTo}});
   const {confirmDialog, copyDayDialog, duplicatePlan, isDuplicatingPlan, itemsByDay, mealsById} =
     useNutritionPlanBuilderActions(planId, navTo);
 
@@ -79,7 +79,7 @@ export default function NutritionPlanBuilderPage() {
             </Button>
             <Button
               className="min-h-11"
-              onPress={() => navigate(returnTo)}
+              onPress={() => navigate({to: returnTo})}
               size="md"
               variant="ghost"
             >
@@ -114,7 +114,7 @@ export default function NutritionPlanBuilderPage() {
         <div className="flex items-center justify-between">
           <Button
             className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-            onPress={() => navigate(returnTo)}
+            onPress={() => navigate({to: returnTo})}
             size="sm"
             variant="ghost"
           >

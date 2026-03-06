@@ -1,8 +1,8 @@
 import {Button, FieldError, InputOTP, Label, REGEXP_ONLY_DIGITS, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
-import {useLocation, useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import {
@@ -29,7 +29,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export default function VerifyPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as null | {email?: string})?.email ?? '';
+  const email = ((location.state as Record<string, unknown>)?.email as string) ?? '';
   const [verifyOtp, {isLoading: isVerifying}] = useVerifyOtpMutation();
   const [exchangeToken, {isLoading: isExchanging}] = useExchangeTokenMutation();
   const [sendOtp, {isLoading: isSending}] = useSendOtpMutation();
@@ -55,18 +55,18 @@ export default function VerifyPage() {
     try {
       const result = await getMyBusiness().unwrap();
       if (result?.data?.id) {
-        navigate('/clients', {replace: true});
+        navigate({to: '/clients', replace: true});
         return;
       }
     } catch (error) {
       const status =
         error && typeof error === 'object' && 'status' in error ? (error as {status?: number}).status : null;
       if (status === 404) {
-        navigate('/onboarding', {replace: true});
+        navigate({to: '/onboarding', replace: true});
         return;
       }
     }
-    navigate('/onboarding', {replace: true});
+    navigate({to: '/onboarding', replace: true});
   };
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function VerifyPage() {
       } else {
         tokens = await verifyOtp({email, otp: values.otp}).unwrap();
         setTokens(tokens);
-        navigate('/onboarding', {replace: true});
+        navigate({to: '/onboarding', replace: true});
       }
     } catch (err) {
       const result = handleFormError(err, 'Unable to verify code. Please try again.');
@@ -203,7 +203,8 @@ export default function VerifyPage() {
         <button
           className="text-primary underline-offset-4 hover:underline"
           onClick={() =>
-            navigate(isLoginFlow ? '/login' : '/register', {
+            navigate({
+              to: isLoginFlow ? '/login' : '/register',
               state: {email},
             })
           }

@@ -1,7 +1,7 @@
 import {Button, Card, Label, Radio, RadioGroup, Skeleton, toast} from '@heroui/react';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft} from 'lucide-react';
 import {useEffect, useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import {useListPlanItemsQuery, useUpdatePlanItemMutation} from '@/entities/nutritionPlans/api/nutritionPlans';
 import {getReturnTo} from '@/features/library/libraryFormShared';
@@ -10,11 +10,11 @@ import {DAYS, MEAL_TYPES, toSentenceLabel} from '@/features/library/nutrition-pl
 export default function NutritionPlanAssignmentEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id, planItemId} = useParams();
+  const {id, planItemId} = useParams({strict: false});
   const planId = id ?? '';
   const assignmentId = planItemId ?? '';
 
-  const returnTo = getReturnTo(location, `/library/nutrition-plans/${planId}/builder`);
+  const returnTo = getReturnTo(location.state, `/library/nutrition-plans/${planId}/builder`);
 
   const {data: planItemsData, isLoading} = useListPlanItemsQuery(planId, {
     skip: !planId,
@@ -48,7 +48,7 @@ export default function NutritionPlanAssignmentEditorPage() {
         planId,
       }).unwrap();
       toast.success('Day assignment updated.');
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch {
       toast.danger('Unable to update assignment. Please try again.');
     }
@@ -72,7 +72,7 @@ export default function NutritionPlanAssignmentEditorPage() {
           <p className="text-sm text-muted">This assignment may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(returnTo)}
+            onPress={() => navigate({to: returnTo})}
             variant="secondary"
           >
             Back to builder
@@ -88,7 +88,7 @@ export default function NutritionPlanAssignmentEditorPage() {
       <div className="flex items-center">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-          onPress={() => navigate(returnTo)}
+          onPress={() => navigate({to: returnTo})}
           size="sm"
           variant="ghost"
         >
@@ -169,7 +169,7 @@ export default function NutritionPlanAssignmentEditorPage() {
       <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-separator bg-background pb-4 pt-4 sm:flex-row sm:justify-end">
         <Button
           className="min-h-11 w-full sm:w-auto"
-          onPress={() => navigate(returnTo)}
+          onPress={() => navigate({to: returnTo})}
           size="md"
           variant="ghost"
         >

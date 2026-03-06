@@ -1,14 +1,14 @@
 import {Button, Card, Input, Skeleton, TextField} from '@heroui/react';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, ChevronRight, Dumbbell} from 'lucide-react';
 import {Fragment, useState} from 'react';
-import {useNavigate, useParams} from 'react-router';
 
 import {useListExercisesQuery} from '@/entities/exercises/api/exercises';
 import {useGetPlannedWorkoutQuery} from '@/entities/trainingPlans/api/trainingPlans';
 
 export default function ExercisePickerPage() {
   const navigate = useNavigate();
-  const {id: planId = '', workoutId = ''} = useParams();
+  const {id: planId = '', workoutId = ''} = useParams({strict: false});
   const backTo = `/library/training-plans/${planId}/builder/workouts/${workoutId}`;
 
   const {data: workoutData, isLoading: isWorkoutLoading} = useGetPlannedWorkoutQuery(workoutId, {skip: !workoutId});
@@ -38,7 +38,7 @@ export default function ExercisePickerPage() {
     <div className="flex flex-col gap-6">
       <Button
         className="min-h-9 w-fit gap-2 px-2 text-muted hover:text-foreground"
-        onPress={() => navigate(backTo)}
+        onPress={() => navigate({to: backTo})}
         size="sm"
         variant="ghost"
       >
@@ -80,10 +80,10 @@ export default function ExercisePickerPage() {
               <button
                 className="flex w-full cursor-pointer items-center gap-3 border-none bg-transparent px-4 py-3 text-left outline-none hover:bg-surface-secondary"
                 onClick={() =>
-                  navigate(
-                    `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new/${exercise.id}`,
-                    {state: {exerciseName: exercise.name}},
-                  )
+                  navigate({
+                    to: `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new/${exercise.id}`,
+                    state: {exerciseName: exercise.name},
+                  })
                 }
                 type="button"
               >

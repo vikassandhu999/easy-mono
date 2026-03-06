@@ -1,6 +1,6 @@
 import {Button, Skeleton} from '@heroui/react';
+import {useNavigate} from '@tanstack/react-router';
 import {Plus, UtensilsCrossed} from 'lucide-react';
-import {useNavigate} from 'react-router';
 
 import type {NutritionPlan} from '@/entities/nutritionPlans/api/nutritionPlans';
 
@@ -73,7 +73,7 @@ export default function ClientNutritionTab({isLoading, onAssign, plans}: ClientN
                 itemCount={`${plan.meals.length} meal${plan.meals.length !== 1 ? 's' : ''}`}
                 key={plan.id}
                 name={plan.name}
-                onOpen={() => navigate(`/library/nutrition-plans/${plan.id}/builder`)}
+                onOpen={() => navigate({to: `/library/nutrition-plans/${plan.id}/builder`})}
                 status={plan.status}
               />
             );

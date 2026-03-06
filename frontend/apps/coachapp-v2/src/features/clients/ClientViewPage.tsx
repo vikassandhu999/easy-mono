@@ -1,7 +1,7 @@
 import {Button, Card, Skeleton} from '@heroui/react';
+import {useNavigate, useParams, useSearch} from '@tanstack/react-router';
 import {ArrowLeft} from 'lucide-react';
 import {useCallback, useState} from 'react';
-import {useNavigate, useParams, useSearchParams} from 'react-router';
 
 import {useGetClientQuery} from '@/entities/clients/api/clients';
 import {useListNutritionPlansQuery} from '@/entities/nutritionPlans/api/nutritionPlans';
@@ -25,11 +25,11 @@ const TAB_LABELS: Record<TabKey, string> = {
 
 export default function ClientViewPage() {
   const navigate = useNavigate();
-  const {id} = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const {id} = useParams({strict: false});
+  const search = useSearch({strict: false});
 
-  const activeTab = (searchParams.get('tab') as TabKey) || 'overview';
-  const setActiveTab = useCallback((tab: TabKey) => setSearchParams({tab}, {replace: true}), [setSearchParams]);
+  const activeTab = ((search as Record<string, unknown>).tab as TabKey) || 'overview';
+  const setActiveTab = useCallback((tab: TabKey) => navigate({search: {tab}, replace: true}), [navigate]);
 
   const {data: clientData, isError, isLoading: clientLoading} = useGetClientQuery(id ?? '', {skip: !id});
   const {data: trainingData, isLoading: trainingLoading} = useListTrainingPlansQuery({client_id: id}, {skip: !id});
@@ -50,7 +50,7 @@ export default function ClientViewPage() {
           <p className="text-sm text-muted">The requested client id is missing.</p>
           <div>
             <Button
-              onPress={() => navigate('/clients')}
+              onPress={() => navigate({to: '/clients'})}
               size="md"
               variant="outline"
             >
@@ -67,7 +67,7 @@ export default function ClientViewPage() {
       <div className="flex items-center justify-between">
         <Button
           className="gap-2"
-          onPress={() => navigate('/clients')}
+          onPress={() => navigate({to: '/clients'})}
           size="md"
           variant="ghost"
         >
@@ -91,7 +91,7 @@ export default function ClientViewPage() {
             <p className="text-sm text-muted">Please try again or return to the clients list.</p>
             <div className="flex gap-2">
               <Button
-                onPress={() => navigate('/clients')}
+                onPress={() => navigate({to: '/clients'})}
                 size="md"
                 variant="outline"
               >

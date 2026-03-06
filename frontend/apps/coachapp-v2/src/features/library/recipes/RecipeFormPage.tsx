@@ -1,8 +1,8 @@
 import {toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {RecipeFormValues} from '@/features/library/recipes/recipeFormTypes';
 
@@ -43,10 +43,10 @@ const FIELD_MAP: Record<string, FieldPath<RecipeFormValues>> = {
 export default function RecipeFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const {
     data: recipeData,
@@ -86,7 +86,7 @@ export default function RecipeFormPage() {
   const hasPendingChanges = isDirty && !isSubmitting;
 
   useUnsavedChangesWarning(hasPendingChanges);
-  const onBack = () => navigate(returnTo);
+  const onBack = () => navigate({to: returnTo});
   const pageTitle = getPageTitle(isEditing, 'Recipe', recipeData?.data?.name);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -101,7 +101,7 @@ export default function RecipeFormPage() {
         toast.success(`Recipe "${values.name.trim()}" created successfully.`);
       }
       reset(values);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(
         err,
@@ -122,7 +122,7 @@ export default function RecipeFormPage() {
     try {
       await deleteRecipe(id).unwrap();
       toast.success(`Recipe "${recipeData.data.name}" deleted successfully.`);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(err, 'Unable to delete recipe. Please try again.');
       toast.danger(result.formError);

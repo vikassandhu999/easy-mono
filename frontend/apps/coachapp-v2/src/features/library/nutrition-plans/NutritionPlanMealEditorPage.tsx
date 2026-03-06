@@ -1,7 +1,7 @@
 import {Button, Card, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, EllipsisVertical, Pencil, Plus, Trash2, UtensilsCrossed} from 'lucide-react';
 import {Fragment, useCallback, useMemo, useState} from 'react';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {MealItem} from '@/entities/meals/api/meals';
 
@@ -23,10 +23,10 @@ import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 export default function NutritionPlanMealEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id, mealId} = useParams();
+  const {id, mealId} = useParams({strict: false});
   const planId = id ?? '';
   const editingMealId = mealId ?? '';
-  const returnTo = getReturnTo(location, `/library/nutrition-plans/${planId}/builder`);
+  const returnTo = getReturnTo(location.state, `/library/nutrition-plans/${planId}/builder`);
 
   const {data: selectedMealData, isLoading: isMealLoading} = useGetMealQuery(editingMealId, {skip: !editingMealId});
   const {data: mealItemsData} = useListMealItemsQuery(editingMealId, {
@@ -97,7 +97,7 @@ export default function NutritionPlanMealEditorPage() {
     try {
       await deleteMeal({id: editingMealId, planId}).unwrap();
       toast.success('Meal deleted');
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (error) {
       toast.danger(getApiErrorMessage(error, 'Failed to delete meal'));
     }
@@ -151,7 +151,7 @@ export default function NutritionPlanMealEditorPage() {
           <p className="text-sm text-muted">This meal may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(returnTo)}
+            onPress={() => navigate({to: returnTo})}
             variant="secondary"
           >
             Back
@@ -167,7 +167,7 @@ export default function NutritionPlanMealEditorPage() {
       <div className="flex items-center justify-between">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-          onPress={() => navigate(returnTo)}
+          onPress={() => navigate({to: returnTo})}
           size="sm"
           variant="ghost"
         >
@@ -232,7 +232,9 @@ export default function NutritionPlanMealEditorPage() {
             </div>
             <Button
               className="mt-2 min-h-11"
-              onPress={() => navigate(`/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/new`)}
+              onPress={() =>
+                navigate({to: `/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/new`})
+              }
               size="md"
               variant="primary"
             >
@@ -252,7 +254,7 @@ export default function NutritionPlanMealEditorPage() {
                 itemName={getItemName(item.food_id, item.recipe_id)}
                 onMove={(dir) => handleMoveItem(item, dir)}
                 onTap={() =>
-                  navigate(`/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/${item.id}`)
+                  navigate({to: `/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/${item.id}`})
                 }
               />
             </Fragment>
@@ -262,7 +264,7 @@ export default function NutritionPlanMealEditorPage() {
 
       <Button
         className="min-h-11 w-full"
-        onPress={() => navigate(`/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/new`)}
+        onPress={() => navigate({to: `/library/nutrition-plans/${planId}/builder/meals/${editingMealId}/items/new`})}
         variant="secondary"
       >
         <Plus className="h-4 w-4" />

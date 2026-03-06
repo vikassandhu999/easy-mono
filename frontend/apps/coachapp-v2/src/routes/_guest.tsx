@@ -1,9 +1,13 @@
-import {Navigate, Outlet} from 'react-router';
+import {createFileRoute, Navigate, Outlet} from '@tanstack/react-router';
 
 import {getAccessToken} from '@/entities/auth/api/auth';
 import {useGetMyBusinessQuery} from '@/entities/business/api/business';
 
-export default function GuestRoute() {
+export const Route = createFileRoute('/_guest')({
+  component: GuestLayout,
+});
+
+function GuestLayout() {
   const isAuthenticated = Boolean(getAccessToken());
   const {data, isLoading} = useGetMyBusinessQuery(undefined, {
     skip: !isAuthenticated,

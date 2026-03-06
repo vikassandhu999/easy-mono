@@ -1,7 +1,7 @@
 import {Button, Card, Skeleton} from '@heroui/react';
+import {useNavigate} from '@tanstack/react-router';
 import {ArrowUpDown, Plus, Search} from 'lucide-react';
 import {useMemo, useState} from 'react';
-import {useNavigate} from 'react-router';
 
 import type {Client} from '@/entities/clients/api/clients';
 
@@ -187,7 +187,7 @@ export default function ClientsPage() {
                 <Card
                   className="border border-separator bg-surface p-4 text-left transition-none"
                   key={client.id}
-                  onClick={() => navigate(`/clients/${client.id}`)}
+                  onClick={() => navigate({to: `/clients/${client.id}`})}
                 >
                   <div className="flex flex-col gap-4">
                     <div className="flex items-start justify-between">

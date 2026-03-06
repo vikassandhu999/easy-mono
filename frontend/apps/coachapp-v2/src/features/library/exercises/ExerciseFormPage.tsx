@@ -1,8 +1,8 @@
 import {toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {ExerciseFormValues} from '@/features/library/exercises/exerciseFormTypes';
 
@@ -39,10 +39,10 @@ const FIELD_MAP: Record<string, FieldPath<ExerciseFormValues>> = {
 export default function ExerciseFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const {
     data: exerciseData,
@@ -94,7 +94,7 @@ export default function ExerciseFormPage() {
   const hasPendingChanges = isDirty && !isSubmitting;
 
   useUnsavedChangesWarning(hasPendingChanges);
-  const onBack = () => navigate(returnTo);
+  const onBack = () => navigate({to: returnTo});
   const pageTitle = getPageTitle(isEditing, 'Exercise', exerciseData?.data?.name);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -109,7 +109,7 @@ export default function ExerciseFormPage() {
         toast.success(`Exercise "${values.name.trim()}" created successfully.`);
       }
       reset(values);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(
         err,
@@ -136,7 +136,7 @@ export default function ExerciseFormPage() {
     try {
       await deleteExercise(id).unwrap();
       toast.success(`Exercise "${exerciseData.data.name}" deleted successfully.`);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(err, 'Unable to delete exercise. Please try again.');
       toast.danger(result.formError);

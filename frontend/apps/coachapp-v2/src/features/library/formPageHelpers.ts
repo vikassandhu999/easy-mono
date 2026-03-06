@@ -1,6 +1,6 @@
 import type {FieldPath, FieldValues, UseFormSetError} from 'react-hook-form';
 
-import {useBeforeUnload} from 'react-router';
+import {useEffect} from 'react';
 
 export const getPageTitle = (isEditing: boolean, entityLabel: string, dataName?: string): string => {
   if (!isEditing) {
@@ -24,11 +24,12 @@ export const applyServerErrors = <T extends FieldValues>(
 };
 
 export const useUnsavedChangesWarning = (hasPendingChanges: boolean): void => {
-  useBeforeUnload((event) => {
-    if (!hasPendingChanges) {
-      return;
-    }
-    event.preventDefault();
-    event.returnValue = '';
-  });
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!hasPendingChanges) return;
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasPendingChanges]);
 };

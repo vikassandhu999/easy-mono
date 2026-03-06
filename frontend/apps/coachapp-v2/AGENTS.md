@@ -1,6 +1,6 @@
 ## Stack
 
-Vite + React 19 + TypeScript (strict) | HeroUI 3.0.0-beta + Tailwind v4 | Redux Toolkit + RTK Query | react-hook-form + zod | react-router
+Vite + React 19 + TypeScript (strict) | HeroUI 3.0.0-beta + Tailwind v4 | Redux Toolkit + RTK Query | react-hook-form + zod | TanStack Router (file-based routing)
 
 ## Commands
 
@@ -76,24 +76,38 @@ src/
   shared/           — Cross-cutting utilities, types, and UI components
   api.ts            — Base RTK Query createApi singleton
   store.ts          — Redux store
-  App.tsx           — BrowserRouter + AppRoutes
+  App.tsx           — RouterProvider + createRouter
   main.tsx          — Entry point
   index.css         — Global styles
 ```
 
+### routes/ (file-based routing)
+
+TanStack Router file-based routes. The Vite plugin auto-generates `routeTree.gen.ts`.
+
+```
+routes/
+  __root.tsx                — Root layout (Toast provider, 404)
+  index.tsx                 — / → redirect to /login
+  _guest.tsx                — Guest guard (redirect if authenticated)
+  _guest/_auth.tsx          — Auth card layout
+  _guest/_auth/login/       — Login + verify pages
+  _guest/_auth/register/    — Register + verify pages
+  _authed.tsx               — Auth guard + AppShell (sidebar, mobile nav)
+  _authed/clients/          — Client pages
+  _authed/library/          — Library index + all builder/form routes (flat dot notation)
+  _authed/onboarding.tsx    — Onboarding page
+  _authed/page.tsx          — My Page
+  _authed/settings.tsx      — Settings
+```
+
 ### app/
 
-Application shell — routing and layout. Imports from all layers.
+Application layout config. Imports from all layers.
 
 ```
 app/
-  router/
-    AppRoutes.tsx           — All route definitions
   layout/
-    AppShell.tsx            — Sidebar + top bar chrome
-    MainLayout.tsx          — Authenticated layout wrapper
-    PrivateRoute.tsx        — Auth guard (redirect to /login)
-    GuestRoute.tsx          — Guest guard (redirect to /dashboard)
     navConfig.ts            — Sidebar navigation items
 ```
 

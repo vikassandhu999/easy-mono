@@ -1,8 +1,8 @@
 import {toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {useEffect, useState} from 'react';
 import {type FieldPath, useForm} from 'react-hook-form';
-import {useLocation, useNavigate, useParams} from 'react-router';
 
 import type {NutritionPlanFormValues} from '@/features/library/nutrition-plans/nutritionPlanFormTypes';
 
@@ -39,10 +39,10 @@ const FIELD_MAP: Record<string, FieldPath<NutritionPlanFormValues>> = {
 export default function NutritionPlanFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const {id} = useParams();
+  const {id} = useParams({strict: false});
   const isEditing = Boolean(id);
   const [formError, setFormError] = useState<null | string>(null);
-  const returnTo = getReturnTo(location, '/library');
+  const returnTo = getReturnTo(location.state, '/library');
 
   const {
     data: nutritionPlanData,
@@ -81,7 +81,7 @@ export default function NutritionPlanFormPage() {
   const hasPendingChanges = isDirty && !isSubmitting;
 
   useUnsavedChangesWarning(hasPendingChanges);
-  const onBack = () => navigate(returnTo);
+  const onBack = () => navigate({to: returnTo});
   const pageTitle = getPageTitle(isEditing, 'Nutrition Plan', nutritionPlanData?.data?.name);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -100,13 +100,11 @@ export default function NutritionPlanFormPage() {
       reset(values);
 
       if (id) {
-        navigate(returnTo);
+        navigate({to: returnTo});
         return;
       }
 
-      navigate(`/library/nutrition-plans/${response.data.id}/builder`, {
-        state: {from: returnTo},
-      });
+      navigate({to: `/library/nutrition-plans/${response.data.id}/builder`, state: {from: returnTo}});
     } catch (err) {
       const result = handleFormError(
         err,
@@ -129,7 +127,7 @@ export default function NutritionPlanFormPage() {
     try {
       await deleteNutritionPlan(id).unwrap();
       toast.success(`Nutrition plan "${nutritionPlanData.data.name}" deleted successfully.`);
-      navigate(returnTo);
+      navigate({to: returnTo});
     } catch (err) {
       const result = handleFormError(err, 'Unable to delete nutrition plan. Please try again.');
       toast.danger(result.formError);

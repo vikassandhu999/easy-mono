@@ -1,8 +1,8 @@
 import {Button, FieldError, Input, Label, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useLocation, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {useLocation, useNavigate} from 'react-router';
 import {z} from 'zod';
 
 import {SignupRequest, useSignupMutation} from '@/entities/auth/api/auth';
@@ -19,7 +19,7 @@ const schema = z.object({
 export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const prefilledEmail = (location.state as null | {email?: string})?.email ?? '';
+  const prefilledEmail = ((location.state as Record<string, unknown>)?.email as string) ?? '';
   const [signup, {isLoading}] = useSignupMutation();
   const {
     handleSubmit,
@@ -40,7 +40,7 @@ export default function RegisterPage() {
     setFieldErrors(null);
     try {
       await signup(values).unwrap();
-      navigate('/register/verify', {state: {email: values.email}});
+      navigate({to: '/register/verify', state: {email: values.email}});
     } catch (err) {
       const result = handleFormError(err, 'Unable to register. Please try again.');
       setFieldErrors(result.fieldErrors);
@@ -102,7 +102,7 @@ export default function RegisterPage() {
         Already have an account?{' '}
         <button
           className="text-primary underline-offset-4 hover:underline"
-          onClick={() => navigate('/login')}
+          onClick={() => navigate({to: '/login'})}
           type="button"
         >
           Sign in

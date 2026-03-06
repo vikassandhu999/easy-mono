@@ -1,6 +1,6 @@
 import {Button, Skeleton} from '@heroui/react';
+import {useNavigate} from '@tanstack/react-router';
 import {Dumbbell, Plus} from 'lucide-react';
-import {useNavigate} from 'react-router';
 
 import type {TrainingPlan} from '@/entities/trainingPlans/api/trainingPlans';
 
@@ -72,7 +72,7 @@ export default function ClientTrainingTab({isLoading, onAssign, plans}: ClientTr
               itemCount={`${plan.planned_workouts.length} workout${plan.planned_workouts.length !== 1 ? 's' : ''}`}
               key={plan.id}
               name={plan.name}
-              onOpen={() => navigate(`/library/training-plans/${plan.id}/builder`)}
+              onOpen={() => navigate({to: `/library/training-plans/${plan.id}/builder`})}
               status={plan.status}
             />
           ))}

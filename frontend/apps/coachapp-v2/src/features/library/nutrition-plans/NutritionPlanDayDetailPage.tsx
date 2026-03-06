@@ -1,7 +1,7 @@
 import {Button, Card, Dropdown, Label, Skeleton} from '@heroui/react';
+import {useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Copy, EllipsisVertical, Plus, Trash2, UtensilsCrossed} from 'lucide-react';
 import {Fragment, useMemo} from 'react';
-import {useNavigate, useParams} from 'react-router';
 
 import {useGetNutritionPlanQuery} from '@/entities/nutritionPlans/api/nutritionPlans';
 import CopyDayDialog from '@/features/library/nutrition-plans/CopyDayDialog';
@@ -31,14 +31,14 @@ const getPlanItemSortWeight = (mealType: string) => {
 
 export default function NutritionPlanDayDetailPage() {
   const navigate = useNavigate();
-  const {day = '', id: planId = ''} = useParams();
+  const {day = '', id: planId = ''} = useParams({strict: false});
   const backTo = `/library/nutrition-plans/${planId}/builder`;
   const addMealPath = `/library/nutrition-plans/${planId}/builder/days/${day}/meals/new`;
 
   const {data: planData, isLoading: isPlanLoading} = useGetNutritionPlanQuery(planId, {skip: !planId});
 
   const dayPath = `/library/nutrition-plans/${planId}/builder/days/${day}`;
-  const navTo = (path: string) => navigate(path, {state: {from: dayPath}});
+  const navTo = (path: string) => navigate({to: path, state: {from: dayPath}});
   const {confirmDialog, copyDayDialog, dayActions, itemActions, itemsByDay, mealsById} = useNutritionPlanBuilderActions(
     planId,
     navTo,
@@ -84,7 +84,7 @@ export default function NutritionPlanDayDetailPage() {
           <p className="text-sm text-muted">This plan may have been removed.</p>
           <Button
             className="min-h-11"
-            onPress={() => navigate(backTo)}
+            onPress={() => navigate({to: backTo})}
             variant="secondary"
           >
             Back to plan
@@ -100,7 +100,7 @@ export default function NutritionPlanDayDetailPage() {
       <div className="flex items-center justify-between">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-          onPress={() => navigate(backTo)}
+          onPress={() => navigate({to: backTo})}
           size="sm"
           variant="ghost"
         >
@@ -166,7 +166,7 @@ export default function NutritionPlanDayDetailPage() {
             </div>
             <Button
               className="mt-2 min-h-11"
-              onPress={() => navigate(addMealPath)}
+              onPress={() => navigate({to: addMealPath})}
               size="md"
               variant="primary"
             >
@@ -194,7 +194,7 @@ export default function NutritionPlanDayDetailPage() {
 
       <Button
         className="min-h-11 w-full"
-        onPress={() => navigate(addMealPath)}
+        onPress={() => navigate({to: addMealPath})}
         variant="secondary"
       >
         <Plus className="h-4 w-4" />

@@ -164,7 +164,7 @@ export default function useLibraryResources(
 
     const filtered = all.filter((r) => r.type === filterType && matchesSearch(r, normalizedQuery));
 
-    return [...filtered].sort((a, b) => {
+    return filtered.toSorted((a, b) => {
       if (sortBy === 'name') return a.data.name.localeCompare(b.data.name);
       if (sortBy === 'popular') return getResourcePopularity(b) - getResourcePopularity(a);
       return new Date(b.data.updated_at).getTime() - new Date(a.data.updated_at).getTime();

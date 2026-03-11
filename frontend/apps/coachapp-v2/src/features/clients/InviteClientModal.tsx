@@ -128,7 +128,7 @@ export default function InviteClientModal({isOpen, onInvited, onOpenChange}: Inv
                       <Input
                         className={INVITE_INPUT_CLASS}
                         onChange={(event) => handleChange('first_name', event.target.value)}
-                        placeholder="First name"
+                        placeholder="First name…"
                         value={values.first_name}
                         variant="primary"
                       />
@@ -139,7 +139,7 @@ export default function InviteClientModal({isOpen, onInvited, onOpenChange}: Inv
                       <Input
                         className={INVITE_INPUT_CLASS}
                         onChange={(event) => handleChange('last_name', event.target.value)}
-                        placeholder="Last name"
+                        placeholder="Last name…"
                         value={values.last_name}
                         variant="primary"
                       />
@@ -151,7 +151,7 @@ export default function InviteClientModal({isOpen, onInvited, onOpenChange}: Inv
                     <Input
                       className={INVITE_INPUT_CLASS}
                       onChange={(event) => handleChange('notes', event.target.value)}
-                      placeholder="Optional context for this client"
+                      placeholder="Optional context for this client…"
                       value={values.notes}
                       variant="primary"
                     />
@@ -177,7 +177,7 @@ export default function InviteClientModal({isOpen, onInvited, onOpenChange}: Inv
                 size="md"
                 variant="secondary"
               >
-                {isInviting ? 'Sending...' : 'Send Invite'}
+                {isInviting ? 'Sending…' : 'Send Invite'}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

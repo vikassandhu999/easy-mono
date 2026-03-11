@@ -105,7 +105,7 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
             <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.unit?.message)}>
               <Label className="text-xs font-medium text-foreground">Unit</Label>
               <Input
-                placeholder="e.g. cup"
+                placeholder="e.g. cup…"
                 variant="secondary"
                 {...register(`serving_sizes.${index}.unit` as Path<TFormValues>)}
               />
@@ -116,7 +116,7 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
             <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.weight_g?.message)}>
               <Label className="text-xs font-medium text-foreground">Weight (g)</Label>
               <Input
-                placeholder="e.g. 120"
+                placeholder="e.g. 120…"
                 type="number"
                 variant="secondary"
                 {...register(`serving_sizes.${index}.weight_g` as Path<TFormValues>)}
@@ -128,7 +128,7 @@ export default function ServingSizeRows<TFormValues extends FieldValues>({
             <TextField isInvalid={Boolean(servingSizeErrors?.[index]?.amount?.message)}>
               <Label className="text-xs font-medium text-foreground">Amount</Label>
               <Input
-                placeholder="e.g. 1"
+                placeholder="e.g. 1…"
                 type="number"
                 variant="secondary"
                 {...register(`serving_sizes.${index}.amount` as Path<TFormValues>)}

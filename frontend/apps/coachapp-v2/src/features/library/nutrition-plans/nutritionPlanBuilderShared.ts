@@ -38,3 +38,14 @@ export const getDayMealCounts = (itemsByDay: Record<string, PlanItem[]>) => {
     return acc;
   }, {});
 };
+
+const MEAL_TYPE_SORT_WEIGHT: Record<string, number> = {
+  breakfast: 0,
+  dinner: 5,
+  lunch: 2,
+  post_workout: 4,
+  pre_workout: 1,
+  snack: 3,
+};
+
+export const getPlanItemSortWeight = (mealType: string): number => MEAL_TYPE_SORT_WEIGHT[mealType] ?? 99;

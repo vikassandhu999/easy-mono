@@ -16,7 +16,7 @@ export default function MacrosFields({errors, register, step}: MacrosFieldsProps
       <TextField isInvalid={Boolean(errors.calories?.message)}>
         <Label className="text-sm font-medium text-foreground">Calories</Label>
         <Input
-          placeholder="e.g. 150"
+          placeholder="e.g. 150…"
           step={step}
           type="number"
           variant="secondary"
@@ -28,7 +28,7 @@ export default function MacrosFields({errors, register, step}: MacrosFieldsProps
       <TextField isInvalid={Boolean(errors.protein?.message)}>
         <Label className="text-sm font-medium text-foreground">Protein (g)</Label>
         <Input
-          placeholder="e.g. 12"
+          placeholder="e.g. 12…"
           step={step}
           type="number"
           variant="secondary"
@@ -40,7 +40,7 @@ export default function MacrosFields({errors, register, step}: MacrosFieldsProps
       <TextField isInvalid={Boolean(errors.carbs?.message)}>
         <Label className="text-sm font-medium text-foreground">Carbs (g)</Label>
         <Input
-          placeholder="e.g. 27"
+          placeholder="e.g. 27…"
           step={step}
           type="number"
           variant="secondary"
@@ -52,7 +52,7 @@ export default function MacrosFields({errors, register, step}: MacrosFieldsProps
       <TextField isInvalid={Boolean(errors.fat?.message)}>
         <Label className="text-sm font-medium text-foreground">Fat (g)</Label>
         <Input
-          placeholder="e.g. 4.5"
+          placeholder="e.g. 4.5…"
           step={step}
           type="number"
           variant="secondary"

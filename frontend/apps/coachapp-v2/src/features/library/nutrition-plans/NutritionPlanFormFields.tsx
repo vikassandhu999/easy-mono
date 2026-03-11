@@ -79,7 +79,7 @@ export default function NutritionPlanFormFields({
       <TextField isInvalid={Boolean(errors.name?.message)}>
         <Label className="text-sm font-medium text-foreground">Name</Label>
         <Input
-          placeholder="e.g. Fat Loss Starter"
+          placeholder="e.g. Fat Loss Starter…"
           variant="secondary"
           {...register('name')}
         />
@@ -89,7 +89,7 @@ export default function NutritionPlanFormFields({
       <TextField isInvalid={Boolean(errors.description?.message)}>
         <Label className="text-sm font-medium text-foreground">Description</Label>
         <TextArea
-          placeholder="Optional plan notes"
+          placeholder="Optional plan notes…"
           variant="secondary"
           {...register('description')}
         />
@@ -136,7 +136,7 @@ export default function NutritionPlanFormFields({
           <TagsInput
             label="Tags"
             onChange={(nextTags) => field.onChange(nextTags)}
-            placeholder="Add tags (press Enter or comma)"
+            placeholder="Add tags (press Enter or comma)…"
             value={field.value}
           />
         )}

@@ -96,7 +96,7 @@ export default function MealItemPickerPage() {
         <Input
           className="min-h-11"
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={tab === 'food' ? 'Search foods...' : 'Search recipes...'}
+          placeholder={tab === 'food' ? 'Search foods…' : 'Search recipes…'}
           value={search}
           variant="secondary"
         />

@@ -91,7 +91,7 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
                       <Input
                         className={INPUT_CLASS}
                         onChange={(e) => handleChange('first_name', e.target.value)}
-                        placeholder="First name"
+                        placeholder="First name…"
                         value={values.first_name}
                         variant="primary"
                       />
@@ -101,7 +101,7 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
                       <Input
                         className={INPUT_CLASS}
                         onChange={(e) => handleChange('last_name', e.target.value)}
-                        placeholder="Last name"
+                        placeholder="Last name…"
                         value={values.last_name}
                         variant="primary"
                       />
@@ -124,7 +124,7 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
                     <Input
                       className={INPUT_CLASS}
                       onChange={(e) => handleChange('notes', e.target.value)}
-                      placeholder="Notes about this client"
+                      placeholder="Notes about this client…"
                       value={values.notes}
                       variant="primary"
                     />
@@ -150,7 +150,7 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
                 size="md"
                 variant="secondary"
               >
-                {isLoading ? 'Saving...' : 'Save changes'}
+                {isLoading ? 'Saving…' : 'Save changes'}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

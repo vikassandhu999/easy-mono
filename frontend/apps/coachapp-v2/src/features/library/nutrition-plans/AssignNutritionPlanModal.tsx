@@ -129,7 +129,7 @@ export default function AssignNutritionPlanModal({
                 variant="primary"
               >
                 {isAssigning ? (
-                  'Assigning...'
+                  'Assigning…'
                 ) : (
                   <>
                     <Check className="mr-1 h-4 w-4" />

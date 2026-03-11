@@ -46,7 +46,7 @@ export default function ClientPicker({onSelect, selectedId}: ClientPickerProps) 
           autoComplete="off"
           className="min-h-11"
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search clients..."
+          placeholder="Search clients…"
           value={query}
           variant="secondary"
         />

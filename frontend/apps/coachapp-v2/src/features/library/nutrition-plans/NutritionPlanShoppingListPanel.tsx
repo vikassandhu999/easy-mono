@@ -19,7 +19,7 @@ export default function NutritionPlanShoppingListPanel({isActive, planId}: Nutri
   if (isLoading) {
     return (
       <Card className="border border-separator bg-surface p-4">
-        <p className="text-sm text-muted">Loading shopping list...</p>
+        <p className="text-sm text-muted">Loading shopping list…</p>
       </Card>
     );
   }

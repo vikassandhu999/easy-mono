@@ -1,10 +1,8 @@
 import {Button, FieldError, Input, Label, TextArea, TextField} from '@heroui/react';
-import {useRef} from 'react';
 import {
   type Control,
   Controller,
   type FieldErrors,
-  useFieldArray,
   type UseFormRegister,
   type UseFormSetValue,
   useWatch,
@@ -14,8 +12,8 @@ import type {Food} from '@/entities/foods/api/foods';
 import type {RecipeIngredient} from '@/entities/recipes/api/recipes';
 import type {RecipeFormValues} from '@/features/library/recipes/recipeFormTypes';
 
-import {createEmptyIngredient, RECIPE_NUMERIC_STEP} from '@/features/library/recipes/recipeFormSchema';
-import RecipeIngredientRow from '@/features/library/recipes/RecipeIngredientRow';
+import {RECIPE_NUMERIC_STEP} from '@/features/library/recipes/recipeFormSchema';
+import RecipeIngredientsSection from '@/features/library/recipes/RecipeIngredientsSection';
 import MacrosFields from '@/shared/ui/forms/MacrosFields';
 import ServingSizeRows from '@/shared/ui/forms/ServingSizeRows';
 import TagsInput from '@/shared/ui/forms/TagsInput';
@@ -39,12 +37,7 @@ export default function RecipeFormFields({
   register,
   setValue,
 }: RecipeFormFieldsProps) {
-  const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const serviceSizeType = useWatch({control, name: 'service_size_type'});
-  const {fields, append, remove} = useFieldArray({
-    control,
-    name: 'ingredients',
-  });
 
   return (
     <>
@@ -54,7 +47,7 @@ export default function RecipeFormFields({
         <TextField isInvalid={Boolean(errors.name?.message)}>
           <Label className="text-sm font-medium text-foreground">Recipe name</Label>
           <Input
-            placeholder="e.g. High Protein Pancakes"
+            placeholder="e.g. High Protein Pancakes…"
             variant="secondary"
             {...register('name')}
           />
@@ -65,7 +58,7 @@ export default function RecipeFormFields({
           <TextField isInvalid={Boolean(errors.category?.message)}>
             <Label className="text-sm font-medium text-foreground">Category</Label>
             <Input
-              placeholder="e.g. Breakfast"
+              placeholder="e.g. Breakfast…"
               variant="secondary"
               {...register('category')}
             />
@@ -75,7 +68,7 @@ export default function RecipeFormFields({
           <TextField isInvalid={Boolean(errors.source?.message)}>
             <Label className="text-sm font-medium text-foreground">Source</Label>
             <Input
-              placeholder="e.g. Internal"
+              placeholder="e.g. Internal…"
               variant="secondary"
               {...register('source')}
             />
@@ -101,7 +94,7 @@ export default function RecipeFormFields({
             <TagsInput
               label="Tags"
               onChange={(nextTags) => field.onChange(nextTags)}
-              placeholder="Add tags (press Enter or comma)"
+              placeholder="Add tags (press Enter or comma)…"
               value={field.value}
             />
           )}
@@ -144,7 +137,7 @@ export default function RecipeFormFields({
           <TextField isInvalid={Boolean(errors.cooked_weight_g?.message)}>
             <Label className="text-sm font-medium text-foreground">Cooked weight (g)</Label>
             <Input
-              placeholder="e.g. 800"
+              placeholder="e.g. 800…"
               step={RECIPE_NUMERIC_STEP}
               type="number"
               variant="secondary"
@@ -168,7 +161,7 @@ export default function RecipeFormFields({
         <TextField isInvalid={Boolean(errors.instructions?.message)}>
           <Label className="text-sm font-medium text-foreground">Instructions</Label>
           <TextArea
-            placeholder="Optional prep instructions"
+            placeholder="Optional prep instructions…"
             variant="secondary"
             {...register('instructions')}
           />
@@ -176,67 +169,14 @@ export default function RecipeFormFields({
         </TextField>
       </section>
 
-      <section className={SECTION}>
-        <p className="text-sm font-semibold text-foreground">Ingredients</p>
-
-        <div className="flex items-center justify-between gap-3 border-b border-separator pb-2">
-          <div>
-            <p className="text-sm font-medium text-foreground">Ingredients</p>
-            <p className="text-xs text-muted">
-              {fields.length} ingredient
-              {fields.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <Button
-            className="min-h-11 gap-1 px-3"
-            onPress={() => append(createEmptyIngredient())}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span>Add ingredient</span>
-          </Button>
-        </div>
-
-        {fields.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-separator bg-surface-secondary p-4">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <p className="text-sm font-medium text-foreground">No ingredients yet</p>
-              <p className="text-xs text-muted">Add your first ingredient to build this recipe.</p>
-              <Button
-                className="min-h-11 gap-1 px-3"
-                onPress={() => append(createEmptyIngredient())}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <span className="text-lg leading-none">+</span>
-                <span>Add ingredient</span>
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
-        {fields.map((field, index) => (
-          <RecipeIngredientRow
-            foods={foods}
-            form={{control, errors, register}}
-            initialFood={initialIngredients?.[index]?.food}
-            key={field.id}
-            numericStep={RECIPE_NUMERIC_STEP}
-            row={{
-              id: field.id,
-              index,
-              onRemove: () => remove(index),
-              ref: (node) => {
-                rowRefs.current[index] = node;
-              },
-              title: `Ingredient ${index + 1}`,
-            }}
-          />
-        ))}
-      </section>
+      <RecipeIngredientsSection
+        className={SECTION}
+        control={control}
+        errors={errors}
+        foods={foods}
+        initialIngredients={initialIngredients}
+        register={register}
+      />
     </>
   );
 }

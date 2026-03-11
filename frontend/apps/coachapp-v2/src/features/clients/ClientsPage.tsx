@@ -1,4 +1,4 @@
-import {Button, Card, Skeleton} from '@heroui/react';
+import {Button, Card} from '@heroui/react';
 import {useNavigate} from '@tanstack/react-router';
 import {ArrowUpDown, Plus, Search} from 'lucide-react';
 import {useMemo, useState} from 'react';
@@ -6,7 +6,8 @@ import {useMemo, useState} from 'react';
 import type {Client} from '@/entities/clients/api/clients';
 
 import {useListClientsQuery} from '@/entities/clients/api/clients';
-import {CLIENT_STATUS_STYLES, formatDate, getClientInitial, getClientName} from '@/features/clients/clientDisplay';
+import ClientCard from '@/features/clients/ClientCard';
+import ClientCardSkeleton from '@/features/clients/ClientCardSkeleton';
 import InviteClientModal from '@/features/clients/InviteClientModal';
 
 const SORT_OPTIONS = [
@@ -32,52 +33,32 @@ export default function ClientsPage() {
 
   const activeSortLabel = SORT_OPTIONS.find((option) => option.key === sortBy)?.label ?? SORT_OPTIONS[0].label;
 
-  const openInviteModal = () => {
-    setIsInviteOpen(true);
-  };
-
   const handleRotateSort = () => {
     const currentIndex = SORT_OPTIONS.findIndex((option) => option.key === sortBy);
     const nextIndex = currentIndex === SORT_OPTIONS.length - 1 ? 0 : currentIndex + 1;
     const nextOption = SORT_OPTIONS[nextIndex];
-
-    if (nextOption) {
-      setSortBy(nextOption.key);
-    }
+    if (nextOption) setSortBy(nextOption.key);
   };
 
   const displayedClients = useMemo(() => {
     const apiClients = data?.data ?? [];
-
     const filtered = apiClients.filter((client) => {
       if (filterStatus === 'all') return true;
       return client.status.toLowerCase() === filterStatus;
     });
-
-    return [...filtered].sort((left, right) => {
+    return filtered.toSorted((left, right) => {
       if (sortBy === 'name') {
         const leftName = `${left.first_name ?? ''} ${left.last_name ?? ''}`.trim() || left.email;
         const rightName = `${right.first_name ?? ''} ${right.last_name ?? ''}`.trim() || right.email;
         return leftName.localeCompare(rightName);
       }
-
       const leftJoined = new Date(left.inserted_at).getTime();
       const rightJoined = new Date(right.inserted_at).getTime();
       const leftUpdated = new Date(left.updated_at).getTime();
       const rightUpdated = new Date(right.updated_at).getTime();
-
-      if (sortBy === 'recent') {
-        return rightUpdated - leftUpdated;
-      }
-
-      if (sortBy === 'newest') {
-        return rightJoined - leftJoined;
-      }
-
-      if (sortBy === 'oldest') {
-        return leftJoined - rightJoined;
-      }
-
+      if (sortBy === 'recent') return rightUpdated - leftUpdated;
+      if (sortBy === 'newest') return rightJoined - leftJoined;
+      if (sortBy === 'oldest') return leftJoined - rightJoined;
       return 0;
     });
   }, [data?.data, filterStatus, sortBy]);
@@ -92,10 +73,9 @@ export default function ClientsPage() {
             Track progress, review activity, and keep every client program on schedule.
           </p>
         </div>
-
         <Button
           className="min-h-11 w-full gap-2 sm:w-auto"
-          onPress={openInviteModal}
+          onPress={() => setIsInviteOpen(true)}
           size="lg"
           variant="primary"
         >
@@ -108,22 +88,19 @@ export default function ClientsPage() {
         <div className="flex items-center gap-2 overflow-x-auto">
           {FILTER_TABS.map((tab) => {
             const tabValue = tab.toLowerCase() as 'all' | Client['status'];
-            const isActive = tabValue === filterStatus;
-
             return (
               <Button
                 className="min-h-11 shrink-0"
                 key={tab}
                 onPress={() => setFilterStatus(tabValue)}
                 size="md"
-                variant={isActive ? 'secondary' : 'ghost'}
+                variant={tabValue === filterStatus ? 'secondary' : 'ghost'}
               >
                 {tab}
               </Button>
             );
           })}
         </div>
-
         <Button
           className="min-h-11 w-full justify-start gap-2 sm:w-auto sm:justify-center"
           onPress={handleRotateSort}
@@ -165,65 +142,13 @@ export default function ClientsPage() {
       {!isError ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading
-            ? [1, 2, 3, 4, 5, 6].map((index) => (
-                <Card
-                  className="border border-separator bg-surface p-4"
-                  key={index}
-                >
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="flex flex-col gap-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-2/3" />
-                  </div>
-                </Card>
-              ))
+            ? [1, 2, 3, 4, 5, 6].map((i) => <ClientCardSkeleton key={i} />)
             : displayedClients.map((client) => (
-                <Card
-                  className="border border-separator bg-surface p-4 text-left transition-none"
+                <ClientCard
+                  client={client}
                   key={client.id}
-                  onClick={() => navigate({to: `/clients/${client.id}`})}
-                >
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent font-semibold text-foreground">
-                          {getClientInitial(client)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-foreground">{getClientName(client)}</span>
-                          <span className="text-sm text-muted">{client.email}</span>
-                        </div>
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${CLIENT_STATUS_STYLES[client.status] ?? 'bg-default text-muted'}`}
-                      >
-                        {client.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-6 text-sm text-muted">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">{client.phone || '—'}</span>
-                        <span>Phone</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground capitalize">{client.status}</span>
-                        <span>Status</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t border-separator pt-3 text-xs text-muted">
-                      <span>Joined {formatDate(client.inserted_at)}</span>
-                      <span>Updated {formatDate(client.updated_at)}</span>
-                    </div>
-                  </div>
-                </Card>
+                  onPress={() => navigate({to: `/clients/${client.id}`})}
+                />
               ))}
         </div>
       ) : null}
@@ -240,7 +165,7 @@ export default function ClientsPage() {
             </div>
             <Button
               className="gap-2"
-              onPress={openInviteModal}
+              onPress={() => setIsInviteOpen(true)}
               size="lg"
               variant="primary"
             >

@@ -48,7 +48,7 @@ export function RenameMealModal({currentName, isLoading, isOpen, onOpenChange, o
                 variant="secondary"
               >
                 <Label>Name</Label>
-                <Input placeholder="Meal name..." />
+                <Input placeholder="Meal name…" />
                 <FieldError />
               </TextField>
             </Modal.Body>
@@ -68,7 +68,7 @@ export function RenameMealModal({currentName, isLoading, isOpen, onOpenChange, o
                 size="md"
                 variant="primary"
               >
-                {isLoading ? 'Saving...' : 'Save'}
+                {isLoading ? 'Saving…' : 'Save'}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

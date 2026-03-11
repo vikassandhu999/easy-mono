@@ -1,24 +1,14 @@
-import {Button, Card, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {Button, Card, Dropdown, Label, Skeleton} from '@heroui/react';
 import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, EllipsisVertical, Pencil, Plus, Trash2, UtensilsCrossed} from 'lucide-react';
-import {Fragment, useCallback, useMemo, useState} from 'react';
+import {Fragment} from 'react';
 
-import type {MealItem} from '@/entities/meals/api/meals';
-
-import {useListFoodsQuery} from '@/entities/foods/api/foods';
-import {
-  useDeleteMealMutation,
-  useGetMealQuery,
-  useListMealItemsQuery,
-  useUpdateMealItemMutation,
-  useUpdateMealMutation,
-} from '@/entities/meals/api/meals';
-import {useListRecipesQuery} from '@/entities/recipes/api/recipes';
 import {getReturnTo} from '@/features/library/libraryFormShared';
 import {MealItemCard} from '@/features/library/nutrition-plans/MealItemCard';
 import {RenameMealModal} from '@/features/library/nutrition-plans/RenameMealModal';
-import {getApiErrorMessage} from '@/shared/api/shared';
+import useMealEditor from '@/features/library/nutrition-plans/useMealEditor';
 import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
+import NotFoundCard from '@/shared/ui/feedback/NotFoundCard';
 
 export default function NutritionPlanMealEditorPage() {
   const navigate = useNavigate();
@@ -28,44 +18,21 @@ export default function NutritionPlanMealEditorPage() {
   const editingMealId = mealId ?? '';
   const returnTo = getReturnTo(location.state, `/library/nutrition-plans/${planId}/builder`);
 
-  const {data: selectedMealData, isLoading: isMealLoading} = useGetMealQuery(editingMealId, {skip: !editingMealId});
-  const {data: mealItemsData} = useListMealItemsQuery(editingMealId, {
-    skip: !editingMealId,
-  });
-  const {data: foodsData} = useListFoodsQuery({limit: 250, offset: 0});
-  const {data: recipesData} = useListRecipesQuery({limit: 250, offset: 0});
-
-  const [updateMeal, {isLoading: isRenaming}] = useUpdateMealMutation();
-  const [deleteMeal, {isLoading: isDeletingMeal}] = useDeleteMealMutation();
-  const [updateMealItem] = useUpdateMealItemMutation();
-
-  const meal = selectedMealData?.data;
-
-  const sortedItems = useMemo(
-    () => [...(mealItemsData?.data ?? [])].sort((a, b) => a.position - b.position),
-    [mealItemsData?.data],
-  );
-
-  const [isRenameOpen, setIsRenameOpen] = useState(false);
-  const [isDeleteMealOpen, setIsDeleteMealOpen] = useState(false);
-
-  const foodNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const f of foodsData?.data ?? []) map.set(f.id, f.name);
-    return map;
-  }, [foodsData?.data]);
-
-  const recipeNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const r of recipesData?.data ?? []) map.set(r.id, r.name);
-    return map;
-  }, [recipesData?.data]);
-
-  const getItemName = (foodId: null | string, recipeId: null | string) => {
-    if (foodId) return foodNameMap.get(foodId) ?? 'Food item';
-    if (recipeId) return recipeNameMap.get(recipeId) ?? 'Recipe item';
-    return 'Unknown item';
-  };
+  const {
+    getItemName,
+    handleDeleteMeal,
+    handleMoveItem,
+    handleRename,
+    isDeleteMealOpen,
+    isDeletingMeal,
+    isMealLoading,
+    isRenameOpen,
+    isRenaming,
+    meal,
+    setIsDeleteMealOpen,
+    setIsRenameOpen,
+    sortedItems,
+  } = useMealEditor(planId, editingMealId, () => navigate({to: returnTo}));
 
   const handleAction = (key: React.Key) => {
     switch (key) {
@@ -77,60 +44,6 @@ export default function NutritionPlanMealEditorPage() {
         break;
     }
   };
-
-  const handleRename = async (name: string) => {
-    try {
-      await updateMeal({
-        body: {name, position: meal?.position ?? 0},
-        id: editingMealId,
-        planId,
-      }).unwrap();
-      toast.success('Meal renamed');
-      setIsRenameOpen(false);
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to rename meal'));
-    }
-  };
-
-  const handleDeleteMeal = async () => {
-    setIsDeleteMealOpen(false);
-    try {
-      await deleteMeal({id: editingMealId, planId}).unwrap();
-      toast.success('Meal deleted');
-      navigate({to: returnTo});
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to delete meal'));
-    }
-  };
-
-  const handleMoveItem = useCallback(
-    async (item: MealItem, direction: 'down' | 'up') => {
-      const currentIndex = sortedItems.findIndex((el) => el.id === item.id);
-      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      const targetItem = sortedItems[targetIndex];
-      if (!targetItem) return;
-
-      try {
-        await Promise.all([
-          updateMealItem({
-            body: {position: targetItem.position},
-            id: item.id,
-            mealId: editingMealId,
-            planId,
-          }).unwrap(),
-          updateMealItem({
-            body: {position: item.position},
-            id: targetItem.id,
-            mealId: editingMealId,
-            planId,
-          }).unwrap(),
-        ]);
-      } catch (error) {
-        toast.danger(getApiErrorMessage(error, 'Failed to reorder items'));
-      }
-    },
-    [editingMealId, sortedItems, planId, updateMealItem],
-  );
 
   if (isMealLoading) {
     return (
@@ -145,25 +58,17 @@ export default function NutritionPlanMealEditorPage() {
 
   if (!meal) {
     return (
-      <Card className="rounded-xl border border-separator bg-surface p-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-semibold text-foreground">Meal not found</p>
-          <p className="text-sm text-muted">This meal may have been removed.</p>
-          <Button
-            className="min-h-11"
-            onPress={() => navigate({to: returnTo})}
-            variant="secondary"
-          >
-            Back
-          </Button>
-        </div>
-      </Card>
+      <NotFoundCard
+        backLabel="Back"
+        description="This meal may have been removed."
+        onBack={() => navigate({to: returnTo})}
+        title="Meal not found"
+      />
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header row: back + overflow menu */}
       <div className="flex items-center justify-between">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
@@ -177,6 +82,7 @@ export default function NutritionPlanMealEditorPage() {
         <Dropdown>
           <Dropdown.Trigger>
             <Button
+              aria-label="More actions"
               className="min-h-11 min-w-11"
               size="md"
               variant="ghost"
@@ -209,7 +115,6 @@ export default function NutritionPlanMealEditorPage() {
         </Dropdown>
       </div>
 
-      {/* Title area */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{meal.name}</h1>
         <p className="mt-1 text-sm text-muted">
@@ -219,7 +124,6 @@ export default function NutritionPlanMealEditorPage() {
 
       <div className="border-t border-separator" />
 
-      {/* Item list */}
       {sortedItems.length === 0 ? (
         <Card className="border border-dashed border-separator bg-surface p-10">
           <div className="flex flex-col items-center gap-4 text-center">

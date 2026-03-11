@@ -1,5 +1,5 @@
 import {Button, Card} from '@heroui/react';
-import {useNavigate} from '@tanstack/react-router';
+import {Link} from '@tanstack/react-router';
 import {Dumbbell, Pencil, UtensilsCrossed} from 'lucide-react';
 
 import type {Client} from '@/entities/clients/api/clients';
@@ -26,8 +26,6 @@ export default function ClientOverviewTab({
   onEditClient,
   trainingPlans,
 }: ClientOverviewTabProps) {
-  const navigate = useNavigate();
-
   const activeTraining = trainingPlans.find((p) => p.status === 'active');
   const activeNutrition = nutritionPlans.find((p) => p.status === 'active');
 
@@ -97,14 +95,12 @@ export default function ClientOverviewTab({
                 {activeTraining.planned_workouts.length} workout
                 {activeTraining.planned_workouts.length !== 1 ? 's' : ''}
               </p>
-              <Button
-                className="mt-1 w-fit"
-                onPress={() => navigate({to: `/library/training-plans/${activeTraining.id}/builder`})}
-                size="sm"
-                variant="ghost"
+              <Link
+                className="mt-1 w-fit text-sm text-primary underline-offset-4 hover:underline"
+                to={`/library/training-plans/${activeTraining.id}/builder`}
               >
                 View plan
-              </Button>
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -133,14 +129,12 @@ export default function ClientOverviewTab({
                 {activeNutrition.meals.length} meal
                 {activeNutrition.meals.length !== 1 ? 's' : ''}
               </p>
-              <Button
-                className="mt-1 w-fit"
-                onPress={() => navigate({to: `/library/nutrition-plans/${activeNutrition.id}/builder`})}
-                size="sm"
-                variant="ghost"
+              <Link
+                className="mt-1 w-fit text-sm text-primary underline-offset-4 hover:underline"
+                to={`/library/nutrition-plans/${activeNutrition.id}/builder`}
               >
                 View plan
-              </Button>
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col gap-2">

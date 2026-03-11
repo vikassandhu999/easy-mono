@@ -61,7 +61,7 @@ export default function ExercisePickerPage() {
         <Input
           className="min-h-11"
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search exercises..."
+          placeholder="Search exercises…"
           value={search}
           variant="secondary"
         />

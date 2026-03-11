@@ -1,106 +1,36 @@
 import {toast} from '@heroui/react';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
-import type {Meal} from '@/entities/meals/api/meals';
 import type {PlanItem} from '@/entities/nutritionPlans/api/nutritionPlans';
+import type {
+  ConfirmDialogState,
+  CopyDayDialogState,
+  PendingConfirm,
+  PendingCopyDay,
+  UseNutritionPlanBuilderActionsResult,
+} from '@/features/library/nutrition-plans/nutritionPlanBuilderTypes';
 
-import {useCreateMealItemMutation, useCreateMealMutation, useListMealsQuery} from '@/entities/meals/api/meals';
+import {useCreateMealItemMutation, useCreateMealMutation} from '@/entities/meals/api/meals';
 import {
   useCopyNutritionPlanDayMutation,
   useCreatePlanItemMutation,
   useDeletePlanItemMutation,
   useDuplicateNutritionPlanMutation,
-  useListPlanItemsQuery,
   useUpdatePlanItemMutation,
 } from '@/entities/nutritionPlans/api/nutritionPlans';
-import {DAYS, getItemsByDay, toSentenceLabel} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
-
-type ConfirmDialogState = {
-  confirmLabel: string;
-  description: string;
-  isOpen: boolean;
-  onConfirm: () => void;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-};
-
-type CopyDayDialogState = {
-  dayMealCounts: Record<string, number>;
-  isOpen: boolean;
-  onConfirm: (targetDay: string) => void;
-  onOpenChange: (open: boolean) => void;
-  sourceDay: string;
-};
-
-type UseNutritionPlanBuilderActionsResult = {
-  confirmDialog: ConfirmDialogState | null;
-  copyDayDialog: CopyDayDialogState | null;
-  dayActions: {
-    onClearDay: (day: string) => void;
-    onCopyDay: (day: string) => void;
-    onCreateMealForDay: (day: string, mealName: string, mealType: string) => Promise<void>;
-    onLinkMealToDay: (day: string, mealId: string, mealType: string) => Promise<void>;
-  };
-  duplicatePlan: () => void;
-  isDuplicatingAssignment: boolean;
-  isDuplicatingPlan: boolean;
-  itemActions: {
-    onDuplicateForDay: (planItem: PlanItem) => void;
-    onEditAssignment: (planItem: PlanItem) => void;
-    onEditMeal: (mealId: string) => void;
-    onRemoveFromDay: (planItemId: string) => void;
-  };
-  itemsByDay: Record<string, PlanItem[]>;
-  meals: Meal[];
-  mealsById: Record<string, Meal>;
-  mealUsageCount: number;
-};
-
-type PendingConfirm = {
-  confirmLabel: string;
-  description: string;
-  onConfirm: () => void;
-  title: string;
-};
-
-type PendingCopyDay = {
-  sourceDay: string;
-};
+import {DAYS, toSentenceLabel} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
+import useNutritionPlanBuilderData from '@/features/library/nutrition-plans/useNutritionPlanBuilderData';
 
 export default function useNutritionPlanBuilderActions(
   planId: string,
   navigateTo: (path: string) => void,
 ): UseNutritionPlanBuilderActionsResult {
-  const [planItemsOverride, setPlanItemsOverride] = useState<null | PlanItem[]>(null);
+  const {effectivePlanItems, itemsByDay, meals, mealsById, mealUsageCount, setPlanItemsOverride} =
+    useNutritionPlanBuilderData(planId);
+
   const [isDuplicatingAssignment, setDuplicatingAssignment] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState<null | PendingConfirm>(null);
   const [pendingCopyDay, setPendingCopyDay] = useState<null | PendingCopyDay>(null);
-
-  const {data: mealsData} = useListMealsQuery({planId}, {skip: !planId});
-  const {data: planItemsData} = useListPlanItemsQuery(planId, {
-    skip: !planId,
-  });
-
-  const meals = useMemo(() => [...(mealsData?.data ?? [])].sort((a, b) => a.position - b.position), [mealsData?.data]);
-  const mealsById = useMemo(
-    () =>
-      meals.reduce<Record<string, Meal>>((acc, meal) => {
-        acc[meal.id] = meal;
-        return acc;
-      }, {}),
-    [meals],
-  );
-
-  const planItems = planItemsData?.data ?? [];
-  const effectivePlanItems = planItemsOverride ?? planItems;
-
-  useEffect(() => {
-    if (planItemsOverride !== null) setPlanItemsOverride(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planItems]);
-
-  const itemsByDay = useMemo(() => getItemsByDay(effectivePlanItems), [effectivePlanItems]);
-  const mealUsageCount = useMemo(() => new Set(effectivePlanItems.map((i) => i.meal_id)).size, [effectivePlanItems]);
 
   const [duplicateNutritionPlan, {isLoading: isDuplicatingPlan}] = useDuplicateNutritionPlanMutation();
   const [copyNutritionPlanDay, {isLoading: isCopyingDay}] = useCopyNutritionPlanDayMutation();
@@ -191,7 +121,7 @@ export default function useNutritionPlanBuilderActions(
         title: 'Remove assignment',
       });
     },
-    [deletePlanItem, effectivePlanItems, planId],
+    [deletePlanItem, effectivePlanItems, planId, setPlanItemsOverride],
   );
 
   const onClearDay = useCallback(
@@ -218,7 +148,7 @@ export default function useNutritionPlanBuilderActions(
         title: 'Clear day',
       });
     },
-    [dayMealCounts, deletePlanItem, effectivePlanItems, isDeletingPlanItem, planId],
+    [dayMealCounts, deletePlanItem, effectivePlanItems, isDeletingPlanItem, planId, setPlanItemsOverride],
   );
 
   const onDuplicateForDay = useCallback(
@@ -274,7 +204,16 @@ export default function useNutritionPlanBuilderActions(
         setDuplicatingAssignment(false);
       }
     },
-    [createMeal, createMealItem, effectivePlanItems, meals.length, mealsById, planId, updatePlanItem],
+    [
+      createMeal,
+      createMealItem,
+      effectivePlanItems,
+      meals.length,
+      mealsById,
+      planId,
+      setPlanItemsOverride,
+      updatePlanItem,
+    ],
   );
 
   const onCreateMealForDay = useCallback(

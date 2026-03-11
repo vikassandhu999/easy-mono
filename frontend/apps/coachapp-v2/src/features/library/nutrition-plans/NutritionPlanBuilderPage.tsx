@@ -1,6 +1,6 @@
-import {Button, Card, Dropdown, Label, Skeleton} from '@heroui/react';
-import {Link, useLocation, useNavigate, useParams} from '@tanstack/react-router';
-import {ArrowLeft, ArrowUpRight, Copy, EllipsisVertical, Pencil, UserPlus, UtensilsCrossed} from 'lucide-react';
+import {Button, Card, Skeleton} from '@heroui/react';
+import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
+import {UtensilsCrossed} from 'lucide-react';
 import {Fragment, useState} from 'react';
 
 import {useGetClientQuery} from '@/entities/clients/api/clients';
@@ -11,7 +11,7 @@ import CopyDayDialog from '@/features/library/nutrition-plans/CopyDayDialog';
 import {NutritionDayCard} from '@/features/library/nutrition-plans/NutritionDayCard';
 import {DAYS} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
 import useNutritionPlanBuilderActions from '@/features/library/nutrition-plans/useNutritionPlanBuilderActions';
-import {toSentenceCase} from '@/shared/lib/format/formatHelpers';
+import PlanBuilderHeader from '@/features/library/shared/PlanBuilderHeader';
 import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
 
 export default function NutritionPlanBuilderPage() {
@@ -40,7 +40,9 @@ export default function NutritionPlanBuilderPage() {
     skip: !plan?.client_id,
   });
   const client = clientData?.data;
-  const clientName = client ? [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email : null;
+  const clientDisplay = client
+    ? {id: client.id, name: [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email}
+    : null;
 
   const totalAssignments = Object.values(itemsByDay).reduce((sum, items) => sum + items.length, 0);
 
@@ -91,136 +93,20 @@ export default function NutritionPlanBuilderPage() {
     );
   }
 
-  const isTemplate = plan.type === 'template';
-
-  const handleAction = (key: React.Key) => {
-    switch (key) {
-      case 'edit':
-        navTo(`/library/nutrition-plans/${plan.id}/edit`);
-        break;
-      case 'duplicate':
-        duplicatePlan();
-        break;
-      case 'assign':
-        setIsAssignOpen(true);
-        break;
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        {/* Row 1: back + actions */}
-        <div className="flex items-center justify-between">
-          <Button
-            className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
-            onPress={() => navigate({to: returnTo})}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Library
-          </Button>
-
-          {/* Desktop: labeled buttons */}
-          <div className="hidden items-center gap-2 sm:flex">
-            <Button
-              className="min-h-11 gap-2"
-              onPress={() => navTo(`/library/nutrition-plans/${plan.id}/edit`)}
-              size="md"
-              variant="outline"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit details
-            </Button>
-            <Button
-              className="min-h-11 gap-2"
-              isDisabled={isDuplicatingPlan}
-              onPress={duplicatePlan}
-              size="md"
-              variant="ghost"
-            >
-              <Copy className="h-4 w-4" />
-              Duplicate
-            </Button>
-            {isTemplate ? (
-              <Button
-                className="min-h-11 gap-2"
-                onPress={() => setIsAssignOpen(true)}
-                size="md"
-                variant="secondary"
-              >
-                <UserPlus className="h-4 w-4" />
-                Assign
-              </Button>
-            ) : null}
-          </div>
-
-          {/* Mobile: overflow menu */}
-          <div className="sm:hidden">
-            <Dropdown>
-              <Dropdown.Trigger>
-                <Button
-                  className="min-h-11 min-w-11"
-                  size="md"
-                  variant="ghost"
-                >
-                  <EllipsisVertical className="h-5 w-5" />
-                </Button>
-              </Dropdown.Trigger>
-              <Dropdown.Popover placement="bottom left">
-                <Dropdown.Menu
-                  aria-label="Plan actions"
-                  disabledKeys={isDuplicatingPlan ? new Set(['duplicate']) : new Set()}
-                  onAction={handleAction}
-                >
-                  <Dropdown.Item
-                    id="edit"
-                    textValue="Edit details"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <Label>Edit details</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="duplicate"
-                    textValue="Duplicate plan"
-                  >
-                    <Copy className="h-4 w-4" />
-                    <Label>Duplicate plan</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    id="assign"
-                    isDisabled={!isTemplate}
-                    textValue="Assign to client"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    <Label>Assign to client</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </div>
-        </div>
-
-        {/* Row 2: plan name + status + client */}
-        <div className="flex items-start justify-between gap-3 px-2">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight text-foreground md:text-2xl">{plan.name}</h1>
-            {clientName && plan.client_id ? (
-              <Link
-                className="inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
-                to={`/clients/${plan.client_id}`}
-              >
-                {clientName}
-                <ArrowUpRight className="h-3 w-3 shrink-0" />
-              </Link>
-            ) : null}
-          </div>
-          <span className="mt-1.5 shrink-0 rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-muted">
-            {toSentenceCase(plan.status)}
-          </span>
-        </div>
-      </div>
+      <PlanBuilderHeader
+        actions={{
+          onAssign: () => setIsAssignOpen(true),
+          onDuplicate: duplicatePlan,
+          onNavigateBack: () => navigate({to: returnTo}),
+          onNavigateEdit: () => navTo(`/library/nutrition-plans/${plan.id}/edit`),
+        }}
+        client={clientDisplay}
+        isDuplicating={isDuplicatingPlan}
+        isTemplate={plan.type === 'template'}
+        plan={plan}
+      />
 
       <div className="border-t border-separator" />
 

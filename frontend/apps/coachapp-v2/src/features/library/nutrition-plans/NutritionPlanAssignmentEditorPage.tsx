@@ -6,6 +6,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {useListPlanItemsQuery, useUpdatePlanItemMutation} from '@/entities/nutritionPlans/api/nutritionPlans';
 import {getReturnTo} from '@/features/library/libraryFormShared';
 import {DAYS, MEAL_TYPES, toSentenceLabel} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
+import NotFoundCard from '@/shared/ui/feedback/NotFoundCard';
 
 export default function NutritionPlanAssignmentEditorPage() {
   const navigate = useNavigate();
@@ -66,19 +67,12 @@ export default function NutritionPlanAssignmentEditorPage() {
 
   if (!assignment) {
     return (
-      <Card className="border border-separator bg-surface p-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-semibold text-foreground">Assignment not found</p>
-          <p className="text-sm text-muted">This assignment may have been removed.</p>
-          <Button
-            className="min-h-11"
-            onPress={() => navigate({to: returnTo})}
-            variant="secondary"
-          >
-            Back to builder
-          </Button>
-        </div>
-      </Card>
+      <NotFoundCard
+        backLabel="Back to builder"
+        description="This assignment may have been removed."
+        onBack={() => navigate({to: returnTo})}
+        title="Assignment not found"
+      />
     );
   }
 
@@ -182,7 +176,7 @@ export default function NutritionPlanAssignmentEditorPage() {
           size="md"
           variant="primary"
         >
-          {isSaving ? 'Saving...' : 'Save assignment'}
+          {isSaving ? 'Saving…' : 'Save assignment'}
         </Button>
       </div>
     </div>

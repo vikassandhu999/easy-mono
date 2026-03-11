@@ -1,56 +1,34 @@
-import {Button, Card, Dropdown, Label, Skeleton, toast} from '@heroui/react';
+import {Button, Card, Dropdown, Label, Skeleton} from '@heroui/react';
 import {useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Dumbbell, EllipsisVertical, Pencil, Plus, Trash2} from 'lucide-react';
-import {Fragment, useMemo, useState} from 'react';
+import {Fragment} from 'react';
 
-import type {WorkoutElement} from '@/entities/trainingPlans/api/trainingPlans';
-
-import {useListExercisesQuery} from '@/entities/exercises/api/exercises';
-import {
-  useDeletePlannedWorkoutMutation,
-  useGetPlannedWorkoutQuery,
-  useUpdatePlannedWorkoutMutation,
-  useUpdateWorkoutElementMutation,
-} from '@/entities/trainingPlans/api/trainingPlans';
 import {RenameWorkoutModal} from '@/features/library/training-plans/RenameWorkoutModal';
+import useWorkoutDetail from '@/features/library/training-plans/useWorkoutDetail';
 import {WorkoutExerciseCard} from '@/features/library/training-plans/WorkoutExerciseCard';
-import {getApiErrorMessage} from '@/shared/api/shared';
 import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
+import NotFoundCard from '@/shared/ui/feedback/NotFoundCard';
 
 export default function WorkoutDetailPage() {
   const navigate = useNavigate();
   const {id: planId = '', workoutId = ''} = useParams({strict: false});
   const backTo = `/library/training-plans/${planId}/builder`;
 
-  const {data: workoutData, isLoading} = useGetPlannedWorkoutQuery(workoutId, {skip: !workoutId});
-  const {data: exercisesData} = useListExercisesQuery({
-    limit: 250,
-    offset: 0,
-  });
-
-  const [updatePlannedWorkout, {isLoading: isRenaming}] = useUpdatePlannedWorkoutMutation();
-  const [deletePlannedWorkout, {isLoading: isDeletingWorkout}] = useDeletePlannedWorkoutMutation();
-  const [updateWorkoutElement] = useUpdateWorkoutElementMutation();
-
-  const workout = workoutData?.data;
-  const exercisesList = exercisesData?.data;
-
-  const sortedElements = useMemo(
-    () => [...(workout?.workout_elements ?? [])].sort((a, b) => a.position - b.position),
-    [workout?.workout_elements],
-  );
-
-  const [isRenameOpen, setIsRenameOpen] = useState(false);
-  const [isDeleteWorkoutOpen, setIsDeleteWorkoutOpen] = useState(false);
-
-  const exerciseNameMap = useMemo(() => {
-    const map = new Map<string, string>();
-    (exercisesList ?? []).forEach((e) => map.set(e.id, e.name));
-    return map;
-  }, [exercisesList]);
-
-  const getExerciseName = (exerciseId: string, fallbackName?: null | string) =>
-    fallbackName ?? exerciseNameMap.get(exerciseId) ?? 'Exercise';
+  const {
+    getExerciseName,
+    handleDeleteWorkout,
+    handleMoveExercise,
+    handleRename,
+    isDeleteWorkoutOpen,
+    isDeletingWorkout,
+    isLoading,
+    isRenameOpen,
+    isRenaming,
+    setIsDeleteWorkoutOpen,
+    setIsRenameOpen,
+    sortedElements,
+    workout,
+  } = useWorkoutDetail(planId, workoutId, () => navigate({to: backTo}));
 
   const handleAction = (key: React.Key) => {
     switch (key) {
@@ -60,57 +38,6 @@ export default function WorkoutDetailPage() {
       case 'delete':
         setIsDeleteWorkoutOpen(true);
         break;
-    }
-  };
-
-  const handleRename = async (name: string) => {
-    try {
-      await updatePlannedWorkout({
-        body: {name},
-        id: workoutId,
-        planId,
-      }).unwrap();
-      toast.success('Workout renamed');
-      setIsRenameOpen(false);
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to rename workout'));
-    }
-  };
-
-  const handleDeleteWorkout = async () => {
-    setIsDeleteWorkoutOpen(false);
-    try {
-      await deletePlannedWorkout({id: workoutId, planId}).unwrap();
-      toast.success('Workout deleted');
-      navigate({to: backTo});
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to delete workout'));
-    }
-  };
-
-  const handleMoveExercise = async (element: WorkoutElement, direction: 'down' | 'up') => {
-    const currentIndex = sortedElements.findIndex((el) => el.id === element.id);
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const targetElement = sortedElements[targetIndex];
-    if (!targetElement) return;
-
-    try {
-      await Promise.all([
-        updateWorkoutElement({
-          body: {position: targetElement.position},
-          id: element.id,
-          planId,
-          plannedWorkoutId: workoutId,
-        }).unwrap(),
-        updateWorkoutElement({
-          body: {position: element.position},
-          id: targetElement.id,
-          planId,
-          plannedWorkoutId: workoutId,
-        }).unwrap(),
-      ]);
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to reorder exercises'));
     }
   };
 
@@ -127,25 +54,17 @@ export default function WorkoutDetailPage() {
 
   if (!workout) {
     return (
-      <Card className="rounded-xl border border-separator bg-surface p-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-semibold text-foreground">Workout not found</p>
-          <p className="text-sm text-muted">This workout may have been removed.</p>
-          <Button
-            className="min-h-11"
-            onPress={() => navigate({to: backTo})}
-            variant="secondary"
-          >
-            Back to plan
-          </Button>
-        </div>
-      </Card>
+      <NotFoundCard
+        backLabel="Back to plan"
+        description="This workout may have been removed."
+        onBack={() => navigate({to: backTo})}
+        title="Workout not found"
+      />
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header row: back + overflow menu */}
       <div className="flex items-center justify-between">
         <Button
           className="min-h-11 w-fit gap-1.5 px-2 text-muted hover:text-foreground"
@@ -159,6 +78,7 @@ export default function WorkoutDetailPage() {
         <Dropdown>
           <Dropdown.Trigger>
             <Button
+              aria-label="More actions"
               className="min-h-11 min-w-11"
               size="md"
               variant="ghost"
@@ -191,7 +111,6 @@ export default function WorkoutDetailPage() {
         </Dropdown>
       </div>
 
-      {/* Title area */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{workout.name}</h1>
         <p className="mt-1 text-sm text-muted">
@@ -202,7 +121,6 @@ export default function WorkoutDetailPage() {
 
       <div className="border-t border-separator" />
 
-      {/* Exercise list */}
       {sortedElements.length === 0 ? (
         <Card className="border border-dashed border-separator bg-surface p-10">
           <div className="flex flex-col items-center gap-4 text-center">

@@ -87,7 +87,7 @@ export default function RecipeIngredientRow({foods, form, initialFood, numericSt
                   <SearchField>
                     <SearchField.Group>
                       <SearchField.SearchIcon />
-                      <SearchField.Input placeholder="Search food..." />
+                      <SearchField.Input placeholder="Search food…" />
                     </SearchField.Group>
                   </SearchField>
                   <ListBox>

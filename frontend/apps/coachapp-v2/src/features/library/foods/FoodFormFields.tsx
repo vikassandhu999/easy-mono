@@ -27,7 +27,7 @@ export default function FoodFormFields({control, errors, register}: FoodFormFiel
         <TextField isInvalid={Boolean(errors.name?.message)}>
           <Label className="text-sm font-medium text-foreground">Food name</Label>
           <Input
-            placeholder="e.g. Rolled Oats"
+            placeholder="e.g. Rolled Oats…"
             variant="secondary"
             {...register('name')}
           />
@@ -38,7 +38,7 @@ export default function FoodFormFields({control, errors, register}: FoodFormFiel
           <TextField isInvalid={Boolean(errors.category?.message)}>
             <Label className="text-sm font-medium text-foreground">Category</Label>
             <Input
-              placeholder="e.g. Grain"
+              placeholder="e.g. Grain…"
               variant="secondary"
               {...register('category')}
             />
@@ -48,7 +48,7 @@ export default function FoodFormFields({control, errors, register}: FoodFormFiel
           <TextField isInvalid={Boolean(errors.source?.message)}>
             <Label className="text-sm font-medium text-foreground">Source</Label>
             <Input
-              placeholder="e.g. USDA"
+              placeholder="e.g. USDA…"
               variant="secondary"
               {...register('source')}
             />
@@ -61,7 +61,7 @@ export default function FoodFormFields({control, errors, register}: FoodFormFiel
         <TextField isInvalid={Boolean(errors.notes?.message)}>
           <Label className="text-sm font-medium text-foreground">Notes</Label>
           <TextArea
-            placeholder="Optional notes"
+            placeholder="Optional notes…"
             variant="secondary"
             {...register('notes')}
           />
@@ -77,7 +77,7 @@ export default function FoodFormFields({control, errors, register}: FoodFormFiel
             <TagsInput
               label="Tags"
               onChange={(nextTags) => field.onChange(nextTags)}
-              placeholder="Add tags (press Enter or comma)"
+              placeholder="Add tags (press Enter or comma)…"
               value={field.value}
             />
           )}

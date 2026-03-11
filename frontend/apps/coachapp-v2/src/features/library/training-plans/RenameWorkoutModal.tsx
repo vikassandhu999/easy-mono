@@ -48,7 +48,7 @@ export function RenameWorkoutModal({currentName, isLoading, isOpen, onOpenChange
                 variant="secondary"
               >
                 <Label>Name</Label>
-                <Input placeholder="Workout name..." />
+                <Input placeholder="Workout name…" />
                 <FieldError />
               </TextField>
             </Modal.Body>
@@ -68,7 +68,7 @@ export function RenameWorkoutModal({currentName, isLoading, isOpen, onOpenChange
                 size="md"
                 variant="primary"
               >
-                {isLoading ? 'Saving...' : 'Save'}
+                {isLoading ? 'Saving…' : 'Save'}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

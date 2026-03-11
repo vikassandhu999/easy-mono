@@ -55,7 +55,7 @@ export default function FormPageShell({actions, children, formError, header, sta
   if (isLoading) {
     return (
       <Card className="border border-separator bg-surface p-6">
-        <p className="text-sm text-muted">Loading...</p>
+        <p className="text-sm text-muted">Loading…</p>
       </Card>
     );
   }
@@ -136,7 +136,7 @@ export default function FormPageShell({actions, children, formError, header, sta
             type="submit"
             variant="primary"
           >
-            {isSubmitting ? (submitLabel.startsWith('Save') ? 'Saving...' : 'Creating...') : submitLabel}
+            {isSubmitting ? (submitLabel.startsWith('Save') ? 'Saving…' : 'Creating…') : submitLabel}
           </Button>
           <Button
             className="min-h-11 w-full sm:w-auto"

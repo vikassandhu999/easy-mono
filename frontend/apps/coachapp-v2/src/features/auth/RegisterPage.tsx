@@ -75,7 +75,7 @@ export default function RegisterPage() {
           <TextField isInvalid={Boolean(firstNameError)}>
             <Label className="text-sm font-medium text-foreground">First name</Label>
             <Input
-              placeholder="First name"
+              placeholder="First name…"
               {...register('first_name')}
             />
             {firstNameError ? <FieldError>{firstNameError}</FieldError> : null}
@@ -83,7 +83,7 @@ export default function RegisterPage() {
           <TextField isInvalid={Boolean(lastNameError)}>
             <Label className="text-sm font-medium text-foreground">Last name</Label>
             <Input
-              placeholder="Last name"
+              placeholder="Last name…"
               {...register('last_name')}
             />
             {lastNameError ? <FieldError>{lastNameError}</FieldError> : null}

@@ -108,7 +108,7 @@ export function SetAccordionRow({onChange, onRemove, setDraft, setIndex}: SetAcc
               className="min-h-11 w-full"
               inputMode="text"
               onChange={(e) => updateField('target_reps', e.target.value)}
-              placeholder="e.g. 8-10"
+              placeholder="e.g. 8-10…"
               value={setDraft.target_reps}
               variant="secondary"
             />
@@ -188,7 +188,7 @@ export function SetAccordionRow({onChange, onRemove, setDraft, setIndex}: SetAcc
               <Input
                 className="min-h-10 w-full"
                 onChange={(e) => updateField('intensity_target', e.target.value)}
-                placeholder="e.g. RPE 8 or 80%"
+                placeholder="e.g. RPE 8 or 80%…"
                 value={setDraft.intensity_target}
                 variant="secondary"
               />
@@ -201,7 +201,7 @@ export function SetAccordionRow({onChange, onRemove, setDraft, setIndex}: SetAcc
               <Input
                 className="min-h-10 w-full"
                 onChange={(e) => updateField('notes', e.target.value)}
-                placeholder="e.g. pause at bottom"
+                placeholder="e.g. pause at bottom…"
                 value={setDraft.notes}
                 variant="secondary"
               />

@@ -20,7 +20,7 @@ function GuestLayout() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-foreground/70">
-        Checking your workspace...
+        Checking your workspace…
       </div>
     );
   }

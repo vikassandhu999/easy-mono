@@ -5,29 +5,11 @@ import {Fragment, useMemo} from 'react';
 
 import {useGetNutritionPlanQuery} from '@/entities/nutritionPlans/api/nutritionPlans';
 import CopyDayDialog from '@/features/library/nutrition-plans/CopyDayDialog';
-import {toSentenceLabel} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
+import {getPlanItemSortWeight, toSentenceLabel} from '@/features/library/nutrition-plans/nutritionPlanBuilderShared';
 import NutritionPlanMealCard from '@/features/library/nutrition-plans/NutritionPlanMealCard';
 import useNutritionPlanBuilderActions from '@/features/library/nutrition-plans/useNutritionPlanBuilderActions';
 import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
-
-const getPlanItemSortWeight = (mealType: string) => {
-  switch (mealType) {
-    case 'breakfast':
-      return 0;
-    case 'pre_workout':
-      return 1;
-    case 'lunch':
-      return 2;
-    case 'snack':
-      return 3;
-    case 'post_workout':
-      return 4;
-    case 'dinner':
-      return 5;
-    default:
-      return 99;
-  }
-};
+import NotFoundCard from '@/shared/ui/feedback/NotFoundCard';
 
 export default function NutritionPlanDayDetailPage() {
   const navigate = useNavigate();
@@ -47,7 +29,7 @@ export default function NutritionPlanDayDetailPage() {
   const planItems = useMemo(() => itemsByDay[day] ?? [], [itemsByDay, day]);
   const sortedPlanItems = useMemo(
     () =>
-      [...planItems].sort((a, b) => {
+      planItems.toSorted((a, b) => {
         const typeSort = getPlanItemSortWeight(a.meal_type) - getPlanItemSortWeight(b.meal_type);
         if (typeSort !== 0) return typeSort;
         return (mealsById[a.meal_id]?.position ?? 0) - (mealsById[b.meal_id]?.position ?? 0);
@@ -78,19 +60,12 @@ export default function NutritionPlanDayDetailPage() {
 
   if (!planData?.data) {
     return (
-      <Card className="rounded-xl border border-separator bg-surface p-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-semibold text-foreground">Plan not found</p>
-          <p className="text-sm text-muted">This plan may have been removed.</p>
-          <Button
-            className="min-h-11"
-            onPress={() => navigate({to: backTo})}
-            variant="secondary"
-          >
-            Back to plan
-          </Button>
-        </div>
-      </Card>
+      <NotFoundCard
+        backLabel="Back to plan"
+        description="This plan may have been removed."
+        onBack={() => navigate({to: backTo})}
+        title="Plan not found"
+      />
     );
   }
 
@@ -110,6 +85,7 @@ export default function NutritionPlanDayDetailPage() {
         <Dropdown>
           <Dropdown.Trigger>
             <Button
+              aria-label="More actions"
               className="min-h-11 min-w-11"
               size="md"
               variant="ghost"

@@ -1,6 +1,6 @@
 import {Button, FieldError, Input, Label, TextField, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useLocation, useNavigate} from '@tanstack/react-router';
+import {Link, useLocation, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
@@ -81,13 +81,12 @@ export default function LoginPage() {
       </form>
       <div className="text-sm text-foreground/70">
         New here?{' '}
-        <button
+        <Link
           className="text-primary underline-offset-4 hover:underline"
-          onClick={() => navigate({to: '/register'})}
-          type="button"
+          to="/register"
         >
           Create an account
-        </button>
+        </Link>
       </div>
     </div>
   );

@@ -15,8 +15,8 @@ type ClientTrainingTabProps = {
 
 const formatDateRange = (plan: TrainingPlan): string | undefined => {
   if (!plan.start_date && !plan.end_date) return undefined;
-  const start = plan.start_date ? formatDate(plan.start_date) : '...';
-  const end = plan.end_date ? formatDate(plan.end_date) : '...';
+  const start = plan.start_date ? formatDate(plan.start_date) : '…';
+  const end = plan.end_date ? formatDate(plan.end_date) : '…';
   return `${start} – ${end}`;
 };
 

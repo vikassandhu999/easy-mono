@@ -21,7 +21,7 @@ export default function NutritionPlanMacrosPanel({isActive, planId}: NutritionPl
   if (isLoading) {
     return (
       <Card className="border border-separator bg-surface p-4">
-        <p className="text-sm text-muted">Loading macros summary...</p>
+        <p className="text-sm text-muted">Loading macros summary…</p>
       </Card>
     );
   }

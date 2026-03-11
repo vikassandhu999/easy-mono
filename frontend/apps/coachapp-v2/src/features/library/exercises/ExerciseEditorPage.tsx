@@ -1,25 +1,11 @@
-import {Button, Card, Input, Label, Skeleton, TextField, toast} from '@heroui/react';
+import {Button, Input, Label, Skeleton, TextField} from '@heroui/react';
 import {useLocation, useNavigate, useParams} from '@tanstack/react-router';
 import {ArrowLeft, Save, Trash2} from 'lucide-react';
-import {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {
-  useCreateWorkoutElementMutation,
-  useDeleteWorkoutElementMutation,
-  useGetPlannedWorkoutQuery,
-  useGetWorkoutElementQuery,
-  useUpdateWorkoutElementMutation,
-} from '@/entities/trainingPlans/api/trainingPlans';
+import useExerciseEditor from '@/features/library/exercises/useExerciseEditor';
 import {SetConfigSection} from '@/features/library/shared/workout-sets/SetConfigSection';
-import {
-  areSetsUniform,
-  fromSetDraft,
-  newSetDraft,
-  type SetDraft,
-  toSetDraft,
-} from '@/features/library/shared/workout-sets/setDraftHelpers';
-import {getApiErrorMessage} from '@/shared/api/shared';
 import ConfirmDialog from '@/shared/ui/feedback/ConfirmDialog';
+import NotFoundCard from '@/shared/ui/feedback/NotFoundCard';
 
 export default function ExerciseEditorPage() {
   const navigate = useNavigate();
@@ -29,119 +15,38 @@ export default function ExerciseEditorPage() {
   const workoutDetailUrl = `/library/training-plans/${planId}/builder/workouts/${workoutId}`;
   const backTo = isEditMode ? workoutDetailUrl : `${workoutDetailUrl}/exercises/new`;
 
-  const {data: workoutData, isLoading: isWorkoutLoading} = useGetPlannedWorkoutQuery(workoutId, {skip: !workoutId});
-  const {data: elementData, isLoading: isElementLoading} = useGetWorkoutElementQuery(elementId ?? '', {
-    skip: !elementId,
-  });
-
-  const [createWorkoutElement, {isLoading: isCreating}] = useCreateWorkoutElementMutation();
-  const [updateWorkoutElement, {isLoading: isUpdating}] = useUpdateWorkoutElementMutation();
-  const [deleteWorkoutElement, {isLoading: isDeleting}] = useDeleteWorkoutElementMutation();
-
-  const workout = workoutData?.data;
-  const element = elementData?.data;
-  const isLoading = isWorkoutLoading || (isEditMode && isElementLoading);
-
-  const exerciseId = isEditMode ? (element?.exercise_id ?? '') : (newExerciseId ?? '');
   const locationState = location.state as Record<string, unknown>;
-  const exerciseName = isEditMode ? (element?.exercise?.name ?? '') : ((locationState?.exerciseName as string) ?? '');
+  const exerciseNameFromState = isEditMode ? '' : ((locationState?.exerciseName as string) ?? '');
 
-  const [initialized, setInitialized] = useState(!isEditMode);
-  const [notes, setNotes] = useState('');
-  const [showNotes, setShowNotes] = useState(false);
-  const [sets, setSets] = useState<SetDraft[]>(() => [newSetDraft()]);
-  const [isUniform, setIsUniform] = useState(true);
-  const [setCount, setSetCount] = useState(3);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
-  useEffect(() => {
-    if (initialized || !element) return;
-    const initialNotes = element.notes ?? '';
-    setNotes(initialNotes);
-    if (initialNotes) setShowNotes(true);
-    const loadedSets = element.planned_sets.length > 0 ? element.planned_sets.map(toSetDraft) : [newSetDraft()];
-    const uniform = areSetsUniform(loadedSets);
-    setIsUniform(uniform);
-    setSetCount(loadedSets.length);
-    setSets(uniform ? [loadedSets[0]!] : loadedSets);
-    setInitialized(true);
-  }, [initialized, element]);
-
-  const nextPosition = useMemo(() => (workout?.workout_elements.length ?? 0) + 1, [workout?.workout_elements.length]);
-
-  const isMutating = isCreating || isUpdating || isDeleting;
-
-  const handleSave = useCallback(async () => {
-    if (!exerciseId) {
-      toast.danger('No exercise selected');
-      return;
-    }
-    try {
-      const plannedSets = isUniform
-        ? Array.from({length: setCount}, () => fromSetDraft(sets[0]!))
-        : sets.map(fromSetDraft);
-      if (isEditMode && elementId) {
-        await updateWorkoutElement({
-          body: {
-            exercise_id: exerciseId,
-            notes: notes.trim() || undefined,
-            planned_sets: plannedSets,
-          },
-          id: elementId,
-          planId,
-          plannedWorkoutId: workoutId,
-        }).unwrap();
-        toast.success('Exercise updated');
-      } else {
-        await createWorkoutElement({
-          body: {
-            exercise_id: exerciseId,
-            notes: notes.trim() || undefined,
-            planned_sets: plannedSets,
-            planned_workout_id: workoutId,
-            position: nextPosition,
-          },
-          planId,
-          plannedWorkoutId: workoutId,
-        }).unwrap();
-        toast.success('Exercise added');
-      }
-      navigate({to: workoutDetailUrl});
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, isEditMode ? 'Failed to update exercise' : 'Failed to add exercise'));
-    }
-  }, [
+  const {
     exerciseId,
-    sets,
+    exerciseName,
+    handleDelete,
+    handleSave,
+    isDeleteOpen,
+    isDeleting,
+    isLoading,
+    isMutating,
     isUniform,
-    setCount,
-    isEditMode,
-    elementId,
     notes,
+    setCount,
+    setIsDeleteOpen,
+    setIsUniform,
+    setNotes,
+    setSetCount,
+    setSets,
+    setShowNotes,
+    sets,
+    showNotes,
+    workout,
+  } = useExerciseEditor({
+    elementId,
+    exerciseName: exerciseNameFromState,
+    newExerciseId,
+    onSaved: () => navigate({to: workoutDetailUrl}),
     planId,
     workoutId,
-    nextPosition,
-    updateWorkoutElement,
-    createWorkoutElement,
-    navigate,
-    workoutDetailUrl,
-  ]);
-
-  const handleDelete = useCallback(async () => {
-    if (!elementId) return;
-    setIsDeleteOpen(false);
-    try {
-      await deleteWorkoutElement({
-        id: elementId,
-        planId,
-        plannedWorkoutId: workoutId,
-      }).unwrap();
-      toast.success('Exercise deleted');
-      navigate({to: workoutDetailUrl});
-    } catch (error) {
-      toast.danger(getApiErrorMessage(error, 'Failed to delete exercise'));
-    }
-  }, [elementId, deleteWorkoutElement, planId, workoutId, navigate, workoutDetailUrl]);
+  });
 
   if (isLoading) {
     return (
@@ -155,19 +60,12 @@ export default function ExerciseEditorPage() {
 
   if (!workout) {
     return (
-      <Card className="rounded-xl border border-separator bg-surface p-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-semibold text-foreground">Workout not found</p>
-          <p className="text-sm text-muted">This workout may have been removed.</p>
-          <Button
-            className="min-h-11"
-            onPress={() => navigate({to: `/library/training-plans/${planId}/builder`})}
-            variant="secondary"
-          >
-            Back to plan
-          </Button>
-        </div>
-      </Card>
+      <NotFoundCard
+        backLabel="Back to plan"
+        description="This workout may have been removed."
+        onBack={() => navigate({to: `/library/training-plans/${planId}/builder`})}
+        title="Workout not found"
+      />
     );
   }
 
@@ -211,7 +109,7 @@ export default function ExerciseEditorPage() {
           <Input
             className="min-h-11"
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Exercise notes..."
+            placeholder="Exercise notes…"
             value={notes}
             variant="secondary"
           />

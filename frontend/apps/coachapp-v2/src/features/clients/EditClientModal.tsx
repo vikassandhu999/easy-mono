@@ -48,24 +48,26 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
 
   const handleSubmit = async () => {
     setFormError(null);
-    try {
-      await updateClient({
-        body: {
-          first_name: values.first_name?.trim() || undefined,
-          last_name: values.last_name?.trim() || undefined,
-          notes: values.notes?.trim() || undefined,
-          phone: values.phone?.trim() || undefined,
-          status: values.status || undefined,
-        },
-        id: client.id,
-      }).unwrap();
-      toast.success('Client updated successfully.');
-      handleClose();
-    } catch (err) {
-      const result = handleFormError(err, 'Unable to update client. Please try again.');
-      setFormError(result.formError);
-      toast.danger(result.formError);
-    }
+    updateClient({
+      body: {
+        first_name: values.first_name?.trim() || undefined,
+        last_name: values.last_name?.trim() || undefined,
+        notes: values.notes?.trim() || undefined,
+        phone: values.phone?.trim() || undefined,
+        status: values.status || undefined,
+      },
+      id: client.id,
+    })
+      .unwrap()
+      .then(() => {
+        toast.success('Client updated successfully.');
+        handleClose();
+      })
+      .catch((err) => {
+        const result = handleFormError(err, 'Unable to update client. Please try again.');
+        setFormError(result.formError);
+        toast.danger(result.formError);
+      });
   };
 
   return (

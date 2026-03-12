@@ -1,4 +1,4 @@
-import {Button, Input, Label, Modal, Surface, TextField, toast} from '@heroui/react';
+import {Button, Input, Label, Modal, TextField, toast} from '@heroui/react';
 import {useState} from 'react';
 
 import type {Client, ClientUpdateRequest} from '@/entities/clients/api/clients';
@@ -83,56 +83,54 @@ export default function EditClientModal({client, isOpen, onOpenChange}: EditClie
           <Modal.Dialog>
             <Modal.Header>Edit client</Modal.Header>
             <Modal.Body className="p-2">
-              <Surface variant="default">
-                <div className="flex flex-col gap-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField>
-                      <Label className="text-sm font-medium text-foreground">First name</Label>
-                      <Input
-                        className={INPUT_CLASS}
-                        onChange={(e) => handleChange('first_name', e.target.value)}
-                        placeholder="First name…"
-                        value={values.first_name}
-                        variant="primary"
-                      />
-                    </TextField>
-                    <TextField>
-                      <Label className="text-sm font-medium text-foreground">Last name</Label>
-                      <Input
-                        className={INPUT_CLASS}
-                        onChange={(e) => handleChange('last_name', e.target.value)}
-                        placeholder="Last name…"
-                        value={values.last_name}
-                        variant="primary"
-                      />
-                    </TextField>
-                  </div>
-
+              <div className="flex flex-col gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <TextField>
-                    <Label className="text-sm font-medium text-foreground">Phone</Label>
+                    <Label className="text-sm font-medium text-foreground">First name</Label>
                     <Input
                       className={INPUT_CLASS}
-                      onChange={(e) => handleChange('phone', e.target.value)}
-                      placeholder="+1 555 123 4567"
-                      value={values.phone}
+                      onChange={(e) => handleChange('first_name', e.target.value)}
+                      placeholder="First name…"
+                      value={values.first_name}
                       variant="primary"
                     />
                   </TextField>
-
                   <TextField>
-                    <Label className="text-sm font-medium text-foreground">Notes</Label>
+                    <Label className="text-sm font-medium text-foreground">Last name</Label>
                     <Input
                       className={INPUT_CLASS}
-                      onChange={(e) => handleChange('notes', e.target.value)}
-                      placeholder="Notes about this client…"
-                      value={values.notes}
+                      onChange={(e) => handleChange('last_name', e.target.value)}
+                      placeholder="Last name…"
+                      value={values.last_name}
                       variant="primary"
                     />
                   </TextField>
-
-                  {formError ? <p className="text-sm text-danger">{formError}</p> : null}
                 </div>
-              </Surface>
+
+                <TextField>
+                  <Label className="text-sm font-medium text-foreground">Phone</Label>
+                  <Input
+                    className={INPUT_CLASS}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                    placeholder="+1 555 123 4567"
+                    value={values.phone}
+                    variant="primary"
+                  />
+                </TextField>
+
+                <TextField>
+                  <Label className="text-sm font-medium text-foreground">Notes</Label>
+                  <Input
+                    className={INPUT_CLASS}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    placeholder="Notes about this client…"
+                    value={values.notes}
+                    variant="primary"
+                  />
+                </TextField>
+
+                {formError ? <p className="text-sm text-danger">{formError}</p> : null}
+              </div>
             </Modal.Body>
             <Modal.Footer>
               <Button

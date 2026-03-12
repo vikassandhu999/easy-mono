@@ -115,13 +115,13 @@ export default function ExerciseEditorPage() {
           />
         </TextField>
       ) : (
-        <button
-          className="w-fit cursor-pointer border-none bg-transparent p-0 text-sm font-medium text-muted hover:text-foreground"
-          onClick={() => setShowNotes(true)}
-          type="button"
+        <Button
+          className="w-fit p-0 text-sm font-medium text-muted hover:text-foreground"
+          onPress={() => setShowNotes(true)}
+          variant="ghost"
         >
           + Add notes
-        </button>
+        </Button>
       )}
 
       <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-separator bg-background pb-4 pt-4 sm:flex-row sm:items-center">

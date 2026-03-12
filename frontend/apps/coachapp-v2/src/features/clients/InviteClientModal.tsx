@@ -1,4 +1,4 @@
-import {Button, FieldError, Input, Label, Modal, Surface, TextField, toast} from '@heroui/react';
+import {Button, FieldError, Input, Label, Modal, TextField, toast} from '@heroui/react';
 import {useState} from 'react';
 
 import type {ClientInviteRequest} from '@/entities/clients/api/clients';
@@ -94,72 +94,70 @@ export default function InviteClientModal({isOpen, onInvited, onOpenChange}: Inv
           <Modal.Dialog>
             <Modal.Header>Invite Client</Modal.Header>
             <Modal.Body className="p-2">
-              <Surface variant="default">
-                <div className="flex flex-col gap-4">
-                  <p className="text-sm text-muted">Send an invitation by email to add a client to your workspace.</p>
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-muted">Send an invitation by email to add a client to your workspace.</p>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField isInvalid={Boolean(emailError)}>
-                      <Label className="text-sm font-medium text-foreground">Email</Label>
-                      <Input
-                        className={INVITE_INPUT_CLASS}
-                        onChange={(event) => handleChange('email', event.target.value)}
-                        placeholder="client@example.com"
-                        type="email"
-                        value={values.email}
-                        variant="primary"
-                      />
-                      {emailError ? <FieldError>{emailError}</FieldError> : null}
-                    </TextField>
-
-                    <TextField>
-                      <Label className="text-sm font-medium text-foreground">Phone</Label>
-                      <Input
-                        className={INVITE_INPUT_CLASS}
-                        onChange={(event) => handleChange('phone', event.target.value)}
-                        placeholder="+1 555 123 4567"
-                        value={values.phone}
-                        variant="primary"
-                      />
-                    </TextField>
-
-                    <TextField>
-                      <Label className="text-sm font-medium text-foreground">First Name</Label>
-                      <Input
-                        className={INVITE_INPUT_CLASS}
-                        onChange={(event) => handleChange('first_name', event.target.value)}
-                        placeholder="First name…"
-                        value={values.first_name}
-                        variant="primary"
-                      />
-                    </TextField>
-
-                    <TextField>
-                      <Label className="text-sm font-medium text-foreground">Last Name</Label>
-                      <Input
-                        className={INVITE_INPUT_CLASS}
-                        onChange={(event) => handleChange('last_name', event.target.value)}
-                        placeholder="Last name…"
-                        value={values.last_name}
-                        variant="primary"
-                      />
-                    </TextField>
-                  </div>
-
-                  <TextField>
-                    <Label className="text-sm font-medium text-foreground">Notes</Label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField isInvalid={Boolean(emailError)}>
+                    <Label className="text-sm font-medium text-foreground">Email</Label>
                     <Input
                       className={INVITE_INPUT_CLASS}
-                      onChange={(event) => handleChange('notes', event.target.value)}
-                      placeholder="Optional context for this client…"
-                      value={values.notes}
+                      onChange={(event) => handleChange('email', event.target.value)}
+                      placeholder="client@example.com"
+                      type="email"
+                      value={values.email}
+                      variant="primary"
+                    />
+                    {emailError ? <FieldError>{emailError}</FieldError> : null}
+                  </TextField>
+
+                  <TextField>
+                    <Label className="text-sm font-medium text-foreground">Phone</Label>
+                    <Input
+                      className={INVITE_INPUT_CLASS}
+                      onChange={(event) => handleChange('phone', event.target.value)}
+                      placeholder="+1 555 123 4567"
+                      value={values.phone}
                       variant="primary"
                     />
                   </TextField>
 
-                  {formError ? <p className="text-sm text-danger">{formError}</p> : null}
+                  <TextField>
+                    <Label className="text-sm font-medium text-foreground">First Name</Label>
+                    <Input
+                      className={INVITE_INPUT_CLASS}
+                      onChange={(event) => handleChange('first_name', event.target.value)}
+                      placeholder="First name…"
+                      value={values.first_name}
+                      variant="primary"
+                    />
+                  </TextField>
+
+                  <TextField>
+                    <Label className="text-sm font-medium text-foreground">Last Name</Label>
+                    <Input
+                      className={INVITE_INPUT_CLASS}
+                      onChange={(event) => handleChange('last_name', event.target.value)}
+                      placeholder="Last name…"
+                      value={values.last_name}
+                      variant="primary"
+                    />
+                  </TextField>
                 </div>
-              </Surface>
+
+                <TextField>
+                  <Label className="text-sm font-medium text-foreground">Notes</Label>
+                  <Input
+                    className={INVITE_INPUT_CLASS}
+                    onChange={(event) => handleChange('notes', event.target.value)}
+                    placeholder="Optional context for this client…"
+                    value={values.notes}
+                    variant="primary"
+                  />
+                </TextField>
+
+                {formError ? <p className="text-sm text-danger">{formError}</p> : null}
+              </div>
             </Modal.Body>
             <Modal.Footer>
               <Button

@@ -77,15 +77,15 @@ export default function ExercisePickerPage() {
           {filtered.map((exercise, i) => (
             <Fragment key={exercise.id}>
               {i > 0 && <div className="border-t border-separator" />}
-              <button
-                className="flex w-full cursor-pointer items-center gap-3 border-none bg-transparent px-4 py-3 text-left outline-none hover:bg-surface-secondary"
-                onClick={() =>
+              <Button
+                className="flex h-auto w-full items-center gap-3 rounded-none px-4 py-3 text-left"
+                onPress={() =>
                   navigate({
                     to: `/library/training-plans/${planId}/builder/workouts/${workoutId}/exercises/new/${exercise.id}`,
                     state: {exerciseName: exercise.name},
                   })
                 }
-                type="button"
+                variant="ghost"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-secondary">
                   <Dumbbell className="h-4 w-4 text-muted" />
@@ -95,7 +95,7 @@ export default function ExercisePickerPage() {
                   {exercise.mechanics && <p className="text-xs capitalize text-muted">{exercise.mechanics}</p>}
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
-              </button>
+              </Button>
             </Fragment>
           ))}
         </Card>

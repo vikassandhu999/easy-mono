@@ -13,7 +13,7 @@ export default function ClientCard({client, onPress}: ClientCardProps) {
   return (
     <Card
       className="border border-separator bg-surface p-4 text-left transition-none"
-      onClick={onPress}
+      onPress={onPress}
     >
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between">

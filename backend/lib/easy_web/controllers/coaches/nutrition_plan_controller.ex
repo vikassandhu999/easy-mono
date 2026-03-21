@@ -178,13 +178,4 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       error -> error
     end
   end
-
-  defp parse_enum(params, key, allowed) do
-    case Map.get(params, key) do
-      nil -> nil
-      value when is_binary(value) -> Easy.Utils.safe_to_atom(value, allowed)
-      value when is_atom(value) -> if Enum.member?(allowed, value), do: value, else: nil
-      _ -> nil
-    end
-  end
 end

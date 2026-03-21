@@ -1,55 +1,135 @@
 defmodule EasyWeb.Coaches.WorkoutSessionController do
   use EasyWeb, :controller
 
-  alias Easy.Training
+  alias Easy.Clients.Client
+  alias Easy.Repo
+  alias Easy.Training.{PlannedWorkout, WorkoutSession}
 
   def create(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Training.create_workout_session(business_id, client_id, params) do
+    planned_workout_id =
+      Map.get(params, "planned_workout_id") || Map.get(params, :planned_workout_id)
+
+    with true <- client_accessible?(business_id, client_id),
+         true <- planned_workout_optional_accessible?(business_id, planned_workout_id),
+         {:ok, session} <- WorkoutSession.create(business_id, client_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
+    else
+      false -> {:error, :not_found}
+      error -> error
     end
   end
 
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Training.fetch_workout_session(business_id, id) do
-      render(conn, :show, session: session)
+    case WorkoutSession
+         |> WorkoutSession.for_business(business_id)
+         |> WorkoutSession.with_sets()
+         |> Repo.get(id) do
+      nil -> {:error, :not_found}
+      session -> render(conn, :show, session: session)
     end
   end
 
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, {sessions, pagination}} <- Training.list_workout_sessions(business_id, params) do
-      render(conn, :index, sessions: sessions, count: pagination.count)
-    end
+    offset = parse_integer(params, "offset", 0)
+    limit = parse_integer(params, "limit", 50)
+    client_id = Map.get(params, "client_id")
+    state = parse_enum(params, "state", WorkoutSession.states())
+
+    base =
+      WorkoutSession
+      |> WorkoutSession.for_business(business_id)
+      |> WorkoutSession.with_state(state)
+      |> maybe_for_client(client_id)
+
+    count = Repo.aggregate(base, :count, :id)
+
+    sessions =
+      base
+      |> WorkoutSession.newest()
+      |> Easy.Utils.paginate(offset, limit)
+      |> WorkoutSession.with_sets()
+      |> Repo.all()
+
+    render(conn, :index, sessions: sessions, count: count)
   end
 
   def complete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Training.complete_workout_session(business_id, id, conn.body_params) do
-      render(conn, :show, session: session)
+    case WorkoutSession
+         |> WorkoutSession.for_business(business_id)
+         |> WorkoutSession.with_sets()
+         |> Repo.get(id) do
+      nil ->
+        {:error, :not_found}
+
+      session ->
+        with {:ok, completed} <- WorkoutSession.complete(session, conn.body_params) do
+          render(conn, :show, session: completed)
+        end
     end
   end
 
   def discard(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Training.discard_workout_session(business_id, id) do
-      render(conn, :show, session: session)
+    case WorkoutSession
+         |> WorkoutSession.for_business(business_id)
+         |> WorkoutSession.with_sets()
+         |> Repo.get(id) do
+      nil ->
+        {:error, :not_found}
+
+      session ->
+        with {:ok, discarded} <- WorkoutSession.discard(session) do
+          render(conn, :show, session: discarded)
+        end
     end
   end
 
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, _session} <- Training.delete_workout_session(business_id, id) do
-      send_resp(conn, :no_content, "")
+    case WorkoutSession
+         |> WorkoutSession.for_business(business_id)
+         |> WorkoutSession.with_sets()
+         |> Repo.get(id) do
+      nil ->
+        {:error, :not_found}
+
+      session ->
+        with {:ok, _session} <- WorkoutSession.delete(session) do
+          send_resp(conn, :no_content, "")
+        end
     end
+  end
+
+  defp maybe_for_client(query, nil), do: query
+  defp maybe_for_client(query, ""), do: query
+  defp maybe_for_client(query, client_id), do: WorkoutSession.for_client(query, client_id)
+
+  defp client_accessible?(business_id, client_id) do
+    Client
+    |> Client.for_business(business_id)
+    |> Repo.get(client_id)
+    |> is_struct(Client)
+  end
+
+  defp planned_workout_optional_accessible?(_business_id, nil), do: true
+  defp planned_workout_optional_accessible?(_business_id, ""), do: true
+
+  defp planned_workout_optional_accessible?(business_id, planned_workout_id) do
+    PlannedWorkout
+    |> PlannedWorkout.for_business(business_id)
+    |> Repo.get(planned_workout_id)
+    |> is_struct(PlannedWorkout)
   end
 end

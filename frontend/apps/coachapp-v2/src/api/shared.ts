@@ -59,6 +59,31 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
   return fallback;
 };
 
+/**
+ * Bridges server errors into react-hook-form's setError.
+ * - Field errors → setError('fieldName', {message}) per field
+ * - General error → setError('root', {message})
+ */
+export const applyFormErrors = (
+  error: unknown,
+  fallbackMessage: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setError: (name: any, error: {message: string}) => void,
+) => {
+  const {fieldErrors, formError} = handleFormError(error, fallbackMessage);
+
+  if (fieldErrors) {
+    for (const [field, messages] of Object.entries(fieldErrors)) {
+      const msg = messages[0];
+      if (msg) {
+        setError(field, {message: msg});
+      }
+    }
+  }
+
+  setError('root', {message: formError});
+};
+
 export type Macros = Record<string, number>;
 
 export type ServingSize = {

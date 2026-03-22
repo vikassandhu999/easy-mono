@@ -1,6 +1,7 @@
 export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
+  VERIFY_OTP: '/verify',
   DASHBOARD: '/dashboard',
   CLIENTS: '/clients',
   CLIENT_DETAIL: '/clients/:id',

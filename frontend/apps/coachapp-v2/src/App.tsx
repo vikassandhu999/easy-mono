@@ -3,24 +3,18 @@ import {Navigate, Route, Routes} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
-
-// Placeholder screens — replace with real feature screens as they are built
-function Placeholder({title}: {title: string}) {
-  return <p>{title}</p>;
-}
+import Login from '@/auth/login';
+import Signup from '@/auth/signup';
+import VerifyOtp from '@/auth/verify-otp';
 
 // Public screens (redirect away if already authenticated)
-const LoginScreen = withNotAuth(function Login() {
-  return <Placeholder title="Login" />;
-});
+const LoginScreen = withNotAuth(Login);
+const SignupScreen = withNotAuth(Signup);
+const VerifyOtpScreen = withNotAuth(VerifyOtp);
 
-const SignupScreen = withNotAuth(function Signup() {
-  return <Placeholder title="Signup" />;
-});
-
-// Protected screens
+// Protected screens — placeholder until features are built
 const DashboardScreen = withAuth(function Dashboard() {
-  return <Placeholder title="Dashboard" />;
+  return <p className="p-4">Dashboard — you are logged in.</p>;
 });
 
 export default function App() {
@@ -34,6 +28,10 @@ export default function App() {
       <Route
         element={<SignupScreen />}
         path={ROUTES.SIGNUP}
+      />
+      <Route
+        element={<VerifyOtpScreen />}
+        path={ROUTES.VERIFY_OTP}
       />
 
       {/* Protected */}

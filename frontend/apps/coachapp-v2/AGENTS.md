@@ -151,11 +151,56 @@ App.tsx route → Feature screen → RTK Query hook (from api/) → Component (v
 - Screens call RTK Query hooks. Components receive data via props.
 - Exception: Form components may call mutation hooks directly.
 
-### Forms
+### Forms (MANDATORY: react-hook-form + zod)
 
-- `react-hook-form` + `zod` schema defined in the same file as the form.
-- Form component calls the RTK Query mutation in its own `onSubmit`.
-- Forms live in `{feature}/components/`.
+**Every form MUST use `react-hook-form` + `zod`. No exceptions. No native FormData. No `useState` for form fields.**
+
+Pattern for every form in this codebase:
+
+```tsx
+import {zodResolver} from '@hookform/resolvers/zod';
+import {useForm, Controller} from 'react-hook-form';
+import {z} from 'zod';
+
+// 1. Schema defined in same file
+const schema = z.object({
+  email: z.string().min(1, 'Required').email('Invalid email'),
+});
+type FormValues = z.infer<typeof schema>;
+
+// 2. useForm with zodResolver
+const {register, handleSubmit, control, formState: {errors}, setError} = useForm<FormValues>({
+  resolver: zodResolver(schema),
+});
+
+// 3. For standard inputs: use register()
+<Input {...register('email')} />
+
+// 4. For non-standard inputs (InputOTP, Select, etc.): use Controller
+<Controller control={control} name="otp" render={({field}) => (
+  <InputOTP value={field.value} onChange={field.onChange} />
+)} />
+
+// 5. Server errors: ALWAYS use applyFormErrors() — handles both field + root errors
+import {applyFormErrors} from '@/api/shared';
+
+// In catch block:
+catch (err) {
+  applyFormErrors(err, 'Fallback error message', setError);
+}
+
+// 6. Display field errors from errors.fieldName?.message
+// 7. Display root errors from errors.root?.message
+```
+
+Rules:
+
+- Schema + type defined in the **same file** as the form component.
+- `register()` for native inputs (`<Input>`, `<Textarea>`).
+- `Controller` for controlled components (`<InputOTP>`, `<Select>`, `<Switch>`).
+- **Server/API errors → ALWAYS `applyFormErrors(err, fallback, setError)` from `@/api/shared`.** This function handles both per-field server errors (e.g. `{email: ['is already taken']}`) AND general errors. Never manually call `setError('root', ...)` or use `getApiErrorMessage` in forms.
+- Form components call the RTK Query mutation in their own `onSubmit`.
+- Forms live in `{feature}/components/` or directly in screen files if simple.
 
 ### Imports
 

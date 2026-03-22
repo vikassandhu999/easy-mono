@@ -12,6 +12,7 @@ import AuthLayout from '@/auth/components/auth-layout';
 
 interface VerifyOtpLocationState {
   email: string;
+  role: 'coach' | 'guest';
   type: 'authentication' | 'email_confirmation';
 }
 
@@ -61,10 +62,13 @@ export default function VerifyOtp() {
         email: state.email,
         grant_type: 'otp',
         otp: data.otp,
-        role: 'coach',
+        role: state.role,
       }).unwrap();
       setTokens(result);
-      navigate(ROUTES.DASHBOARD, {replace: true});
+
+      // Signup flow → register business; Login flow → dashboard
+      const destination = state.role === 'guest' ? ROUTES.REGISTER_BUSINESS : ROUTES.DASHBOARD;
+      navigate(destination, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Invalid code. Please try again.', setError);
       reset({otp: ''});

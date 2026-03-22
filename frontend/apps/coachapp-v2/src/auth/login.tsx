@@ -32,7 +32,7 @@ export default function Login() {
     try {
       await sendOtp({email: data.email, type: 'authentication'}).unwrap();
       navigate(ROUTES.VERIFY_OTP, {
-        state: {email: data.email, type: 'authentication'},
+        state: {email: data.email, type: 'authentication', role: 'coach'},
       });
     } catch (err) {
       applyFormErrors(err, 'Failed to send verification code. Please try again.', setError);

@@ -4,15 +4,20 @@ import {ROUTES} from '@/@config/routes';
 import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
 import Login from '@/auth/login';
+import RegisterBusiness from '@/auth/register-business';
 import Signup from '@/auth/signup';
 import VerifyOtp from '@/auth/verify-otp';
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
 const SignupScreen = withNotAuth(Signup);
-const VerifyOtpScreen = withNotAuth(VerifyOtp);
 
-// Protected screens — placeholder until features are built
+// Semi-public: needs a token (from OTP) but not full auth redirect
+// VerifyOtp handles its own guard (redirects to /login if no email in state)
+// RegisterBusiness requires a guest token from signup OTP flow
+
+// Protected screens
+const RegisterBusinessScreen = withAuth(RegisterBusiness);
 const DashboardScreen = withAuth(function Dashboard() {
   return <p className="p-4">Dashboard — you are logged in.</p>;
 });
@@ -30,11 +35,15 @@ export default function App() {
         path={ROUTES.SIGNUP}
       />
       <Route
-        element={<VerifyOtpScreen />}
+        element={<VerifyOtp />}
         path={ROUTES.VERIFY_OTP}
       />
 
       {/* Protected */}
+      <Route
+        element={<RegisterBusinessScreen />}
+        path={ROUTES.REGISTER_BUSINESS}
+      />
       <Route
         element={<DashboardScreen />}
         path={ROUTES.DASHBOARD}

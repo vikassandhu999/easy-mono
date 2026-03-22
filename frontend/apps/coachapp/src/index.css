@@ -2,12 +2,12 @@
 @import "@heroui/styles";
 
 .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .scrollbar-hidden {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Hide Chrome's translation and suggestion UI */
@@ -16,14 +16,14 @@
 .chrome-search-suggestion,
 .translate-infobar,
 .goog-te-gadget {
-    display: none !important;
+  display: none !important;
 }
 
 /* Hide Google Translate widget completely */
 #google_translate_element {
-    display: none !important;
+  display: none !important;
 }
 
 body {
-    background-color: var(--color-background);
+  background-color: var(--color-background);
 }

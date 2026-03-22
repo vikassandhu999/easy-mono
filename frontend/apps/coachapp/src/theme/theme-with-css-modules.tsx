@@ -82,12 +82,30 @@ export const theme = createTheme({
     fontFamily: 'var(--mantine-font-family-headings)',
     fontWeight: '600',
     sizes: {
-      h1: {fontSize: 'var(--ce-font-size-display)', lineHeight: 'var(--ce-line-height-display)'},
-      h2: {fontSize: 'var(--ce-font-size-h1)', lineHeight: 'var(--ce-line-height-h1)'},
-      h3: {fontSize: 'var(--ce-font-size-h2)', lineHeight: 'var(--ce-line-height-h2)'},
-      h4: {fontSize: 'var(--ce-font-size-h3)', lineHeight: 'var(--ce-line-height-h3)'},
-      h5: {fontSize: 'var(--ce-font-size-h4)', lineHeight: 'var(--ce-line-height-h4)'},
-      h6: {fontSize: 'var(--ce-font-size-h5)', lineHeight: 'var(--ce-line-height-h5)'},
+      h1: {
+        fontSize: 'var(--ce-font-size-display)',
+        lineHeight: 'var(--ce-line-height-display)',
+      },
+      h2: {
+        fontSize: 'var(--ce-font-size-h1)',
+        lineHeight: 'var(--ce-line-height-h1)',
+      },
+      h3: {
+        fontSize: 'var(--ce-font-size-h2)',
+        lineHeight: 'var(--ce-line-height-h2)',
+      },
+      h4: {
+        fontSize: 'var(--ce-font-size-h3)',
+        lineHeight: 'var(--ce-line-height-h3)',
+      },
+      h5: {
+        fontSize: 'var(--ce-font-size-h4)',
+        lineHeight: 'var(--ce-line-height-h4)',
+      },
+      h6: {
+        fontSize: 'var(--ce-font-size-h5)',
+        lineHeight: 'var(--ce-line-height-h5)',
+      },
     },
   },
 

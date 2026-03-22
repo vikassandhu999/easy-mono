@@ -65,7 +65,11 @@ export function getContentDisplayInfo(content: Content) {
       const definition = content.recipe_definition;
       const calories = definition?.nutrition_per_serving?.calories || 0;
       return {
-        badges: definition?.diet_types?.map((diet) => ({color: 'green', label: diet})) || [],
+        badges:
+          definition?.diet_types?.map((diet) => ({
+            color: 'green',
+            label: diet,
+          })) || [],
         description: content.description || undefined,
         secondaryInfo: [
           `${calories} cal`,

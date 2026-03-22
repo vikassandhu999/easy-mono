@@ -1,7 +1,9 @@
 /* UserInfo component styles based on Encore patterns */
 
 .userInfo {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   background-color: var(--mantine-color-dark-7);
   border: 1px solid var(--mantine-color-dark-5);
   border-radius: 8px;
@@ -9,7 +11,7 @@
   cursor: pointer;
   transition: all 0.1s ease-in-out;
   width: 100%;
-  
+
   display: flex;
   align-items: center;
   gap: 12px;
@@ -33,7 +35,11 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--mantine-color-primary-6), var(--mantine-color-secondary-6));
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-primary-6),
+    var(--mantine-color-secondary-6)
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -91,27 +97,29 @@
 }
 
 .menuItem {
-  font-family: CircularSp, var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-family:
+    CircularSp,
+    var(--fallback-fonts, -apple-system, BlinkMacSystemFont, sans-serif);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.43;
-  
+
   background-color: transparent;
   border: none;
   border-radius: 6px;
   color: var(--mantine-color-dark-2);
-  
+
   padding: 12px;
   margin: 0;
-  
+
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   cursor: pointer;
   text-decoration: none;
   width: 100%;
-  
+
   transition: all 0.1s ease-in-out;
 }
 

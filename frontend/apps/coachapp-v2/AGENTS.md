@@ -1,13 +1,218 @@
+# CoachApp V2
+
 ## Stack
 
-Vite + React 19 + TypeScript (strict) | HeroUI 3.0.0-beta + Tailwind v4 | Redux Toolkit + RTK Query | react-hook-form + zod | React Router (file-based routing)
+Vite + React 19 + TypeScript (strict) | HeroUI v3 + Tailwind CSS v4 | Redux Toolkit + RTK Query | react-hook-form + zod | react-router v7
 
 ## Commands
 
 ```sh
-pnpm -C apps/coachapp-v2 dev
-pnpm -C apps/coachapp-v2 build
-pnpm -C apps/coachapp-v2 lint
+pnpm -C apps/coachapp-v2 dev        # port 2021
+pnpm -C apps/coachapp-v2 build      # tsc --noEmit && vite build
+pnpm -C apps/coachapp-v2 lint       # eslint --fix
 ```
 
-**MUST run `build` after changes.** TypeScript errors = build failures.
+**MUST run `build` after every change.** TypeScript errors = build failures.
+
+---
+
+## Architecture
+
+Adapted from the v3-nblik reference architecture. Two kinds of folders: **feature modules** (own their UI + logic) and **`@`-prefixed shared folders** (cross-cutting infrastructure).
+
+```
+src/
+├── api/                          # HTTP / data layer (RTK Query)
+│   ├── base.ts                   #   createApi + reauth middleware
+│   ├── shared.ts                 #   Response types, error helpers
+│   ├── authStorage.ts            #   Token localStorage helpers
+│   ├── auth.ts                   #   Auth endpoints
+│   ├── clients.ts                #   Client endpoints
+│   ├── exercises.ts              #   Exercise endpoints
+│   ├── foods.ts                  #   Food endpoints
+│   ├── recipes.ts                #   Recipe endpoints
+│   ├── meals.ts                  #   Meal endpoints
+│   ├── nutritionPlans.ts         #   Nutrition plan endpoints
+│   ├── trainingPlans.ts          #   Training plan endpoints
+│   ├── coach.ts                  #   Coach endpoints
+│   └── business.ts               #   Business endpoints
+│
+├── @components/                  # Shared UI components (used by 2+ features)
+├── @hoc/                         # Higher-order components
+│   ├── with-auth.tsx             #   Redirects to /login if no token
+│   └── with-not-auth.tsx         #   Redirects away from auth pages if logged in
+├── @config/                      # App-wide configuration
+│   └── routes.ts                 #   Route path constants
+│
+├── auth/                         # Auth feature module
+│   └── components/
+├── dashboard/                    # Dashboard feature module
+│   └── components/
+├── clients/                      # Clients feature module
+│   └── components/
+├── exercises/                    # Exercises feature module
+│   └── components/
+├── foods/                        # Foods feature module
+│   └── components/
+├── recipes/                      # Recipes feature module
+│   └── components/
+├── nutrition-plans/              # Nutrition plans feature module
+│   └── components/
+├── training-plans/               # Training plans feature module
+│   └── components/
+├── settings/                     # Settings feature module
+│   └── components/
+│
+├── App.tsx                       # All routes — imports feature screens
+├── main.tsx                      # Entry: providers + BrowserRouter
+├── store.ts                      # Redux store
+└── index.css                     # Tailwind + HeroUI
+```
+
+---
+
+## How It Works
+
+### Feature Modules (`src/{feature}/`)
+
+Each feature owns everything it needs:
+
+```
+src/clients/
+├── components/                   # UI pieces specific to this feature
+│   ├── client-card.tsx
+│   └── invite-client-form.tsx
+├── list-clients.tsx              # Screen: lists all clients
+├── client-detail.tsx             # Screen: single client view
+└── edit-client.tsx               # Screen: edit client form
+```
+
+- **Screen files** sit at the root of the feature folder. These are the entry points that `App.tsx` imports.
+- **`components/`** holds UI pieces specific to this feature. If a component is only used by one screen, it can also live right in the screen file.
+- Screen files call RTK Query hooks, handle loading/error, compose components.
+- Feature modules import from `@/api/*` for data, from `@/@components/*` for shared UI, and from their own `./components/*`. They never import from other feature modules.
+
+### `@`-Prefixed Shared Folders
+
+The `@` prefix visually separates infrastructure from features when scanning `src/`:
+
+| Folder         | Purpose                                                          |
+| -------------- | ---------------------------------------------------------------- |
+| `api/`         | All RTK Query endpoint definitions + types. One file per domain. |
+| `@components/` | UI components shared across 2+ features.                         |
+| `@hoc/`        | `withAuth` and `withNotAuth` route protection HOCs.              |
+| `@config/`     | App-wide constants (routes, etc).                                |
+
+### `App.tsx` — Route Assembly
+
+`App.tsx` is the single source of truth for routing. It imports screen components from features and wraps them with `withAuth`/`withNotAuth`:
+
+```tsx
+import { withAuth } from "@/@hoc/with-auth";
+import ListClients from "@/clients/list-clients";
+
+const ClientsScreen = withAuth(ListClients);
+
+// In routes:
+<Route element={<ClientsScreen />} path={ROUTES.CLIENTS} />;
+```
+
+This mirrors v3-nblik's thin `pages/` layer: `App.tsx` does zero business logic — it only assembles features into routes.
+
+---
+
+## Rules
+
+### Where does new code go?
+
+| You're building...                   | Put it in...                                                       |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| A new screen for an existing feature | `src/{feature}/screen-name.tsx`                                    |
+| A component used by one feature      | `src/{feature}/components/component-name.tsx`                      |
+| A component used by 2+ features      | `src/@components/component-name.tsx`                               |
+| A new API endpoint                   | The matching file in `src/api/`. New domain = new file.            |
+| A new feature entirely               | New folder at `src/{feature}/` with `components/` inside.          |
+| A form                               | In the feature's `components/` folder. Uses react-hook-form + zod. |
+| A new route                          | Add to `App.tsx` + add path to `@config/routes.ts`.                |
+| An HOC or guard                      | `src/@hoc/`                                                        |
+
+### Naming
+
+- **Feature screen files**: `kebab-case` describing the action — `list-clients.tsx`, `create-exercise.tsx`, `client-detail.tsx`, `edit-recipe.tsx`.
+- **Component files**: `kebab-case` — `client-card.tsx`, `invite-client-form.tsx`.
+- **API files**: `camelCase` matching the domain — `nutritionPlans.ts`, `trainingPlans.ts`.
+
+### Data Flow
+
+```
+App.tsx route → Feature screen → RTK Query hook (from api/) → Component (via props)
+```
+
+- Screens call RTK Query hooks. Components receive data via props.
+- Exception: Form components may call mutation hooks directly.
+
+### Forms
+
+- `react-hook-form` + `zod` schema defined in the same file as the form.
+- Form component calls the RTK Query mutation in its own `onSubmit`.
+- Forms live in `{feature}/components/`.
+
+### Imports
+
+Direct file paths. No barrel files. No re-exports.
+
+```tsx
+import { useListClientsQuery } from "@/api/clients";
+import { withAuth } from "@/@hoc/with-auth";
+import ClientCard from "@/clients/components/client-card";
+import { ROUTES } from "@/@config/routes";
+```
+
+### Don'ts
+
+- Don't create `index.ts` barrel files.
+- Don't import across features (clients/ must not import from exercises/).
+- Don't use `useEffect` for data fetching — RTK Query handles it.
+- Don't store server state in React state — it lives in RTK Query cache.
+- Don't use `any`. Use `unknown` and narrow.
+- Don't create new CSS files. Tailwind classes only.
+- Don't use `window.location` for navigation. Use react-router.
+- Don't put types in separate files. Types live next to the code that uses them (API types in `api/*.ts`, component props inline).
+
+---
+
+## Design Rules — Mobile First
+
+This app MUST work on both mobile (375px) and desktop (1280px). **Design for mobile first, derive desktop from it.**
+
+Load the `mobile-first-design` skill for full patterns and code examples.
+
+### Container Decision (non-negotiable)
+
+Before building any action, input, or information display — choose the container for mobile:
+
+1. **Does it involve a text input / keyboard?**
+   - YES, 1 field that fits in the current view → **INLINE**
+   - YES, 2+ fields or search+select → **NEW PAGE**
+2. **No keyboard involved?**
+   - Simple yes/no confirmation → **DIALOG**
+   - Read-only preview or tap-only selection → **DRAWER** (bottom sheet)
+   - Complex or multi-step → **NEW PAGE**
+   - Everything else → **INLINE**
+
+**The Keyboard Rule: If the virtual keyboard will open, the container MUST be INLINE or a NEW PAGE. Never a dialog, modal, or drawer.**
+
+Desktop derives from mobile: INLINE stays INLINE (wider), DIALOG stays DIALOG, DRAWER becomes DRAWER or POPOVER, NEW PAGE stays NEW PAGE.
+
+### Styling
+
+- Base Tailwind classes = mobile. Breakpoint prefixes (`sm:`, `md:`, `lg:`) enhance for larger screens.
+- Touch targets: `min-h-11` (44px) on every interactive element.
+- No hover-only interactions.
+- Tables → cards on mobile (`lg:hidden` / `hidden lg:block`).
+- Forms single-column by default, `md:grid-cols-2` for wider screens.
+- Spacing scales: `p-4 md:p-6 lg:p-8`.
+
+### Verification
+
+Every screen must be visually verified at **375px** and **1280px**. Breakage at either = bug.

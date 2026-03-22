@@ -191,7 +191,13 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
           >
             <TrashIcon size={20} />
           </ActionIcon>
-          <div style={{width: 1, height: 24, background: 'var(--mantine-color-gray-3)'}} />
+          <div
+            style={{
+              width: 1,
+              height: 24,
+              background: 'var(--mantine-color-gray-3)',
+            }}
+          />
           <ActionIcon
             aria-label="Close"
             onClick={onClose}
@@ -222,7 +228,14 @@ const SetConfigModal = ({opened, onClose, exerciseName, initialSets, onSave, onD
                 >
                   <div className={classes.setNumber}>{index + 1}</div>
 
-                  <div style={{flex: 1, display: 'flex', gap: '8px', alignItems: 'center'}}>
+                  <div
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      gap: '8px',
+                      alignItems: 'center',
+                    }}
+                  >
                     <Controller
                       control={control}
                       name={`sets.${index}.target_reps`}

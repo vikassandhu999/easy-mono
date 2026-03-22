@@ -29,6 +29,7 @@ services/
 ### Base API Configuration
 
 All services extend from `baseAPISlice.ts` which provides:
+
 - Axios instance configuration
 - Base URL resolution
 - Authentication token management
@@ -52,9 +53,9 @@ service-name/
 
 ```typescript
 // Import hooks and types from service modules
-import { useLoginMutation, useGetUserQuery } from '@/services/auth';
-import { useListClientsQuery } from '@/services/clients';
-import { Plan, useGetPlanQuery } from '@/services/plans';
+import { useLoginMutation, useGetUserQuery } from "@/services/auth";
+import { useListClientsQuery } from "@/services/clients";
+import { Plan, useGetPlanQuery } from "@/services/plans";
 ```
 
 ### 2. Using Query Hooks (GET requests)
@@ -68,7 +69,7 @@ function MyComponent() {
   const { data: clients } = useListClientsQuery({
     page: 1,
     limit: 10,
-    search: 'john'
+    search: "john",
   });
 
   // Conditional fetching
@@ -88,14 +89,14 @@ function LoginForm() {
     try {
       const result = await login({
         email: credentials.email,
-        password: credentials.password
+        password: credentials.password,
       }).unwrap();
 
       // Handle success
-      console.log('Login successful:', result);
+      console.log("Login successful:", result);
     } catch (err) {
       // Handle error
-      console.error('Login failed:', err);
+      console.error("Login failed:", err);
     }
   };
 }
@@ -109,23 +110,24 @@ RTK Query automatically caches responses. You can invalidate caches using tags:
 // In your API definition
 endpoints: (builder) => ({
   getClients: builder.query({
-    query: () => '/clients',
-    providesTags: ['Clients']
+    query: () => "/clients",
+    providesTags: ["Clients"],
   }),
   addClient: builder.mutation({
     query: (client) => ({
-      url: '/clients',
-      method: 'POST',
-      data: client
+      url: "/clients",
+      method: "POST",
+      data: client,
     }),
-    invalidatesTags: ['Clients'] // Refetch clients after adding
-  })
-})
+    invalidatesTags: ["Clients"], // Refetch clients after adding
+  }),
+});
 ```
 
 ## Service Modules
 
 ### Auth Service (`/auth`)
+
 - **Purpose**: Handle authentication, registration, and token management
 - **Key Endpoints**:
   - `login`: User login
@@ -136,6 +138,7 @@ endpoints: (builder) => ({
   - `resetPassword`: Password reset
 
 ### Clients Service (`/clients`)
+
 - **Purpose**: Manage coach-client relationships
 - **Key Endpoints**:
   - `listClients`: Get all clients
@@ -145,6 +148,7 @@ endpoints: (builder) => ({
   - `deleteClient`: Remove client
 
 ### Plans Service (`/plans`)
+
 - **Purpose**: Manage training and nutrition plans
 - **Key Endpoints**:
   - `listPlans`: Get all plans
@@ -155,6 +159,7 @@ endpoints: (builder) => ({
   - `deletePlan`: Remove plan
 
 ### Contents Service (`/contents`)
+
 - **Purpose**: Manage exercises, meals, and other content
 - **Key Endpoints**:
   - `listContents`: Get content library
@@ -164,6 +169,7 @@ endpoints: (builder) => ({
   - `searchContent`: Search content
 
 ### Session Service (`/session`)
+
 - **Purpose**: Manage individual workout/meal sessions
 - **Key Endpoints**:
   - `listSessions`: Get all sessions
@@ -173,6 +179,7 @@ endpoints: (builder) => ({
   - `deleteSession`: Remove session
 
 ### Chats Service (`/chats`)
+
 - **Purpose**: Handle messaging between coach and clients
 - **Key Endpoints**:
   - `listChats`: Get chat conversations
@@ -187,12 +194,12 @@ endpoints: (builder) => ({
 Always use TypeScript definitions from `*_definition.ts` files:
 
 ```typescript
-import type { Plan, PlanCreateRequest } from '@/services/plans';
+import type { Plan, PlanCreateRequest } from "@/services/plans";
 
 const newPlan: PlanCreateRequest = {
-  name: 'Beginner Workout',
-  discipline: 'workout',
-  duration: 4
+  name: "Beginner Workout",
+  discipline: "workout",
+  duration: 4,
 };
 ```
 
@@ -235,7 +242,7 @@ For real-time data:
 ```typescript
 // Poll every 30 seconds
 const { data } = useGetMessagesQuery(chatId, {
-  pollingInterval: 30000
+  pollingInterval: 30000,
 });
 
 // Manual refetch
@@ -250,6 +257,7 @@ To add a new service:
 1. Create a new folder: `services/your-service/`
 
 2. Create type definitions: `your-service_definition.ts`
+
 ```typescript
 export interface YourModel {
   id: string;
@@ -264,35 +272,35 @@ export interface YourModelRequest {
 ```
 
 3. Create API endpoints: `your-service.ts`
+
 ```typescript
-import { baseAPISlice } from '../baseAPISlice';
-import type { YourModel, YourModelRequest } from './your-service_definition';
+import { baseAPISlice } from "../baseAPISlice";
+import type { YourModel, YourModelRequest } from "./your-service_definition";
 
 export const yourServiceApi = baseAPISlice.injectEndpoints({
   endpoints: (builder) => ({
     listYourModels: builder.query<YourModel[], void>({
-      query: () => '/api/your-models',
+      query: () => "/api/your-models",
     }),
     createYourModel: builder.mutation<YourModel, YourModelRequest>({
       query: (data) => ({
-        url: '/api/your-models',
-        method: 'POST',
+        url: "/api/your-models",
+        method: "POST",
         data,
       }),
     }),
   }),
 });
 
-export const {
-  useListYourModelsQuery,
-  useCreateYourModelMutation
-} = yourServiceApi;
+export const { useListYourModelsQuery, useCreateYourModelMutation } =
+  yourServiceApi;
 ```
 
 4. Create index file: `index.ts`
+
 ```typescript
-export * from './your-service';
-export * from './your-service_definition';
+export * from "./your-service";
+export * from "./your-service_definition";
 ```
 
 ## Authentication Token Management
@@ -301,7 +309,7 @@ The base API slice handles authentication automatically:
 
 ```typescript
 // Set token after login
-import { setApiAuthToken } from '@/services/baseAPISlice';
+import { setApiAuthToken } from "@/services/baseAPISlice";
 
 const handleLogin = async (credentials) => {
   const { access_token } = await login(credentials);
@@ -346,10 +354,10 @@ const { data, isLoading } = useListClientsQuery({
 ```typescript
 const { data } = useListPlansQuery({
   search: searchTerm,
-  discipline: 'workout',
-  status: 'active',
-  sortBy: 'created_at',
-  sortOrder: 'desc'
+  discipline: "workout",
+  status: "active",
+  sortBy: "created_at",
+  sortOrder: "desc",
 });
 ```
 
@@ -360,7 +368,7 @@ const [uploadFile] = useUploadFileMutation();
 
 const handleFileUpload = async (file: File) => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
   const result = await uploadFile(formData).unwrap();
 };
@@ -369,20 +377,25 @@ const handleFileUpload = async (file: File) => {
 ## Troubleshooting
 
 ### Issue: Query not refetching after mutation
+
 **Solution**: Ensure proper cache tags are configured in both query and mutation endpoints.
 
 ### Issue: Authentication token not being sent
+
 **Solution**: Check if `skipAuth` is not set to `true` and token is properly set using `setApiAuthToken`.
 
 ### Issue: CORS errors
+
 **Solution**: Verify `withCredentials: true` is set in axios config and backend CORS settings are correct.
 
 ### Issue: Type errors in TypeScript
+
 **Solution**: Ensure you're importing types from the correct `*_definition.ts` files.
 
 ## Support
 
 For questions or issues related to services:
+
 1. Check the specific service's `*_definition.ts` file for available types
 2. Review the endpoint definitions in the service's main file
 3. Consult the RTK Query documentation: https://redux-toolkit.js.org/rtk-query/overview

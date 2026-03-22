@@ -1,35 +1,35 @@
-import { ReactNode } from 'react';
+import {ReactNode} from 'react';
 
 export type DayKey = string;
-export type FilterKind = 'all' | 'training' | 'nutrition';
+export type FilterKind = 'all' | 'nutrition' | 'training';
 
 export type CompletionState = 'completed' | 'in_progress' | 'not_started' | string | undefined;
 
 export interface ScheduleEntity {
-  planned_workout_id?: string;
   [key: string]: unknown;
+  planned_workout_id?: string;
 }
 
 export interface ScheduleItem {
-  id?: string;
-  kind?: 'training' | 'nutrition' | string;
-  title?: string;
-  subtitle?: string | null;
-  status?: string;
-  date?: string;
-  time?: string;
+  completion?: undefined | {state?: CompletionState};
   cta?: string;
+  date?: string;
   entity?: ScheduleEntity;
-  completion?: { state?: CompletionState } | undefined;
+  id?: string;
+  kind?: 'nutrition' | 'training' | string;
+  status?: string;
+  subtitle?: null | string;
+  time?: string;
+  title?: string;
 }
 
 export interface NormalizedDay {
-  key: DayKey;
-  header: string;
+  completedCount: number;
   fullHeader: string;
+  header: string;
   isToday: boolean;
   items: ScheduleItem[];
-  completedCount: number;
+  key: DayKey;
   totalCount: number;
 }
 

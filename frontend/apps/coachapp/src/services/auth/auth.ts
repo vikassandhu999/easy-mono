@@ -1,4 +1,4 @@
-import { baseAPISlice } from "../baseAPISlice";
+import {baseAPISlice} from '../baseAPISlice';
 import {
   type AuthTokenResponse,
   type MessageResponse,
@@ -9,7 +9,7 @@ import {
   type TokenRefreshRequest,
   type VerifyOtpRequest,
   type VerifyTokenRequest,
-} from "./auth_definition";
+} from './auth_definition';
 
 export const authApi = baseAPISlice.injectEndpoints({
   endpoints: (build) => ({
@@ -19,8 +19,8 @@ export const authApi = baseAPISlice.injectEndpoints({
      */
     signup: build.mutation<SignupResponse, SignupRequest>({
       query: (body) => ({
-        url: "/v1/auth/signup",
-        method: "post",
+        url: '/v1/auth/signup',
+        method: 'post',
         data: body,
       }),
     }),
@@ -31,8 +31,8 @@ export const authApi = baseAPISlice.injectEndpoints({
      */
     sendOtp: build.mutation<MessageResponse, SendOtpRequest>({
       query: (body) => ({
-        url: "/v1/auth/otp",
-        method: "post",
+        url: '/v1/auth/otp',
+        method: 'post',
         data: body,
       }),
     }),
@@ -42,13 +42,10 @@ export const authApi = baseAPISlice.injectEndpoints({
      * Verify a token (email confirmation link) or OTP.
      * Accepts either { token } or { email, otp }.
      */
-    verify: build.mutation<
-      AuthTokenResponse,
-      VerifyTokenRequest | VerifyOtpRequest
-    >({
+    verify: build.mutation<AuthTokenResponse, VerifyOtpRequest | VerifyTokenRequest>({
       query: (body) => ({
-        url: "/v1/auth/verify",
-        method: "post",
+        url: '/v1/auth/verify',
+        method: 'post',
         data: body,
       }),
     }),
@@ -59,13 +56,10 @@ export const authApi = baseAPISlice.injectEndpoints({
      * Accepts either TokenOtpRequest (grant_type: "otp") or
      * TokenRefreshRequest (grant_type: "refresh_token").
      */
-    exchangeToken: build.mutation<
-      AuthTokenResponse,
-      TokenOtpRequest | TokenRefreshRequest
-    >({
+    exchangeToken: build.mutation<AuthTokenResponse, TokenOtpRequest | TokenRefreshRequest>({
       query: (body) => ({
-        url: "/v1/auth/token",
-        method: "post",
+        url: '/v1/auth/token',
+        method: 'post',
         data: body,
       }),
     }),
@@ -73,9 +67,4 @@ export const authApi = baseAPISlice.injectEndpoints({
   overrideExisting: false,
 });
 
-export const {
-  useExchangeTokenMutation,
-  useSendOtpMutation,
-  useSignupMutation,
-  useVerifyMutation,
-} = authApi;
+export const {useExchangeTokenMutation, useSendOtpMutation, useSignupMutation, useVerifyMutation} = authApi;

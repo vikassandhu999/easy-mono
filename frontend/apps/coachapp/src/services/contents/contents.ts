@@ -79,7 +79,13 @@ export const contentsApi = baseAPISlice.injectEndpoints({
           return baseTag;
         }
 
-        return [...records.map((content) => ({type: 'Contents' as const, id: content.id})), ...baseTag];
+        return [
+          ...records.map((content) => ({
+            type: 'Contents' as const,
+            id: content.id,
+          })),
+          ...baseTag,
+        ];
       },
       infiniteQueryOptions: {
         initialPageParam: 1,

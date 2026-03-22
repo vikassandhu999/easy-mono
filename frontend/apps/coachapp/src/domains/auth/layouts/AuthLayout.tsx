@@ -6,7 +6,7 @@ import useScreenSize from '@/hooks/useScreenSize';
 import TextLogo from '@/shared/TextLogo/TextLogo';
 
 // eslint-disable-next-line prettier/prettier, import/no-absolute-path
-import AuthIllustration from '/auth-background.png';
+import AuthIllustration from "/auth-background.png";
 
 interface AuthLayoutProps extends PropsWithChildren {
   illustrationAlt?: string;

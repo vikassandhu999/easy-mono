@@ -56,7 +56,17 @@ export const LEGAL_LINKS: LegalLink[] = [
 ];
 
 export const ACTION_GRID_CONFIG: ActionGridConfig = [
-  {id: 'coach_profile', label: 'My Profile', icon: IconChalkboard, color: 'blue'},
+  {
+    id: 'coach_profile',
+    label: 'My Profile',
+    icon: IconChalkboard,
+    color: 'blue',
+  },
   {id: 'business', label: 'Business', icon: IconBuilding, color: 'green'},
-  {id: 'subscription', label: 'Subscription', icon: IconCreditCard, color: 'violet'},
+  {
+    id: 'subscription',
+    label: 'Subscription',
+    icon: IconCreditCard,
+    color: 'violet',
+  },
 ];

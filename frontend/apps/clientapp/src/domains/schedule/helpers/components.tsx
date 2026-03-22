@@ -26,31 +26,69 @@ import {
   IconTrophy,
 } from '@tabler/icons-react';
 
-import { completionColor, completionLabel, getCtaLabel } from './status';
-import { KindIcon } from './icons';
-import type { CompletionState, FilterKind, ScheduleItem, WeeklyStats } from './types';
+import type {CompletionState, FilterKind, ScheduleItem, WeeklyStats} from './types';
 
-
-
+import {KindIcon} from './icons';
+import {completionColor, completionLabel, getCtaLabel} from './status';
 
 export function ScheduleSkeleton() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <Skeleton height={24} width={200} radius="md" animate />
-        <Skeleton height={36} width={250} radius="md" animate />
+        <Skeleton
+          animate
+          height={24}
+          radius="md"
+          width={200}
+        />
+        <Skeleton
+          animate
+          height={36}
+          radius="md"
+          width={250}
+        />
       </Group>
-      <Skeleton height={14} width={180} radius="sm" animate />
-      <Group gap="xs" mt="sm">
+      <Skeleton
+        animate
+        height={14}
+        radius="sm"
+        width={180}
+      />
+      <Group
+        gap="xs"
+        mt="sm"
+      >
         {[...Array(7)].map((_, i) => (
-          <Skeleton key={i} height={48} width={72} radius="md" animate />
+          <Skeleton
+            animate
+            height={48}
+            key={i}
+            radius="md"
+            width={72}
+          />
         ))}
       </Group>
-      <Card withBorder radius="md" p="md" mt="md">
-        <Skeleton height={20} width={120} mb="md" radius="sm" animate />
+      <Card
+        mt="md"
+        p="md"
+        radius="md"
+        withBorder
+      >
+        <Skeleton
+          animate
+          height={20}
+          mb="md"
+          radius="sm"
+          width={120}
+        />
         <Stack gap="sm">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} height={88} radius="md" animate />
+            <Skeleton
+              animate
+              height={88}
+              key={i}
+              radius="md"
+            />
           ))}
         </Stack>
       </Card>
@@ -63,7 +101,7 @@ interface EmptyDayStateProps {
   isToday?: boolean;
 }
 
-export function EmptyDayState({ filter, isToday = false }: EmptyDayStateProps) {
+export function EmptyDayState({filter, isToday = false}: EmptyDayStateProps) {
   const getContent = () => {
     if (isToday) {
       if (filter === 'all') {
@@ -93,12 +131,7 @@ export function EmptyDayState({ filter, isToday = false }: EmptyDayStateProps) {
     // Future/past day
     return {
       icon: <IconCalendarOff size={32} />,
-      title:
-        filter === 'all'
-          ? 'Nothing scheduled'
-          : filter === 'training'
-            ? 'No workouts'
-            : 'No meals',
+      title: filter === 'all' ? 'Nothing scheduled' : filter === 'training' ? 'No workouts' : 'No meals',
       subtitle: 'Check other days or add something new.',
       color: 'gray',
     };
@@ -107,16 +140,35 @@ export function EmptyDayState({ filter, isToday = false }: EmptyDayStateProps) {
   const content = getContent();
 
   return (
-    <Card withBorder radius="md" p="xl" style={{ textAlign: 'center' }}>
-      <Stack align="center" gap="md">
-        <ThemeIcon size={64} radius="xl" variant="light" color={content.color}>
+    <Card
+      p="xl"
+      radius="md"
+      style={{textAlign: 'center'}}
+      withBorder
+    >
+      <Stack
+        align="center"
+        gap="md"
+      >
+        <ThemeIcon
+          color={content.color}
+          radius="xl"
+          size={64}
+          variant="light"
+        >
           {content.icon}
         </ThemeIcon>
         <Stack gap={4}>
-          <Text fw={600} size="md">
+          <Text
+            fw={600}
+            size="md"
+          >
             {content.title}
           </Text>
-          <Text c="dimmed" size="sm">
+          <Text
+            c="dimmed"
+            size="sm"
+          >
             {content.subtitle}
           </Text>
         </Stack>
@@ -129,7 +181,7 @@ interface WeeklySummaryProps extends WeeklyStats {
   streak?: number;
 }
 
-export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryProps) {
+export function WeeklySummary({completed, total, streak = 0}: WeeklySummaryProps) {
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
   const isComplete = percentage === 100;
   const theme = useMantineTheme();
@@ -145,10 +197,9 @@ export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryPro
 
   return (
     <Card
-      withBorder
-      radius="md"
-      p="md"
       mb="md"
+      p="md"
+      radius="md"
       style={{
         background: isComplete
           ? `linear-gradient(135deg, ${theme.colors.green[0]} 0%, ${theme.colors.teal[0]} 100%)`
@@ -156,12 +207,34 @@ export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryPro
         borderColor: isComplete ? theme.colors.green[4] : undefined,
         transition: 'all 0.3s ease',
       }}
+      withBorder
     >
-      <Group justify="space-between" align="center">
+      <Group
+        align="center"
+        justify="space-between"
+      >
         <Group gap="md">
           <RingProgress
-            size={60}
-            thickness={6}
+            label={
+              isComplete ? (
+                <ThemeIcon
+                  color="green"
+                  radius="xl"
+                  size="lg"
+                  variant="light"
+                >
+                  <IconCheck size={18} />
+                </ThemeIcon>
+              ) : (
+                <Text
+                  fw={700}
+                  size="xs"
+                  ta="center"
+                >
+                  {percentage}%
+                </Text>
+              )
+            }
             roundCaps
             sections={[
               {
@@ -169,38 +242,42 @@ export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryPro
                 color: isComplete ? 'green' : percentage > 50 ? 'teal' : 'blue',
               },
             ]}
-            label={
-              isComplete ? (
-                <ThemeIcon color="green" variant="light" radius="xl" size="lg">
-                  <IconCheck size={18} />
-                </ThemeIcon>
-              ) : (
-                <Text size="xs" ta="center" fw={700}>
-                  {percentage}%
-                </Text>
-              )
-            }
+            size={60}
+            thickness={6}
           />
           <Stack gap={2}>
-            <Text size="sm" fw={600}>
+            <Text
+              fw={600}
+              size="sm"
+            >
               Weekly Progress
             </Text>
-            <Text size="xs" c="dimmed">
+            <Text
+              c="dimmed"
+              size="xs"
+            >
               {completed} of {total} completed
             </Text>
-            <Text size="xs" c={isComplete ? 'green' : 'blue'} fw={500}>
+            <Text
+              c={isComplete ? 'green' : 'blue'}
+              fw={500}
+              size="xs"
+            >
               {getMotivationalText()}
             </Text>
           </Stack>
         </Group>
 
-        <Stack gap="xs" align="flex-end">
+        <Stack
+          align="flex-end"
+          gap="xs"
+        >
           {isComplete && (
             <Badge
               color="green"
-              variant="filled"
-              size="lg"
               leftSection={<IconTrophy size={14} />}
+              size="lg"
+              variant="filled"
             >
               Week Complete!
             </Badge>
@@ -208,9 +285,9 @@ export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryPro
           {streak > 0 && (
             <Badge
               color="orange"
-              variant="light"
-              size="sm"
               leftSection={<IconFlame size={12} />}
+              size="sm"
+              variant="light"
             >
               {streak} day streak
             </Badge>
@@ -223,31 +300,40 @@ export function WeeklySummary({ completed, total, streak = 0 }: WeeklySummaryPro
 
 interface DayTabBadgeProps {
   completed: number;
-  total: number;
   isToday?: boolean;
+  total: number;
 }
 
-export function DayTabBadge({ completed, total, isToday = false }: DayTabBadgeProps) {
+export function DayTabBadge({completed, total, isToday = false}: DayTabBadgeProps) {
   if (total === 0) return null;
 
   const percentage = Math.round((completed / total) * 100);
   const isComplete = completed === total;
 
   return (
-    <Group gap={4} wrap="nowrap">
-      <Text size="xs" c={isComplete ? 'green' : 'dimmed'}>
+    <Group
+      gap={4}
+      wrap="nowrap"
+    >
+      <Text
+        c={isComplete ? 'green' : 'dimmed'}
+        size="xs"
+      >
         {completed}/{total}
       </Text>
       {isComplete && (
-        <IconCheck size={12} style={{ color: 'var(--mantine-color-green-6)' }} />
+        <IconCheck
+          size={12}
+          style={{color: 'var(--mantine-color-green-6)'}}
+        />
       )}
       {isToday && !isComplete && (
         <Progress
-          value={percentage}
-          size={4}
-          w={24}
           color="blue"
           radius="xl"
+          size={4}
+          value={percentage}
+          w={24}
         />
       )}
     </Group>
@@ -259,16 +345,16 @@ interface NextUpCardProps {
   onAction?: (item: ScheduleItem) => void;
 }
 
-export function NextUpCard({ item, onAction }: NextUpCardProps) {
+export function NextUpCard({item, onAction}: NextUpCardProps) {
   const theme = useMantineTheme();
   const kindColor = item.kind === 'training' ? 'blue' : 'teal';
 
   return (
     <Card
-      withBorder
-      radius="md"
-      p="md"
       mb="md"
+      onClick={() => onAction?.(item)}
+      p="md"
+      radius="md"
       style={{
         borderColor: theme.colors[kindColor][4],
         borderWidth: 2,
@@ -276,30 +362,58 @@ export function NextUpCard({ item, onAction }: NextUpCardProps) {
         cursor: 'pointer',
         transition: 'all 0.2s ease',
       }}
-      onClick={() => onAction?.(item)}
+      withBorder
     >
-      <Group justify="space-between" align="center">
+      <Group
+        align="center"
+        justify="space-between"
+      >
         <Group gap="md">
-          <ThemeIcon size={48} radius="md" variant="light" color={kindColor}>
-            <KindIcon kind={item.kind} size={24} />
+          <ThemeIcon
+            color={kindColor}
+            radius="md"
+            size={48}
+            variant="light"
+          >
+            <KindIcon
+              kind={item.kind}
+              size={24}
+            />
           </ThemeIcon>
           <Stack gap={2}>
             <Group gap="xs">
-              <Badge size="xs" variant="filled" color={kindColor}>
+              <Badge
+                color={kindColor}
+                size="xs"
+                variant="filled"
+              >
                 Up Next
               </Badge>
               {item.time && (
-                <Text size="xs" c="dimmed">
-                  <IconClock size={10} style={{ marginRight: 2 }} />
+                <Text
+                  c="dimmed"
+                  size="xs"
+                >
+                  <IconClock
+                    size={10}
+                    style={{marginRight: 2}}
+                  />
                   {item.time}
                 </Text>
               )}
             </Group>
-            <Text fw={600} size="md">
+            <Text
+              fw={600}
+              size="md"
+            >
               {item.title ?? 'Untitled'}
             </Text>
             {item.subtitle && (
-              <Text size="xs" c="dimmed" lineClamp={1}>
+              <Text
+                c="dimmed"
+                lineClamp={1}
+                size="xs"
+              >
                 {item.subtitle}
               </Text>
             )}
@@ -307,10 +421,10 @@ export function NextUpCard({ item, onAction }: NextUpCardProps) {
         </Group>
 
         <Button
-          variant="filled"
           color={kindColor}
-          size="sm"
           rightSection={<IconPlayerPlay size={16} />}
+          size="sm"
+          variant="filled"
         >
           {getCtaLabel(item.kind, item.status)}
         </Button>
@@ -324,7 +438,7 @@ interface ScheduleItemCardProps {
   onAction?: (item: ScheduleItem) => void;
 }
 
-export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
+export function ScheduleItemCard({item, onAction}: ScheduleItemCardProps) {
   const state = (item.completion?.state ?? item.status) as CompletionState;
   const isCompleted = state === 'completed';
   const isInProgress = state === 'in_progress';
@@ -346,28 +460,6 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
 
   const cardContent = (
     <Card
-      withBorder
-      radius="md"
-      p="sm"
-      style={{
-        background: isCompleted
-          ? `linear-gradient(90deg, ${theme.colors.green[0]} 0%, var(--mantine-color-body) 100%)`
-          : isInProgress
-            ? `linear-gradient(90deg, ${theme.colors.yellow[0]} 0%, var(--mantine-color-body) 100%)`
-            : 'var(--mantine-color-body)',
-        opacity: isDisabled ? 0.55 : 1,
-        borderColor: isCompleted
-          ? theme.colors.green[3]
-          : isInProgress
-            ? theme.colors.yellow[4]
-            : undefined,
-        cursor: isDisabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.2s ease',
-        transform: 'translateY(0)',
-        ...(isInProgress && {
-          animation: `${pulse} 2s ease-in-out infinite`,
-        }),
-      }}
       onClick={handleClick}
       onMouseEnter={(e) => {
         if (!isDisabled) {
@@ -379,31 +471,79 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = 'none';
       }}
+      p="sm"
+      radius="md"
+      style={{
+        background: isCompleted
+          ? `linear-gradient(90deg, ${theme.colors.green[0]} 0%, var(--mantine-color-body) 100%)`
+          : isInProgress
+            ? `linear-gradient(90deg, ${theme.colors.yellow[0]} 0%, var(--mantine-color-body) 100%)`
+            : 'var(--mantine-color-body)',
+        opacity: isDisabled ? 0.55 : 1,
+        borderColor: isCompleted ? theme.colors.green[3] : isInProgress ? theme.colors.yellow[4] : undefined,
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        transition: 'all 0.2s ease',
+        transform: 'translateY(0)',
+        ...(isInProgress && {
+          animation: `${pulse} 2s ease-in-out infinite`,
+        }),
+      }}
+      withBorder
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+      <Group
+        align="flex-start"
+        justify="space-between"
+        wrap="nowrap"
+      >
+        <Group
+          gap="sm"
+          style={{flex: 1, minWidth: 0}}
+          wrap="nowrap"
+        >
           <ThemeIcon
-            size={40}
-            radius="md"
-            variant={isCompleted ? 'filled' : 'light'}
             color={isCompleted ? 'green' : isDisabled ? 'gray' : kindColor}
+            radius="md"
+            size={40}
+            variant={isCompleted ? 'filled' : 'light'}
           >
-            {isCompleted ? <IconCheck size={20} /> : <KindIcon kind={item.kind} size={20} />}
+            {isCompleted ? (
+              <IconCheck size={20} />
+            ) : (
+              <KindIcon
+                kind={item.kind}
+                size={20}
+              />
+            )}
           </ThemeIcon>
 
-          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-            <Group gap="xs" wrap="nowrap">
+          <Stack
+            gap={4}
+            style={{flex: 1, minWidth: 0}}
+          >
+            <Group
+              gap="xs"
+              wrap="nowrap"
+            >
               <Badge
+                color={completionColor(state)}
                 size="xs"
                 variant="light"
-                color={completionColor(state)}
               >
                 {completionLabel(state)}
               </Badge>
               {item.time && (
-                <Group gap={2} wrap="nowrap">
-                  <IconClock size={10} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                  <Text size="xs" c="dimmed">
+                <Group
+                  gap={2}
+                  wrap="nowrap"
+                >
+                  <IconClock
+                    size={10}
+                    style={{color: 'var(--mantine-color-dimmed)'}}
+                  />
+                  <Text
+                    c="dimmed"
+                    size="xs"
+                  >
                     {item.time}
                   </Text>
                 </Group>
@@ -412,48 +552,59 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
 
             <Text
               fw={600}
+              lineClamp={1}
               size="sm"
               style={{
                 textDecoration: isCompleted ? 'line-through' : 'none',
                 color: isDisabled ? 'var(--mantine-color-dimmed)' : undefined,
               }}
-              lineClamp={1}
             >
               {item.title ?? 'Untitled'}
             </Text>
 
             {item.subtitle && (
-              <Text size="xs" c="dimmed" lineClamp={1}>
+              <Text
+                c="dimmed"
+                lineClamp={1}
+                size="xs"
+              >
                 {item.subtitle}
               </Text>
             )}
 
             {isInProgress && (
               <Progress
-                value={50}
-                size="xs"
-                color="yellow"
-                radius="xl"
                 animated
+                color="yellow"
                 mt={4}
+                radius="xl"
+                size="xs"
+                value={50}
               />
             )}
           </Stack>
         </Group>
 
-        <Stack gap="xs" align="flex-end">
+        <Stack
+          align="flex-end"
+          gap="xs"
+        >
           {isDisabled ? (
             <Group gap={4}>
-              <IconLock size={12} style={{ color: 'var(--mantine-color-dimmed)' }} />
-              <Text size="xs" c="dimmed">
+              <IconLock
+                size={12}
+                style={{color: 'var(--mantine-color-dimmed)'}}
+              />
+              <Text
+                c="dimmed"
+                size="xs"
+              >
                 {getDisabledReason()}
               </Text>
             </Group>
           ) : (
             <Button
-              variant={isCompleted ? 'subtle' : 'light'}
               color={isCompleted ? 'gray' : kindColor}
-              size="xs"
               rightSection={
                 isCompleted ? (
                   <IconChevronRight size={14} />
@@ -463,6 +614,8 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
                   <IconPlayerPlay size={14} />
                 )
               }
+              size="xs"
+              variant={isCompleted ? 'subtle' : 'light'}
             >
               {getCtaLabel(item.kind, state)}
             </Button>
@@ -474,8 +627,12 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
 
   if (isDisabled) {
     return (
-      <Tooltip label={getDisabledReason()} position="top" withArrow>
-        <div style={{ pointerEvents: 'auto' }}>{cardContent}</div>
+      <Tooltip
+        label={getDisabledReason()}
+        position="top"
+        withArrow
+      >
+        <div style={{pointerEvents: 'auto'}}>{cardContent}</div>
       </Tooltip>
     );
   }
@@ -484,20 +641,20 @@ export function ScheduleItemCard({ item, onAction }: ScheduleItemCardProps) {
 }
 
 interface ScheduleItemListProps {
-  items: ScheduleItem[];
   filter: FilterKind;
   isToday?: boolean;
+  items: ScheduleItem[];
   onAction?: (item: ScheduleItem) => void;
 }
 
-export function ScheduleItemList({
-  items,
-  filter,
-  isToday = false,
-  onAction,
-}: ScheduleItemListProps) {
+export function ScheduleItemList({items, filter, isToday = false, onAction}: ScheduleItemListProps) {
   if (items.length === 0) {
-    return <EmptyDayState filter={filter} isToday={isToday} />;
+    return (
+      <EmptyDayState
+        filter={filter}
+        isToday={isToday}
+      />
+    );
   }
 
   // Find the next actionable item for "Up Next" card
@@ -506,7 +663,7 @@ export function ScheduleItemList({
         (item) =>
           (item.completion?.state ?? item.status) !== 'completed' &&
           (item.completion?.state ?? item.status) !== 'skipped' &&
-          (item.completion?.state ?? item.status) !== 'upcoming'
+          (item.completion?.state ?? item.status) !== 'upcoming',
       )
     : undefined;
 
@@ -514,18 +671,26 @@ export function ScheduleItemList({
 
   return (
     <Stack gap="sm">
-      {nextItem && <NextUpCard item={nextItem} onAction={onAction} />}
+      {nextItem && (
+        <NextUpCard
+          item={nextItem}
+          onAction={onAction}
+        />
+      )}
       {otherItems.map((item, index) => (
         <Transition
+          duration={200}
           key={item.id ?? index}
           mounted
-          transition="fade"
-          duration={200}
           timingFunction="ease"
+          transition="fade"
         >
           {(styles) => (
             <div style={styles}>
-              <ScheduleItemCard item={item} onAction={onAction} />
+              <ScheduleItemCard
+                item={item}
+                onAction={onAction}
+              />
             </div>
           )}
         </Transition>

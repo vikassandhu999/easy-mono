@@ -1,40 +1,28 @@
-import { humanizeError } from "@easy/error-parser";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  FieldError,
-  Input,
-  Label,
-  Modal,
-  Spinner,
-  Surface,
-  TextArea,
-  TextField,
-} from "@heroui/react";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import {humanizeError} from '@easy/error-parser';
+import {Button, FieldError, Input, Label, Modal, Spinner, Surface, TextArea, TextField} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {useEffect} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 
-import useParamsDrawer from "@/hooks/useParamDrawer";
+import useParamsDrawer from '@/hooks/useParamDrawer';
 import {
   BusinessUpdateForm_zod,
   BusinessUpdateFormValues,
   useGetMyBusinessQuery,
   useUpdateMyBusinessMutation,
-} from "@/services/business";
-import { notifyError, notifySuccess } from "@/utils/notification";
+} from '@/services/business';
+import {notifyError, notifySuccess} from '@/utils/notification';
 
 const BusinessEditDrawer = () => {
-  const { closeDrawer } = useParamsDrawer({});
+  const {closeDrawer} = useParamsDrawer({});
 
-  const { data: business, isLoading: isLoadingBusiness } =
-    useGetMyBusinessQuery();
-  const [updateBusiness, { isLoading: isUpdating }] =
-    useUpdateMyBusinessMutation();
+  const {data: business, isLoading: isLoadingBusiness} = useGetMyBusinessQuery();
+  const [updateBusiness, {isLoading: isUpdating}] = useUpdateMyBusinessMutation();
 
-  const { control, handleSubmit, reset } = useForm<BusinessUpdateFormValues>({
+  const {control, handleSubmit, reset} = useForm<BusinessUpdateFormValues>({
     defaultValues: {
-      name: "",
-      about: "",
+      name: '',
+      about: '',
     },
     resolver: zodResolver(BusinessUpdateForm_zod),
   });
@@ -42,8 +30,8 @@ const BusinessEditDrawer = () => {
   useEffect(() => {
     if (business) {
       reset({
-        name: business.name || "",
-        about: business.about || "",
+        name: business.name || '',
+        about: business.about || '',
       });
     }
   }, [business, reset]);
@@ -52,11 +40,11 @@ const BusinessEditDrawer = () => {
     try {
       const payload = {
         name: values.name,
-        about: values.about === "" ? undefined : (values.about ?? undefined),
+        about: values.about === '' ? undefined : (values.about ?? undefined),
       };
 
       await updateBusiness(payload).unwrap();
-      notifySuccess("Business updated successfully");
+      notifySuccess('Business updated successfully');
       closeDrawer();
     } catch (error) {
       const errMsg = humanizeError(error);
@@ -67,20 +55,24 @@ const BusinessEditDrawer = () => {
   if (isLoadingBusiness) {
     return (
       <Modal>
-        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
-          <Modal.Container placement="top" scroll="outside" size="lg">
+        <Modal.Backdrop
+          isDismissable
+          isOpen
+          onOpenChange={() => closeDrawer()}
+        >
+          <Modal.Container
+            placement="top"
+            scroll="outside"
+            size="lg"
+          >
             <Modal.Dialog>
               <Modal.Header>
-                <Modal.Heading className="text-xl font-semibold">
-                  Edit Business Profile
-                </Modal.Heading>
+                <Modal.Heading className="text-xl font-semibold">Edit Business Profile</Modal.Heading>
               </Modal.Header>
               <Modal.Body>
                 <div className="flex flex-col items-center justify-center gap-3 py-8">
                   <Spinner />
-                  <p className="text-sm text-default-500">
-                    Loading business...
-                  </p>
+                  <p className="text-sm text-default-500">Loading business...</p>
                 </div>
               </Modal.Body>
             </Modal.Dialog>
@@ -93,18 +85,22 @@ const BusinessEditDrawer = () => {
   if (!business) {
     return (
       <Modal>
-        <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
-          <Modal.Container placement="top" scroll="outside" size="lg">
+        <Modal.Backdrop
+          isDismissable
+          isOpen
+          onOpenChange={() => closeDrawer()}
+        >
+          <Modal.Container
+            placement="top"
+            scroll="outside"
+            size="lg"
+          >
             <Modal.Dialog>
               <Modal.Header>
-                <Modal.Heading className="text-xl font-semibold">
-                  Edit Business Profile
-                </Modal.Heading>
+                <Modal.Heading className="text-xl font-semibold">Edit Business Profile</Modal.Heading>
               </Modal.Header>
               <Modal.Body>
-                <p className="py-4 text-sm text-danger-600">
-                  Business not found
-                </p>
+                <p className="py-4 text-sm text-danger-600">Business not found</p>
               </Modal.Body>
             </Modal.Dialog>
           </Modal.Container>
@@ -115,16 +111,20 @@ const BusinessEditDrawer = () => {
 
   return (
     <Modal>
-      <Modal.Backdrop isDismissable isOpen onOpenChange={() => closeDrawer()}>
-        <Modal.Container placement="top" scroll="outside" size="lg">
+      <Modal.Backdrop
+        isDismissable
+        isOpen
+        onOpenChange={() => closeDrawer()}
+      >
+        <Modal.Container
+          placement="top"
+          scroll="outside"
+          size="lg"
+        >
           <Modal.Dialog>
             <Modal.Header>
-              <Modal.Heading className="text-xl font-semibold">
-                Edit Business Profile
-              </Modal.Heading>
-              {business.handle && (
-                <p className="text-sm text-default-400">@{business.handle}</p>
-              )}
+              <Modal.Heading className="text-xl font-semibold">Edit Business Profile</Modal.Heading>
+              {business.handle && <p className="text-sm text-default-400">@{business.handle}</p>}
             </Modal.Header>
             <Modal.Body className="p-1">
               <Surface variant="default">
@@ -136,19 +136,15 @@ const BusinessEditDrawer = () => {
                   <Controller
                     control={control}
                     name="name"
-                    render={({ field, fieldState }) => (
+                    render={({field, fieldState}) => (
                       <TextField
                         {...field}
                         isInvalid={fieldState.invalid}
                         isRequired
                       >
-                        <Label className="text-sm font-medium">
-                          Business Name
-                        </Label>
+                        <Label className="text-sm font-medium">Business Name</Label>
                         <Input placeholder="e.g., FitIndia Coaching" />
-                        {fieldState.error?.message && (
-                          <FieldError>{fieldState.error.message}</FieldError>
-                        )}
+                        {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
                       </TextField>
                     )}
                   />
@@ -157,20 +153,18 @@ const BusinessEditDrawer = () => {
                   <Controller
                     control={control}
                     name="about"
-                    render={({ field, fieldState }) => (
+                    render={({field, fieldState}) => (
                       <TextField
                         {...field}
                         isInvalid={fieldState.invalid}
-                        value={field.value ?? ""}
+                        value={field.value ?? ''}
                       >
                         <Label className="text-sm font-medium">About</Label>
                         <TextArea
                           placeholder="Tell clients about your business..."
                           rows={4}
                         />
-                        {fieldState.error?.message && (
-                          <FieldError>{fieldState.error.message}</FieldError>
-                        )}
+                        {fieldState.error?.message && <FieldError>{fieldState.error.message}</FieldError>}
                       </TextField>
                     )}
                   />
@@ -178,14 +172,17 @@ const BusinessEditDrawer = () => {
               </Surface>
             </Modal.Body>
             <Modal.Footer>
-              <Button slot="close" variant="secondary">
+              <Button
+                slot="close"
+                variant="secondary"
+              >
                 Cancel
               </Button>
               <Button
                 isDisabled={isUpdating}
                 onPress={() => handleSubmit(handleFormSubmit)()}
               >
-                {isUpdating ? "Saving..." : "Save"}
+                {isUpdating ? 'Saving...' : 'Save'}
               </Button>
             </Modal.Footer>
           </Modal.Dialog>

@@ -1,0 +1,18 @@
+export const ROUTES = {
+  LOGIN: '/login',
+  SIGNUP: '/signup',
+  DASHBOARD: '/dashboard',
+  CLIENTS: '/clients',
+  CLIENT_DETAIL: '/clients/:id',
+  EXERCISES: '/exercises',
+  EXERCISE_DETAIL: '/exercises/:id',
+  FOODS: '/foods',
+  FOOD_DETAIL: '/foods/:id',
+  RECIPES: '/recipes',
+  RECIPE_DETAIL: '/recipes/:id',
+  NUTRITION_PLANS: '/nutrition-plans',
+  NUTRITION_PLAN_DETAIL: '/nutrition-plans/:id',
+  TRAINING_PLANS: '/training-plans',
+  TRAINING_PLAN_DETAIL: '/training-plans/:id',
+  SETTINGS: '/settings',
+} as const;

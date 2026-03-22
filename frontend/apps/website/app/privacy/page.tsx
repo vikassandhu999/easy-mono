@@ -43,13 +43,13 @@ export default function PrivacyPolicyPage() {
 
         <div className="prose prose-gray max-w-none">
           <p className="text-gray-700 mb-6">
-            CoachEasy (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) provides a
-            software-as-a-service platform that helps professional coaches manage
-            clients, deliver programs, schedule sessions, track progress, and
-            communicate securely. This Privacy Policy explains how we collect,
-            use, disclose, and protect personal information when you access or
-            use our website, platform, and related services (collectively, the
-            &quot;Services&quot;).
+            CoachEasy (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;)
+            provides a software-as-a-service platform that helps professional
+            coaches manage clients, deliver programs, schedule sessions, track
+            progress, and communicate securely. This Privacy Policy explains how
+            we collect, use, disclose, and protect personal information when you
+            access or use our website, platform, and related services
+            (collectively, the &quot;Services&quot;).
           </p>
 
           <section className="mb-8">
@@ -59,8 +59,8 @@ export default function PrivacyPolicyPage() {
             <p className="text-gray-700 mb-4">
               We collect information in three primary ways: (a) information you
               provide directly, (b) information collected automatically, and (c)
-              information provided by clients about their own participants (where
-              applicable).
+              information provided by clients about their own participants
+              (where applicable).
             </p>
 
             <h3 className="text-xl font-medium mb-3 mt-6">
@@ -73,19 +73,20 @@ export default function PrivacyPolicyPage() {
                 organization/team info.
               </li>
               <li>
-                <strong>Client & Participant Data:</strong> Names, emails, goals,
-                session notes, progress metrics, uploaded documents, and program
-                assignments you choose to store.
+                <strong>Client & Participant Data:</strong> Names, emails,
+                goals, session notes, progress metrics, uploaded documents, and
+                program assignments you choose to store.
               </li>
               <li>
-                <strong>Billing Information:</strong> If applicable, subscription
-                plan, limited payment metadata (payment details are processed by
-                our third-party payment processor; we do not store full card
-                numbers).
+                <strong>Billing Information:</strong> If applicable,
+                subscription plan, limited payment metadata (payment details are
+                processed by our third-party payment processor; we do not store
+                full card numbers).
               </li>
               <li>
-                <strong>Communications:</strong> Messages you send through in-app
-                messaging, support requests, feedback, and email interactions.
+                <strong>Communications:</strong> Messages you send through
+                in-app messaging, support requests, feedback, and email
+                interactions.
               </li>
             </ul>
 
@@ -99,8 +100,8 @@ export default function PrivacyPolicyPage() {
                 and interaction patterns (for improving UX and performance).
               </li>
               <li>
-                <strong>Device & Technical Data:</strong> Browser type, operating
-                system, device type, screen size, and log files.
+                <strong>Device & Technical Data:</strong> Browser type,
+                operating system, device type, screen size, and log files.
               </li>
               <li>
                 <strong>Cookies & Similar Technologies:</strong> Session
@@ -114,11 +115,11 @@ export default function PrivacyPolicyPage() {
               c. Client-Provided Data
             </h3>
             <p className="text-gray-700">
-              If you are a coach entering information about your clients, you are
-              responsible for obtaining any necessary consent and ensuring the
-              accuracy and lawful basis for processing that data. We act as a
-              data processor for such client-submitted personal information and
-              process it only as instructed by you.
+              If you are a coach entering information about your clients, you
+              are responsible for obtaining any necessary consent and ensuring
+              the accuracy and lawful basis for processing that data. We act as
+              a data processor for such client-submitted personal information
+              and process it only as instructed by you.
             </p>
           </section>
 
@@ -163,10 +164,10 @@ export default function PrivacyPolicyPage() {
               3. Legal Basis (Where Applicable)
             </h2>
             <p className="text-gray-700">
-              Depending on jurisdiction, we rely on one or more of the following:
-              performance of a contract, legitimate interests (e.g., platform
-              improvement, security), consent (marketing, certain analytics), and
-              legal compliance.
+              Depending on jurisdiction, we rely on one or more of the
+              following: performance of a contract, legitimate interests (e.g.,
+              platform improvement, security), consent (marketing, certain
+              analytics), and legal compliance.
             </p>
           </section>
 
@@ -180,16 +181,16 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>
                 <strong>Service Providers:</strong> Hosting, analytics, email
-                delivery, payment processing, and error monitoring—only as needed
-                to perform services.
+                delivery, payment processing, and error monitoring—only as
+                needed to perform services.
               </li>
               <li>
-                <strong>Business Transfers:</strong> In a merger, acquisition, or
-                asset sale, data may be transferred subject to this policy.
+                <strong>Business Transfers:</strong> In a merger, acquisition,
+                or asset sale, data may be transferred subject to this policy.
               </li>
               <li>
-                <strong>Legal & Security:</strong> To comply with law, respond to
-                lawful requests, or protect rights, safety, and integrity.
+                <strong>Legal & Security:</strong> To comply with law, respond
+                to lawful requests, or protect rights, safety, and integrity.
               </li>
               <li>
                 <strong>Aggregated / De-Identified Data:</strong> Used for
@@ -213,10 +214,10 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-2xl font-semibold mb-4">6. Data Retention</h2>
             <p className="text-gray-700">
               Account and coaching data are retained while your subscription or
-              trial remains active. Upon request or account termination, data may
-              be deleted or anonymized unless retention is required for legal,
-              billing, dispute resolution, or security reasons. Backups are
-              purged on a rolling schedule.
+              trial remains active. Upon request or account termination, data
+              may be deleted or anonymized unless retention is required for
+              legal, billing, dispute resolution, or security reasons. Backups
+              are purged on a rolling schedule.
             </p>
           </section>
 
@@ -247,8 +248,8 @@ export default function PrivacyPolicyPage() {
               8. International Data Transfers
             </h2>
             <p className="text-gray-700">
-              Your information may be processed in jurisdictions where our or our
-              providers&apos; servers are located. We implement safeguards
+              Your information may be processed in jurisdictions where our or
+              our providers&apos; servers are located. We implement safeguards
               consistent with applicable data protection laws.
             </p>
           </section>

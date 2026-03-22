@@ -1,17 +1,17 @@
 import {
-    Alert,
-    Box,
-    Button,
-    Divider,
-    Group,
-    LoadingOverlay,
-    Select,
-    SimpleGrid,
-    Stack,
-    Text,
-    Textarea,
-    TextInput,
-    Title,
+  Alert,
+  Box,
+  Button,
+  Divider,
+  Group,
+  LoadingOverlay,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
 } from '@mantine/core';
 import {IconCheck, IconEdit, IconExclamationCircle} from '@tabler/icons-react';
 import React, {useEffect, useState} from 'react';
@@ -23,362 +23,361 @@ import PaddingContainer from '@/shared/containers/PaddingContainer';
 import Header from '@/shared/layouts/Header';
 
 type EditableProfileForm = {
-    full_name: string;
-    phone: string;
-    height_cm: string;
-    weight_kg: string;
-    date_of_birth: string;
-    sex: string;
-    gender_identity: string;
-    activity_level: string;
-    goal: string;
-    measurement_system: string;
-    dietary_notes: string;
-    injury_notes: string;
-    medication_notes: string;
+  full_name: string;
+  phone: string;
+  height_cm: string;
+  weight_kg: string;
+  date_of_birth: string;
+  sex: string;
+  gender_identity: string;
+  activity_level: string;
+  goal: string;
+  measurement_system: string;
+  dietary_notes: string;
+  injury_notes: string;
+  medication_notes: string;
 };
 
 const toStringOrEmpty = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
 
 const safeNumberString = (v: unknown) => {
-    if (v === null || v === undefined) return '';
-    if (typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
-    if (typeof v === 'string') return v;
-    return '';
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
+  if (typeof v === 'string') return v;
+  return '';
 };
 
 const pickInitialForm = (profile: any): EditableProfileForm => ({
-    full_name: toStringOrEmpty(profile?.full_name),
-    phone: toStringOrEmpty(profile?.phone),
-    height_cm: safeNumberString(profile?.height_cm),
-    weight_kg: safeNumberString(profile?.weight_kg),
-    date_of_birth: toStringOrEmpty(profile?.date_of_birth), // expects "YYYY-MM-DD"
-    sex: toStringOrEmpty(profile?.sex),
-    gender_identity: toStringOrEmpty(profile?.gender_identity),
-    activity_level: toStringOrEmpty(profile?.activity_level),
-    goal: toStringOrEmpty(profile?.goal),
-    measurement_system: toStringOrEmpty(profile?.measurement_system),
-    dietary_notes: toStringOrEmpty(profile?.dietary_notes),
-    injury_notes: toStringOrEmpty(profile?.injury_notes),
-    medication_notes: toStringOrEmpty(profile?.medication_notes),
+  full_name: toStringOrEmpty(profile?.full_name),
+  phone: toStringOrEmpty(profile?.phone),
+  height_cm: safeNumberString(profile?.height_cm),
+  weight_kg: safeNumberString(profile?.weight_kg),
+  date_of_birth: toStringOrEmpty(profile?.date_of_birth), // expects "YYYY-MM-DD"
+  sex: toStringOrEmpty(profile?.sex),
+  gender_identity: toStringOrEmpty(profile?.gender_identity),
+  activity_level: toStringOrEmpty(profile?.activity_level),
+  goal: toStringOrEmpty(profile?.goal),
+  measurement_system: toStringOrEmpty(profile?.measurement_system),
+  dietary_notes: toStringOrEmpty(profile?.dietary_notes),
+  injury_notes: toStringOrEmpty(profile?.injury_notes),
+  medication_notes: toStringOrEmpty(profile?.medication_notes),
 });
 
 const buildUpdatePayload = (form: EditableProfileForm) => {
-    // Only send values that are explicitly set; convert numeric strings to numbers.
-    // Keep empty strings as null for optional fields.
-    const normalizeNullable = (s: string) => (s.trim() === '' ? null : s.trim());
+  // Only send values that are explicitly set; convert numeric strings to numbers.
+  // Keep empty strings as null for optional fields.
+  const normalizeNullable = (s: string) => (s.trim() === '' ? null : s.trim());
 
-    const height = form.height_cm.trim() === '' ? null : Number(form.height_cm);
-    const weight = form.weight_kg.trim() === '' ? null : Number(form.weight_kg);
+  const height = form.height_cm.trim() === '' ? null : Number(form.height_cm);
+  const weight = form.weight_kg.trim() === '' ? null : Number(form.weight_kg);
 
-    return {
-        full_name: normalizeNullable(form.full_name),
-        phone: normalizeNullable(form.phone),
-        height_cm: height,
-        weight_kg: weight,
-        date_of_birth: normalizeNullable(form.date_of_birth),
-        sex: normalizeNullable(form.sex),
-        gender_identity: normalizeNullable(form.gender_identity),
-        activity_level: normalizeNullable(form.activity_level),
-        goal: normalizeNullable(form.goal),
-        measurement_system: normalizeNullable(form.measurement_system),
-        dietary_notes: normalizeNullable(form.dietary_notes),
-        injury_notes: normalizeNullable(form.injury_notes),
-        medication_notes: normalizeNullable(form.medication_notes),
-    };
+  return {
+    full_name: normalizeNullable(form.full_name),
+    phone: normalizeNullable(form.phone),
+    height_cm: height,
+    weight_kg: weight,
+    date_of_birth: normalizeNullable(form.date_of_birth),
+    sex: normalizeNullable(form.sex),
+    gender_identity: normalizeNullable(form.gender_identity),
+    activity_level: normalizeNullable(form.activity_level),
+    goal: normalizeNullable(form.goal),
+    measurement_system: normalizeNullable(form.measurement_system),
+    dietary_notes: normalizeNullable(form.dietary_notes),
+    injury_notes: normalizeNullable(form.injury_notes),
+    medication_notes: normalizeNullable(form.medication_notes),
+  };
 };
 
 const MainProfilePage = () => {
-    const navigate = useNavigate();
-    const {data, isLoading, isFetching, isError, error} = useGetProfileQuery();
-    const [updateProfile, updateState] = useUpdateProfileMutation();
+  const navigate = useNavigate();
+  const {data, isLoading, isFetching, isError, error} = useGetProfileQuery();
+  const [updateProfile, updateState] = useUpdateProfileMutation();
 
-    const profile = data?.data;
+  const profile = data?.data;
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [form, setForm] = useState<EditableProfileForm>(() => pickInitialForm(profile));
-    const [saveSuccessMessage, setSaveSuccessMessage] = useState<null | string>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState<EditableProfileForm>(() => pickInitialForm(profile));
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<null | string>(null);
 
-    useEffect(() => {
-        // Whenever profile loads/refreshes, reset display form if not editing.
-        if (profile && !isEditing) {
-            setForm(pickInitialForm(profile));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [profile?.updated_at, isEditing]);
+  useEffect(() => {
+    // Whenever profile loads/refreshes, reset display form if not editing.
+    if (profile && !isEditing) {
+      setForm(pickInitialForm(profile));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.updated_at, isEditing]);
 
-    const onChange =
-        (key: keyof EditableProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            setSaveSuccessMessage(null);
-            setForm((prev) => ({...prev, [key]: e.target.value}));
-        };
-
-    const onChangeSelect = (key: keyof EditableProfileForm) => (value: null | string) => {
-        setSaveSuccessMessage(null);
-        setForm((prev) => ({...prev, [key]: value ?? ''}));
+  const onChange =
+    (key: keyof EditableProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setSaveSuccessMessage(null);
+      setForm((prev) => ({...prev, [key]: e.target.value}));
     };
 
-    const onCancel = () => {
-        setSaveSuccessMessage(null);
-        setIsEditing(false);
-        setForm(pickInitialForm(profile));
-    };
+  const onChangeSelect = (key: keyof EditableProfileForm) => (value: null | string) => {
+    setSaveSuccessMessage(null);
+    setForm((prev) => ({...prev, [key]: value ?? ''}));
+  };
 
-    const onSave = async () => {
-        setSaveSuccessMessage(null);
+  const onCancel = () => {
+    setSaveSuccessMessage(null);
+    setIsEditing(false);
+    setForm(pickInitialForm(profile));
+  };
 
-        // Basic client-side guards for numeric fields (server will validate too)
-        if (form.height_cm.trim() !== '' && Number.isNaN(Number(form.height_cm))) return;
-        if (form.weight_kg.trim() !== '' && Number.isNaN(Number(form.weight_kg))) return;
+  const onSave = async () => {
+    setSaveSuccessMessage(null);
 
-        const payload = buildUpdatePayload(form);
+    // Basic client-side guards for numeric fields (server will validate too)
+    if (form.height_cm.trim() !== '' && Number.isNaN(Number(form.height_cm))) return;
+    if (form.weight_kg.trim() !== '' && Number.isNaN(Number(form.weight_kg))) return;
 
-        const res: any = await updateProfile(payload);
-        if ('data' in res) {
-            setIsEditing(false);
-            setSaveSuccessMessage('Profile updated successfully.');
-        }
-    };
+    const payload = buildUpdatePayload(form);
 
-    const pageBusy = isLoading || isFetching || updateState.isLoading;
+    const res: any = await updateProfile(payload);
+    if ('data' in res) {
+      setIsEditing(false);
+      setSaveSuccessMessage('Profile updated successfully.');
+    }
+  };
 
-    return (
-        <React.Fragment>
-            <HeadingContainer>
-                <Header
-                    onBack={() => {
-                        navigate(-1);
-                    }}
-                    title="Profile"
+  const pageBusy = isLoading || isFetching || updateState.isLoading;
+
+  return (
+    <React.Fragment>
+      <HeadingContainer>
+        <Header
+          onBack={() => {
+            navigate(-1);
+          }}
+          title="Profile"
+        />
+      </HeadingContainer>
+      <PaddingContainer paddingY="xl">
+        <Box pos="relative">
+          <LoadingOverlay
+            overlayProps={{radius: 'md', blur: 2}}
+            visible={pageBusy}
+            zIndex={10}
+          />
+
+          <Stack gap="xl">
+            {isError && (
+              <Alert
+                color="red"
+                icon={<IconExclamationCircle size={16} />}
+                title="Failed to load profile"
+              >
+                <Text size="sm">
+                  {(error as any)?.message ?? 'Something went wrong while loading your profile. Please try again.'}
+                </Text>
+              </Alert>
+            )}
+
+            {!!saveSuccessMessage && (
+              <Alert
+                color="green"
+                icon={<IconCheck size={16} />}
+                title="Saved"
+              >
+                <Text size="sm">{saveSuccessMessage}</Text>
+              </Alert>
+            )}
+
+            <Stack gap="md">
+              <Group
+                align="center"
+                justify="space-between"
+              >
+                <Title order={4}>Details</Title>
+                <Group gap="sm">
+                  {!isEditing ? (
+                    <Button
+                      color="brand"
+                      disabled={!profile}
+                      leftSection={<IconEdit size={16} />}
+                      onClick={() => {
+                        setSaveSuccessMessage(null);
+                        setIsEditing(true);
+                      }}
+                      size="sm"
+                      variant="light"
+                    >
+                      Edit
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        color="gray"
+                        onClick={onCancel}
+                        size="sm"
+                        variant="default"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        color="brand"
+                        disabled={updateState.isLoading}
+                        leftSection={<IconCheck size={16} />}
+                        onClick={onSave}
+                        size="sm"
+                      >
+                        Save
+                      </Button>
+                    </>
+                  )}
+                </Group>
+              </Group>
+
+              <SimpleGrid
+                cols={{base: 1, sm: 2}}
+                spacing="md"
+              >
+                <TextInput
+                  disabled={!isEditing}
+                  label="Full name"
+                  onChange={onChange('full_name')}
+                  placeholder="Your name"
+                  value={form.full_name}
                 />
-            </HeadingContainer>
-            <PaddingContainer paddingY="xl">
-                <Box pos="relative">
-                    <LoadingOverlay
-                        overlayProps={{radius: 'md', blur: 2}}
-                        visible={pageBusy}
-                        zIndex={10}
-                    />
 
-                    <Stack gap="xl">
-                        {isError && (
-                            <Alert
-                                color="red"
-                                icon={<IconExclamationCircle size={16} />}
-                                title="Failed to load profile"
-                            >
-                                <Text size="sm">
-                                    {(error as any)?.message ??
-                                        'Something went wrong while loading your profile. Please try again.'}
-                                </Text>
-                            </Alert>
-                        )}
+                <TextInput
+                  disabled={!isEditing}
+                  label="Phone"
+                  onChange={onChange('phone')}
+                  placeholder="+1234567890"
+                  value={form.phone}
+                />
 
-                        {!!saveSuccessMessage && (
-                            <Alert
-                                color="green"
-                                icon={<IconCheck size={16} />}
-                                title="Saved"
-                            >
-                                <Text size="sm">{saveSuccessMessage}</Text>
-                            </Alert>
-                        )}
+                <TextInput
+                  disabled={!isEditing}
+                  label="Date of birth"
+                  onChange={onChange('date_of_birth')}
+                  placeholder="YYYY-MM-DD"
+                  value={form.date_of_birth}
+                />
 
-                        <Stack gap="md">
-                            <Group
-                                align="center"
-                                justify="space-between"
-                            >
-                                <Title order={4}>Details</Title>
-                                <Group gap="sm">
-                                    {!isEditing ? (
-                                        <Button
-                                            color="brand"
-                                            disabled={!profile}
-                                            leftSection={<IconEdit size={16} />}
-                                            onClick={() => {
-                                                setSaveSuccessMessage(null);
-                                                setIsEditing(true);
-                                            }}
-                                            size="sm"
-                                            variant="light"
-                                        >
-                                            Edit
-                                        </Button>
-                                    ) : (
-                                        <>
-                                            <Button
-                                                color="gray"
-                                                onClick={onCancel}
-                                                size="sm"
-                                                variant="default"
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                color="brand"
-                                                disabled={updateState.isLoading}
-                                                leftSection={<IconCheck size={16} />}
-                                                onClick={onSave}
-                                                size="sm"
-                                            >
-                                                Save
-                                            </Button>
-                                        </>
-                                    )}
-                                </Group>
-                            </Group>
+                <TextInput
+                  disabled={!isEditing}
+                  label="Height (cm)"
+                  onChange={onChange('height_cm')}
+                  placeholder="e.g. 170"
+                  value={form.height_cm}
+                />
 
-                            <SimpleGrid
-                                cols={{base: 1, sm: 2}}
-                                spacing="md"
-                            >
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Full name"
-                                    onChange={onChange('full_name')}
-                                    placeholder="Your name"
-                                    value={form.full_name}
-                                />
+                <TextInput
+                  disabled={!isEditing}
+                  label="Weight (kg)"
+                  onChange={onChange('weight_kg')}
+                  placeholder="e.g. 70"
+                  value={form.weight_kg}
+                />
 
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Phone"
-                                    onChange={onChange('phone')}
-                                    placeholder="+1234567890"
-                                    value={form.phone}
-                                />
+                <Select
+                  clearable
+                  data={[
+                    {value: 'male', label: 'Male'},
+                    {value: 'female', label: 'Female'},
+                    {value: 'intersex', label: 'Intersex'},
+                    {value: 'prefer_not_to_say', label: 'Prefer not to say'},
+                  ]}
+                  disabled={!isEditing}
+                  label="Sex"
+                  onChange={onChangeSelect('sex')}
+                  placeholder="Select"
+                  value={form.sex || null}
+                />
 
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Date of birth"
-                                    onChange={onChange('date_of_birth')}
-                                    placeholder="YYYY-MM-DD"
-                                    value={form.date_of_birth}
-                                />
+                <TextInput
+                  disabled={!isEditing}
+                  label="Gender identity"
+                  onChange={onChange('gender_identity')}
+                  placeholder="e.g. Non-binary"
+                  value={form.gender_identity}
+                />
 
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Height (cm)"
-                                    onChange={onChange('height_cm')}
-                                    placeholder="e.g. 170"
-                                    value={form.height_cm}
-                                />
+                <Select
+                  clearable
+                  data={[
+                    {value: 'sedentary', label: 'Sedentary'},
+                    {value: 'light', label: 'Light'},
+                    {value: 'moderate', label: 'Moderate'},
+                    {value: 'active', label: 'Active'},
+                    {value: 'athlete', label: 'Athlete'},
+                  ]}
+                  disabled={!isEditing}
+                  label="Activity level"
+                  onChange={onChangeSelect('activity_level')}
+                  placeholder="Select"
+                  value={form.activity_level || null}
+                />
 
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Weight (kg)"
-                                    onChange={onChange('weight_kg')}
-                                    placeholder="e.g. 70"
-                                    value={form.weight_kg}
-                                />
+                <Select
+                  clearable
+                  data={[
+                    {value: 'lose_weight', label: 'Lose weight'},
+                    {value: 'maintain', label: 'Maintain'},
+                    {value: 'gain_muscle', label: 'Gain muscle'},
+                    {value: 'improve_endurance', label: 'Improve endurance'},
+                    {value: 'rehab', label: 'Rehab'},
+                  ]}
+                  disabled={!isEditing}
+                  label="Goal"
+                  onChange={onChangeSelect('goal')}
+                  placeholder="Select"
+                  value={form.goal || null}
+                />
 
-                                <Select
-                                    clearable
-                                    data={[
-                                        {value: 'male', label: 'Male'},
-                                        {value: 'female', label: 'Female'},
-                                        {value: 'intersex', label: 'Intersex'},
-                                        {value: 'prefer_not_to_say', label: 'Prefer not to say'},
-                                    ]}
-                                    disabled={!isEditing}
-                                    label="Sex"
-                                    onChange={onChangeSelect('sex')}
-                                    placeholder="Select"
-                                    value={form.sex || null}
-                                />
+                <Select
+                  clearable
+                  data={[
+                    {value: 'metric', label: 'Metric'},
+                    {value: 'imperial', label: 'Imperial'},
+                  ]}
+                  disabled={!isEditing}
+                  label="Measurement system"
+                  onChange={onChangeSelect('measurement_system')}
+                  placeholder="Select"
+                  value={form.measurement_system || null}
+                />
+              </SimpleGrid>
 
-                                <TextInput
-                                    disabled={!isEditing}
-                                    label="Gender identity"
-                                    onChange={onChange('gender_identity')}
-                                    placeholder="e.g. Non-binary"
-                                    value={form.gender_identity}
-                                />
+              <Divider my="sm" />
 
-                                <Select
-                                    clearable
-                                    data={[
-                                        {value: 'sedentary', label: 'Sedentary'},
-                                        {value: 'light', label: 'Light'},
-                                        {value: 'moderate', label: 'Moderate'},
-                                        {value: 'active', label: 'Active'},
-                                        {value: 'athlete', label: 'Athlete'},
-                                    ]}
-                                    disabled={!isEditing}
-                                    label="Activity level"
-                                    onChange={onChangeSelect('activity_level')}
-                                    placeholder="Select"
-                                    value={form.activity_level || null}
-                                />
-
-                                <Select
-                                    clearable
-                                    data={[
-                                        {value: 'lose_weight', label: 'Lose weight'},
-                                        {value: 'maintain', label: 'Maintain'},
-                                        {value: 'gain_muscle', label: 'Gain muscle'},
-                                        {value: 'improve_endurance', label: 'Improve endurance'},
-                                        {value: 'rehab', label: 'Rehab'},
-                                    ]}
-                                    disabled={!isEditing}
-                                    label="Goal"
-                                    onChange={onChangeSelect('goal')}
-                                    placeholder="Select"
-                                    value={form.goal || null}
-                                />
-
-                                <Select
-                                    clearable
-                                    data={[
-                                        {value: 'metric', label: 'Metric'},
-                                        {value: 'imperial', label: 'Imperial'},
-                                    ]}
-                                    disabled={!isEditing}
-                                    label="Measurement system"
-                                    onChange={onChangeSelect('measurement_system')}
-                                    placeholder="Select"
-                                    value={form.measurement_system || null}
-                                />
-                            </SimpleGrid>
-
-                            <Divider my="sm" />
-
-                            <SimpleGrid
-                                cols={{base: 1, sm: 2}}
-                                spacing="md"
-                            >
-                                <Textarea
-                                    disabled={!isEditing}
-                                    label="Dietary notes"
-                                    minRows={3}
-                                    onChange={onChange('dietary_notes')}
-                                    placeholder="Allergies, preferences..."
-                                    value={form.dietary_notes}
-                                />
-                                <Textarea
-                                    disabled={!isEditing}
-                                    label="Injury notes"
-                                    minRows={3}
-                                    onChange={onChange('injury_notes')}
-                                    placeholder="Anything your coach should know..."
-                                    value={form.injury_notes}
-                                />
-                                <Textarea
-                                    disabled={!isEditing}
-                                    label="Medication notes"
-                                    minRows={3}
-                                    onChange={onChange('medication_notes')}
-                                    placeholder="Optional"
-                                    value={form.medication_notes}
-                                />
-                            </SimpleGrid>
-                        </Stack>
-                    </Stack>
-                </Box>
-            </PaddingContainer>
-        </React.Fragment>
-    );
+              <SimpleGrid
+                cols={{base: 1, sm: 2}}
+                spacing="md"
+              >
+                <Textarea
+                  disabled={!isEditing}
+                  label="Dietary notes"
+                  minRows={3}
+                  onChange={onChange('dietary_notes')}
+                  placeholder="Allergies, preferences..."
+                  value={form.dietary_notes}
+                />
+                <Textarea
+                  disabled={!isEditing}
+                  label="Injury notes"
+                  minRows={3}
+                  onChange={onChange('injury_notes')}
+                  placeholder="Anything your coach should know..."
+                  value={form.injury_notes}
+                />
+                <Textarea
+                  disabled={!isEditing}
+                  label="Medication notes"
+                  minRows={3}
+                  onChange={onChange('medication_notes')}
+                  placeholder="Optional"
+                  value={form.medication_notes}
+                />
+              </SimpleGrid>
+            </Stack>
+          </Stack>
+        </Box>
+      </PaddingContainer>
+    </React.Fragment>
+  );
 };
 
 export default MainProfilePage;

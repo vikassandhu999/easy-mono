@@ -63,7 +63,13 @@ export const planSessionsApi = baseAPISlice.injectEndpoints({
           return baseTags;
         }
 
-        return [...result.records.map((session) => ({type: 'PlanSessions' as const, id: session.id})), ...baseTags];
+        return [
+          ...result.records.map((session) => ({
+            type: 'PlanSessions' as const,
+            id: session.id,
+          })),
+          ...baseTags,
+        ];
       },
     }),
     getPlanSession: builder.query<PlanSession, GetPlanSessionArg>({

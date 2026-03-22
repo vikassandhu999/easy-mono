@@ -12,105 +12,105 @@ const isDebugEnabled = import.meta.env.VITE_DEBUG === 'true' || import.meta.env.
  * Check if verbose logging should be enabled
  */
 const shouldLog = (): boolean => {
-    return isDev || isDebugEnabled;
+  return isDev || isDebugEnabled;
 };
 
 /**
  * Format log message with timestamp and prefix
  */
 const formatMessage = (level: string, message: string): string => {
-    const timestamp = new Date().toISOString();
-    return `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+  const timestamp = new Date().toISOString();
+  return `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 };
 
 /**
  * Logger object with environment-aware methods
  */
 export const logger = {
-    /**
-     * Log general messages (development only)
-     */
-    log: (message: string, ...args: unknown[]): void => {
-        if (shouldLog()) {
-            console.log(formatMessage('log', message), ...args);
-        }
-    },
+  /**
+   * Log general messages (development only)
+   */
+  log: (message: string, ...args: unknown[]): void => {
+    if (shouldLog()) {
+      console.log(formatMessage('log', message), ...args);
+    }
+  },
 
-    /**
-     * Log informational messages (development only)
-     */
-    info: (message: string, ...args: unknown[]): void => {
-        if (shouldLog()) {
-            console.info(formatMessage('info', message), ...args);
-        }
-    },
+  /**
+   * Log informational messages (development only)
+   */
+  info: (message: string, ...args: unknown[]): void => {
+    if (shouldLog()) {
+      console.info(formatMessage('info', message), ...args);
+    }
+  },
 
-    /**
-     * Log debug messages with data (development only)
-     */
-    debug: (message: string, ...args: unknown[]): void => {
-        if (shouldLog()) {
-            console.debug(formatMessage('debug', message), ...args);
-        }
-    },
+  /**
+   * Log debug messages with data (development only)
+   */
+  debug: (message: string, ...args: unknown[]): void => {
+    if (shouldLog()) {
+      console.debug(formatMessage('debug', message), ...args);
+    }
+  },
 
-    /**
-     * Log warning messages (always shown)
-     */
-    warn: (message: string, ...args: unknown[]): void => {
-        console.warn(formatMessage('warn', message), ...args);
-    },
+  /**
+   * Log warning messages (always shown)
+   */
+  warn: (message: string, ...args: unknown[]): void => {
+    console.warn(formatMessage('warn', message), ...args);
+  },
 
-    /**
-     * Log error messages (always shown)
-     */
-    error: (message: string, ...args: unknown[]): void => {
-        console.error(formatMessage('error', message), ...args);
-    },
+  /**
+   * Log error messages (always shown)
+   */
+  error: (message: string, ...args: unknown[]): void => {
+    console.error(formatMessage('error', message), ...args);
+  },
 
-    /**
-     * Log performance metrics (development only)
-     */
-    performance: (label: string, metrics: Record<string, unknown>): void => {
-        if (shouldLog()) {
-            console.log(formatMessage('perf', label), metrics);
-        }
-    },
+  /**
+   * Log performance metrics (development only)
+   */
+  performance: (label: string, metrics: Record<string, unknown>): void => {
+    if (shouldLog()) {
+      console.log(formatMessage('perf', label), metrics);
+    }
+  },
 
-    /**
-     * Create a grouped log (development only)
-     */
-    group: (label: string, fn: () => void): void => {
-        if (shouldLog()) {
-            console.group(formatMessage('group', label));
-            fn();
-            console.groupEnd();
-        }
-    },
+  /**
+   * Create a grouped log (development only)
+   */
+  group: (label: string, fn: () => void): void => {
+    if (shouldLog()) {
+      console.group(formatMessage('group', label));
+      fn();
+      console.groupEnd();
+    }
+  },
 
-    /**
-     * Log a table (development only)
-     */
-    table: (data: unknown[], columns?: string[]): void => {
-        if (shouldLog()) {
-            console.table(data, columns);
-        }
-    },
+  /**
+   * Log a table (development only)
+   */
+  table: (data: unknown[], columns?: string[]): void => {
+    if (shouldLog()) {
+      console.table(data, columns);
+    }
+  },
 
-    /**
-     * Check if logging is enabled
-     */
-    isEnabled: (): boolean => shouldLog(),
+  /**
+   * Check if logging is enabled
+   */
+  isEnabled: (): boolean => shouldLog(),
 
-    /**
-     * Check if running in production
-     */
-    isProduction: (): boolean => import.meta.env.PROD,
+  /**
+   * Check if running in production
+   */
+  isProduction: (): boolean => import.meta.env.PROD,
 
-    /**
-     * Check if running in development
-     */
-    isDevelopment: (): boolean => import.meta.env.DEV,
+  /**
+   * Check if running in development
+   */
+  isDevelopment: (): boolean => import.meta.env.DEV,
 };
 
 export default logger;

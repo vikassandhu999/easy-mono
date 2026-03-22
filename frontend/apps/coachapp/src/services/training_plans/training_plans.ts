@@ -61,7 +61,11 @@ export const trainingPlansApi = baseAPISlice.injectEndpoints({
       }),
       transformResponse: (response: {data: TrainingPlan[]; meta: TrainingPlansList['meta']}) => ({
         records: response.data,
-        meta: response.meta || {offset: 0, limit: 10, total: response.data.length}, // Fallback if meta missing
+        meta: response.meta || {
+          offset: 0,
+          limit: 10,
+          total: response.data.length,
+        }, // Fallback if meta missing
       }),
       providesTags: (result) => {
         const baseTag = [{type: 'TrainingPlans' as const, id: 'LIST'}];

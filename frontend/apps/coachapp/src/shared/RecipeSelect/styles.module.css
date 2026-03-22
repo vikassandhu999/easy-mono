@@ -9,10 +9,10 @@
    ============================================ */
 
 .container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ce-space-3);
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ce-space-3);
+  height: 100%;
 }
 
 /* ============================================
@@ -20,18 +20,18 @@
    ============================================ */
 
 .searchSection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ce-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ce-space-2);
 }
 
 .searchInputWrapper {
-    position: relative;
+  position: relative;
 }
 
 .searchHint {
-    text-align: center;
-    padding: var(--ce-space-1) 0;
+  text-align: center;
+  padding: var(--ce-space-1) 0;
 }
 
 /* ============================================
@@ -39,75 +39,75 @@
    ============================================ */
 
 .quickFilters {
-    display: flex;
-    align-items: center;
-    gap: var(--ce-space-2);
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: var(--ce-space-2);
+  flex-wrap: wrap;
 }
 
 .filterChip {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-full);
-    color: var(--mantine-color-gray-6);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-in-out);
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--mantine-color-gray-6);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  white-space: nowrap;
 }
 
 .filterChip:hover {
-    background: var(--mantine-color-gray-1);
-    border-color: var(--mantine-color-gray-4);
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-4);
 }
 
 .filterChipActive {
-    background: var(--mantine-color-orange-0);
-    border-color: var(--mantine-color-orange-4);
-    color: var(--mantine-color-orange-7);
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-4);
+  color: var(--mantine-color-orange-7);
 }
 
 .filterChipActive:hover {
-    background: var(--mantine-color-orange-1);
+  background: var(--mantine-color-orange-1);
 }
 
 .selectionBadge {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    background: var(--mantine-color-blue-0);
-    color: var(--mantine-color-blue-7);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: var(--font-semibold);
-    margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--mantine-color-blue-0);
+  color: var(--mantine-color-blue-7);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  margin-left: auto;
 }
 
 .createButton {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    background: transparent;
-    border: 1px dashed var(--mantine-color-orange-4);
-    border-radius: var(--radius-full);
-    color: var(--mantine-color-orange-6);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-in-out);
-    white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px dashed var(--mantine-color-orange-4);
+  border-radius: var(--radius-full);
+  color: var(--mantine-color-orange-6);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  white-space: nowrap;
 }
 
 .createButton:hover {
-    background: var(--mantine-color-orange-0);
-    border-color: var(--mantine-color-orange-5);
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-5);
 }
 
 /* ============================================
@@ -115,69 +115,69 @@
    ============================================ */
 
 .recentSection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ce-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ce-space-2);
 }
 
 .sectionHeader {
-    display: flex;
-    align-items: center;
-    gap: var(--ce-space-1);
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    color: var(--mantine-color-gray-5);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: var(--ce-space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .recentList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ce-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ce-space-2);
 }
 
 .recentChip {
-    display: flex;
-    align-items: center;
-    gap: var(--ce-space-2);
-    padding: var(--ce-space-2) var(--ce-space-3);
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-in-out);
-    max-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: var(--ce-space-2);
+  padding: var(--ce-space-2) var(--ce-space-3);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  max-width: 200px;
 }
 
 .recentChip:hover {
-    background: var(--mantine-color-gray-1);
-    border-color: var(--mantine-color-gray-4);
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-4);
 }
 
 .recentChipSelected {
-    background: var(--mantine-color-blue-0);
-    border-color: var(--mantine-color-blue-4);
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-4);
 }
 
 .recentChipSelected:hover {
-    background: var(--mantine-color-blue-1);
+  background: var(--mantine-color-blue-1);
 }
 
 .recentChipName {
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    color: var(--mantine-color-gray-8);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--mantine-color-gray-8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .recentChipMeta {
-    font-size: 10px;
-    color: var(--mantine-color-gray-5);
-    white-space: nowrap;
+  font-size: 10px;
+  color: var(--mantine-color-gray-5);
+  white-space: nowrap;
 }
 
 /* ============================================
@@ -185,12 +185,12 @@
    ============================================ */
 
 .recipeList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ce-space-2);
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: var(--ce-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ce-space-2);
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: var(--ce-space-4);
 }
 
 /* ============================================
@@ -198,123 +198,123 @@
    ============================================ */
 
 .recipeCard {
-    display: flex;
-    align-items: center;
-    gap: var(--ce-space-3);
-    padding: var(--ce-space-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-in-out);
-    outline: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-3);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  outline: none;
 }
 
 .recipeCard:hover {
-    background: var(--mantine-color-gray-0);
-    border-color: var(--mantine-color-gray-4);
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-4);
 }
 
 .recipeCard:focus-visible {
-    border-color: var(--mantine-color-blue-5);
-    box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
+  border-color: var(--mantine-color-blue-5);
+  box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
 }
 
 .recipeCard.selected {
-    background: var(--mantine-color-blue-0);
-    border-color: var(--mantine-color-blue-4);
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-4);
 }
 
 .recipeCard.selected:hover {
-    background: var(--mantine-color-blue-1);
+  background: var(--mantine-color-blue-1);
 }
 
 .recipeCard.focused {
-    border-color: var(--mantine-color-blue-5);
-    box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
+  border-color: var(--mantine-color-blue-5);
+  box-shadow: 0 0 0 2px var(--mantine-color-blue-1);
 }
 
 /* Recipe Image */
 .recipeImage {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .recipeImage img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Recipe Info */
 .recipeInfo {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .recipeName {
-    font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
-    color: var(--mantine-color-gray-8);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--mantine-color-gray-8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recipeMeta {
-    display: flex;
-    align-items: center;
-    gap: var(--ce-space-2);
-    font-size: var(--text-xs);
-    color: var(--mantine-color-gray-5);
+  display: flex;
+  align-items: center;
+  gap: var(--ce-space-2);
+  font-size: var(--text-xs);
+  color: var(--mantine-color-gray-5);
 }
 
 .recipeMeta span {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .recipeDescription {
-    font-size: var(--text-xs);
-    color: var(--mantine-color-gray-5);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: var(--text-xs);
+  color: var(--mantine-color-gray-5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Selection Indicator */
 .selectionIndicator {
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-full);
-    border: 2px solid var(--mantine-color-gray-3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all var(--duration-fast) var(--ease-in-out);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--mantine-color-gray-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-in-out);
 }
 
 .recipeCard.selected .selectionIndicator {
-    background: var(--mantine-color-blue-6);
-    border-color: var(--mantine-color-blue-6);
-    color: white;
+  background: var(--mantine-color-blue-6);
+  border-color: var(--mantine-color-blue-6);
+  color: white;
 }
 
 .recipeCard:not(.selected) .selectionIndicator {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 .recipeCard:hover:not(.selected) .selectionIndicator {
-    opacity: 1;
-    border-color: var(--mantine-color-blue-4);
+  opacity: 1;
+  border-color: var(--mantine-color-blue-4);
 }
 
 /* ============================================
@@ -322,54 +322,54 @@
    ============================================ */
 
 .loadingContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ce-space-3);
-    padding: var(--ce-space-6);
-    flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-6);
+  flex: 1;
 }
 
 .loadingText {
-    font-size: var(--text-sm);
-    color: var(--mantine-color-gray-5);
+  font-size: var(--text-sm);
+  color: var(--mantine-color-gray-5);
 }
 
 .emptyState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ce-space-3);
-    padding: var(--ce-space-6);
-    text-align: center;
-    flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ce-space-3);
+  padding: var(--ce-space-6);
+  text-align: center;
+  flex: 1;
 }
 
 .emptyStateText {
-    font-size: var(--text-sm);
-    color: var(--mantine-color-gray-5);
+  font-size: var(--text-sm);
+  color: var(--mantine-color-gray-5);
 }
 
 .emptyStateAction {
-    margin-top: var(--ce-space-2);
+  margin-top: var(--ce-space-2);
 }
 
 .clearFilterButton {
-    padding: var(--ce-space-2) var(--ce-space-3);
-    background: var(--mantine-color-gray-1);
-    border: none;
-    border-radius: var(--radius-md);
-    color: var(--mantine-color-gray-6);
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-in-out);
+  padding: var(--ce-space-2) var(--ce-space-3);
+  background: var(--mantine-color-gray-1);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--mantine-color-gray-6);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
 }
 
 .clearFilterButton:hover {
-    background: var(--mantine-color-gray-2);
-    color: var(--mantine-color-gray-7);
+  background: var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-7);
 }
 
 /* ============================================
@@ -377,10 +377,10 @@
    ============================================ */
 
 .loadMoreTrigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--ce-space-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ce-space-3);
 }
 
 /* ============================================
@@ -388,22 +388,22 @@
    ============================================ */
 
 @media (min-width: 768px) {
-    .container {
-        gap: var(--ce-space-4);
-    }
+  .container {
+    gap: var(--ce-space-4);
+  }
 
-    .recipeCard {
-        padding: var(--ce-space-3) var(--ce-space-4);
-    }
+  .recipeCard {
+    padding: var(--ce-space-3) var(--ce-space-4);
+  }
 
-    .recipeImage {
-        width: 64px;
-        height: 64px;
-    }
+  .recipeImage {
+    width: 64px;
+    height: 64px;
+  }
 
-    .recipeName {
-        font-size: var(--text-base);
-    }
+  .recipeName {
+    font-size: var(--text-base);
+  }
 }
 
 /* ============================================
@@ -411,10 +411,9 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
-    .recipeCard,
-    .selectionIndicator,
-    .createButton {
-        transition: none;
-    }
+  .recipeCard,
+  .selectionIndicator,
+  .createButton {
+    transition: none;
+  }
 }

@@ -1,9 +1,5 @@
-import { baseAPISlice } from "../baseAPISlice";
-import {
-  type Coach,
-  type CoachResponse,
-  type CoachUpdateRequest,
-} from "./coach_definition";
+import {baseAPISlice} from '../baseAPISlice';
+import {type Coach, type CoachResponse, type CoachUpdateRequest} from './coach_definition';
 
 export const coachApi = baseAPISlice.injectEndpoints({
   endpoints: (build) => ({
@@ -13,11 +9,11 @@ export const coachApi = baseAPISlice.injectEndpoints({
      */
     getMyCoach: build.query<Coach, void>({
       query: () => ({
-        url: "/v1/coaches/me",
-        method: "get",
+        url: '/v1/coaches/me',
+        method: 'get',
       }),
       transformResponse: (response: CoachResponse) => response.data,
-      providesTags: ["Coach"],
+      providesTags: ['Coach'],
     }),
 
     /**
@@ -26,15 +22,15 @@ export const coachApi = baseAPISlice.injectEndpoints({
      */
     updateMyCoach: build.mutation<Coach, CoachUpdateRequest>({
       query: (body) => ({
-        url: "/v1/coaches/me",
-        method: "patch",
+        url: '/v1/coaches/me',
+        method: 'patch',
         data: body,
       }),
       transformResponse: (response: CoachResponse) => response.data,
-      invalidatesTags: ["Coach"],
+      invalidatesTags: ['Coach'],
     }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetMyCoachQuery, useUpdateMyCoachMutation } = coachApi;
+export const {useGetMyCoachQuery, useUpdateMyCoachMutation} = coachApi;

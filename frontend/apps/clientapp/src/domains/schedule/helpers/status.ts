@@ -1,4 +1,4 @@
-import type { CompletionState } from './types';
+import type {CompletionState} from './types';
 
 const WEEKDAY_LABELS: Record<number, string> = {
   1: 'Mon',

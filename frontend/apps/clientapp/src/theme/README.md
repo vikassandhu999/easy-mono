@@ -13,6 +13,7 @@ A production-ready, mobile-first design system built on Mantine for coaching and
 ## 🎨 Color System
 
 ### Brand Colors
+
 - **Primary Blue** (`brand`): Professional, trustworthy - main interactive elements
 - **Success Green** (`success`): Achievement, health metrics, positive outcomes
 - **Error Red** (`error`): Alerts, validation errors, critical states
@@ -20,6 +21,7 @@ A production-ready, mobile-first design system built on Mantine for coaching and
 - **Neutral Gray** (`gray`): UI hierarchy, text, backgrounds
 
 ### Semantic Colors
+
 ```tsx
 // Text colors
 --mantine-color-text-primary: #0f172a    // Headings, primary content
@@ -41,6 +43,7 @@ A production-ready, mobile-first design system built on Mantine for coaching and
 ## 📏 Typography
 
 ### Mobile-First Scale
+
 ```tsx
 // Body text
 --text-xs: 0.75rem    (12px)  // Captions, timestamps
@@ -57,6 +60,7 @@ H4: 1rem                     (16px)
 ```
 
 ### Font Families
+
 - **Primary**: Inter Variable (body text)
 - **Headings**: Inter Variable (enhanced)
 - **Monospace**: Roboto Mono Variable (code, data)
@@ -94,9 +98,10 @@ All interactive elements meet accessibility guidelines:
 ## 🎭 Component Variants
 
 ### Buttons
+
 ```tsx
-size: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-variant: 'filled' | 'light' | 'outline' | 'subtle' | 'transparent'
+size: "xs" | "sm" | "md" | "lg" | "xl";
+variant: "filled" | "light" | "outline" | "subtle" | "transparent";
 ```
 
 - **Filled**: Primary actions (CTAs, submit)
@@ -106,8 +111,9 @@ variant: 'filled' | 'light' | 'outline' | 'subtle' | 'transparent'
 - **Transparent**: Navigation, minimal UI
 
 ### Inputs
+
 ```tsx
-size: 'sm' | 'md' | 'lg'
+size: "sm" | "md" | "lg";
 ```
 
 - **sm (36px)**: Compact forms, inline editing
@@ -164,20 +170,18 @@ Typography scales up at each breakpoint for optimal readability.
 ## 🚀 Usage
 
 ### Basic Setup
+
 ```tsx
-import { MantineProvider } from '@mantine/core';
-import { theme } from './theme';
+import { MantineProvider } from "@mantine/core";
+import { theme } from "./theme";
 
 function App() {
-  return (
-    <MantineProvider theme={theme}>
-      {/* Your app */}
-    </MantineProvider>
-  );
+  return <MantineProvider theme={theme}>{/* Your app */}</MantineProvider>;
 }
 ```
 
 ### Using CSS Variables
+
 ```tsx
 import './theme/default-css-variables.css';
 
@@ -191,6 +195,7 @@ import './theme/default-css-variables.css';
 ```
 
 ### Component Styling
+
 ```tsx
 <Button
   size="md"           // 44px height (touch-friendly)
@@ -211,6 +216,7 @@ import './theme/default-css-variables.css';
 ## 🎨 Brand Identity
 
 ### Logo Component
+
 ```tsx
 <span className="logo">
   <span className="logo-primary">Coach</span>
@@ -232,6 +238,7 @@ Dark variant: Add `on-dark` class
 ## 🔧 Customization
 
 ### Override Variables
+
 ```css
 :root {
   --mantine-color-brand-6: #your-brand-color;
@@ -240,6 +247,7 @@ Dark variant: Add `on-dark` class
 ```
 
 ### Extend Theme
+
 ```tsx
 import { theme as baseTheme } from './theme';
 
@@ -255,6 +263,7 @@ export const customTheme = {
 ## 📦 Included Components
 
 All Mantine components are pre-styled with consistent:
+
 - Typography (labels, descriptions, errors)
 - Spacing (padding, margins)
 - Colors (semantic usage)
@@ -273,15 +282,19 @@ All Mantine components are pre-styled with consistent:
 ## 🐛 Common Issues
 
 ### Text too small on mobile?
+
 ✅ Base font is 14px (0.875rem) - optimal for mobile readability
 
 ### Buttons too small to tap?
+
 ✅ Use `size="md"` (44px) or larger for primary actions
 
 ### Spacing feels tight?
+
 ✅ This is intentional for mobile - use `--ce-space-5` or higher for breathing room
 
 ### Need more contrast?
+
 ✅ Use `--mantine-color-text-primary` for important text
 
 ## 📚 Resources

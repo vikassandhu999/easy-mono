@@ -23,7 +23,10 @@ const WebstieFeature = () => {
             className="rounded-xl shadow-lg"
           />
         </div>
-        <Link href={APP_LOGIN_URL} className="flex gap-4 my-8 justify-between mx-auto items-center bg-blue-500 py-4 px-8  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
+        <Link
+          href={APP_LOGIN_URL}
+          className="flex gap-4 my-8 justify-between mx-auto items-center bg-blue-500 py-4 px-8  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg"
+        >
           Build Your Brand
           <IconArrowRight />
         </Link>

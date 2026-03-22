@@ -11,7 +11,11 @@ interface DrawerStackContextValue {
   getDrawerData: <T = DrawerData>(id: string) => T | undefined;
   isOpen: (id: string) => boolean;
   openDrawer: (id: string, data?: DrawerData) => void;
-  register: (id: string) => {onClose: () => void; opened: boolean; stackId: string};
+  register: (id: string) => {
+    onClose: () => void;
+    opened: boolean;
+    stackId: string;
+  };
   replaceDrawer: (id: string, data?: DrawerData) => void;
   setDrawerData: (id: string, data: DrawerData) => void;
   toggle: (id: string, data?: DrawerData) => void;

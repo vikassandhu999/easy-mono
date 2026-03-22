@@ -127,7 +127,6 @@ const nutritionPlanFormRef = useRef<NutritionPlanFormHandle<'update'>>(null);
 
 ## Benefits
 
-
 ✅ **Type Safety**: TypeScript now enforces correct types based on mode  
 ✅ **DRY Principle**: The form handles adding the `id` internally, no need to do it in every drawer  
 ✅ **Clear Intent**: Explicitly typed refs make it clear whether you're creating or updating  
@@ -147,4 +146,7 @@ const nutritionPlanFormRef = useRef<NutritionPlanFormHandle<'update'>>(null);
 - [ ] Verify TypeScript has no errors in both drawers
 - [ ] Verify the API receives the correct payload (with `id` for updates)
 - [ ] Test form validation in both modes
-````
+
+```
+
+```

@@ -97,7 +97,8 @@ export default function PaymentProcessingPage() {
               Payment Processing
             </span>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Get Paid <span className="text-purple-600">On Time, Every Time</span>
+              Get Paid{" "}
+              <span className="text-purple-600">On Time, Every Time</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8">
               Stop chasing payments. CoachEasy&apos;s integrated payment system
@@ -139,7 +140,9 @@ export default function PaymentProcessingPage() {
                   <div className="w-12 h-12 bg-purple-100 flex items-center justify-center mb-4">
                     <Icon size={24} className="text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {feature.title}
+                  </h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
               );

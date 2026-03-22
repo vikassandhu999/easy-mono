@@ -35,7 +35,16 @@ const Header = ({onClose, title, actions}: AutoModalProps) => {
         {title}
       </Title>
     ) : (
-      <Box style={{overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0}}>{title}</Box>
+      <Box
+        style={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {title}
+      </Box>
     );
 
   const ActionElements = actions && <Box style={{flexShrink: 0, marginLeft: 'auto'}}>{actions}</Box>;

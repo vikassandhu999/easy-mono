@@ -1,4 +1,4 @@
-import { z } from "zod";
+import {z} from 'zod';
 
 /* --------- Coach entity (matches API contract GET /v1/coaches/me) */
 export interface Coach {
@@ -27,18 +27,18 @@ export function parseCoachName(name: null | string): {
   firstName: string;
   lastName: string;
 } {
-  if (!name) return { firstName: "", lastName: "" };
+  if (!name) return {firstName: '', lastName: ''};
   const parts = name.trim().split(/\s+/);
   return {
-    firstName: parts[0] ?? "",
-    lastName: parts.slice(1).join(" "),
+    firstName: parts[0] ?? '',
+    lastName: parts.slice(1).join(' '),
   };
 }
 
 /* --------- Form validation schema (Zod for zodResolver only) */
 export const CoachProfileForm_zod = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  title: z.string().max(127).optional().nullable().or(z.literal("")),
+  name: z.string().min(1, 'Name is required').max(255),
+  title: z.string().max(127).optional().nullable().or(z.literal('')),
   bio: z
     .string()
     .optional()
@@ -48,7 +48,7 @@ export const CoachProfileForm_zod = z.object({
         if (!val) return true;
         return val.trim().split(/\s+/).filter(Boolean).length <= 200;
       },
-      { message: "Bio cannot exceed 200 words" },
+      {message: 'Bio cannot exceed 200 words'},
     ),
 });
 

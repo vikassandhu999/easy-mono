@@ -11,49 +11,49 @@ import SettingsPage from '@/domains/settings/pages/SettingsPage';
 import ProtectedRouteLayout from '@/utils/ProtectedRouteLayout';
 
 const router = createBrowserRouter([
-    // Public auth routes
-    {
-        element: <SignInPage />,
-        path: '/signin',
-    },
-    {
-        element: <SignInCodePage />,
-        path: '/signin/code',
-    },
-    {
-        element: <PublicJoinPage />,
-        path: '/join/:code',
-    },
-    {
-        element: <AcceptInvitationPage />,
-        path: '/invite/:token',
-    },
-    // Protected routes
-    {
-        element: <ProtectedRouteLayout />,
-        children: [
-            {
-                element: <HomePage />,
-                path: '/',
-            },
-            {
-                element: <SchedulePage />,
-                path: '/schedule',
-            },
-            {
-                element: <SettingsPage />,
-                path: '/settings',
-            },
-            {
-                element: <MainProfilePage />,
-                path: '/settings/profile',
-            },
-        ],
-    },
+  // Public auth routes
+  {
+    element: <SignInPage />,
+    path: '/signin',
+  },
+  {
+    element: <SignInCodePage />,
+    path: '/signin/code',
+  },
+  {
+    element: <PublicJoinPage />,
+    path: '/join/:code',
+  },
+  {
+    element: <AcceptInvitationPage />,
+    path: '/invite/:token',
+  },
+  // Protected routes
+  {
+    element: <ProtectedRouteLayout />,
+    children: [
+      {
+        element: <HomePage />,
+        path: '/',
+      },
+      {
+        element: <SchedulePage />,
+        path: '/schedule',
+      },
+      {
+        element: <SettingsPage />,
+        path: '/settings',
+      },
+      {
+        element: <MainProfilePage />,
+        path: '/settings/profile',
+      },
+    ],
+  },
 ]);
 
 const AppRouterProvider = () => {
-    return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />;
 };
 
 export default AppRouterProvider;

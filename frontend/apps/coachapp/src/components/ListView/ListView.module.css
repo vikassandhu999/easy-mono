@@ -1,17 +1,17 @@
 .list {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 
 .listItem {
-    margin-bottom: 8px;
-    padding: 0;
-    display: flex;
+  margin-bottom: 8px;
+  padding: 0;
+  display: flex;
 }
 
-.listItem>* {
-    display: block;
-    width: 100%;
-    flex: 1;
+.listItem > * {
+  display: block;
+  width: 100%;
+  flex: 1;
 }

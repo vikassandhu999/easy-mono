@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
 
-import 'axios';
+import "axios";
 
-declare module 'axios' {
+declare module "axios" {
   export interface AxiosRequestConfig {
     _retry?: boolean;
     skipAuth?: boolean;
-    authToken?: string
+    authToken?: string;
   }
 }

@@ -62,7 +62,10 @@ const SimplicitySection = () => {
           </div>
         </div>
 
-        <Link href={APP_LOGIN_URL} className="flex w-max gap-4 my-8 items-center bg-blue-500 py-4 px-8  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
+        <Link
+          href={APP_LOGIN_URL}
+          className="flex w-max gap-4 my-8 items-center bg-blue-500 py-4 px-8  text-white font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg"
+        >
           Get started
           <IconArrowRight />
         </Link>

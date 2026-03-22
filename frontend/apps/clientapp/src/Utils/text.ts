@@ -4,10 +4,10 @@
  * @returns The capitalized string
  */
 export function capitalize(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**
@@ -16,13 +16,13 @@ export function capitalize(str: string): string {
  * @returns The string with each word capitalized
  */
 export function capitalizeWords(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str
-        .split(' ')
-        .map((word) => capitalize(word))
-        .join(' ');
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str
+    .split(' ')
+    .map((word) => capitalize(word))
+    .join(' ');
 }
 
 /**
@@ -31,44 +31,44 @@ export function capitalizeWords(str: string): string {
  * @returns The title-cased string
  */
 export function titleCase(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
+  if (!str || str.length === 0) {
+    return str;
+  }
 
-    const smallWords = [
-        'a',
-        'an',
-        'and',
-        'as',
-        'at',
-        'but',
-        'by',
-        'for',
-        'if',
-        'in',
-        'of',
-        'on',
-        'or',
-        'the',
-        'to',
-        'via',
-    ];
+  const smallWords = [
+    'a',
+    'an',
+    'and',
+    'as',
+    'at',
+    'but',
+    'by',
+    'for',
+    'if',
+    'in',
+    'of',
+    'on',
+    'or',
+    'the',
+    'to',
+    'via',
+  ];
 
-    return str
-        .toLowerCase()
-        .split(' ')
-        .map((word, index) => {
-            // Always capitalize first and last word
-            if (index === 0 || index === str.split(' ').length - 1) {
-                return capitalize(word);
-            }
-            // Don't capitalize small words
-            if (smallWords.includes(word)) {
-                return word;
-            }
-            return capitalize(word);
-        })
-        .join(' ');
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => {
+      // Always capitalize first and last word
+      if (index === 0 || index === str.split(' ').length - 1) {
+        return capitalize(word);
+      }
+      // Don't capitalize small words
+      if (smallWords.includes(word)) {
+        return word;
+      }
+      return capitalize(word);
+    })
+    .join(' ');
 }
 
 /**
@@ -77,13 +77,13 @@ export function titleCase(str: string): string {
  * @returns The Title Case string
  */
 export function snakeToTitle(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str
-        .split('_')
-        .map((word) => capitalize(word))
-        .join(' ');
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str
+    .split('_')
+    .map((word) => capitalize(word))
+    .join(' ');
 }
 
 /**
@@ -92,15 +92,15 @@ export function snakeToTitle(str: string): string {
  * @returns The Title Case string
  */
 export function camelToTitle(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str
-        .replace(/([A-Z])/g, ' $1')
-        .trim()
-        .split(' ')
-        .map((word) => capitalize(word))
-        .join(' ');
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .split(' ')
+    .map((word) => capitalize(word))
+    .join(' ');
 }
 
 /**
@@ -111,10 +111,10 @@ export function camelToTitle(str: string): string {
  * @returns The truncated string
  */
 export function truncate(str: string, maxLength: number, ellipsis: string = '...'): string {
-    if (!str || str.length <= maxLength) {
-        return str;
-    }
-    return str.slice(0, maxLength - ellipsis.length) + ellipsis;
+  if (!str || str.length <= maxLength) {
+    return str;
+  }
+  return str.slice(0, maxLength - ellipsis.length) + ellipsis;
 }
 
 /**
@@ -123,13 +123,13 @@ export function truncate(str: string, maxLength: number, ellipsis: string = '...
  * @returns The kebab-case string
  */
 export function toKebabCase(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str
-        .replace(/([a-z])([A-Z])/g, '$1-$2')
-        .replace(/[\s_]+/g, '-')
-        .toLowerCase();
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[\s_]+/g, '-')
+    .toLowerCase();
 }
 
 /**
@@ -138,13 +138,13 @@ export function toKebabCase(str: string): string {
  * @returns The snake_case string
  */
 export function toSnakeCase(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str
-        .replace(/([a-z])([A-Z])/g, '$1_$2')
-        .replace(/[\s-]+/g, '_')
-        .toLowerCase();
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .replace(/[\s-]+/g, '_')
+    .toLowerCase();
 }
 
 /**
@@ -153,10 +153,10 @@ export function toSnakeCase(str: string): string {
  * @returns The camelCase string
  */
 export function toCamelCase(str: string): string {
-    if (!str || str.length === 0) {
-        return str;
-    }
-    return str.toLowerCase().replace(/[_-\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ''));
+  if (!str || str.length === 0) {
+    return str;
+  }
+  return str.toLowerCase().replace(/[_-\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ''));
 }
 
 /**
@@ -167,10 +167,10 @@ export function toCamelCase(str: string): string {
  * @returns The word in singular or plural form
  */
 export function pluralize(word: string, count: number, pluralForm?: string): string {
-    if (count === 1) {
-        return word;
-    }
-    return pluralForm || `${word}s`;
+  if (count === 1) {
+    return word;
+  }
+  return pluralForm || `${word}s`;
 }
 
 /**
@@ -179,8 +179,8 @@ export function pluralize(word: string, count: number, pluralForm?: string): str
  * @returns The cleaned string
  */
 export function cleanWhitespace(str: string): string {
-    if (!str) {
-        return str;
-    }
-    return str.replace(/\s+/g, ' ').trim();
+  if (!str) {
+    return str;
+  }
+  return str.replace(/\s+/g, ' ').trim();
 }

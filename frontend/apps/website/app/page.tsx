@@ -55,8 +55,9 @@ export default function Home() {
           Built With Coaches, For Coaches
         </h3>
         <p className="text-gray-600 text-lg max-w-2xl">
-          We don&apos;t build in isolation. Every feature starts with real feedback from coaches like you.
-          Join our WhatsApp community to share ideas, report issues, and help shape what we build next.
+          We don&apos;t build in isolation. Every feature starts with real
+          feedback from coaches like you. Join our WhatsApp community to share
+          ideas, report issues, and help shape what we build next.
         </p>
         <div className="flex flex-wrap gap-4 mt-2">
           <Link

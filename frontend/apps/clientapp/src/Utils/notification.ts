@@ -6,12 +6,12 @@ import {notifications} from '@mantine/notifications';
  * Configuration options for notifications
  */
 export interface NotificationOptions {
-    autoClose?: false | number;
-    id?: string;
-    loading?: boolean;
-    message: string;
-    title?: string;
-    withCloseButton?: boolean;
+  autoClose?: false | number;
+  id?: string;
+  loading?: boolean;
+  message: string;
+  title?: string;
+  withCloseButton?: boolean;
 }
 
 /**
@@ -20,15 +20,15 @@ export interface NotificationOptions {
  * @param options - Optional configuration
  */
 export const notifySuccess = (message: string, options?: Partial<NotificationOptions>) => {
-    notifications.show({
-        title: options?.title || 'Success',
-        message,
-        color: 'green',
-        autoClose: options?.autoClose ?? 5000,
-        withCloseButton: options?.withCloseButton ?? true,
-        id: options?.id,
-        loading: options?.loading ?? false,
-    });
+  notifications.show({
+    title: options?.title || 'Success',
+    message,
+    color: 'green',
+    autoClose: options?.autoClose ?? 5000,
+    withCloseButton: options?.withCloseButton ?? true,
+    id: options?.id,
+    loading: options?.loading ?? false,
+  });
 };
 
 /**
@@ -37,15 +37,15 @@ export const notifySuccess = (message: string, options?: Partial<NotificationOpt
  * @param options - Optional configuration
  */
 export const notifyError = (message: string, options?: Partial<NotificationOptions>) => {
-    notifications.show({
-        title: options?.title || 'Error',
-        message,
-        color: 'red',
-        autoClose: options?.autoClose ?? 7000,
-        withCloseButton: options?.withCloseButton ?? true,
-        id: options?.id,
-        loading: options?.loading ?? false,
-    });
+  notifications.show({
+    title: options?.title || 'Error',
+    message,
+    color: 'red',
+    autoClose: options?.autoClose ?? 7000,
+    withCloseButton: options?.withCloseButton ?? true,
+    id: options?.id,
+    loading: options?.loading ?? false,
+  });
 };
 
 /**
@@ -54,15 +54,15 @@ export const notifyError = (message: string, options?: Partial<NotificationOptio
  * @param options - Optional configuration
  */
 export const notifyWarning = (message: string, options?: Partial<NotificationOptions>) => {
-    notifications.show({
-        title: options?.title || 'Warning',
-        message,
-        color: 'yellow',
-        autoClose: options?.autoClose ?? 6000,
-        withCloseButton: options?.withCloseButton ?? true,
-        id: options?.id,
-        loading: options?.loading ?? false,
-    });
+  notifications.show({
+    title: options?.title || 'Warning',
+    message,
+    color: 'yellow',
+    autoClose: options?.autoClose ?? 6000,
+    withCloseButton: options?.withCloseButton ?? true,
+    id: options?.id,
+    loading: options?.loading ?? false,
+  });
 };
 
 /**
@@ -71,15 +71,15 @@ export const notifyWarning = (message: string, options?: Partial<NotificationOpt
  * @param options - Optional configuration
  */
 export const notifyInfo = (message: string, options?: Partial<NotificationOptions>) => {
-    notifications.show({
-        title: options?.title || 'Info',
-        message,
-        color: 'blue',
-        autoClose: options?.autoClose ?? 5000,
-        withCloseButton: options?.withCloseButton ?? true,
-        id: options?.id,
-        loading: options?.loading ?? false,
-    });
+  notifications.show({
+    title: options?.title || 'Info',
+    message,
+    color: 'blue',
+    autoClose: options?.autoClose ?? 5000,
+    withCloseButton: options?.withCloseButton ?? true,
+    id: options?.id,
+    loading: options?.loading ?? false,
+  });
 };
 
 /**
@@ -88,17 +88,17 @@ export const notifyInfo = (message: string, options?: Partial<NotificationOption
  * @param options - Optional configuration
  */
 export const notifyLoading = (message: string, options?: Partial<NotificationOptions>) => {
-    const id = options?.id || `loading-${Date.now()}`;
-    notifications.show({
-        id,
-        title: options?.title || 'Loading',
-        message,
-        color: 'blue',
-        loading: true,
-        autoClose: false,
-        withCloseButton: false,
-    });
-    return id;
+  const id = options?.id || `loading-${Date.now()}`;
+  notifications.show({
+    id,
+    title: options?.title || 'Loading',
+    message,
+    color: 'blue',
+    loading: true,
+    autoClose: false,
+    withCloseButton: false,
+  });
+  return id;
 };
 
 /**
@@ -109,34 +109,34 @@ export const notifyLoading = (message: string, options?: Partial<NotificationOpt
  * @param options - Optional configuration
  */
 export const notifyUpdate = (
-    id: string,
-    message: string,
-    type: 'error' | 'info' | 'success' | 'warning' = 'success',
-    options?: Partial<NotificationOptions>,
+  id: string,
+  message: string,
+  type: 'error' | 'info' | 'success' | 'warning' = 'success',
+  options?: Partial<NotificationOptions>,
 ) => {
-    const colorMap = {
-        success: 'green',
-        error: 'red',
-        warning: 'yellow',
-        info: 'blue',
-    };
+  const colorMap = {
+    success: 'green',
+    error: 'red',
+    warning: 'yellow',
+    info: 'blue',
+  };
 
-    const titleMap = {
-        success: 'Success',
-        error: 'Error',
-        warning: 'Warning',
-        info: 'Info',
-    };
+  const titleMap = {
+    success: 'Success',
+    error: 'Error',
+    warning: 'Warning',
+    info: 'Info',
+  };
 
-    notifications.update({
-        id,
-        title: options?.title || titleMap[type],
-        message,
-        color: colorMap[type],
-        loading: false,
-        autoClose: options?.autoClose ?? 5000,
-        withCloseButton: options?.withCloseButton ?? true,
-    });
+  notifications.update({
+    id,
+    title: options?.title || titleMap[type],
+    message,
+    color: colorMap[type],
+    loading: false,
+    autoClose: options?.autoClose ?? 5000,
+    withCloseButton: options?.withCloseButton ?? true,
+  });
 };
 
 /**
@@ -144,14 +144,14 @@ export const notifyUpdate = (
  * @param id - The notification ID to hide
  */
 export const notifyHide = (id: string) => {
-    notifications.hide(id);
+  notifications.hide(id);
 };
 
 /**
  * Clears all notifications
  */
 export const notifyClearAll = () => {
-    notifications.clean();
+  notifications.clean();
 };
 
 /**
@@ -159,7 +159,7 @@ export const notifyClearAll = () => {
  * @param config - The notification configuration
  */
 export const notifyCustom = (config: NotificationData) => {
-    notifications.show(config);
+  notifications.show(config);
 };
 
 /**
@@ -168,36 +168,36 @@ export const notifyCustom = (config: NotificationData) => {
  * @param messages - Messages for loading, success, and error states
  */
 export const notifyAsync = async <T>(
-    promise: Promise<T>,
-    messages: {
-        loading: string;
-        success: string;
-        error: string;
-    },
+  promise: Promise<T>,
+  messages: {
+    loading: string;
+    success: string;
+    error: string;
+  },
 ): Promise<T> => {
-    const id = notifyLoading(messages.loading);
+  const id = notifyLoading(messages.loading);
 
-    try {
-        const result = await promise;
-        notifyUpdate(id, messages.success, 'success');
-        return result;
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : messages.error;
-        notifyUpdate(id, errorMessage, 'error');
-        throw error;
-    }
+  try {
+    const result = await promise;
+    notifyUpdate(id, messages.success, 'success');
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : messages.error;
+    notifyUpdate(id, errorMessage, 'error');
+    throw error;
+  }
 };
 
 // Export a default notification helper object
 export default {
-    success: notifySuccess,
-    error: notifyError,
-    warning: notifyWarning,
-    info: notifyInfo,
-    loading: notifyLoading,
-    update: notifyUpdate,
-    hide: notifyHide,
-    clearAll: notifyClearAll,
-    custom: notifyCustom,
-    async: notifyAsync,
+  success: notifySuccess,
+  error: notifyError,
+  warning: notifyWarning,
+  info: notifyInfo,
+  loading: notifyLoading,
+  update: notifyUpdate,
+  hide: notifyHide,
+  clearAll: notifyClearAll,
+  custom: notifyCustom,
+  async: notifyAsync,
 };

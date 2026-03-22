@@ -36,7 +36,10 @@ export default function EasyController<
       render={(renderProps) =>
         props.render({
           ...renderProps,
-          field: {...renderProps.field, error: renderProps.fieldState.error?.message},
+          field: {
+            ...renderProps.field,
+            error: renderProps.fieldState.error?.message,
+          },
         })
       }
     />

@@ -106,7 +106,10 @@ const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section id="pricing" className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gradient-to-r from-blue-50 to-purple-50">
+    <section
+      id="pricing"
+      className="px-4 md:px-0 w-full mx-auto font-sans py-20 md:py-32 bg-gradient-to-r from-blue-50 to-purple-50"
+    >
       <main className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h1 className="font-funnel text-3xl md:text-4xl lg:text-5xl xl:text-7xl font-normal leading-tight">

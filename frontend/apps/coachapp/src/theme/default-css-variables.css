@@ -1,71 +1,71 @@
 :root {
-  --ce-text-strong: #000626E5;
-  --ce-text-weak: #000933A6;
-  --ce-text-brand: #4C64D9;
-  --ce-text-disabled: #0011661A;
-  --ce-text-error: #C73A3A;
-  --ce-text-warning: #8F6C1A;
-  --ce-text-success: #067A57;
-  --ce-text-info: #1A74A8;
-  --ce-text-inverse-strong: #FFFFFF;
-  --ce-text-inverse-weak: #FFFFFFC7;
-  --ce-text-inverse-disabled: #FFFFFF1F;
+  --ce-text-strong: #000626e5;
+  --ce-text-weak: #000933a6;
+  --ce-text-brand: #4c64d9;
+  --ce-text-disabled: #0011661a;
+  --ce-text-error: #c73a3a;
+  --ce-text-warning: #8f6c1a;
+  --ce-text-success: #067a57;
+  --ce-text-info: #1a74a8;
+  --ce-text-inverse-strong: #ffffff;
+  --ce-text-inverse-weak: #ffffffc7;
+  --ce-text-inverse-disabled: #ffffff1f;
 
-  --ce-bg-base: #FFFFFF;
-  --ce-bg-raised: #FFFFFF;
-  --ce-bg-overlay: #FFFFFF;
-  --ce-bg-sunken: #F5F6FA;
-  --ce-bg-alternate: #F5F6FA;
-  --ce-bg-brand: #4C64D9;
-  --ce-bg-inverse: #12131A;
+  --ce-bg-base: #ffffff;
+  --ce-bg-raised: #ffffff;
+  --ce-bg-overlay: #ffffff;
+  --ce-bg-sunken: #f5f6fa;
+  --ce-bg-alternate: #f5f6fa;
+  --ce-bg-brand: #4c64d9;
+  --ce-bg-inverse: #12131a;
 
-  --ce-stroke-strong: #000D4D73;
-  --ce-stroke-weak: #0011661A;
-  --ce-stroke-selected: #4C64D9;
-  --ce-stroke-focus: #4C64D9;
-  --ce-stroke-disabled: #0011661A;
-  --ce-stroke-brand-strong: #4C64D9CC;
-  --ce-stroke-brand-weak: #4C64D933;
-  --ce-stroke-error-strong: #C73A3ACC;
-  --ce-stroke-error-weak: #C73A3A24;
-  --ce-stroke-warning-strong: #8F6C1ACC;
-  --ce-stroke-warning-weak: #8F6C1A33;
-  --ce-stroke-success-strong: #067A57CC;
-  --ce-stroke-success-weak: #067A5733;
-  --ce-stroke-info-strong: #1A74A8CC;
-  --ce-stroke-info-weak: #1A74A833;
-  --ce-stroke-inverse-strong: #FFFFFF99;
-  --ce-stroke-inverse-weak: #FFFFFF1F;
-  --ce-stroke-inverse-disabled: #FFFFFF1F;
+  --ce-stroke-strong: #000d4d73;
+  --ce-stroke-weak: #0011661a;
+  --ce-stroke-selected: #4c64d9;
+  --ce-stroke-focus: #4c64d9;
+  --ce-stroke-disabled: #0011661a;
+  --ce-stroke-brand-strong: #4c64d9cc;
+  --ce-stroke-brand-weak: #4c64d933;
+  --ce-stroke-error-strong: #c73a3acc;
+  --ce-stroke-error-weak: #c73a3a24;
+  --ce-stroke-warning-strong: #8f6c1acc;
+  --ce-stroke-warning-weak: #8f6c1a33;
+  --ce-stroke-success-strong: #067a57cc;
+  --ce-stroke-success-weak: #067a5733;
+  --ce-stroke-info-strong: #1a74a8cc;
+  --ce-stroke-info-weak: #1a74a833;
+  --ce-stroke-inverse-strong: #ffffff99;
+  --ce-stroke-inverse-weak: #ffffff1f;
+  --ce-stroke-inverse-disabled: #ffffff1f;
 
-  --ce-fill-strong: #000626E5;
-  --ce-fill-weak: #0015800A;
+  --ce-fill-strong: #000626e5;
+  --ce-fill-weak: #0015800a;
   --ce-fill-weaker: #00158005;
-  --ce-fill-hover: #0015800A;
-  --ce-fill-press: #0011661A;
-  --ce-fill-selected: #4C64D9;
-  --ce-fill-disabled: #0011661A;
-  --ce-fill-overlay: #000D4D73;
-  --ce-fill-brand-strong: #4C64D9;
-  --ce-fill-brand-weak: #5975FF0D;
-  --ce-fill-error-strong: #C73A3A;
-  --ce-fill-error-weak: #FF4A4A0D;
-  --ce-fill-warning-strong: #8F6C1A;
-  --ce-fill-warning-weak: #FFC02E0D;
-  --ce-fill-success-strong: #067A57;
-  --ce-fill-success-weak: #0ACC920D;
-  --ce-fill-info-strong: #1A74A8;
-  --ce-fill-info-weak: #26B0FF0D;
-  --ce-fill-inverse-strong: #FFFFFF;
-  --ce-fill-inverse-weak: #FFFFFF0F;
-  --ce-fill-inverse-hover: #FFFFFF0F;
-  --ce-fill-inverse-press: #FFFFFF1F;
-  --ce-fill-inverse-disabled: #FFFFFF1F;
-  --ce-fill-white: #FFFFFF;
-  --ce-fill-yellow: #FEC62E;
+  --ce-fill-hover: #0015800a;
+  --ce-fill-press: #0011661a;
+  --ce-fill-selected: #4c64d9;
+  --ce-fill-disabled: #0011661a;
+  --ce-fill-overlay: #000d4d73;
+  --ce-fill-brand-strong: #4c64d9;
+  --ce-fill-brand-weak: #5975ff0d;
+  --ce-fill-error-strong: #c73a3a;
+  --ce-fill-error-weak: #ff4a4a0d;
+  --ce-fill-warning-strong: #8f6c1a;
+  --ce-fill-warning-weak: #ffc02e0d;
+  --ce-fill-success-strong: #067a57;
+  --ce-fill-success-weak: #0acc920d;
+  --ce-fill-info-strong: #1a74a8;
+  --ce-fill-info-weak: #26b0ff0d;
+  --ce-fill-inverse-strong: #ffffff;
+  --ce-fill-inverse-weak: #ffffff0f;
+  --ce-fill-inverse-hover: #ffffff0f;
+  --ce-fill-inverse-press: #ffffff1f;
+  --ce-fill-inverse-disabled: #ffffff1f;
+  --ce-fill-white: #ffffff;
+  --ce-fill-yellow: #fec62e;
 
-  --ce-shadow-raised: 0px 4px 8px -2px #0000000A, 0px 2px 4px -2px #00000014;
-  --ce-shadow-overlay: 0px 20px 24px -4px #00000014, 0px 8px 8px -4px #0000000A;
+  --ce-shadow-raised: 0px 4px 8px -2px #0000000a, 0px 2px 4px -2px #00000014;
+  --ce-shadow-overlay: 0px 20px 24px -4px #00000014, 0px 8px 8px -4px #0000000a;
 
   --ce-font-size-display: 56px;
   --ce-font-size-h1: 40px;
@@ -115,8 +115,6 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-
-
   /* ============================================
      SPACING SYSTEM (4px Base Grid)
      ============================================ */
@@ -164,7 +162,6 @@
   --ce-space-80: 6rem;
   /* 96px */
 
-
   /* Minimum touch target (Apple/Google guidelines: 44px) */
   --touch-target-min: 40px;
   --touch-target-comfortable: 48px;
@@ -182,8 +179,6 @@
   --button-height-md: 44px;
   --button-height-lg: 52px;
   --button-height-xl: 60px;
-
-
 
   --mantine-scale: 1;
   --mantine-cursor-type: pointer;
@@ -218,12 +213,14 @@
 
 /* Medium devices (tablets, 768px+) */
 @media (min-width: 768px) {
-  :root {}
+  :root {
+  }
 }
 
 /* Large devices (desktops, 1024px+) */
 @media (min-width: 1024px) {
-  :root {}
+  :root {
+  }
 }
 
 /* ============================================
@@ -304,7 +301,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {

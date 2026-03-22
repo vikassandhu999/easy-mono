@@ -4,9 +4,9 @@ import {useLocation} from 'react-router';
 import {shouldShowNavigation} from './navigation_config.ts';
 
 export function useNavigationVisibility(): boolean {
-    const location = useLocation();
+  const location = useLocation();
 
-    return useMemo(() => {
-        return shouldShowNavigation(location.pathname);
-    }, [location.pathname]);
+  return useMemo(() => {
+    return shouldShowNavigation(location.pathname);
+  }, [location.pathname]);
 }

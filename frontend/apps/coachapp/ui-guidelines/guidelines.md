@@ -127,7 +127,7 @@ Heading 4 20 bold
 Heading 3 24 bold
 Heading 2 32 bold
 Heading 1 40 bold
-Input * Dropdown *
+Input _ Dropdown _
 Selected
 Default Default
 Selected
@@ -142,10 +142,6 @@ Practical UI
 Quick and practical UI design guidelines to design
 intuitive, accessible, and beautiful interfaces.
 Written and designed by Adham Dannaway
-
-
-
-
 
 Copyright © 2024 Adham Dannaway
 All rights reserved. No part of this book may be reproduced or transmitted in any form or by
@@ -163,148 +159,149 @@ Introduction 9
 Hi, I’m Adham 10
 UI design doesn’t have to be so hard 11
 A tutorial to apply what you’ve learned 14
+
 1. Fundamentals 16
-Minimise usability risks 17
-Have a logical reason for every design detail 19
-Minimise interaction cost 21
-Minimise cognitive load 24
-Create a design system 26
-Ensure an interface is accessible 35
-Use common design patterns 40
-Use the 80/20 Rule to prioritise 42
-Keep costs in mind 43
-Be consistent 44
-Clearly indicate interaction states 47
-Tutorial - Fundamentals 48
-Chapter summary 53
+   Minimise usability risks 17
+   Have a logical reason for every design detail 19
+   Minimise interaction cost 21
+   Minimise cognitive load 24
+   Create a design system 26
+   Ensure an interface is accessible 35
+   Use common design patterns 40
+   Use the 80/20 Rule to prioritise 42
+   Keep costs in mind 43
+   Be consistent 44
+   Clearly indicate interaction states 47
+   Tutorial - Fundamentals 48
+   Chapter summary 53
 2. Less is more 55
-Remove unnecessary information 56
-Remove unnecessary styles 57
-Not all links need to be underlined 59
-Use progressive disclosure 61
-Don’t confuse minimalism with simplicity 63
-Make sure important content is visible 65
-Design for the smallest screen first 66
-Reduce choice to speed up decision making 67
-Tutorial - Less is more 72
-Chapter summary 76
+   Remove unnecessary information 56
+   Remove unnecessary styles 57
+   Not all links need to be underlined 59
+   Use progressive disclosure 61
+   Don’t confuse minimalism with simplicity 63
+   Make sure important content is visible 65
+   Design for the smallest screen first 66
+   Reduce choice to speed up decision making 67
+   Tutorial - Less is more 72
+   Chapter summary 76
 3. Colour 78
-Ensure sufficient contrast 79
-Don’t rely on colour alone to convey meaning 85
-Use system colours to indicate status 87
-Use colour to define a clear visual hierarchy 89
-Use black and white for a timeless aesthetic 91
-Add a tinge of colour to black and white 93
-Use 1 brand colour 94
-Apply the brand colour to interactive elements 96
-Create a colour palette with rules that govern its usage 103
-Use the HSB colour system 105
-5 colour variations is often all you need 106
-Create a dark colour palette 116
-Add depth using colour and shadows 120
-Consider using transparent colours 124
-Create a transparent colour palette 129
-Use transparent layers for interaction states 142
-Name colours to keep them organised 146
-Adjust photo colour temperature to match the colour palette 152
-Tutorial - Colour 154
-Chapter summary 161
+   Ensure sufficient contrast 79
+   Don’t rely on colour alone to convey meaning 85
+   Use system colours to indicate status 87
+   Use colour to define a clear visual hierarchy 89
+   Use black and white for a timeless aesthetic 91
+   Add a tinge of colour to black and white 93
+   Use 1 brand colour 94
+   Apply the brand colour to interactive elements 96
+   Create a colour palette with rules that govern its usage 103
+   Use the HSB colour system 105
+   5 colour variations is often all you need 106
+   Create a dark colour palette 116
+   Add depth using colour and shadows 120
+   Consider using transparent colours 124
+   Create a transparent colour palette 129
+   Use transparent layers for interaction states 142
+   Name colours to keep them organised 146
+   Adjust photo colour temperature to match the colour palette 152
+   Tutorial - Colour 154
+   Chapter summary 161
 4. Layout and spacing 163
-Group related elements 164
-Create a clear visual hierarchy 179
-Test visual hierarchy using The Squint Test 187
-Use depth to create visual hierarchy 188
-Understand the box model 189
-Design @1x using points 191
-Create a set of predefined spacing options 192
-Space elements based on how closely related they are 194
-Be generous with white space 201
-Align the main layout to a 12 column grid 203
-Align text to improve readability 207
-Try to avoid using multiple alignments 210
-Keep related actions close 213
-Ensure your interface is unbreakable 216
-Use the Rule of Thirds for photos 217
-Tutorial - Layout and spacing 219
-Chapter summary 227
+   Group related elements 164
+   Create a clear visual hierarchy 179
+   Test visual hierarchy using The Squint Test 187
+   Use depth to create visual hierarchy 188
+   Understand the box model 189
+   Design @1x using points 191
+   Create a set of predefined spacing options 192
+   Space elements based on how closely related they are 194
+   Be generous with white space 201
+   Align the main layout to a 12 column grid 203
+   Align text to improve readability 207
+   Try to avoid using multiple alignments 210
+   Keep related actions close 213
+   Ensure your interface is unbreakable 216
+   Use the Rule of Thirds for photos 217
+   Tutorial - Layout and spacing 219
+   Chapter summary 227
 5. Typography 229
-Use a single sans serif typeface 230
-Evoke emotion using a second typeface for headings 237
-Use regular and bold font weights only 239
-Use a type scale to set font sizes 241
-Make long body text bigger 244
-Use at least 1.5 line height for long body text 245
-Decrease line height as font size increases 247
-Ensure ideal line length 248
-Left align text 251
-Decrease letter spacing for large text 253
-Ensure text on photos is legible 254
-Avoid light grey and pure black text 257
-Tutorial - Typography 258
-Chapter summary 264
+   Use a single sans serif typeface 230
+   Evoke emotion using a second typeface for headings 237
+   Use regular and bold font weights only 239
+   Use a type scale to set font sizes 241
+   Make long body text bigger 244
+   Use at least 1.5 line height for long body text 245
+   Decrease line height as font size increases 247
+   Ensure ideal line length 248
+   Left align text 251
+   Decrease letter spacing for large text 253
+   Ensure text on photos is legible 254
+   Avoid light grey and pure black text 257
+   Tutorial - Typography 258
+   Chapter summary 264
 6. Copywriting 266
-Be concise 267
-Use sentence case 269
-Use plain and simple language 270
-Front-load text 271
-Use the inverted pyramid 272
-Limit the use of abbreviations and acronyms 274
-Limit the use of UPPERCASE 275
-Break up content using descriptive headings and bullets 276
-Avoid using my on form labels 278
-Use vocabulary consistently 279
-Use numerals for numbers 281
-Avoid full stops if possible 283
-Ensure text length is similar across similar interface elements 284
-Ensure text links describe their destination 285
-Write clear error messages 287
-Tutorial - Copywriting 288
-Chapter summary 293
+   Be concise 267
+   Use sentence case 269
+   Use plain and simple language 270
+   Front-load text 271
+   Use the inverted pyramid 272
+   Limit the use of abbreviations and acronyms 274
+   Limit the use of UPPERCASE 275
+   Break up content using descriptive headings and bullets 276
+   Avoid using my on form labels 278
+   Use vocabulary consistently 279
+   Use numerals for numbers 281
+   Avoid full stops if possible 283
+   Ensure text length is similar across similar interface elements 284
+   Ensure text links describe their destination 285
+   Write clear error messages 287
+   Tutorial - Copywriting 288
+   Chapter summary 293
 7. Buttons 295
-Define 3 buttons weights 296
-Use a single primary button for the most important action 303
-Use secondary buttons for less important actions 305
-Use tertiary buttons for the least important actions 306
-Try to avoid disabled buttons 307
-Left align buttons 312
-Ensure button text describes the action 317
-Ensure buttons have a sufficient target size 318
-Balance icon and text pairs 320
-Add friction to destructive actions 322
-Tutorial - Buttons 325
-Chapter summary 328
+   Define 3 buttons weights 296
+   Use a single primary button for the most important action 303
+   Use secondary buttons for less important actions 305
+   Use tertiary buttons for the least important actions 306
+   Try to avoid disabled buttons 307
+   Left align buttons 312
+   Ensure button text describes the action 317
+   Ensure buttons have a sufficient target size 318
+   Balance icon and text pairs 320
+   Add friction to destructive actions 322
+   Tutorial - Buttons 325
+   Chapter summary 328
 8. Forms 330
-Stack forms in a single column layout 331
-Minimise the number of form fields 336
-Mark optional fields 337
-Try to avoid optional fields by using opt-ins 338
-Mark both required and optional fields 339
-Match field width to the intended input 344
-Stick with conventional form field styles 346
-Display hints above form fields 348
-Don’t use placeholder text instead of a label 350
-Ensure form field labels are close to their fields 352
-Try to use radio buttons instead of dropdowns 353
-Use an autocomplete instead of a long dropdown 354
-Use steppers for numeric fields instead of dropdowns 356
-Use a checkbox or toggle switch for 2 options 358
-Use positive phrasing for checkboxes 360
-Break up long forms into multiple steps 361
-Group related fields under headings 362
-Ensure form field borders are high contrast 363
-Choose your form validation approach 364
-Chapter summary 369
-Conclusion 371
-Closing thoughts 372
-Introduction
-A brief breakdown of what to expect in the book to
-ensure you get the most out of it
-Introduction 10
-Hi, I’m Adham
-I’m a product designer from sunny Sydney, Australia, specialising in UI design
-and design systems. Since 2005, I’ve enjoyed working in startups, agencies,
-corporations, and government. I’ve led projects to design products used by
-millions of people.
+   Stack forms in a single column layout 331
+   Minimise the number of form fields 336
+   Mark optional fields 337
+   Try to avoid optional fields by using opt-ins 338
+   Mark both required and optional fields 339
+   Match field width to the intended input 344
+   Stick with conventional form field styles 346
+   Display hints above form fields 348
+   Don’t use placeholder text instead of a label 350
+   Ensure form field labels are close to their fields 352
+   Try to use radio buttons instead of dropdowns 353
+   Use an autocomplete instead of a long dropdown 354
+   Use steppers for numeric fields instead of dropdowns 356
+   Use a checkbox or toggle switch for 2 options 358
+   Use positive phrasing for checkboxes 360
+   Break up long forms into multiple steps 361
+   Group related fields under headings 362
+   Ensure form field borders are high contrast 363
+   Choose your form validation approach 364
+   Chapter summary 369
+   Conclusion 371
+   Closing thoughts 372
+   Introduction
+   A brief breakdown of what to expect in the book to
+   ensure you get the most out of it
+   Introduction 10
+   Hi, I’m Adham
+   I’m a product designer from sunny Sydney, Australia, specialising in UI design
+   and design systems. Since 2005, I’ve enjoyed working in startups, agencies,
+   corporations, and government. I’ve led projects to design products used by
+   millions of people.
 
 I’ve been fortunate to have my work featured in books, magazines, and
 websites around the world. I love design and enjoy sharing what I’ve learned
@@ -327,7 +324,7 @@ guidelines. Not artistic flair or magical intuition, just simple guidelines.
 Sure, artistic talent helps, but a lot of what makes up an intuitive, accessible,
 and beautiful interface design can be learned. Having a system of logical
 guidelines helps you efficiently make informed design decisions. Without a
-logical system, you’re just using gut feeling to move stuff around until it 
+logical system, you’re just using gut feeling to move stuff around until it
 looks pretty.
 
 I wish I knew these guidelines when I first started out. They're a culmination
@@ -337,7 +334,7 @@ experience in a matter of hours.
 Introduction 12
 UI versus UX
 The focus of this book is user interface (UI) design, which is made up of
-visual and interaction design. What a product looks like and how it works. 
+visual and interaction design. What a product looks like and how it works.
 UI design is a large part of user experience (UX) design.
 
 You'll learn how to design the interface that people interact with when they
@@ -351,7 +348,7 @@ software applications, and more.
 Only what you need to know
 There’s an overwhelming amount of design tips, videos, books, and articles
 out there. You can spend a lot of time and money and end up even more
-confused. Much UI design theory is high-level, impractical, and unnecessary. 
+confused. Much UI design theory is high-level, impractical, and unnecessary.
 
 I kept this book as concise and practical as possible to help you quickly cut
 through the noise. It contains the most important things you need to know
@@ -365,11 +362,11 @@ Introduction 13
 How were these guidelines validated?
 Most of the guidelines in this book are based on conventional best practices.
 They've been tried, tested, and documented over many years by hundreds of
-designers around the world. 
+designers around the world.
 
 Many of the guidelines are based on how our bodies work. How our eyes
 perceive things, how our brains interpret them, and how we interact with a
-user interface. 
+user interface.
 
 There are, of course, certain topics that have conflicting evidence and
 opinions. In these cases, I’ve looked at the evidence, weighed it up against
@@ -382,7 +379,7 @@ Got feedback?
 I don’t claim to know it all. In fact, it’s quite the opposite. The more I learn, the
 more I realise how much I have yet to learn. I’m always open to hearing
 different ideas or having my ideas constructively challenged. That’s how we
-learn and grow as designers. 
+learn and grow as designers.
 
 I’d love for this book to grow and improve over time, so let me know if you
 have any thoughts or feedback at hi@adhamdannaway.com
@@ -403,7 +400,7 @@ Inhale Good Vibes
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Morning yoga workout
@@ -437,40 +434,40 @@ Minimise usability risks
 While it might not sound very fun or creative, I base many of my design
 decisions on risk. The risk that someone could have difficulty using an
 interface. For example"
- Thin, light grey text can look sleek and trendy, but there’s a risk that some
+Thin, light grey text can look sleek and trendy, but there’s a risk that some
 may find it difficult to read.B
- Icons without labels can look clean and minimal, but there’s a risk that
+Icons without labels can look clean and minimal, but there’s a risk that
 some might not understand what the icons mean. This risk is greater for
 those with cognitive and vision impairments.B
- It might look nice to add colour to heading text, but there’s a risk that
-some could mistake it for a link. 
+It might look nice to add colour to heading text, but there’s a risk that
+some could mistake it for a link.
 
 Usability testing should highlight large risks, but smaller ones could go
 unnoticed. It depends on the diversity of users you test with and the
 effectiveness of the testing. Most of the time you don’t know the different
 types of people that will be using your product, so it’s safest to cater to as
-diverse a range as possible. 
+diverse a range as possible.
 
 Consider people with poor eyesight, low computer literacy, reduced dexterity
 and cognitive ability. Make sure that your designs meet Web Content
-Accessibility Guidelines (WCAG). 
+Accessibility Guidelines (WCAG).
 
 These guidelines are a good benchmark for website accessibility. Aim to at
 least meet WCAG 2.1 level AA requirements. This is the medium level of
 conformance and a good place to start. You’ll learn the accessibility
-guidelines you need to know throughout the book. 
+guidelines you need to know throughout the book.
 Fundamentals 18
 Keep an eye out for potential usability risks. If there’s anything that’s slightly
 vague, confusing or unclear, simplify it to make it crystal clear before
 investing time and money in usability testing. I’ll refer to usability risks often
 throughout this book to help you see risks that you may not have been aware
-of. I’ll also provide practical advice to decrease usability risks. 
+of. I’ll also provide practical advice to decrease usability risks.
 
 The following example contains the 3 usability risks mentioned previously
 (low contrast text, icons without labels, and blue heading text) along with a
 bunch of others. You’ll learn logical guidelines throughout the book to help
 you fix usability risks like these.
-Experience the wonders of nature as you hike through the snow-capped mountains and fish in the nearby river. This newly built cabin sits high in the mountains, offering breathtaking views that stretch as far as the eye can see. 
+Experience the wonders of nature as you hike through the snow-capped mountains and fish in the nearby river. This newly built cabin sits high in the mountains, offering breathtaking views that stretch as far as the eye can see.
 
 With the capacity to comfortably sleep four people, this cozy retreat provides an intimate escape into the heart of the wilderness. The cabin's interior boasts a warm and inviting atmosphere, featuring a well-appointed dinin
 Book now $299.00
@@ -496,12 +493,12 @@ The importance of UI design is often trivialised as being nothing more than
 making an interface look pretty. I think this demonstrates an ignorance of the
 logic behind UI design. Sure, some elements are purely decorative, but if an
 interface is designed well, every detail will have a logical reason behind it
-that improves usability. 
+that improves usability.
 
 I’m not saying that aesthetics aren’t important, but UI design is about so
 much more than how it looks. It’s about how it works and why it works that
 way. When designing an interface, you’re literally designing the user’s
-experience. 
+experience.
 
 Designing interfaces using objective logic, rather than subjective opinion,
 makes it faster and easier to make design decisions. It also helps you support
@@ -559,10 +556,10 @@ Minimise interaction cost
 Interaction cost is the sum of physical and mental effort required to achieve a
 task. Looking, scrolling, searching, reading, clicking, waiting, typing, thinking,
 and remembering all add to interaction cost. The higher the interaction cost,
-the harder it is for someone to achieve their task. 
+the harder it is for someone to achieve their task.
 
 The great thing about interaction cost is that you can measure it. This means
-you can try to minimise it to make it easier for people to achieve their goals. 
+you can try to minimise it to make it easier for people to achieve their goals.
 
 Of course, the more features a product provides, the harder it is to keep
 interaction costs down. This is one of the reasons why simple apps that
@@ -570,27 +567,28 @@ focus on doing a specific task efficiently, are often the most successful.
 How to minimise interaction cost
 Many of the guidelines in this book help to minimise interaction cost, but here
 are 3 of the most effective:
+
 1. Keep related actions close
-According to Fitts’s Law, the closer and larger a target, the faster it is to click
-on that target. Keep actions close to the element they relate to and try to
-ensure they have a sufficient target area (at least 48pt by 48pt is a safe
-size). You’ll learn about points (pt) in the “Layout and spacing” chapter.
+   According to Fitts’s Law, the closer and larger a target, the faster it is to click
+   on that target. Keep actions close to the element they relate to and try to
+   ensure they have a sufficient target area (at least 48pt by 48pt is a safe
+   size). You’ll learn about points (pt) in the “Layout and spacing” chapter.
 2. Reduce distractions
-Attention grabbing distractions like animated banners, pop-ups, and
-unnecessary visuals, can pull people’s attention away from the task they’re
-trying to complete.
-Fundamentals 22
+   Attention grabbing distractions like animated banners, pop-ups, and
+   unnecessary visuals, can pull people’s attention away from the task they’re
+   trying to complete.
+   Fundamentals 22
 3. Minimise choice
-According to Hick’s Law, the time it takes to make a decision increases with
-the number and complexity of choices. Reduce choices to speed up
-decisions. You can also highlight a smaller set of recommended or popular
-items to help people make decisions faster.
-An interaction cost example
-In the following product page example, let’s say you want to add 2 products
-to your cart. You need to select the quantity via a dropdown, which requires 1
-click, 1 scroll, and another click. This can be especially difficult for those with
-motor impairments. Then you need to move your mouse across to the “Add to
-cart” button and click it. 
+   According to Hick’s Law, the time it takes to make a decision increases with
+   the number and complexity of choices. Reduce choices to speed up
+   decisions. You can also highlight a smaller set of recommended or popular
+   items to help people make decisions faster.
+   An interaction cost example
+   In the following product page example, let’s say you want to add 2 products
+   to your cart. You need to select the quantity via a dropdown, which requires 1
+   click, 1 scroll, and another click. This can be especially difficult for those with
+   motor impairments. Then you need to move your mouse across to the “Add to
+   cart” button and click it.
 
 The total interaction cost is 3 clicks, 1 scroll, and a short mouse movement.
 White mug
@@ -613,7 +611,7 @@ the field.
 
 We move the “Add to cart” button closer to the quantity selector to further
 reduce interaction cost. Left aligning the button also helps ensure the button
-won’t be missed by those using screen magnifiers. 
+won’t be missed by those using screen magnifiers.
 
 We reduced the total interaction cost to 2 clicks and a very small mouse
 movement. A similar approach can be taken to reduce the interaction cost on
@@ -636,17 +634,17 @@ Minimise cognitive load
 Cognitive load is the amount of brain power required to use an interface. The
 goal is to minimise cognitive load to make your interface as easy to use as
 possible. This frees up mental resources for people to focus on the task
-they're trying to achieve. 
+they're trying to achieve.
 
 Quick ways to reduce unnecessary cognitive load:
- Removing unnecessary styles, information, and decisions to reduce
+Removing unnecessary styles, information, and decisions to reduce
 distractions$
  Breaking up information into smaller groups to clearly show relationships
 and speed up decision making$
- Using conventional design patterns that people are familiar with$
+Using conventional design patterns that people are familiar with$
  Maintaining consistency by ensuring that similar elements look and work
 in a similar way$
- Creating a clear visual hierarchy to show the level of importance of
+Creating a clear visual hierarchy to show the level of importance of
 information.
 
 Many of the guidelines in this book help to reduce cognitive load. It’s an
@@ -657,24 +655,24 @@ complex form into smaller, simpler steps. People can get overwhelmed by
 large, complex problems. Breaking them down into smaller, simpler ones
 makes them easier to solve.
 Survey
-Required fields are marked with an asterisk *
-How often do you use our app? *
+Required fields are marked with an asterisk _
+How often do you use our app? _
 Daily
 Weekly
 Monthly
 Which of our product features did you find
-most useful? *
+most useful? _
 Trend monitoring
 Custom reports
 User segmentation
 Live dashboard
 Website builder
 Email marketing
-Would you recommend our app? *
+Would you recommend our app? _
 Yes
 No
 Maybe
-What would you like to see improved? *
+What would you like to see improved? \*
 Submit survey
 Step 2 of 4
 Back
@@ -695,7 +693,7 @@ Create a design system
 Having endless design possibilities sounds great in theory, but in practice, it
 can be frustrating and time consuming. When designing an interface, there
 are so many options to choose from regarding layout, spacing, typography,
-and colour, it can quickly get overwhelming. 
+and colour, it can quickly get overwhelming.
 
 That’s why having a system of predefined options and guidelines to help you
 efficiently make design decisions is crucial. This is known as a design system
@@ -704,16 +702,17 @@ and you can create one in 3 steps
 =! Create reusable module2
 ! Define usage guidelines
 Fundamentals 27
+
 1. Set predefined style options
-Rather than choosing from unlimited options for things like colour,
-typography, and spacing, create a small set of predefined options to choose
-from. Limiting your options in this way helps improve consistency and speeds
-up decision making. These predefined reusable options are often referred to
-as “tokens”.
-Colour options
-Create a small set of predefined colour options called a colour palette. The
-following colour palette is made up of variations of the brand colour. Each
-colour has a purpose to help you quickly decide how and where to use it. 
+   Rather than choosing from unlimited options for things like colour,
+   typography, and spacing, create a small set of predefined options to choose
+   from. Limiting your options in this way helps improve consistency and speeds
+   up decision making. These predefined reusable options are often referred to
+   as “tokens”.
+   Colour options
+   Create a small set of predefined colour options called a colour palette. The
+   following colour palette is made up of variations of the brand colour. Each
+   colour has a purpose to help you quickly decide how and where to use it.
 
 For example, actions like buttons and text links are often assigned the brand
 colour from the colour palette. Using a consistent colour for interactive
@@ -732,7 +731,7 @@ Typography options
 Create a small set of predefined typography options for different text types.
 Define the font sizes, line-heights and weights once and reuse them
 throughout an interface. I used a set of typography options similar to the
-following one to create the examples in this book. 
+following one to create the examples in this book.
 
 You’ll learn how to use a type scale to create a set of typography options
 later in the “Typography” chapter.
@@ -749,8 +748,8 @@ Spacing options
 Deciding on the ideal spacing between interface elements can be a
 frustrating and time consuming process, as there are so many options to
 choose from. In my early days as a designer, I remember painstakingly
-pushing interface elements back and forth, a pixel at a time, until they 
-looked perfect. 
+pushing interface elements back and forth, a pixel at a time, until they
+looked perfect.
 
 Creating a limited set of predefined spacing options (as seen below) can
 speed up your design process significantly, making you a much more
@@ -788,8 +787,7 @@ Medium
 Large
 32pt
 Predefined set of border radius options
-Fundamentals 31
-2. Create reusable modules
+Fundamentals 31 2. Create reusable modules
 Modular design involves breaking things down into smaller, reusable, and
 replaceable parts called modules or components. Modular design has been
 used to create cars, machines, buildings, and computers for many years. It’s
@@ -843,7 +841,7 @@ can be reused across multiple interfaces or templates.
 i n v e s t m e n t S e m i n a r
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started
 Photography 101
@@ -858,8 +856,7 @@ online by adding a custom domain.
 Benefits of a custom domain
 Add domain
 The same button component is reused inside multiple larger components
-Fundamentals 34
-3. Define usage guidelines
+Fundamentals 34 3. Define usage guidelines
 Many design systems forget to include guidance on how to use the
 components and visual styles in the system. Without clear usage guidelines,
 there’s little chance that a team of designers will be able to design a
@@ -879,8 +876,8 @@ the high level usage guidelines include
  Front-load texG
  Be concise and use plain and simple language
 
-You’ll learn the rationale for these guidelines and many more throughout 
-the book. 
+You’ll learn the rationale for these guidelines and many more throughout
+the book.
 Fundamentals 35
 Ensure an interface is accessible
 As designers, it’s our responsibility to try and ensure the interfaces we
@@ -889,7 +886,7 @@ even a legal requirement in some countries.
 
 We need to accommodate people with disabilities such as blindness, low
 vision, colour blindness, motor impairment, and mental disabilities. An
-accessible interface can be used by everyone, regardless of disability. 
+accessible interface can be used by everyone, regardless of disability.
 
 Keep the following in mind to help ensure an interface is accessible to all!
  Try to provide a comparable experience for all&
@@ -898,7 +895,7 @@ Accessibility Guidelines (WCAG) 2.1 level AA. They’re a good benchmark
 for website accessibility and are often a legal requirement&
  Learn about how people with different disabilities access digital products
 and include them in usability testing. We’ll look at some common assistive
-technologies soon. 
+technologies soon.
 
 In the following example, people with low vision could struggle to see the
 light form field border. Ensure the form field is accessible by increasing the
@@ -916,7 +913,7 @@ Wood laptop stand
 5.0 (23 reviews)
 This handmade curved laptop stand is skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -962,7 +959,7 @@ experience temporary and situational disabilities at various points in our lives
 
 Not having an accessible product means you could be missing out on
 potential customers. It also means that many of your existing customers are
-suffering a lesser user experience. 
+suffering a lesser user experience.
 Fundamentals 38
 Assistive technology
 People with disabilities often use software and other devices to assist them
@@ -973,7 +970,7 @@ A screen reader is software that describes an interface (using speech or
 braille) to someone who can’t see it. Computer users use their keyboard to
 step through interface elements which are read to them. Mobile users swipe
 through interface elements or drag their finger across the screen, getting
-what’s under their finger read to them. 
+what’s under their finger read to them.
 
 Much of what makes an interface accessible by a screen reader depends on
 the front end code (which isn’t covered in this book), but it’s important to
@@ -992,14 +989,14 @@ magnifiers throughout the book.
 A screen magnifier enlarges part of an interface
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 Fundamentals 40
 Use common design patterns
 According to Jakob’s Law, it’s safest to stick with common or conventional
 design patterns that people are already familiar with. Design patterns are
-established solutions to recurring problems. 
+established solutions to recurring problems.
 
 For example, the following accordion component is a common design pattern
 used to save space when displaying information. Accordions turn sections of
@@ -1016,26 +1013,26 @@ Example of a common accordion pattern
 Building on people’s existing mental models (understanding of how
 something works) means that they won’t need to spend extra time and effort
 learning new ones. Using common design patterns is a quick and easy way to
-reduce usability issues, cognitive load, and interaction cost. 
+reduce usability issues, cognitive load, and interaction cost.
 Fundamentals 41
 In the following example, unconventional form field styles introduce
 unnecessary usability risk. It’s safer to use conventional form field styles that
 people are used to.
 Payment details
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Credit card Paypal
 Pay $99.00
-Name on card *
-Card number *
-Expiry date * CVC *
+Name on card _
+Card number _
+Expiry date _ CVC _
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 Unconventional form field styles versus conventional form field styles
 Playing it safe might sound a bit boring, but you can save a lot of time and
@@ -1051,9 +1048,12 @@ Use the 80/20 Rule to prioritise
 Also called the Pareto Principle, the idea of the 80/20 Rule is that roughly
 80% of effects come from 20% of the causes. Here are a few ways the 80/20
 Rule relates to product design$
+
 # Roughly 80% of your users use 20% of your features)
+
 # Roughly 80% of customer complaints come from 20% of product issues)
-# Roughly 80% of a customer’s attention is spent on 20% of a web page. 
+
+# Roughly 80% of a customer’s attention is spent on 20% of a web page.
 
 The 80/20 Rule isn’t an exact measure, it states that a relatively small number
 of things will have a large impact. So, it’s best to prioritise putting effort into
@@ -1071,11 +1071,11 @@ Fundamentals 43
 Keep costs in mind
 If you’re working on a commercial project, time isn’t free. Every minute spent
 on user research, design, usability testing, development, and quality
-assurance costs money. 
+assurance costs money.
 
 The more efficient you become as a designer, the more valuable you are to
 businesses. Here are some simple ways to improve your efficiency
- Consider using an existing design system, website template, or icon set 
+ Consider using an existing design system, website template, or icon set
 to save time.B
  Outsource time-intensive tasks like illustrations to other designers$
  Stick with familiar UI patterns to save time and money on usability testing.
@@ -1087,18 +1087,18 @@ technical constraints. This will help you design products that are easier,
 faster, and cheaper to build$
  Talk to developers early and often to discuss how you might achieve more
 from your design for less. The simple approach is usually cheaper to build
-and easier for customers to understand and use. 
+and easier for customers to understand and use.
 Fundamentals 44
 Be consistent
 Consistency in UI design means that similar elements look and work in a
 similar way. This should be true both within your product and when
 compared with other well-established products. This predictable
-functionality improves usability and reduces errors, as people don’t 
+functionality improves usability and reduces errors, as people don’t
 need to keep learning how things work.
 Be consistent within your product
 To maintain visual and functional consistency within your product, create a
 design system to define guidelines for components, templates, visual styles,
-and language. 
+and language.
 
 Some guidelines I followed to create the examples in this bookJ
 G Indicate interactive elements using the brand colourx
@@ -1140,13 +1140,13 @@ need to spend extra time and effort learning new patterns.
 
 If your product sits on a certain platform, like an app on iOS or Android, it’s
 generally safest to follow the platform guidelines (unless they test poorly in
-usability testing or result in an inaccessible interface). 
+usability testing or result in an inaccessible interface).
 
 When in doubt, follow well-established, accessible UI patterns and common
 conventions that people are used to. For example, text links are underlined,
 form checkboxes are small squares with a tick icon inside them, and input
 fields are rectangles with a label on top.
-Label * Label *
+Label _ Label _
 Label
 Label Label
 Label
@@ -1170,7 +1170,7 @@ Focus
 Label
 Disabled
 For example, a button should have a different appearance depending on
-whether you’re looking at it, hovering your mouse over it, or pressing it. 
+whether you’re looking at it, hovering your mouse over it, or pressing it.
 Each of these appearances is known as a “state” and there are 5 of themc
 _ Default / enabled - the appearance of an element when not interacted
 with, indicating that it’s interactiveW
@@ -1180,7 +1180,7 @@ _ Press / active - triggered when an element is pressed, indicating that it’s
 being interacted with.
 _ Focus - triggered by using a keyboard to navigate an interface, indicating
 the element about to be interacted withW
-_ Disabled - the appearance of an element when it’s not interactive.
+\_ Disabled - the appearance of an element when it’s not interactive.
 
 We’ll look at different ways to indicate states in the “Colour” chapter.
 Morning Yoga Workout
@@ -1190,7 +1190,7 @@ Inhale Good Vibes
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 T u t o r i a l - F u n d a m e n ta l s
@@ -1204,7 +1204,7 @@ Minimise interaction cost
 In the fitness app example, the main call to action button is relatively small.
 Small targets are more difficult to touch than large ones. This is especially
 true for those with impaired motor control, or even someone holding their
-phone with one hand and using their thumb. 
+phone with one hand and using their thumb.
 
 Increasing the button size to at least 48pt tall makes it faster and easier for
 people to press it.
@@ -1215,7 +1215,7 @@ Inhale Good Vibes
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Morning Yoga Workout
@@ -1225,7 +1225,7 @@ Inhale Good Vibes
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Button size increased to at least 48pt tall to make it easier to press
@@ -1240,7 +1240,7 @@ Inhale Good Vibes
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Morning Yoga Workout
@@ -1249,7 +1249,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1258,7 +1258,7 @@ Fundamentals 51
 Be consistent
 In the fitness app example, the icon styles are inconsistent, as some are filled
 and others aren’t. This could confuse some people, as filled icons often
-indicate that an element is selected. 
+indicate that an element is selected.
 
 Sticking with an outlined style for all icons helps improve consistency and
 gives each icon a similar level of prominence. Try to ensure the thickness of
@@ -1269,7 +1269,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1279,7 +1279,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1321,11 +1321,11 @@ Every element you add to your interface competes with existing elements.
 This can make it harder for people to understand. Unnecessary information is
 a distraction that increases cognitive load, so try to ensure every interface
 element has a logical reason behind it. Some quick tips!
- Remove repeated elements to instantly simplify your interface without
+Remove repeated elements to instantly simplify your interface without
 losing information.;
- Avoid unneeded words and introductory phrases. I’ll go through this in
+Avoid unneeded words and introductory phrases. I’ll go through this in
 more detail in the “Copywriting” chapter.;
- Reveal less important information gradually. This is called progressive
+Reveal less important information gradually. This is called progressive
 disclosure and you’ll learn about it later in this chapter.
 
 In the following example, the course name is repeated. Making the course
@@ -1348,7 +1348,7 @@ Less is more 57
 Remove unnecessary styles
 Just like unnecessary information can be distracting and increase cognitive
 load, so can unnecessary styles. Avoid unnecessary lines, colours,
-backgrounds, and animations to create a simpler, more focused interface. 
+backgrounds, and animations to create a simpler, more focused interface.
 
 Unnecessary styles are those that don’t convey information, they’re purely
 decorative. I’m not saying that you shouldn’t have any decorative styles, as
@@ -1380,7 +1380,7 @@ Style trends fade
 It’s tempting to use the latest popular visual style trends, but just remember
 that trends are always changing. The more trendy effects you use, the worse
 your interface will age over time. Sticking with minimal styles that highlight
-quality content is better for longevity. 
+quality content is better for longevity.
 
 While many popular visual styles look great, some simply aren’t practical in
 real-world products, as they’re prone to usability and accessibility issues. In
@@ -1409,7 +1409,7 @@ Less is more 59
 Not all links need to be underlined
 For accessibility, consistency and good usability, it’s safest to make text links
 coloured and underlined. This conventional link treatment helps differentiate
-links from other text and clearly indicates interactivity. 
+links from other text and clearly indicates interactivity.
 
 Some UI elements already look and feel interactive, so you don’t need to
 underline and colour the text. Things like navigation menus, cards, and tabs
@@ -1499,7 +1499,7 @@ those who need it, rather than showing it to everyone. This avoids the need
 for an optional mobile number field and simplifies the form for people who
 aren’t interested in receiving updates. You’ll learn more about opt-in form
 fields in the “Forms” chapter.
-Mobile number *
+Mobile number \*
 Receive updates via text message
 Receive updates via text message
 The mobile number field is displayed on click of the checkbox
@@ -1507,7 +1507,7 @@ Less is more 63
 Don’t confuse minimalism with simplicity
 Minimal doesn’t mean simple. We have a tendency to favour minimal
 interfaces as they can look beautiful and clean. A minimal interface has fewer
-elements and styles, but isn’t necessarily simple to understand and use. 
+elements and styles, but isn’t necessarily simple to understand and use.
 
 Minimal interfaces can often be vague or confusing as they lack crucial
 details needed for good usability. Simplification isn’t just about reduction.
@@ -1521,16 +1521,16 @@ Vague minimal interface versus a simple and intuitive one
 Less is more 64
 The previous example demonstrates how a minimal interface design could be
 confusing to use. Some of the issues include
- The page, photo filters, and bottom navigation menu aren’t labelled, so it’s
+The page, photo filters, and bottom navigation menu aren’t labelled, so it’s
 unclear what they’re for(
- The selected state of the filters and navigation menu is very subtle, so it’s
+The selected state of the filters and navigation menu is very subtle, so it’s
 unclear which one is selected(
- The share and save actions are hidden and could be missed(
- The contrast of the icons is insufficient and could be difficult for some
+The share and save actions are hidden and could be missed(
+The contrast of the icons is insufficient and could be difficult for some
 people to see.
 
 These issues can be fixed by making sure important actions are clearly
-visible, labelled, and have sufficient contrast. 
+visible, labelled, and have sufficient contrast.
 Less is more 65
 Make sure important content is visible
 People don’t use what they can’t see. Hiding things behind interactive menus
@@ -1580,7 +1580,7 @@ Less is more 67
 Reduce choice to speed up decision making
 According to Hick’s Law, the time it takes to make a decision increases with
 the number and complexity of choices. That means you should aim to
-present less choices more simply to help people make decisions faster. 
+present less choices more simply to help people make decisions faster.
 
 There are 4 main ways to do this
  Remove choice0
@@ -1590,12 +1590,13 @@ D Recommend choices
 
 Let’s go through each point in more detail with examples.
 Less is more 68
+
 1. Remove choices
-The most obvious way to reduce choices is to actually remove them. While
-this isn’t always possible, it’s good to keep in mind. Whether you’re designing
-a form, a navigation, or a landing page, make sure that every option earns its
-place. If it’s not necessary, it’s a potential distraction that you should 
-consider removing.
+   The most obvious way to reduce choices is to actually remove them. While
+   this isn’t always possible, it’s good to keep in mind. Whether you’re designing
+   a form, a navigation, or a landing page, make sure that every option earns its
+   place. If it’s not necessary, it’s a potential distraction that you should
+   consider removing.
 
 In the following example, the first 2 fields are removed from the subscription
 form. This results in a much simpler form that’s faster and easier for people to
@@ -1606,10 +1607,10 @@ Design tips emailed to
 you weekly
 Subscribe to join 6,899 designers getting
 practical design tips each week.
-Required fields are marked with an asterisk *
-First name *
-Company name *
-Email*
+Required fields are marked with an asterisk _
+First name _
+Company name _
+Email_
 Subscribe
 Design tips emailed to
 you weekly
@@ -1617,12 +1618,11 @@ Subscribe to join 6,899 designers getting
 practical design tips each week.
 Email
 Removing unnecessary form fields can make forms faster and easier to complete
-Less is more 69
-2. Group or categorise choices
+Less is more 69 2. Group or categorise choices
 Reduce the number and complexity of choices people need to make by
 grouping or categorising the options. It’s simpler and faster to decide
-between a small number of categories than it is to choose an option from 
-a large list. 
+between a small number of categories than it is to choose an option from
+a large list.
 
 In the following blog example, the articles are categorised to break them up
 and make them easier to browse.
@@ -1658,11 +1658,10 @@ Lush linens to warm up your
 bed room
 Interiors Architecture Gardens
 A list of articles are broken up into categories to make them easier to browse
-Less is more 70
-3. Break up choices into multiple steps
+Less is more 70 3. Break up choices into multiple steps
 To make large, complex tasks seem less overwhelming, break them up into
 multiple smaller steps. This decreases cognitive load and allows people to
-focus on one small thing at a time. 
+focus on one small thing at a time.
 
 For example
  Long forms are often broken into multiple steps to simplify them and make
@@ -1689,11 +1688,10 @@ Create unique coupon codes
 Affiliate program
 Get help to grow faster
 Navigation menu broken into multiple levels
-Less is more 71
-4. Recommend choices
+Less is more 71 4. Recommend choices
 In some cases, you can make decisions easier for people by recommending
 popular or common choices. If a lot of people prefer certain choices, there’s a
-good chance that others will too. 
+good chance that others will too.
 
 For example
  Video streaming websites often recommend popular videos.3
@@ -1712,7 +1710,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1739,7 +1737,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1749,11 +1747,11 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
-White space around the photo is removed to reduce complexity 
+White space around the photo is removed to reduce complexity
 Less is more 74
 White space around the photo is removed to reduce complexity
 Make sure important content is visible
@@ -1769,7 +1767,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1779,7 +1777,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -1827,7 +1825,7 @@ In order to help ensure that people with low vision can clearly see interface
 details, aim to at least meet Web Content Accessibility Guidelines (WCAG) 2.1
 level AA colour contrast requirements.
 
- There are 2 important contrast ratios you need to remember!
+There are 2 important contrast ratios you need to remember!
 _ 3:1 - Minimum for large text (above 18px with bold weight or above 24px
 with regular weight) and user interface elements (like form fields).
 Decorative elements and styles that don’t convey meaning don’t need to
@@ -1898,7 +1896,7 @@ number, the higher the contrast. The APCA contrast value also depends on
 the size and weight of text. Smaller and thinner text gets a lower score.
 15 30 45 60 75 90
 APCA key contrast values for neutral grey
-Here’s a summary of the APCA contrast guidelines_
+Here’s a summary of the APCA contrast guidelines\_
 P 90 - Preferred for body text (14px regular and above)X
 P 75 - Minimum for body text (18px regular and above)X
 P 60 - Minimum for other text (24px regular or 16px bold and above)X
@@ -1906,7 +1904,7 @@ P 45 - Minimum for large text (36px regular or 24px bold and above) and
 interface elementsX
 P 30 - Absolute minimum for text like form field placeholder text and
 disabled button textX
-P 15 - Minimum for non-text elements. 
+P 15 - Minimum for non-text elements.
 Colour 83
 Swapping text and background colours affects contrast
 The APCA contrast measurement differs depending on whether the colour is
@@ -1931,7 +1929,7 @@ Colour 84
 Should I start using APCA?
 If you’re working on a personal project, start using APCA, as it results in a
 more accessible interface. It’s also easier to comply with contrast
-requirements, as it fixes many of the issues with WCAG 2. 
+requirements, as it fixes many of the issues with WCAG 2.
 
 For commercial projects, where accessibility compliance is a requirement, it’s
 safest to stick with WCAG 2 until WCAG 3 is released. That being said, you
@@ -1941,7 +1939,7 @@ Don’t rely on colour alone to convey
 meaning
 There are many different types of colour blindness and they mainly affect
 men. Commonly, people who are colour blind have difficulty distinguishing
-between red and green, but some aren’t able to see any colour at all. 
+between red and green, but some aren’t able to see any colour at all.
 
 To ensure an interface is accessible to those who are colour blind, you can’t
 rely on colour alone to convey meaning or distinguish visual elements. You
@@ -1981,7 +1979,7 @@ same as other text, so the colour blind can’t tell it’s a link. You can fix 
 underlining the text link to clearly differentiate it from other text.
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -1992,7 +1990,7 @@ Free shipping Australia-wide
 5.0 (38 reviews)
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -2004,7 +2002,7 @@ Free shipping Australia-wide
 Colour alone is used to indicate a link is interactive
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -2015,7 +2013,7 @@ Free shipping Australia-wide
 5.0 (38 reviews)
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -2145,7 +2143,7 @@ designing your interface in black and white.
 Black and white are the foundations that most interfaces are built on. It’s a
 good idea to design interfaces without colour first, regardless of the brand
 colours. Designing in black and white first helps you focus on spacing, size,
-layout, and contrast, without the extra challenge of colour. 
+layout, and contrast, without the extra challenge of colour.
 
 The proportion of black and white you use in an interface depends on the
 brand personality. Use mostly white backgrounds to create a light interface
@@ -2196,11 +2194,11 @@ Articles Activity About
 Avoid pure black
 It s generally safest to avoid pure black as it has a high contrast against
 white. This high contrast can cause eye strain and fatigue, especially when
-reading long text. 
+reading long text.
 
 Black has 0% colour brightness and white has 100% colour brightness. The
 large difference in colour brightness causes our eyes to work harder. It s
-safest to avoid pure black against white and opt for a dark grey instead. 
+safest to avoid pure black against white and opt for a dark grey instead.
 Colour 93
 Add a tinge of colour to black and white
 Some brands add a tinge of colour to black and white to differentiate their
@@ -2279,28 +2277,28 @@ Colour psychology isn’t universal
 If you’ve read about colour psychology, you know that colours make people
 feel a certain way. For example, green is often associated with nature,
 growth, and success. Yellow is often thought to convey happiness, warmth,
-and positivity. 
+and positivity.
 Colour 95
 Universal colour meanings sound nice in theory, but in practice, colour
 affects each of us differently for the following reasons:!
- Colours have different meanings in different cultures
- Your feelings about certain colours are based on your own personal
+Colours have different meanings in different cultures
+Your feelings about certain colours are based on your own personal
 experiences and preferences
- There are different types of colour blindness that affect how people see
+There are different types of colour blindness that affect how people see
 colours
- Our perception of colour is affected by surrounding colours, shapes,
+Our perception of colour is affected by surrounding colours, shapes,
 typography, and imagery
- One colour has many different tints, shades, and tones, each of which has
+One colour has many different tints, shades, and tones, each of which has
 its own associations.
 Tips for choosing a brand colour
 Brand design is a complex craft in itself. We’re only scratching the surface as
 to how it relates to UI design. As a UI designer, you’ll most likely be designing
 interfaces for an existing brand. In case you need to create your own brand,
 here are a few quick tips to help you choose a single brand colour: !
- Use colour psychology as a loose guideline.!
- Test the brand colour on users to make sure it’s suitable
- Try to choose a distinctive colour to help the brand stand out
- Remember that some colours have strong meanings associated with
+Use colour psychology as a loose guideline.!
+Test the brand colour on users to make sure it’s suitable
+Try to choose a distinctive colour to help the brand stand out
+Remember that some colours have strong meanings associated with
 them. Red, for example, is a very prominent system colour used to
 indicate urgent errors and notifications. Using it for other interface
 elements could cause confusion.
@@ -2309,7 +2307,7 @@ Apply the brand colour to interactive
 elements
 Use colour sparingly and with purpose. Try to avoid using colour purely for
 decoration, as it can be confusing and distracting. Start with black and white
-and introduce colour where it conveys meaning. 
+and introduce colour where it conveys meaning.
 
 A simple and effective approach is to apply the brand colour to interactive
 elements like text links and buttons. This helps teach people what's
@@ -2537,7 +2535,7 @@ If the brand colour has meaning, avoid using it for
 interactive elements.
 Some colours have strong meanings associated with them. Red, for example,
 is a very prominent system colour used to indicate urgent errors, destructive
-actions, and notifications. 
+actions, and notifications.
 
 Using it for other interface elements, like actions, could cause confusion.
 Green and amber are other system colours that indicate success and
@@ -2568,7 +2566,7 @@ Using red for interactive elements can cause confusion
 Colour 102
 What if there are multiple brand colours?
 If there are multiple brand colours, use the highest contrast colour for
-interactive elements and use the others sparingly for decorative elements. 
+interactive elements and use the others sparingly for decorative elements.
 
 Decorative elements might include backgrounds, borders, icons, and
 illustrations. Don’t use more than one colour for interactive elements, as it
@@ -2654,7 +2652,7 @@ Colour 105
 Use the HSB colour system
 Using the HSB (Hue, Saturation, Brightness) colour system makes it much
 easier to define your colour variations. If you haven’t used the HSB colour
-system before, you’ve been missing out. It’s really simple and very powerful. 
+system before, you’ve been missing out. It’s really simple and very powerful.
 
 Here’s a quick introduction to HSB colours:g
 B Hue - a number between 0 and 360 degrees that represents the colours
@@ -2668,7 +2666,7 @@ and 0 is always black.
 Creating variations of the brand
 colour using HSB
 Start with the brand colour as a base and
-change the saturation and brightness to 
+change the saturation and brightness to
 create other variations.
 Colour picker using the HSB colour system
 Colour 106
@@ -2690,19 +2688,19 @@ Contrast with fill variation
 must be at least: 4.5 : 1
 Stroke strong
 HSB: 230, 23, 65
-Contrast with fill variation 
+Contrast with fill variation
 must be at least: 3 : 1
 Stroke weak
 HSB: 230, 5, 94
-This is a decorative colour, so it 
+This is a decorative colour, so it
 doesn’t need to be high contrast.
 Fill
 HSB: 230, 2, 98
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Background
 HSB: 0, 0, 100
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Colour 107
 This simple, accessible, and powerful colour palette works well in most
@@ -2955,11 +2953,11 @@ Monochromatic colour palettes are a popular and effective option for
 interface design for the following reasonsâ
 ÷ Variations of a single colour create a simple and cohesive look.
 Colour 115
- Colour can be assigned a functional purpose rather than just being
+Colour can be assigned a functional purpose rather than just being
 decorative. For example, the brand colour can be used to indicate
 actionable or interactive elements like links and buttons
- Fewer colours can simplify an interface and decrease cognitive load
- Most brands consist of a single brand colour, so a monochromatic colour
+Fewer colours can simplify an interface and decrease cognitive load
+Most brands consist of a single brand colour, so a monochromatic colour
 palette conveys a strong brand presence.
 
 If you prefer a neutral colour palette like the following example, simply use
@@ -2988,7 +2986,7 @@ There’s conflicting evidence on whether dark interfaces are better for your
 eyes or not. Some believe that they can reduce eye strain, as they’re less
 bright. Others believe that dark interface details can be difficult to see,
 especially in bright, sunny environments. So it’s especially important to
-ensure dark interfaces have sufficient contrast. 
+ensure dark interfaces have sufficient contrast.
 
 Luckily, you can create a dark colour palette in a similar way to the light one.
 Let’s get started.
@@ -3056,19 +3054,19 @@ Contrast with fill variation
 must be at least: 4.5 : 1
 Stroke strong
 HSB: 230, 10, 65
-Contrast with fill variation 
+Contrast with fill variation
 must be at least: 3 : 1
 Stroke weak
 HSB: 230, 15, 25
-This is a decorative colour, so it 
+This is a decorative colour, so it
 doesn’t need to be high contrast.
 Fill
 HSB: 230, 20, 15
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Background
 HSB: 230, 30, 10
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Colour 118
 Start with white for the “Text strong” variation, it has a saturation of 0 and a
@@ -3088,11 +3086,11 @@ Tina Wong
 t.wong@gmail.com
 Brand Text strong Text weak Stroke strong Stroke weak Fill Background
 Colour 119
-What if the brand colour has low contrast on a 
+What if the brand colour has low contrast on a
 dark background?
 In order to use the brand colour on interactive elements like text links and
 buttons, it needs sufficient contrast. Dark brand colours will generally need
-to be lightened and desaturated to achieve the required contrast. 
+to be lightened and desaturated to achieve the required contrast.
 
 If the adjusted colour no longer reflects the brand closely enough, consider
 using white for interactive elements instead. You can use the brand colour
@@ -3118,9 +3116,8 @@ elevation appear further away and are less prominent.
 Define 2 shadow options
 Including shadow options in your design system saves time and improves
 consistency. For most projects you’ll only need the following shadow optionsM
-` Raised - a small and sharp shadow used to slightly elevate interactive
-elements like cardsR
-` Overlay - a larger and softer shadow used for elements that float high
+`Raised - a small and sharp shadow used to slightly elevate interactive
+elements like cardsR` Overlay - a larger and softer shadow used for elements that float high
 above the page like dropdown menus and floating dialog boxes.
 10 free stock photo sites
 Find the perfect images to bring your
@@ -3191,7 +3188,7 @@ However, shadows can be difficult to see in dark interfaces, so you mostly
 need to rely on colour to indicate depth.
 
 Take your background colour as your base and define 2 progressively
-brighter background colours to help indicate elevation above the page. 
+brighter background colours to help indicate elevation above the page.
 This gives you 3 background colours to use when designing dark interfaces:3
 H Base - darkest colour for the main background
 H Raised - slightly brighter than the base colour
@@ -3224,13 +3221,13 @@ Overlay Overlay
 Colour 124
 Consider using transparent colours
 Solid colours have an opacity of 100%, which means that you can’t see
-through them. Lowering the opacity of a colour makes it more transparent 
+through them. Lowering the opacity of a colour makes it more transparent
 or see-through.
 
 There’s actually a 4th value in the HSB colour system that controls the
 opacity of a colour. It’s known as the “alpha” value and it’s represented by the
 letter “A”. It can have a value from 0 to 1, with 1 being 100% opacity.
-Control opacity using 
+Control opacity using
 the “alpha” value
 HSBA(230, 70, 80, 0.5)
 Colour picker using the HSBA colour system
@@ -3312,7 +3309,7 @@ Home / Blog
 Tags are darkened to account for the grey background
 Depending on your design, you might also be able to lighten the background
 colour to avoid the issue. But what if you have other background colours you
-need to support? 
+need to support?
 
 Dark interfaces are especially problematic, as they generally have at least 3
 different background colours. One for each level of elevation. It can be very
@@ -3368,7 +3365,7 @@ colour palette in your design system. Include usage guidelines to help ensure
 colours are used consistently and correctly.
 
 You’ll create a transparent colour palette that supports both light and dark
-mode next. 
+mode next.
 Colour 129
 Create a transparent colour palette
 As demonstrated previously, using transparent colours on foreground
@@ -3421,11 +3418,11 @@ Contrast with fill on overlay
 background must be at least: 3 : 1
 Stroke weak
 12% opacity
-This is a decorative colour, so it 
+This is a decorative colour, so it
 doesn’t need to be high contrast.
 Fill
 6% opacity
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Colour 131
 Ensure foreground colours used for text and interface elements have
@@ -3451,7 +3448,7 @@ has sufficient contrast
 “Overlay” background
 Colour 132
 Define 5 variations of black for light mode
-It’s safest to avoid pure black against white for text, as it can cause eye 
+It’s safest to avoid pure black against white for text, as it can cause eye
 strain and fatigue. Instead, lower the opacity slightly to create a dark grey.
 Continue to gradually lower the opacity to create 4 other variations. These
 will be your foreground greys in light mode. Use the following opacities or
@@ -3466,15 +3463,15 @@ Contrast with fill on
 background must be at least: 4.5 : 1
 Stroke strong
 45% opacity
-Contrast with fill on 
+Contrast with fill on
 background must be at least: 3 : 1
 Stroke weak
 10% opacity
-This is a decorative colour, so it 
+This is a decorative colour, so it
 doesn’t need to be high contrast.
 Fill
 4% opacity
-Text and interface elements sitting on 
+Text and interface elements sitting on
 this colour must have sufficient contrast
 Colour 133
 Again, ensure foreground colours used for text and interface elements have
@@ -3498,10 +3495,10 @@ Colour 134
 Define 4 variations of the brand colour
 Depending on your design, you’ll generally need 4 variations of the brand
 colour for foreground elements in both light and dark mode. Start with the
-brand colour and gradually lower its opacity to create 3 other variations. 
+brand colour and gradually lower its opacity to create 3 other variations.
 
 Ensure foreground colours used for text and interface elements have
-sufficient contrast against the “overlay” background, as it’s the brightest. 
+sufficient contrast against the “overlay” background, as it’s the brightest.
 If you have any elements with a “fill” colour, like the badge in the following
 example, test the contrast of the text and icon inside them.
 Brand
@@ -3554,7 +3551,7 @@ Light mode Dark mode
 Each system colour needs 4 variations in both light and dark mode. Again,
 ensure foreground colours used for text and interface elements have
 sufficient contrast against the “overlay” background. If you have any
-elements with a “fill” colour, test the contrast of the text inside them. 
+elements with a “fill” colour, test the contrast of the text inside them.
 Use the following opacities or define your own
  100% opacity - Text (needs 4.5:1 contrast
  80% opacity - Stroke strong (needs 3:1 contrast
@@ -3641,7 +3638,7 @@ Colour 138
 Test your colour palette
 You’ve already tested that the colours have sufficient contrast, but it’s also
 important to make sure they work well together. Test your colour palette
-using an interface example that contains all colour variations. 
+using an interface example that contains all colour variations.
 
 The interface doesn’t need to make sense, as you’re just looking at colours.
 Try to also ensure consistency between light and dark mode.
@@ -3723,7 +3720,7 @@ Colour 140
 Creating a monochromatic transparent colour palette
 In dark mode, simply add a tinge of the brand colour to the background
 colours. For each background colour, change the hue to the brand colour and
-saturate it slightly. 
+saturate it slightly.
 
 There’s no need to change the foreground white variations. Because they’re
 transparent, you’ll be able to see some of the background colour through
@@ -3745,11 +3742,11 @@ HSB(230, 20, 20)
 Comparison of neutral and monochromatic background colours
 Colour 141
 In light mode, rather than using different opacities of black for foreground
-colours, add a tinge of the brand colour. 
+colours, add a tinge of the brand colour.
 
 For each foreground variation of black, change the hue to the brand colour
 and the saturation to 100. Start with a low brightness for the “Text strong”
-variation and gradually increase it for weaker variations. 
+variation and gradually increase it for weaker variations.
 
 As always, make sure colour variations used for text and interface elements
 have sufficient contrast.
@@ -3917,9 +3914,9 @@ So far, you’ve created a colour palette with high level rules that govern how
 colours should be used. This is fine if it’s just you working on a simple
 product, but if there are multiple designers and developers involved, you’ll
 need to name and organise colours systematically. This helps to ensure that
-colours are applied correctly and consistently. 
+colours are applied correctly and consistently.
 
-Colours are commonly named in 2 ways*
+Colours are commonly named in 2 ways\*
 R Primitive colours - includes all available colours in the design system.
 Colours are named based on their appearance and shouldn’t be used
 directly in your designs0
@@ -4126,7 +4123,7 @@ the colour palette
 Rather than a guideline, this is a quick trick that can help you create a
 harmonious look and feel. You may have noticed that some photos look
 warmer or more orange and others look cooler or more blue. This is due to
-their colour temperature, which is a measure of the colour of light. 
+their colour temperature, which is a measure of the colour of light.
 
 If your colour palette is based on a cool colour like blue, using photos with a
 cooler colour temperature can help create a more cohesive look and feel. The
@@ -4137,7 +4134,7 @@ The middle photo below is the original. The colour temperature of the left
 photo was decreased, while the one on the right was increased.
 This little trick isn’t for product photos where realistic colours are important.
 It can, however, come in handy for decorative photos where you want to
-create a harmonious feel. 
+create a harmonious feel.
 Colour 153
 The following example demonstrates how a warm photo can conflict with a
 cool colour palette. There’s nothing wrong with this, but a cool or neutral
@@ -4177,7 +4174,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4194,7 +4191,7 @@ Apply the brand colour to interactive elements
 In the fitness app example, colour isn’t used purposefully. Interactive
 elements like the button and text link use the brand colour, but so do noninteractive elements like the heading and icons. This makes it unclear what’s
 interactive and what’s not. A simple and effective approach is to apply the
-brand colour to interactive elements like text links and buttons. 
+brand colour to interactive elements like text links and buttons.
 
 To help avoid confusion, remove the brand colour from the heading and
 icons, as they’re not interactive.
@@ -4204,7 +4201,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4214,7 +4211,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4242,7 +4239,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4252,7 +4249,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4269,7 +4266,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4279,7 +4276,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4287,7 +4284,7 @@ Colour 159
 Don’t rely on colour alone as an indicator
 In the fitness app example, the brand colour is used on the “reviews” text to
 indicate that it’s a link. If colour is removed, the link text looks the same as
-other text, so people who are colour blind won’t be able to tell it’s a link. 
+other text, so people who are colour blind won’t be able to tell it’s a link.
 
 Underlining the link text clearly differentiates it from other text in the
 absence of colour.
@@ -4297,7 +4294,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Embark on a journey of self-discovery and
 holistic well-being as we guide you
-through the ancient practice of yoga. 
+through the ancient practice of yoga.
 
 In this class, we blend ancient wisdom with
 modern techniques to create a
@@ -4310,9 +4307,9 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Embark on a journey of self-discovery and
 holistic well-being as we guide you
-through the ancient practice of yoga. 
+through the ancient practice of yoga.
 
-I thi l  bld it id ith Morning Yoga Workout
+I thi l bld it id ith Morning Yoga Workout
 With Brooklyn Sims
 5.0 (23 reviews)
 20 mins Beginner Ambient NEmbark on a journey of self-discovery aholistic well-being as we guide you
@@ -4323,7 +4320,7 @@ Morning Yoga Workout
 With Brooklyn Sims
 5.0 (23 reviews)
 20 mins Beginner Ambient NEmbark on a journey of self-discovery aholistic well-being as we guide you
-through the ancient practice of yoga.I thi l  bld it id Link is underlined to clearly differentiate it from plain text 
+through the ancient practice of yoga.I thi l bld it id Link is underlined to clearly differentiate it from plain text
 Colour 160
 Avoid pure black
 In the fitness app example, pure black is used for multiple text elements.
@@ -4334,7 +4331,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4344,7 +4341,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -4386,22 +4383,22 @@ Layout and spacing 164
 Group related elements
 Breaking up information into smaller groups of related elements helps to
 structure and organise an interface. This makes it faster and easier for
-people to understand and remember. 
+people to understand and remember.
 
 Group related elements using the following methods%
-$* Place related elements in the same containeD
-@* Space related elements close togetheD
-#* Make related elements look similaD
-9* Align related elements in a continuous line
+$_ Place related elements in the same containeD
+@_ Space related elements close togetheD #_ Make related elements look similaD
+9_ Align related elements in a continuous line
 
 You can combine these methods to help display groupings more clearly. Let’s
-look at each of these grouping methods in more detail. 
+look at each of these grouping methods in more detail.
 Layout and spacing 165
+
 1. Place related elements in the same container
-According to the principle of common region, items within the same
-boundary or container are perceived as a group and assumed to be related.
-You can create containers using borders, shadows, and background colours.
-Using containers is the strongest visual cue to group interface elements.
+   According to the principle of common region, items within the same
+   boundary or container are perceived as a group and assumed to be related.
+   You can create containers using borders, shadows, and background colours.
+   Using containers is the strongest visual cue to group interface elements.
 
 Containers are often used to create the main structure of an interface.
 Examples of containers being used to define common website structures
@@ -4423,7 +4420,7 @@ Add domain
 Layout and spacing 166
 If groupings are unclear, consider using containers to help make them
 clearer. In the following travel blog example, it’s difficult to tell who wrote
-each article, as the author’s details are very close to the article below. 
+each article, as the author’s details are very close to the article below.
 
 There are also varying amounts of space above the author’s details, as the
 article description text is an inconsistent length. A large gap above the
@@ -4460,7 +4457,7 @@ Darlene Robs
 Top destinations Tours About Contact travelblog
 It’s difficult to tell who wrote each article due to unclear groupings
 Layout and spacing 167
-Using containers helps to clearly associate the author with their article. 
+Using containers helps to clearly associate the author with their article.
 This example demonstrates how containers can overpower spacing as a
 grouping method.
 Top destinations
@@ -4497,9 +4494,8 @@ Containers are used to clearly associate the author with their article
 Try to avoid using containers for every group on an interface, as it can cause
 unnecessary clutter. Instead, look for opportunities to use other grouping
 methods. They re often more subtle and can result in a simpler design, as
-you ll see next. 
-Layout and spacing 168
-2. Space related elements close together
+you ll see next.
+Layout and spacing 168 2. Space related elements close together
 According to the principle of proximity, elements near each other are
 perceived as a group and assumed to be related. Place related elements
 close together to group them. Separate unrelated elements by placing more
@@ -4540,7 +4536,7 @@ Yazd
 Iran
 Similarly, the next example shows how removing containers can help simplify
 an interface. Sometimes spacing is enough to clearly group related elements,
-especially when it’s combined with other grouping methods like similarity 
+especially when it’s combined with other grouping methods like similarity
 and continuity.
 Layout and spacing 169
 architect Architecture Interiors About Contact
@@ -4587,11 +4583,10 @@ Drawing inspiration from the world around us,
 our practice strives to create elegant and
 thoughtful designs.
 About us
-Layout and spacing 170
-3. Make related elements look similar
+Layout and spacing 170 3. Make related elements look similar
 According to the principle of similarity, when things look similar your mind
 groups them together. Make related elements look similar by giving them
-similar visual characteristics, such as size, shape, and colour. 
+similar visual characteristics, such as size, shape, and colour.
 
 In the following example, your mind naturally groups the links in the top
 navigation because they look similar. The cards also appear to be grouped
@@ -4608,7 +4603,7 @@ Contact us today to see how
 we can help you
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -4616,7 +4611,7 @@ Examples of related elements being grouped by similarity
 Layout and spacing 171
 Within a group of related elements, you can highlight certain ones by making
 them look slightly different. In the following example, the pricing options look
-similar enough that our eyes group them together. 
+similar enough that our eyes group them together.
 
 The middle one stands out, as it looks slightly different. It’s larger, has a
 higher contrast border, a deeper shadow, a filled button, and a “most
@@ -4653,7 +4648,7 @@ the same functionality. Conversely, try to ensure elements with different
 functionality look different.
 Layout and spacing 172
 In the following example, the icons look similar to the secondary “save”
-button. This makes them seem interactive, even though they’re not. 
+button. This makes them seem interactive, even though they’re not.
 
 Removing the blue colour and border helps to differentiate the icons from the
 secondary button. This makes it clearer that the icons function differently to
@@ -4716,12 +4711,11 @@ Tina Wong Verified Microsoft
 Aisha Abboud Verified Google
 Follow all Cancel
 Because the badges look like the primary button, they seem interactive, even though they’re not.
-Layout and spacing 174
-4. Align related elements in a continuous line
+Layout and spacing 174 4. Align related elements in a continuous line
 According to the principle of continuity, people perceive elements that are
 arranged in a continuous line to be related. Our eyes naturally tend to follow
 elements aligned in continuous straight or curved lines. You can use this to
-your advantage to help guide people’s eyes through an interface. 
+your advantage to help guide people’s eyes through an interface.
 
 Lists are a common way of using continuity to group related elements in an
 interface. You can disrupt continuity to indicate the end of a group of related
@@ -4782,7 +4776,9 @@ Summer Chill
 16 songs · 1 hr 10 min
 Play Save
 Help Patrick
+
 #
+
 1
 2
 3
@@ -4832,7 +4828,7 @@ controls along the bottomR
 m A grey border is used to contain the account menu along the top.
 
 All of these colours come from the monochromatic colour palette created
-previously in the Colour chapter. 
+previously in the Colour chapter.
 Layout and spacing 176
 You might think of using a container to group the songs in the table, but it’s
 not always necessary.
@@ -4852,7 +4848,9 @@ Summer Chill
 16 songs · 1 hr 10 min
 Play Save
 Help Patrick
+
 #
+
 1
 2
 3
@@ -4904,7 +4902,9 @@ J They’re in close proximitN
 J They look simila^
 J They’re aligned in a continuous line
 Layout and spacing 177
+
 #
+
 1
 2
 3
@@ -4948,7 +4948,9 @@ Duration
 Container is used to group songs in the table
 Since the songs are grouped using multiple methods, you can remove the
 outer container, and the songs still appear to be grouped.
+
 #
+
 1
 2
 3
@@ -5048,7 +5050,7 @@ information they need and take the appropriate action.
 i n v e s t m e n t S e m i n a r
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started
 Example of a website banner with a clear visual hierarchy
@@ -5106,7 +5108,7 @@ step. A similar approach can be taken for almost any interface
  Firstly, group related information into separate sections. Order the
 information in each section by importance.2
  Then order the sections by importance. Place more important sections
-towards the top of the interface to give them prominence. 
+towards the top of the interface to give them prominence.
 
 This creates 4 main sections ordered by importance.
 Name: Beach Getaway
@@ -5290,7 +5292,7 @@ Interfaces are made up of lots of rectangles within rectangles.
 
 It’s important to understand how these rectangles, or boxes, work and
 interact. Each rectangle can have an outer margin, inner padding, and a
-border according to the box model*
+border according to the box model\*
 N Margin - the space between the box and neighbouring boxes#
 N Border - the stroke around the edge of the box#
 N Padding - the space between the border and the contents of the box.
@@ -5329,7 +5331,7 @@ Layout and spacing 191
 Design @1x using points
 Back when all screen resolutions were 72 ppi (pixels per inch), 1 point (pt)
 was equal to 1 pixel (px). A pixel is the smallest piece of a screen that can
-display colours. 
+display colours.
 
 Nowadays, screen resolutions are higher, so 1pt may be equal to 4px (2px x
 2px) on a “@2x” resolution, or 9px (3px x 3px) on a “@3x” resolution.
@@ -5337,7 +5339,7 @@ Nowadays, screen resolutions are higher, so 1pt may be equal to 4px (2px x
 1pt = 1px 1pt = 4px 1pt = 9px
 Points versus pixels on different screen resolutions
 For UI design, always work in points. This is often called working “@1x” and
-most design tools are configured to work like this by default. 
+most design tools are configured to work like this by default.
 Layout and spacing 192
 Create a set of predefined spacing options
 Deciding on the ideal spacing between interface elements can be a
@@ -5359,7 +5361,7 @@ XXL
 An example set of predefined spacing options
 Set simple t-shirt sized spacing options based on increments of 8 points.
 Why 8? Many popular screen sizes are divisible by 8 and it provides a bit
-more spacing flexibility than using 10 points. 
+more spacing flexibility than using 10 points.
 
 This is also known as using an 8 point grid, as all interface elements will end
 up aligning to a series of vertical and horizontal guidelines separated by 8
@@ -5371,88 +5373,89 @@ amounts as they get bigger. This ensures that spacing is proportional for
 larger interface elements.
 Layout and spacing 193
 Benefits of using a predefined set of spacing options
+
 - Simplified designs - as there’s less variation between spacing
 - Improved consistency - as spacing across interface elements will match
 - Design faster - as there are fewer options to choose from.
-Share with people
-Invite people to edit your article
-e d i to r s
-Email Send invite
-Brooklyn Simmons
-Developer
-Remove
-Aisha Abboud
-Product manager Remove
-Jon Tony
-UX designer Remove
-25pt 39pt
-35pt
-29pt
-27pt
-23pt
-16pt
-16pt
-16pt
-16pt
-16pt
-16pt
-11pt
-27pt
-Share with people
-Invite people to edit your article
-e d i to r s
-Email Send invite
-Brooklyn Simmons
-Developer
-Remove
-Jon Tony
-UX designer Remove
-Aisha Abboud
-Product manager Remove
-32pt 32pt
-32pt
-32pt
-32pt
-16pt
-16pt
-16pt
-16pt
-16pt
-16pt
-16pt
-8pt
-32pt
-An example of an interface with inconsistent spacing versus one using a set of spacing options
-Layout and spacing 194
-Space elements based on how closely
-related they are
-It’s great that we have a set of predefined spacing options, but how do we
-know which spacing option to use? The amount of spacing between interface
-elements should depend on how closely related the elements are.
-S
-16pt
-XS
-8pt
-M
-24pt
-L
-32pt
-XL
-48pt
-XXL
-80pt
-Closely related Not related
-More closely related elements should generally be closer together to show
-that they’re related. Unrelated elements should be separated by placing more
-space between them. 
+  Share with people
+  Invite people to edit your article
+  e d i to r s
+  Email Send invite
+  Brooklyn Simmons
+  Developer
+  Remove
+  Aisha Abboud
+  Product manager Remove
+  Jon Tony
+  UX designer Remove
+  25pt 39pt
+  35pt
+  29pt
+  27pt
+  23pt
+  16pt
+  16pt
+  16pt
+  16pt
+  16pt
+  16pt
+  11pt
+  27pt
+  Share with people
+  Invite people to edit your article
+  e d i to r s
+  Email Send invite
+  Brooklyn Simmons
+  Developer
+  Remove
+  Jon Tony
+  UX designer Remove
+  Aisha Abboud
+  Product manager Remove
+  32pt 32pt
+  32pt
+  32pt
+  32pt
+  16pt
+  16pt
+  16pt
+  16pt
+  16pt
+  16pt
+  16pt
+  8pt
+  32pt
+  An example of an interface with inconsistent spacing versus one using a set of spacing options
+  Layout and spacing 194
+  Space elements based on how closely
+  related they are
+  It’s great that we have a set of predefined spacing options, but how do we
+  know which spacing option to use? The amount of spacing between interface
+  elements should depend on how closely related the elements are.
+  S
+  16pt
+  XS
+  8pt
+  M
+  24pt
+  L
+  32pt
+  XL
+  48pt
+  XXL
+  80pt
+  Closely related Not related
+  More closely related elements should generally be closer together to show
+  that they’re related. Unrelated elements should be separated by placing more
+  space between them.
 
 Using spacing in this way is one of the most powerful methods of breaking
 up information into smaller groups. If you think of each group as a rectangle,
 you’ll start to notice that interfaces are made up of many small rectangles
-within larger ones. 
+within larger ones.
 
 Start by applying small spacing to the innermost rectangles and gradually
-increase the spacing between rectangles as you move outwards. 
+increase the spacing between rectangles as you move outwards.
 Layout and spacing 195
 In the following landing page example, the same predefined spacing option,
 small (16pt), is used between all rectangles, regardless of how closely related
@@ -5475,11 +5478,11 @@ Get started Learn more
 homeinvest About Services Contact Get started
 Landing page example with small spacing option applied everywhere
 Let’s fix the spacing issues with this example. Firstly, break it up into
-rectangles within rectangles. 
+rectangles within rectangles.
 
 Start by applying extra small (8pt) spacing to the innermost rectangles and
 gradually increase the spacing between rectangles as you move outwards.
-We’ll go through this process in more detail soon. 
+We’ll go through this process in more detail soon.
 
 This results in a design that’s clearer, neater, and easier to understand.
 Layout and spacing 196
@@ -5494,7 +5497,7 @@ Contact us today to see how
 we can help you
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -5505,7 +5508,7 @@ better consistency and to speed up spacing decisions. For example, you
 might use the following spacing rulesÆ
 Å Use medium (24pt) internal padding for components like cardé
 Å Use large (32pt) gaps between columné
-Å Use extra extra large (80pt) vertical padding for website sections 
+Å Use extra extra large (80pt) vertical padding for website sections
 Layout and spacing 197
 Let’s look at the spacing options used in the improved example. Start with
 extra small (8pt) spacing for the innermost rectangles (the card text).
@@ -5533,7 +5536,7 @@ XXL
 Closely related Not related
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -5553,7 +5556,7 @@ Contact us today to see how
 we can help you
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -5576,7 +5579,7 @@ navigation links and cards. The cards are actually sitting on a 12 column grid
 which has gaps of 32pt between columns. You’ll learn about grids soon.
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -5618,7 +5621,7 @@ Contact us today to see how
 we can help you
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -5644,7 +5647,7 @@ margins, or even the space between lines of text. White space isn’t
 necessarily white, it can be a colour, pattern or image.
 A handmade curved laptop stand skilfully crafted
 from natural Walnut timber veneer pressed on
-Premium Birch Plywood. 
+Premium Birch Plywood.
 
 Ideal for the home or office, the stand is designed
 at an angle for improved ergonomics. It has a
@@ -5658,7 +5661,7 @@ Free shipping Australia-wide
 5.0 (23 reviews)
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for the home or office, the stand is
 designed at an angle for improved ergonomics.
@@ -5676,7 +5679,7 @@ should use. Using more white space is generally better than using less. Tight
 spacing makes it more difficult for people to see groupings and visual
 hierarchy. This makes it harder for them to understand the information. More
 white space can also make your interface design look simpler, cleaner, and
-more sophisticated. 
+more sophisticated.
 
 When defining the space between design elements, try to be generous. For
 example, instead of using the extra small (8pt) predefined spacing option,
@@ -5697,7 +5700,7 @@ squint or blur the interface and you can’t easily distinguish between
 elements, then you should probably increase spacing to be safe.
 
 White space isn’t just leftover space, it’s an important design element that
-you can use to improve usability and aesthetics. 
+you can use to improve usability and aesthetics.
 Layout and spacing 203
 Align the main layout to a 12 column grid
 The more interface elements you align, the more ordered and structured your
@@ -5740,7 +5743,7 @@ smaller elements.
 Columns generally have a flexible width, defined with percentages, rather
 than a fixed width. This allows them to adapt to different screen sizes. Start
 with 12 columns for large screen sizes, like desktops and laptops. Decrease
-the number of columns for smaller screens, like tablets and mobiles. 
+the number of columns for smaller screens, like tablets and mobiles.
 
 For example, on a large screen, 3 content cards might be aligned in a row
 across 12 columns. Each card spans 4 columns. On a smaller mobile screen,
@@ -5753,7 +5756,7 @@ Gutters
 The purpose of gutters is to separate and align columns of content, not to
 contain content. Gutters should remain empty and should be narrower than
 columns. Gutters generally have a fixed width and are often wider on larger
-screens to keep spacing proportional. 
+screens to keep spacing proportional.
 
 For example, a large (32pt) predefined spacing option might be used for
 gutters on large screens, while a small (16pt) spacing option is used on
@@ -5763,7 +5766,7 @@ desktop decrease to
 16pt on mobile screens
 Layout and spacing 206
 Margins
-Margins are the empty space on the left and right of the 12 columns. 
+Margins are the empty space on the left and right of the 12 columns.
 They prevent the content from hitting the left and right edges of a screen.
 Margins can have either a fixed or flexible width and are generally wider on
 larger screens.
@@ -5782,7 +5785,7 @@ Align text to improve readability
 Left aligned text is easiest to read because each line starts along the same
 straight left edge. This gives your eyes a consistent anchor to quickly jump
 back to at the end of each line. Try to maintain a straight left edge when
-aligning text with other interface elements like icons. 
+aligning text with other interface elements like icons.
 
 In the following example, the icon placement breaks the straight left edge.
 You can feel your eyes working slightly harder to go from the heading to the
@@ -5875,14 +5878,14 @@ The more different types of alignment you use (left, right, or centre), the
 more complex and messy an interface can look. Our eyes are forced to work
 harder as they move around to try and follow each alignment. This is
 highlighted when multiple different alignments are used within a small
-component or section of an interface. 
+component or section of an interface.
 
 Sticking with a single alignment (or as few as possible) helps to simplify an
-interface, making it look neater and tidier. 
+interface, making it look neater and tidier.
 
 The following example starts with centre aligned text, then changes to left
 alignment for the other elements. The mixture of alignments adds
-unnecessary complexity, resulting in a slightly increased cognitive load 
+unnecessary complexity, resulting in a slightly increased cognitive load
 and a less tidy interface.
 Photography 101
 Take your photography to the next level with 8
@@ -5954,11 +5957,11 @@ needed to take my designs to the next level.”
 Layout and spacing 213
 Keep related actions close
 According to Fitts’s Law, the closer and larger a target, the faster it is for
-someone to select the target. This simple concept is often forgotten. 
+someone to select the target. This simple concept is often forgotten.
 
 Reduce interaction cost by keeping actions close to the element they relate
 to. Try to ensure they have a sufficient target area. At least 48pt by 48pt is a
-safe size. 
+safe size.
 
 In the following example of a blog, we’ll use Fitts’s Law to help reduce
 interaction cost. Let’s say that you want to navigate to the “Most popular”
@@ -5993,9 +5996,9 @@ slightly more time and effort navigating to a category or closing the menu.
 
 The size and tap area of the category menu items are also relatively small,
 which means you need to be more precise when tapping them. Again, this
-takes more time and effort which increases interaction cost. 
+takes more time and effort which increases interaction cost.
 Layout and spacing 215
-Let’s quickly redesign this slide out menu to accommodate Fitts's Law*
+Let’s quickly redesign this slide out menu to accommodate Fitts's Law\*
  Move the close button to the start position, so that people don’t need to
 move their finger position to open and close the menu.3
  Move the category menu to the top, left align the text, and increase the
@@ -6057,7 +6060,7 @@ balanced, natural, and dynamic. Let’s learn how to use it.
 Divide your photo into thirds by creating a grid that’s 3 columns wide and 3
 rows tall. This creates 4 focal points where the lines intersect. Our eyes
 naturally gravitate towards these focal points. Try to roughly align key
-elements of your photo to the grid, ensuring that the main subject sits on 
+elements of your photo to the grid, ensuring that the main subject sits on
 one of the 4 focal points.
 Centre alignment versus alignment using the Rule of Thirds
 In this example, the focal point is the person’s eyes. If you simply position
@@ -6082,7 +6085,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -6110,7 +6113,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -6120,7 +6123,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -6156,7 +6159,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing practice.
 Inhale Good Vibes
@@ -6166,7 +6169,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6196,7 +6199,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6212,7 +6215,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6223,7 +6226,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6236,7 +6239,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6259,7 +6262,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6270,7 +6273,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6315,7 +6318,7 @@ beautiful and easy to read
 Typography 230
 Use a single sans serif typeface
 It’s safest to use a single sans serif typeface for most interface designs. To
-see why, let’s learn a bit about typefaces. 
+see why, let’s learn a bit about typefaces.
 
 A typeface is a set of related fonts with a similar style or aesthetic. Helvetica
 is an example of a san serif typeface. Fonts are variations within a typeface,
@@ -6361,7 +6364,7 @@ Monospaced typefaces
 In most typefaces, the horizontal space that a character takes up depends
 on its natural width. For example, an “i” takes up less space than a “w”. In a
 monospaced typeface, every character takes up the same amount of
-horizontal space. 
+horizontal space.
 
 For this reason, they’re often used for displaying code. They’re also useful for
 displaying numbers to make them easier and faster to compare.
@@ -6370,22 +6373,23 @@ Typography 234
 Reasons to use a single sans serif typeface
 If you’re just starting out, it’s safest to use a single sans serif typeface for
 most interface designs for the following 3 reasons:
+
 1. Legibility
-Legibility is a measure of how easily individual characters can be
-distinguished and identified. Sans serif typefaces are generally the most
-legible. The main purpose of interface text is to clearly communicate
-information so that people can achieve a task. If a typeface isn’t legible, it
-makes the interface harder to read, understand, and use.
+   Legibility is a measure of how easily individual characters can be
+   distinguished and identified. Sans serif typefaces are generally the most
+   legible. The main purpose of interface text is to clearly communicate
+   information so that people can achieve a task. If a typeface isn’t legible, it
+   makes the interface harder to read, understand, and use.
 2. Neutrality
-Sans serif typefaces generally don’t convey a strong mood or personality.
-This can be helpful for the following reasonsn
-m The typeface will fit with most brand personalities.
-m The content is the focal point, rather than the typeface.
-m There’s less chance you’ll choose an unsuitable typeface.
+   Sans serif typefaces generally don’t convey a strong mood or personality.
+   This can be helpful for the following reasonsn
+   m The typeface will fit with most brand personalities.
+   m The content is the focal point, rather than the typeface.
+   m There’s less chance you’ll choose an unsuitable typeface.
 3. Simplicity
-Sans serif typefaces are generally simpler than others as they have less
-character and detail. Complicated typefaces can be distracting and can
-increase cognitive load, especially if there’s more than one. 
+   Sans serif typefaces are generally simpler than others as they have less
+   character and detail. Complicated typefaces can be distracting and can
+   increase cognitive load, especially if there’s more than one.
 
 Simplifying your typography can help improve usability and aesthetics. Less
 is more when it comes to typography.
@@ -6440,9 +6444,9 @@ typeface does too.X
 Windows computers, usually offer better language support, and often
 have additional advanced features9
 4 When in doubt, just use the default system typeface native to the
-platform, as it’s tried and tested and loads quickly. 
+platform, as it’s tried and tested and loads quickly.
 Typography 237
-Evoke emotion using a second typeface 
+Evoke emotion using a second typeface
 for headings
 While it’s safest to use a single sans serif typeface for most interface
 designs, you might want to add some personality depending on the brand.
@@ -6507,9 +6511,9 @@ difficult to use each font weight consistently.
 Keep your design system simple and concise by using regular and bold font
 weights only. Some typefaces have a semi-bold font option that you can use
 instead of bold if bold is too heavy. Quick usage tips:>
- Use bold font weight for headings to emphasise them.>
- Use regular font weight for other smaller text.>
- Reserve very thin or thick font weights for headings and larger text, as
+Use bold font weight for headings to emphasise them.>
+Use regular font weight for other smaller text.>
+Reserve very thin or thick font weights for headings and larger text, as
 they can be difficult to read at smaller sizes.
 Thin
 Light
@@ -6526,7 +6530,7 @@ neater and easier to understand. It also speeds up the design process, as
 there are fewer decisions to make regarding typography.
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for the home or office, the stand is
 designed at an angle for improved ergonomics.
@@ -6542,7 +6546,7 @@ Wood laptop stand
 Free shipping Australia-wide
 A handmade curved laptop stand skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for the home or office, the stand is
 designed at an angle for improved ergonomics.
@@ -6556,12 +6560,12 @@ Use a type scale to set font sizes
 Using a type scale is a simple and logical way to create a set of balanced
 font sizes that work well together. It’s best to have a limited set of font sizes
 in your design system. It helps speed up decision making and improve
-consistency across your product. 
+consistency across your product.
 
 To create your set of font sizes, start with a base font size for body text, then
-keep multiplying it by a certain scale to create larger font sizes. 
+keep multiplying it by a certain scale to create larger font sizes.
 
-Here are some popular type scales, ordered from smallest to largest*
+Here are some popular type scales, ordered from smallest to largest\*
 % 1.067 – Minor Secon@
 % 1.125 – Major Secon@
 % 1.200 – Minor Thir@
@@ -6586,7 +6590,7 @@ An example set of font sizes using a slightly modified Minor Third type scale
 With most type scales, you’ll notice that the resulting font sizes have messy
 decimal values. Round font sizes to the nearest whole number for simplicity.
 It’s not crucial that font sizes are divisible by 4, but try to ensure that their
-line height is. This will align your text neatly to a 4pt vertical layout grid. 
+line height is. This will align your text neatly to a 4pt vertical layout grid.
 You’ll learn more about line height soon.
 
 You don’t need to stick strictly to a scale. Once you get more confident with
@@ -6648,7 +6652,7 @@ Typography 245
 Use at least 1.5 line height for long body text
 Line height is the vertical distance between two lines of text. For accessibility
 and readability, especially for long body text, ensure that line height is at
-least 1.5 (150%). Keeping line height between 1.5 and 2 generally works well. 
+least 1.5 (150%). Keeping line height between 1.5 and 2 generally works well.
 
 The white space between lines helps prevent people from rereading the
 same line of text. It also makes text look and feel more comfortable to read.
@@ -6723,7 +6727,7 @@ Typography 248
 Ensure ideal line length
 Ensure text is 40 - 80 characters per line (including spaces) to improve
 readability. If lines are too long, it makes it harder for people to gauge where
-the line starts and ends. 
+the line starts and ends.
 
 If lines are too short, your eyes get stressed from having to travel back too
 often. A comfortable line length is especially important for long body text.
@@ -6754,7 +6758,7 @@ stand out. We bring a wealth of expertise, providing you with tailored strategie
 financial goals.
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -6770,7 +6774,7 @@ expertise, providing you with tailored strategies that align with your
 financial goals.
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Register
@@ -6781,7 +6785,7 @@ expertise, providing you with tailored strategies that align with your
 financial goals.
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Get started Learn more
 homeinvest About Services Contact Get started
@@ -6790,7 +6794,7 @@ Left align text
 English is read from left to right, downwards in an F-shaped pattern. So it’s
 best to keep text left aligned for optimal readability. For long body text, it’s
 safest to avoid centre aligned or justified text. It’s more difficult to read,
-especially for those with cognitive disabilities. 
+especially for those with cognitive disabilities.
 
 Also, avoid combinations of different text alignments. It’s harder for your eyes
 to follow and can look messy.
@@ -6825,7 +6829,7 @@ Don’t justify long body text
 Books often justify text for aesthetics, ironically making them harder to read.
 The variations in letter and word spacing make it harder for your eyes to
 distinguish text and follow lines (especially for those with cognitive
-impairments like dyslexia). 
+impairments like dyslexia).
 
 The variations in spacing also create distracting “rivers” of white space,
 highlighted in the following example.
@@ -6894,7 +6898,7 @@ Balmoral Beach
 Sydney, Australia
 Example of illegible white text placed directly on a photo
 Here are some simple options you can use to ensure your text is always
-accessible on photos. 
+accessible on photos.
 Typography 255
 Add a linear gradient overlay
 In the following example, a linear gradient overlay is placed behind text to
@@ -6919,7 +6923,7 @@ Balmoral Beach
 Sydney, Australia
 Example of a blurred semi-transparent overlay placed on top of a photo to improve text legibility
 Apply a solid text background
-A popular approach for video captions is to apply a solid background 
+A popular approach for video captions is to apply a solid background
 behind text to ensure text has sufficient contrast. Try using white text on a
 dark grey background.
 Balmoral Beach
@@ -6960,7 +6964,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -6972,7 +6976,7 @@ Apply what you’ve
 just learned
 Let’s apply some of the guidelines you’ve learned
 to continue improving the fitness app example.
-60% tutorial progress 
+60% tutorial progress
 Typography 259
 Use a single sans serif typeface
 It’s safest to use a single sans serif typeface for interface design, as they’re
@@ -6990,7 +6994,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -7001,7 +7005,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -7023,7 +7027,7 @@ With Brooklyn Sims
 20 mins Beginner Ambient None
 Escape the stresses of quotidian existence with this harmonious fusion of contemplative pranayama techniques and corporeal postures. You will feel rejuvenated and ready to take on the day.
 
-The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment. 
+The session commences with a succinct centering exercise, fostering a seamless detachment from external distractions and inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your breath, laying the foundation for the ensuing
 practice.
@@ -7041,7 +7045,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7070,7 +7074,7 @@ the day.
 
 The session commences with a succinct
 centering exercise, fostering a seamless
-detachment from external distractions and   Morning Yoga Workout
+detachment from external distractions and Morning Yoga Workout
 With Brooklyn Sims
 5.0 (23 reviews)
 20 mins Beginner Ambient None
@@ -7082,7 +7086,7 @@ the day.
 
 The session commences with a succinct
 centering exercise, fostering a seamless
-detachment from external distractions and   Light font weight is increased to regular to improve legibility
+detachment from external distractions and Light font weight is increased to regular to improve legibility
 Typography 262
 Left align text
 In the fitness app example, the block of body text is centre aligned. Left
@@ -7101,7 +7105,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7120,7 +7124,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7129,7 +7133,7 @@ Inhale Good Vibes
 All text is left aligned to improve readability and consistency
 Typography 263
 Use at least 1.5 line height for body text
-In the fitness app example, the line height of the block of body text is 
+In the fitness app example, the line height of the block of body text is
 only 1 (100%). Increasing it to 1.5 (150%) helps to improve readability.
 body Font size Line height
 Line height is the vertical distance between two lines of text Morning Yoga Workout
@@ -7145,7 +7149,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7164,7 +7168,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7173,7 +7177,7 @@ Inhale Good Vibes
 Line height is increased from 1 to 1.5 to improve readability
 Nice one. We’re nearly there. Our example fitness app is looking much better
 after applying a few logical guidelines. How text looks can make a big
-difference to your interface designs, but so can the words themselves. 
+difference to your interface designs, but so can the words themselves.
 We’ll look at the words in the next chapter.
 Typography 264
 Chapter summary
@@ -7225,7 +7229,7 @@ Save article Cancel
 Example of unnecessary text versus concise text
 Copywriting 268
 Some guidelines on how to be concise
-' Avoid unneeded words like: “actually”, “basically”, “really”, “truthfully”, 
+' Avoid unneeded words like: “actually”, “basically”, “really”, “truthfully”,
 and “quite”.0
 ' Avoid short joining words like: “a”, “an”, and “the”.0
 ' Avoid introductory phrases like: “would you like to”, “in order to”, “when it
@@ -7233,7 +7237,7 @@ comes to”, “are you sure”, "there are" and "it is".0
 ' Use shorter words instead of longer ones if they convey the same
 message.0
 ' Try to keep sentences under 20 words. People can lose focus when
-reading long sentences with a lot of commas. 
+reading long sentences with a lot of commas.
 Copywriting 269
 Use sentence case
 Sentence case is where only the first word and proper nouns (names of
@@ -7261,14 +7265,23 @@ Use plain and simple language
 Many people have trouble reading and some may have mental disabilities.
 Keep your language simple and conversational to make it easier for a broader
 range of people to understand. Here are some quick tips(
+
 # Imagine that you’re having a conversation with a 6th grade student who’s
+
 unfamiliar with the topic.K
+
 # Avoid jargon (specialised or technical language that’s only understood by
+
 particular groups of people)-
+
 # Avoid slang (very informal language used between people in the same
+
 social group)-
+
 # Choose short, simple words over long and complex ones.K
+
 # Use shortened words to sound more natural: who’s, they’re, you’re.
+
 Custom domains are the
 bee’s knees for brands
 Look slick and help your customers locate you online
@@ -7285,7 +7298,7 @@ Front-load text
 Front-loading is putting the important information at the start of your text.
 People quickly scan text down the page from left to right. Putting the key
 information or benefit at the front of your headings, lists, and links makes it
-faster and easier for people to gain value from your text. 
+faster and easier for people to gain value from your text.
 
 The following examples aren’t front-loaded. Key information, highlighted in
 bold, is at the end of each sentenceE
@@ -7308,7 +7321,7 @@ Use the inverted pyramid
 The inverted pyramid is a writing structure where the most important
 information is placed at the start, followed by supporting information and
 then smaller background details. It’s a similar concept to front-loading text
-but it applies to larger pieces of text. 
+but it applies to larger pieces of text.
 
 The inverted pyramid writing structure is popular in journalism and is also
 very effective for interface text for the following reasons
@@ -7410,7 +7423,7 @@ experience a 5-star review. Free secure
 parking. This property features a single
 lock-up garage with storage.
 Property features
-98% of recent guests gave this location 
+98% of recent guests gave this location
 a 5-star review
 Beautiful waterfront location
 95% of recent guests gave the check-in
@@ -7430,7 +7443,7 @@ as it takes more effort.:
 screen readers. Screen reader users often listen to a list of all headings on
 a page and quickly skip to the information they’re after.
 Property features
-98% of recent guests gave this location 
+98% of recent guests gave this location
 a 5-star review
 Location
 95% of recent guests gave the check-in
@@ -7440,7 +7453,7 @@ This property features a single lock-up
 garage with storage
 Parking
 Property features
-98% of recent guests gave this location 
+98% of recent guests gave this location
 a 5-star review
 Beautiful waterfront location
 95% of recent guests gave the check-in
@@ -7454,7 +7467,7 @@ Copywriting 278
 Avoid using “my” on form labels
 Avoid using the word “my” on form labels as it can be confusing. Think of the
 interface as a person who’s talking to the user. An input field labelled “my
-email address”, refers to the interface’s email address, rather than the user’s. 
+email address”, refers to the interface’s email address, rather than the user’s.
 
 Using “your” is clearer, but unnecessary in most cases. Keep it simple and
 avoid using either “my” or “your” if possible. Being concise will also help
@@ -7469,7 +7482,7 @@ Copywriting 279
 Use vocabulary consistently
 Similar interface elements should look and work similarly to reduce
 confusion. The same goes for words. Use the same word consistently to
-describe the same interface element. 
+describe the same interface element.
 
 For example, if the primary button on your product page is labelled “add to
 cart”, and your cart is labelled “bag”, this can cause confusion.
@@ -7478,7 +7491,7 @@ Wood laptop stand
 Free shipping Australia-wide
 This handmade curved laptop stand is skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -7491,7 +7504,7 @@ Wood laptop stand
 Free shipping Australia-wide
 This handmade curved laptop stand is skilfully
 crafted from natural Walnut timber veneer
-pressed on Premium Birch Plywood. 
+pressed on Premium Birch Plywood.
 
 Ideal for home or office workspaces, the stand
 is designed at an angle for improved
@@ -7502,11 +7515,16 @@ Cart
 “Cart” and “bag” are inconsistent
 Copywriting 280
 Some common examples of inconsistent vocabulary on interfaces:.
+
 # Publish / pos
+
 # Sign up / registe1
+
 # Log in / sign i%
+
 # Delete / remov
-# Subscribe / join 
+
+# Subscribe / join
 
 “Register” and “Sign up” are used inconsistently in the following landing page
 example. This can cause confusion.
@@ -7525,7 +7543,7 @@ inbox every week.
 Find growth areas Monitor market trends Get weekly reports
 Your property investment
 journey starts here
-Achieve financial independence using our proven strategy 
+Achieve financial independence using our proven strategy
 to build your property portfolio
 Sign up Learn more
 homeinvest About Services Contact Register
@@ -7576,18 +7594,18 @@ Copywriting 283
 Avoid full stops if possible
 Most user interface text should be short enough that commas and full stops
 (periods) aren’t needed. Don’t add full stops unless the piece of text forms a
-full sentence with commas. 
+full sentence with commas.
 
 Full stops are a tiny detail, but removing them when they’re not needed can
-help simplify your interface design. 
+help simplify your interface design.
 
 If you have multiple similar interface elements next to each other, make sure
-you use full stops consistently across them. 
+you use full stops consistently across them.
 
 In the following example, full stops are used inconsistently. Since there aren’t
 any commas used, it’s neater to avoid using full stops.
 Property features.
-98% of recent guests gave this location 
+98% of recent guests gave this location
 a 5-star review
 Beautiful waterfront location.
 95% of recent guests gave the check-in
@@ -7597,7 +7615,7 @@ This property features a single lock-up
 garage with storage.
 Free secure parking.
 Property features
-98% of recent guests gave this location 
+98% of recent guests gave this location
 a 5-star review
 Beautiful waterfront location
 95% of recent guests gave the check-in
@@ -7657,7 +7675,7 @@ descriptive, they won’t make sense when read out of context in a list.
 Website templates
 With over 100 beautifully
 designed templates at your
-disposal, your site will be up 
+disposal, your site will be up
 and running in no time.
 Learn more
 Email marketing
@@ -7675,7 +7693,7 @@ Learn more
 Website templates
 With over 100 beautifully
 designed templates at your
-disposal, your site will be up 
+disposal, your site will be up
 and running in no time.
 Explore templates
 Email marketing
@@ -7698,7 +7716,7 @@ more” link and simply turn the heading into a link.
 Website templates
 With over 100 beautifully
 designed templates at your
-disposal, your site will be up 
+disposal, your site will be up
 and running in no time.
 Email marketing
 Launch professionally branded
@@ -7715,7 +7733,7 @@ Using “click here” for text links is another common mistake:É
 Ã It’s inaccessible and difficult to scanÃ It’s unnecessary to tell people how to use a link, as most already know
 that links can be actioned (make sure links look different to other text).É
 Ã “Click” is also inaccurate for those not using a mouse. They might be
-using a mobile phone, keyboard, or voice recognition. 
+using a mobile phone, keyboard, or voice recognition.
 
 Avoid using “click here” for text links. Instead, use the name of the
 destination page.
@@ -7727,14 +7745,14 @@ Example of text link using “click here” versus the name of the destination p
 Copywriting 287
 Write clear error messages
 Error messages should let people know that a problem occurred, why it
-happened, and provide a solution to fix it and move forward. 
+happened, and provide a solution to fix it and move forward.
 
 Quick tips to keep in mind when writing error messages!
- Never blame the user. Always be positive and helpful#
- Be concise and avoid unnecessary words like “please”, “sorry” and “oops”#
- Don’t talk like a robot, keep language clear and conversational, and avoid
+Never blame the user. Always be positive and helpful#
+Be concise and avoid unnecessary words like “please”, “sorry” and “oops”#
+Don’t talk like a robot, keep language clear and conversational, and avoid
 technical jargon.A
- Make headings and buttons descriptive, so people don’t need to read
+Make headings and buttons descriptive, so people don’t need to read
 supporting text.
 Oops, something went wrong!
 Your payment wasn’t successful as an error occurred
@@ -7756,7 +7774,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7769,7 +7787,7 @@ Apply what you’ve
 just learned
 Let’s apply some of the guidelines you’ve learned
 to continue improving the fitness app example.
-80% tutorial progress 
+80% tutorial progress
 Copywriting 289
 Limit the use of uppercase
 Unless you’re shouting at people, there aren’t many valid reasons to use
@@ -7794,7 +7812,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7813,7 +7831,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7837,7 +7855,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7856,7 +7874,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7896,7 +7914,7 @@ the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7914,7 +7932,7 @@ ready to take on the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -7922,7 +7940,7 @@ practice.
 Inhale good vibes
 Complex language versus simple language
 Looking good. You’re nearly there. You’ve looked at colour, layout,
-typography, and copywriting. There’s only one more improvement to make 
+typography, and copywriting. There’s only one more improvement to make
 to the button in the next chapter.
 Copywriting 293
 Chapter summary
@@ -7993,7 +8011,7 @@ required to distinguish interface components can have lower contrast.
 
 In this example, the secondary button fill contrast ratio against the
 background is less than 3:1. This is too low to clearly indicate the button
-shape to those with low vision. 
+shape to those with low vision.
 
 Some designers may argue that the secondary button fill is decorative and
 doesn’t need to have a contrast ratio of 3:1 to be accessible. The fill is
@@ -8034,7 +8052,7 @@ Example 5
 Primary Secondary Tertiary
 The button styles in example 5 are too similar for people with low vision to
 distinguish between. The contrast ratio between buttons is the only way to
-tell the difference between them and it’s less than the required 3:1 ratio. 
+tell the difference between them and it’s less than the required 3:1 ratio.
 
 Buttons should have a clear visual hierarchy that isn’t reliant on colour.
 Buttons 300
@@ -8079,24 +8097,25 @@ Buttons 302
 Button design guidelines
 Based on the previous button design mistakes, here are some quick and
 practical tips to keep in mind to design user-friendly and accessible buttons
-+ Buttons should have a clear visual hierarchy that doesn’t depend on
-colour alone%
-+ The contrast ratio of the button shape must be at least 3:1 to ensure
-people with low vision can identify it as an interactive element%
-+ The button text contrast ratio must be at least 4.5:1 to meet WCAG 2.1
-level AA accessibility requirements%
-+ If buttons have identical styles, the contrast ratio between them must be
-at least 3:1 to ensure they’re distinguishable to those with low vision%
-+ Use a large target area (at least 48pt by 48pt) to ensure people can easily
-press buttons%
-+ Make sure there’s sufficient space between buttons so people don’t
-mistakenly press the wrong one. I usually use 16pt to be safe.
-Buttons 303
-Use a single primary button for the most
-important action
-The purpose of a primary button is to highlight the most important action on
-an interface. This helps people understand what to do next in order to
-complete their task. 
+
+- Buttons should have a clear visual hierarchy that doesn’t depend on
+  colour alone%
+- The contrast ratio of the button shape must be at least 3:1 to ensure
+  people with low vision can identify it as an interactive element%
+- The button text contrast ratio must be at least 4.5:1 to meet WCAG 2.1
+  level AA accessibility requirements%
+- If buttons have identical styles, the contrast ratio between them must be
+  at least 3:1 to ensure they’re distinguishable to those with low vision%
+- Use a large target area (at least 48pt by 48pt) to ensure people can easily
+  press buttons%
+- Make sure there’s sufficient space between buttons so people don’t
+  mistakenly press the wrong one. I usually use 16pt to be safe.
+  Buttons 303
+  Use a single primary button for the most
+  important action
+  The purpose of a primary button is to highlight the most important action on
+  an interface. This helps people understand what to do next in order to
+  complete their task.
 
 Guidelines for using primary buttons
  If there isn’t a single most important action on an interface, use secondary
@@ -8156,11 +8175,11 @@ Google
 Follow
 Multiple primary buttons can clutter an interface and confuse the visual hierarchy
 Buttons 305
-Use secondary buttons for less 
+Use secondary buttons for less
 important actions
 Secondary buttons are usually the alternative to the primary action. Use
 secondary buttons for less important actions or for multiple actions that have
-equal importance. 
+equal importance.
 
 The following example is a message that appears after someone deletes a
 suspicious email from their inbox. It’s up to them whether they want to report
@@ -8168,19 +8187,19 @@ the email as junk or not. Since the buttons have equal importance, they
 should have equal prominence. Don’t make one button more prominent than
 the other as it creates bias.
 Report this email as junk?
-This will help us improve the accuracy of the 
+This will help us improve the accuracy of the
 junk email filter
 Report Don’t report
 Report this email as junk?
-This will help us improve the accuracy of the 
+This will help us improve the accuracy of the
 junk email filter
 Report Don’t report
 Use secondary buttons for multiple actions that have equal importance
 Buttons 306
-Use tertiary buttons for the least 
+Use tertiary buttons for the least
 important actions
 Due to their low prominence, tertiary buttons are especially good for
-displaying multiple actions or destructive actions that you want to make 
+displaying multiple actions or destructive actions that you want to make
 less prominent.
 
 In the following example, too much attention is brought to destructive
@@ -8239,7 +8258,7 @@ Disabled buttons can be problematic for the following reasons
 feedback on why they’re not actionable.
  Their low contrast makes them hard for those with poor eyesight to see.
  They’re not keyboard accessible, which may confuse keyboard users
-when they can’t focus on the button. 
+when they can’t focus on the button.
 
 Here are some alternatives to disabled buttons to help avoid these issues.
 Buttons 308
@@ -8247,32 +8266,32 @@ Enable buttons and validate on submit
 Submit buttons on forms are often disabled until all fields are completed. This
 prevents people from submitting empty fields but can be problematic for the
 reasons mentioned previously. Instead of disabling the submit button, enable
-it and display error messages on submit. 
+it and display error messages on submit.
 
 In the following example, the user mistakenly missed the first field and is
 stuck wondering why they can’t press the pay button. Using an enabled
 button instead, instantly makes them aware that they missed the first field.
 This is a simple, accessible solution that prevents people from getting stuck.
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
 1234 5678 1234 5678
-Expiry date *
+Expiry date _
 07 / 21
-CVC *
+CVC _
 123
 Credit card Paypal
 Pay $99.00 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
+Required fields are marked with an asterisk _
+Name on card _
 Enter name on card
-Card number *
+Card number _
 1234 5678 1234 5678
-Expiry date *
+Expiry date _
 07 / 21
-CVC *
+CVC _
 123
 Credit card Paypal
 Instead of disabling the submit button, enable it and display error messages on submit.
@@ -8300,7 +8319,7 @@ Remove unavailable actions and let people know why they’re unavailable
 Buttons 310
 Put a lock icon on unavailable actions
 Another alternative to disabled buttons is to put a lock icon on regular
-buttons. This indicates that they're unavailable or locked. 
+buttons. This indicates that they're unavailable or locked.
 
 Putting a lock icon on regular buttons ensures actions are discoverable and
 have sufficient contrast. It works especially well for premium features that
@@ -8336,37 +8355,37 @@ You need to fill out all fields to register
 Register
 Add a tooltip to the disabled button explaining why it’s unavailable
 Also, make sure the button is keyboard accessible. This allows those using
-assistive technology to focus on the button and trigger the tooltip. 
+assistive technology to focus on the button and trigger the tooltip.
 Buttons 312
 Left align buttons
 In most cases, you should order buttons from left to right, most important to
 least important, for the following reasons!
- English is read from left to right, downwards in an F-shaped pattern.
+English is read from left to right, downwards in an F-shaped pattern.
 People naturally look to the left edge as they move down the screen
- Right aligned buttons can be missed on larger screens and by those using
+Right aligned buttons can be missed on larger screens and by those using
 screen magnifiers.8
- The most important button is the one that most people will need to use.
+The most important button is the one that most people will need to use.
 Placing it first decreases the interaction cost for most people.
 Application form
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Postal address
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Cancel Save and exit Apply now
 Application form
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Postal address
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Apply now Save and exit Cancel
 Right aligned versus left aligned buttons
 Buttons 313
 On mobile screens, stack buttons top to bottom, from most important to least
-important. This maintains the button order. 
+important. This maintains the button order.
 
 Sometimes people need to carry things while using their mobile, so they
 might only have one hand available. Making buttons full-width helps both left
@@ -8375,20 +8394,20 @@ Cancel
 Save and exit
 Apply now
 Application form
-Required fields are marked with an asterisk *
-Postcode *
-Suburb, town or city *
-State *
-Street address *
+Required fields are marked with an asterisk _
+Postcode _
+Suburb, town or city _
+State _
+Street address _
 Cancel
 Save and exit
 Apply now
 Application form
-Required fields are marked with an asterisk *
-Postcode *
-Suburb, town or city *
-State *
-Street address *
+Required fields are marked with an asterisk _
+Postcode _
+Suburb, town or city _
+State _
+Street address _
 On mobile screens, stack buttons top to bottom, from most important to least important.
 Buttons 314
 What about small dialog boxes?
@@ -8404,17 +8423,17 @@ Discard post Cancel Save post
 Reasons for left aligned buttons
 Along with the reasons mentioned previously, there are others that support
 aligning buttons to the left
- It’s a familiar pattern used widely on Windows OS and other websites
- To maintain consistency with other forms that have left aligned buttons.
+It’s a familiar pattern used widely on Windows OS and other websites
+To maintain consistency with other forms that have left aligned buttons.
 Having buttons left aligned on some screens and right aligned on others
 in your product could be confusing.
 Reasons for right aligned buttons
 It’s often recommended to align buttons to the right on small dialog boxes for
 the following reasons:Ê
- To better indicate direction or momentum. The primary button usually
+To better indicate direction or momentum. The primary button usually
 takes the user forward (right), while the secondary button takes them
 backward (left).Ê
- It’s a familiar pattern used widely on operating systems like Mac OS.
+It’s a familiar pattern used widely on operating systems like Mac OS.
 Buttons 315
 Left align buttons on multi-step forms
 On multi-step forms, the primary button is often right aligned and the “Back”
@@ -8428,15 +8447,15 @@ the interaction cost to press it (especially on large screens).?
 using screen magnifiers.
 Step 2 of 3
 Contact details
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 R e g i s t r at i o n
-Email*
-Mobile number *
+Email_
+Mobile number _
 Back Next
 Step 2 of 3
 Back
 Contact details
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 R e g i s t r at i o n
 Email*
 Mobile number *
@@ -8466,7 +8485,7 @@ Buttons 317
 Ensure button text describes the action
 Button text should clearly describe the action being taken so that it’s
 meaningful when read out of context. A simple rule for button text that works
-well in most cases, is a verb (action) followed by a noun (thing). 
+well in most cases, is a verb (action) followed by a noun (thing).
 
 For example, “Save post”, “Discard message”, and “Edit article”. Button text
 should be descriptive for the following reasons:@
@@ -8486,7 +8505,7 @@ Buttons 318
 Ensure buttons have a sufficient target size
 Small targets are more difficult to click or touch than large ones. This is
 especially true for those with impaired motor control, or even someone
-holding their phone with one hand and using their thumb. 
+holding their phone with one hand and using their thumb.
 
 Try to stick to the following guidelines to ensure buttons (and other
 interactive elements) have a sufficient target size$
@@ -8574,7 +8593,7 @@ Sometimes it’s difficult to match the weight and size of icons and text.
 Luckily, you can also use contrast to help create a balance between the two.
 
 In the example below, the icons are larger and thicker than the text they’re
-paired with. This makes the icons slightly more prominent than the text. 
+paired with. This makes the icons slightly more prominent than the text.
 
 To balance the pair, the contrast of the icons is decreased. Rather than using
 the “Text weak” colour variation from the solid colour palette for both icons
@@ -8632,7 +8651,7 @@ Moderate friction
 To add further friction, highlight the confirmation message in red. This will
 warn people that the action they’re about to take is destructive.
 Delete article?
-Are you sure you want to delete this article? 
+Are you sure you want to delete this article?
 You won’t be able to recover it.
 Delete article Cancel
 Buttons 324
@@ -8665,7 +8684,7 @@ ready to take on the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -8678,11 +8697,11 @@ Apply what you’ve
 just learned
 Let’s apply some of the guidelines you’ve learned
 to continue improving the fitness app example.
-95% tutorial progress 
+95% tutorial progress
 Buttons 326
 Ensure button text describes the action
 In the fitness app example, the meaning of the button text could be
-confusing to some, as it doesn’t clearly describe the action being taken. 
+confusing to some, as it doesn’t clearly describe the action being taken.
 Use a clear and descriptive label to reduce confusion.  
 Morning yoga workout
 With Brooklyn Sims
@@ -8696,7 +8715,7 @@ ready to take on the day.
 The session commences with a succinct
 centering exercise, fostering a seamless
 detachment from external distractions and
-inviting full immersion into the present moment. 
+inviting full immersion into the present moment.
 
 You shall cultivate an unwavering focus on your
 breath, laying the foundation for the ensuing
@@ -8731,7 +8750,7 @@ rejuvenated and ready to take on the day.
 The session commences with a succinct centering
 exercise, fostering a seamless detachment from
 external distractions and inviting full immersion into the
-present moment. 
+present moment.
 
 You shall cultivate an unwavering focus on your breath,
 laying the foundation for the ensuing practice.
@@ -8755,7 +8774,7 @@ Order buttons from left to right, most important to least important to
 reduce interaction cost. This also helps avoid buttons being missed on
 larger screens and by those using screen magnifiers.
 Ensure button text clearly describes the action being taken, so it’s
-meaningful when read out of context. Use a verb (action) followed by 
+meaningful when read out of context. Use a verb (action) followed by
 a noun (thing).
 Try to ensure buttons have a sufficient target size. Make them at least
 48pt by 48pt in size and separate them by at least 8pt to help prevent
@@ -8786,19 +8805,19 @@ to fill out next. They simply move down the page in a straight line%
  Since there’s only a single downward path to fill out the form, there’s less
 chance of people missing fields. Those using screen magnifiers have a
 limited view of the screen and could miss fields in a second column.
-Postcode *
-Suburb, town or city *
-State *
-Street address *
+Postcode _
+Suburb, town or city _
+State _
+Street address _
 Postal address
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Register Cancel
 Postal address
-Required fields are marked with an asterisk *
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Required fields are marked with an asterisk _
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Register Cancel
 Multi column versus single column form examples
 Forms 332
@@ -8813,19 +8832,19 @@ In the following example, the relatively large and inconsistent gap between
 labels and inputs is highlighted. This gap increases interaction cost. Your
 eyes need to focus on the label first, then move focus to the input in a zigzag pattern. Interaction cost is further increased if you forget the label and
 need to go back and check it.
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Postal address
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Register Cancel
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Postal address
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Register Cancel
 A large and inconsistent gap between labels and inputs increases interaction cost
 Forms 333
@@ -8835,19 +8854,19 @@ problem is that it creates an inconsistent jagged left edge, making the text
 labels harder to scan. Right aligned text makes it harder for people to find the
 start of each line, as it changes depending on the label length. The jagged
 alignment also makes the layout look messy.
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Postal address
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Register Cancel
 Postal address
-Required fields are marked with an asterisk *
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Required fields are marked with an asterisk _
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Register Cancel
 An inconsistent jagged left edge can make text labels harder to scan
 Placing labels to the left of inputs is also problematic if the labels are long.
@@ -8878,39 +8897,39 @@ form layout far outweigh the disadvantages.
 
 To reduce the height of forms, short related fields can be placed side by
 side. For example, it’s common for the credit card expiry date and CVC
-number to be placed side by side. 
+number to be placed side by side.
 
 Since the fields are relatively small, they’re contained within the bounds of
 the single column layout. This means they avoid most of the issues that
-come with a multi-column form layout. 
+come with a multi-column form layout.
 Forms 335
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 To reduce form height, short related fields can be placed side by side.
 If a form is getting very long and it’s affecting completion rates, consider
 breaking it up into multiple smaller steps. This can help decrease cognitive
 load, reduce mistakes, and improve completion rates. You’ll learn more about
-breaking up forms later in this chapter. 
+breaking up forms later in this chapter.
 Forms 336
 Minimise the number of form fields
 People generally don’t want to give away their personal information. Only ask
-for information that’s essential to providing your product or service. 
+for information that’s essential to providing your product or service.
 
 More form fields can be problematic and can result in:E
  A higher chance that some won’t complete the form
@@ -8922,10 +8941,10 @@ Design tips emailed to
 you weekly
 Subscribe to join 6,899 designers getting
 practical design tips each week.
-Required fields are marked with an asterisk *
-First name *
-Company name *
-Email*
+Required fields are marked with an asterisk _
+First name _
+Company name _
+Email_
 Subscribe
 Design tips emailed to
 you weekly
@@ -8936,11 +8955,11 @@ Remove unnecessary form fields
 Forms 337
 Mark optional fields
 Required form fields must be completed before a form can be submitted
-successfully. Optional fields don’t need to be completed. 
+successfully. Optional fields don’t need to be completed.
 
 Ideally, you should only ask people for essential information, but sometimes
 optional fields can’t be avoided. They can also be helpful to gather extra
-information from people to improve their experience. 
+information from people to improve their experience.
 
 Add the word “optional” to optional field labels. It lets people know that they
 don’t need to provide this information to complete the form.
@@ -8959,34 +8978,34 @@ receive updates first (using a checkbox). If they would, then ask for their
 mobile number (using a required input field).
 Mobile number (optional)
 To receive updates via text message
-Mobile number *
+Mobile number \*
 Receive updates via text message
 Receive updates via text message
 Optional field versus opt-in
 Using progressive disclosure in this way can help simplify your form. Those
 who aren’t interested in receiving updates don’t need to see the extra mobile
-number field. This makes it faster and easier for people to complete. 
+number field. This makes it faster and easier for people to complete.
 Forms 339
 Mark both required and optional fields
 It’s safest to mark both required and optional fields, especially for those with
 cognitive disabilities. It clearly lets people know whether a field needs to be
-completed or not. 
+completed or not.
 
 Guidelines for marking required and optional fields1
- Mark required fields with an asterisk * or the word “required”!
+ Mark required fields with an asterisk \* or the word “required”!
  Mark optional fields with the word “optional”.
 
 We’ll look at the rationale behind these guidelines next.
 Email
-Email *
+Email _
 Email(required)
 Email(optional)
 Mark both required and optional fields
 Forms 340
 The problem with leaving required fields unmarked
-Marking required fields with an asterisk * or the word “required” is often
+Marking required fields with an asterisk _ or the word “required” is often
 avoided by designers to reduce clutter. Instead, only optional fields are
-marked and the following instructions are included at the top of the form: 
+marked and the following instructions are included at the top of the form:
 “All fields are required unless marked optional”.
 Mobile number (optional)
 To receive updates via text message
@@ -9005,7 +9024,7 @@ are required or not.
 Marking both required and optional fields is an accessibility requirement for
 screen reader users, so it makes sense to do the same for sighted users.
 Forms 341
-Mark required fields with an asterisk *
+Mark required fields with an asterisk \*
 Marking required fields with an asterisk is a concise and familiar way to
 clearly indicate the fields people need to complete. Avoid colouring the
 asterisks red, as red commonly indicates an error.
@@ -9024,13 +9043,13 @@ Enter your details below to receive service
 alerts and product updates
 Mobile number (optional)
 To receive updates via text message
-First name *
-Email *
+First name _
+Email _
 Subscribe for updates
 Subscribe for updates
 Enter your details below to receive service
 alerts and product updates
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk \*
 Marking required fields with an asterisk is concise and familiar
 Marking required fields with an asterisk also makes it easy for people to
 quickly scan a form to get a better idea of how many required fields they
@@ -9039,7 +9058,7 @@ Forms 342
 Mark required fields with the word “required”
 There’s still a small risk that some people might not understand that an
 asterisk indicates a required field. To be crystal clear, you can include the
-word “required” on required fields. 
+word “required” on required fields.
 
 This means there’s no need for any additional instructions at the top of the
 form. Sure, it adds clutter, but it’s clearer and it avoids the usability risks
@@ -9063,7 +9082,7 @@ Enter your details below to receive service
 alerts and product updates
 Marking required fields with the word “required” is safest
 Forms 343
-Situations where you don’t need to mark 
+Situations where you don’t need to mark
 required fields
 To reduce clutter, you could consider leaving required fields unmarked in the
 following situations::
@@ -9092,27 +9111,27 @@ Forms 344
 Match field width to the intended input
 The width of a form field sets people’s expectations for the amount of
 information expected in the field. Using a wide field to collect a small piece of
-information can increase cognitive load and cause confusion. 
+information can increase cognitive load and cause confusion.
 
 Even though it looks neat and tidy, don’t set all fields to the same width. The
 field width should be just wide enough to display all characters in the input.
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 Full-width fields versus fields with a width that matches their intended input
 Forms 345
@@ -9128,7 +9147,7 @@ Stick with conventional form field styles
 According to Jakob’s Law, it’s safest to use conventional design patterns that
 people are familiar with. Aligning to people’s existing mental models
 (understanding of how something works) can help avoid usability issues and
-decrease cognitive load. So, stick with conventional form field styles. 
+decrease cognitive load. So, stick with conventional form field styles.
 
 In the following example, unconventional form field styles make it unclear
 where people should put the answer to each question. Because the labels
@@ -9136,20 +9155,20 @@ are inside the fields where the answers go, the fields already look filled. This
 makes it harder to distinguish between filled and empty fields. Using
 conventional field styles makes it much clearer.
 Payment details
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Credit card Paypal
 Pay $99.00
-Name on card *
-Card number *
-Expiry date * CVC *
+Name on card _
+Card number _
+Expiry date _ CVC _
 Pay $99.00
 Payment details
-Required fields are marked with an asterisk *
-Name on card *
-Card number *
-Expiry date *
+Required fields are marked with an asterisk _
+Name on card _
+Card number _
+Expiry date _
 MM / YY
-CVC *
+CVC _
 Credit card Paypal
 Unconventional form field styles versus conventional ones
 Forms 347
@@ -9229,7 +9248,7 @@ Email
 Placeholder text being used as a label versus an input with a separate label on top
 This is problematic for the following reasons:X
 P Placeholder text disappears once a person starts filling in an input field,
-causing some to forget what the field was for_
+causing some to forget what the field was for\_
 P Some might miss or skip fields with placeholder text, as it can look like the
 field has already been pre-filled.X
 P Placeholder text colour contrast is almost always inaccessible, as it’s very
@@ -9253,40 +9272,40 @@ form fields like search boxes is fine, as long as you increase the contrast rati
 of the placeholder text to at least 4.5:1 and ensure the field has an accessible
 label for screen readers.
 Forms 352
-Ensure form field labels are close to 
+Ensure form field labels are close to
 their fields
 It’s very common for form field labels to be spaced relatively far away from
-their input fields. This makes it unclear which labels relate to which fields. 
+their input fields. This makes it unclear which labels relate to which fields.
 
 When spacing interface elements, make sure that related elements are
 spaced closer together to clearly indicate that they’re related.
 Application form
-Required fields are marked with an asterisk *
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Required fields are marked with an asterisk _
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Apply now
 16pt
 16pt
 Application form
-Required fields are marked with an asterisk *
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Required fields are marked with an asterisk _
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Apply now
 32pt
 4pt
 Ensure form field labels are close to their fields to clearly indicate that they’re related
 Another benefit of spacing labels close to their input fields is that your eyes
 don’t need to focus on the label and input field separately. Your eyes only
-need to focus once on each field, which decreases the interaction cost. 
+need to focus once on each field, which decreases the interaction cost.
 Forms 353
 Try to use radio buttons instead of
 dropdowns
 If there are around 10 options or fewer, consider displaying them as radio
-buttons instead of hiding them in a dropdown. 
+buttons instead of hiding them in a dropdown.
 
 Dropdowns are popular as they’re compact and tidy, but they can also be
 difficult and inefficient to use for the following reasons
@@ -9311,7 +9330,7 @@ Use an autocomplete instead of a long
 dropdown
 Rather than force people to scroll through a long list of options in a
 dropdown, use an autocomplete search field (also known as predictive
-search) to help them find what they’re looking for faster. 
+search) to help them find what they’re looking for faster.
 
 An autocomplete search field displays suggestions as someone types into
 the field, just like the Google search bar.
@@ -9353,11 +9372,11 @@ to make decisions easier and faster by providing options
 differentiate them faster.
 fewer
 Forms 356
-Use steppers for numeric fields instead 
+Use steppers for numeric fields instead
 of dropdowns
 A stepper component makes it easier and faster for people to make small
 numeric changes. It allows people to increase or decrease a number with a
-single button press, or by typing the number in the field. 
+single button press, or by typing the number in the field.
 
 In the following example, using steppers to select the number of guests
 decreases the interaction cost significantly. Let’s say that you needed to
@@ -9423,7 +9442,7 @@ Infants
 Under 2 years
 Ensure stepper buttons have a sufficient target area and space between them
 Forms 358
-Use a checkbox or toggle switch for 
+Use a checkbox or toggle switch for
 2 options
 For simple on or off options where the default option is off, consider using a
 checkbox or toggle switch. They have a lower interaction cost than
@@ -9437,8 +9456,8 @@ In the following example, people can use a checkbox to opt in to receive
 news and special offers and then submit the form.
 Receive news and special offers
 Register
-First name *
-Email *
+First name _
+Email _
 Use a single checkbox when a user needs to press a submit button before the option will take effect
 Forms 359
 Toggle switch usage
@@ -9476,7 +9495,7 @@ Use a toggle switch for options that take immediate effect
 Forms 360
 Use positive phrasing for checkboxes
 It’s generally safest to use positive phrasing for checkbox labels to avoid
-confusion. Describe what will happen when the checkbox is selected, 
+confusion. Describe what will happen when the checkbox is selected,
 rather than what won’t happen.
 
 A simple way to test whether you’re using positive phrasing is to replace the
@@ -9506,15 +9525,15 @@ Step 2 of 3
 Back
 Next
 Contact details
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 R e g i s t r at i o n
-Mobile number *
-Email*
+Mobile number _
+Email\*
 Personal details Change
 Full name
 Address
 Adham Dannaway
-25 Beach Rd, Waterview, 
+25 Beach Rd, Waterview,
 NSW, Australia 2099
 Contact details Change
 Mobile number
@@ -9539,21 +9558,21 @@ If you can’t break up a long form into multiple separate steps, group related
 fields together under headings. Grouping will make the form seem less
 overwhelming and make it easier for people to understand and complete.
 Registration
-Required fields are marked with an asterisk *
-Street address *
-Suburb, town or city *
-State *
-Postcode *
-Email*
-Mobile number *
+Required fields are marked with an asterisk _
+Street address _
+Suburb, town or city _
+State _
+Postcode _
+Email_
+Mobile number _
 Register
 Registration
-Required fields are marked with an asterisk *
+Required fields are marked with an asterisk _
 Postal address
-Street address *
-Suburb, town or city *
-State *
-Postcode *
+Street address _
+Suburb, town or city _
+State _
+Postcode _
 Contact details
 Email*
 Mobile number *
@@ -9564,13 +9583,13 @@ Ensure form field borders are high contrast
 Low contrast form fields are one of the most common UI design mistakes.
 Light borders on form fields can look nice, but there’s a risk that some people
 may have difficulty seeing the borders. It could be someone with low vision
-or even a sighted user viewing the interface outside on a sunny day. 
+or even a sighted user viewing the interface outside on a sunny day.
 
 Borders are a distinctive detail that differentiate form fields from other
 interface elements. Without borders, it’s unclear how to interact with a form
 field. Make sure the contrast ratio of form field borders is at least 3:1. This
 rule applies to any interface element to ensure it’s accessible: buttons, toggle
-switches, inputs, steppers, checkboxes, and radio buttons. 
+switches, inputs, steppers, checkboxes, and radio buttons.
 
 If an interface element isn’t purely for decorative purposes, it needs to have
 sufficient contrast to ensure that what it does and how it works is clear.
@@ -9589,7 +9608,7 @@ Email
 Low contrast form field border versus one with a sufficient 3:1 contrast ratio
 Forms 364
 Choose your form validation approach
-Even if your forms are well-designed, people will still make mistakes. 
+Even if your forms are well-designed, people will still make mistakes.
 Form validation is the process of checking whether a person has answered
 all required questions in a form and whether they have answered them
 correctly. If they miss a question or make a mistake, let them know and help
@@ -9603,60 +9622,61 @@ $ Validate on submit of the for6
 The first is the simplest and easiest to design and build. Each subsequent
 approach becomes more complex and challenging to create. Depending on
 the types of questions you’re asking in your form, you might consider using
-multiple approaches. 
+multiple approaches.
 
 Let’s look at the advantages and disadvantages of each.
 Forms 365
+
 1. Validate on submit of the form
-If you’re low on time and development resources, keep it simple and validate
-the form once a person submits it. It may sound simplistic, but it’s the way
-forms were originally designed and it’s still a valid approach.
-Application form
-Required fields are marked with an asterisk *
-2 errors were found
-Correct them and apply again
-¸ Enter street addres¯
-¸ Enter suburb, town or city
-Street address *
-Enter street address
-Suburb, town or city *
-Enter suburb, town or city
-State *
-NSW
-Postcode *
-2000
-Apply now Cancel
-A list of errors with links are displayed at the top of the form after it’s submitted
-Forms 366
-Quick guidelines for validating forms on submit
-$ Display a prominent error message above invalid form fields (rather than
-below) to help ensure errors are always visible. The space below form
-fields can be covered by autofill menus and on-screen keyboards
-$ Use a red border and background shade to prominently highlight invalid
-fields. Make sure you also include an icon for people who are colour blind.
-Never rely on colour alone to distinguish interface elements.+
-$ If there are multiple errors, let people know how many there are and list
-them at the top of the form. Make the listed errors links that take people
-to the corresponding invalid field
-$ Don’t disable the submit button, as disabled buttons can be problematic.
-Advantages
-$ Relatively simple and easy to implement
-$ Allows people to focus on form completion without distractions.
-Disadvantages
-$ As people are completing a form, they have no idea whether they’re
-answering questions correctly or not.+
-$ People could be overwhelmed and frustrated by facing multiple errors all
-at once
-$ People are forced to navigate through the entire form again to find and fix
-errors when they may have lost context
-$ It doesn't work when people need assistance promptly, such as when
-someone requires help creating a password that meets specific criteria.
-Forms 367
+   If you’re low on time and development resources, keep it simple and validate
+   the form once a person submits it. It may sound simplistic, but it’s the way
+   forms were originally designed and it’s still a valid approach.
+   Application form
+   Required fields are marked with an asterisk _
+   2 errors were found
+   Correct them and apply again
+   ¸ Enter street addres¯
+   ¸ Enter suburb, town or city
+   Street address _
+   Enter street address
+   Suburb, town or city _
+   Enter suburb, town or city
+   State _
+   NSW
+   Postcode \*
+   2000
+   Apply now Cancel
+   A list of errors with links are displayed at the top of the form after it’s submitted
+   Forms 366
+   Quick guidelines for validating forms on submit
+   $ Display a prominent error message above invalid form fields (rather than
+   below) to help ensure errors are always visible. The space below form
+   fields can be covered by autofill menus and on-screen keyboards
+   $ Use a red border and background shade to prominently highlight invalid
+   fields. Make sure you also include an icon for people who are colour blind.
+   Never rely on colour alone to distinguish interface elements.+
+   $ If there are multiple errors, let people know how many there are and list
+   them at the top of the form. Make the listed errors links that take people
+   to the corresponding invalid field
+   $ Don’t disable the submit button, as disabled buttons can be problematic.
+   Advantages
+   $ Relatively simple and easy to implement
+   $ Allows people to focus on form completion without distractions.
+   Disadvantages
+   $ As people are completing a form, they have no idea whether they’re
+   answering questions correctly or not.+
+   $ People could be overwhelmed and frustrated by facing multiple errors all
+   at once
+   $ People are forced to navigate through the entire form again to find and fix
+   errors when they may have lost context
+   $ It doesn't work when people need assistance promptly, such as when
+   someone requires help creating a password that meets specific criteria.
+   Forms 367
 2. Validate after people leave a field
-Rather than informing people of errors after they’ve completed a form, this
-approach lets them know if they’ve made a mistake immediately after they’ve
-completed a field. Validating after people leave a field is commonly known as
-inline validation or validating “on blur”. 
+   Rather than informing people of errors after they’ve completed a form, this
+   approach lets them know if they’ve made a mistake immediately after they’ve
+   completed a field. Validating after people leave a field is commonly known as
+   inline validation or validating “on blur”.
 
 Remove the error message once the error has been resolved to let people
 know they've fixed it. This involves using the third validation approach
@@ -9678,8 +9698,7 @@ Disadvantages
 answering questions and fixing errorsf
  It doesn’t work well for groups of inputs, such as a list of checkboxesf
  It can be relatively complex to implement.
-Forms 368
-3. Validate instantly as people type
+Forms 368 3. Validate instantly as people type
 This approach waits until people have stopped typing their answer before
 validating it. To help prevent premature error messages, a delay is typically
 introduced once they’ve stopped typing.
@@ -9726,15 +9745,15 @@ design journey ahead
 Conclusion 372
 Closing thoughts
 Congratulations on levelling up your design skills. I hope you feel a lot more
-confident about designing intuitive, accessible, and beautiful interfaces. 
+confident about designing intuitive, accessible, and beautiful interfaces.
 
 My goal when writing this book was to equip you with a system of logical
 guidelines to help you make informed design decisions efficiently. Guidelines
 can seem restrictive, but they’re not meant to limit your creativity. Instead,
-think of them as a solid foundation to build, explore, and experiment on. 
+think of them as a solid foundation to build, explore, and experiment on.
 
 After seeing the how and why behind each guideline, I think you’ll agree that
-UI design is about much more than just making an interface look pretty. 
+UI design is about much more than just making an interface look pretty.
 
 Here’s a quick recap of some of the key guidelines
  Minimise usability risk by keeping interfaces simple and familiar-
@@ -9747,7 +9766,7 @@ usage guidelines to help you make consistent design decisions faster-
 everyone to use.
 
 I hope this logic-driven approach to UI design will serve you as well in your
-career as it has in mine. 
+career as it has in mine.
 Conclusion 373
 Please review the book
 If you found the book helpful, please take a few seconds to review it. I’ve
@@ -9760,7 +9779,7 @@ Got feedback?
 I don’t claim to know it all. In fact, it’s quite the opposite. The more I learn, the
 more I realise how much I have yet to learn. I’m always open to hearing
 different ideas or having my ideas constructively challenged. That’s how we
-learn and grow as designers. 
+learn and grow as designers.
 
 I’d love for this book to grow and improve over time, so let me know if you
 have any thoughts or feedback at hi@adhamdannaway.com

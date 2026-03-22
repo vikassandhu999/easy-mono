@@ -1,4 +1,4 @@
-import { z } from "zod";
+import {z} from 'zod';
 
 /* --------- Business entity (matches API contract GET /v1/businesses/me) */
 export interface Business {
@@ -30,20 +30,13 @@ export interface BusinessUpdateRequest {
 
 /* --------- Form validation: create business (Zod for zodResolver only) */
 export const BusinessCreateForm_zod = z.object({
-  name: z.string().min(1, "Business name is required").max(255),
+  name: z.string().min(1, 'Business name is required').max(255),
   handle: z
     .string()
-    .regex(
-      /^[a-z0-9_]*$/,
-      "Handle must only contain lowercase letters, numbers, and underscores",
-    )
-    .min(2, "Handle must be at least 2 characters")
-    .max(30, "Handle must not exceed 30 characters"),
-  about: z
-    .string()
-    .max(1000, "About must not exceed 1000 characters")
-    .optional()
-    .or(z.literal("")),
+    .regex(/^[a-z0-9_]*$/, 'Handle must only contain lowercase letters, numbers, and underscores')
+    .min(2, 'Handle must be at least 2 characters')
+    .max(30, 'Handle must not exceed 30 characters'),
+  about: z.string().max(1000, 'About must not exceed 1000 characters').optional().or(z.literal('')),
 });
 
 export interface BusinessCreateFormValues {
@@ -54,13 +47,8 @@ export interface BusinessCreateFormValues {
 
 /* --------- Form validation: update business (Zod for zodResolver only) */
 export const BusinessUpdateForm_zod = z.object({
-  name: z.string().min(1, "Business name is required").max(255),
-  about: z
-    .string()
-    .max(1000, "About must not exceed 1000 characters")
-    .optional()
-    .nullable()
-    .or(z.literal("")),
+  name: z.string().min(1, 'Business name is required').max(255),
+  about: z.string().max(1000, 'About must not exceed 1000 characters').optional().nullable().or(z.literal('')),
 });
 
 export interface BusinessUpdateFormValues {

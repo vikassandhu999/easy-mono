@@ -1,15 +1,15 @@
-import { Spinner } from "@heroui/react";
-import React, { useState } from "react";
-import { Navigate } from "react-router";
+import {Spinner} from '@heroui/react';
+import React, {useState} from 'react';
+import {Navigate} from 'react-router';
 
-import { useGetMyBusinessQuery } from "@/services/business/business";
+import {useGetMyBusinessQuery} from '@/services/business/business';
 
-import BusinessStep from "../components/BusinessStep";
-import CoachProfileStep from "../components/CoachProfileStep";
+import BusinessStep from '../components/BusinessStep';
+import CoachProfileStep from '../components/CoachProfileStep';
 
 const STEPS = [
-  { label: "Business", description: "Set up your business" },
-  { label: "Profile", description: "Complete your profile" },
+  {label: 'Business', description: 'Set up your business'},
+  {label: 'Profile', description: 'Complete your profile'},
 ] as const;
 
 /**
@@ -24,7 +24,7 @@ const OnboardingPage: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
 
   // Check if business already exists (user refreshed mid-onboarding)
-  const { data: business, isLoading } = useGetMyBusinessQuery();
+  const {data: business, isLoading} = useGetMyBusinessQuery();
 
   // If business already exists, skip to step 2
   React.useEffect(() => {
@@ -42,16 +42,19 @@ const OnboardingPage: React.FC = () => {
   }
 
   if (isComplete) {
-    return <Navigate replace to="/" />;
+    return (
+      <Navigate
+        replace
+        to="/"
+      />
+    );
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white px-6 py-4">
-        <h1 className="text-lg font-semibold text-neutral-900">
-          Welcome! Let&apos;s get you set up.
-        </h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Welcome! Let&apos;s get you set up.</h1>
       </header>
 
       {/* Step indicator */}
@@ -64,10 +67,10 @@ const OnboardingPage: React.FC = () => {
                 <div
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${
                     index < currentStep
-                      ? "bg-green-600 text-white"
+                      ? 'bg-green-600 text-white'
                       : index === currentStep
-                        ? "bg-neutral-900 text-white"
-                        : "bg-neutral-200 text-neutral-500"
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-neutral-200 text-neutral-500'
                   }`}
                 >
                   {index < currentStep ? (
@@ -89,11 +92,7 @@ const OnboardingPage: React.FC = () => {
                   )}
                 </div>
                 <span
-                  className={`text-sm font-medium ${
-                    index <= currentStep
-                      ? "text-neutral-900"
-                      : "text-neutral-400"
-                  }`}
+                  className={`text-sm font-medium ${index <= currentStep ? 'text-neutral-900' : 'text-neutral-400'}`}
                 >
                   {step.label}
                 </span>
@@ -101,30 +100,20 @@ const OnboardingPage: React.FC = () => {
 
               {/* Connector line between steps */}
               {index < STEPS.length - 1 && (
-                <div
-                  className={`mx-2 h-0.5 flex-1 ${
-                    index < currentStep ? "bg-green-600" : "bg-neutral-200"
-                  }`}
-                />
+                <div className={`mx-2 h-0.5 flex-1 ${index < currentStep ? 'bg-green-600' : 'bg-neutral-200'}`} />
               )}
             </React.Fragment>
           ))}
         </div>
 
         {/* Step description */}
-        <p className="mt-2 text-sm text-neutral-500">
-          {STEPS[currentStep]?.description}
-        </p>
+        <p className="mt-2 text-sm text-neutral-500">{STEPS[currentStep]?.description}</p>
       </div>
 
       {/* Step content */}
       <div className="mx-auto w-full max-w-xl flex-1 px-6 py-8">
-        {currentStep === 0 && (
-          <BusinessStep onComplete={() => setCurrentStep(1)} />
-        )}
-        {currentStep === 1 && (
-          <CoachProfileStep onComplete={() => setIsComplete(true)} />
-        )}
+        {currentStep === 0 && <BusinessStep onComplete={() => setCurrentStep(1)} />}
+        {currentStep === 1 && <CoachProfileStep onComplete={() => setIsComplete(true)} />}
       </div>
     </div>
   );

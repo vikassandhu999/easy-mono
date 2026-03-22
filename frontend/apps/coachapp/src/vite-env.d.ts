@@ -5,7 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
 
   // Environment identifier
-  readonly VITE_APP_ENV: 'development' | 'production' | 'staging';
+  readonly VITE_APP_ENV: "development" | "production" | "staging";
 
   // Debug flag
   readonly VITE_DEBUG: string;
@@ -36,9 +36,9 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-import 'axios';
+import "axios";
 
-declare module 'axios' {
+declare module "axios" {
   export interface AxiosRequestConfig {
     _retry?: boolean;
     skipAuth?: boolean;
@@ -46,9 +46,9 @@ declare module 'axios' {
   }
 }
 
-import '@kiwicom/orbit-components/lib/primitives/ButtonPrimitive/types';
+import "@kiwicom/orbit-components/lib/primitives/ButtonPrimitive/types";
 
-declare module '@kiwicom/orbit-components/lib/primitives/ButtonPrimitive/types' {
+declare module "@kiwicom/orbit-components/lib/primitives/ButtonPrimitive/types" {
   export interface ButtonCommonProps {
     to?: string;
   }

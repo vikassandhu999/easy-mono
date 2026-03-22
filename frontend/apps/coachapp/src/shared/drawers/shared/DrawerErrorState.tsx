@@ -13,7 +13,14 @@ export const DrawerErrorState = ({
   onRetry,
 }: DrawerErrorStateProps) => {
   return (
-    <Box style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px'}}>
+    <Box
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '200px',
+      }}
+    >
       <Stack
         align="center"
         gap="md"

@@ -43,32 +43,34 @@ export default function TermsOfServicePage() {
 
         <div className="prose prose-gray max-w-none">
           <p className="text-gray-700 mb-6">
-            These Terms of Service (&quot;Terms&quot;) govern your access to and use of
-            CoachEasy (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;). CoachEasy provides a software
-            platform that enables professional coaches to manage clients, deliver
-            coaching programs, schedule sessions, and communicate securely. By
-            accessing or using the platform, you agree to these Terms and our
-            Privacy Policy. If you do not agree, do not use the Services.
+            These Terms of Service (&quot;Terms&quot;) govern your access to and
+            use of CoachEasy (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;).
+            CoachEasy provides a software platform that enables professional
+            coaches to manage clients, deliver coaching programs, schedule
+            sessions, and communicate securely. By accessing or using the
+            platform, you agree to these Terms and our Privacy Policy. If you do
+            not agree, do not use the Services.
           </p>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Definitions</h2>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>
-                <strong>&quot;Coach&quot;</strong> – A registered user who provides
-                coaching services.
+                <strong>&quot;Coach&quot;</strong> – A registered user who
+                provides coaching services.
               </li>
               <li>
-                <strong>&quot;Client&quot;</strong> – An individual whose data is managed
-                by a Coach within the platform.
+                <strong>&quot;Client&quot;</strong> – An individual whose data
+                is managed by a Coach within the platform.
               </li>
               <li>
-                <strong>&quot;Content&quot;</strong> – Any data, messages, documents,
-                notes, goals, or materials uploaded or created in the platform.
+                <strong>&quot;Content&quot;</strong> – Any data, messages,
+                documents, notes, goals, or materials uploaded or created in the
+                platform.
               </li>
               <li>
-                <strong>&quot;Services&quot;</strong> – The CoachEasy web application,
-                website, features, and related offerings.
+                <strong>&quot;Services&quot;</strong> – The CoachEasy web
+                application, website, features, and related offerings.
               </li>
             </ul>
           </section>
@@ -78,10 +80,11 @@ export default function TermsOfServicePage() {
               2. Account Registration & Security
             </h2>
             <p className="text-gray-700">
-              You must provide accurate information when creating an account. You
-              are responsible for safeguarding login credentials and all activity
-              under your account. Notify us promptly of unauthorized access. We
-              may suspend accounts involved in suspicious or abusive behavior.
+              You must provide accurate information when creating an account.
+              You are responsible for safeguarding login credentials and all
+              activity under your account. Notify us promptly of unauthorized
+              access. We may suspend accounts involved in suspicious or abusive
+              behavior.
             </p>
           </section>
 
@@ -93,8 +96,8 @@ export default function TermsOfServicePage() {
                 Upload unlawful, defamatory, abusive, or infringing content.
               </li>
               <li>
-                Attempt to probe, breach, or disable security or integrity of the
-                platform.
+                Attempt to probe, breach, or disable security or integrity of
+                the platform.
               </li>
               <li>Misuse messaging or notifications to spam clients.</li>
               <li>
@@ -114,12 +117,12 @@ export default function TermsOfServicePage() {
               4. Client Data & Responsibility
             </h2>
             <p className="text-gray-700">
-              Coaches are data controllers for the personal information of clients
-              they input or collect. You must ensure you have proper consent and a
-              lawful basis before storing client information. Do not collect
-              sensitive categories unless necessary and legally permitted.
-              CoachEasy acts as a processor for such data and processes it only to
-              provide the Services.
+              Coaches are data controllers for the personal information of
+              clients they input or collect. You must ensure you have proper
+              consent and a lawful basis before storing client information. Do
+              not collect sensitive categories unless necessary and legally
+              permitted. CoachEasy acts as a processor for such data and
+              processes it only to provide the Services.
             </p>
           </section>
 
@@ -129,9 +132,10 @@ export default function TermsOfServicePage() {
             </h2>
             <p className="text-gray-700">
               You retain ownership of Content you submit. By using the Services,
-              you grant us a limited, revocable, non-exclusive, worldwide license
-              to host, process, transmit, and display your Content solely to
-              operate and improve the Services. We do not sell your data.
+              you grant us a limited, revocable, non-exclusive, worldwide
+              license to host, process, transmit, and display your Content
+              solely to operate and improve the Services. We do not sell your
+              data.
             </p>
           </section>
 
@@ -140,11 +144,11 @@ export default function TermsOfServicePage() {
               6. Intellectual Property
             </h2>
             <p className="text-gray-700">
-              The platform, underlying software, branding, and design elements are
-              owned by CoachEasy or its licensors. Except for the limited right to
-              access and use the Services, no rights are granted. You may not
-              copy, distribute, resell, frame, or exploit any part of the platform
-              without written consent.
+              The platform, underlying software, branding, and design elements
+              are owned by CoachEasy or its licensors. Except for the limited
+              right to access and use the Services, no rights are granted. You
+              may not copy, distribute, resell, frame, or exploit any part of
+              the platform without written consent.
             </p>
           </section>
 
@@ -167,10 +171,10 @@ export default function TermsOfServicePage() {
             <p className="text-gray-700">
               If subscription plans are introduced, pricing, billing intervals,
               and renewal terms will be disclosed at purchase. Unless canceled
-              before renewal, subscriptions renew automatically. You authorize us
-              or our payment processor to charge applicable fees. Fees are
-              generally non-refundable except where required by law or explicitly
-              stated.
+              before renewal, subscriptions renew automatically. You authorize
+              us or our payment processor to charge applicable fees. Fees are
+              generally non-refundable except where required by law or
+              explicitly stated.
             </p>
           </section>
 
@@ -180,8 +184,8 @@ export default function TermsOfServicePage() {
               You may stop using the Services at any time. We may suspend or
               terminate access for violations, fraud, security concerns, or
               non-payment. Upon termination, we may delete or restrict access to
-              Content after a reasonable retention period unless legally required
-              to retain it.
+              Content after a reasonable retention period unless legally
+              required to retain it.
             </p>
           </section>
 
@@ -202,10 +206,10 @@ export default function TermsOfServicePage() {
             </h2>
             <p className="text-gray-700">
               We aim for high availability but do not guarantee uninterrupted or
-              error-free operation. Services are provided &quot;as is&quot; without
-              warranties, express or implied (including fitness for a particular
-              purpose, merchantability, or non-infringement), to the maximum
-              extent permitted by law.
+              error-free operation. Services are provided &quot;as is&quot;
+              without warranties, express or implied (including fitness for a
+              particular purpose, merchantability, or non-infringement), to the
+              maximum extent permitted by law.
             </p>
           </section>
 
@@ -214,13 +218,14 @@ export default function TermsOfServicePage() {
               12. Limitation of Liability
             </h2>
             <p className="text-gray-700">
-              To the fullest extent permitted by law, CoachEasy and its officers,
-              directors, employees, and partners will not be liable for indirect,
-              incidental, special, consequential, exemplary, or punitive damages,
-              or loss of profits, data, goodwill, or revenue, even if advised of
-              the possibility. Our aggregate liability for claims arising out of
-              these Terms or the Services will not exceed the greater of (a)
-              amounts paid by you in the preceding 6 months or (b) INR 10,000.
+              To the fullest extent permitted by law, CoachEasy and its
+              officers, directors, employees, and partners will not be liable
+              for indirect, incidental, special, consequential, exemplary, or
+              punitive damages, or loss of profits, data, goodwill, or revenue,
+              even if advised of the possibility. Our aggregate liability for
+              claims arising out of these Terms or the Services will not exceed
+              the greater of (a) amounts paid by you in the preceding 6 months
+              or (b) INR 10,000.
             </p>
           </section>
 
@@ -240,23 +245,28 @@ export default function TermsOfServicePage() {
             </h2>
             <p className="text-gray-700">
               These Terms are governed by the laws of India. Courts located in
-              Bengaluru, Karnataka (or another specified jurisdiction if updated)
-              will have exclusive jurisdiction, except that we may seek injunctive
-              or equitable relief in any court of competent jurisdiction.
+              Bengaluru, Karnataka (or another specified jurisdiction if
+              updated) will have exclusive jurisdiction, except that we may seek
+              injunctive or equitable relief in any court of competent
+              jurisdiction.
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">15. Changes to Terms</h2>
+            <h2 className="text-2xl font-semibold mb-4">
+              15. Changes to Terms
+            </h2>
             <p className="text-gray-700">
               We may revise these Terms periodically. Material changes will be
-              communicated (e.g., email or in-app notice). Continued use after the
-              effective date constitutes acceptance.
+              communicated (e.g., email or in-app notice). Continued use after
+              the effective date constitutes acceptance.
             </p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">16. Notices & Contact</h2>
+            <h2 className="text-2xl font-semibold mb-4">
+              16. Notices & Contact
+            </h2>
             <p className="text-gray-700">
               Formal legal notices and questions should be sent to:{" "}
               <a

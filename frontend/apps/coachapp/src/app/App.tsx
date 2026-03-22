@@ -11,7 +11,9 @@ import {theme} from '../theme/index';
 import '../index.css';
 import Routes from './routes.tsx';
 
-const queryClient = new QueryClient({defaultOptions: {queries: {staleTime: 5 * 60 * 1000}}});
+const queryClient = new QueryClient({
+  defaultOptions: {queries: {staleTime: 5 * 60 * 1000}},
+});
 
 function App() {
   return (

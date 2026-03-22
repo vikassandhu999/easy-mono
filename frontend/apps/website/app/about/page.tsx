@@ -49,7 +49,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-br from-blue-50 to-purple-50 py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Our story and  Vision
+            Our story and Vision
           </h1>
           <p className="text-xl text-gray-600">
             Building the simplest coaching platform—because fitness coaches
@@ -71,16 +71,16 @@ export default function AboutPage() {
               </div>
 
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                We&apos;re two brothers from Punjab, India—one 21, the other 25—who
-                believe that software should make life easier, not more
+                We&apos;re two brothers from Punjab, India—one 21, the other
+                25—who believe that software should make life easier, not more
                 complicated.
               </p>
 
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
                 My brother brings 5 years of experience building software in the
-                industry. I&apos;ve spent the last 2 years working with startups,
-                learning what it takes to build products people actually love.
-                Together, we started CoachEasy.
+                industry. I&apos;ve spent the last 2 years working with
+                startups, learning what it takes to build products people
+                actually love. Together, we started CoachEasy.
               </p>
 
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
@@ -88,7 +88,8 @@ export default function AboutPage() {
                 we listened. We talked to hundreds of fitness coaches—in gyms,
                 online, over calls—asking one question:{" "}
                 <span className="font-semibold">
-                  &quot;What&apos;s making your work harder than it needs to be?&quot;
+                  &quot;What&apos;s making your work harder than it needs to
+                  be?&quot;
                 </span>
               </p>
 
@@ -143,8 +144,8 @@ export default function AboutPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Useful Over Flashy</h3>
               <p className="text-gray-600">
-                We&apos;d rather give you 10 features that work perfectly than 100
-                that you&apos;ll never use. Quality over quantity, always.
+                We&apos;d rather give you 10 features that work perfectly than
+                100 that you&apos;ll never use. Quality over quantity, always.
               </p>
             </div>
           </div>
@@ -192,12 +193,13 @@ export default function AboutPage() {
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             To remove the clutter from coaching workflows. To build software
-            that serves fitness coaches with only what&apos;s useful—nothing more,
-            nothing less.
+            that serves fitness coaches with only what&apos;s useful—nothing
+            more, nothing less.
           </p>
           <p className="text-blue-200 italic">
-            &quot;We&apos;re not here to bloat your work with features. We&apos;re here to
-            help you focus on what you do best—coaching.&quot;
+            &quot;We&apos;re not here to bloat your work with features.
+            We&apos;re here to help you focus on what you do
+            best—coaching.&quot;
           </p>
         </div>
       </section>
@@ -207,8 +209,8 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">Join Us on This Journey</h2>
           <p className="text-gray-600 text-lg mb-8">
-            We&apos;re building CoachEasy in public, with feedback from coaches like
-            you. Have ideas? We&apos;d love to hear them.
+            We&apos;re building CoachEasy in public, with feedback from coaches
+            like you. Have ideas? We&apos;d love to hear them.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

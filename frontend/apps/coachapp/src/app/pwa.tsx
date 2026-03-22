@@ -149,7 +149,9 @@ const PWAUtils = {
           updateViaCache: 'none',
         });
 
-        logger.log('Service Worker registered successfully', {scope: registration.scope});
+        logger.log('Service Worker registered successfully', {
+          scope: registration.scope,
+        });
 
         // Handle service worker updates
         registration.addEventListener('updatefound', () => {
@@ -167,7 +169,9 @@ const PWAUtils = {
         // Send message to prevent Chrome nudges
         const channel = new MessageChannel();
         channel.port1.onmessage = (event) => {
-          logger.debug('Chrome nudges prevention', {message: event.data.message});
+          logger.debug('Chrome nudges prevention', {
+            message: event.data.message,
+          });
         };
 
         if (registration.active) {
@@ -187,7 +191,9 @@ const PWAUtils = {
   reportPerformanceMetrics(metrics: any) {
     // This can be extended to send to analytics services
     if (metrics.totalTime > 3000) {
-      logger.warn('Slow page load detected', {loadTime: metrics.totalTime + 'ms'});
+      logger.warn('Slow page load detected', {
+        loadTime: metrics.totalTime + 'ms',
+      });
     }
   },
 

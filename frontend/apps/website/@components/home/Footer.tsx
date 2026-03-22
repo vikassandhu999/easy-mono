@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  IconBrandInstagram,
-} from "@tabler/icons-react";
+import { IconBrandInstagram } from "@tabler/icons-react";
 
 const FOOTER_LINKS = {
   features: {
@@ -19,10 +17,19 @@ const FOOTER_LINKS = {
   resources: {
     title: "RESOURCES & SUPPORT",
     links: [
-      { label: "Report a Bug", href: "https://coacheasy.notion.site/29338d91a7b880a7808acdab65799f0a?pvs=105" },
-      { label: "Request Feature", href: "https://coacheasy.notion.site/29338d91a7b880109e0fef65910b1249?pvs=105" },
+      {
+        label: "Report a Bug",
+        href: "https://coacheasy.notion.site/29338d91a7b880a7808acdab65799f0a?pvs=105",
+      },
+      {
+        label: "Request Feature",
+        href: "https://coacheasy.notion.site/29338d91a7b880109e0fef65910b1249?pvs=105",
+      },
       { label: "Contact Support", href: "/support" },
-      { label: "Join WhatsApp", href: "https://chat.whatsapp.com/J2KRTVSsTS48wNi3gx1nsp" },
+      {
+        label: "Join WhatsApp",
+        href: "https://chat.whatsapp.com/J2KRTVSsTS48wNi3gx1nsp",
+      },
     ],
   },
   company: {
@@ -35,7 +42,11 @@ const FOOTER_LINKS = {
 };
 
 const SOCIAL_LINKS = [
-  { icon: IconBrandInstagram, href: "https://www.instagram.com/coacheasyapp/", label: "Instagram" },
+  {
+    icon: IconBrandInstagram,
+    href: "https://www.instagram.com/coacheasyapp/",
+    label: "Instagram",
+  },
 ];
 
 const LEGAL_LINKS = [

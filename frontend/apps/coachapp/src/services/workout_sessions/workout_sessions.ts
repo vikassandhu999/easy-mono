@@ -23,7 +23,10 @@ export const workoutSessionsApi = baseAPISlice.injectEndpoints({
       providesTags: (result) =>
         result
           ? [
-              ...result.records.map(({id}) => ({type: 'WorkoutSessions' as const, id})),
+              ...result.records.map(({id}) => ({
+                type: 'WorkoutSessions' as const,
+                id,
+              })),
               {type: 'WorkoutSessions', id: 'LIST'},
             ]
           : [{type: 'WorkoutSessions', id: 'LIST'}],

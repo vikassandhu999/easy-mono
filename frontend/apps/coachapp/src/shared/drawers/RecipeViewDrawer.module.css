@@ -412,7 +412,6 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
   .editButton,
   .retryButton {
     transition: none;

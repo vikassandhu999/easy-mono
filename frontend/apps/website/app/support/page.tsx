@@ -171,7 +171,9 @@ export default function SupportPage() {
                   </div>
                   <Link
                     href={option.href}
-                    target={option.href.startsWith("http") ? "_blank" : undefined}
+                    target={
+                      option.href.startsWith("http") ? "_blank" : undefined
+                    }
                     rel={
                       option.href.startsWith("http")
                         ? "noopener noreferrer"
@@ -232,7 +234,9 @@ export default function SupportPage() {
       {/* FAQ Teaser */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Frequently Asked Questions
+          </h2>
           <p className="text-gray-600 mb-8">
             Before reaching out, you might find your answer in our FAQ section
             on the homepage.

@@ -133,7 +133,9 @@ export default function NutritionPlansPage() {
                   <div className="w-12 h-12 bg-green-100 flex items-center justify-center mb-4">
                     <Icon size={24} className="text-green-600" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {feature.title}
+                  </h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
               );

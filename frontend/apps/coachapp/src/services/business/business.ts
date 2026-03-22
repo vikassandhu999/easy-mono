@@ -1,10 +1,10 @@
-import { baseAPISlice } from "../baseAPISlice";
+import {baseAPISlice} from '../baseAPISlice';
 import {
   type Business,
   type BusinessCreateRequest,
   type BusinessResponse,
   type BusinessUpdateRequest,
-} from "./business_definition";
+} from './business_definition';
 
 export const businessApi = baseAPISlice.injectEndpoints({
   endpoints: (build) => ({
@@ -14,12 +14,12 @@ export const businessApi = baseAPISlice.injectEndpoints({
      */
     createBusiness: build.mutation<Business, BusinessCreateRequest>({
       query: (body) => ({
-        url: "/v1/businesses",
-        method: "post",
+        url: '/v1/businesses',
+        method: 'post',
         data: body,
       }),
       transformResponse: (response: BusinessResponse) => response.data,
-      invalidatesTags: ["Business"],
+      invalidatesTags: ['Business'],
     }),
 
     /**
@@ -28,11 +28,11 @@ export const businessApi = baseAPISlice.injectEndpoints({
      */
     getMyBusiness: build.query<Business, void>({
       query: () => ({
-        url: "/v1/businesses/me",
-        method: "get",
+        url: '/v1/businesses/me',
+        method: 'get',
       }),
       transformResponse: (response: BusinessResponse) => response.data,
-      providesTags: ["Business"],
+      providesTags: ['Business'],
     }),
 
     /**
@@ -41,19 +41,15 @@ export const businessApi = baseAPISlice.injectEndpoints({
      */
     updateMyBusiness: build.mutation<Business, BusinessUpdateRequest>({
       query: (body) => ({
-        url: "/v1/businesses/me",
-        method: "patch",
+        url: '/v1/businesses/me',
+        method: 'patch',
         data: body,
       }),
       transformResponse: (response: BusinessResponse) => response.data,
-      invalidatesTags: ["Business"],
+      invalidatesTags: ['Business'],
     }),
   }),
   overrideExisting: false,
 });
 
-export const {
-  useCreateBusinessMutation,
-  useGetMyBusinessQuery,
-  useUpdateMyBusinessMutation,
-} = businessApi;
+export const {useCreateBusinessMutation, useGetMyBusinessQuery, useUpdateMyBusinessMutation} = businessApi;

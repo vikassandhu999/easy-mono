@@ -11,7 +11,10 @@ export type DrawerParams = {
   [DRAWER_KEYS.RECIPE_EDIT]: {recipe_id: string};
   [DRAWER_KEYS.NUTRITION_PLAN_CREATE]: Record<string, never>;
   [DRAWER_KEYS.NUTRITION_PLAN_EDIT]: {nutrition_plan_id: string};
-  [DRAWER_KEYS.NUTRITION_PLAN_BUILDER]: {nutrition_plan_id: string; day_number?: string};
+  [DRAWER_KEYS.NUTRITION_PLAN_BUILDER]: {
+    nutrition_plan_id: string;
+    day_number?: string;
+  };
 };
 
 /**

@@ -12,7 +12,10 @@ type Props = {
 };
 
 const ClientsList = ({search, status}: Props) => {
-  const {data, isLoading, hasNextPage, isFetchingNextPage} = useListClients({search, status});
+  const {data, isLoading, hasNextPage, isFetchingNextPage} = useListClients({
+    search,
+    status,
+  });
   const items = useMemo(() => {
     return data?.pages?.flatMap((page) => page.records) ?? [];
   }, [data]);

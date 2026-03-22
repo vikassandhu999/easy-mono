@@ -68,7 +68,11 @@ export const exercisesApi = baseAPISlice.injectEndpoints({
       }),
       transformResponse: (response: {data: Exercise[]; meta: ExercisesList['meta']}) => ({
         records: response.data,
-        meta: response.meta || {offset: 0, limit: 10, total: response.data.length},
+        meta: response.meta || {
+          offset: 0,
+          limit: 10,
+          total: response.data.length,
+        },
       }),
       providesTags: (result) => {
         const baseTag = [{type: 'Exercises' as const, id: 'LIST'}];

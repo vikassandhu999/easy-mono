@@ -1497,7 +1497,17 @@ components:
           type: integer
     Recipe:
       type: object
-      required: [id, name, serving_sizes, recipe_ingredients, foods, creator_id, inserted_at, updated_at]
+      required:
+        [
+          id,
+          name,
+          serving_sizes,
+          recipe_ingredients,
+          foods,
+          creator_id,
+          inserted_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string
@@ -1641,7 +1651,7 @@ components:
           creator_id,
           business_id,
           inserted_at,
-          updated_at
+          updated_at,
         ]
       properties:
         id:
@@ -1775,7 +1785,17 @@ components:
     Meal:
       type: object
       required:
-        [id, name, position, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
+        [
+          id,
+          name,
+          position,
+          meal_items,
+          creator_id,
+          business_id,
+          plan_id,
+          inserted_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string
@@ -1836,7 +1856,18 @@ components:
             $ref: "#/components/schemas/PlanItem"
     PlanItem:
       type: object
-      required: [id, day, meal_type, meal_id, plan_id, creator_id, business_id, inserted_at, updated_at]
+      required:
+        [
+          id,
+          day,
+          meal_type,
+          meal_id,
+          plan_id,
+          creator_id,
+          business_id,
+          inserted_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string
@@ -1905,7 +1936,19 @@ components:
     MealItem:
       type: object
       required:
-        [id, weight_g, amount, unit, position, recipe_id, food_id, meal_id, business_id, inserted_at, updated_at]
+        [
+          id,
+          weight_g,
+          amount,
+          unit,
+          position,
+          recipe_id,
+          food_id,
+          meal_id,
+          business_id,
+          inserted_at,
+          updated_at,
+        ]
       properties:
         id:
           type: string

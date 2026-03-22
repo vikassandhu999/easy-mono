@@ -162,7 +162,7 @@
 }
 
 .selectIndicatorActive::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -229,7 +229,6 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
   .searchInput,
   .clearButton,
   .planItem,

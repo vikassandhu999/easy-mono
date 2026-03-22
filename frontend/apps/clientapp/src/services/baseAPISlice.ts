@@ -10,43 +10,46 @@ import {logger} from '@/utils/logger';
  * - In development: Auto-detects local dev server and adjusts port
  */
 const resolveBaseUrl = (): string => {
-    const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-    // In development with http://, auto-detect and replace port for local dev
-    if (import.meta.env.DEV && typeof window !== 'undefined' && window.origin.startsWith('http://')) {
-        return window.origin.replace(':1313', ':4000').replace(':2020', ':4000');
-    }
+  // In development with http://, auto-detect and replace port for local dev
+  if (import.meta.env.DEV && typeof window !== 'undefined' && window.origin.startsWith('http://')) {
+    return window.origin.replace(':1313', ':4000').replace(':2020', ':4000');
+  }
 
-    // Use environment variable (required in production)
-    if (!envBaseUrl) {
-        logger.warn('VITE_API_BASE_URL is not set, using default');
-        return 'http://localhost:4000';
-    }
+  // Use environment variable (required in production)
+  if (!envBaseUrl) {
+    logger.warn('VITE_API_BASE_URL is not set, using default');
+    return 'http://localhost:4000';
+  }
 
-    return envBaseUrl;
+  return envBaseUrl;
 };
 
 const BASE_URL = resolveBaseUrl();
 
-logger.log('API Base URL configured', {url: BASE_URL, env: import.meta.env.VITE_APP_ENV || 'unknown'});
+logger.log('API Base URL configured', {
+  url: BASE_URL,
+  env: import.meta.env.VITE_APP_ENV || 'unknown',
+});
 
 const axiosInstance = axios.create({
-    baseURL: BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    withCredentials: true,
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
 });
 
 /**
  * Clears authentication state from localStorage and application state
  */
 function clearAuthState() {
-    if (typeof window !== 'undefined') {
-        tokenStorage.clearTokens();
-        localStorage.removeItem('user');
-        localStorage.removeItem('client');
-    }
+  if (typeof window !== 'undefined') {
+    tokenStorage.clearTokens();
+    localStorage.removeItem('user');
+    localStorage.removeItem('client');
+  }
 }
 
 /**
@@ -54,183 +57,186 @@ function clearAuthState() {
  * Only redirects if not already on an auth page to prevent infinite loops
  */
 function redirectToLogin() {
-    if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        const authPages = ['/login', '/signin', '/join', '/invite', '/verify'];
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname;
+    const authPages = ['/login', '/signin', '/join', '/invite', '/verify'];
 
-        // Don't redirect if already on an auth page
-        if (!authPages.some((page) => currentPath.startsWith(page))) {
-            window.location.href = '/signin';
-        }
+    // Don't redirect if already on an auth page
+    if (!authPages.some((page) => currentPath.startsWith(page))) {
+      window.location.href = '/signin';
     }
+  }
 }
 
 // Track if we're currently refreshing to prevent multiple refresh calls
 let isRefreshing = false;
-let failedQueue: Array<{resolve: (value?: unknown) => void; reject: (reason?: unknown) => void}> = [];
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
 
 const processQueue = (error: unknown = null) => {
-    failedQueue.forEach((prom) => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve();
-        }
-    });
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
 
-    failedQueue = [];
+  failedQueue = [];
 };
 
 // Add request interceptor to attach access token
 axiosInstance.interceptors.request.use(
-    (config) => {
-        const accessToken = tokenStorage.getAccessToken();
-        if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error),
+  (config) => {
+    const accessToken = tokenStorage.getAccessToken();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
 );
 
 // Add response interceptor for error handling
 axiosInstance.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-        // Only handle 401 errors
-        if (error.response?.status !== 401) {
-            return Promise.reject(error);
-        }
+    // Only handle 401 errors
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
 
-        // Don't retry if:
-        // 1. Already retried this request
-        // 2. This IS the refresh endpoint
-        // 3. This is an auth endpoint
-        if (
-            originalRequest._retry ||
-            originalRequest.url?.includes('/api/auth/client/token') ||
-            originalRequest.url?.includes('/api/auth/client/send-login-code') ||
-            originalRequest.url?.includes('/api/auth/verify') ||
-            originalRequest.url?.includes('/api/auth/client-signup') ||
-            originalRequest.url?.includes('/api/invitations') ||
-            originalRequest.url?.includes('/api/join')
-        ) {
-            // Clear auth state and redirect to login
-            clearAuthState();
-            redirectToLogin();
-            return Promise.reject(error);
-        }
+    // Don't retry if:
+    // 1. Already retried this request
+    // 2. This IS the refresh endpoint
+    // 3. This is an auth endpoint
+    if (
+      originalRequest._retry ||
+      originalRequest.url?.includes('/api/auth/client/token') ||
+      originalRequest.url?.includes('/api/auth/client/send-login-code') ||
+      originalRequest.url?.includes('/api/auth/verify') ||
+      originalRequest.url?.includes('/api/auth/client-signup') ||
+      originalRequest.url?.includes('/api/invitations') ||
+      originalRequest.url?.includes('/api/join')
+    ) {
+      // Clear auth state and redirect to login
+      clearAuthState();
+      redirectToLogin();
+      return Promise.reject(error);
+    }
 
-        // Mark this request as retried to prevent infinite loops
-        originalRequest._retry = true;
+    // Mark this request as retried to prevent infinite loops
+    originalRequest._retry = true;
 
-        // If already refreshing, queue this request
-        if (isRefreshing) {
-            return new Promise((resolve, reject) => {
-                failedQueue.push({resolve, reject});
-            })
-                .then(() => axiosInstance(originalRequest))
-                .catch((err) => Promise.reject(err));
-        }
+    // If already refreshing, queue this request
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({resolve, reject});
+      })
+        .then(() => axiosInstance(originalRequest))
+        .catch((err) => Promise.reject(err));
+    }
 
-        isRefreshing = true;
+    isRefreshing = true;
 
-        try {
-            const refreshToken = tokenStorage.getRefreshToken();
+    try {
+      const refreshToken = tokenStorage.getRefreshToken();
 
-            if (!refreshToken) {
-                throw new Error('No refresh token available');
-            }
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
 
-            // Call refresh endpoint (client-specific)
-            const response = await axiosInstance.post('/api/auth/client/token', {
-                refresh_token: refreshToken,
-            });
+      // Call refresh endpoint (client-specific)
+      const response = await axiosInstance.post('/api/auth/client/token', {
+        refresh_token: refreshToken,
+      });
 
-            const {access_token, refresh_token: new_refresh_token} = response.data;
+      const {access_token, refresh_token: new_refresh_token} = response.data;
 
-            // Save new tokens
-            tokenStorage.setTokens(access_token, new_refresh_token);
+      // Save new tokens
+      tokenStorage.setTokens(access_token, new_refresh_token);
 
-            logger.debug('Token refreshed successfully');
+      logger.debug('Token refreshed successfully');
 
-            // Process queued requests
-            processQueue(null);
+      // Process queued requests
+      processQueue(null);
 
-            // Retry the original request with new token
-            return axiosInstance(originalRequest);
-        } catch (refreshError) {
-            // Refresh failed - clear state and redirect
-            logger.error('Token refresh failed', refreshError);
-            processQueue(refreshError);
-            clearAuthState();
-            redirectToLogin();
-            return Promise.reject(refreshError);
-        } finally {
-            isRefreshing = false;
-        }
-    },
+      // Retry the original request with new token
+      return axiosInstance(originalRequest);
+    } catch (refreshError) {
+      // Refresh failed - clear state and redirect
+      logger.error('Token refresh failed', refreshError);
+      processQueue(refreshError);
+      clearAuthState();
+      redirectToLogin();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
+  },
 );
 
 export type AxiosBaseQueryError = {
-    data?: unknown;
-    message: string;
-    status?: number;
+  data?: unknown;
+  message: string;
+  status?: number;
 };
 
 type AxiosBaseQueryArgs = {
-    data?: AxiosRequestConfig['data'];
-    headers?: AxiosRequestConfig['headers'];
-    method?: AxiosRequestConfig['method'];
-    params?: AxiosRequestConfig['params'];
-    url: string;
+  data?: AxiosRequestConfig['data'];
+  headers?: AxiosRequestConfig['headers'];
+  method?: AxiosRequestConfig['method'];
+  params?: AxiosRequestConfig['params'];
+  url: string;
 };
 
 const axiosBaseQuery = (): BaseQueryFn<AxiosBaseQueryArgs, unknown, AxiosBaseQueryError> => {
-    return async ({url, method = 'get', data, params, headers}, {signal}) => {
-        try {
-            const requestHeaders: Record<string, string | undefined> = {};
+  return async ({url, method = 'get', data, params, headers}, {signal}) => {
+    try {
+      const requestHeaders: Record<string, string | undefined> = {};
 
-            // Add authorization header with access token
-            const accessToken = tokenStorage.getAccessToken();
-            if (accessToken) {
-                requestHeaders.Authorization = `Bearer ${accessToken}`;
-            }
+      // Add authorization header with access token
+      const accessToken = tokenStorage.getAccessToken();
+      if (accessToken) {
+        requestHeaders.Authorization = `Bearer ${accessToken}`;
+      }
 
-            // Merge with any custom headers
-            if (headers && typeof headers === 'object') {
-                Object.assign(requestHeaders, headers as Record<string, string | undefined>);
-            }
+      // Merge with any custom headers
+      if (headers && typeof headers === 'object') {
+        Object.assign(requestHeaders, headers as Record<string, string | undefined>);
+      }
 
-            const result = await axiosInstance.request({
-                url,
-                method,
-                data,
-                params,
-                headers: requestHeaders,
-                signal,
-            });
-            return {data: result.data};
-        } catch (error) {
-            const axiosError = error as AxiosError;
-            return {
-                error: {
-                    status: axiosError.response?.status,
-                    data: axiosError.response?.data,
-                    message: axiosError.message,
-                },
-            };
-        }
-    };
+      const result = await axiosInstance.request({
+        url,
+        method,
+        data,
+        params,
+        headers: requestHeaders,
+        signal,
+      });
+      return {data: result.data};
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      return {
+        error: {
+          status: axiosError.response?.status,
+          data: axiosError.response?.data,
+          message: axiosError.message,
+        },
+      };
+    }
+  };
 };
 
 export const baseAPISlice = createApi({
-    reducerPath: 'api',
-    baseQuery: axiosBaseQuery(),
-    tagTypes: ['Invitation', 'PublicJoin', 'Profile', 'Schedule', 'Content', 'Business'],
-    endpoints: () => ({}),
+  reducerPath: 'api',
+  baseQuery: axiosBaseQuery(),
+  tagTypes: ['Invitation', 'PublicJoin', 'Profile', 'Schedule', 'Content', 'Business'],
+  endpoints: () => ({}),
 });
 
 export type BaseAPIQueryAPI = BaseQueryApi;

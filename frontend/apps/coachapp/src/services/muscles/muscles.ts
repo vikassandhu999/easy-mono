@@ -11,7 +11,13 @@ export const musclesApi = baseAPISlice.injectEndpoints({
       }),
       providesTags: (result) =>
         result
-          ? [...result.data.map(({id}) => ({type: 'Muscles' as const, id})), {type: 'Muscles', id: 'LIST'}]
+          ? [
+              ...result.data.map(({id}) => ({
+                type: 'Muscles' as const,
+                id,
+              })),
+              {type: 'Muscles', id: 'LIST'},
+            ]
           : [{type: 'Muscles', id: 'LIST'}],
     }),
   }),

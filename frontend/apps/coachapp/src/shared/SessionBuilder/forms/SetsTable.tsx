@@ -91,7 +91,13 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                       {setIndex + 1}
                     </Badge>
                   </Table.Td>
-                  <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
+                  <Table.Td
+                    style={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      padding: '8px',
+                    }}
+                  >
                     <Controller
                       control={control}
                       name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.weight.value`}
@@ -114,7 +120,13 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                       )}
                     />
                   </Table.Td>
-                  <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
+                  <Table.Td
+                    style={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      padding: '8px',
+                    }}
+                  >
                     <Controller
                       control={control}
                       name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.reps.value`}
@@ -138,7 +150,13 @@ export default function SetsTable({control, sectionIndex, exerciseIndex}: SetsTa
                       )}
                     />
                   </Table.Td>
-                  <Table.Td style={{textAlign: 'center', verticalAlign: 'middle', padding: '8px'}}>
+                  <Table.Td
+                    style={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      padding: '8px',
+                    }}
+                  >
                     <Controller
                       control={control}
                       name={`definition.sections.${sectionIndex}.exercises.${exerciseIndex}.sets.${setIndex}.rest_seconds.value`}

@@ -11,7 +11,13 @@ export const equipmentApi = baseAPISlice.injectEndpoints({
       }),
       providesTags: (result) =>
         result
-          ? [...result.data.map(({id}) => ({type: 'Equipment' as const, id})), {type: 'Equipment', id: 'LIST'}]
+          ? [
+              ...result.data.map(({id}) => ({
+                type: 'Equipment' as const,
+                id,
+              })),
+              {type: 'Equipment', id: 'LIST'},
+            ]
           : [{type: 'Equipment', id: 'LIST'}],
     }),
   }),

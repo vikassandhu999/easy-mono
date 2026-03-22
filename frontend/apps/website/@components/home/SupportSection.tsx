@@ -33,7 +33,10 @@ const SupportSection = () => {
               Found something that{"'"}s not working right? Let us know and we
               {"'"}ll fix it fast.
             </p>
-            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 border-2 border-red-500 text-red-500  font-medium hover:bg-red-500 hover:text-white transition-all block text-center">
+            <Link
+              href={APP_LOGIN_URL}
+              className="w-full py-3 px-6 border-2 border-red-500 text-red-500  font-medium hover:bg-red-500 hover:text-white transition-all block text-center"
+            >
               Report Bug
             </Link>
           </div>
@@ -49,7 +52,10 @@ const SupportSection = () => {
               Have an idea that could make coaching easier? We want to hear it.
               Your input drives our roadmap.
             </p>
-            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 border-2 border-yellow-500 text-yellow-600  font-medium hover:bg-yellow-500 hover:text-white transition-all block text-center">
+            <Link
+              href={APP_LOGIN_URL}
+              className="w-full py-3 px-6 border-2 border-yellow-500 text-yellow-600  font-medium hover:bg-yellow-500 hover:text-white transition-all block text-center"
+            >
               Request Feature
             </Link>
           </div>
@@ -65,7 +71,10 @@ const SupportSection = () => {
               Need help? Our support team is ready to assist you every step of
               the way.
             </p>
-            <Link href={APP_LOGIN_URL} className="w-full py-3 px-6 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-all hover:shadow-lg block text-center">
+            <Link
+              href={APP_LOGIN_URL}
+              className="w-full py-3 px-6 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-all hover:shadow-lg block text-center"
+            >
               Contact Support
             </Link>
           </div>

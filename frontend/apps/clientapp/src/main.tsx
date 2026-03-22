@@ -10,30 +10,30 @@ import {logger} from './utils/logger';
 
 // Error boundary for React errors
 window.addEventListener('error', (event) => {
-    logger.error('Global error', event.error);
+  logger.error('Global error', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-    logger.error('Unhandled promise rejection', event.reason);
+  logger.error('Unhandled promise rejection', event.reason);
 });
 
 // Initialize React app
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-    throw new Error('Root element not found');
+  throw new Error('Root element not found');
 }
 
 const root = createRoot(rootElement);
 
 root.render(
-    <StrictMode>
-        <Provider store={store}>
-            <PersistGate
-                loading={null}
-                persistor={persistor}
-            >
-                <App />
-            </PersistGate>
-        </Provider>
-    </StrictMode>,
+  <StrictMode>
+    <Provider store={store}>
+      <PersistGate
+        loading={null}
+        persistor={persistor}
+      >
+        <App />
+      </PersistGate>
+    </Provider>
+  </StrictMode>,
 );

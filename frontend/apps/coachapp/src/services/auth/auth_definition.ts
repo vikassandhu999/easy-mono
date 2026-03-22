@@ -1,6 +1,6 @@
-import { z } from "zod";
+import {z} from 'zod';
 
-export type AuthRole = "client" | "coach" | "guest" | "owner";
+export type AuthRole = 'client' | 'coach' | 'guest' | 'owner';
 
 /* --------- Signup: POST /v1/auth/signup */
 export interface SignupRequest {
@@ -20,7 +20,7 @@ export interface SignupResponse {
 /* --------- OTP: POST /v1/auth/otp */
 export interface SendOtpRequest {
   email: string;
-  type: "authentication" | "email_confirmation";
+  type: 'authentication' | 'email_confirmation';
 }
 
 export interface MessageResponse {
@@ -39,14 +39,14 @@ export interface VerifyOtpRequest {
 
 /* --------- Token exchange: POST /v1/auth/token (oneOf refresh | otp) */
 export interface TokenRefreshRequest {
-  grant_type: "refresh_token";
+  grant_type: 'refresh_token';
   refresh_token: string;
   role?: AuthRole;
 }
 
 export interface TokenOtpRequest {
   email: string;
-  grant_type: "otp";
+  grant_type: 'otp';
   otp: string;
   role: AuthRole;
 }
@@ -62,26 +62,20 @@ export interface AuthTokenResponse {
 
 /* --------- Form validation schemas (Zod for zodResolver only) */
 export const SendOtp_zod = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.string().email('Invalid email format'),
 });
 
 export const VerifyOtp_zod = z.object({
-  email: z.string().email("Invalid email format"),
-  grant_type: z.literal("otp"),
-  otp: z.string().length(6, "Passcode should contain 6 digits"),
-  role: z.enum(["client", "coach", "guest", "owner"]),
+  email: z.string().email('Invalid email format'),
+  grant_type: z.literal('otp'),
+  otp: z.string().length(6, 'Passcode should contain 6 digits'),
+  role: z.enum(['client', 'coach', 'guest', 'owner']),
 });
 
 export const Signup_zod = z.object({
-  email: z.string().email("Invalid email format"),
-  first_name: z
-    .string()
-    .min(2, "First name is too short.")
-    .max(255, "First name is too long"),
-  last_name: z
-    .string()
-    .min(2, "Last name is too short.")
-    .max(255, "Last name is too long"),
+  email: z.string().email('Invalid email format'),
+  first_name: z.string().min(2, 'First name is too short.').max(255, 'First name is too long'),
+  last_name: z.string().min(2, 'Last name is too short.').max(255, 'Last name is too long'),
 });
 
 export interface SignupFormValues {

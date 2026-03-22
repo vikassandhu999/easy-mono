@@ -306,7 +306,12 @@ export default function ExerciseSelect(props: ExerciseSelectProps) {
                       onSearchChangeDebounced('');
                       searchInputRef.current?.focus();
                     }}
-                    style={{background: 'none', border: 'none', cursor: 'pointer', padding: 4}}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 4,
+                    }}
                     type="button"
                   >
                     <XIcon size={16} />

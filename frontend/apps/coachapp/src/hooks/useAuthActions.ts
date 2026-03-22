@@ -1,6 +1,6 @@
-import { useCallback } from "react";
+import {useCallback} from 'react';
 
-import { useExchangeTokenMutation } from "@/services/auth";
+import {useExchangeTokenMutation} from '@/services/auth';
 import {
   logout as logoutAction,
   selectAuth,
@@ -13,8 +13,8 @@ import {
   setUser,
   tokenStorage,
   type User,
-} from "@/slices/authSlice";
-import { useAppDispatch, useAppSelector } from "@/store";
+} from '@/slices/authSlice';
+import {useAppDispatch, useAppSelector} from '@/store';
 
 /**
  * Hook for auth operations
@@ -66,7 +66,7 @@ export const useAuthActions = () => {
       const refreshToken = tokenStorage.getRefreshToken();
 
       if (!refreshToken) {
-        dispatch(setAuthError("No refresh token available"));
+        dispatch(setAuthError('No refresh token available'));
         return false;
       }
 
@@ -76,7 +76,7 @@ export const useAuthActions = () => {
 
       try {
         const response = await exchangeToken({
-          grant_type: "refresh_token",
+          grant_type: 'refresh_token',
           refresh_token: refreshToken,
         }).unwrap();
 
@@ -89,8 +89,8 @@ export const useAuthActions = () => {
 
         return true;
       } catch (error) {
-        console.error("Token refresh failed:", error);
-        dispatch(setAuthError("Session expired. Please login again."));
+        console.error('Token refresh failed:', error);
+        dispatch(setAuthError('Session expired. Please login again.'));
         tokenStorage.clearTokens();
         return false;
       }

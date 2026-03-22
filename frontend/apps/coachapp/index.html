@@ -2,77 +2,105 @@
 <html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
-    
+
     <!-- Optimized viewport for mobile-first PWA -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content"
     />
-    
+
     <!-- SEO and PWA Meta Tags -->
-    <meta name="description" content="CoachEasy - Your personal coaching platform for fitness and wellness goals. Track progress, connect with coaches, and achieve your health objectives." />
-    <meta name="keywords" content="coaching, fitness, wellness, personal trainer, health, PWA, mobile app" />
+    <meta
+      name="description"
+      content="CoachEasy - Your personal coaching platform for fitness and wellness goals. Track progress, connect with coaches, and achieve your health objectives."
+    />
+    <meta
+      name="keywords"
+      content="coaching, fitness, wellness, personal trainer, health, PWA, mobile app"
+    />
     <meta name="author" content="CoachEasy" />
     <meta name="robots" content="index, follow" />
     <meta name="rating" content="general" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    
+
     <!-- Disable Chrome translation and search nudges -->
     <meta name="google" content="notranslate" />
     <meta name="google" content="nositelinkssearchbox" />
     <meta name="google" content="nopagereadaloud" />
     <meta name="google-site-verification" content="" />
     <meta http-equiv="Content-Language" content="en-US" />
-    
+
     <!-- PWA Theme and Display -->
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1a1a1a"
+      media="(prefers-color-scheme: dark)"
+    />
 
     <!-- For enablbing dark mode as well for loader (pwa) add dark mode here as well -->
-    <meta name="color-scheme" content="light" /> 
+    <meta name="color-scheme" content="light" />
     <meta name="msapplication-navbutton-color" content="#ffffff" />
-    
+
     <!-- iOS Specific PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="CoachEasy" />
     <meta name="apple-touch-fullscreen" content="yes" />
-    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
-    
+    <meta
+      name="format-detection"
+      content="telephone=no, date=no, address=no, email=no"
+    />
+
     <!-- Android/Chrome PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="CoachEasy" />
     <meta name="msapplication-starturl" content="/" />
     <meta name="msapplication-TileColor" content="#ffffff" />
     <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
-    
+
     <!-- Security and Performance Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="X-Frame-Options" content="DENY" />
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()" />
-    
+    <meta
+      http-equiv="Referrer-Policy"
+      content="strict-origin-when-cross-origin"
+    />
+    <meta
+      http-equiv="Permissions-Policy"
+      content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    />
+
     <!-- Icons and Manifest -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-    <link rel="apple-touch-icon" href="/android-chrome-192x192.png" sizes="192x192" />
+    <link
+      rel="apple-touch-icon"
+      href="/android-chrome-192x192.png"
+      sizes="192x192"
+    />
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="shortcut icon" href="/favicon.ico" />
-    
+
     <!-- Preload critical resources for better performance -->
     <link rel="preload" href="/src/main.tsx" as="script" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="//fonts.gstatic.com" />
-    
+
     <!-- Critical inline CSS for loading states and PWA styling -->
     <style>
       /* Base styles */
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         height: 100%;
@@ -81,13 +109,13 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
-      
+
       #root {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
       }
-      
+
       /* Loading spinner for better perceived performance */
       .loading-spinner {
         position: fixed;
@@ -102,36 +130,41 @@
         /* animation: spin 1s linear infinite; */
         z-index: 9999;
       }
-      
+
       @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
       }
-      
+
       /* Safe area handling for notched devices */
       body {
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
       }
-      
+
       /* PWA specific styles */
       .pwa-mode {
         padding-top: env(titlebar-area-height, 0);
       }
-      
+
       /* Mobile-first responsive design helpers */
       @media (max-width: 768px) {
         body {
           font-size: 16px; /* Prevent zoom on focus */
         }
       }
-      
+
       /* High DPI display optimizations */
       @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
         .loading-spinner {
           border-width: 2px;
         }
       }
-      
+
       /* Dark mode support */
       /* @media (prefers-color-scheme: dark) {
         .loading-spinner {
@@ -147,7 +180,7 @@
         }
       }
     </style>
-    
+
     <title>coacheasy - Personal Coaching Platform</title>
   </head>
   <body>

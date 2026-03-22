@@ -37,8 +37,14 @@ const WorkoutCard = ({
   const sortedElements = [...(workout.elements || [])].sort((a, b) => a.position - b.position);
 
   // Group elements by superset_group_id
-  const groupedElements: {groupId: null | string; elements: WorkoutElement[]}[] = [];
-  let currentGroup: null | {groupId: null | string; elements: WorkoutElement[]} = null;
+  const groupedElements: {
+    groupId: null | string;
+    elements: WorkoutElement[];
+  }[] = [];
+  let currentGroup: null | {
+    groupId: null | string;
+    elements: WorkoutElement[];
+  } = null;
 
   sortedElements.forEach((element) => {
     const groupId = element.superset_group_id;

@@ -140,7 +140,9 @@ export default function ProgressTrackingPage() {
                   <div className="w-12 h-12 bg-green-100 flex items-center justify-center mb-4">
                     <Icon className="text-green-600" size={24} />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {feature.title}
+                  </h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
               );
@@ -163,7 +165,9 @@ export default function ProgressTrackingPage() {
                     1
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Boost Client Retention</h3>
+                    <h3 className="font-semibold mb-1">
+                      Boost Client Retention
+                    </h3>
                     <p className="text-gray-600">
                       Clients who see measurable progress are more likely to
                       stick with their programs long-term.
@@ -175,7 +179,9 @@ export default function ProgressTrackingPage() {
                     2
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Data-Driven Adjustments</h3>
+                    <h3 className="font-semibold mb-1">
+                      Data-Driven Adjustments
+                    </h3>
                     <p className="text-gray-600">
                       Use real data to make informed decisions about program
                       modifications and nutrition changes.
@@ -187,7 +193,9 @@ export default function ProgressTrackingPage() {
                     3
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Celebrate Wins Together</h3>
+                    <h3 className="font-semibold mb-1">
+                      Celebrate Wins Together
+                    </h3>
                     <p className="text-gray-600">
                       Milestone notifications help you acknowledge achievements
                       and strengthen the coach-client relationship.
@@ -198,7 +206,9 @@ export default function ProgressTrackingPage() {
             </div>
             <div className="bg-white p-8 shadow-lg">
               <div className="text-center">
-                <div className="text-6xl font-bold text-green-600 mb-2">87%</div>
+                <div className="text-6xl font-bold text-green-600 mb-2">
+                  87%
+                </div>
                 <p className="text-gray-600 mb-6">
                   of clients who track progress consistently achieve their goals
                 </p>

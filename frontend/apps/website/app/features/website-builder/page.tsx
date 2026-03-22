@@ -151,7 +151,9 @@ export default function WebsiteBuilderPage() {
                   <div className="w-12 h-12 bg-purple-100 flex items-center justify-center mb-4">
                     <Icon size={24} className="text-purple-600" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {feature.title}
+                  </h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
               );
@@ -227,7 +229,9 @@ export default function WebsiteBuilderPage() {
               </p>
             </div>
             <div className="p-6">
-              <div className="text-4xl font-bold text-purple-600 mb-2">24/7</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">
+                24/7
+              </div>
               <p className="text-gray-600">
                 Your website works for you around the clock, even while you
                 sleep

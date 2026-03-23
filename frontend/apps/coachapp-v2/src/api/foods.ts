@@ -1,6 +1,8 @@
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
+const PAGE_SIZE = 20;
+
 export type Food = {
   id: string;
   name: string;
@@ -19,6 +21,11 @@ export type Food = {
 export type ListFoodsParams = {
   offset?: number;
   limit?: number;
+  search?: string;
+};
+
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListFoodsFilters = {
   search?: string;
 };
 
@@ -87,6 +94,40 @@ export const foodsApi = api.injectEndpoints({
         {type: 'Food', id: 'LIST'},
       ],
     }),
+    /**
+     * Infinite-scroll variant of listFoods.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useFoodsInfiniteQuery
+     */
+    foods: build.infiniteQuery<ApiListResponse<Food>, ListFoodsFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/foods',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((food) => ({
+                  type: 'Food' as const,
+                  id: food.id,
+                })),
+              ),
+              {type: 'Food' as const, id: 'LIST'},
+            ]
+          : [{type: 'Food' as const, id: 'LIST'}],
+    }),
     updateFood: build.mutation<ApiResponse<Food>, {body: FoodUpdateRequest; id: string}>({
       query: ({id, body}) => ({
         url: `/v1/coach/foods/${id}`,
@@ -101,5 +142,11 @@ export const foodsApi = api.injectEndpoints({
   }),
 });
 
-export const {useCreateFoodMutation, useDeleteFoodMutation, useGetFoodQuery, useListFoodsQuery, useUpdateFoodMutation} =
-  foodsApi;
+export const {
+  useCreateFoodMutation,
+  useDeleteFoodMutation,
+  useFoodsInfiniteQuery,
+  useGetFoodQuery,
+  useListFoodsQuery,
+  useUpdateFoodMutation,
+} = foodsApi;

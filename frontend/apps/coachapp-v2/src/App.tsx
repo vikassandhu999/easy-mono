@@ -1,24 +1,28 @@
-import {Navigate, Route, Routes} from 'react-router-dom';
+import { Navigate, Route, Routes } from "react-router-dom";
 
-import AppShell from '@/@components/app-shell';
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
-import {withAuth} from '@/@hoc/with-auth';
-import {withNotAuth} from '@/@hoc/with-not-auth';
-import Login from '@/auth/login';
-import RegisterBusiness from '@/auth/register-business';
-import Signup from '@/auth/signup';
-import VerifyLoginOtp from '@/auth/verify-login-otp';
-import VerifySignupOtp from '@/auth/verify-signup-otp';
-import ClientDetail from '@/clients/client-detail';
-import EditClient from '@/clients/edit-client';
-import InviteClient from '@/clients/invite-client';
-import ListClients from '@/clients/list-clients';
-import CreateExercise from '@/exercises/create-exercise';
-import EditExercise from '@/exercises/edit-exercise';
-import ExerciseDetail from '@/exercises/exercise-detail';
-import ListExercises from '@/exercises/list-exercises';
-import Library from '@/library/library';
+import AppShell from "@/@components/app-shell";
+import PageLayout from "@/@components/page-layout";
+import { ROUTES } from "@/@config/routes";
+import { withAuth } from "@/@hoc/with-auth";
+import { withNotAuth } from "@/@hoc/with-not-auth";
+import Login from "@/auth/login";
+import RegisterBusiness from "@/auth/register-business";
+import Signup from "@/auth/signup";
+import VerifyLoginOtp from "@/auth/verify-login-otp";
+import VerifySignupOtp from "@/auth/verify-signup-otp";
+import ClientDetail from "@/clients/client-detail";
+import EditClient from "@/clients/edit-client";
+import InviteClient from "@/clients/invite-client";
+import ListClients from "@/clients/list-clients";
+import CreateExercise from "@/exercises/create-exercise";
+import EditExercise from "@/exercises/edit-exercise";
+import ExerciseDetail from "@/exercises/exercise-detail";
+import ListExercises from "@/exercises/list-exercises";
+import CreateFood from "@/foods/create-food";
+import EditFood from "@/foods/edit-food";
+import FoodDetail from "@/foods/food-detail";
+import ListFoods from "@/foods/list-foods";
+import Library from "@/library/library";
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
@@ -29,10 +33,12 @@ const RegisterBusinessScreen = withAuth(RegisterBusiness);
 const AppShellScreen = withAuth(AppShell);
 
 // Placeholder page for features not yet built
-function Placeholder({title}: {title: string}) {
+function Placeholder({ title }: { title: string }) {
   return (
     <PageLayout title={title}>
-      <p className="text-sm text-foreground-500">This page is under construction.</p>
+      <p className="text-sm text-foreground-500">
+        This page is under construction.
+      </p>
     </PageLayout>
   );
 }
@@ -41,22 +47,10 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route
-        element={<LoginScreen />}
-        path={ROUTES.LOGIN}
-      />
-      <Route
-        element={<SignupScreen />}
-        path={ROUTES.SIGNUP}
-      />
-      <Route
-        element={<VerifyLoginOtp />}
-        path={ROUTES.VERIFY_LOGIN_OTP}
-      />
-      <Route
-        element={<VerifySignupOtp />}
-        path={ROUTES.VERIFY_SIGNUP_OTP}
-      />
+      <Route element={<LoginScreen />} path={ROUTES.LOGIN} />
+      <Route element={<SignupScreen />} path={ROUTES.SIGNUP} />
+      <Route element={<VerifyLoginOtp />} path={ROUTES.VERIFY_LOGIN_OTP} />
+      <Route element={<VerifySignupOtp />} path={ROUTES.VERIFY_SIGNUP_OTP} />
 
       {/* Onboarding (protected, no shell) */}
       <Route
@@ -70,50 +64,19 @@ export default function App() {
           element={<Placeholder title="Dashboard" />}
           path={ROUTES.DASHBOARD}
         />
-        <Route
-          element={<ListClients />}
-          path={ROUTES.CLIENTS}
-        />
-        <Route
-          element={<InviteClient />}
-          path={ROUTES.INVITE_CLIENT}
-        />
-        <Route
-          element={<ClientDetail />}
-          path={ROUTES.CLIENT_DETAIL}
-        />
-        <Route
-          element={<EditClient />}
-          path={ROUTES.EDIT_CLIENT}
-        />
-        <Route
-          element={<Library />}
-          path={ROUTES.LIBRARY}
-        />
-        <Route
-          element={<ListExercises />}
-          path={ROUTES.EXERCISES}
-        />
-        <Route
-          element={<CreateExercise />}
-          path={ROUTES.CREATE_EXERCISE}
-        />
-        <Route
-          element={<ExerciseDetail />}
-          path={ROUTES.EXERCISE_DETAIL}
-        />
-        <Route
-          element={<EditExercise />}
-          path={ROUTES.EDIT_EXERCISE}
-        />
-        <Route
-          element={<Placeholder title="Foods" />}
-          path={ROUTES.FOODS}
-        />
-        <Route
-          element={<Placeholder title="Food Detail" />}
-          path={ROUTES.FOOD_DETAIL}
-        />
+        <Route element={<ListClients />} path={ROUTES.CLIENTS} />
+        <Route element={<InviteClient />} path={ROUTES.INVITE_CLIENT} />
+        <Route element={<ClientDetail />} path={ROUTES.CLIENT_DETAIL} />
+        <Route element={<EditClient />} path={ROUTES.EDIT_CLIENT} />
+        <Route element={<Library />} path={ROUTES.LIBRARY} />
+        <Route element={<ListExercises />} path={ROUTES.EXERCISES} />
+        <Route element={<CreateExercise />} path={ROUTES.CREATE_EXERCISE} />
+        <Route element={<ExerciseDetail />} path={ROUTES.EXERCISE_DETAIL} />
+        <Route element={<EditExercise />} path={ROUTES.EDIT_EXERCISE} />
+        <Route element={<ListFoods />} path={ROUTES.FOODS} />
+        <Route element={<CreateFood />} path={ROUTES.CREATE_FOOD} />
+        <Route element={<FoodDetail />} path={ROUTES.FOOD_DETAIL} />
+        <Route element={<EditFood />} path={ROUTES.EDIT_FOOD} />
         <Route
           element={<Placeholder title="Recipes" />}
           path={ROUTES.RECIPES}
@@ -145,15 +108,7 @@ export default function App() {
       </Route>
 
       {/* Catch-all */}
-      <Route
-        element={
-          <Navigate
-            replace
-            to={ROUTES.DASHBOARD}
-          />
-        }
-        path="*"
-      />
+      <Route element={<Navigate replace to={ROUTES.DASHBOARD} />} path="*" />
     </Routes>
   );
 }

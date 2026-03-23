@@ -124,13 +124,7 @@ export default function InviteClient() {
 
         {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-          <Button
-            onPress={() => navigate(ROUTES.CLIENTS)}
-            variant="ghost"
-          >
-            Cancel
-          </Button>
+        <div className="flex flex-row gap-2 pt-2">
           <Button
             isPending={isLoading}
             type="submit"
@@ -146,6 +140,12 @@ export default function InviteClient() {
             ) : (
               'Send Invite'
             )}
+          </Button>
+          <Button
+            onPress={() => navigate(ROUTES.CLIENTS)}
+            variant="ghost"
+          >
+            Cancel
           </Button>
         </div>
       </form>

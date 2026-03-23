@@ -235,7 +235,7 @@ export default function AppShell() {
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-divider bg-content1 lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-divider bg-background lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
               item={item}

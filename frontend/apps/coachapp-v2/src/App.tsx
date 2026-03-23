@@ -10,6 +10,10 @@ import RegisterBusiness from '@/auth/register-business';
 import Signup from '@/auth/signup';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
+import ClientDetail from '@/clients/client-detail';
+import EditClient from '@/clients/edit-client';
+import InviteClient from '@/clients/invite-client';
+import ListClients from '@/clients/list-clients';
 import Library from '@/library/library';
 
 // Public screens (redirect away if already authenticated)
@@ -63,12 +67,20 @@ export default function App() {
           path={ROUTES.DASHBOARD}
         />
         <Route
-          element={<Placeholder title="Clients" />}
+          element={<ListClients />}
           path={ROUTES.CLIENTS}
         />
         <Route
-          element={<Placeholder title="Client Detail" />}
+          element={<InviteClient />}
+          path={ROUTES.INVITE_CLIENT}
+        />
+        <Route
+          element={<ClientDetail />}
           path={ROUTES.CLIENT_DETAIL}
+        />
+        <Route
+          element={<EditClient />}
+          path={ROUTES.EDIT_CLIENT}
         />
         <Route
           element={<Library />}

@@ -1,6 +1,8 @@
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
+const PAGE_SIZE = 20;
+
 export type Client = {
   id: string;
   email: string;
@@ -32,6 +34,12 @@ export type ClientUpdateRequest = {
 export type ListClientsParams = {
   offset?: number;
   limit?: number;
+  search?: string;
+  status?: string;
+};
+
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListClientsFilters = {
   search?: string;
   status?: string;
 };
@@ -69,6 +77,41 @@ export const clientsApi = api.injectEndpoints({
             ]
           : [{type: 'Client' as const, id: 'LIST'}],
     }),
+    /**
+     * Infinite-scroll variant of listClients.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useClientsInfiniteQuery
+     */
+    clients: build.infiniteQuery<ApiListResponse<Client>, ListClientsFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/clients',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          ...(queryArg?.status && {status: queryArg.status}),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((client) => ({
+                  type: 'Client' as const,
+                  id: client.id,
+                })),
+              ),
+              {type: 'Client' as const, id: 'LIST'},
+            ]
+          : [{type: 'Client' as const, id: 'LIST'}],
+    }),
     updateClient: build.mutation<ApiResponse<Client>, {body: ClientUpdateRequest; id: string}>({
       query: ({body, id}) => ({
         url: `/v1/coach/clients/${id}`,
@@ -83,4 +126,10 @@ export const clientsApi = api.injectEndpoints({
   }),
 });
 
-export const {useGetClientQuery, useInviteClientMutation, useListClientsQuery, useUpdateClientMutation} = clientsApi;
+export const {
+  useClientsInfiniteQuery,
+  useGetClientQuery,
+  useInviteClientMutation,
+  useListClientsQuery,
+  useUpdateClientMutation,
+} = clientsApi;

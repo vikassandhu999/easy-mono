@@ -50,15 +50,17 @@ src/
 │   └── components/
 ├── clients/                      # Clients feature module
 │   └── components/
-├── exercises/                    # Exercises feature module
+├── library/                      # Library landing page (links to sub-features)
 │   └── components/
-├── foods/                        # Foods feature module
+├── exercises/                    # Exercises (under /library/exercises)
 │   └── components/
-├── recipes/                      # Recipes feature module
+├── foods/                        # Foods (under /library/foods)
 │   └── components/
-├── nutrition-plans/              # Nutrition plans feature module
+├── recipes/                      # Recipes (under /library/recipes)
 │   └── components/
-├── training-plans/               # Training plans feature module
+├── nutrition-plans/              # Nutrition plans (under /library/nutrition-plans)
+│   └── components/
+├── training-plans/               # Training plans (under /library/training-plans)
 │   └── components/
 ├── settings/                     # Settings feature module
 │   └── components/

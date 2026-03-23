@@ -1,10 +1,10 @@
-import {Button, Chip, Spinner} from '@heroui/react';
-import {ArrowLeft, Dumbbell, Pencil} from 'lucide-react';
+import {AlertDialog, Button, Chip, Spinner} from '@heroui/react';
+import {ArrowLeft, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useGetExerciseQuery} from '@/api/exercises';
+import {useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -30,6 +30,16 @@ export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetExerciseQuery(id!);
+  const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
+
+  const handleDelete = async () => {
+    try {
+      await deleteExercise(id!).unwrap();
+      navigate(ROUTES.EXERCISES, {replace: true});
+    } catch {
+      // Mutation error — could add a toast here in the future.
+    }
+  };
 
   if (isLoading) {
     return (
@@ -87,6 +97,46 @@ export default function ExerciseDetail() {
           <Pencil size={16} />
           Edit
         </Button>
+        <AlertDialog>
+          <Button
+            size="sm"
+            variant="danger"
+          >
+            <Trash2 size={16} />
+            Delete
+          </Button>
+          <AlertDialog.Backdrop>
+            <AlertDialog.Container>
+              <AlertDialog.Dialog className="sm:max-w-[400px]">
+                <AlertDialog.CloseTrigger />
+                <AlertDialog.Header>
+                  <AlertDialog.Icon status="danger" />
+                  <AlertDialog.Heading>Delete exercise?</AlertDialog.Heading>
+                </AlertDialog.Header>
+                <AlertDialog.Body>
+                  <p>
+                    This will permanently delete <strong>{exercise.name}</strong>. This action cannot be undone.
+                  </p>
+                </AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button
+                    slot="close"
+                    variant="tertiary"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    isPending={isDeleting}
+                    onPress={handleDelete}
+                    variant="danger"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </AlertDialog.Footer>
+              </AlertDialog.Dialog>
+            </AlertDialog.Container>
+          </AlertDialog.Backdrop>
+        </AlertDialog>
       </div>
 
       <div className="max-w-lg">

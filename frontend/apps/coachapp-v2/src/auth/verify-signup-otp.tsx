@@ -5,29 +5,27 @@ import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
+import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
-interface VerifyOtpLocationState {
+interface VerifySignupOtpLocationState {
   email: string;
-  role: 'coach' | 'guest';
-  type: 'authentication' | 'email_confirmation';
 }
 
 const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),
 });
 
-type VerifyOtpFormValues = z.infer<typeof schema>;
+type VerifySignupOtpFormValues = z.infer<typeof schema>;
 
-export default function VerifyOtp() {
+export default function VerifySignupOtp() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as null | VerifyOtpLocationState;
+  const state = location.state as null | VerifySignupOtpLocationState;
 
-  const [exchangeToken, {isLoading}] = useExchangeTokenMutation();
+  const [verifyOtp, {isLoading}] = useVerifyOtpMutation();
   const [sendOtp, {isLoading: isResending}] = useSendOtpMutation();
 
   const {
@@ -37,38 +35,33 @@ export default function VerifyOtp() {
     reset,
     setError,
     watch,
-  } = useForm<VerifyOtpFormValues>({
+  } = useForm<VerifySignupOtpFormValues>({
     defaultValues: {otp: ''},
     resolver: zodResolver(schema),
   });
 
   const otpValue = watch('otp');
 
-  // Guard: must arrive via login/signup with email in state
+  // Guard: must arrive via signup with email in state
   if (!state?.email) {
     return (
       <Navigate
         replace
-        to={ROUTES.LOGIN}
+        to={ROUTES.SIGNUP}
       />
     );
   }
 
   const maskedEmail = state.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 
-  const onSubmit = async (data: VerifyOtpFormValues) => {
+  const onSubmit = async (data: VerifySignupOtpFormValues) => {
     try {
-      const result = await exchangeToken({
+      const result = await verifyOtp({
         email: state.email,
-        grant_type: 'otp',
         otp: data.otp,
-        role: state.role,
       }).unwrap();
       setTokens(result);
-
-      // Signup flow → register business; Login flow → dashboard
-      const destination = state.role === 'guest' ? ROUTES.REGISTER_BUSINESS : ROUTES.DASHBOARD;
-      navigate(destination, {replace: true});
+      navigate(ROUTES.REGISTER_BUSINESS, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Invalid code. Please try again.', setError);
       reset({otp: ''});
@@ -77,7 +70,10 @@ export default function VerifyOtp() {
 
   const handleResend = async () => {
     try {
-      await sendOtp({email: state.email, type: state.type}).unwrap();
+      await sendOtp({
+        email: state.email,
+        type: 'email_confirmation',
+      }).unwrap();
     } catch (err) {
       applyFormErrors(err, 'Failed to resend code. Please try again.', setError);
     }
@@ -86,7 +82,7 @@ export default function VerifyOtp() {
   return (
     <AuthLayout
       description={`We sent a 6-digit code to ${maskedEmail}`}
-      title="Check your email"
+      title="Confirm your email"
     >
       <form
         className="flex flex-col gap-4"

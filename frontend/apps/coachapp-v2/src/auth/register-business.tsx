@@ -5,6 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
+import {useExchangeTokenMutation} from '@/api/auth';
+import {getRefreshToken, setTokens} from '@/api/authStorage';
 import {useCreateBusinessMutation} from '@/api/business';
 import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
@@ -22,7 +24,9 @@ type RegisterBusinessFormValues = z.infer<typeof schema>;
 
 export default function RegisterBusiness() {
   const navigate = useNavigate();
-  const [createBusiness, {isLoading}] = useCreateBusinessMutation();
+  const [createBusiness, {isLoading: isCreating}] = useCreateBusinessMutation();
+  const [exchangeToken, {isLoading: isExchanging}] = useExchangeTokenMutation();
+  const isLoading = isCreating || isExchanging;
 
   const {
     formState: {errors},
@@ -49,6 +53,18 @@ export default function RegisterBusiness() {
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     try {
       await createBusiness({name: data.name, handle: data.handle}).unwrap();
+
+      // Exchange guest token for coach token that contains the business_id
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        const tokens = await exchangeToken({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          role: 'coach',
+        }).unwrap();
+        setTokens(tokens);
+      }
+
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to register business. Please try again.', setError);

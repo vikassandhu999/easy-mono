@@ -31,8 +31,8 @@ export default function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       await sendOtp({email: data.email, type: 'authentication'}).unwrap();
-      navigate(ROUTES.VERIFY_OTP, {
-        state: {email: data.email, type: 'authentication', role: 'coach'},
+      navigate(ROUTES.VERIFY_LOGIN_OTP, {
+        state: {email: data.email},
       });
     } catch (err) {
       applyFormErrors(err, 'Failed to send verification code. Please try again.', setError);

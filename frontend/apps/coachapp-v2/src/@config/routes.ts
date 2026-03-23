@@ -1,7 +1,8 @@
 export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
-  VERIFY_OTP: '/verify',
+  VERIFY_LOGIN_OTP: '/verify-login',
+  VERIFY_SIGNUP_OTP: '/verify-signup',
   REGISTER_BUSINESS: '/register-business',
   DASHBOARD: '/dashboard',
   CLIENTS: '/clients',

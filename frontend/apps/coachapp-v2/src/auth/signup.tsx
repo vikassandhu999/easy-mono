@@ -37,8 +37,8 @@ export default function Signup() {
         first_name: data.first_name || undefined,
         last_name: data.last_name || undefined,
       }).unwrap();
-      navigate(ROUTES.VERIFY_OTP, {
-        state: {email: data.email, type: 'email_confirmation', role: 'guest'},
+      navigate(ROUTES.VERIFY_SIGNUP_OTP, {
+        state: {email: data.email},
       });
     } catch (err) {
       applyFormErrors(err, 'Failed to create account. Please try again.', setError);

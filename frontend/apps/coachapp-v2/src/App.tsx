@@ -6,7 +6,8 @@ import {withNotAuth} from '@/@hoc/with-not-auth';
 import Login from '@/auth/login';
 import RegisterBusiness from '@/auth/register-business';
 import Signup from '@/auth/signup';
-import VerifyOtp from '@/auth/verify-otp';
+import VerifyLoginOtp from '@/auth/verify-login-otp';
+import VerifySignupOtp from '@/auth/verify-signup-otp';
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
@@ -35,8 +36,12 @@ export default function App() {
         path={ROUTES.SIGNUP}
       />
       <Route
-        element={<VerifyOtp />}
-        path={ROUTES.VERIFY_OTP}
+        element={<VerifyLoginOtp />}
+        path={ROUTES.VERIFY_LOGIN_OTP}
+      />
+      <Route
+        element={<VerifySignupOtp />}
+        path={ROUTES.VERIFY_SIGNUP_OTP}
       />
 
       {/* Protected */}

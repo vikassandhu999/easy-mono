@@ -2,6 +2,8 @@ import {api} from '@/api/base';
 import {Food} from '@/api/foods';
 import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
+const PAGE_SIZE = 20;
+
 export type RecipeIngredient = {
   food_id: string;
   food: Food;
@@ -39,6 +41,11 @@ export type Recipe = {
 export type ListRecipesParams = {
   offset?: number;
   limit?: number;
+  search?: string;
+};
+
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListRecipesFilters = {
   search?: string;
 };
 
@@ -113,6 +120,40 @@ export const recipesApi = api.injectEndpoints({
         {type: 'Recipe', id: 'LIST'},
       ],
     }),
+    /**
+     * Infinite-scroll variant of listRecipes.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useRecipesInfiniteQuery
+     */
+    recipes: build.infiniteQuery<ApiListResponse<Recipe>, ListRecipesFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/recipes',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((recipe) => ({
+                  type: 'Recipe' as const,
+                  id: recipe.id,
+                })),
+              ),
+              {type: 'Recipe' as const, id: 'LIST'},
+            ]
+          : [{type: 'Recipe' as const, id: 'LIST'}],
+    }),
     updateRecipe: build.mutation<ApiResponse<Recipe>, {body: RecipeUpdateRequest; id: string}>({
       query: ({id, body}) => ({
         url: `/v1/coach/recipes/${id}`,
@@ -132,5 +173,6 @@ export const {
   useDeleteRecipeMutation,
   useGetRecipeQuery,
   useListRecipesQuery,
+  useRecipesInfiniteQuery,
   useUpdateRecipeMutation,
 } = recipesApi;

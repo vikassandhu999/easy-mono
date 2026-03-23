@@ -24,7 +24,6 @@ pnpm build:coachapp-v2
 
 # Lint & Format
 pnpm lint                # eslint --fix across all packages
-pnpm format              # prettier --write across all packages
 ```
 
 There are no tests configured in this repository.

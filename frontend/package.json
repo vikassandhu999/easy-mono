@@ -7,7 +7,6 @@
     "dev": "pnpm --parallel --recursive dev",
     "build": "pnpm --recursive build",
     "lint": "pnpm --recursive lint",
-    "format": "pnpm --recursive format",
     "clean": "pnpm --recursive clean",
     "dev:clientapp": "pnpm --filter @easy/clientapp dev",
     "dev:coachapp": "pnpm --filter @easy/coachapp-v2 dev",

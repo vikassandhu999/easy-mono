@@ -1,0 +1,224 @@
+import {Button, Chip, Spinner} from '@heroui/react';
+import {ArrowLeft, Dumbbell, Pencil} from 'lucide-react';
+import {useNavigate, useParams} from 'react-router-dom';
+
+import PageLayout from '@/@components/page-layout';
+import {ROUTES} from '@/@config/routes';
+import {useGetExerciseQuery} from '@/api/exercises';
+
+const MECHANICS_LABEL: Record<string, string> = {
+  compound: 'Compound',
+  isolation: 'Isolation',
+  isometric: 'Isometric',
+};
+
+const FORCE_LABEL: Record<string, string> = {
+  pull: 'Pull',
+  push: 'Push',
+  static: 'Static',
+};
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export default function ExerciseDetail() {
+  const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
+  const {data, isError, isLoading} = useGetExerciseQuery(id!);
+
+  if (isLoading) {
+    return (
+      <PageLayout title="Exercise">
+        <div className="flex items-center justify-center py-20">
+          <Spinner color="accent" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <PageLayout title="Exercise">
+        <div className="mb-4">
+          <Button
+            onPress={() => navigate(ROUTES.EXERCISES)}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
+          Failed to load exercise. It may not exist or you don&apos;t have access.
+        </div>
+      </PageLayout>
+    );
+  }
+
+  const exercise = data.data;
+  const mechanicsLabel = exercise.mechanics ? MECHANICS_LABEL[exercise.mechanics] : null;
+  const forceLabel = exercise.force ? FORCE_LABEL[exercise.force] : null;
+  const muscleNames = exercise.muscles.map((m) => m.name);
+  const equipmentNames = exercise.equipment.map((e) => e.name);
+
+  return (
+    <PageLayout title="Exercise">
+      {/* Navigation */}
+      <div className="mb-4 flex items-center gap-2">
+        <Button
+          onPress={() => navigate(ROUTES.EXERCISES)}
+          size="sm"
+          variant="ghost"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </Button>
+        <Button
+          onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+          size="sm"
+          variant="secondary"
+        >
+          <Pencil size={16} />
+          Edit
+        </Button>
+      </div>
+
+      <div className="max-w-lg">
+        {/* Header — image/icon + name + chips */}
+        <div className="flex items-start gap-4 pb-6">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
+            {exercise.images[0] ? (
+              <img
+                alt={exercise.name}
+                className="size-14 rounded-xl object-cover"
+                src={exercise.images[0]}
+              />
+            ) : (
+              <Dumbbell
+                className="text-foreground-400"
+                size={24}
+              />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold">{exercise.name}</h2>
+            {(mechanicsLabel || forceLabel) && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {mechanicsLabel && (
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                  >
+                    {mechanicsLabel}
+                  </Chip>
+                )}
+                {forceLabel && (
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                  >
+                    {forceLabel}
+                  </Chip>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Description */}
+        {exercise.description && (
+          <section className="border-t border-divider py-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Description</h3>
+            <p className="whitespace-pre-wrap text-sm">{exercise.description}</p>
+          </section>
+        )}
+
+        {/* Instructions */}
+        {exercise.instructions && (
+          <section className="border-t border-divider py-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Instructions</h3>
+            <p className="whitespace-pre-wrap text-sm">{exercise.instructions}</p>
+          </section>
+        )}
+
+        {/* Muscles */}
+        <section className="border-t border-divider py-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Target Muscles</h3>
+          {muscleNames.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {muscleNames.map((name) => (
+                <Chip
+                  key={name}
+                  size="sm"
+                  variant="soft"
+                >
+                  {name}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-400">No muscles assigned.</p>
+          )}
+        </section>
+
+        {/* Equipment */}
+        <section className="border-t border-divider py-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Equipment</h3>
+          {equipmentNames.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {equipmentNames.map((name) => (
+                <Chip
+                  key={name}
+                  size="sm"
+                  variant="soft"
+                >
+                  {name}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-400">No equipment specified.</p>
+          )}
+        </section>
+
+        {/* Images */}
+        {exercise.images.length > 0 && (
+          <section className="border-t border-divider py-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Images</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {exercise.images.map((src, i) => (
+                <img
+                  alt={`${exercise.name} ${i + 1}`}
+                  className="aspect-square rounded-lg object-cover"
+                  key={src}
+                  src={src}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Meta */}
+        <section className="border-t border-divider py-4">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-foreground-400">Created</p>
+              <p>{formatDate(exercise.inserted_at)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-foreground-400">Last updated</p>
+              <p>{formatDate(exercise.updated_at)}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </PageLayout>
+  );
+}

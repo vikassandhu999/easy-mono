@@ -14,6 +14,10 @@ import ClientDetail from '@/clients/client-detail';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
+import CreateExercise from '@/exercises/create-exercise';
+import EditExercise from '@/exercises/edit-exercise';
+import ExerciseDetail from '@/exercises/exercise-detail';
+import ListExercises from '@/exercises/list-exercises';
 import Library from '@/library/library';
 
 // Public screens (redirect away if already authenticated)
@@ -87,12 +91,20 @@ export default function App() {
           path={ROUTES.LIBRARY}
         />
         <Route
-          element={<Placeholder title="Exercises" />}
+          element={<ListExercises />}
           path={ROUTES.EXERCISES}
         />
         <Route
-          element={<Placeholder title="Exercise Detail" />}
+          element={<CreateExercise />}
+          path={ROUTES.CREATE_EXERCISE}
+        />
+        <Route
+          element={<ExerciseDetail />}
           path={ROUTES.EXERCISE_DETAIL}
+        />
+        <Route
+          element={<EditExercise />}
+          path={ROUTES.EDIT_EXERCISE}
         />
         <Route
           element={<Placeholder title="Foods" />}

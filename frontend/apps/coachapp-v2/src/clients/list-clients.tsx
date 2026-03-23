@@ -38,7 +38,7 @@ export default function ListClients() {
   const clients = useMemo<Client[]>(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((page) => page.data);
-  }, [data?.pages]);
+  }, [data]);
 
   const {sentinelRef} = useInfiniteScroll({
     hasNextPage,

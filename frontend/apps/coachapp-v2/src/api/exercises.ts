@@ -1,6 +1,8 @@
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
+const PAGE_SIZE = 20;
+
 export type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 export type ExerciseForce = 'pull' | 'push' | 'static';
 
@@ -35,6 +37,12 @@ export type ListExercisesParams = {
   limit?: number;
   muscle_ids?: string[];
   offset?: number;
+  search?: string;
+};
+
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListExercisesFilters = {
+  muscle_ids?: string[];
   search?: string;
 };
 
@@ -99,6 +107,43 @@ export const exercisesApi = api.injectEndpoints({
             ]
           : [{type: 'Exercise' as const, id: 'LIST'}],
     }),
+    /**
+     * Infinite-scroll variant of listExercises.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useExercisesInfiniteQuery
+     */
+    exercises: build.infiniteQuery<ApiListResponse<Exercise>, ListExercisesFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/exercises',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          ...(queryArg?.muscle_ids?.length && {
+            muscle_ids: queryArg.muscle_ids.join(','),
+          }),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((exercise) => ({
+                  type: 'Exercise' as const,
+                  id: exercise.id,
+                })),
+              ),
+              {type: 'Exercise' as const, id: 'LIST'},
+            ]
+          : [{type: 'Exercise' as const, id: 'LIST'}],
+    }),
     updateExercise: build.mutation<ApiResponse<Exercise>, {body: ExerciseUpdateRequest; id: string}>({
       query: ({body, id}) => ({
         url: `/v1/coach/exercises/${id}`,
@@ -157,6 +202,7 @@ export const {
   useCreateExerciseMutation,
   useDeleteExerciseMutation,
   useDuplicateExerciseMutation,
+  useExercisesInfiniteQuery,
   useGetExerciseQuery,
   useListEquipmentQuery,
   useListExercisesQuery,

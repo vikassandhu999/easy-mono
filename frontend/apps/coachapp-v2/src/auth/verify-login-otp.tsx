@@ -1,6 +1,6 @@
 import {Button, InputOTP, Label, Link, REGEXP_ONLY_DIGITS, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -34,13 +34,12 @@ export default function VerifyLoginOtp() {
     handleSubmit,
     reset,
     setError,
-    watch,
   } = useForm<VerifyLoginOtpFormValues>({
     defaultValues: {otp: ''},
     resolver: zodResolver(schema),
   });
 
-  const otpValue = watch('otp');
+  const otpValue = useWatch({control, name: 'otp'});
 
   // Guard: must arrive via login with email in state
   if (!state?.email) {

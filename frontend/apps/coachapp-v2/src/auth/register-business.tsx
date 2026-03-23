@@ -1,6 +1,6 @@
 import {Button, Input, Label, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -34,12 +34,12 @@ export default function RegisterBusiness() {
     register,
     setError,
     setValue,
-    watch,
+    control,
   } = useForm<RegisterBusinessFormValues>({
     resolver: zodResolver(schema),
   });
 
-  const nameValue = watch('name');
+  const nameValue = useWatch({control, name: 'name'});
 
   const generateHandle = (name: string) => {
     return name

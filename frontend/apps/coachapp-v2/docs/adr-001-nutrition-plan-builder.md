@@ -69,6 +69,8 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 | Assign meal to day slot | Yes, search       | **INLINE**   | MealPicker autocomplete                           |
 | Remove day assignment   | No, single tap    | **INLINE**   | Button press, just unlinking                      |
 | Copy day                | No, select+tap    | **INLINE**   | Native select + button                            |
+| Copy plan to client     | Yes, search       | **INLINE**   | ClientPicker autocomplete in top nav toggle panel |
+| Assign plan from client | Yes, search       | **INLINE**   | NutritionPlanPicker autocomplete in section panel |
 
 ---
 
@@ -85,24 +87,26 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 
 ### Components (`nutrition-plans/components/`)
 
-| Component                 | Purpose                                                  | Used by              |
-| ------------------------- | -------------------------------------------------------- | -------------------- |
-| `nutrition-plan-form.tsx` | Shared form (schema + hook + component) for create/edit  | create, edit screens |
-| `nutrition-plan-card.tsx` | List item card (name, meal count, status chip)           | list screen          |
-| `meal-section.tsx`        | Single meal card: items list + tabbed picker + delete    | detail screen        |
-| `meal-item-row.tsx`       | Food/recipe row with image, name, amounts, remove        | meal-section         |
-| `meal-item-picker.tsx`    | Tabbed (Foods/Recipes) autocomplete for adding items     | meal-section         |
-| `meal-picker.tsx`         | Autocomplete for selecting/creating meals in day planner | day-planner          |
-| `day-planner.tsx`         | Weekly schedule: day tabs + meal_type slots + copy day   | detail screen        |
+| Component                   | Purpose                                                     | Used by              |
+| --------------------------- | ----------------------------------------------------------- | -------------------- |
+| `nutrition-plan-form.tsx`   | Shared form (schema + hook + component) for create/edit     | create, edit screens |
+| `nutrition-plan-card.tsx`   | List item card (name, meal count, status chip)              | list screen          |
+| `meal-section.tsx`          | Single meal card: items list + tabbed picker + delete       | detail screen        |
+| `meal-item-row.tsx`         | Food/recipe row with image, name, amounts, remove           | meal-section         |
+| `meal-item-picker.tsx`      | Tabbed (Foods/Recipes) autocomplete for adding items        | meal-section         |
+| `meal-picker.tsx`           | Autocomplete for selecting/creating meals in day planner    | day-planner          |
+| `day-planner.tsx`           | Weekly schedule: day tabs + meal_type slots + copy day      | detail screen        |
+| `nutrition-plan-picker.tsx` | Autocomplete to search/select plan templates for assignment | client detail page   |
 
 ### Reused from other features
 
-| Component      | From                | Used for                                                 |
-| -------------- | ------------------- | -------------------------------------------------------- |
-| `FoodPicker`   | `foods/components/` | Not used directly anymore (replaced by `MealItemPicker`) |
-| `AlertDialog`  | HeroUI              | Delete confirmations (meal, plan)                        |
-| `InfiniteList` | `@components/`      | Plan list screen                                         |
-| `PageLayout`   | `@components/`      | All screens                                              |
+| Component      | From                  | Used for                                                 |
+| -------------- | --------------------- | -------------------------------------------------------- |
+| `FoodPicker`   | `foods/components/`   | Not used directly anymore (replaced by `MealItemPicker`) |
+| `ClientPicker` | `clients/components/` | Copy plan to client (search + select client)             |
+| `AlertDialog`  | HeroUI                | Delete confirmations (meal, plan)                        |
+| `InfiniteList` | `@components/`        | Plan list screen                                         |
+| `PageLayout`   | `@components/`        | All screens                                              |
 
 ---
 
@@ -124,11 +128,21 @@ nutrition-plan-detail.tsx
   │   ├── useCopyNutritionPlanDayMutation → copy day's assignments
   │   └── useCreateMealMutation        → create meal + assign (from picker)
   │
-  └── Inline "Add Meal"
-      └── useCreateMealMutation        → create meal (name only)
+  ├── Inline "Add Meal"
+  │   └── useCreateMealMutation        → create meal (name only)
+  │
+  └── Copy to Client (inline panel)
+      └── useAssignNutritionPlanMutation → copy plan to selected client
+
+client-detail.tsx (ClientNutritionPlans section)
+  │
+  ├── useListNutritionPlansQuery({client_id}) → plans assigned to this client
+  │
+  └── Assign Plan (inline panel)
+      └── useAssignNutritionPlanMutation → copy selected template to this client
 ```
 
-All mutations invalidate the `NutritionPlan` cache tag, so `useGetNutritionPlanQuery` automatically refetches with updated `meals[]` and `plan_items[]`.
+All mutations invalidate the `NutritionPlan` cache tag, so `useGetNutritionPlanQuery` automatically refetches with updated `meals[]` and `plan_items[]`. The `assignNutritionPlan` mutation also invalidates the `Client` tag to refresh client-specific plan lists.
 
 ---
 
@@ -158,6 +172,19 @@ The API uses `"monday"` through `"sunday"` for the `day` field, and `"breakfast"
 
 Copying a day's assignments to another day uses a native `<select>` + "Copy" button inline below the day slots. This is a simple select+tap interaction with no keyboard involvement.
 
+### 7. Plan assignment works from both directions
+
+A plan can be assigned to a client from two entry points:
+
+- **From plan detail page:** "Copy to Client" button in the top nav bar reveals an inline `ClientPicker` panel below the nav bar. The coach searches for a client, and the API copies the plan template to that client.
+- **From client detail page:** "Assign Plan" button in the top nav bar reveals an inline `NutritionPlanPicker` within the Nutrition Plans section. The coach searches plan templates and assigns one.
+
+Both use the same `assignNutritionPlan` mutation (`POST /nutrition_plans/:id/assign`). The API creates a copy of the plan for the client (the original template remains unchanged).
+
+### 8. Library listing shows templates only
+
+The nutrition plans list screen (`/library/nutrition-plans`) client-side filters out plans where `client_id !== null`. Only template plans (unassigned) appear in the library. Client-assigned copies are shown on the client detail page in the "Nutrition Plans" section.
+
 ---
 
 ## API Endpoints Used
@@ -176,8 +203,11 @@ Copying a day's assignments to another day uses a native `<select>` + "Copy" but
 | `POST /v1/coach/nutrition_plans/:id/plan_items` | `useCreatePlanItemMutation`       | Assign meal to day slot            |
 | `DELETE /v1/coach/plan_items/:id`               | `useDeletePlanItemMutation`       | Remove day assignment              |
 | `POST /v1/coach/nutrition_plans/:id/copy-day`   | `useCopyNutritionPlanDayMutation` | Copy day assignments               |
+| `POST /v1/coach/nutrition_plans/:id/assign`     | `useAssignNutritionPlanMutation`  | Copy plan to a client              |
+| `GET /v1/coach/nutrition_plans?client_id=X`     | `useListNutritionPlansQuery`      | List plans assigned to a client    |
 | `GET /v1/coach/foods`                           | `useListFoodsQuery`               | Food search in picker              |
 | `GET /v1/coach/recipes`                         | `useListRecipesQuery`             | Recipe search in picker            |
+| `GET /v1/coach/clients`                         | `useListClientsQuery`             | Client search in ClientPicker      |
 
 ---
 
@@ -187,8 +217,7 @@ Copying a day's assignments to another day uses a native `<select>` + "Copy" but
 - **Meal item reordering** -- position field exists but no drag-and-drop
 - **Meal name editing** -- `updateMeal` mutation exists, inline rename not yet implemented
 - **Meal item editing** -- `updateMealItem` mutation exists, editing amounts not yet implemented
-- **Plan assignment to client** -- `assignNutritionPlan` mutation exists, UI deferred
-- **Plan duplication** -- `duplicateNutritionPlan` mutation exists, UI deferred
+- **Plan duplication** -- `duplicateNutritionPlan` mutation exists, UI deferred (separate from assignment which is built)
 - **Shopping list** -- `getNutritionPlanShoppingList` endpoint exists, UI deferred
 - **Computed macros** -- `getNutritionPlanMacros` endpoint exists, UI deferred
 - **Tags management** -- tags field exists on plan, not exposed in form yet

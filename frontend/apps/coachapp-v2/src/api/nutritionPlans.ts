@@ -79,6 +79,7 @@ export type ListNutritionPlansParams = {
   client_id?: string;
   offset?: number;
   limit?: number;
+  search?: string;
   status?: string;
   type?: string;
 };
@@ -206,10 +207,11 @@ export const nutritionPlansApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_, __, {id}) => [
+      invalidatesTags: (_, __, {body, id}) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
         {type: 'Client', id: 'LIST'},
+        {type: 'Client', id: body.client_id},
       ],
     }),
     duplicateNutritionPlan: build.mutation<ApiResponse<NutritionPlan>, string>({

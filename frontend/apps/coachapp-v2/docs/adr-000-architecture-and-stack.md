@@ -89,7 +89,7 @@ src/
 ### Key Rules
 
 - **No barrel files.** Direct imports only (`import X from '@/clients/components/client-card'`).
-- **No cross-feature imports.** `clients/` never imports from `exercises/`.
+- **No cross-feature imports.** `clients/` never imports from `exercises/`. Exception: **picker components** (e.g. `ClientPicker`, `NutritionPlanPicker`) may be imported across features for entity selection workflows (assign plan to client, copy plan from template).
 - **Screen files at feature root.** `list-clients.tsx`, `client-detail.tsx`, `edit-client.tsx`.
 - **Components in `{feature}/components/`.** Feature-specific UI pieces.
 - **Shared components in `@components/`** only when used by 2+ features.
@@ -290,21 +290,23 @@ These were discovered during implementation, not planned upfront:
 7. **HeroUI Autocomplete async filtering** — Uses `inputValue`/`onInputChange` on `Autocomplete.Filter` for server-side search.
 8. **PageLayout `action` slot** — Only for right-aligned CTAs on list/index pages. Sub-pages put Back/Edit buttons inside the page body.
 9. **LSP phantom errors** — Avatar component and stale paths sometimes show errors in the editor that don't affect the build. `tsc --noEmit` is the source of truth.
+10. **Library lists show templates only** — List screens under `/library/` client-side filter out entities assigned to clients (`client_id !== null`) so only templates appear. Client-assigned copies are shown on the client detail page instead.
+11. **Cross-feature picker components** — Picker components (`ClientPicker`, `NutritionPlanPicker`) are the one exception to the no-cross-feature-imports rule. They use the same Autocomplete + server-side search pattern as `FoodPicker` and `MealPicker`.
 
 ---
 
 ## Modules Completed
 
-| Module              | Screens                                                               | Key Components                                                                                                       |
-| ------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Auth**            | Login, Signup, Verify Login OTP, Verify Signup OTP, Register Business | `AuthLayout`                                                                                                         |
-| **App Shell**       | (layout)                                                              | Desktop sidebar, mobile bottom nav, Library group                                                                    |
-| **Clients**         | List, Detail, Invite, Edit                                            | `ClientCard`                                                                                                         |
-| **Exercises**       | List, Create, Detail, Edit                                            | `ExerciseForm`, `ExerciseCard`                                                                                       |
-| **Foods**           | List, Create, Detail, Edit                                            | `FoodForm`, `FoodCard`, `FoodPicker`, `IngredientList`                                                               |
-| **Recipes**         | List, Create, Detail, Edit                                            | `RecipeForm`, `RecipeCard`                                                                                           |
-| **Nutrition Plans** | List, Create, Detail/Builder, Edit                                    | `NutritionPlanForm`, `NutritionPlanCard`, `MealSection`, `MealItemRow`, `MealItemPicker`, `MealPicker`, `DayPlanner` |
-| **Library**         | Landing page                                                          | Grid of cards linking to sub-sections                                                                                |
+| Module              | Screens                                                               | Key Components                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Auth**            | Login, Signup, Verify Login OTP, Verify Signup OTP, Register Business | `AuthLayout`                                                                                                                                |
+| **App Shell**       | (layout)                                                              | Desktop sidebar, mobile bottom nav, Library group                                                                                           |
+| **Clients**         | List, Detail, Invite, Edit                                            | `ClientCard`, `ClientPicker`                                                                                                                |
+| **Exercises**       | List, Create, Detail, Edit                                            | `ExerciseForm`, `ExerciseCard`                                                                                                              |
+| **Foods**           | List, Create, Detail, Edit                                            | `FoodForm`, `FoodCard`, `FoodPicker`, `IngredientList`                                                                                      |
+| **Recipes**         | List, Create, Detail, Edit                                            | `RecipeForm`, `RecipeCard`                                                                                                                  |
+| **Nutrition Plans** | List, Create, Detail/Builder, Edit                                    | `NutritionPlanForm`, `NutritionPlanCard`, `NutritionPlanPicker`, `MealSection`, `MealItemRow`, `MealItemPicker`, `MealPicker`, `DayPlanner` |
+| **Library**         | Landing page                                                          | Grid of cards linking to sub-sections                                                                                                       |
 
 ---
 

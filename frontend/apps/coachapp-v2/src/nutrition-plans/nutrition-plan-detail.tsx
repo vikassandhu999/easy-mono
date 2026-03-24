@@ -1,12 +1,19 @@
-import {AlertDialog, Button, Chip, Input, Spinner} from '@heroui/react';
-import {ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
+import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
+import {ArrowLeft, Copy, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
+
+import type {Client} from '@/api/clients';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useCreateMealMutation} from '@/api/meals';
-import {useDeleteNutritionPlanMutation, useGetNutritionPlanQuery} from '@/api/nutritionPlans';
+import {
+  useAssignNutritionPlanMutation,
+  useDeleteNutritionPlanMutation,
+  useGetNutritionPlanQuery,
+} from '@/api/nutritionPlans';
+import ClientPicker from '@/clients/components/client-picker';
 import DayPlanner from '@/nutrition-plans/components/day-planner';
 import MealSection from '@/nutrition-plans/components/meal-section';
 
@@ -42,7 +49,22 @@ export default function NutritionPlanDetail() {
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
+  const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
   const [createMeal, {isLoading: isCreatingMeal}] = useCreateMealMutation();
+
+  // Inline copy-to-client state
+  const [showCopyToClient, setShowCopyToClient] = useState(false);
+
+  const handleCopyToClient = async (client: Client) => {
+    try {
+      await assignPlan({id: id!, body: {client_id: client.id}}).unwrap();
+      const clientName = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email;
+      toast.success(`Plan copied to ${clientName}`);
+      setShowCopyToClient(false);
+    } catch {
+      toast.danger('Failed to copy plan to client.');
+    }
+  };
 
   // Inline add-meal state
   const [isAddingMeal, setIsAddingMeal] = useState(false);
@@ -122,7 +144,7 @@ export default function NutritionPlanDetail() {
   return (
     <PageLayout title="Nutrition Plan">
       {/* Navigation */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button
           onPress={() => navigate(ROUTES.NUTRITION_PLANS)}
           size="sm"
@@ -138,6 +160,14 @@ export default function NutritionPlanDetail() {
         >
           <Pencil size={16} />
           Edit
+        </Button>
+        <Button
+          onPress={() => setShowCopyToClient((v) => !v)}
+          size="sm"
+          variant="secondary"
+        >
+          <Copy size={14} />
+          Copy to Client
         </Button>
         <AlertDialog>
           <Button
@@ -181,6 +211,25 @@ export default function NutritionPlanDetail() {
           </AlertDialog.Backdrop>
         </AlertDialog>
       </div>
+
+      {/* Copy to client — revealed inline below nav bar */}
+      {showCopyToClient && (
+        <div className="mb-4 max-w-md rounded-xl border border-divider bg-content1 p-4">
+          <p className="mb-2 text-sm text-foreground-500">
+            Search for a client to copy this plan to. A new plan will be created for the selected client.
+          </p>
+          <ClientPicker
+            onSelect={handleCopyToClient}
+            placeholder="Search clients..."
+          />
+          {isAssigning && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
+              <Spinner size="sm" />
+              Copying plan...
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="max-w-2xl">
         {/* Plan header */}

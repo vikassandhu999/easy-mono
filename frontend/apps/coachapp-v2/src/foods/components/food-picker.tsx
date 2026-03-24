@@ -1,134 +1,146 @@
-import {Input, Spinner} from '@heroui/react';
-import {Apple, Search} from 'lucide-react';
-import {useRef, useState} from 'react';
+import type {Key} from '@heroui/react';
+
+import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
+import {Apple} from 'lucide-react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 
 type FoodPickerProps = {
-  /** Called when the user selects a food from the dropdown */
+  /** Called when the user selects a food from the list */
   onSelect: (food: Food) => void;
+  /** Optional label text */
+  label?: string;
+  /** Optional description text */
+  description?: string;
   /** Optional placeholder text */
   placeholder?: string;
-  /** IDs of foods already selected (will be visually marked) */
+  /** IDs of foods already selected (shown as disabled) */
   excludeIds?: string[];
 };
 
 /**
- * Inline food search + select component.
+ * Inline food search + select using HeroUI Autocomplete with async server filtering.
  *
- * Container decision: INLINE — single text input that opens keyboard,
- * results render as a dropdown list directly below.
+ * Container decision: INLINE — single text input that opens a popover with results.
  *
  * Reusable: lives in foods/components/ and takes a generic onSelect callback.
+ * Uses Autocomplete in single-select mode. After selecting a food, the selection
+ * is cleared and the full Food object is passed to onSelect.
  */
 export default function FoodPicker({
   onSelect,
+  label,
+  description,
   placeholder = 'Search foods to add...',
   excludeIds = [],
 }: FoodPickerProps) {
-  const [search, setSearch] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const debouncedSearch = useDebouncedValue(search);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput);
   const shouldQuery = debouncedSearch.length >= 1;
 
   const {data, isFetching} = useListFoodsQuery(shouldQuery ? {search: debouncedSearch, limit: 10} : undefined, {
     skip: !shouldQuery,
   });
 
-  const foods = data?.data ?? [];
-  const showDropdown = isFocused && search.length >= 1;
+  const foods = useMemo(() => data?.data ?? [], [data]);
 
-  const handleSelect = (food: Food) => {
-    onSelect(food);
-    setSearch('');
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    // Only close if focus leaves the entire container (not just moving between input and list)
-    if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
-      setIsFocused(false);
+  // Build a lookup map so we can resolve the full Food object from a Key on selection
+  const foodMap = useMemo(() => {
+    const map = new Map<string, Food>();
+    for (const food of foods) {
+      map.set(food.id, food);
     }
-  };
+    return map;
+  }, [foods]);
+
+  const handleChange = useCallback(
+    (key: Key | Key[] | null) => {
+      if (key == null) return;
+      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
+      if (!id) return;
+      const food = foodMap.get(id);
+      if (food) {
+        onSelect(food);
+        // Clear the search after selection
+        setSearchInput('');
+      }
+    },
+    [onSelect, foodMap],
+  );
 
   return (
-    <div
-      className="relative"
-      onBlur={handleBlur}
-      ref={containerRef}
+    <Autocomplete
+      allowsEmptyCollection
+      className="w-full"
+      disabledKeys={excludeIds}
+      onChange={handleChange}
+      placeholder={placeholder}
+      selectionMode="single"
+      value={null}
     >
-      <div className="relative">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-400"
-          size={16}
-        />
-        <Input
-          aria-label="Search foods"
-          className="pl-9"
-          onChange={(e) => setSearch(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          placeholder={placeholder}
-          type="search"
-          value={search}
-        />
-        {isFetching && (
-          <Spinner
-            className="absolute right-3 top-1/2 -translate-y-1/2"
-            color="accent"
-            size="sm"
-          />
-        )}
-      </div>
-
-      {showDropdown && (
-        <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-xl border border-divider bg-content1 shadow-lg">
-          {foods.length === 0 && !isFetching && (
-            <p className="p-3 text-center text-xs text-foreground-400">
-              {debouncedSearch.length >= 1 ? 'No foods found' : 'Type to search...'}
-            </p>
-          )}
-          {foods.map((food) => {
-            const isExcluded = excludeIds.includes(food.id);
-            return (
-              <button
-                className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
-                  isExcluded ? 'cursor-default opacity-40' : 'cursor-pointer hover:bg-content2 active:bg-content2'
-                }`}
-                disabled={isExcluded}
+      {label && <Label>{label}</Label>}
+      <Autocomplete.Trigger>
+        <Autocomplete.Value />
+        <Autocomplete.Indicator />
+      </Autocomplete.Trigger>
+      {description && <Description>{description}</Description>}
+      <Autocomplete.Popover>
+        <Autocomplete.Filter
+          inputValue={searchInput}
+          onInputChange={setSearchInput}
+        >
+          <SearchField
+            className="sticky top-0 z-10"
+            name="food-search"
+            variant="secondary"
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search foods..." />
+              <Spinner
+                className={`absolute right-2 top-1/2 -translate-y-1/2 ${isFetching ? '' : 'pointer-events-none opacity-0'}`}
+                size="sm"
+              />
+              <SearchField.ClearButton className={isFetching ? 'pointer-events-none opacity-0' : ''} />
+            </SearchField.Group>
+          </SearchField>
+          <ListBox
+            className="max-h-[280px] overflow-y-auto"
+            items={foods}
+            renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
+          >
+            {(food: Food) => (
+              <ListBox.Item
+                id={food.id}
                 key={food.id}
-                onMouseDown={(e) => {
-                  // Prevent blur from firing before click
-                  e.preventDefault();
-                  if (!isExcluded) handleSelect(food);
-                }}
-                type="button"
+                textValue={food.name}
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
                   {food.image_url ? (
                     <img
                       alt={food.name}
-                      className="size-8 rounded-lg object-cover"
+                      className="size-7 rounded-md object-cover"
                       src={food.image_url}
                     />
                   ) : (
                     <Apple
                       className="text-foreground-400"
-                      size={16}
+                      size={14}
                     />
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{food.name}</p>
-                  {food.category && <p className="truncate text-xs text-foreground-400">{food.category}</p>}
+                <div className="flex min-w-0 flex-col">
+                  <Label>{food.name}</Label>
+                  {food.category && <Description>{food.category}</Description>}
                 </div>
-                {isExcluded && <span className="text-xs text-foreground-400">Added</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            )}
+          </ListBox>
+        </Autocomplete.Filter>
+      </Autocomplete.Popover>
+    </Autocomplete>
   );
 }

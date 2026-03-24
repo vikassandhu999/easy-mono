@@ -1,3 +1,6 @@
+import type {Food} from '@/api/foods';
+import type {Recipe} from '@/api/recipes';
+
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
 
@@ -9,6 +12,8 @@ export type MealItem = {
   position: number;
   recipe_id: null | string;
   food_id: null | string;
+  food: Food | null;
+  recipe: null | Recipe;
   meal_id: string;
   business_id: string;
   inserted_at: string;

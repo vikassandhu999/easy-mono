@@ -83,6 +83,13 @@ export type ListNutritionPlansParams = {
   type?: string;
 };
 
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListNutritionPlansFilters = {
+  search?: string;
+  status?: string;
+  type?: string;
+};
+
 export type ShoppingListItem = {
   type: string;
   name: null | string;
@@ -92,6 +99,8 @@ export type ShoppingListItem = {
   amount: number;
   weight_g: number;
 };
+
+const PAGE_SIZE = 20;
 
 const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
@@ -128,6 +137,42 @@ export const nutritionPlansApi = api.injectEndpoints({
                 type: 'NutritionPlan' as const,
                 id: plan.id,
               })),
+              {type: 'NutritionPlan' as const, id: 'LIST'},
+            ]
+          : [{type: 'NutritionPlan' as const, id: 'LIST'}],
+    }),
+    /**
+     * Infinite-scroll variant of listNutritionPlans.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useNutritionPlansInfiniteQuery
+     */
+    nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/nutrition_plans',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          ...(queryArg?.status && {status: queryArg.status}),
+          ...(queryArg?.type && {type: queryArg.type}),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((plan) => ({
+                  type: 'NutritionPlan' as const,
+                  id: plan.id,
+                })),
+              ),
               {type: 'NutritionPlan' as const, id: 'LIST'},
             ]
           : [{type: 'NutritionPlan' as const, id: 'LIST'}],
@@ -270,6 +315,7 @@ export const {
   useGetNutritionPlanShoppingListQuery,
   useListNutritionPlansQuery,
   useListPlanItemsQuery,
+  useNutritionPlansInfiniteQuery,
   useReorderNutritionPlanMealsMutation,
   useUpdateNutritionPlanMutation,
   useUpdatePlanItemMutation,

@@ -15,7 +15,6 @@ defmodule EasyWeb.Coaches.MealJSON do
       id: meal.id,
       name: meal.name,
       macros: meal.macros,
-      position: meal.position,
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
       business_id: meal.business_id,

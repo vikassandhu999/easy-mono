@@ -223,16 +223,14 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
         plan: plan,
         creator: coach,
         business: business,
-        macros: %{"calories" => 100, "protein" => 10},
-        position: 0
+        macros: %{"calories" => 100, "protein" => 10}
       )
 
       insert(:meal,
         plan: plan,
         creator: coach,
         business: business,
-        macros: %{"calories" => 200, "protein" => 5},
-        position: 1
+        macros: %{"calories" => 200, "protein" => 5}
       )
 
       conn = get(conn, "/v1/coach/nutrition_plans/#{plan.id}/macros")
@@ -271,25 +269,6 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert item["day"] == "tuesday"
       assert item["meal_type"] == "breakfast"
       assert item["meal_id"] == meal.id
-    end
-  end
-
-  describe "POST /v1/coach/nutrition_plans/:id/reorder-meals" do
-    test "reorders meals in a plan", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:plan, creator: coach, business: business)
-      meal_one = insert(:meal, plan: plan, creator: coach, business: business, position: 0)
-      meal_two = insert(:meal, plan: plan, creator: coach, business: business, position: 1)
-
-      conn =
-        post(conn, "/v1/coach/nutrition_plans/#{plan.id}/reorder-meals", %{
-          "meal_ids" => [meal_two.id, meal_one.id]
-        })
-
-      assert %{"data" => [first, second]} = json_response(conn, 200)
-      assert first["id"] == meal_two.id
-      assert second["id"] == meal_one.id
-      assert first["position"] == 0
-      assert second["position"] == 1
     end
   end
 end

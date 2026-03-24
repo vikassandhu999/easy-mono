@@ -166,16 +166,4 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
       error -> error
     end
   end
-
-  def reorder_meals(conn, %{"id" => plan_id, "meal_ids" => meal_ids}) do
-    %{business_id: business_id} = conn.assigns.claims
-
-    with plan when not is_nil(plan) <- Plan |> Plan.for_business(business_id) |> Repo.get(plan_id),
-         {:ok, meals} <- Plan.reorder_meals(plan, meal_ids) do
-      render(conn, :meals, meals: meals)
-    else
-      nil -> {:error, :not_found}
-      error -> error
-    end
-  end
 end

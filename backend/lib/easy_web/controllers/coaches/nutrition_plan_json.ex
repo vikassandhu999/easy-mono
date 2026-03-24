@@ -24,10 +24,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
     %{data: Enum.map(plan_items, &plan_item_data/1)}
   end
 
-  def meals(%{meals: meals}) do
-    %{data: Enum.map(meals, &meal_data/1)}
-  end
-
   defp data(%Plan{} = plan) do
     %{
       id: plan.id,
@@ -59,7 +55,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       id: meal.id,
       name: meal.name,
       macros: meal.macros,
-      position: meal.position,
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
       business_id: meal.business_id,

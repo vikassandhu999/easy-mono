@@ -185,7 +185,6 @@ defmodule Easy.Factory do
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
       macros: %{"calories" => 500, "protein" => 40, "carbs" => 50, "fat" => 15},
-      position: 0,
       creator: plan.creator,
       business: plan.business,
       plan: plan
@@ -195,8 +194,7 @@ defmodule Easy.Factory do
   def meal_attrs_factory do
     %{
       "name" => sequence(:meal_attr_name, &"New Meal #{&1}"),
-      "macros" => %{"calories" => 450, "protein" => 35, "carbs" => 45, "fat" => 12},
-      "position" => 0
+      "macros" => %{"calories" => 450, "protein" => 35, "carbs" => 45, "fat" => 12}
     }
   end
 

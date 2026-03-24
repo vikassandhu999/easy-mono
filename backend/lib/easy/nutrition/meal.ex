@@ -17,7 +17,6 @@ defmodule Easy.Nutrition.Meal do
     field :name, :string
 
     field :macros, :map
-    field :position, :integer, default: 0
 
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
@@ -28,7 +27,7 @@ defmodule Easy.Nutrition.Meal do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :macros, :position]
+  @cast_fields [:name, :macros]
 
   # Changesets
 
@@ -40,14 +39,12 @@ defmodule Easy.Nutrition.Meal do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> validate_required([:name, :plan_id, :business_id, :creator_id])
-    |> unique_constraint(:position, name: :meals_plan_id_position_index)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(meal, attrs) do
     meal
     |> cast(attrs, @cast_fields)
-    |> unique_constraint(:position, name: :meals_plan_id_position_index)
   end
 
   # Queries
@@ -64,7 +61,7 @@ defmodule Easy.Nutrition.Meal do
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
-    from(m in query, order_by: [asc: m.position, asc: m.inserted_at])
+    from(m in query, order_by: [asc: m.inserted_at])
   end
 
   @spec with_items(Ecto.Queryable.t()) :: Ecto.Query.t()

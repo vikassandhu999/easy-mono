@@ -199,32 +199,6 @@ defmodule Easy.Nutrition.Plan do
     end
   end
 
-  @spec reorder_meals(t(), [String.t()]) :: {:ok, [Meal.t()]} | {:error, any()}
-  def reorder_meals(plan, meal_ids) do
-    with :ok <- validate_reorder_ids(meal_ids),
-         :ok <- validate_all_meals_exist(plan, meal_ids) do
-      Repo.transaction(fn ->
-        from(m in Meal,
-          where: m.plan_id == ^plan.id,
-          update: [set: [position: fragment("? + ?", m.position, 1000)]]
-        )
-        |> Repo.update_all([])
-
-        Enum.with_index(meal_ids)
-        |> Enum.each(fn {meal_id, index} ->
-          Meal
-          |> where([m], m.id == ^meal_id)
-          |> Repo.update_all(set: [position: index])
-        end)
-
-        Meal
-        |> Meal.for_plan(plan.id)
-        |> Meal.ordered()
-        |> Repo.all()
-      end)
-    end
-  end
-
   @spec assign_to_client(t(), String.t(), String.t()) :: {:ok, t()} | {:error, any()}
   def assign_to_client(plan, client_id, creator_id) do
     copy_plan(plan, creator_id,
@@ -292,8 +266,7 @@ defmodule Easy.Nutrition.Plan do
     Enum.reduce_while(meals, {:ok, %{}}, fn meal, {:ok, acc} ->
       attrs = %{
         name: meal.name,
-        macros: meal.macros,
-        position: meal.position
+        macros: meal.macros
       }
 
       case Meal.insert_changeset(new_plan_id, business_id, creator_id, attrs) |> Repo.insert() do
@@ -395,31 +368,4 @@ defmodule Easy.Nutrition.Plan do
   end
 
   defp validate_copy_day(_source_day, _target_day), do: :ok
-
-  defp validate_all_meals_exist(plan, meal_ids) do
-    count =
-      Meal
-      |> Meal.for_plan(plan.id)
-      |> Meal.for_business(plan.business_id)
-      |> where([m], m.id in ^meal_ids)
-      |> Repo.aggregate(:count, :id)
-
-    if count == length(meal_ids) do
-      :ok
-    else
-      {:error, Easy.Error.not_found("Meal not found")}
-    end
-  end
-
-  defp validate_reorder_ids(ids) when is_list(ids) and ids != [] do
-    if Enum.all?(ids, &is_binary/1) do
-      :ok
-    else
-      {:error, Easy.Error.unprocessable(%{fields: %{meal_ids: ["must be a list of ids"]}})}
-    end
-  end
-
-  defp validate_reorder_ids(_ids) do
-    {:error, Easy.Error.unprocessable(%{fields: %{meal_ids: ["can't be blank"]}})}
-  end
 end

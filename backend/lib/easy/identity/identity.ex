@@ -89,16 +89,22 @@ defmodule Easy.Identity do
           scope: String.t()
         }
 
-  @type grant_type :: :refresh_token | :otp
-  @type token_opts :: %{
+  @type refresh_token_opts :: %{
           refresh_token: String.t(),
+          ip: String.t(),
+          user_agent: String.t(),
+          role: atom() | nil
+        }
+
+  @type otp_token_opts :: %{
           token_hash: String.t(),
           ip: String.t(),
           user_agent: String.t(),
           role: atom() | nil
         }
 
-  @spec token(grant_type(), token_opts()) :: {:ok, auth_token()} | {:error, any()}
+  @spec token(:refresh_token, refresh_token_opts()) :: {:ok, auth_token()} | {:error, any()}
+  @spec token(:otp, otp_token_opts()) :: {:ok, auth_token()} | {:error, any()}
   def token(:refresh_token, %{refresh_token: refresh_token} = opts) do
     require Logger
 
@@ -159,7 +165,7 @@ defmodule Easy.Identity do
     end
   end
 
-  @spec create_session(User.t(), token_opts()) :: {:ok, UserSession.t()} | {:error, any()}
+  @spec create_session(User.t(), otp_token_opts()) :: {:ok, UserSession.t()} | {:error, any()}
   defp create_session(user, opts) do
     with {:ok, attrs_with_role} <- validate_role(opts.role || :guest, user) do
       attrs =
@@ -175,7 +181,7 @@ defmodule Easy.Identity do
     end
   end
 
-  @spec refresh_session(User.t(), UserSession.t(), token_opts()) ::
+  @spec refresh_session(User.t(), UserSession.t(), refresh_token_opts()) ::
           {:ok, UserSession.t()} | {:error, any()}
   defp refresh_session(user, session, opts) do
     role =

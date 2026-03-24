@@ -965,40 +965,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/coach/nutrition_plans/{id}/reorder-meals:
-    post:
-      summary: Reorder nutrition plan meals
-      description: Persists drag-and-drop meal ordering inside a nutrition plan editor. Frontend pattern - optimistically reorder locally, then reconcile canonical ordering from the response.
-      operationId: reorderNutritionPlanMeals
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReorderMealsRequest"
-            examples:
-              default:
-                value:
-                  meal_ids:
-                    - 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
-                    - 3295f5e6-f074-4eab-bb4d-54c9ad95d822
-      responses:
-        "200":
-          description: Meals reordered
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MealListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/nutrition_plans/{id}/macros:
     get:
       summary: Nutrition plan macros
@@ -1077,7 +1043,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List meals for plan
-      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete/reorder.
+      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete.
       operationId: listMeals
       security:
         - bearerAuth: []
@@ -1118,7 +1084,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update meal
-      description: Updates meal metadata such as name, macros, and position from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
+      description: Updates meal metadata such as name and macros from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
       operationId: updateMeal
       security:
         - bearerAuth: []
@@ -1134,7 +1100,6 @@ paths:
               default:
                 value:
                   name: Breakfast (Training Day)
-                  position: 1
       responses:
         "200":
           description: Meal updated
@@ -2944,14 +2909,6 @@ components:
           type: string
         target_day:
           type: string
-    ReorderMealsRequest:
-      type: object
-      required: [meal_ids]
-      properties:
-        meal_ids:
-          type: array
-          items:
-            type: string
     ShoppingListResponse:
       type: object
       required: [data]
@@ -2996,8 +2953,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
     MealUpdateRequest:
       type: object
       properties:
@@ -3005,8 +2960,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
     MealResponse:
       type: object
       required: [data]
@@ -3026,7 +2979,7 @@ components:
     Meal:
       type: object
       required:
-        [id, name, position, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
+        [id, name, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
       properties:
         id:
           type: string
@@ -3034,8 +2987,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
         meal_items:
           type: array
           items:

@@ -1,6 +1,10 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
+import {useMemo, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
+
+import type {RecipeIngredientInput} from '@/api/recipes';
+import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 import PageLayout from '@/@components/page-layout';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
@@ -20,47 +24,71 @@ function buildMacros(data: RecipeFormValues): Record<string, number> | undefined
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-export default function EditRecipe() {
-  const {id} = useParams<{id: string}>();
+/** Convert ingredient items to API format */
+function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] {
+  return items.map((item) => ({
+    food_id: item.food_id,
+    ...(item.unit && {unit: item.unit}),
+    ...(item.amount !== '' &&
+      typeof Number(item.amount) === 'number' &&
+      !isNaN(Number(item.amount)) && {
+        amount: Number(item.amount),
+      }),
+    ...(item.weight_g !== '' &&
+      typeof Number(item.weight_g) === 'number' &&
+      !isNaN(Number(item.weight_g)) && {
+        weight_g: Number(item.weight_g),
+      }),
+  }));
+}
+
+/**
+ * Inner component rendered only when recipe data is available.
+ * This avoids the need for useEffect to sync server state into local state,
+ * which the React Compiler lint rule forbids.
+ */
+function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
   const navigate = useNavigate();
-  const {data, isLoading: isFetching} = useGetRecipeQuery(id!);
+  const {data} = useGetRecipeQuery(recipeId);
   const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
 
-  const recipe = data?.data;
-  const backPath = `/library/recipes/${id}`;
+  const recipe = data!.data;
+
+  const initialIngredients = useMemo<IngredientItem[]>(
+    () =>
+      recipe.recipe_ingredients.map((ri) => ({
+        food: ri.food,
+        food_id: ri.food_id,
+        amount: ri.amount ?? '',
+        unit: ri.unit ?? '',
+        weight_g: ri.weight_g ?? '',
+      })),
+    [recipe],
+  );
+
+  const [ingredients, setIngredients] = useState<IngredientItem[]>(initialIngredients);
 
   const form = useRecipeForm({
-    values: recipe
-      ? {
-          name: recipe.name,
-          category: recipe.category ?? '',
-          source: recipe.source ?? '',
-          instructions: recipe.instructions ?? '',
-          cooked_weight_g: recipe.cooked_weight_g ?? '',
-          calories_per_100g: recipe.macros.calories_per_100g ?? '',
-          protein_g: recipe.macros.protein_g ?? '',
-          carbs_g: recipe.macros.carbs_g ?? '',
-          fats_g: recipe.macros.fats_g ?? '',
-          fiber_g: recipe.macros.fiber_g ?? '',
-          sugar_g: recipe.macros.sugar_g ?? '',
-        }
-      : undefined,
+    values: {
+      name: recipe.name,
+      category: recipe.category ?? '',
+      source: recipe.source ?? '',
+      instructions: recipe.instructions ?? '',
+      cooked_weight_g: recipe.cooked_weight_g ?? '',
+      calories_per_100g: recipe.macros.calories_per_100g ?? '',
+      protein_g: recipe.macros.protein_g ?? '',
+      carbs_g: recipe.macros.carbs_g ?? '',
+      fats_g: recipe.macros.fats_g ?? '',
+      fiber_g: recipe.macros.fiber_g ?? '',
+      sugar_g: recipe.macros.sugar_g ?? '',
+    },
   });
-
-  if (isFetching || !recipe) {
-    return (
-      <PageLayout title="Edit Recipe">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
-    );
-  }
 
   const onSubmit = async (formData: RecipeFormValues) => {
     try {
       const macros = buildMacros(formData);
       const cookedWeight = formData.cooked_weight_g;
+      const recipeIngredients = buildIngredients(ingredients);
       const body = {
         name: formData.name,
         category: formData.category || undefined,
@@ -70,8 +98,9 @@ export default function EditRecipe() {
           ? {cooked_weight_g: cookedWeight}
           : {}),
         ...(macros ? {macros} : {}),
+        recipe_ingredients: recipeIngredients,
       };
-      await updateRecipe({body, id: id!}).unwrap();
+      await updateRecipe({body, id: recipeId}).unwrap();
       navigate(backPath);
     } catch (err) {
       applyFormErrors(err, 'Failed to update recipe. Please try again.', form.setError);
@@ -96,12 +125,58 @@ export default function EditRecipe() {
 
       <RecipeForm
         form={form}
+        ingredients={ingredients}
         isSubmitting={isUpdating}
         onCancel={() => navigate(backPath)}
+        onIngredientsChange={setIngredients}
         onSubmit={onSubmit}
         submitLabel="Save Changes"
         submittingLabel="Saving..."
       />
     </PageLayout>
+  );
+}
+
+export default function EditRecipe() {
+  const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
+  const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
+  const backPath = `/library/recipes/${id}`;
+
+  if (isFetching || !data) {
+    return (
+      <PageLayout title="Edit Recipe">
+        <div className="flex items-center justify-center py-20">
+          <Spinner color="accent" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageLayout title="Edit Recipe">
+        <div className="mb-4">
+          <Button
+            onPress={() => navigate(backPath)}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
+          Failed to load recipe.
+        </div>
+      </PageLayout>
+    );
+  }
+
+  return (
+    <EditRecipeForm
+      backPath={backPath}
+      recipeId={id!}
+    />
   );
 }

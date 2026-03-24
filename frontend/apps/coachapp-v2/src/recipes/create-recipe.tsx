@@ -1,6 +1,10 @@
 import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+
+import type {RecipeIngredientInput} from '@/api/recipes';
+import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
@@ -21,9 +25,29 @@ function buildMacros(data: RecipeFormValues): Record<string, number> | undefined
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
+/** Convert ingredient items to API format */
+function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] | undefined {
+  if (items.length === 0) return undefined;
+  return items.map((item) => ({
+    food_id: item.food_id,
+    ...(item.unit && {unit: item.unit}),
+    ...(item.amount !== '' &&
+      typeof Number(item.amount) === 'number' &&
+      !isNaN(Number(item.amount)) && {
+        amount: Number(item.amount),
+      }),
+    ...(item.weight_g !== '' &&
+      typeof Number(item.weight_g) === 'number' &&
+      !isNaN(Number(item.weight_g)) && {
+        weight_g: Number(item.weight_g),
+      }),
+  }));
+}
+
 export default function CreateRecipe() {
   const navigate = useNavigate();
   const [createRecipe, {isLoading}] = useCreateRecipeMutation();
+  const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
 
   const form = useRecipeForm();
 
@@ -31,6 +55,7 @@ export default function CreateRecipe() {
     try {
       const macros = buildMacros(data);
       const cookedWeight = data.cooked_weight_g;
+      const recipeIngredients = buildIngredients(ingredients);
       const body = {
         name: data.name,
         ...(data.category && {category: data.category}),
@@ -42,6 +67,7 @@ export default function CreateRecipe() {
             cooked_weight_g: cookedWeight,
           }),
         ...(macros && {macros}),
+        ...(recipeIngredients && {recipe_ingredients: recipeIngredients}),
       };
       const result = await createRecipe(body).unwrap();
       navigate(`/library/recipes/${result.data.id}`);
@@ -68,8 +94,10 @@ export default function CreateRecipe() {
 
       <RecipeForm
         form={form}
+        ingredients={ingredients}
         isSubmitting={isLoading}
         onCancel={() => navigate(ROUTES.RECIPES)}
+        onIngredientsChange={setIngredients}
         onSubmit={onSubmit}
         submitLabel="Create Recipe"
         submittingLabel="Creating..."

@@ -1,7 +1,13 @@
-import {Button, Input, Label, Spinner, TextArea} from '@heroui/react';
+import {Button, Description, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {useCallback, useMemo} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+
+import type {Food} from '@/api/foods';
+
+import FoodPicker from '@/foods/components/food-picker';
+import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
 
 export const recipeFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -55,6 +61,10 @@ type RecipeFormProps = {
   submittingLabel: string;
   /** Called when Cancel is pressed */
   onCancel: () => void;
+  /** Current ingredients list (managed by parent) */
+  ingredients: IngredientItem[];
+  /** Called when ingredients change */
+  onIngredientsChange: (items: IngredientItem[]) => void;
 };
 
 export default function RecipeForm({
@@ -64,12 +74,30 @@ export default function RecipeForm({
   submitLabel,
   submittingLabel,
   onCancel,
+  ingredients,
+  onIngredientsChange,
 }: RecipeFormProps) {
   const {
     formState: {errors},
     handleSubmit,
     register,
   } = form;
+
+  const excludeIds = useMemo(() => ingredients.map((item) => item.food_id), [ingredients]);
+
+  const handleFoodSelect = useCallback(
+    (food: Food) => {
+      const newItem: IngredientItem = {
+        food,
+        food_id: food.id,
+        amount: '',
+        unit: '',
+        weight_g: '',
+      };
+      onIngredientsChange([...ingredients, newItem]);
+    },
+    [ingredients, onIngredientsChange],
+  );
 
   return (
     <form
@@ -110,6 +138,22 @@ export default function RecipeForm({
           {errors.source && <p className="text-xs text-danger">{errors.source.message}</p>}
         </div>
       </div>
+
+      {/* Ingredients */}
+      <fieldset className="flex flex-col gap-3">
+        <div>
+          <legend className="text-sm font-semibold">Ingredients</legend>
+          <Description className="text-xs">Search and add food items to this recipe</Description>
+        </div>
+        <FoodPicker
+          excludeIds={excludeIds}
+          onSelect={handleFoodSelect}
+        />
+        <IngredientList
+          onChange={onIngredientsChange}
+          value={ingredients}
+        />
+      </fieldset>
 
       {/* Cooked weight */}
       <div className="flex flex-col gap-1.5">

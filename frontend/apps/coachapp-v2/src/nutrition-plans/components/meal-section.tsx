@@ -99,7 +99,7 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
 
   return (
     <div
-      className="rounded-xl border border-divider bg-content1 p-4"
+      className="min-w-0 overflow-hidden rounded-xl border border-divider bg-content1 p-4"
       ref={sectionRef}
     >
       {/* Meal header */}

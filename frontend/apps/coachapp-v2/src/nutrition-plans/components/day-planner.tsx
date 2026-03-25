@@ -152,7 +152,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
   const currentDayHasItems = planItems.some((pi) => pi.day === selectedDay);
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Day tabs — horizontally scrollable on mobile */}
       <div className="-mx-1 mb-4 flex gap-1 overflow-x-auto px-1 pb-1">
         {DAYS.map((day) => {
@@ -188,7 +188,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
 
           return (
             <div
-              className="flex min-h-11 items-center gap-3 rounded-lg border border-divider bg-content1 px-3 py-2"
+              className="flex min-h-11 items-center gap-3 overflow-hidden rounded-lg border border-divider bg-content1 px-3 py-2"
               key={slotKey}
             >
               {/* Meal type label */}
@@ -199,7 +199,9 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
               {/* Slot content */}
               <div className="min-w-0 flex-1">
                 {isSaving ? (
-                  <Spinner size="sm" />
+                  <div className="flex items-center gap-4">
+                    <Spinner />
+                  </div>
                 ) : assignedMeal && planItem ? (
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm">{assignedMeal.name}</span>
@@ -214,8 +216,8 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                     </Button>
                   </div>
                 ) : isAssigning ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="min-w-0 flex-1">
                       <MealPicker
                         meals={meals}
                         onCreate={(name) => handleCreateAndAssign(selectedDay, mealType.value, name)}

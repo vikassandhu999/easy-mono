@@ -229,7 +229,7 @@ export default function AppShell() {
       </aside>
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
-      <main className={`flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
+      <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
         <Outlet />
       </main>
 

@@ -231,7 +231,7 @@ export default function NutritionPlanDetail() {
         </div>
       )}
 
-      <div className="max-w-2xl">
+      <div className="min-w-0 max-w-2xl overflow-hidden">
         {/* Plan header */}
         <div className="pb-6">
           <h2 className="text-lg font-semibold">{plan.name}</h2>

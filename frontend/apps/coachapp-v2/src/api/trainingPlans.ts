@@ -129,11 +129,21 @@ export type ListTrainingPlansParams = {
   status?: 'active' | 'archived' | 'draft';
 };
 
+/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+export type ListTrainingPlansFilters = {
+  client_id?: string;
+  is_template?: boolean;
+  search?: string;
+  status?: 'active' | 'archived' | 'draft';
+};
+
 export type ListPlannedWorkoutsParams = {
   limit?: number;
   offset?: number;
   planId: string;
 };
+
+const PAGE_SIZE = 20;
 
 const getPlanScopedId = (planId: string) => `TRAINING_PLAN_${planId}`;
 
@@ -162,6 +172,43 @@ export const trainingPlansApi = api.injectEndpoints({
                 type: 'TrainingPlan' as const,
                 id: plan.id,
               })),
+              {type: 'TrainingPlan' as const, id: 'LIST'},
+            ]
+          : [{type: 'TrainingPlan' as const, id: 'LIST'}],
+    }),
+    /**
+     * Infinite-scroll variant of listTrainingPlans.
+     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
+     * Hook: useTrainingPlansInfiniteQuery
+     */
+    trainingPlans: build.infiniteQuery<ApiListResponse<TrainingPlan>, ListTrainingPlansFilters | void, number>({
+      query: ({queryArg, pageParam}) => ({
+        url: '/v1/coach/training_plans',
+        params: {
+          ...(queryArg?.search && {search: queryArg.search}),
+          ...(queryArg?.status && {status: queryArg.status}),
+          ...(queryArg?.is_template !== undefined && {is_template: queryArg.is_template}),
+          ...(queryArg?.client_id && {client_id: queryArg.client_id}),
+          offset: pageParam,
+          limit: PAGE_SIZE,
+        },
+      }),
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          const nextOffset = lastPageParam + PAGE_SIZE;
+          return nextOffset < lastPage.count ? nextOffset : undefined;
+        },
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.pages.flatMap((page) =>
+                page.data.map((plan) => ({
+                  type: 'TrainingPlan' as const,
+                  id: plan.id,
+                })),
+              ),
               {type: 'TrainingPlan' as const, id: 'LIST'},
             ]
           : [{type: 'TrainingPlan' as const, id: 'LIST'}],
@@ -356,6 +403,7 @@ export const {
   useGetWorkoutElementQuery,
   useListPlannedWorkoutsQuery,
   useListTrainingPlansQuery,
+  useTrainingPlansInfiniteQuery,
   useUpdatePlannedWorkoutMutation,
   useUpdateTrainingPlanMutation,
   useUpdateWorkoutElementMutation,

@@ -31,6 +31,10 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
+import CreateTrainingPlan from '@/training-plans/create-training-plan';
+import EditTrainingPlan from '@/training-plans/edit-training-plan';
+import ListTrainingPlans from '@/training-plans/list-training-plans';
+import TrainingPlanDetail from '@/training-plans/training-plan-detail';
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
@@ -167,12 +171,20 @@ export default function App() {
           path={ROUTES.EDIT_NUTRITION_PLAN}
         />
         <Route
-          element={<Placeholder title="Training Plans" />}
+          element={<ListTrainingPlans />}
           path={ROUTES.TRAINING_PLANS}
         />
         <Route
-          element={<Placeholder title="Training Plan Detail" />}
+          element={<CreateTrainingPlan />}
+          path={ROUTES.CREATE_TRAINING_PLAN}
+        />
+        <Route
+          element={<TrainingPlanDetail />}
           path={ROUTES.TRAINING_PLAN_DETAIL}
+        />
+        <Route
+          element={<EditTrainingPlan />}
+          path={ROUTES.EDIT_TRAINING_PLAN}
         />
         <Route
           element={<Placeholder title="Settings" />}

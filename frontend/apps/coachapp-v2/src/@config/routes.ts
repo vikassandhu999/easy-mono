@@ -27,6 +27,8 @@ export const ROUTES = {
   NUTRITION_PLAN_DETAIL: '/library/nutrition-plans/:id',
   EDIT_NUTRITION_PLAN: '/library/nutrition-plans/:id/edit',
   TRAINING_PLANS: '/library/training-plans',
+  CREATE_TRAINING_PLAN: '/library/training-plans/create',
   TRAINING_PLAN_DETAIL: '/library/training-plans/:id',
+  EDIT_TRAINING_PLAN: '/library/training-plans/:id/edit',
   SETTINGS: '/settings',
 } as const;

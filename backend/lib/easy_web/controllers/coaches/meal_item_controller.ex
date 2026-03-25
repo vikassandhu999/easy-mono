@@ -81,7 +81,7 @@ defmodule EasyWeb.Coaches.MealItemController do
   defp ensure_food(nil, _business_id), do: :ok
 
   defp ensure_food(food_id, business_id) do
-    case Food |> Food.for_business(business_id) |> Repo.get(food_id) do
+    case Food |> Food.for_business_or_system(business_id) |> Repo.get(food_id) do
       nil -> {:error, :not_found}
       _food -> :ok
     end

@@ -38,6 +38,7 @@ defmodule Easy.Nutrition.MealItem do
     |> put_change(:meal_id, meal_id)
     |> put_change(:business_id, business_id)
     |> validate_required([:meal_id, :business_id])
+    |> maybe_set_next_position(meal_id)
     |> validate_food_or_recipe()
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
   end
@@ -48,6 +49,15 @@ defmodule Easy.Nutrition.MealItem do
     |> cast(attrs, @cast_fields)
     |> validate_food_or_recipe()
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
+  end
+
+  defp maybe_set_next_position(changeset, meal_id) do
+    if get_change(changeset, :position) do
+      changeset
+    else
+      next = next_position(meal_id)
+      put_change(changeset, :position, next)
+    end
   end
 
   defp validate_food_or_recipe(changeset) do
@@ -71,6 +81,16 @@ defmodule Easy.Nutrition.MealItem do
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(m in query, where: m.business_id == ^business_id)
+  end
+
+  @spec next_position(String.t()) :: integer()
+  def next_position(meal_id) do
+    query = from(m in __MODULE__, where: m.meal_id == ^meal_id, select: max(m.position))
+
+    case Repo.one(query) do
+      nil -> 0
+      max -> max + 1
+    end
   end
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()

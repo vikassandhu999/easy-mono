@@ -57,6 +57,7 @@ defmodule Easy.MixProject do
       {:ex_phone_number, "~> 0.4"},
       {:cors_plug, "~> 3.0"},
       {:resend, "~> 0.4.4"},
+      {:nimble_csv, "~> 1.2"},
       {:ex_machina, "~> 2.8", only: :test}
     ]
   end

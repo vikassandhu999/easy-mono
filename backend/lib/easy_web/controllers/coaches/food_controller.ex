@@ -20,7 +20,7 @@ defmodule EasyWeb.Coaches.FoodController do
   def show(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Food |> Food.for_business(claims.business_id) |> Repo.get(food_id) do
+    case Food |> Food.for_business_or_system(claims.business_id) |> Repo.get(food_id) do
       %Food{} = food ->
         conn
         |> put_status(:ok)
@@ -63,14 +63,16 @@ defmodule EasyWeb.Coaches.FoodController do
   def index(conn, params) do
     claims = conn.assigns.claims
 
-    search_term = Map.get(params, "search", "")
+    search_term = params |> Map.get("search", "") |> String.trim()
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
 
-    base = Food |> Food.for_business(claims.business_id) |> Food.search(search_term)
+    base = Food |> Food.for_business_or_system(claims.business_id) |> Food.search(search_term)
 
     count = Repo.aggregate(base, :count, :id)
-    foods = base |> Food.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
+
+    ordered = if search_term == "", do: Food.newest(base), else: base
+    foods = ordered |> Easy.Utils.paginate(offset, limit) |> Repo.all()
 
     conn
     |> put_status(:ok)

@@ -59,15 +59,52 @@ defmodule Easy.Nutrition.Food do
     from(f in query, where: f.business_id == ^business_id)
   end
 
+  @spec for_business_or_system(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business_or_system(query \\ __MODULE__, business_id) do
+    from(f in query, where: f.business_id == ^business_id or is_nil(f.business_id))
+  end
+
   @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
   def search(query, ""), do: query
-  def search(query, term), do: from(f in query, where: ilike(f.name, ^"%#{term}%"))
+
+  def search(query, term) do
+    case to_tsquery(term) do
+      "" ->
+        query
+
+      tsquery ->
+        from(f in query,
+          where: fragment("search_vector @@ to_tsquery('simple', ?)", ^tsquery),
+          order_by: [
+            desc:
+              fragment(
+                "ts_rank(search_vector, to_tsquery('simple', ?)) / greatest(length(?), 1)",
+                ^tsquery,
+                f.name
+              )
+          ]
+        )
+    end
+  end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(f in query, order_by: [desc: f.inserted_at])
+  end
+
+  defp to_tsquery(term) do
+    term
+    |> String.trim()
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.map(&sanitize_tsquery_token/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.map_join(" & ", &"#{&1}:*")
+  end
+
+  defp sanitize_tsquery_token(token) do
+    String.replace(token, ~r/[^a-zA-Z0-9]/, "")
   end
 
   # Actions

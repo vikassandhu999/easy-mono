@@ -1,10 +1,11 @@
 import {AlertDialog, Button, Chip, Spinner} from '@heroui/react';
-import {Apple, ArrowLeft, Pencil, Trash2} from 'lucide-react';
+import {Apple, ArrowLeft, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
+import {normalizeMacros} from '@/api/shared';
 
 /** Well-known macro keys to display in a structured way */
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
@@ -70,9 +71,11 @@ export default function FoodDetail() {
   }
 
   const food = data.data;
-  const macroEntries = Object.entries(food.macros);
-  const knownMacros = macroEntries.filter(([key]) => key in MACRO_LABELS);
-  const unknownMacros = macroEntries.filter(([key]) => !(key in MACRO_LABELS));
+  const isSystemFood = food.source === 'system';
+  const normalizedMacros = normalizeMacros(food.macros);
+  const macroEntries = Object.entries(normalizedMacros);
+  const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
+  const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 
   return (
     <PageLayout title="Food">
@@ -86,54 +89,66 @@ export default function FoodDetail() {
           <ArrowLeft size={16} />
           Back
         </Button>
+        {!isSystemFood && (
+          <Button
+            onPress={() => navigate(`/library/foods/${food.id}/edit`)}
+            size="sm"
+            variant="secondary"
+          >
+            <Pencil size={16} />
+            Edit
+          </Button>
+        )}
         <Button
-          onPress={() => navigate(`/library/foods/${food.id}/edit`)}
+          onPress={() => navigate(ROUTES.CREATE_FOOD, {state: {duplicateFrom: food}})}
           size="sm"
           variant="secondary"
         >
-          <Pencil size={16} />
-          Edit
+          <Copy size={16} />
+          Duplicate
         </Button>
-        <AlertDialog>
-          <Button
-            size="sm"
-            variant="danger"
-          >
-            <Trash2 size={16} />
-            Delete
-          </Button>
-          <AlertDialog.Backdrop>
-            <AlertDialog.Container>
-              <AlertDialog.Dialog className="sm:max-w-[400px]">
-                <AlertDialog.CloseTrigger />
-                <AlertDialog.Header>
-                  <AlertDialog.Icon status="danger" />
-                  <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
-                </AlertDialog.Header>
-                <AlertDialog.Body>
-                  <p>
-                    This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
-                  </p>
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button
-                    slot="close"
-                    variant="tertiary"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    isPending={isDeleting}
-                    onPress={handleDelete}
-                    variant="danger"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </AlertDialog.Footer>
-              </AlertDialog.Dialog>
-            </AlertDialog.Container>
-          </AlertDialog.Backdrop>
-        </AlertDialog>
+        {!isSystemFood && (
+          <AlertDialog>
+            <Button
+              size="sm"
+              variant="danger"
+            >
+              <Trash2 size={16} />
+              Delete
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-[400px]">
+                  <AlertDialog.CloseTrigger />
+                  <AlertDialog.Header>
+                    <AlertDialog.Icon status="danger" />
+                    <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
+                  </AlertDialog.Header>
+                  <AlertDialog.Body>
+                    <p>
+                      This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
+                    </p>
+                  </AlertDialog.Body>
+                  <AlertDialog.Footer>
+                    <Button
+                      slot="close"
+                      variant="tertiary"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      isPending={isDeleting}
+                      onPress={handleDelete}
+                      variant="danger"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </AlertDialog.Footer>
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        )}
       </div>
 
       <div className="max-w-lg">
@@ -180,7 +195,7 @@ export default function FoodDetail() {
         </div>
 
         {/* Macros */}
-        {macroEntries.length > 0 && (
+        {(knownMacros.length > 0 || unknownMacros.length > 0) && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
               Nutrition per 100g
@@ -221,11 +236,12 @@ export default function FoodDetail() {
                   className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
                   key={i}
                 >
-                  <span className="font-medium">{serving.unit}</span>
-                  <div className="flex gap-3 text-foreground-500">
-                    {serving.amount != null && <span>{serving.amount} unit(s)</span>}
-                    {serving.weight_g != null && <span>{serving.weight_g}g</span>}
-                  </div>
+                  <span className="font-medium">
+                    {serving.amount ?? 1} {serving.unit}
+                  </span>
+                  {serving.weight_g != null && serving.weight_g > 0 && (
+                    <span className="text-foreground-500">{serving.weight_g}g</span>
+                  )}
                 </div>
               ))}
             </div>

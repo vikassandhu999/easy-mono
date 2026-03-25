@@ -6,6 +6,7 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
+import {normalizeMacros} from '@/api/shared';
 
 type FoodPickerProps = {
   /** Called when the user selects a food from the list */
@@ -111,33 +112,46 @@ export default function FoodPicker({
             items={foods}
             renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
           >
-            {(food: Food) => (
-              <ListBox.Item
-                id={food.id}
-                key={food.id}
-                textValue={food.name}
-              >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
-                  {food.image_url ? (
-                    <img
-                      alt={food.name}
-                      className="size-7 rounded-md object-cover"
-                      src={food.image_url}
-                    />
-                  ) : (
-                    <Apple
-                      className="text-foreground-400"
-                      size={14}
-                    />
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-col">
-                  <Label>{food.name}</Label>
-                  {food.category && <Description>{food.category}</Description>}
-                </div>
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            )}
+            {(food: Food) => {
+              const m = normalizeMacros(food.macros);
+              const cal = m.calories_per_100g;
+              const pro = m.protein_g;
+              return (
+                <ListBox.Item
+                  id={food.id}
+                  key={food.id}
+                  textValue={food.name}
+                >
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
+                    {food.image_url ? (
+                      <img
+                        alt={food.name}
+                        className="size-7 rounded-md object-cover"
+                        src={food.image_url}
+                      />
+                    ) : (
+                      <Apple
+                        className="text-foreground-400"
+                        size={14}
+                      />
+                    )}
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>{food.name}</Label>
+                      {cal != null && cal > 0 && (
+                        <span className="shrink-0 text-xs text-foreground-400">{cal} Cal</span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      {food.category && <Description>{food.category}</Description>}
+                      {pro != null && pro > 0 && <span className="shrink-0 text-xs text-foreground-400">{pro}g P</span>}
+                    </div>
+                  </div>
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              );
+            }}
           </ListBox>
         </Autocomplete.Filter>
       </Autocomplete.Popover>

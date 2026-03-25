@@ -5,6 +5,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/recipes';
+import {normalizeMacros} from '@/api/shared';
 
 /** Well-known macro keys to display in a structured way */
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
@@ -70,7 +71,8 @@ export default function RecipeDetail() {
   }
 
   const recipe = data.data;
-  const macroEntries = Object.entries(recipe.macros);
+  const normalizedMacros = normalizeMacros(recipe.macros);
+  const macroEntries = Object.entries(normalizedMacros);
   const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
   const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 
@@ -265,11 +267,12 @@ export default function RecipeDetail() {
                   className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
                   key={i}
                 >
-                  <span className="font-medium">{serving.unit}</span>
-                  <div className="flex gap-3 text-foreground-500">
-                    {serving.amount != null && <span>{serving.amount} unit(s)</span>}
-                    {serving.weight_g != null && <span>{serving.weight_g}g</span>}
-                  </div>
+                  <span className="font-medium">
+                    {serving.amount ?? 1} {serving.unit}
+                  </span>
+                  {serving.weight_g != null && serving.weight_g > 0 && (
+                    <span className="text-foreground-500">{serving.weight_g}g</span>
+                  )}
                 </div>
               ))}
             </div>

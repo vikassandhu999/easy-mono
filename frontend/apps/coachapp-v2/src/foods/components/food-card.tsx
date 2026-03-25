@@ -1,8 +1,11 @@
 import {Chip} from '@heroui/react';
 import {Apple} from 'lucide-react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import type {Food} from '@/api/foods';
+
+import {normalizeMacros} from '@/api/shared';
 
 /** Well-known macro keys displayed as summary on the card */
 const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
@@ -13,7 +16,18 @@ const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
 ];
 
 export default function FoodCard({food}: {food: Food}) {
+  const normalized = useMemo(() => normalizeMacros(food.macros), [food.macros]);
   const hasMacros = Object.keys(food.macros).length > 0;
+  const isSystem = food.source === 'system';
+
+  // Build subtitle: category + "system" badge
+  const subtitle = food.category
+    ? isSystem
+      ? `${food.category} · system`
+      : food.category
+    : isSystem
+      ? 'system'
+      : null;
 
   return (
     <Link
@@ -39,8 +53,12 @@ export default function FoodCard({food}: {food: Food}) {
       {/* Name + category */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{food.name}</p>
-        {food.category ? (
-          <p className="truncate text-xs text-foreground-500">{food.category}</p>
+        {subtitle ? (
+          <p className="truncate text-xs text-foreground-500">
+            {food.category ?? ''}
+            {food.category && isSystem && <span className="text-foreground-400"> · system</span>}
+            {!food.category && isSystem && <span className="text-foreground-400">system</span>}
+          </p>
         ) : (
           <p className="text-xs text-foreground-400">No category</p>
         )}
@@ -50,7 +68,7 @@ export default function FoodCard({food}: {food: Food}) {
       {hasMacros && (
         <div className="hidden gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {
-            const value = food.macros[macro.key];
+            const value = normalized[macro.key];
             if (value === undefined) return null;
             return (
               <Chip

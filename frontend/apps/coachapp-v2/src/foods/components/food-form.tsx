@@ -1,7 +1,11 @@
 import {Button, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
+import {Plus, X} from 'lucide-react';
+import {useCallback, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+
+import type {ServingSize} from '@/api/shared';
 
 export const foodFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -32,9 +36,9 @@ export const FOOD_FORM_DEFAULTS: FoodFormValues = {
 };
 
 /** Hook wrapper so screens don't need to import zod/resolver separately */
-export function useFoodForm(options?: {values?: FoodFormValues}) {
+export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: FoodFormValues}) {
   return useForm<FoodFormValues>({
-    defaultValues: options?.values ? undefined : FOOD_FORM_DEFAULTS,
+    defaultValues: options?.values ? undefined : (options?.defaultValues ?? FOOD_FORM_DEFAULTS),
     resolver: zodResolver(foodFormSchema),
     values: options?.values,
   });
@@ -53,6 +57,10 @@ type FoodFormProps = {
   submittingLabel: string;
   /** Called when Cancel is pressed */
   onCancel: () => void;
+  /** Current serving sizes list (managed by parent) */
+  servingSizes: ServingSize[];
+  /** Called when serving sizes change */
+  onServingSizesChange: (sizes: ServingSize[]) => void;
 };
 
 export default function FoodForm({
@@ -62,12 +70,49 @@ export default function FoodForm({
   submitLabel,
   submittingLabel,
   onCancel,
+  servingSizes,
+  onServingSizesChange,
 }: FoodFormProps) {
   const {
     formState: {errors},
     handleSubmit,
     register,
   } = form;
+
+  // Inline add-serving-size form state
+  const [isAddingServing, setIsAddingServing] = useState(false);
+  const [newUnit, setNewUnit] = useState('');
+  const [newAmount, setNewAmount] = useState('');
+  const [newWeightG, setNewWeightG] = useState('');
+  const [servingError, setServingError] = useState('');
+
+  const resetServingForm = useCallback(() => {
+    setNewUnit('');
+    setNewAmount('');
+    setNewWeightG('');
+    setServingError('');
+  }, []);
+
+  const handleAddServing = useCallback(() => {
+    const unit = newUnit.trim();
+    if (!unit) {
+      setServingError('Unit is required');
+      return;
+    }
+    const amount = newAmount ? Number(newAmount) : null;
+    const weightG = newWeightG ? Number(newWeightG) : null;
+    const serving: ServingSize = {unit, amount, weight_g: weightG};
+    onServingSizesChange([...servingSizes, serving]);
+    resetServingForm();
+    setIsAddingServing(false);
+  }, [newUnit, newAmount, newWeightG, servingSizes, onServingSizesChange, resetServingForm]);
+
+  const handleRemoveServing = useCallback(
+    (index: number) => {
+      onServingSizesChange(servingSizes.filter((_, i) => i !== index));
+    },
+    [servingSizes, onServingSizesChange],
+  );
 
   return (
     <form
@@ -199,6 +244,114 @@ export default function FoodForm({
         />
         {errors.notes && <p className="text-xs text-danger">{errors.notes.message}</p>}
       </div>
+
+      {/* Serving Sizes */}
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-sm font-semibold">Serving Sizes</legend>
+
+        {/* Existing serving sizes as compact rows */}
+        {servingSizes.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {servingSizes.map((serving, i) => (
+              <div
+                className="flex min-h-11 items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
+                key={i}
+              >
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {serving.amount ?? 1} {serving.unit}
+                </span>
+                <div className="flex shrink-0 items-center gap-2">
+                  {serving.weight_g != null && serving.weight_g > 0 && (
+                    <span className="text-foreground-500">{serving.weight_g}g</span>
+                  )}
+                  <Button
+                    aria-label={`Remove ${serving.unit}`}
+                    onPress={() => handleRemoveServing(i)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Inline add form */}
+        {isAddingServing ? (
+          <div className="flex flex-col gap-3 rounded-lg border border-divider p-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="serving-unit">
+                  Unit <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  id="serving-unit"
+                  onChange={(e) => {
+                    setNewUnit(e.target.value);
+                    setServingError('');
+                  }}
+                  placeholder="e.g. scoop"
+                  value={newUnit}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="serving-amount">Amount</Label>
+                <Input
+                  id="serving-amount"
+                  inputMode="decimal"
+                  onChange={(e) => setNewAmount(e.target.value)}
+                  placeholder="1"
+                  type="number"
+                  value={newAmount}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="serving-weight">Weight (g)</Label>
+                <Input
+                  id="serving-weight"
+                  inputMode="decimal"
+                  onChange={(e) => setNewWeightG(e.target.value)}
+                  placeholder="30"
+                  type="number"
+                  value={newWeightG}
+                />
+              </div>
+            </div>
+            {servingError && <p className="text-xs text-danger">{servingError}</p>}
+            <div className="flex gap-2">
+              <Button
+                onPress={handleAddServing}
+                size="sm"
+              >
+                <Plus size={14} />
+                Add
+              </Button>
+              <Button
+                onPress={() => {
+                  setIsAddingServing(false);
+                  resetServingForm();
+                }}
+                size="sm"
+                variant="ghost"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            className="self-start"
+            onPress={() => setIsAddingServing(true)}
+            size="sm"
+            variant="ghost"
+          >
+            <Plus size={14} />
+            Add serving size
+          </Button>
+        )}
+      </fieldset>
 
       {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}

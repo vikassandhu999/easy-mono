@@ -8,7 +8,7 @@ import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 import PageLayout from '@/@components/page-layout';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
 
 /** Build the macros Record from form values, omitting empty fields */
@@ -68,6 +68,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
   const [ingredients, setIngredients] = useState<IngredientItem[]>(initialIngredients);
 
+  const macros = normalizeMacros(recipe.macros);
   const form = useRecipeForm({
     values: {
       name: recipe.name,
@@ -75,12 +76,12 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
       source: recipe.source ?? '',
       instructions: recipe.instructions ?? '',
       cooked_weight_g: recipe.cooked_weight_g ?? '',
-      calories_per_100g: recipe.macros.calories_per_100g ?? '',
-      protein_g: recipe.macros.protein_g ?? '',
-      carbs_g: recipe.macros.carbs_g ?? '',
-      fats_g: recipe.macros.fats_g ?? '',
-      fiber_g: recipe.macros.fiber_g ?? '',
-      sugar_g: recipe.macros.sugar_g ?? '',
+      calories_per_100g: macros.calories_per_100g ?? '',
+      protein_g: macros.protein_g ?? '',
+      carbs_g: macros.carbs_g ?? '',
+      fats_g: macros.fats_g ?? '',
+      fiber_g: macros.fiber_g ?? '',
+      sugar_g: macros.sugar_g ?? '',
     },
   });
 

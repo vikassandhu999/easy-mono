@@ -7,6 +7,7 @@ import {z} from 'zod';
 
 import type {Food} from '@/api/foods';
 
+import {normalizeMacros} from '@/api/shared';
 import FoodPicker from '@/foods/components/food-picker';
 import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
 
@@ -108,7 +109,10 @@ export default function RecipeForm({
       if (!wg || wg <= 0) continue;
       totalWeight += wg;
 
-      for (const [key, val] of Object.entries(item.food.macros)) {
+      // Normalize keys so system-imported foods (calories, protein, carbs, fat)
+      // are mapped to canonical form keys (calories_per_100g, protein_g, etc.)
+      const normalized = normalizeMacros(item.food.macros);
+      for (const [key, val] of Object.entries(normalized)) {
         if (typeof val !== 'number') continue;
         // Scale: food macros are per 100g, so scale by (weight_g / 100)
         totals[key] = (totals[key] ?? 0) + val * (wg / 100);
@@ -122,10 +126,8 @@ export default function RecipeForm({
     const divisor = cookedWeight > 0 ? cookedWeight : totalWeight;
     const per100g = (val: number) => Math.round(val * (100 / divisor) * 10) / 10;
 
-    // Map food macro keys → recipe form fields
-    // Food uses "calories" or "calories_per_100g", recipe form uses "calories_per_100g"
-    const caloriesRaw = totals.calories ?? totals.calories_per_100g ?? 0;
-    setValue('calories_per_100g', per100g(caloriesRaw));
+    // All keys are now canonical after normalizeMacros
+    setValue('calories_per_100g', per100g(totals.calories_per_100g ?? 0));
     setValue('protein_g', per100g(totals.protein_g ?? 0));
     setValue('carbs_g', per100g(totals.carbs_g ?? 0));
     setValue('fats_g', per100g(totals.fats_g ?? 0));

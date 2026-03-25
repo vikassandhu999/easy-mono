@@ -1,10 +1,13 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useState} from 'react';
+import {Navigate, useNavigate, useParams} from 'react-router-dom';
+
+import type {ServingSize} from '@/api/shared';
 
 import PageLayout from '@/@components/page-layout';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
 
 /** Build the macros Record from form values, omitting empty fields */
@@ -20,53 +23,48 @@ function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-export default function EditFood() {
-  const {id} = useParams<{id: string}>();
+/**
+ * Inner component rendered only when food data is available.
+ * This avoids the need for useEffect to sync server state into local state,
+ * which the React Compiler lint rule forbids.
+ */
+function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   const navigate = useNavigate();
-  const {data, isLoading: isFetching} = useGetFoodQuery(id!);
+  const {data} = useGetFoodQuery(foodId);
   const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
 
-  const food = data?.data;
-  const backPath = `/library/foods/${id}`;
+  const food = data!.data;
+  const macros = normalizeMacros(food.macros);
+
+  const [servingSizes, setServingSizes] = useState<ServingSize[]>(food.serving_sizes);
 
   const form = useFoodForm({
-    values: food
-      ? {
-          name: food.name,
-          category: food.category ?? '',
-          source: food.source ?? '',
-          notes: food.notes ?? '',
-          calories_per_100g: food.macros.calories_per_100g ?? '',
-          protein_g: food.macros.protein_g ?? '',
-          carbs_g: food.macros.carbs_g ?? '',
-          fats_g: food.macros.fats_g ?? '',
-          fiber_g: food.macros.fiber_g ?? '',
-          sugar_g: food.macros.sugar_g ?? '',
-        }
-      : undefined,
+    values: {
+      name: food.name,
+      category: food.category ?? '',
+      source: food.source ?? '',
+      notes: food.notes ?? '',
+      calories_per_100g: macros.calories_per_100g ?? '',
+      protein_g: macros.protein_g ?? '',
+      carbs_g: macros.carbs_g ?? '',
+      fats_g: macros.fats_g ?? '',
+      fiber_g: macros.fiber_g ?? '',
+      sugar_g: macros.sugar_g ?? '',
+    },
   });
-
-  if (isFetching || !food) {
-    return (
-      <PageLayout title="Edit Food">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
-    );
-  }
 
   const onSubmit = async (formData: FoodFormValues) => {
     try {
-      const macros = buildMacros(formData);
+      const builtMacros = buildMacros(formData);
       const body = {
         name: formData.name,
         category: formData.category || undefined,
         source: formData.source || undefined,
         notes: formData.notes || undefined,
-        ...(macros ? {macros} : {}),
+        ...(builtMacros ? {macros: builtMacros} : {}),
+        serving_sizes: servingSizes,
       };
-      await updateFood({body, id: id!}).unwrap();
+      await updateFood({body, id: foodId}).unwrap();
       navigate(backPath);
     } catch (err) {
       applyFormErrors(err, 'Failed to update food. Please try again.', form.setError);
@@ -93,10 +91,66 @@ export default function EditFood() {
         form={form}
         isSubmitting={isUpdating}
         onCancel={() => navigate(backPath)}
+        onServingSizesChange={setServingSizes}
         onSubmit={onSubmit}
+        servingSizes={servingSizes}
         submitLabel="Save Changes"
         submittingLabel="Saving..."
       />
     </PageLayout>
+  );
+}
+
+export default function EditFood() {
+  const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
+  const {data, isError, isLoading: isFetching} = useGetFoodQuery(id!);
+  const backPath = `/library/foods/${id}`;
+
+  if (isFetching || !data) {
+    return (
+      <PageLayout title="Edit Food">
+        <div className="flex items-center justify-center py-20">
+          <Spinner color="accent" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageLayout title="Edit Food">
+        <div className="mb-4">
+          <Button
+            onPress={() => navigate(backPath)}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
+          Failed to load food.
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Guard: system foods cannot be edited — redirect to detail page
+  if (data.data.source === 'system') {
+    return (
+      <Navigate
+        replace
+        to={backPath}
+      />
+    );
+  }
+
+  return (
+    <EditFoodForm
+      backPath={backPath}
+      foodId={id!}
+    />
   );
 }

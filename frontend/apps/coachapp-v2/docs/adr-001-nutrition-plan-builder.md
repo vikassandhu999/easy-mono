@@ -1,6 +1,6 @@
 # ADR-001: Nutrition Plan Builder
 
-**Date:** 2026-03-24  
+**Date:** 2026-03-25  
 **Context:** Nutrition plan creation and management in coachapp-v2
 
 ---
@@ -43,12 +43,13 @@ A standard form page (`create-nutrition-plan.tsx`) collects plan metadata:
 
 After creation, the coach lands on `nutrition-plan-detail.tsx` which serves as both the **detail view** and the **builder**. All operations are live server mutations with RTK Query cache invalidation providing reactivity.
 
-The detail page has four sections:
+The detail page has five sections:
 
-1. **Header** -- plan name, status/type chips, edit/delete navigation
-2. **Macros Goal** -- daily target grid (if set)
-3. **Meals Builder** -- add/remove meals, add foods/recipes to meals
-4. **Weekly Schedule** (Day Planner) -- assign meals to day+meal_type slots
+1. **Header** -- plan name, status/type chips, edit/delete navigation, copy-to-client
+2. **Macros Goal** -- daily target grid (if set); zero values display as em-dash, not "0g"
+3. **Daily Totals** -- computed totals vs. goal with color-coded progress bars (green/yellow/red), powered by `useGetNutritionPlanMacrosQuery`
+4. **Meals Builder** -- add/remove meals, add foods/recipes to meals, inline editing of names and amounts
+5. **Weekly Schedule** (Day Planner) -- assign meals to day+meal_type slots, copy day via dialog
 
 ---
 
@@ -68,7 +69,9 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 | Remove meal item        | No, single tap    | **INLINE**   | Button press, no confirmation needed (reversible) |
 | Assign meal to day slot | Yes, search       | **INLINE**   | MealPicker autocomplete                           |
 | Remove day assignment   | No, single tap    | **INLINE**   | Button press, just unlinking                      |
-| Copy day                | No, select+tap    | **INLINE**   | Native select + button                            |
+| Copy day                | No, select+tap    | **DIALOG**   | AlertDialog with HeroUI Select for target day     |
+| Edit meal name          | Yes, 1 field      | **INLINE**   | Tap name to toggle inline Input, save on blur     |
+| Edit meal item amounts  | Yes, 3 fields     | **INLINE**   | Tap amounts to toggle inline inputs, save/cancel  |
 | Copy plan to client     | Yes, search       | **INLINE**   | ClientPicker autocomplete in top nav toggle panel |
 | Assign plan from client | Yes, search       | **INLINE**   | NutritionPlanPicker autocomplete in section panel |
 
@@ -91,8 +94,8 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 | --------------------------- | ----------------------------------------------------------- | -------------------- |
 | `nutrition-plan-form.tsx`   | Shared form (schema + hook + component) for create/edit     | create, edit screens |
 | `nutrition-plan-card.tsx`   | List item card (name, meal count, status chip)              | list screen          |
-| `meal-section.tsx`          | Single meal card: items list + tabbed picker + delete       | detail screen        |
-| `meal-item-row.tsx`         | Food/recipe row with image, name, amounts, remove           | meal-section         |
+| `meal-section.tsx`          | Single meal card: items list, inline name editing, per-meal macro totals, tabbed picker with serving size chips, delete | detail screen        |
+| `meal-item-row.tsx`         | Food/recipe row with image, name, inline amount/unit/weight editing, remove | meal-section         |
 | `meal-item-picker.tsx`      | Tabbed (Foods/Recipes) autocomplete for adding items        | meal-section         |
 | `meal-picker.tsx`           | Autocomplete for selecting/creating meals in day planner    | day-planner          |
 | `day-planner.tsx`           | Weekly schedule: day tabs + meal_type slots + copy day      | detail screen        |
@@ -117,10 +120,16 @@ nutrition-plan-detail.tsx
   │
   ├── useGetNutritionPlanQuery(id)     → plan.meals[], plan.plan_items[]
   │
+  ├── useGetNutritionPlanMacrosQuery(id) → computed daily macro totals (DailyTotals)
+  │
   ├── MealSection (per meal)
   │   ├── useCreateMealItemMutation    → add food/recipe to meal
   │   ├── useDeleteMealItemMutation    → remove item from meal
-  │   └── useDeleteMealMutation        → delete entire meal
+  │   ├── useDeleteMealMutation        → delete entire meal
+  │   └── useUpdateMealMutation        → rename meal (inline editing)
+  │
+  ├── MealItemRow (per item, inside MealSection)
+  │   └── useUpdateMealItemMutation    → edit amount/unit/weight (inline editing)
   │
   ├── DayPlanner
   │   ├── useCreatePlanItemMutation    → assign meal to day slot
@@ -148,9 +157,9 @@ All mutations invalidate the `NutritionPlan` cache tag, so `useGetNutritionPlanQ
 
 ## Key Design Decisions
 
-### 1. MealItem includes resolved food/recipe objects
+### 1. MealItem food/recipe hydration via queryFn
 
-The `MealItem` type includes `food: Food | null` and `recipe: Recipe | null` (server returns them). This avoids a separate lookup/query to display item names and images in `MealItemRow`.
+The API's `MealItem` schema only has `food_id` / `recipe_id` — it does not return resolved food/recipe objects. The `getNutritionPlan` endpoint uses a `queryFn` (not a plain `query`) that: (1) fetches the plan, (2) collects unique food/recipe IDs from all meal items, (3) batch-fetches them in parallel, (4) merges the resolved objects into each `meal_item`. This allows `MealItemRow` and `MealSection` to display food/recipe names, images, macros, and serving sizes without separate queries.
 
 ### 2. Tabbed item picker (Foods + Recipes)
 
@@ -168,9 +177,9 @@ After creating a meal (from either the inline "Add Meal" or the day planner), th
 
 The API uses `"monday"` through `"sunday"` for the `day` field, and `"breakfast"`, `"lunch"`, `"dinner"`, `"snack"` for `meal_type`. These are displayed as shortened labels (Mon-Sun) in the day tabs.
 
-### 6. Copy day is inline, not a dialog
+### 6. Copy day uses AlertDialog with Select
 
-Copying a day's assignments to another day uses a native `<select>` + "Copy" button inline below the day slots. This is a simple select+tap interaction with no keyboard involvement.
+Copying a day's assignments to another day uses an `AlertDialog` with a HeroUI `Select` compound component for choosing the target day. The "Copy meals" trigger button appears above the day's meal slots only when the current day has assignments. The dialog heading uses the full day name ("Copy Monday Meals to"). The Copy button is disabled until a target day is selected, and shows pending state during the API call.
 
 ### 7. Plan assignment works from both directions
 
@@ -184,6 +193,30 @@ Both use the same `assignNutritionPlan` mutation (`POST /nutrition_plans/:id/ass
 ### 8. Library listing shows templates only
 
 The nutrition plans list screen (`/library/nutrition-plans`) client-side filters out plans where `client_id !== null`. Only template plans (unassigned) appear in the library. Client-assigned copies are shown on the client detail page in the "Nutrition Plans" section.
+
+### 9. Daily totals vs goal with progress bars
+
+The `DailyTotals` component (defined inline in `nutrition-plan-detail.tsx`) wires up the existing `useGetNutritionPlanMacrosQuery` to show computed daily macro totals against the plan's macros goal. Each macro shows a progress bar color-coded: green (90-110% of goal), red (>120%), yellow (otherwise). Columns where both total and goal are zero are hidden.
+
+### 10. Per-meal macro totals
+
+Each `MealSection` computes calories and protein totals from its items' resolved food/recipe macros using `useMemo`. If `meal.macros` has non-zero server values, those are preferred. Otherwise, a client-side sum scales each item's macros by `weight_g / 100` (or falls back to `amount`). Displayed as "{cal} kcal · {pro}g protein" between the items list and the picker.
+
+### 11. Inline meal name editing
+
+Tapping the meal name in `MealSection` toggles an inline `<Input>` (via callback ref for auto-focus, avoiding the `autoFocus` lint rule). Save fires on blur or Enter. Cancel on Escape. Empty input reverts to the original name. Uses `useUpdateMealMutation`.
+
+### 12. Inline meal item amount editing
+
+Tapping the amount display in `MealItemRow` toggles three inline inputs (amount, unit, weight_g) with Save/Cancel buttons. Uses `useUpdateMealItemMutation`. Only sends changed fields in the PATCH body. Touch targets are 44px minimum (`min-h-11`).
+
+### 13. Serving size quick-fill chips
+
+When adding a food/recipe to a meal, `MealSection` renders the item's `serving_sizes` as tappable chips in a horizontally scrollable row. Tapping a chip auto-fills the amount, unit, and weight_g fields. Manual input change clears the active chip highlight. Same pattern reused in the recipe ingredient list (`ingredient-list.tsx`).
+
+### 14. Zero-value macros goal display
+
+The macros goal grid in the detail page displays an em-dash (`—`) in dimmed color for zero/unset values instead of "0g". This prevents the impression that the coach deliberately set a target of 0.
 
 ---
 
@@ -199,11 +232,14 @@ The nutrition plans list screen (`/library/nutrition-plans`) client-side filters
 | `POST /v1/coach/nutrition_plans/:id/meals`      | `useCreateMealMutation`           | Add meal to plan                   |
 | `DELETE /v1/coach/meals/:id`                    | `useDeleteMealMutation`           | Remove meal                        |
 | `POST /v1/coach/meals/:id/items`                | `useCreateMealItemMutation`       | Add food/recipe to meal            |
+| `PATCH /v1/coach/meals/:id`                     | `useUpdateMealMutation`           | Rename meal (inline editing)       |
 | `DELETE /v1/coach/meal_items/:id`               | `useDeleteMealItemMutation`       | Remove item from meal              |
+| `PATCH /v1/coach/meal_items/:id`                | `useUpdateMealItemMutation`       | Edit item amounts (inline editing) |
 | `POST /v1/coach/nutrition_plans/:id/plan_items` | `useCreatePlanItemMutation`       | Assign meal to day slot            |
 | `DELETE /v1/coach/plan_items/:id`               | `useDeletePlanItemMutation`       | Remove day assignment              |
 | `POST /v1/coach/nutrition_plans/:id/copy-day`   | `useCopyNutritionPlanDayMutation` | Copy day assignments               |
 | `POST /v1/coach/nutrition_plans/:id/assign`     | `useAssignNutritionPlanMutation`  | Copy plan to a client              |
+| `GET /v1/coach/nutrition_plans/:id/macros`      | `useGetNutritionPlanMacrosQuery`  | Computed daily macro totals        |
 | `GET /v1/coach/nutrition_plans?client_id=X`     | `useListNutritionPlansQuery`      | List plans assigned to a client    |
 | `GET /v1/coach/foods`                           | `useListFoodsQuery`               | Food search in picker              |
 | `GET /v1/coach/recipes`                         | `useListRecipesQuery`             | Recipe search in picker            |
@@ -215,9 +251,6 @@ The nutrition plans list screen (`/library/nutrition-plans`) client-side filters
 
 - **Meal reordering** -- `reorderNutritionPlanMeals` mutation exists but drag-and-drop UI is deferred
 - **Meal item reordering** -- position field exists but no drag-and-drop
-- **Meal name editing** -- `updateMeal` mutation exists, inline rename not yet implemented
-- **Meal item editing** -- `updateMealItem` mutation exists, editing amounts not yet implemented
 - **Plan duplication** -- `duplicateNutritionPlan` mutation exists, UI deferred (separate from assignment which is built)
 - **Shopping list** -- `getNutritionPlanShoppingList` endpoint exists, UI deferred
-- **Computed macros** -- `getNutritionPlanMacros` endpoint exists, UI deferred
 - **Tags management** -- tags field exists on plan, not exposed in form yet

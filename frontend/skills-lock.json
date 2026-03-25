@@ -24,6 +24,10 @@
     "mobile-first-design": {
       "source": "local",
       "sourceType": "github"
+    },
+    "adr-management": {
+      "source": "local",
+      "sourceType": "github"
     }
   }
 }

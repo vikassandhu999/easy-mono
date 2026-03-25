@@ -19,6 +19,7 @@ const FORCE_MAP: Record<string, string> = {
 export default function ExerciseCard({exercise}: {exercise: Exercise}) {
   const mechanics = exercise.mechanics ? MECHANICS_MAP[exercise.mechanics] : null;
   const force = exercise.force ? FORCE_MAP[exercise.force] : null;
+  const isSystem = exercise.business_id === null;
   const muscleNames = exercise.muscles.map((m) => m.name).join(', ');
 
   return (
@@ -46,7 +47,12 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{exercise.name}</p>
         {muscleNames ? (
-          <p className="truncate text-xs text-foreground-500">{muscleNames}</p>
+          <p className="truncate text-xs text-foreground-500">
+            {muscleNames}
+            {isSystem && <span className="text-foreground-400"> · system</span>}
+          </p>
+        ) : isSystem ? (
+          <p className="text-xs text-foreground-400">system</p>
         ) : (
           <p className="text-xs text-foreground-400">No muscles assigned</p>
         )}

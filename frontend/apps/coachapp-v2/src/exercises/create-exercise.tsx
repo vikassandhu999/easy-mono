@@ -1,5 +1,6 @@
 import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
@@ -13,6 +14,7 @@ export default function CreateExercise() {
   const [createExercise, {isLoading}] = useCreateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
   const {data: equipmentData} = useListEquipmentQuery();
+  const [images, setImages] = useState<string[]>([]);
 
   const form = useExerciseForm();
 
@@ -30,6 +32,7 @@ export default function CreateExercise() {
         ...(data.equipment_ids?.length && {
           equipment_ids: data.equipment_ids,
         }),
+        ...(images.length > 0 && {images}),
       };
       const result = await createExercise(body).unwrap();
       navigate(`/library/exercises/${result.data.id}`);
@@ -57,9 +60,11 @@ export default function CreateExercise() {
       <ExerciseForm
         equipment={equipmentData?.data ?? []}
         form={form}
+        images={images}
         isSubmitting={isLoading}
         muscles={musclesData?.data ?? []}
         onCancel={() => navigate(ROUTES.EXERCISES)}
+        onImagesChange={setImages}
         onSubmit={onSubmit}
         submitLabel="Create Exercise"
         submittingLabel="Creating..."

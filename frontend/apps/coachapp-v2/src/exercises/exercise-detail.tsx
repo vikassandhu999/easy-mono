@@ -1,10 +1,10 @@
-import {AlertDialog, Button, Chip, Spinner} from '@heroui/react';
-import {ArrowLeft, Dumbbell, Pencil, Trash2} from 'lucide-react';
+import {AlertDialog, Button, Chip, Spinner, toast} from '@heroui/react';
+import {ArrowLeft, Copy, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useDeleteExerciseMutation, useGetExerciseQuery} from '@/api/exercises';
+import {useDeleteExerciseMutation, useDuplicateExerciseMutation, useGetExerciseQuery} from '@/api/exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
   compound: 'Compound',
@@ -31,6 +31,17 @@ export default function ExerciseDetail() {
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetExerciseQuery(id!);
   const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
+  const [duplicateExercise, {isLoading: isDuplicating}] = useDuplicateExerciseMutation();
+
+  const handleDuplicate = async () => {
+    try {
+      const result = await duplicateExercise(id!).unwrap();
+      toast.success('Exercise duplicated');
+      navigate(`/library/exercises/${result.data.id}`);
+    } catch {
+      toast.danger('Failed to duplicate exercise');
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -72,6 +83,7 @@ export default function ExerciseDetail() {
   }
 
   const exercise = data.data;
+  const isSystemExercise = exercise.business_id === null;
   const mechanicsLabel = exercise.mechanics ? MECHANICS_LABEL[exercise.mechanics] : null;
   const forceLabel = exercise.force ? FORCE_LABEL[exercise.force] : null;
   const muscleNames = exercise.muscles.map((m) => m.name);
@@ -89,54 +101,67 @@ export default function ExerciseDetail() {
           <ArrowLeft size={16} />
           Back
         </Button>
+        {!isSystemExercise && (
+          <Button
+            onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+            size="sm"
+            variant="secondary"
+          >
+            <Pencil size={16} />
+            Edit
+          </Button>
+        )}
         <Button
-          onPress={() => navigate(`/library/exercises/${exercise.id}/edit`)}
+          isPending={isDuplicating}
+          onPress={handleDuplicate}
           size="sm"
           variant="secondary"
         >
-          <Pencil size={16} />
-          Edit
+          <Copy size={16} />
+          Duplicate
         </Button>
-        <AlertDialog>
-          <Button
-            size="sm"
-            variant="danger"
-          >
-            <Trash2 size={16} />
-            Delete
-          </Button>
-          <AlertDialog.Backdrop>
-            <AlertDialog.Container>
-              <AlertDialog.Dialog className="sm:max-w-[400px]">
-                <AlertDialog.CloseTrigger />
-                <AlertDialog.Header>
-                  <AlertDialog.Icon status="danger" />
-                  <AlertDialog.Heading>Delete exercise?</AlertDialog.Heading>
-                </AlertDialog.Header>
-                <AlertDialog.Body>
-                  <p>
-                    This will permanently delete <strong>{exercise.name}</strong>. This action cannot be undone.
-                  </p>
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button
-                    slot="close"
-                    variant="tertiary"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    isPending={isDeleting}
-                    onPress={handleDelete}
-                    variant="danger"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </AlertDialog.Footer>
-              </AlertDialog.Dialog>
-            </AlertDialog.Container>
-          </AlertDialog.Backdrop>
-        </AlertDialog>
+        {!isSystemExercise && (
+          <AlertDialog>
+            <Button
+              size="sm"
+              variant="danger"
+            >
+              <Trash2 size={16} />
+              Delete
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-[400px]">
+                  <AlertDialog.CloseTrigger />
+                  <AlertDialog.Header>
+                    <AlertDialog.Icon status="danger" />
+                    <AlertDialog.Heading>Delete exercise?</AlertDialog.Heading>
+                  </AlertDialog.Header>
+                  <AlertDialog.Body>
+                    <p>
+                      This will permanently delete <strong>{exercise.name}</strong>. This action cannot be undone.
+                    </p>
+                  </AlertDialog.Body>
+                  <AlertDialog.Footer>
+                    <Button
+                      slot="close"
+                      variant="tertiary"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      isPending={isDeleting}
+                      onPress={handleDelete}
+                      variant="danger"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </AlertDialog.Footer>
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        )}
       </div>
 
       <div className="max-w-lg">
@@ -198,9 +223,9 @@ export default function ExerciseDetail() {
         )}
 
         {/* Muscles */}
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Target Muscles</h3>
-          {muscleNames.length > 0 ? (
+        {muscleNames.length > 0 && (
+          <section className="border-t border-divider py-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Target Muscles</h3>
             <div className="flex flex-wrap gap-1.5">
               {muscleNames.map((name) => (
                 <Chip
@@ -212,15 +237,13 @@ export default function ExerciseDetail() {
                 </Chip>
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-foreground-400">No muscles assigned.</p>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Equipment */}
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Equipment</h3>
-          {equipmentNames.length > 0 ? (
+        {equipmentNames.length > 0 && (
+          <section className="border-t border-divider py-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Equipment</h3>
             <div className="flex flex-wrap gap-1.5">
               {equipmentNames.map((name) => (
                 <Chip
@@ -232,10 +255,8 @@ export default function ExerciseDetail() {
                 </Chip>
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-foreground-400">No equipment specified.</p>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Images */}
         {exercise.images.length > 0 && (

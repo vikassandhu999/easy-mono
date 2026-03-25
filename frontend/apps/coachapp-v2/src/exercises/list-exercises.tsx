@@ -1,6 +1,6 @@
 import {Button, Input} from '@heroui/react';
-import {ArrowLeft, Plus, Search} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {ArrowLeft, Plus, Search, X} from 'lucide-react';
+import {useCallback, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import InfiniteList from '@/@components/infinite-list';
@@ -8,19 +8,39 @@ import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
-import {type Exercise, type ListExercisesFilters, useExercisesInfiniteQuery} from '@/api/exercises';
+import {
+  type Exercise,
+  type ListExercisesFilters,
+  useExercisesInfiniteQuery,
+  useListMusclesQuery,
+} from '@/api/exercises';
 import ExerciseCard from '@/exercises/components/exercise-card';
 
 export default function ListExercises() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
+
+  const {data: musclesData} = useListMusclesQuery();
+  const muscles = musclesData?.data ?? [];
 
   const debouncedSearch = useDebouncedValue(search);
 
+  const toggleMuscle = useCallback((muscleId: string) => {
+    setSelectedMuscleIds((prev) =>
+      prev.includes(muscleId) ? prev.filter((id) => id !== muscleId) : [...prev, muscleId],
+    );
+  }, []);
+
   const queryArg: ListExercisesFilters | undefined = useMemo(() => {
-    if (!debouncedSearch) return undefined;
-    return {search: debouncedSearch};
-  }, [debouncedSearch]);
+    const hasSearch = Boolean(debouncedSearch);
+    const hasMuscles = selectedMuscleIds.length > 0;
+    if (!hasSearch && !hasMuscles) return undefined;
+    return {
+      ...(hasSearch && {search: debouncedSearch}),
+      ...(hasMuscles && {muscle_ids: selectedMuscleIds}),
+    };
+  }, [debouncedSearch, selectedMuscleIds]);
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
     useExercisesInfiniteQuery(queryArg);
@@ -36,7 +56,7 @@ export default function ListExercises() {
     fetchNextPage,
   });
 
-  const isFiltering = search.length > 0;
+  const isFiltering = search.length > 0 || selectedMuscleIds.length > 0;
 
   return (
     <PageLayout
@@ -80,6 +100,37 @@ export default function ListExercises() {
         </div>
       </div>
 
+      {/* Muscle group filter chips */}
+      {muscles.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+          {muscles.map((muscle) => {
+            const isActive = selectedMuscleIds.includes(muscle.id);
+            return (
+              <button
+                className={`min-h-8 shrink-0 rounded-full px-3 text-xs font-medium transition-colors ${
+                  isActive ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
+                }`}
+                key={muscle.id}
+                onClick={() => toggleMuscle(muscle.id)}
+                type="button"
+              >
+                {muscle.name}
+              </button>
+            );
+          })}
+          {selectedMuscleIds.length > 0 && (
+            <button
+              className="flex min-h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium text-foreground-400 transition-colors hover:text-foreground-500"
+              onClick={() => setSelectedMuscleIds([])}
+              type="button"
+            >
+              <X size={12} />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       <InfiniteList
         emptyState={
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
@@ -87,7 +138,7 @@ export default function ListExercises() {
               <>
                 <p className="text-sm font-medium text-foreground-500">No exercises found</p>
                 <p className="text-xs text-foreground-400">
-                  Try adjusting your search to find what you&apos;re looking for.
+                  Try adjusting your search or filters to find what you&apos;re looking for.
                 </p>
               </>
             ) : (

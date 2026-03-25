@@ -71,8 +71,8 @@ export default function RecipeDetail() {
 
   const recipe = data.data;
   const macroEntries = Object.entries(recipe.macros);
-  const knownMacros = macroEntries.filter(([key]) => key in MACRO_LABELS);
-  const unknownMacros = macroEntries.filter(([key]) => !(key in MACRO_LABELS));
+  const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
+  const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 
   return (
     <PageLayout title="Recipe">
@@ -180,7 +180,7 @@ export default function RecipeDetail() {
         </div>
 
         {/* Cooked weight */}
-        {recipe.cooked_weight_g != null && (
+        {recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Cooked Weight</h3>
             <p className="text-sm font-medium">{recipe.cooked_weight_g}g</p>
@@ -188,7 +188,7 @@ export default function RecipeDetail() {
         )}
 
         {/* Macros */}
-        {macroEntries.length > 0 && (
+        {(knownMacros.length > 0 || unknownMacros.length > 0) && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
               Nutrition per 100g
@@ -224,22 +224,25 @@ export default function RecipeDetail() {
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Ingredients</h3>
             <div className="flex flex-col gap-2">
-              {recipe.recipe_ingredients.map((ingredient, i) => (
-                <div
-                  className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
-                  key={i}
-                >
-                  <span className="font-medium">{ingredient.food.name}</span>
-                  <div className="flex gap-3 text-foreground-500">
-                    {ingredient.amount != null && ingredient.unit && (
-                      <span>
-                        {ingredient.amount} {ingredient.unit}
-                      </span>
-                    )}
-                    {ingredient.weight_g != null && <span>{ingredient.weight_g}g</span>}
+              {recipe.recipe_ingredients.map((ingredient, i) => {
+                const hasAmount = ingredient.amount != null && ingredient.amount !== 0;
+                const hasWeight = ingredient.weight_g != null && ingredient.weight_g !== 0;
+                const amountPart = hasAmount
+                  ? `${ingredient.amount}${ingredient.unit ? ` ${ingredient.unit}` : ''}`
+                  : null;
+                const weightPart = hasWeight ? `${ingredient.weight_g}g` : null;
+                const detail = [amountPart, weightPart].filter(Boolean).join(' · ');
+
+                return (
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-lg border border-divider px-3 py-2 text-sm"
+                    key={i}
+                  >
+                    <span className="min-w-0 flex-1 truncate font-medium">{ingredient.food.name}</span>
+                    {detail && <span className="shrink-0 text-foreground-500">{detail}</span>}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

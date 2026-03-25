@@ -1,7 +1,8 @@
 import {Button, Description, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useCallback, useMemo} from 'react';
-import {useForm} from 'react-hook-form';
+import {Calculator} from 'lucide-react';
+import {useCallback, useMemo, useState} from 'react';
+import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import type {Food} from '@/api/foods';
@@ -78,12 +79,65 @@ export default function RecipeForm({
   onIngredientsChange,
 }: RecipeFormProps) {
   const {
+    control,
     formState: {errors},
     handleSubmit,
     register,
+    setValue,
   } = form;
 
+  const [autoExpandId, setAutoExpandId] = useState<null | string>(null);
   const excludeIds = useMemo(() => ingredients.map((item) => item.food_id), [ingredients]);
+
+  // Watch cooked_weight_g for the auto-compute function
+  const cookedWeightRaw = useWatch({control, name: 'cooked_weight_g'});
+
+  // Check if at least one ingredient has weight_g set (precondition for compute)
+  const canCompute = useMemo(
+    () => ingredients.some((item) => item.weight_g !== '' && item.weight_g != null && Number(item.weight_g) > 0),
+    [ingredients],
+  );
+
+  const computeNutrition = useCallback(() => {
+    // Sum macros across all ingredients with valid weight_g
+    const totals: Record<string, number> = {};
+    let totalWeight = 0;
+
+    for (const item of ingredients) {
+      const wg = Number(item.weight_g);
+      if (!wg || wg <= 0) continue;
+      totalWeight += wg;
+
+      for (const [key, val] of Object.entries(item.food.macros)) {
+        if (typeof val !== 'number') continue;
+        // Scale: food macros are per 100g, so scale by (weight_g / 100)
+        totals[key] = (totals[key] ?? 0) + val * (wg / 100);
+      }
+    }
+
+    if (totalWeight === 0) return;
+
+    // Convert to per-100g of cooked recipe
+    const cookedWeight = Number(cookedWeightRaw);
+    const divisor = cookedWeight > 0 ? cookedWeight : totalWeight;
+    const per100g = (val: number) => Math.round(val * (100 / divisor) * 10) / 10;
+
+    // Map food macro keys → recipe form fields
+    // Food uses "calories" or "calories_per_100g", recipe form uses "calories_per_100g"
+    const caloriesRaw = totals.calories ?? totals.calories_per_100g ?? 0;
+    setValue('calories_per_100g', per100g(caloriesRaw));
+    setValue('protein_g', per100g(totals.protein_g ?? 0));
+    setValue('carbs_g', per100g(totals.carbs_g ?? 0));
+    setValue('fats_g', per100g(totals.fats_g ?? 0));
+
+    // fiber_g and sugar_g — only set if present in ingredient macros
+    if (totals.fiber_g != null) {
+      setValue('fiber_g', per100g(totals.fiber_g));
+    }
+    if (totals.sugar_g != null) {
+      setValue('sugar_g', per100g(totals.sugar_g));
+    }
+  }, [ingredients, cookedWeightRaw, setValue]);
 
   const handleFoodSelect = useCallback(
     (food: Food) => {
@@ -95,6 +149,7 @@ export default function RecipeForm({
         weight_g: '',
       };
       onIngredientsChange([...ingredients, newItem]);
+      setAutoExpandId(food.id);
     },
     [ingredients, onIngredientsChange],
   );
@@ -150,10 +205,23 @@ export default function RecipeForm({
           onSelect={handleFoodSelect}
         />
         <IngredientList
+          autoExpandId={autoExpandId}
           onChange={onIngredientsChange}
           value={ingredients}
         />
       </fieldset>
+
+      {/* Instructions — right after Ingredients to match coach workflow */}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="instructions">Instructions</Label>
+        <TextArea
+          id="instructions"
+          placeholder="Step-by-step preparation instructions..."
+          rows={4}
+          {...register('instructions')}
+        />
+        {errors.instructions && <p className="text-xs text-danger">{errors.instructions.message}</p>}
+      </div>
 
       {/* Cooked weight */}
       <div className="flex flex-col gap-1.5">
@@ -170,7 +238,18 @@ export default function RecipeForm({
 
       {/* Macros per 100g */}
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-semibold">Nutrition per 100g</legend>
+        <div className="flex items-center justify-between gap-2">
+          <legend className="text-sm font-semibold">Nutrition per 100g</legend>
+          <Button
+            isDisabled={!canCompute}
+            onPress={computeNutrition}
+            size="sm"
+            variant="ghost"
+          >
+            <Calculator size={14} />
+            {canCompute ? 'Calculate from ingredients' : 'Set ingredient weights first'}
+          </Button>
+        </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <div className="flex flex-col gap-1.5">
@@ -246,18 +325,6 @@ export default function RecipeForm({
           </div>
         </div>
       </fieldset>
-
-      {/* Instructions */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="instructions">Instructions</Label>
-        <TextArea
-          id="instructions"
-          placeholder="Step-by-step preparation instructions..."
-          rows={4}
-          {...register('instructions')}
-        />
-        {errors.instructions && <p className="text-xs text-danger">{errors.instructions.message}</p>}
-      </div>
 
       {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}

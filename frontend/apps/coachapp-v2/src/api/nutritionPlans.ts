@@ -1,4 +1,6 @@
+import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
+import type {Recipe} from '@/api/recipes';
 
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
@@ -116,7 +118,57 @@ export const nutritionPlansApi = api.injectEndpoints({
       invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}],
     }),
     getNutritionPlan: build.query<ApiResponse<NutritionPlan>, string>({
-      query: (id) => `/v1/coach/nutrition_plans/${id}`,
+      async queryFn(id, _queryApi, _extraOptions, baseQuery) {
+        // 1. Fetch the nutrition plan
+        const planResult = await baseQuery(`/v1/coach/nutrition_plans/${id}`);
+        if (planResult.error) return {error: planResult.error};
+
+        const plan = (planResult.data as ApiResponse<NutritionPlan>).data;
+
+        // 2. Collect unique food_ids and recipe_ids from all meal items
+        const foodIds = new Set<string>();
+        const recipeIds = new Set<string>();
+        for (const meal of plan.meals) {
+          for (const item of meal.meal_items) {
+            if (item.food_id && !item.food) foodIds.add(item.food_id);
+            if (item.recipe_id && !item.recipe) recipeIds.add(item.recipe_id);
+          }
+        }
+
+        // 3. Batch-fetch foods and recipes in parallel
+        const [foodResults, recipeResults] = await Promise.all([
+          Promise.all([...foodIds].map((fid) => baseQuery(`/v1/coach/foods/${fid}`))),
+          Promise.all([...recipeIds].map((rid) => baseQuery(`/v1/coach/recipes/${rid}`))),
+        ]);
+
+        // Build lookup maps
+        const foodMap = new Map<string, Food>();
+        for (const r of foodResults) {
+          if (!r.error && r.data) {
+            const food = (r.data as ApiResponse<Food>).data;
+            foodMap.set(food.id, food);
+          }
+        }
+        const recipeMap = new Map<string, Recipe>();
+        for (const r of recipeResults) {
+          if (!r.error && r.data) {
+            const recipe = (r.data as ApiResponse<Recipe>).data;
+            recipeMap.set(recipe.id, recipe);
+          }
+        }
+
+        // 4. Merge food/recipe into each meal_item
+        const hydratedMeals: Meal[] = plan.meals.map((meal) => ({
+          ...meal,
+          meal_items: meal.meal_items.map((item) => ({
+            ...item,
+            food: item.food ?? (item.food_id ? (foodMap.get(item.food_id) ?? null) : null),
+            recipe: item.recipe ?? (item.recipe_id ? (recipeMap.get(item.recipe_id) ?? null) : null),
+          })),
+        }));
+
+        return {data: {data: {...plan, meals: hydratedMeals}} as ApiResponse<NutritionPlan>};
+      },
       providesTags: (_, __, id) => [
         {type: 'NutritionPlan', id},
         {type: 'Meal', id: getPlanScopedId(id)},

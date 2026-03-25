@@ -4,6 +4,7 @@ import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import type {Client} from '@/api/clients';
+import type {Macros} from '@/api/shared';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
@@ -11,6 +12,7 @@ import {useCreateMealMutation} from '@/api/meals';
 import {
   useAssignNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
+  useGetNutritionPlanMacrosQuery,
   useGetNutritionPlanQuery,
 } from '@/api/nutritionPlans';
 import ClientPicker from '@/clients/components/client-picker';
@@ -44,6 +46,67 @@ function formatDate(dateString: string): string {
   });
 }
 
+const MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
+
+function getProgressColor(percentage: number): string {
+  if (percentage >= 90 && percentage <= 110) return 'bg-success';
+  if (percentage > 120) return 'bg-danger';
+  return 'bg-warning';
+}
+
+function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
+  // Only show columns where total > 0 or goal is set
+  const columns = MACRO_KEYS.filter((key) => {
+    const total = totals[key] ?? 0;
+    const goalVal = goal?.[key] ?? 0;
+    return total > 0 || goalVal > 0;
+  });
+
+  if (columns.length === 0) return null;
+
+  return (
+    <section className="border-t border-divider py-4">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Daily Totals</h3>
+      <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        {columns.map((key) => {
+          const meta = MACRO_LABELS[key];
+          const total = Math.round(totals[key] ?? 0);
+          const goalVal = goal?.[key] ? Math.round(goal[key]) : null;
+          const percentage = goalVal ? Math.round((total / goalVal) * 100) : null;
+
+          return (
+            <div key={key}>
+              <p className="text-xs text-foreground-400">{meta ? meta.label : key}</p>
+              <p className="font-medium">
+                {total}
+                {meta ? meta.unit : ''}
+                {goalVal ? (
+                  <span className="text-foreground-400">
+                    {' '}
+                    / {goalVal}
+                    {meta ? meta.unit : ''}
+                  </span>
+                ) : null}
+              </p>
+              {percentage != null && (
+                <>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-content2">
+                    <div
+                      className={`h-full rounded-full transition-all ${getProgressColor(percentage)}`}
+                      style={{width: `${Math.min(percentage, 100)}%`}}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-xs text-foreground-400">{percentage}%</p>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function NutritionPlanDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
@@ -51,6 +114,7 @@ export default function NutritionPlanDetail() {
   const [deletePlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
   const [createMeal, {isLoading: isCreatingMeal}] = useCreateMealMutation();
+  const {data: macrosData} = useGetNutritionPlanMacrosQuery(id!);
 
   // Inline copy-to-client state
   const [showCopyToClient, setShowCopyToClient] = useState(false);
@@ -269,15 +333,27 @@ export default function NutritionPlanDetail() {
                 return (
                   <div key={key}>
                     <p className="text-xs text-foreground-400">{meta ? meta.label : key}</p>
-                    <p className="font-medium">
-                      {value}
-                      {meta ? meta.unit : ''}
-                    </p>
+                    {value ? (
+                      <p className="font-medium">
+                        {value}
+                        {meta ? meta.unit : ''}
+                      </p>
+                    ) : (
+                      <p className="font-medium text-foreground-300">&mdash;</p>
+                    )}
                   </div>
                 );
               })}
             </div>
           </section>
+        )}
+
+        {/* Daily totals vs goal */}
+        {macrosData?.data && plan.meals.some((m) => m.meal_items.length > 0) && (
+          <DailyTotals
+            goal={plan.macros_goal}
+            totals={macrosData.data}
+          />
         )}
 
         {/* Meals builder */}

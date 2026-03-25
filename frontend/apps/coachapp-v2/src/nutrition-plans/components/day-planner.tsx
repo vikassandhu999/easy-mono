@@ -1,4 +1,6 @@
-import {Button, Spinner} from '@heroui/react';
+import type {Key} from '@heroui/react';
+
+import {AlertDialog, Button, ListBox, Select, Spinner} from '@heroui/react';
 import {Copy, Plus, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -129,19 +131,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
     }
   };
 
-  const handleCopyDay = async () => {
-    if (!copyTargetDay || copyTargetDay === selectedDay) return;
-    try {
-      await copyDay({
-        id: planId,
-        body: {source_day: selectedDay, target_day: copyTargetDay},
-      }).unwrap();
-      setCopyTargetDay('');
-    } catch {
-      // Error handled by RTK Query
-    }
-  };
-
   const dayItems = MEAL_TYPES.map((mt) => {
     const slotKey = `${selectedDay}:${mt.value}`;
     const planItem = planItemMap.get(slotKey);
@@ -179,6 +168,98 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
           );
         })}
       </div>
+
+      {/* Copy day — dialog trigger (tap-only selection = DIALOG per container rules) */}
+      {currentDayHasItems && (
+        <div className="mb-3">
+          <AlertDialog>
+            <Button
+              size="sm"
+              variant="secondary"
+            >
+              <Copy size={14} />
+              Copy meals
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-[400px]">
+                  {(renderProps) => (
+                    <>
+                      <AlertDialog.CloseTrigger />
+                      <AlertDialog.Header>
+                        <AlertDialog.Heading>
+                          Copy {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} Meals to
+                        </AlertDialog.Heading>
+                      </AlertDialog.Header>
+                      <AlertDialog.Body>
+                        <p className="mb-3 text-sm text-foreground-500">
+                          Select a day to copy all meal assignments to.
+                        </p>
+                        <Select
+                          className="w-full"
+                          onChange={(value: Key | Key[] | null) => setCopyTargetDay(value ? String(value) : '')}
+                          placeholder="Select target day..."
+                          value={copyTargetDay || null}
+                          variant="secondary"
+                        >
+                          <Select.Trigger>
+                            <Select.Value />
+                            <Select.Indicator />
+                          </Select.Trigger>
+                          <Select.Popover>
+                            <ListBox>
+                              {DAYS.filter((d) => d.value !== selectedDay).map((day) => (
+                                <ListBox.Item
+                                  id={day.value}
+                                  key={day.value}
+                                  textValue={day.label}
+                                >
+                                  {day.label}
+                                  <ListBox.ItemIndicator />
+                                </ListBox.Item>
+                              ))}
+                            </ListBox>
+                          </Select.Popover>
+                        </Select>
+                      </AlertDialog.Body>
+                      <AlertDialog.Footer>
+                        <Button
+                          onPress={() => {
+                            setCopyTargetDay('');
+                            renderProps.close();
+                          }}
+                          variant="tertiary"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          isDisabled={!copyTargetDay}
+                          isPending={isCopying}
+                          onPress={async () => {
+                            if (!copyTargetDay || copyTargetDay === selectedDay) return;
+                            try {
+                              await copyDay({
+                                id: planId,
+                                body: {source_day: selectedDay, target_day: copyTargetDay},
+                              }).unwrap();
+                              setCopyTargetDay('');
+                              renderProps.close();
+                            } catch {
+                              // Error handled by RTK Query
+                            }
+                          }}
+                        >
+                          {isCopying ? 'Copying...' : 'Copy'}
+                        </Button>
+                      </AlertDialog.Footer>
+                    </>
+                  )}
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        </div>
+      )}
 
       {/* Meal type slots for selected day */}
       <div className="flex flex-col gap-2">
@@ -249,42 +330,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
           );
         })}
       </div>
-
-      {/* Copy day */}
-      {currentDayHasItems && (
-        <div className="mt-3 flex items-center gap-2">
-          <Copy
-            className="text-foreground-400"
-            size={14}
-          />
-          <span className="text-xs text-foreground-400">Copy to:</span>
-          <select
-            aria-label="Copy day target"
-            className="min-h-9 rounded-md border border-divider bg-content1 px-2 text-sm outline-none focus:ring-2 focus:ring-accent"
-            onChange={(e) => setCopyTargetDay(e.target.value)}
-            value={copyTargetDay}
-          >
-            <option value="">Select day...</option>
-            {DAYS.filter((d) => d.value !== selectedDay).map((day) => (
-              <option
-                key={day.value}
-                value={day.value}
-              >
-                {day.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            isDisabled={!copyTargetDay}
-            isPending={isCopying}
-            onPress={handleCopyDay}
-            size="sm"
-            variant="secondary"
-          >
-            {isCopying ? 'Copying...' : 'Copy'}
-          </Button>
-        </div>
-      )}
 
       {/* Hint if no meals exist yet */}
       {meals.length === 0 && (

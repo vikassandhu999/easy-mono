@@ -1,0 +1,72 @@
+defmodule EasyWeb.Public.StorefrontJSON do
+  alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
+
+  def show(%{profile: profile, offers: offers, testimonials: testimonials}) do
+    %{
+      data: %{
+        profile: profile_data(profile),
+        offers: Enum.map(offers, &offer_data/1),
+        testimonials: Enum.map(testimonials, &testimonial_data/1)
+      }
+    }
+  end
+
+  def lead(%{lead: lead}) do
+    %{
+      data: %{
+        id: lead.id,
+        name: lead.name,
+        email: lead.email,
+        status: lead.status
+      }
+    }
+  end
+
+  defp profile_data(%StoreProfile{} = p) do
+    %{
+      slug: p.slug,
+      display_name: p.display_name,
+      bio: p.bio,
+      photo_url: p.photo_url,
+      cover_image_url: p.cover_image_url,
+      social_links: p.social_links,
+      theme_color: p.theme_color,
+      intake_questions: p.intake_questions
+    }
+  end
+
+  defp offer_data(%Offer{} = o) do
+    %{
+      id: o.id,
+      name: o.name,
+      slug: o.slug,
+      description: o.description,
+      type: o.type,
+      duration_text: o.duration_text,
+      price: o.price,
+      currency: o.currency,
+      price_display: o.price_display,
+      features: o.features,
+      is_featured: o.is_featured,
+      cta_text: o.cta_text
+    }
+  end
+
+  defp testimonial_data(%Testimonial{} = t) do
+    %{
+      id: t.id,
+      client_name: t.client_name,
+      client_handle: t.client_handle,
+      quote: t.quote,
+      rating: t.rating,
+      result_tag: t.result_tag,
+      program_name: t.program_name,
+      duration_text: t.duration_text,
+      before_image_url: t.before_image_url,
+      after_image_url: t.after_image_url,
+      before_weight: t.before_weight,
+      after_weight: t.after_weight,
+      is_featured: t.is_featured
+    }
+  end
+end

@@ -135,6 +135,36 @@ defmodule EasyWeb.Router do
     patch "/sessions/:id/complete", WorkoutSessionController, :complete
     patch "/sessions/:id/discard", WorkoutSessionController, :discard
     delete "/sessions/:id", WorkoutSessionController, :delete
+
+    # Storefront
+    get "/storefront/profile", StoreProfileController, :show
+    patch "/storefront/profile", StoreProfileController, :update
+    post "/storefront/check-slug", StoreProfileController, :check_slug
+
+    get "/offers", OfferController, :index
+    post "/offers", OfferController, :create
+    get "/offers/:id", OfferController, :show
+    patch "/offers/:id", OfferController, :update
+    delete "/offers/:id", OfferController, :delete
+
+    get "/testimonials", TestimonialController, :index
+    post "/testimonials", TestimonialController, :create
+    get "/testimonials/:id", TestimonialController, :show
+    patch "/testimonials/:id", TestimonialController, :update
+    delete "/testimonials/:id", TestimonialController, :delete
+
+    get "/leads", LeadController, :index
+    get "/leads/:id", LeadController, :show
+    patch "/leads/:id", LeadController, :update
+    post "/leads/:id/convert", LeadController, :convert
+    delete "/leads/:id", LeadController, :delete
+  end
+
+  scope "/v1/public", EasyWeb.Public do
+    pipe_through :api
+
+    get "/coaches/:slug/profile", StorefrontController, :show
+    post "/coaches/:slug/leads", StorefrontController, :create_lead
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

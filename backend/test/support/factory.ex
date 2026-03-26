@@ -13,6 +13,10 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
+  alias Easy.Storefront.Lead
+  alias Easy.Storefront.Offer
+  alias Easy.Storefront.StoreProfile
+  alias Easy.Storefront.Testimonial
   alias Easy.Training.Exercise
   alias Easy.Training.Equipment
   alias Easy.Training.Muscle
@@ -355,6 +359,155 @@ defmodule Easy.Factory do
       notes: "Session note",
       client: client,
       business: business
+    }
+  end
+
+  # Storefront factories
+
+  def store_profile_factory do
+    %StoreProfile{
+      slug: sequence(:slug, &"coach-#{&1}"),
+      display_name: sequence(:display_name, &"Coach #{&1}"),
+      bio: "Certified personal trainer with 5+ years experience",
+      photo_url: "https://example.com/photo.jpg",
+      cover_image_url: "https://example.com/cover.jpg",
+      social_links: %{
+        "instagram" => "https://instagram.com/coach",
+        "youtube" => "https://youtube.com/@coach"
+      },
+      theme_color: "orange",
+      is_published: false,
+      intake_questions: [
+        %{
+          "label" => "Current weight?",
+          "type" => "number",
+          "required" => true
+        },
+        %{
+          "label" => "Goal?",
+          "type" => "select",
+          "required" => true,
+          "options" => ["Fat loss", "Muscle gain", "Recomposition"]
+        }
+      ],
+      business: build(:business)
+    }
+  end
+
+  def store_profile_attrs_factory do
+    %{
+      "slug" => sequence(:profile_attr_slug, &"coach-#{&1}"),
+      "display_name" => "My Coaching Page",
+      "bio" => "Helping you get fit",
+      "theme_color" => "blue",
+      "social_links" => %{
+        "instagram" => "https://instagram.com/me"
+      },
+      "intake_questions" => [
+        %{
+          "label" => "Weight?",
+          "type" => "number",
+          "required" => true
+        }
+      ]
+    }
+  end
+
+  def offer_factory do
+    %Offer{
+      name: sequence(:offer_name, &"Offer #{&1}"),
+      slug: sequence(:offer_slug, &"offer-#{&1}"),
+      description: "Comprehensive program for results",
+      type: :nutrition_plan,
+      duration_text: "8 weeks",
+      price: 4999,
+      currency: "INR",
+      price_display: "₹4,999",
+      features: ["Custom meal plan", "Weekly check-ins", "WhatsApp support"],
+      is_featured: false,
+      status: :active,
+      position: 0,
+      cta_text: "Get started",
+      business: build(:business)
+    }
+  end
+
+  def offer_attrs_factory do
+    %{
+      "name" => sequence(:offer_attr_name, &"New Offer #{&1}"),
+      "description" => "Great program",
+      "type" => "nutrition_plan",
+      "duration_text" => "12 weeks",
+      "price" => 6999,
+      "currency" => "INR",
+      "price_display" => "₹6,999",
+      "features" => ["Meal plan", "Check-ins"],
+      "is_featured" => true,
+      "cta_text" => "Join now"
+    }
+  end
+
+  def testimonial_factory do
+    %Testimonial{
+      client_name: sequence(:testimonial_name, &"Client #{&1}"),
+      client_handle: "@fitness_client",
+      quote: "Coach completely changed my approach to food and fitness.",
+      rating: 5,
+      result_tag: "Lost 15kg",
+      program_name: "Fat Loss Program",
+      duration_text: "12 weeks",
+      before_image_url: "https://example.com/before.jpg",
+      after_image_url: "https://example.com/after.jpg",
+      before_weight: Decimal.new("95.0"),
+      after_weight: Decimal.new("80.0"),
+      is_featured: false,
+      status: :active,
+      position: 0,
+      business: build(:business)
+    }
+  end
+
+  def testimonial_attrs_factory do
+    %{
+      "client_name" => "Vikas",
+      "client_handle" => "@vikas_fit",
+      "quote" => "Best decision I ever made.",
+      "rating" => 5,
+      "result_tag" => "Lost 10kg",
+      "program_name" => "Body Recomp",
+      "duration_text" => "8 weeks",
+      "before_image_url" => "https://example.com/before.jpg",
+      "after_image_url" => "https://example.com/after.jpg",
+      "before_weight" => "90",
+      "after_weight" => "80"
+    }
+  end
+
+  def lead_factory do
+    business = build(:business)
+
+    %Lead{
+      name: sequence(:lead_name, &"Lead #{&1}"),
+      email: sequence(:lead_email, &"lead-#{&1}@test.com"),
+      phone: "+91 98765 43210",
+      instagram_handle: "@lead_user",
+      intake_answers: %{"weight" => "85", "goal" => "Fat loss"},
+      status: :new,
+      notes: nil,
+      source: "storefront",
+      business: business,
+      offer: build(:offer, business: business)
+    }
+  end
+
+  def lead_attrs_factory do
+    %{
+      "name" => "New Lead",
+      "email" => sequence(:lead_attr_email, &"newlead-#{&1}@test.com"),
+      "phone" => "+91 99999 88888",
+      "instagram_handle" => "@newlead",
+      "intake_answers" => %{"weight" => "90", "goal" => "Muscle gain"},
+      "source" => "storefront"
     }
   end
 end

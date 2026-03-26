@@ -16,7 +16,7 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useGetClientQuery} from '@/api/clients';
+import {useGetClientQuery, useResendClientInviteMutation} from '@/api/clients';
 import {type NutritionPlan, useAssignNutritionPlanMutation, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 import {type TrainingPlan, useAssignTrainingPlanMutation, useListTrainingPlansQuery} from '@/api/trainingPlans';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
@@ -31,7 +31,7 @@ const STATUS_MAP: Record<string, StatusConfig> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'danger', label: 'Archived'},
   inactive: {color: 'default', label: 'Inactive'},
-  pending: {color: 'warning', label: 'Invited'},
+  invited: {color: 'warning', label: 'Invited'},
 };
 
 const PLAN_STATUS_MAP: Record<string, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> = {
@@ -91,22 +91,26 @@ function getWhatsAppUrl(phone: string, message?: string): string {
 }
 
 /**
- * Invite management section — shown only for pending (invited) clients.
+ * Invite management section — shown only for invited clients.
  * Displays invite link with copy/share actions, and resend email option.
  */
 function ClientInviteSection({
   clientEmail,
+  clientId,
   clientName,
   clientPhone,
   insertedAt,
   inviteUrl,
 }: {
-  clientEmail: string;
+  clientEmail: null | string;
+  clientId: string;
   clientName: string;
   clientPhone: null | string;
   insertedAt: string;
-  inviteUrl: null | string | undefined;
+  inviteUrl: null | string;
 }) {
+  const [resendInvite, {isLoading: isResending}] = useResendClientInviteMutation();
+
   const handleCopyLink = async () => {
     if (!inviteUrl) return;
     try {
@@ -114,6 +118,15 @@ function ClientInviteSection({
       toast.success('Invite link copied to clipboard');
     } catch {
       toast.danger('Failed to copy link');
+    }
+  };
+
+  const handleResendEmail = async () => {
+    try {
+      await resendInvite(clientId).unwrap();
+      toast.success('Invite email resent');
+    } catch {
+      toast.danger('Failed to resend invite email.');
     }
   };
 
@@ -165,14 +178,17 @@ function ClientInviteSection({
                 <ClipboardCopy size={16} />
                 Copy link
               </Button>
-              <Button
-                onPress={() => toast.warning('Resend email is not yet supported by the backend')}
-                size="sm"
-                variant="ghost"
-              >
-                <RefreshCw size={14} />
-                Resend email
-              </Button>
+              {clientEmail && (
+                <Button
+                  isPending={isResending}
+                  onPress={handleResendEmail}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <RefreshCw size={14} />
+                  Resend email
+                </Button>
+              )}
             </div>
           </>
         ) : (
@@ -501,10 +517,11 @@ export default function ClientDetail() {
           </div>
         </div>
 
-        {/* Invite section — only for pending (invited) clients */}
-        {client.status === 'pending' && (
+        {/* Invite section — only for invited clients */}
+        {client.status === 'invited' && (
           <ClientInviteSection
             clientEmail={client.email}
+            clientId={client.id}
             clientName={fullName}
             clientPhone={client.phone}
             insertedAt={client.inserted_at}

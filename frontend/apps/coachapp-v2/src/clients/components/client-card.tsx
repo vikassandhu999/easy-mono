@@ -17,7 +17,7 @@ const STATUS_MAP: Record<string, StatusConfig> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'danger', label: 'Archived'},
   inactive: {color: 'default', label: 'Inactive'},
-  pending: {color: 'warning', label: 'Invited'},
+  invited: {color: 'warning', label: 'Invited'},
 };
 
 function getInitials(firstName: null | string, lastName: null | string): string {

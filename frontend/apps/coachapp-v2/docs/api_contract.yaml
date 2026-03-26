@@ -197,6 +197,7 @@ paths:
   /v1/coach/clients/invite:
     post:
       summary: Invite client
+      description: Creates a client invitation. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
       operationId: inviteClient
       security:
         - bearerAuth: []
@@ -206,6 +207,19 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ClientInviteRequest"
+            examples:
+              with_email:
+                value:
+                  email: vikas@email.com
+                  first_name: Vikas
+                  last_name: Sandhu
+                  phone: "+91 98765 43210"
+                  notes: Interested in fat loss program
+              phone_only:
+                value:
+                  first_name: Priya
+                  phone: "+91 99999 88888"
+                  notes: WhatsApp lead from Instagram
       responses:
         "201":
           description: Client invited
@@ -213,13 +227,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ClientResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      email: vikas@email.com
+                      first_name: Vikas
+                      last_name: Sandhu
+                      phone: "+91 98765 43210"
+                      notes: Interested in fat loss program
+                      status: invited
+                      invite_url: "https://app.coachapp.com/invite/abc123def456"
+                      inserted_at: "2026-03-26T10:00:00Z"
+                      updated_at: "2026-03-26T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/clients/{id}/resend-invite:
+    post:
+      summary: Resend invite email
+      description: Re-sends the invitation email for a client with status invited and an email address. Returns 422 if the client is not in invited status or has no email. Frontend pattern - show loading state on the resend button, display success toast on 200, show error toast on 422.
+      operationId: resendClientInvite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Invite email resent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/clients/{id}:
     get:
       summary: Get client
+      description: Returns a single client with full details. For clients with status invited, the response includes invite_url so the coach can view, copy, or share the invitation link at any time. Frontend pattern - cache by id, refetch after mutations.
       operationId: getClient
       security:
         - bearerAuth: []
@@ -3116,19 +3167,24 @@ components:
           format: date-time
     ClientInviteRequest:
       type: object
-      required: [email]
+      description: At least one of email or phone is required. If only phone is provided, no invitation email is sent.
       properties:
         email:
           type: string
           format: email
+          nullable: true
         first_name:
           type: string
+          nullable: true
         last_name:
           type: string
+          nullable: true
         phone:
           type: string
+          nullable: true
         notes:
           type: string
+          nullable: true
     ClientUpdateRequest:
       type: object
       properties:
@@ -3161,13 +3217,14 @@ components:
           type: integer
     Client:
       type: object
-      required: [id, email, status, inserted_at, updated_at]
+      required: [id, status, inserted_at, updated_at]
       properties:
         id:
           type: string
         email:
           type: string
           format: email
+          nullable: true
         first_name:
           type: string
           nullable: true
@@ -3182,6 +3239,11 @@ components:
           nullable: true
         status:
           type: string
+          enum: [active, inactive, invited]
+        invite_url:
+          type: string
+          nullable: true
+          description: Present for clients with status invited. Null for active/inactive clients.
         inserted_at:
           type: string
           format: date-time

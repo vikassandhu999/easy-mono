@@ -123,7 +123,7 @@ function QuickInvite() {
 const STATUS_TABS = [
   {id: 'all', label: 'All'},
   {id: 'active', label: 'Active'},
-  {id: 'pending', label: 'Invited'},
+  {id: 'invited', label: 'Invited'},
   {id: 'inactive', label: 'Inactive'},
 ] as const;
 
@@ -209,7 +209,7 @@ export default function ListClients() {
       </div>
 
       {/* Quick-invite — visible on All and Invited tabs */}
-      {(statusFilter === 'all' || statusFilter === 'pending') && <QuickInvite />}
+      {(statusFilter === 'all' || statusFilter === 'invited') && <QuickInvite />}
 
       <InfiniteList
         emptyState={

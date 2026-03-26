@@ -5,9 +5,9 @@ const PAGE_SIZE = 20;
 
 export type Client = {
   id: string;
-  email: string;
+  email: null | string;
   first_name: null | string;
-  invite_url?: null | string;
+  invite_url: null | string;
   last_name: null | string;
   notes: null | string;
   phone: null | string;
@@ -113,6 +113,16 @@ export const clientsApi = api.injectEndpoints({
             ]
           : [{type: 'Client' as const, id: 'LIST'}],
     }),
+    resendClientInvite: build.mutation<ApiResponse<Client>, string>({
+      query: (id) => ({
+        url: `/v1/coach/clients/${id}/resend-invite`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_, __, id) => [
+        {type: 'Client', id},
+        {type: 'Client', id: 'LIST'},
+      ],
+    }),
     updateClient: build.mutation<ApiResponse<Client>, {body: ClientUpdateRequest; id: string}>({
       query: ({body, id}) => ({
         url: `/v1/coach/clients/${id}`,
@@ -132,5 +142,6 @@ export const {
   useGetClientQuery,
   useInviteClientMutation,
   useListClientsQuery,
+  useResendClientInviteMutation,
   useUpdateClientMutation,
 } = clientsApi;

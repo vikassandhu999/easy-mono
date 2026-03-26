@@ -65,7 +65,7 @@ export default function EditClient() {
 
   return (
     <PageLayout
-      description={client.email}
+      description={client.email ?? undefined}
       title="Edit Client"
     >
       <div className="mb-4">

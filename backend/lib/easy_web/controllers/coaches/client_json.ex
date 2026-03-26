@@ -18,6 +18,7 @@ defmodule EasyWeb.Coaches.ClientJSON do
       phone: client.phone,
       notes: client.notes,
       status: client.status,
+      invite_url: Client.build_invite_url(client),
       inserted_at: client.inserted_at,
       updated_at: client.updated_at
     }

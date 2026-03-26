@@ -43,13 +43,29 @@ defmodule Easy.Clients.Client do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, coach.business_id)
-    |> validate_required([:email, :business_id])
+    |> validate_required([:business_id])
+    |> validate_email_or_phone()
     |> put_change(:status, :invited)
     |> put_change(:invitation_token, generate_token())
     |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
     |> unique_constraint(:email, name: :clients_business_id_email_index)
     |> put_assoc(:creator, coach)
   end
+
+  defp validate_email_or_phone(changeset) do
+    email = get_field(changeset, :email)
+    phone = get_field(changeset, :phone)
+
+    if blank?(email) and blank?(phone) do
+      add_error(changeset, :base, "at least one of email or phone is required")
+    else
+      changeset
+    end
+  end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(client, attrs) do
@@ -99,7 +115,7 @@ defmodule Easy.Clients.Client do
   def invite(claims, invite_attrs) when is_map(claims) do
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
          {:ok, client} <- create_invitation(coach, invite_attrs),
-         :ok <- send_invitation_email(client, coach) do
+         :ok <- maybe_send_invitation_email(client, coach) do
       {:ok, client}
     end
   end
@@ -117,7 +133,10 @@ defmodule Easy.Clients.Client do
     |> Repo.insert()
   end
 
-  defp send_invitation_email(client, coach) do
+  defp maybe_send_invitation_email(%__MODULE__{email: nil}, _coach), do: :ok
+  defp maybe_send_invitation_email(%__MODULE__{email: ""}, _coach), do: :ok
+
+  defp maybe_send_invitation_email(client, coach) do
     business = Repo.preload(coach, :business).business
 
     email =
@@ -131,6 +150,40 @@ defmodule Easy.Clients.Client do
     Easy.MailerDelivery.deliver_async(email,
       metadata: %{email: client.email}
     )
+  end
+
+  @spec resend_invitation(t(), Orgs.Coach.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
+  def resend_invitation(%__MODULE__{status: :invited, email: email} = client, coach)
+      when is_binary(email) and email != "" do
+    updated =
+      client
+      |> change(%{invitation_sent_at: DateTime.utc_now(:second)})
+      |> Repo.update!()
+
+    maybe_send_invitation_email(updated, coach)
+    {:ok, updated}
+  end
+
+  def resend_invitation(%__MODULE__{status: :invited, email: nil}, _coach) do
+    {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
+  end
+
+  def resend_invitation(%__MODULE__{status: :invited, email: ""}, _coach) do
+    {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
+  end
+
+  def resend_invitation(%__MODULE__{}, _coach) do
+    {:error, Easy.Error.unprocessable(%{status: ["client is not in invited status"]})}
+  end
+
+  @spec build_invite_url(t()) :: String.t() | nil
+  def build_invite_url(%__MODULE__{invitation_token: nil}), do: nil
+
+  def build_invite_url(%__MODULE__{invitation_token: token}) do
+    base_url =
+      Application.get_env(:easy, :client_frontend_url, "http://localhost:1313")
+
+    "#{base_url}/invite/#{token}"
   end
 
   defp generate_token do

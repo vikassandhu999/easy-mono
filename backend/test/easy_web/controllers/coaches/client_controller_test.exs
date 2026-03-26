@@ -23,10 +23,22 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["status"] == "invited"
       assert data["id"]
       assert data["inserted_at"]
+      assert data["invite_url"] =~ "/invite/"
     end
 
-    test "returns validation error when email is missing", %{conn: conn} do
+    test "invites with phone only (no email)", %{conn: conn} do
       attrs = build(:client_attrs) |> Map.delete("email")
+
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["phone"] == attrs["phone"]
+      assert data["email"] == nil
+      assert data["status"] == "invited"
+      assert data["invite_url"] =~ "/invite/"
+    end
+
+    test "returns 422 when both email and phone are missing", %{conn: conn} do
+      attrs = build(:client_attrs) |> Map.delete("email") |> Map.delete("phone")
 
       conn = post(conn, "/v1/coach/clients/invite", attrs)
       assert json_response(conn, 422)
@@ -49,6 +61,32 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["email"] == client.email
     end
 
+    test "returns invite_url for invited clients", %{conn: conn, coach: coach, business: business} do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :invited,
+          invitation_token: "test-token-abc123"
+        )
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["invite_url"] =~ "/invite/test-token-abc123"
+    end
+
+    test "returns null invite_url for active clients", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["invite_url"] == nil
+    end
+
     test "returns 404 for non-existent client", %{conn: conn} do
       conn = get(conn, "/v1/coach/clients/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404)
@@ -59,6 +97,64 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
       conn = get(conn, "/v1/coach/clients/#{other_client.id}")
+      assert json_response(conn, 404)
+    end
+  end
+
+  describe "POST /v1/coach/clients/:id/resend-invite" do
+    test "resends invite for invited client with email", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :invited,
+          email: "invited@test.com",
+          invitation_token: "existing-token"
+        )
+
+      conn = post(conn, "/v1/coach/clients/#{client.id}/resend-invite")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == client.id
+      assert data["status"] == "invited"
+    end
+
+    test "returns 422 for invited client without email", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :invited,
+          email: nil,
+          phone: "+91 99999 88888",
+          invitation_token: "existing-token"
+        )
+
+      conn = post(conn, "/v1/coach/clients/#{client.id}/resend-invite")
+      assert json_response(conn, 422)
+    end
+
+    test "returns 422 for active client", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      conn = post(conn, "/v1/coach/clients/#{client.id}/resend-invite")
+      assert json_response(conn, 422)
+    end
+
+    test "returns 404 for other business", %{conn: conn} do
+      other_coach = insert(:coach)
+
+      client =
+        insert(:client, creator: other_coach, business: other_coach.business, status: :invited)
+
+      conn = post(conn, "/v1/coach/clients/#{client.id}/resend-invite")
       assert json_response(conn, 404)
     end
   end

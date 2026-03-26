@@ -57,6 +57,7 @@ defmodule EasyWeb.Router do
     pipe_through :require_coach
 
     post "/clients/invite", ClientController, :invite
+    post "/clients/:id/resend-invite", ClientController, :resend_invite
     get "/clients/:id", ClientController, :show
     patch "/clients/:id", ClientController, :update
     get "/clients", ClientController, :index

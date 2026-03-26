@@ -7,11 +7,18 @@ import type {PublicStorefront} from './types';
 import HeroSection from './hero-section';
 import StorefrontClient from './storefront-client';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+const THEME_COLORS: Record<string, string> = {
+  blue: '#2563EB',
+  green: '#16A34A',
+  orange: '#EA580C',
+  purple: '#7C3AED',
+};
+
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 async function getStorefront(slug: string): Promise<PublicStorefront | null> {
   try {
-    const res = await fetch(`${API_BASE}/v1/public/coaches/${slug}/profile`, {
+    const res = await fetch(`http://192.168.1.8:4000/v1/public/coaches/${slug}/profile`, {
       next: {revalidate: 60}, // ISR: revalidate every 60 seconds
     });
     if (!res.ok) return null;
@@ -19,7 +26,7 @@ async function getStorefront(slug: string): Promise<PublicStorefront | null> {
     return json.data;
   } catch {
     return null;
-  }
+  } 
 }
 
 // ── Dynamic metadata ─────────────────────────────────────────
@@ -59,8 +66,13 @@ export default async function CoachStorefrontPage({
   const offerSlug = typeof resolvedSearchParams.offer === 'string' ? resolvedSearchParams.offer : null;
   const initialOfferId = offerSlug ? (data.offers.find((o) => o.slug === offerSlug)?.id ?? null) : null;
 
+  const themeHex = THEME_COLORS[data.profile.theme_color] ?? THEME_COLORS.orange;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gray-50"
+      style={{'--theme': themeHex} as React.CSSProperties}
+    >
       <HeroSection profile={data.profile} />
 
       <StorefrontClient

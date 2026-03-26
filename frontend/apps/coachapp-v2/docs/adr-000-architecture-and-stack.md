@@ -306,12 +306,14 @@ These were discovered during implementation, not planned upfront:
 | **Foods**           | List, Create, Detail, Edit                                            | `FoodForm`, `FoodCard`, `FoodPicker`, `IngredientList`                                                                                      |
 | **Recipes**         | List, Create, Detail, Edit                                            | `RecipeForm`, `RecipeCard`                                                                                                                  |
 | **Nutrition Plans** | List, Create, Detail/Builder, Edit                                    | `NutritionPlanForm`, `NutritionPlanCard`, `NutritionPlanPicker`, `MealSection`, `MealItemRow`, `MealItemPicker`, `MealPicker`, `DayPlanner` |
+| **Training Plans**  | List, Create, Detail/Builder, Edit                                    | `TrainingPlanForm`, `TrainingPlanCard`, `TrainingPlanPicker`, `WorkoutSection`, `ExerciseElement`, `ExercisePicker`, `SetSchemeInput`, `SetDetailEditor` |
+| **Storefront**      | Hub, My Page, List/Create/Edit Offers, List/Create/Edit Testimonials  | `StorefrontPageForm`, `OfferForm`, `OfferCard`, `TestimonialForm`, `TestimonialCard`, `SharePanel`                                          |
+| **Leads**           | List, Detail                                                          | `LeadCard`                                                                                                                                  |
 | **Library**         | Landing page                                                          | Grid of cards linking to sub-sections                                                                                                       |
 
 ---
 
 ## What's Not Built Yet
 
-- **Training Plans** — API endpoints defined (`trainingPlans.ts`), route constants exist, placeholder screen in place. Full CRUD + builder not implemented.
 - **Dashboard** — Placeholder screen. No design or API integration.
 - **Settings** — Placeholder screen. No design or API integration.

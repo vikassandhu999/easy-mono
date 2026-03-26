@@ -1,7 +1,12 @@
 import {Avatar, Chip} from '@heroui/react';
+import {MessageCircle} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import type {Client} from '@/api/clients';
+
+function getWhatsAppUrl(phone: string): string {
+  return `https://wa.me/${phone.replace(/\D/g, '')}`;
+}
 
 type StatusConfig = {
   color: 'danger' | 'default' | 'success' | 'warning';
@@ -12,7 +17,7 @@ const STATUS_MAP: Record<string, StatusConfig> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'danger', label: 'Archived'},
   inactive: {color: 'default', label: 'Inactive'},
-  pending: {color: 'warning', label: 'Pending'},
+  pending: {color: 'warning', label: 'Invited'},
 };
 
 function getInitials(firstName: null | string, lastName: null | string): string {
@@ -43,8 +48,20 @@ export default function ClientCard({client}: {client: Client}) {
       </Avatar>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{fullName}</p>
-        <p className="truncate text-xs text-foreground-500">{client.email}</p>
+        <p className="truncate text-xs text-foreground-500">{client.email ?? client.phone}</p>
       </div>
+      {client.phone && (
+        <a
+          aria-label="Message on WhatsApp"
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 active:bg-default-200"
+          href={getWhatsAppUrl(client.phone)}
+          onClick={(e) => e.stopPropagation()}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <MessageCircle size={18} />
+        </a>
+      )}
       <Chip
         color={status.color}
         size="sm"

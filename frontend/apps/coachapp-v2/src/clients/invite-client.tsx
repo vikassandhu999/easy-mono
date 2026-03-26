@@ -1,33 +1,166 @@
-import {Button, Input, Label, Spinner, TextArea} from '@heroui/react';
+import {Button, Input, Label, Spinner, TextArea, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ArrowLeft} from 'lucide-react';
+import {ArrowLeft, Check, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
+import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useInviteClientMutation} from '@/api/clients';
+import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 
-const schema = z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  first_name: z.string().optional(),
-  last_name: z.string().optional(),
-  notes: z.string().optional(),
-  phone: z.string().optional(),
-});
+const schema = z
+  .object({
+    email: z.string().email('Invalid email address').or(z.literal('')).optional(),
+    name: z.string().min(1, 'Name is required'),
+    notes: z.string().optional(),
+    phone: z.string().optional(),
+  })
+  .refine((data) => (data.email && data.email.length > 0) || (data.phone && data.phone.length > 0), {
+    message: 'At least one of email or phone is required',
+  });
 
 type InviteClientFormValues = z.infer<typeof schema>;
+
+/**
+ * Split a single name string into first_name and last_name.
+ * First word becomes first_name, the rest becomes last_name.
+ */
+function splitName(name: string): {firstName: string; lastName?: string} {
+  const trimmed = name.trim();
+  const spaceIndex = trimmed.indexOf(' ');
+  if (spaceIndex === -1) {
+    return {firstName: trimmed};
+  }
+  return {
+    firstName: trimmed.slice(0, spaceIndex),
+    lastName: trimmed.slice(spaceIndex + 1).trim() || undefined,
+  };
+}
+
+function getFullName(firstName: null | string, lastName: null | string): string {
+  return [firstName, lastName].filter(Boolean).join(' ') || '';
+}
+
+function getWhatsAppUrl(phone: string | undefined, name: string, inviteUrl: string): string {
+  const message = name
+    ? `Hi ${name}, I've set up your coaching profile! Use this link to get started: ${inviteUrl}`
+    : `I've set up your coaching profile! Use this link to get started: ${inviteUrl}`;
+  const encodedMessage = encodeURIComponent(message);
+  const cleanPhone = phone?.replace(/\D/g, '');
+  return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
+}
+
+/**
+ * Confirmation screen shown after a successful invite.
+ * Displays the invite link with copy and WhatsApp share options.
+ */
+function InviteConfirmation({client, onInviteAnother}: {client: Client; onInviteAnother: () => void}) {
+  const navigate = useNavigate();
+  const inviteUrl = client.invite_url;
+  const fullName = getFullName(client.first_name, client.last_name);
+  const contactLabel = client.email || client.phone || 'your client';
+
+  const handleCopyLink = async () => {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success('Invite link copied to clipboard');
+    } catch {
+      toast.danger('Failed to copy link');
+    }
+  };
+
+  return (
+    <div className="flex max-w-lg flex-col gap-6">
+      {/* Success header */}
+      <div className="flex items-start gap-3 rounded-xl border border-success/20 bg-success/5 p-4">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
+          <Check
+            className="text-success"
+            size={16}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">Invite sent to {contactLabel}</p>
+          <p className="mt-1 text-xs text-foreground-500">
+            {client.email
+              ? 'The email invite has been sent automatically. You can also share the link below directly.'
+              : 'Share the link below with your client to get them started.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Invite link section */}
+      {inviteUrl ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium">Share the invite link with your client:</p>
+          <div className="flex items-center gap-2 rounded-xl border border-divider bg-content1 p-3">
+            <p className="min-w-0 flex-1 truncate text-sm text-foreground-500">{inviteUrl}</p>
+            <Button
+              aria-label="Copy invite link"
+              onPress={handleCopyLink}
+              size="sm"
+              variant="ghost"
+            >
+              <ClipboardCopy size={16} />
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <a
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
+              href={getWhatsAppUrl(client.phone ?? undefined, fullName, inviteUrl)}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <MessageCircle size={16} />
+              Share via WhatsApp
+            </a>
+            <Button
+              onPress={handleCopyLink}
+              variant="secondary"
+            >
+              <ClipboardCopy size={16} />
+              Copy link
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-divider bg-content1 p-4">
+          <p className="text-sm text-foreground-500">
+            The invite has been sent. The invite link will be available once the backend is updated to return it.
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2 border-t border-divider pt-4">
+        <Button onPress={() => navigate(`/clients/${client.id}`)}>View client</Button>
+        <Button
+          onPress={onInviteAnother}
+          variant="secondary"
+        >
+          <UserPlus size={16} />
+          Invite another
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function InviteClient() {
   const navigate = useNavigate();
   const [inviteClient, {isLoading}] = useInviteClientMutation();
+  const [inviteResult, setInviteResult] = useState<Client | null>(null);
 
   const {
     formState: {errors},
     handleSubmit,
     register,
+    reset,
     setError,
   } = useForm<InviteClientFormValues>({
     resolver: zodResolver(schema),
@@ -35,17 +168,29 @@ export default function InviteClient() {
 
   const onSubmit = async (data: InviteClientFormValues) => {
     try {
-      await inviteClient(data).unwrap();
-      navigate(ROUTES.CLIENTS);
+      const {firstName, lastName} = splitName(data.name);
+      const result = await inviteClient({
+        email: data.email || undefined,
+        first_name: firstName,
+        last_name: lastName,
+        notes: data.notes || undefined,
+        phone: data.phone || undefined,
+      }).unwrap();
+      setInviteResult(result.data);
     } catch (err) {
       applyFormErrors(err, 'Failed to invite client. Please try again.', setError);
     }
   };
 
+  const handleInviteAnother = () => {
+    setInviteResult(null);
+    reset();
+  };
+
   return (
     <PageLayout
-      description="Send an invitation to a new client."
-      title="Invite Client"
+      description={inviteResult ? undefined : 'Send an invitation to a new client.'}
+      title={inviteResult ? 'Invite Sent' : 'Invite Client'}
     >
       <div className="mb-4">
         <Button
@@ -57,98 +202,95 @@ export default function InviteClient() {
           Back
         </Button>
       </div>
-      <form
-        className="flex max-w-lg flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">
-            Email <span className="text-danger">*</span>
-          </Label>
-          <Input
-            autoComplete="email"
-            id="email"
-            placeholder="client@example.com"
-            type="email"
-            {...register('email')}
-          />
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {inviteResult ? (
+        <InviteConfirmation
+          client={inviteResult}
+          onInviteAnother={handleInviteAnother}
+        />
+      ) : (
+        <form
+          className="flex max-w-lg flex-col gap-4"
+          onSubmit={handleSubmit(onSubmit)}
+        >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="first_name">First name</Label>
+            <Label htmlFor="name">
+              Name <span className="text-danger">*</span>
+            </Label>
             <Input
-              autoComplete="given-name"
-              id="first_name"
-              placeholder="Jane"
-              {...register('first_name')}
+              autoComplete="name"
+              id="name"
+              placeholder="Vikas Sandhu"
+              {...register('name')}
             />
-            {errors.first_name && <p className="text-xs text-danger">{errors.first_name.message}</p>}
+            {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="last_name">Last name</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              autoComplete="family-name"
-              id="last_name"
-              placeholder="Doe"
-              {...register('last_name')}
+              autoComplete="email"
+              id="email"
+              placeholder="client@example.com"
+              type="email"
+              {...register('email')}
             />
-            {errors.last_name && <p className="text-xs text-danger">{errors.last_name.message}</p>}
+            {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
           </div>
-        </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="phone">Phone</Label>
-          <Input
-            autoComplete="tel"
-            id="phone"
-            placeholder="+1 (555) 000-0000"
-            type="tel"
-            {...register('phone')}
-          />
-          {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
-        </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              autoComplete="tel"
+              id="phone"
+              placeholder="+91 98765 43210"
+              type="tel"
+              {...register('phone')}
+            />
+            {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
+          </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="notes">Notes</Label>
-          <TextArea
-            id="notes"
-            placeholder="Any notes about this client..."
-            rows={3}
-            {...register('notes')}
-          />
-          {errors.notes && <p className="text-xs text-danger">{errors.notes.message}</p>}
-        </div>
+          <p className="text-xs text-foreground-400">At least one of email or phone is required.</p>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="notes">Notes</Label>
+            <TextArea
+              id="notes"
+              placeholder="Any notes about this client..."
+              rows={3}
+              {...register('notes')}
+            />
+            {errors.notes && <p className="text-xs text-danger">{errors.notes.message}</p>}
+          </div>
 
-        <div className="flex flex-row gap-2 pt-2">
-          <Button
-            isPending={isLoading}
-            type="submit"
-          >
-            {isLoading ? (
-              <>
-                <Spinner
-                  color="current"
-                  size="sm"
-                />
-                Sending invite...
-              </>
-            ) : (
-              'Send Invite'
-            )}
-          </Button>
-          <Button
-            onPress={() => navigate(ROUTES.CLIENTS)}
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
+          {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+
+          <div className="flex flex-row gap-2 pt-2">
+            <Button
+              isPending={isLoading}
+              type="submit"
+            >
+              {isLoading ? (
+                <>
+                  <Spinner
+                    color="current"
+                    size="sm"
+                  />
+                  Sending invite...
+                </>
+              ) : (
+                'Send Invite'
+              )}
+            </Button>
+            <Button
+              onPress={() => navigate(ROUTES.CLIENTS)}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
     </PageLayout>
   );
 }

@@ -7,20 +7,21 @@ export type Client = {
   id: string;
   email: string;
   first_name: null | string;
+  invite_url?: null | string;
   last_name: null | string;
-  phone: null | string;
   notes: null | string;
+  phone: null | string;
   status: string;
   inserted_at: string;
   updated_at: string;
 };
 
 export type ClientInviteRequest = {
-  email: string;
+  email?: string;
   first_name?: string;
   last_name?: string;
-  phone?: string;
   notes?: string;
+  phone?: string;
 };
 
 export type ClientUpdateRequest = {

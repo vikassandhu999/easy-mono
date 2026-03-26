@@ -4,19 +4,25 @@ import {
   ClipboardList,
   Dumbbell,
   FolderOpen,
+  Gift,
   LayoutDashboard,
+  MessageSquareQuote,
   Settings,
+  Store,
+  UserCheck,
   Users,
   UtensilsCrossed,
 } from 'lucide-react';
-import {useState} from 'react';
+import {type ReactNode, useState} from 'react';
 import {NavLink, Outlet, useLocation} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
+import {useListLeadsQuery} from '@/api/leads';
 
 const ICON_SIZE = 20;
 
 interface NavItem {
+  badge?: ReactNode;
   icon: JSX.Element;
   label: string;
   path: string;
@@ -40,6 +46,12 @@ const SIDEBAR_TOP: NavItem[] = [
     icon: <Users size={ICON_SIZE} />,
     label: 'Clients',
     path: ROUTES.CLIENTS,
+  },
+  {
+    badge: <LeadCountBadge />,
+    icon: <UserCheck size={ICON_SIZE} />,
+    label: 'Leads',
+    path: ROUTES.LEADS,
   },
 ];
 
@@ -75,6 +87,30 @@ const LIBRARY_GROUP: NavGroup = {
   ],
   label: 'Library',
   pathPrefix: ROUTES.LIBRARY,
+};
+
+// Storefront group — collapsible on desktop sidebar
+const STOREFRONT_GROUP: NavGroup = {
+  icon: <Store size={ICON_SIZE} />,
+  items: [
+    {
+      icon: <Store size={ICON_SIZE} />,
+      label: 'My Page',
+      path: ROUTES.STOREFRONT_PAGE,
+    },
+    {
+      icon: <Gift size={ICON_SIZE} />,
+      label: 'Offers',
+      path: ROUTES.STOREFRONT_OFFERS,
+    },
+    {
+      icon: <MessageSquareQuote size={ICON_SIZE} />,
+      label: 'Testimonials',
+      path: ROUTES.STOREFRONT_TESTIMONIALS,
+    },
+  ],
+  label: 'Storefront',
+  pathPrefix: ROUTES.STOREFRONT,
 };
 
 // Bottom sidebar items
@@ -123,8 +159,21 @@ function SidebarNavItem({item}: {item: NavItem}) {
       to={item.path}
     >
       {item.icon}
-      {item.label}
+      <span className="flex-1">{item.label}</span>
+      {item.badge}
     </NavLink>
+  );
+}
+
+/** Small pill that shows the count of new leads. Hidden when 0. */
+function LeadCountBadge() {
+  const {data} = useListLeadsQuery({status: 'new', limit: 0});
+  const count = data?.count ?? 0;
+  if (count === 0) return null;
+  return (
+    <span className="flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-white">
+      {count > 99 ? '99+' : count}
+    </span>
   );
 }
 
@@ -216,6 +265,7 @@ export default function AppShell() {
               />
             ))}
             <SidebarNavGroupSection group={LIBRARY_GROUP} />
+            <SidebarNavGroupSection group={STOREFRONT_GROUP} />
           </div>
           <div className="space-y-1 border-t border-divider pt-4">
             {SIDEBAR_BOTTOM.map((item) => (

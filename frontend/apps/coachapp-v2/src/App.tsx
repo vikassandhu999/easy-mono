@@ -22,6 +22,8 @@ import CreateFood from '@/foods/create-food';
 import EditFood from '@/foods/edit-food';
 import FoodDetail from '@/foods/food-detail';
 import ListFoods from '@/foods/list-foods';
+import LeadDetail from '@/leads/lead-detail';
+import ListLeads from '@/leads/list-leads';
 import Library from '@/library/library';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
@@ -31,6 +33,14 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
+import CreateOffer from '@/storefront/create-offer';
+import CreateTestimonial from '@/storefront/create-testimonial';
+import EditOffer from '@/storefront/edit-offer';
+import EditTestimonial from '@/storefront/edit-testimonial';
+import ListOffers from '@/storefront/list-offers';
+import ListTestimonials from '@/storefront/list-testimonials';
+import Storefront from '@/storefront/storefront';
+import StorefrontPage from '@/storefront/storefront-page';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
@@ -185,6 +195,46 @@ export default function App() {
         <Route
           element={<EditTrainingPlan />}
           path={ROUTES.EDIT_TRAINING_PLAN}
+        />
+        <Route
+          element={<ListLeads />}
+          path={ROUTES.LEADS}
+        />
+        <Route
+          element={<LeadDetail />}
+          path={ROUTES.LEAD_DETAIL}
+        />
+        <Route
+          element={<Storefront />}
+          path={ROUTES.STOREFRONT}
+        />
+        <Route
+          element={<StorefrontPage />}
+          path={ROUTES.STOREFRONT_PAGE}
+        />
+        <Route
+          element={<ListOffers />}
+          path={ROUTES.STOREFRONT_OFFERS}
+        />
+        <Route
+          element={<CreateOffer />}
+          path={ROUTES.CREATE_OFFER}
+        />
+        <Route
+          element={<EditOffer />}
+          path={ROUTES.EDIT_OFFER}
+        />
+        <Route
+          element={<ListTestimonials />}
+          path={ROUTES.STOREFRONT_TESTIMONIALS}
+        />
+        <Route
+          element={<CreateTestimonial />}
+          path={ROUTES.CREATE_TESTIMONIAL}
+        />
+        <Route
+          element={<EditTestimonial />}
+          path={ROUTES.EDIT_TESTIMONIAL}
         />
         <Route
           element={<Placeholder title="Settings" />}

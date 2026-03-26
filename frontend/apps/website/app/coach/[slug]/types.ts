@@ -3,12 +3,17 @@
 export type PublicStoreProfile = {
   slug: string;
   display_name: string;
+  headline: null | string;
   bio: null | string;
   photo_url: null | string;
   cover_image_url: null | string;
   social_links: Record<string, string>;
   theme_color: string;
   intake_questions: IntakeQuestion[];
+  trust_stats: {label: string; value: string}[];
+  faq_items: {answer: string; question: string}[];
+  whatsapp_cta_enabled: boolean;
+  whatsapp_cta_message: null | string;
 };
 
 export type IntakeQuestion = {

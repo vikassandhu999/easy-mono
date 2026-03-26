@@ -19,10 +19,22 @@ const intakeQuestionSchema = z.object({
   type: z.enum(['text', 'number', 'select']),
 });
 
+const trustStatSchema = z.object({
+  label: z.string().min(1, 'Label is required'),
+  value: z.string().min(1, 'Value is required'),
+});
+
+const faqItemSchema = z.object({
+  answer: z.string().min(1, 'Answer is required'),
+  question: z.string().min(1, 'Question is required'),
+});
+
 const schema = z.object({
   bio: z.string().optional(),
   cover_image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   display_name: z.string().min(1, 'Display name is required'),
+  faq_items: z.array(faqItemSchema),
+  headline: z.string().optional(),
   intake_questions: z.array(intakeQuestionSchema),
   instagram: z.string().optional(),
   is_published: z.boolean(),
@@ -36,7 +48,10 @@ const schema = z.object({
       'Lowercase letters, numbers, and hyphens only. Must start and end with a letter or number.',
     ),
   theme_color: z.enum(['orange', 'blue', 'green', 'purple']),
+  trust_stats: z.array(trustStatSchema),
   whatsapp: z.string().optional(),
+  whatsapp_cta_enabled: z.boolean(),
+  whatsapp_cta_message: z.string().optional(),
   youtube: z.string().optional(),
 });
 
@@ -62,12 +77,14 @@ function profileToFormValues(profile: StoreProfile): FormValues {
     bio: profile.bio ?? '',
     cover_image_url: profile.cover_image_url ?? '',
     display_name: profile.display_name,
+    faq_items: profile.faq_items,
+    headline: profile.headline ?? '',
     instagram: profile.social_links?.instagram ?? '',
-    intake_questions: (profile.intake_questions ?? []).map((q) => ({
-      label: q.label ?? '',
+    intake_questions: profile.intake_questions.map((q) => ({
+      label: q.label,
       options: q.options ?? [],
       required: q.required ?? false,
-      type: q.type ?? 'text',
+      type: q.type,
     })),
     is_published: profile.is_published,
     photo_url: profile.photo_url ?? '',
@@ -75,7 +92,10 @@ function profileToFormValues(profile: StoreProfile): FormValues {
     theme_color: (['blue', 'green', 'orange', 'purple'].includes(profile.theme_color)
       ? profile.theme_color
       : 'orange') as FormValues['theme_color'],
+    trust_stats: profile.trust_stats,
     whatsapp: profile.social_links?.whatsapp ?? '',
+    whatsapp_cta_enabled: profile.whatsapp_cta_enabled,
+    whatsapp_cta_message: profile.whatsapp_cta_message ?? '',
     youtube: profile.social_links?.youtube ?? '',
   };
 }
@@ -84,13 +104,18 @@ const DEFAULT_VALUES: FormValues = {
   bio: '',
   cover_image_url: '',
   display_name: '',
+  faq_items: [],
+  headline: '',
   instagram: '',
   intake_questions: [],
   is_published: false,
   photo_url: '',
   slug: '',
   theme_color: 'orange',
+  trust_stats: [],
   whatsapp: '',
+  whatsapp_cta_enabled: false,
+  whatsapp_cta_message: '',
   youtube: '',
 };
 
@@ -116,6 +141,16 @@ export default function StorefrontPageForm({profile}: {profile: null | StoreProf
   });
 
   const {append, fields, remove} = useFieldArray({control, name: 'intake_questions'});
+  const {
+    append: appendStat,
+    fields: statFields,
+    remove: removeStat,
+  } = useFieldArray({control, name: 'trust_stats'});
+  const {
+    append: appendFaq,
+    fields: faqFields,
+    remove: removeFaq,
+  } = useFieldArray({control, name: 'faq_items'});
 
   const slugValue = watch('slug');
   const originalSlug = profile?.slug;
@@ -159,6 +194,7 @@ export default function StorefrontPageForm({profile}: {profile: null | StoreProf
         bio: data.bio || undefined,
         cover_image_url: data.cover_image_url || undefined,
         display_name: data.display_name,
+        headline: data.headline || undefined,
         intake_questions: data.intake_questions.map((q) => ({
           label: q.label,
           options: q.type === 'select' ? (q.options ?? []).filter(Boolean) : undefined,
@@ -170,6 +206,10 @@ export default function StorefrontPageForm({profile}: {profile: null | StoreProf
         slug: data.slug,
         social_links: socialLinks,
         theme_color: data.theme_color,
+        faq_items: data.faq_items.filter((f) => f.question && f.answer),
+        trust_stats: data.trust_stats.filter((s) => s.value && s.label),
+        whatsapp_cta_enabled: data.whatsapp_cta_enabled,
+        whatsapp_cta_message: data.whatsapp_cta_message || undefined,
       }).unwrap();
       toast.success('Profile saved');
     } catch (err) {
@@ -228,6 +268,17 @@ export default function StorefrontPageForm({profile}: {profile: null | StoreProf
             {...register('display_name')}
           />
           {errors.display_name && <p className="text-xs text-danger">{errors.display_name.message}</p>}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="headline">Headline</Label>
+          <Input
+            id="headline"
+            placeholder="Transform your body in 12 weeks"
+            {...register('headline')}
+          />
+          <Description>Bold text shown above your bio. Leave empty to skip.</Description>
+          {errors.headline && <p className="text-xs text-danger">{errors.headline.message}</p>}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -357,6 +408,136 @@ export default function StorefrontPageForm({profile}: {profile: null | StoreProf
             {...register('whatsapp')}
           />
         </div>
+      </fieldset>
+
+      {/* ── Trust stats section ────────────────────────────── */}
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-2 text-base font-semibold">Trust stats</legend>
+        <p className="text-xs text-foreground-500">
+          Stats shown below your hero section (e.g. &ldquo;500+ Clients&rdquo;, &ldquo;6 Years&rdquo;). Up to 4.
+        </p>
+
+        {statFields.map((field, index) => (
+          <div
+            className="flex items-start gap-2"
+            key={field.id}
+          >
+            <div className="w-24 shrink-0">
+              <Input
+                aria-label="Value"
+                placeholder="500+"
+                {...register(`trust_stats.${index}.value`)}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Input
+                aria-label="Label"
+                placeholder="Clients"
+                {...register(`trust_stats.${index}.label`)}
+              />
+            </div>
+            <Button
+              isIconOnly
+              onPress={() => removeStat(index)}
+              size="sm"
+              variant="ghost"
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        ))}
+
+        {statFields.length < 4 ? (
+          <Button
+            onPress={() => appendStat({label: '', value: ''})}
+            size="sm"
+            variant="ghost"
+          >
+            <Plus size={14} />
+            Add stat
+          </Button>
+        ) : null}
+      </fieldset>
+
+      {/* ── WhatsApp CTA section ────────────────────────────── */}
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-2 text-base font-semibold">WhatsApp CTA</legend>
+
+        <Controller
+          control={control}
+          name="whatsapp_cta_enabled"
+          render={({field}) => (
+            <Switch
+              isSelected={field.value}
+              onChange={field.onChange}
+            >
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Content>
+                <span className="text-sm font-medium">Show WhatsApp button on my page</span>
+              </Switch.Content>
+            </Switch>
+          )}
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="whatsapp_cta_message">Pre-filled message</Label>
+          <Input
+            id="whatsapp_cta_message"
+            placeholder="Hi! I'm interested in your coaching services."
+            {...register('whatsapp_cta_message')}
+          />
+          <Description>Message visitors see when they tap the WhatsApp button.</Description>
+        </div>
+      </fieldset>
+
+      {/* ── FAQ section ────────────────────────────────────── */}
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-2 text-base font-semibold">FAQ</legend>
+        <p className="text-xs text-foreground-500">
+          Common questions shown on your page. Helps overcome visitor hesitation.
+        </p>
+
+        {faqFields.map((field, index) => (
+          <div
+            className="flex flex-col gap-2 rounded-xl border border-divider bg-content1 p-3"
+            key={field.id}
+          >
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <Input
+                  aria-label="Question"
+                  placeholder="How does the coaching work?"
+                  {...register(`faq_items.${index}.question`)}
+                />
+              </div>
+              <Button
+                isIconOnly
+                onPress={() => removeFaq(index)}
+                size="sm"
+                variant="ghost"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+            <TextArea
+              aria-label="Answer"
+              placeholder="After you apply, I'll review your details and create a custom plan..."
+              rows={2}
+              {...register(`faq_items.${index}.answer`)}
+            />
+          </div>
+        ))}
+
+        <Button
+          onPress={() => appendFaq({answer: '', question: ''})}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={14} />
+          Add FAQ
+        </Button>
       </fieldset>
 
       {/* ── Intake form questions section ────────────────────── */}

@@ -2,39 +2,62 @@ import {Star} from 'lucide-react';
 
 import type {PublicTestimonial} from './types';
 
-export default function ResultsSection({testimonials}: {testimonials: PublicTestimonial[]}) {
-  if (testimonials.length === 0) return null;
-
-  // Categorize testimonials
-  const featured = testimonials.filter((t) => t.is_featured && t.before_image_url && t.after_image_url);
-  const photoGrid = testimonials.filter((t) => !t.is_featured && t.before_image_url && t.after_image_url);
+/**
+ * Categorize testimonials into three groups:
+ * - spotlight: featured with before/after photos (shown before offers)
+ * - photoGrid: non-featured with before/after photos
+ * - textOnly: no photos, has a quote
+ */
+export function categorizeTestimonials(testimonials: PublicTestimonial[]) {
+  const spotlight = testimonials.filter((t) => t.is_featured && t.before_image_url && t.after_image_url).slice(0, 2);
+  const spotlightIds = new Set(spotlight.map((t) => t.id));
+  const photoGrid = testimonials.filter(
+    (t) => !spotlightIds.has(t.id) && t.before_image_url && t.after_image_url,
+  );
   const textOnly = testimonials.filter((t) => !t.before_image_url && !t.after_image_url && t.quote);
+  return {photoGrid, spotlight, textOnly};
+}
 
-  const hasPhotos = featured.length > 0 || photoGrid.length > 0;
-  const sectionTitle = hasPhotos ? 'Results' : 'What Clients Say';
+/**
+ * Featured transformation spotlight — shown BEFORE offers to establish credibility.
+ * Maximum 2 testimonials with before/after photos.
+ */
+export function ResultsSpotlight({testimonials}: {testimonials: PublicTestimonial[]}) {
+  if (testimonials.length === 0) return null;
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-      <h2 className="mb-8 text-center text-xl font-bold sm:text-2xl">{sectionTitle}</h2>
+      <h2 className="mb-8 text-center text-xl font-bold sm:text-2xl">Results</h2>
+      <div className="flex flex-col gap-8">
+        {testimonials.map((t) => (
+          <TransformationSpotlight
+            key={t.id}
+            testimonial={t}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
-      {/* Component 1: Transformation spotlight (featured + photos) */}
-      {featured.length > 0 && (
-        <div className="flex flex-col gap-8">
-          {featured.map((t) => (
-            <TransformationSpotlight
-              key={t.id}
-              testimonial={t}
-            />
-          ))}
-        </div>
-      )}
+/**
+ * Remaining results — photo grid + text quotes. Shown AFTER offers.
+ */
+export function ResultsGrid({
+  photoGrid,
+  textOnly,
+}: {
+  photoGrid: PublicTestimonial[];
+  textOnly: PublicTestimonial[];
+}) {
+  if (photoGrid.length === 0 && textOnly.length === 0) return null;
 
-      {/* Component 2: Transformation grid (non-featured + photos) */}
-      {photoGrid.length > 0 && (
-        <div className={featured.length > 0 ? 'mt-10' : ''}>
-          {featured.length > 0 && (
-            <h3 className="mb-4 text-center text-lg font-semibold text-gray-700">More Results</h3>
-          )}
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      {/* Photo grid */}
+      {photoGrid.length > 0 ? (
+        <div>
+          <h2 className="mb-4 text-center text-xl font-bold sm:text-2xl">More Results</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {photoGrid.map((t) => (
               <TransformationGridCard
@@ -44,14 +67,12 @@ export default function ResultsSection({testimonials}: {testimonials: PublicTest
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Component 3: Text testimonial quotes */}
-      {textOnly.length > 0 && (
-        <div className={hasPhotos ? 'mt-10' : ''}>
-          {hasPhotos && (
-            <h3 className="mb-4 text-center text-lg font-semibold text-gray-700">What Clients Say</h3>
-          )}
+      {/* Text quotes */}
+      {textOnly.length > 0 ? (
+        <div className={photoGrid.length > 0 ? 'mt-10' : ''}>
+          <h3 className="mb-4 text-center text-lg font-semibold text-gray-700">What Clients Say</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {textOnly.map((t) => (
               <TextTestimonialCard
@@ -61,7 +82,7 @@ export default function ResultsSection({testimonials}: {testimonials: PublicTest
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

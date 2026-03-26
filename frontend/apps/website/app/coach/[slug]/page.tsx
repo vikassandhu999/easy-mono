@@ -6,6 +6,7 @@ import type {PublicStorefront} from './types';
 
 import HeroSection from './hero-section';
 import StorefrontClient from './storefront-client';
+import TrustBar from './trust-bar';
 
 const THEME_COLORS: Record<string, string> = {
   blue: '#2563EB',
@@ -74,6 +75,7 @@ export default async function CoachStorefrontPage({
       style={{'--theme': themeHex} as React.CSSProperties}
     >
       <HeroSection profile={data.profile} />
+      <TrustBar stats={data.profile.trust_stats} />
 
       <StorefrontClient
         data={data}

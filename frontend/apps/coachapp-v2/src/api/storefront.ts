@@ -16,6 +16,7 @@ export type StoreProfile = {
   id: string;
   slug: string;
   display_name: string;
+  headline: null | string;
   bio: null | string;
   photo_url: null | string;
   cover_image_url: null | string;
@@ -23,6 +24,10 @@ export type StoreProfile = {
   theme_color: string;
   is_published: boolean;
   intake_questions: IntakeQuestion[];
+  trust_stats: {label: string; value: string}[];
+  faq_items: {answer: string; question: string}[];
+  whatsapp_cta_enabled: boolean;
+  whatsapp_cta_message: null | string;
   inserted_at: string;
   updated_at: string;
 };
@@ -32,6 +37,7 @@ export type StoreProfileThemeColor = 'blue' | 'green' | 'orange' | 'purple';
 export type StoreProfileUpsertRequest = {
   slug: string;
   display_name: string;
+  headline?: null | string;
   bio?: null | string;
   photo_url?: null | string;
   cover_image_url?: null | string;
@@ -39,6 +45,10 @@ export type StoreProfileUpsertRequest = {
   theme_color?: StoreProfileThemeColor;
   is_published?: boolean;
   intake_questions?: IntakeQuestion[];
+  trust_stats?: {label: string; value: string}[];
+  faq_items?: {answer: string; question: string}[];
+  whatsapp_cta_enabled?: boolean;
+  whatsapp_cta_message?: null | string;
 };
 
 /** Response wraps `data` as either a StoreProfile or null (when no profile exists yet). */

@@ -2,20 +2,28 @@
 
 import {useState} from 'react';
 
-import type {IntakeQuestion, PublicLeadCreateRequest, PublicOffer} from './types';
+import {Lock, MessageCircle, Star} from 'lucide-react';
+
+import type {IntakeQuestion, PublicLeadCreateRequest, PublicOffer, PublicTestimonial} from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export default function IntakeForm({
+  coachName,
   intakeQuestions,
+  microTestimonial,
   offers,
   selectedOfferId,
   slug,
+  socialLinks,
 }: {
+  coachName: string;
   intakeQuestions: IntakeQuestion[];
+  microTestimonial: PublicTestimonial | null;
   offers: PublicOffer[];
   selectedOfferId: null | string;
   slug: string;
+  socialLinks: Record<string, string>;
 }) {
   const [formState, setFormState] = useState({
     email: '',
@@ -73,6 +81,9 @@ export default function IntakeForm({
   };
 
   if (status === 'submitted') {
+    const instagramHandle = socialLinks.instagram;
+    const whatsappNumber = socialLinks.whatsapp;
+
     return (
       <section
         className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16"
@@ -80,9 +91,35 @@ export default function IntakeForm({
       >
         <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
           <h2 className="text-xl font-bold text-green-800">Application submitted!</h2>
-          <p className="mt-2 text-sm text-green-700">
-            Thank you for your interest. The coach will review your application and get back to you soon.
+          <p className="mt-3 text-sm text-green-700">
+            {coachName} will review your application and get back to you within 24 hours.
           </p>
+
+          {(instagramHandle || whatsappNumber) ? (
+            <div className="mt-6 flex flex-col items-center gap-3">
+              {instagramHandle ? (
+                <a
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  href={instagramHandle.startsWith('http') ? instagramHandle : `https://instagram.com/${instagramHandle.replace('@', '')}`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Follow on Instagram
+                </a>
+              ) : null}
+              {whatsappNumber ? (
+                <a
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <MessageCircle size={16} />
+                  Message on WhatsApp
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
     );
@@ -93,7 +130,7 @@ export default function IntakeForm({
       className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16"
       id="get-started"
     >
-      <h2 className="mb-2 text-center text-xl font-bold sm:text-2xl">Get Started</h2>
+      <h2 className="mb-2 text-center text-xl font-bold sm:text-2xl">Ready to start your transformation?</h2>
 
       {selectedOffer && (
         <p className="mb-6 text-center text-sm text-gray-600">
@@ -258,13 +295,38 @@ export default function IntakeForm({
         )}
 
         <button
-          className="min-h-11 w-full rounded-lg bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+          className="min-h-11 w-full rounded-lg bg-[--theme] px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
           disabled={status === 'submitting'}
           type="submit"
         >
           {status === 'submitting' ? 'Submitting...' : 'Submit application'}
         </button>
+
+        {/* Privacy reassurance */}
+        <p className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+          <Lock size={12} />
+          Your information is private and only shared with the coach.
+        </p>
       </form>
+
+      {/* Micro-testimonial — one text quote for last-second social proof */}
+      {microTestimonial ? (
+        <div className="mt-6 flex flex-col items-center gap-1 rounded-xl border border-gray-100 bg-white p-4 text-center">
+          {microTestimonial.rating ? (
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  className={s <= microTestimonial.rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+                  key={s}
+                  size={12}
+                />
+              ))}
+            </div>
+          ) : null}
+          <p className="text-sm italic text-gray-600">&ldquo;{microTestimonial.quote}&rdquo;</p>
+          <p className="text-xs font-medium text-gray-400">&mdash; {microTestimonial.client_name}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

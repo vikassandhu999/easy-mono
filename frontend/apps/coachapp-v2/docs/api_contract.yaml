@@ -965,40 +965,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/coach/nutrition_plans/{id}/reorder-meals:
-    post:
-      summary: Reorder nutrition plan meals
-      description: Persists drag-and-drop meal ordering inside a nutrition plan editor. Frontend pattern - optimistically reorder locally, then reconcile canonical ordering from the response.
-      operationId: reorderNutritionPlanMeals
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReorderMealsRequest"
-            examples:
-              default:
-                value:
-                  meal_ids:
-                    - 7c7d6259-6b75-4333-ad9d-b8abfc3db0ef
-                    - 3295f5e6-f074-4eab-bb4d-54c9ad95d822
-      responses:
-        "200":
-          description: Meals reordered
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MealListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/nutrition_plans/{id}/macros:
     get:
       summary: Nutrition plan macros
@@ -1077,7 +1043,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List meals for plan
-      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete/reorder.
+      description: Lists meals belonging to a single nutrition plan for plan editor timelines and sidebars. Frontend pattern - cache by plan id and refresh after meal create/update/delete.
       operationId: listMeals
       security:
         - bearerAuth: []
@@ -1118,7 +1084,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update meal
-      description: Updates meal metadata such as name, macros, and position from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
+      description: Updates meal metadata such as name and macros from meal settings editors. Frontend pattern - optimistic patch of selected meal and reconcile with response.
       operationId: updateMeal
       security:
         - bearerAuth: []
@@ -1134,7 +1100,6 @@ paths:
               default:
                 value:
                   name: Breakfast (Training Day)
-                  position: 1
       responses:
         "200":
           description: Meal updated
@@ -2211,6 +2176,661 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  # ── Storefront ──────────────────────────────────────────────
+  /v1/coach/storefront/profile:
+    get:
+      summary: Get store profile
+      description: Returns the coach's storefront profile for the profile editor page. Returns null data if no profile exists yet, signalling the frontend to show the creation form. Frontend pattern - fetch on page mount, cache locally, refetch after any edit.
+      operationId: getStoreProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Store profile (or null if not created)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      summary: Create or update store profile
+      description: Upserts the coach's storefront profile. If no profile exists, creates one (returns 201). If one exists, updates it (returns 200). Frontend pattern - single save button on the profile editor; optimistic update, reconcile with response payload.
+      operationId: upsertStoreProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreProfileUpsertRequest"
+            examples:
+              default:
+                value:
+                  slug: fitness-junction
+                  display_name: Fitness Junction
+                  bio: Certified personal trainer with 6+ years of experience and 500+ transformations.
+                  photo_url: "https://cdn.example.com/coaches/photo.jpg"
+                  cover_image_url: "https://cdn.example.com/coaches/cover.jpg"
+                  social_links:
+                    instagram: "https://instagram.com/fitness_junction"
+                    youtube: "https://youtube.com/@fitnessjunction"
+                    whatsapp: "+91 98765 43210"
+                  theme_color: orange
+                  is_published: true
+                  intake_questions:
+                    - label: "Current weight?"
+                      type: number
+                      required: true
+                    - label: "Goal?"
+                      type: select
+                      required: true
+                      options: [Fat loss, Muscle gain, Recomposition]
+      responses:
+        "200":
+          description: Store profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreProfileResponse"
+        "201":
+          description: Store profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreProfileResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      slug: fitness-junction
+                      display_name: Fitness Junction
+                      bio: Certified personal trainer with 6+ years of experience.
+                      photo_url: "https://cdn.example.com/coaches/photo.jpg"
+                      cover_image_url: "https://cdn.example.com/coaches/cover.jpg"
+                      social_links:
+                        instagram: "https://instagram.com/fitness_junction"
+                      theme_color: orange
+                      is_published: true
+                      intake_questions:
+                        - label: "Current weight?"
+                          type: number
+                          required: true
+                      inserted_at: "2026-03-26T10:00:00Z"
+                      updated_at: "2026-03-26T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/storefront/check-slug:
+    post:
+      summary: Check slug availability
+      description: Checks whether a storefront slug is available for use. Frontend should call this on slug input blur or debounced keystrokes to give real-time feedback in the profile editor. Frontend pattern - debounce 300ms, show green check or red X inline.
+      operationId: checkSlugAvailability
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlugCheckRequest"
+            examples:
+              default:
+                value:
+                  slug: fitness-junction
+      responses:
+        "200":
+          description: Slug availability result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlugCheckResponse"
+              examples:
+                available:
+                  value:
+                    available: true
+                taken:
+                  value:
+                    available: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  # ── Offers ──────────────────────────────────────────────────
+  /v1/coach/offers:
+    post:
+      summary: Create offer
+      description: Creates a coaching offer (program/service) for the storefront. Slug is auto-generated from the name. Frontend pattern - optimistic insert into offer list, reconcile with 201 payload. Navigate to offer detail after creation.
+      operationId: createOffer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Fat Loss Program
+                  description: Comprehensive 8-week fat loss program with custom meal plans and weekly check-ins.
+                  type: nutrition_plan
+                  duration_text: 8 weeks
+                  price: 4999
+                  currency: INR
+                  price_display: "₹4,999"
+                  features: [Custom meal plan, Weekly check-ins, WhatsApp support]
+                  is_featured: true
+                  cta_text: Get started
+      responses:
+        "201":
+          description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                      name: Fat Loss Program
+                      slug: fat-loss-program
+                      description: Comprehensive 8-week fat loss program.
+                      type: nutrition_plan
+                      duration_text: 8 weeks
+                      price: 4999
+                      currency: INR
+                      price_display: "₹4,999"
+                      features: [Custom meal plan, Weekly check-ins, WhatsApp support]
+                      is_featured: true
+                      status: active
+                      position: 0
+                      cta_text: Get started
+                      inserted_at: "2026-03-26T10:00:00Z"
+                      updated_at: "2026-03-26T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List offers
+      description: Returns all offers for the coach's business, ordered by position. Powers the offer management list in the storefront section. Frontend pattern - fetch on mount, cache locally, refetch after any create/update/delete.
+      operationId: listOffers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Offers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/offers/{id}:
+    get:
+      summary: Get offer
+      description: Returns a single offer for the edit form or detail view. Frontend pattern - cache by id, refetch after edit.
+      operationId: getOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Offer details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update offer
+      description: Updates an existing offer. Slug is auto-regenerated when name changes. Frontend pattern - optimistic update in local state, reconcile with response payload.
+      operationId: updateOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferUpdateRequest"
+      responses:
+        "200":
+          description: Offer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete offer
+      description: Permanently deletes an offer. Leads referencing this offer retain their offer_id but the offer data will be nil. Frontend pattern - confirm dialog, then remove from local list on 204.
+      operationId: deleteOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Offer deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  # ── Testimonials ────────────────────────────────────────────
+  /v1/coach/testimonials:
+    post:
+      summary: Create testimonial
+      description: Creates a client testimonial or transformation result for the storefront. At least one of quote or before_image_url is required. If both before_weight and after_weight are provided and result_tag is empty, the server auto-suggests a result tag. Frontend pattern - redirect to testimonial list after creation.
+      operationId: createTestimonial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestimonialCreateRequest"
+            examples:
+              full_transformation:
+                value:
+                  client_name: Vikas
+                  client_handle: "@vikas_fitness"
+                  quote: Coach completely changed my approach to food. I never thought I could lose weight without starving.
+                  rating: 5
+                  result_tag: Lost 15kg
+                  program_name: Fat Loss Program
+                  duration_text: 12 weeks
+                  before_image_url: "https://cdn.example.com/before.jpg"
+                  after_image_url: "https://cdn.example.com/after.jpg"
+                  before_weight: 95
+                  after_weight: 80
+                  is_featured: true
+              text_only:
+                value:
+                  client_name: Priya S.
+                  quote: Best decision I ever made. The weekly check-ins kept me accountable.
+                  rating: 5
+                  program_name: Body Recomp
+                  duration_text: 8 weeks
+      responses:
+        "201":
+          description: Testimonial created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestimonialResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: c3d4e5f6-a7b8-9012-cdef-123456789012
+                      client_name: Vikas
+                      client_handle: "@vikas_fitness"
+                      quote: Coach completely changed my approach to food.
+                      rating: 5
+                      result_tag: Lost 15kg
+                      program_name: Fat Loss Program
+                      duration_text: 12 weeks
+                      before_image_url: "https://cdn.example.com/before.jpg"
+                      after_image_url: "https://cdn.example.com/after.jpg"
+                      before_weight: "95.0"
+                      after_weight: "80.0"
+                      is_featured: true
+                      status: active
+                      position: 0
+                      inserted_at: "2026-03-26T10:00:00Z"
+                      updated_at: "2026-03-26T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List testimonials
+      description: Returns all testimonials for the coach's business, ordered by position. Powers the testimonial management list. Frontend pattern - fetch on mount, cache locally, refetch after mutations.
+      operationId: listTestimonials
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Testimonials list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestimonialListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/testimonials/{id}:
+    get:
+      summary: Get testimonial
+      description: Returns a single testimonial for the edit form. Frontend pattern - cache by id, refetch after edit.
+      operationId: getTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Testimonial details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestimonialResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update testimonial
+      description: Updates an existing testimonial. Same validation rules as create apply. Frontend pattern - optimistic update in local state, reconcile with response.
+      operationId: updateTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestimonialUpdateRequest"
+      responses:
+        "200":
+          description: Testimonial updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestimonialResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete testimonial
+      description: Permanently deletes a testimonial. Frontend pattern - confirm dialog, then remove from local list on 204.
+      operationId: deleteTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Testimonial deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  # ── Leads ───────────────────────────────────────────────────
+  /v1/coach/leads:
+    get:
+      summary: List leads
+      description: Returns leads for the coach's business with optional status filter. Powers the leads management section with tab-based filtering (All/New/Contacted/Converted/Rejected). Frontend pattern - fetch with status param on tab change, cache per tab, refetch after status updates.
+      operationId: listLeads
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [new, contacted, converted, rejected]
+      responses:
+        "200":
+          description: Leads list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/coach/leads/{id}:
+    get:
+      summary: Get lead
+      description: Returns a single lead with offer and client preloads for the lead detail page. Shows intake answers, contact info, and conversion status. Frontend pattern - fetch on detail page mount, cache by id.
+      operationId: getLead
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Lead details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update lead
+      description: Updates lead status and/or private notes. Used for status progression (new -> contacted -> converted/rejected) and adding coach notes. Frontend pattern - optimistic update on status change, refetch lead list counts.
+      operationId: updateLead
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdateRequest"
+            examples:
+              status_change:
+                value:
+                  status: contacted
+              add_note:
+                value:
+                  notes: Followed up via WhatsApp, interested in 8-week program.
+      responses:
+        "200":
+          description: Lead updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete lead
+      description: Permanently deletes a lead. Frontend pattern - confirm dialog, then remove from local list on 204.
+      operationId: deleteLead
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Lead deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/leads/{id}/convert:
+    post:
+      summary: Convert lead to client
+      description: Converts a lead into a client record. Creates a new client with the lead's contact info, sets lead status to converted, and links the client. Frontend pattern - show confirmation dialog, on success navigate to the new client detail page using client.id from the response.
+      operationId: convertLead
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Lead converted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadResponse"
+              examples:
+                converted:
+                  value:
+                    data:
+                      id: d4e5f6a7-b8c9-0123-def0-123456789abc
+                      name: Vikas
+                      email: vikas@email.com
+                      phone: "+91 98765 43210"
+                      status: converted
+                      client:
+                        id: e5f6a7b8-c9d0-1234-ef01-23456789abcd
+                        email: vikas@email.com
+                        first_name: Vikas
+                      offer:
+                        id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                        name: Fat Loss Program
+                        price_display: "₹4,999"
+                        duration_text: 8 weeks
+                      inserted_at: "2026-03-26T08:00:00Z"
+                      updated_at: "2026-03-26T10:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  # ── Public Storefront ───────────────────────────────────────
+  /v1/public/coaches/{slug}/profile:
+    get:
+      summary: Get public storefront
+      description: Returns the coach's public storefront page data including profile, active offers, and active testimonials. Only returns published profiles. This endpoint is unauthenticated and powers the public landing page at coachapp.com/coach/{slug}. Frontend pattern - fetch on page load, render the full storefront page. Cache aggressively with short TTL.
+      operationId: getPublicStorefront
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public storefront data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicStorefrontResponse"
+              examples:
+                default:
+                  value:
+                    data:
+                      profile:
+                        slug: fitness-junction
+                        display_name: Fitness Junction
+                        bio: Certified trainer with 6+ years experience.
+                        photo_url: "https://cdn.example.com/photo.jpg"
+                        cover_image_url: "https://cdn.example.com/cover.jpg"
+                        social_links:
+                          instagram: "https://instagram.com/fitness_junction"
+                        theme_color: orange
+                        intake_questions:
+                          - label: "Current weight?"
+                            type: number
+                            required: true
+                      offers:
+                        - id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                          name: Fat Loss Program
+                          slug: fat-loss-program
+                          description: Comprehensive fat loss program.
+                          type: nutrition_plan
+                          duration_text: 8 weeks
+                          price: 4999
+                          currency: INR
+                          price_display: "₹4,999"
+                          features: [Custom meal plan, Weekly check-ins]
+                          is_featured: true
+                          cta_text: Get started
+                      testimonials:
+                        - id: c3d4e5f6-a7b8-9012-cdef-123456789012
+                          client_name: Vikas
+                          client_handle: "@vikas_fitness"
+                          quote: Coach changed my life.
+                          rating: 5
+                          result_tag: Lost 15kg
+                          before_image_url: "https://cdn.example.com/before.jpg"
+                          after_image_url: "https://cdn.example.com/after.jpg"
+                          is_featured: true
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/public/coaches/{slug}/leads:
+    post:
+      summary: Submit lead from public storefront
+      description: Creates a new lead from the public intake form. No authentication required. Accepts the prospect's contact info and intake form answers. The offer can be specified via offer_id or offer_slug. Frontend pattern - show success message after 201, optionally redirect to a thank-you view.
+      operationId: createPublicLead
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicLeadCreateRequest"
+            examples:
+              default:
+                value:
+                  name: Vikas
+                  email: vikas@email.com
+                  phone: "+91 98765 43210"
+                  instagram_handle: "@vikas_fit"
+                  offer_id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  intake_answers:
+                    weight: "90"
+                    goal: Fat loss
+                    diet_type: Non-veg
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLeadResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: d4e5f6a7-b8c9-0123-def0-123456789abc
+                      name: Vikas
+                      email: vikas@email.com
+                      status: new
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
 components:
   securitySchemes:
     bearerAuth:
@@ -2944,14 +3564,6 @@ components:
           type: string
         target_day:
           type: string
-    ReorderMealsRequest:
-      type: object
-      required: [meal_ids]
-      properties:
-        meal_ids:
-          type: array
-          items:
-            type: string
     ShoppingListResponse:
       type: object
       required: [data]
@@ -2996,8 +3608,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
     MealUpdateRequest:
       type: object
       properties:
@@ -3005,8 +3615,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
     MealResponse:
       type: object
       required: [data]
@@ -3026,7 +3634,7 @@ components:
     Meal:
       type: object
       required:
-        [id, name, position, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
+        [id, name, meal_items, creator_id, business_id, plan_id, inserted_at, updated_at]
       properties:
         id:
           type: string
@@ -3034,8 +3642,6 @@ components:
           type: string
         macros:
           $ref: "#/components/schemas/Macros"
-        position:
-          type: integer
         meal_items:
           type: array
           items:
@@ -3951,3 +4557,658 @@ components:
       type: object
       additionalProperties:
         type: number
+    # ── Storefront Schemas ──────────────────────────────────────
+    StoreProfileUpsertRequest:
+      type: object
+      required: [slug, display_name]
+      properties:
+        slug:
+          type: string
+          minLength: 3
+          maxLength: 60
+          pattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        display_name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+          nullable: true
+        social_links:
+          type: object
+          additionalProperties:
+            type: string
+        theme_color:
+          type: string
+          enum: [orange, blue, green, purple]
+        is_published:
+          type: boolean
+        intake_questions:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              type:
+                type: string
+                enum: [text, number, select]
+              required:
+                type: boolean
+              options:
+                type: array
+                items:
+                  type: string
+    StoreProfile:
+      type: object
+      required: [id, slug, display_name, is_published, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        display_name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+          nullable: true
+        social_links:
+          type: object
+          additionalProperties:
+            type: string
+        theme_color:
+          type: string
+        is_published:
+          type: boolean
+        intake_questions:
+          type: array
+          items:
+            type: object
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    StoreProfileResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/StoreProfile"
+            - type: "null"
+    SlugCheckRequest:
+      type: object
+      required: [slug]
+      properties:
+        slug:
+          type: string
+    SlugCheckResponse:
+      type: object
+      required: [available]
+      properties:
+        available:
+          type: boolean
+    # ── Offer Schemas ───────────────────────────────────────────
+    OfferCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 5000
+          nullable: true
+        type:
+          type: string
+          enum: [nutrition_plan, training_plan, combo, consultation, other]
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        price:
+          type: integer
+          minimum: 0
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        price_display:
+          type: string
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+        is_featured:
+          type: boolean
+        cta_text:
+          type: string
+          nullable: true
+        position:
+          type: integer
+    OfferUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 5000
+          nullable: true
+        type:
+          type: string
+          enum: [nutrition_plan, training_plan, combo, consultation, other]
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        price:
+          type: integer
+          minimum: 0
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        price_display:
+          type: string
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+        is_featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        cta_text:
+          type: string
+          nullable: true
+        position:
+          type: integer
+    Offer:
+      type: object
+      required: [id, name, slug, is_featured, status, position, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [nutrition_plan, training_plan, combo, consultation, other]
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        price:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        price_display:
+          type: string
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+        is_featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        position:
+          type: integer
+        cta_text:
+          type: string
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OfferResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Offer"
+    OfferListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Offer"
+        count:
+          type: integer
+    # ── Testimonial Schemas ─────────────────────────────────────
+    TestimonialCreateRequest:
+      type: object
+      required: [client_name]
+      properties:
+        client_name:
+          type: string
+        client_handle:
+          type: string
+          nullable: true
+        quote:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        result_tag:
+          type: string
+          nullable: true
+        program_name:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        before_image_url:
+          type: string
+          nullable: true
+        after_image_url:
+          type: string
+          nullable: true
+        before_weight:
+          type: number
+          nullable: true
+        after_weight:
+          type: number
+          nullable: true
+        is_featured:
+          type: boolean
+        position:
+          type: integer
+    TestimonialUpdateRequest:
+      type: object
+      properties:
+        client_name:
+          type: string
+        client_handle:
+          type: string
+          nullable: true
+        quote:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        result_tag:
+          type: string
+          nullable: true
+        program_name:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        before_image_url:
+          type: string
+          nullable: true
+        after_image_url:
+          type: string
+          nullable: true
+        before_weight:
+          type: number
+          nullable: true
+        after_weight:
+          type: number
+          nullable: true
+        is_featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        position:
+          type: integer
+    Testimonial:
+      type: object
+      required: [id, client_name, is_featured, status, position, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        client_name:
+          type: string
+        client_handle:
+          type: string
+          nullable: true
+        quote:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        result_tag:
+          type: string
+          nullable: true
+        program_name:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        before_image_url:
+          type: string
+          nullable: true
+        after_image_url:
+          type: string
+          nullable: true
+        before_weight:
+          type: string
+          nullable: true
+        after_weight:
+          type: string
+          nullable: true
+        is_featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        position:
+          type: integer
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TestimonialResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Testimonial"
+    TestimonialListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Testimonial"
+        count:
+          type: integer
+    # ── Lead Schemas ────────────────────────────────────────────
+    LeadUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, contacted, converted, rejected]
+        notes:
+          type: string
+          nullable: true
+    OfferBrief:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price_display:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+    ClientBrief:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+    Lead:
+      type: object
+      required: [id, name, email, phone, status, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        instagram_handle:
+          type: string
+          nullable: true
+        intake_answers:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum: [new, contacted, converted, rejected]
+        notes:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        offer:
+          oneOf:
+            - $ref: "#/components/schemas/OfferBrief"
+            - type: "null"
+        client:
+          oneOf:
+            - $ref: "#/components/schemas/ClientBrief"
+            - type: "null"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    LeadResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Lead"
+    LeadListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lead"
+        count:
+          type: integer
+    # ── Public Storefront Schemas ───────────────────────────────
+    PublicLeadCreateRequest:
+      type: object
+      required: [name, email, phone]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        instagram_handle:
+          type: string
+          nullable: true
+        offer_id:
+          type: string
+          nullable: true
+        offer_slug:
+          type: string
+          nullable: true
+        intake_answers:
+          type: object
+          additionalProperties: true
+        source:
+          type: string
+          nullable: true
+    PublicLeadResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [id, name, email, status]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+            status:
+              type: string
+    PublicStoreProfile:
+      type: object
+      required: [slug, display_name]
+      properties:
+        slug:
+          type: string
+        display_name:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+        cover_image_url:
+          type: string
+          nullable: true
+        social_links:
+          type: object
+          additionalProperties:
+            type: string
+        theme_color:
+          type: string
+        intake_questions:
+          type: array
+          items:
+            type: object
+    PublicOffer:
+      type: object
+      required: [id, name, slug, is_featured]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        price:
+          type: integer
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        price_display:
+          type: string
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+        is_featured:
+          type: boolean
+        cta_text:
+          type: string
+          nullable: true
+    PublicTestimonial:
+      type: object
+      required: [id, client_name, is_featured]
+      properties:
+        id:
+          type: string
+        client_name:
+          type: string
+        client_handle:
+          type: string
+          nullable: true
+        quote:
+          type: string
+          nullable: true
+        rating:
+          type: integer
+          nullable: true
+        result_tag:
+          type: string
+          nullable: true
+        program_name:
+          type: string
+          nullable: true
+        duration_text:
+          type: string
+          nullable: true
+        before_image_url:
+          type: string
+          nullable: true
+        after_image_url:
+          type: string
+          nullable: true
+        before_weight:
+          type: string
+          nullable: true
+        after_weight:
+          type: string
+          nullable: true
+        is_featured:
+          type: boolean
+    PublicStorefrontResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [profile, offers, testimonials]
+          properties:
+            profile:
+              $ref: "#/components/schemas/PublicStoreProfile"
+            offers:
+              type: array
+              items:
+                $ref: "#/components/schemas/PublicOffer"
+            testimonials:
+              type: array
+              items:
+                $ref: "#/components/schemas/PublicTestimonial"

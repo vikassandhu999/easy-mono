@@ -69,10 +69,6 @@ export type CopyDayRequest = {
   target_day: string;
 };
 
-export type ReorderMealsRequest = {
-  meal_ids: string[];
-};
-
 export type AssignNutritionPlanRequest = {
   client_id: string;
 };
@@ -287,17 +283,6 @@ export const nutritionPlansApi = api.injectEndpoints({
         {type: 'PlanItem', id: getPlanScopedId(id)},
       ],
     }),
-    reorderNutritionPlanMeals: build.mutation<ApiListResponse<Meal>, {body: ReorderMealsRequest; id: string}>({
-      query: ({body, id}) => ({
-        url: `/v1/coach/nutrition_plans/${id}/reorder-meals`,
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: (_, __, {id}) => [
-        {type: 'NutritionPlan', id},
-        {type: 'Meal', id: getPlanScopedId(id)},
-      ],
-    }),
     getNutritionPlanShoppingList: build.query<ApiResponse<ShoppingListItem[]>, string>({
       query: (id) => `/v1/coach/nutrition_plans/${id}/shopping-list`,
       providesTags: (_, __, id) => [{type: 'NutritionPlan', id}],
@@ -370,7 +355,6 @@ export const {
   useListNutritionPlansQuery,
   useListPlanItemsQuery,
   useNutritionPlansInfiniteQuery,
-  useReorderNutritionPlanMealsMutation,
   useUpdateNutritionPlanMutation,
   useUpdatePlanItemMutation,
 } = nutritionPlansApi;

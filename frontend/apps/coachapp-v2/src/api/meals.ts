@@ -60,7 +60,6 @@ export type MealCreateRequest = {
 export type MealUpdateRequest = {
   name?: string;
   macros?: Macros;
-  position?: number;
 };
 
 export type ListMealsParams = {

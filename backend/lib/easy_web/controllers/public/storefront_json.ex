@@ -31,7 +31,12 @@ defmodule EasyWeb.Public.StorefrontJSON do
       cover_image_url: p.cover_image_url,
       social_links: p.social_links,
       theme_color: p.theme_color,
-      intake_questions: p.intake_questions
+      intake_questions: p.intake_questions,
+      headline: p.headline,
+      trust_stats: p.trust_stats,
+      faq_items: p.faq_items,
+      whatsapp_cta_enabled: p.whatsapp_cta_enabled,
+      whatsapp_cta_message: p.whatsapp_cta_message
     }
   end
 

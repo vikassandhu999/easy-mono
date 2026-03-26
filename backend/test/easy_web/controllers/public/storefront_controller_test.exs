@@ -29,6 +29,29 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
       assert length(data["testimonials"]) == 1
     end
 
+    test "returns v2 fields in profile", %{business: _business, profile: profile} do
+      # Update profile with v2 fields
+      Easy.Repo.update!(
+        Ecto.Changeset.change(profile, %{
+          headline: "Transform your body",
+          trust_stats: [%{"value" => "500+", "label" => "Clients"}],
+          faq_items: [%{"question" => "How?", "answer" => "Custom plans."}],
+          whatsapp_cta_enabled: true,
+          whatsapp_cta_message: "Hi coach!"
+        })
+      )
+
+      conn = build_conn() |> get("/v1/public/coaches/test-coach/profile")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["profile"]["headline"] == "Transform your body"
+      assert length(data["profile"]["trust_stats"]) == 1
+      assert hd(data["profile"]["trust_stats"])["value"] == "500+"
+      assert length(data["profile"]["faq_items"]) == 1
+      assert data["profile"]["whatsapp_cta_enabled"] == true
+      assert data["profile"]["whatsapp_cta_message"] == "Hi coach!"
+    end
+
     test "only returns active offers", %{business: business} do
       insert(:offer, business: business, status: :active)
       insert(:offer, business: business, status: :archived)

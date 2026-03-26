@@ -23,6 +23,11 @@ defmodule Easy.Storefront.StoreProfile do
     field :theme_color, :string, default: "orange"
     field :is_published, :boolean, default: false
     field :intake_questions, {:array, :map}, default: []
+    field :headline, :string
+    field :trust_stats, {:array, :map}, default: []
+    field :faq_items, {:array, :map}, default: []
+    field :whatsapp_cta_enabled, :boolean, default: false
+    field :whatsapp_cta_message, :string
 
     belongs_to :business, Easy.Orgs.Business
 
@@ -38,7 +43,12 @@ defmodule Easy.Storefront.StoreProfile do
     :social_links,
     :theme_color,
     :is_published,
-    :intake_questions
+    :intake_questions,
+    :headline,
+    :trust_stats,
+    :faq_items,
+    :whatsapp_cta_enabled,
+    :whatsapp_cta_message
   ]
 
   # Changesets

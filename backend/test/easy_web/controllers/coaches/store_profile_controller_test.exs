@@ -77,6 +77,72 @@ defmodule EasyWeb.Coaches.StoreProfileControllerTest do
       assert length(data["intake_questions"]) == 2
     end
 
+    test "saves headline", %{conn: conn} do
+      attrs = build(:store_profile_attrs, %{"headline" => "Transform your body in 12 weeks"})
+
+      conn = patch(conn, "/v1/coach/storefront/profile", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["headline"] == "Transform your body in 12 weeks"
+    end
+
+    test "saves trust stats", %{conn: conn} do
+      stats = [
+        %{"value" => "500+", "label" => "Clients"},
+        %{"value" => "6", "label" => "Years"},
+        %{"value" => "4.9★", "label" => "Rating"}
+      ]
+
+      attrs = build(:store_profile_attrs, %{"trust_stats" => stats})
+      conn = patch(conn, "/v1/coach/storefront/profile", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert length(data["trust_stats"]) == 3
+      assert hd(data["trust_stats"])["value"] == "500+"
+    end
+
+    test "saves faq items", %{conn: conn} do
+      faqs = [
+        %{
+          "question" => "How does coaching work?",
+          "answer" => "Custom plans and weekly check-ins."
+        },
+        %{
+          "question" => "Can you help vegetarians?",
+          "answer" => "Yes, I create veg-friendly plans."
+        }
+      ]
+
+      attrs = build(:store_profile_attrs, %{"faq_items" => faqs})
+      conn = patch(conn, "/v1/coach/storefront/profile", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert length(data["faq_items"]) == 2
+      assert hd(data["faq_items"])["question"] == "How does coaching work?"
+    end
+
+    test "saves whatsapp cta settings", %{conn: conn} do
+      attrs =
+        build(:store_profile_attrs, %{
+          "whatsapp_cta_enabled" => true,
+          "whatsapp_cta_message" => "Hi! I saw your page and I'm interested."
+        })
+
+      conn = patch(conn, "/v1/coach/storefront/profile", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["whatsapp_cta_enabled"] == true
+      assert data["whatsapp_cta_message"] == "Hi! I saw your page and I'm interested."
+    end
+
+    test "new fields default gracefully when not provided", %{conn: conn} do
+      attrs = build(:store_profile_attrs)
+
+      conn = patch(conn, "/v1/coach/storefront/profile", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["headline"] == nil
+      assert data["trust_stats"] == []
+      assert data["faq_items"] == []
+      assert data["whatsapp_cta_enabled"] == false
+      assert data["whatsapp_cta_message"] == nil
+    end
+
     test "saves social links", %{conn: conn} do
       social = %{
         "instagram" => "https://instagram.com/test",

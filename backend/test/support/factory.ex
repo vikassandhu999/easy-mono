@@ -390,6 +390,19 @@ defmodule Easy.Factory do
           "options" => ["Fat loss", "Muscle gain", "Recomposition"]
         }
       ],
+      headline: "Transform your body in 12 weeks",
+      trust_stats: [
+        %{"value" => "500+", "label" => "Clients"},
+        %{"value" => "6", "label" => "Years experience"}
+      ],
+      faq_items: [
+        %{
+          "question" => "How does the coaching work?",
+          "answer" => "After you apply, I'll create a custom plan based on your goals."
+        }
+      ],
+      whatsapp_cta_enabled: false,
+      whatsapp_cta_message: nil,
       business: build(:business)
     }
   end

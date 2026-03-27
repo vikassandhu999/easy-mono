@@ -13,7 +13,6 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.PlanItem
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
-  alias Easy.Storefront.Lead
   alias Easy.Storefront.Offer
   alias Easy.Storefront.StoreProfile
   alias Easy.Storefront.Testimonial
@@ -82,6 +81,16 @@ defmodule Easy.Factory do
       "last_name" => "Client",
       "phone" => "123-555-7890",
       "notes" => "Invited via test"
+    }
+  end
+
+  def inquiry_attrs_factory do
+    %{
+      "name" => "Vikas Sandhu",
+      "email" => sequence(:inquiry_email, &"inquiry-#{&1}@test.com"),
+      "phone" => "+91 98765 43210",
+      "instagram_handle" => "@vikas_fit",
+      "intake_answers" => %{"weight" => "90", "goal" => "Fat loss"}
     }
   end
 
@@ -493,34 +502,6 @@ defmodule Easy.Factory do
       "after_image_url" => "https://example.com/after.jpg",
       "before_weight" => "90",
       "after_weight" => "80"
-    }
-  end
-
-  def lead_factory do
-    business = build(:business)
-
-    %Lead{
-      name: sequence(:lead_name, &"Lead #{&1}"),
-      email: sequence(:lead_email, &"lead-#{&1}@test.com"),
-      phone: "+91 98765 43210",
-      instagram_handle: "@lead_user",
-      intake_answers: %{"weight" => "85", "goal" => "Fat loss"},
-      status: :new,
-      notes: nil,
-      source: "storefront",
-      business: business,
-      offer: build(:offer, business: business)
-    }
-  end
-
-  def lead_attrs_factory do
-    %{
-      "name" => "New Lead",
-      "email" => sequence(:lead_attr_email, &"newlead-#{&1}@test.com"),
-      "phone" => "+91 99999 88888",
-      "instagram_handle" => "@newlead",
-      "intake_answers" => %{"weight" => "90", "goal" => "Muscle gain"},
-      "source" => "storefront"
     }
   end
 end

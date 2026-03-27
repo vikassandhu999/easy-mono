@@ -4,6 +4,7 @@ defmodule Easy.Clients.Client do
   alias Easy.Orgs
   alias Easy.Orgs.Coaches
   alias Easy.Repo
+  alias Easy.Storefront.Offer
 
   import Ecto.Changeset
   import Ecto.Query
@@ -13,7 +14,9 @@ defmodule Easy.Clients.Client do
 
   @type t :: %__MODULE__{}
 
-  @client_statuses [:active, :inactive, :invited]
+  @client_statuses [:active, :inactive, :pending, :expired, :archived]
+  @payment_statuses [:free, :paid, :partial, :pending]
+  @expiring_days 7
 
   schema "clients" do
     field :email, :string
@@ -21,35 +24,115 @@ defmodule Easy.Clients.Client do
     field :last_name, :string
     field :phone, :string
     field :notes, :string
+    field :instagram_handle, :string
 
     field :status, Ecto.Enum, values: @client_statuses
 
+    # Program tracking
+    field :program_name, :string
+    field :program_start, :date
+    field :program_end, :date
+
+    # Payment tracking
+    field :payment_status, Ecto.Enum, values: @payment_statuses
+    field :payment_amount, :integer
+    field :payment_currency, :string, default: "INR"
+    field :payment_notes, :string
+
+    # Intake
+    field :intake_answers, :map, default: %{}
+    field :source, :string
+
+    # Status override (bypasses auto-computation when set)
+    field :status_override, :string
+
+    # Invitation
     field :invitation_token, :string
     field :invitation_sent_at, :utc_datetime
 
     belongs_to :user, Easy.Identity.User
     belongs_to :business, Orgs.Business
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
+    belongs_to :offer, Offer
 
     timestamps()
   end
 
-  @cast_fields [:email, :first_name, :last_name, :phone, :notes]
+  @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes, :instagram_handle]
+  @update_cast_fields [
+    :first_name,
+    :last_name,
+    :phone,
+    :notes,
+    :instagram_handle,
+    :program_name,
+    :program_start,
+    :program_end,
+    :payment_status,
+    :payment_amount,
+    :payment_currency,
+    :payment_notes,
+    :status_override
+  ]
+  @inquiry_cast_fields [
+    :email,
+    :first_name,
+    :last_name,
+    :phone,
+    :instagram_handle,
+    :intake_answers
+  ]
 
   # Changesets
 
   @spec invite_changeset(Orgs.Coach.t(), map()) :: Ecto.Changeset.t()
   def invite_changeset(coach, attrs) do
     %__MODULE__{}
-    |> cast(attrs, @cast_fields)
+    |> cast(attrs, @invite_cast_fields)
     |> put_change(:business_id, coach.business_id)
+    |> put_change(:source, "invite")
     |> validate_required([:business_id])
     |> validate_email_or_phone()
-    |> put_change(:status, :invited)
+    |> put_change(:status, :pending)
     |> put_change(:invitation_token, generate_token())
     |> put_change(:invitation_sent_at, DateTime.utc_now(:second))
     |> unique_constraint(:email, name: :clients_business_id_email_index)
     |> put_assoc(:creator, coach)
+  end
+
+  @spec inquiry_changeset(String.t(), map(), Offer.t() | nil) :: Ecto.Changeset.t()
+  def inquiry_changeset(business_id, attrs, offer \\ nil) do
+    %__MODULE__{}
+    |> cast(attrs, @inquiry_cast_fields)
+    |> put_change(:business_id, business_id)
+    |> put_change(:source, "storefront")
+    |> put_change(:status, :pending)
+    |> maybe_set_offer(offer)
+    |> validate_required([:first_name, :email, :phone, :business_id])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    |> unique_constraint(:email, name: :clients_business_id_email_index)
+  end
+
+  defp maybe_set_offer(changeset, nil), do: changeset
+
+  defp maybe_set_offer(changeset, %Offer{} = offer) do
+    changeset
+    |> put_change(:offer_id, offer.id)
+    |> put_change(:program_name, offer.name)
+    |> put_change(:payment_amount, offer.price)
+    |> put_change(:payment_currency, offer.currency || "INR")
+  end
+
+  @status_override_values Enum.map(@client_statuses, &Atom.to_string/1)
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(client, attrs) do
+    client
+    |> cast(attrs, @update_cast_fields)
+    |> validate_inclusion(:status_override, @status_override_values,
+      message: "must be one of: #{Enum.join(@status_override_values, ", ")}"
+    )
+    |> validate_number(:payment_amount, greater_than_or_equal_to: 0)
   end
 
   defp validate_email_or_phone(changeset) do
@@ -67,10 +150,42 @@ defmodule Easy.Clients.Client do
   defp blank?(""), do: true
   defp blank?(_), do: false
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(client, attrs) do
-    client
-    |> cast(attrs, [:first_name, :last_name, :phone, :notes, :status])
+  # Status auto-computation
+
+  @status_override_map Map.new(@client_statuses, &{Atom.to_string(&1), &1})
+
+  @spec compute_status(t()) :: atom()
+  def compute_status(%__MODULE__{status_override: override}) when is_binary(override) do
+    Map.get(@status_override_map, override, :inactive)
+  end
+
+  def compute_status(%__MODULE__{} = client) do
+    today = Date.utc_today()
+
+    cond do
+      client.status == :pending ->
+        :pending
+
+      client.status == :archived ->
+        :archived
+
+      not is_nil(client.program_end) and Date.compare(client.program_end, today) == :lt ->
+        :expired
+
+      not is_nil(client.program_end) and
+          Date.diff(client.program_end, today) <= @expiring_days ->
+        :expiring
+
+      not is_nil(client.program_end) or not is_nil(client.program_start) or
+          not is_nil(client.program_name) ->
+        :active
+
+      client.status == :active ->
+        :active
+
+      true ->
+        :inactive
+    end
   end
 
   # Queries
@@ -90,7 +205,8 @@ defmodule Easy.Clients.Client do
       where:
         ilike(c.first_name, ^"%#{term}%") or
           ilike(c.last_name, ^"%#{term}%") or
-          ilike(c.email, ^"%#{term}%")
+          ilike(c.email, ^"%#{term}%") or
+          ilike(c.phone, ^"%#{term}%")
     )
   end
 
@@ -99,6 +215,13 @@ defmodule Easy.Clients.Client do
   def with_status(query, nil), do: query
   def with_status(query, status), do: from(c in query, where: c.status == ^status)
 
+  @spec with_payment_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  def with_payment_status(query \\ __MODULE__, payment_status)
+  def with_payment_status(query, nil), do: query
+
+  def with_payment_status(query, payment_status),
+    do: from(c in query, where: c.payment_status == ^payment_status)
+
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(c in query, order_by: [desc: c.inserted_at])
@@ -106,7 +229,7 @@ defmodule Easy.Clients.Client do
 
   @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_preloads(query \\ __MODULE__) do
-    from(c in query, preload: [:user, :business, :creator])
+    from(c in query, preload: [:user, :business, :creator, :offer])
   end
 
   # Actions
@@ -120,11 +243,102 @@ defmodule Easy.Clients.Client do
     end
   end
 
+  @spec create_inquiry(String.t(), map(), Offer.t() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def create_inquiry(business_id, attrs, offer \\ nil) do
+    business_id
+    |> inquiry_changeset(attrs, offer)
+    |> Repo.insert()
+  end
+
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(client, attrs) do
     client
     |> update_changeset(attrs)
     |> Repo.update()
+  end
+
+  @spec summary(Ecto.Queryable.t()) :: map()
+  def summary(query) do
+    today = Date.utc_today()
+    expiring_threshold = Date.add(today, @expiring_days)
+
+    counts =
+      from(c in query,
+        select: %{
+          active:
+            count(
+              fragment(
+                """
+                CASE WHEN ? IS NULL AND ? NOT IN ('archived', 'pending', 'inactive') AND (
+                  (? IS NOT NULL OR ? IS NOT NULL OR ? IS NOT NULL)
+                  AND (? IS NULL OR ? > ?)
+                ) THEN 1 END
+                """,
+                c.status_override,
+                c.status,
+                c.program_end,
+                c.program_start,
+                c.program_name,
+                c.program_end,
+                c.program_end,
+                ^expiring_threshold
+              )
+            ) +
+              count(
+                fragment(
+                  "CASE WHEN ? = 'active' AND ? IS NULL AND ? IS NULL AND ? IS NULL AND ? IS NULL THEN 1 END",
+                  c.status,
+                  c.program_end,
+                  c.program_start,
+                  c.program_name,
+                  c.status_override
+                )
+              ),
+          expiring:
+            count(
+              fragment(
+                "CASE WHEN ? IS NOT NULL AND ? >= ? AND ? <= ? AND ? NOT IN ('pending', 'archived') AND ? IS NULL THEN 1 END",
+                c.program_end,
+                c.program_end,
+                ^today,
+                c.program_end,
+                ^expiring_threshold,
+                c.status,
+                c.status_override
+              )
+            ),
+          pending:
+            count(
+              fragment(
+                "CASE WHEN ? = 'pending' AND ? IS NULL THEN 1 END",
+                c.status,
+                c.status_override
+              )
+            ),
+          expired:
+            count(
+              fragment(
+                "CASE WHEN ? IS NOT NULL AND ? < ? AND ? NOT IN ('pending', 'archived') AND ? IS NULL THEN 1 END",
+                c.program_end,
+                c.program_end,
+                ^today,
+                c.status,
+                c.status_override
+              )
+            ),
+          payment_due:
+            count(
+              fragment(
+                "CASE WHEN ? IN ('pending', 'partial') THEN 1 END",
+                c.payment_status
+              )
+            )
+        }
+      )
+      |> Repo.one()
+
+    counts || %{active: 0, expiring: 0, pending: 0, expired: 0, payment_due: 0}
   end
 
   defp create_invitation(coach, invite_attrs) do
@@ -153,7 +367,7 @@ defmodule Easy.Clients.Client do
   end
 
   @spec resend_invitation(t(), Orgs.Coach.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
-  def resend_invitation(%__MODULE__{status: :invited, email: email} = client, coach)
+  def resend_invitation(%__MODULE__{status: :pending, email: email} = client, coach)
       when is_binary(email) and email != "" do
     updated =
       client
@@ -164,16 +378,16 @@ defmodule Easy.Clients.Client do
     {:ok, updated}
   end
 
-  def resend_invitation(%__MODULE__{status: :invited, email: nil}, _coach) do
+  def resend_invitation(%__MODULE__{status: :pending, email: nil}, _coach) do
     {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
   end
 
-  def resend_invitation(%__MODULE__{status: :invited, email: ""}, _coach) do
+  def resend_invitation(%__MODULE__{status: :pending, email: ""}, _coach) do
     {:error, Easy.Error.unprocessable(%{email: ["client has no email address"]})}
   end
 
   def resend_invitation(%__MODULE__{}, _coach) do
-    {:error, Easy.Error.unprocessable(%{status: ["client is not in invited status"]})}
+    {:error, Easy.Error.unprocessable(%{status: ["client is not in pending status"]})}
   end
 
   @spec build_invite_url(t()) :: String.t() | nil

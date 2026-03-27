@@ -1,4 +1,5 @@
 defmodule EasyWeb.Public.StorefrontJSON do
+  alias Easy.Clients.Client
   alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
 
   def show(%{profile: profile, offers: offers, testimonials: testimonials}) do
@@ -11,13 +12,13 @@ defmodule EasyWeb.Public.StorefrontJSON do
     }
   end
 
-  def lead(%{lead: lead}) do
+  def inquiry(%{client: %Client{} = client}) do
     %{
       data: %{
-        id: lead.id,
-        name: lead.name,
-        email: lead.email,
-        status: lead.status
+        id: client.id,
+        first_name: client.first_name,
+        email: client.email,
+        status: client.status
       }
     }
   end

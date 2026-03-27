@@ -98,41 +98,40 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
     end
   end
 
-  describe "POST /v1/public/coaches/:slug/leads" do
-    test "creates lead from public form", %{business: business} do
+  describe "POST /v1/public/coaches/:slug/inquiries" do
+    test "creates client from public inquiry with offer", %{business: business} do
       offer = insert(:offer, business: business)
+      attrs = build(:inquiry_attrs) |> Map.put("offer_id", offer.id)
 
-      attrs = %{
-        "name" => "Vikas",
-        "email" => "vikas@test.com",
-        "phone" => "+91 98765 43210",
-        "instagram_handle" => "@vikas_fit",
-        "offer_id" => offer.id,
-        "intake_answers" => %{"weight" => "90", "goal" => "Fat loss"}
-      }
-
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/leads", attrs)
+      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["name"] == "Vikas"
-      assert data["email"] == "vikas@test.com"
-      assert data["status"] == "new"
+
+      assert data["first_name"] == "Vikas"
+      assert data["email"] == attrs["email"]
+      assert data["status"] == "pending"
     end
 
-    test "creates lead without offer", %{} do
-      attrs = %{
-        "name" => "No Offer Lead",
-        "email" => "nooffer@test.com",
-        "phone" => "+91 11111 22222"
-      }
+    test "creates client without offer", %{} do
+      attrs = build(:inquiry_attrs)
 
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/leads", attrs)
+      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["name"] == "No Offer Lead"
+      assert data["first_name"] == "Vikas"
+      assert data["status"] == "pending"
+    end
+
+    test "parses name into first_name and last_name", %{} do
+      attrs = build(:inquiry_attrs) |> Map.put("name", "Vikas Sandhu")
+
+      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["first_name"] == "Vikas"
     end
 
     test "returns 422 for missing required fields" do
       conn =
-        build_conn() |> post("/v1/public/coaches/test-coach/leads", %{"name" => "Incomplete"})
+        build_conn()
+        |> post("/v1/public/coaches/test-coach/inquiries", %{"first_name" => "Incomplete"})
 
       assert json_response(conn, 422)
     end
@@ -144,37 +143,38 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
         is_published: false
       )
 
-      attrs = %{
-        "name" => "Lead",
-        "email" => "lead@test.com",
-        "phone" => "+91 99999 88888"
-      }
-
-      conn = build_conn() |> post("/v1/public/coaches/hidden-coach/leads", attrs)
+      attrs = build(:inquiry_attrs)
+      conn = build_conn() |> post("/v1/public/coaches/hidden-coach/inquiries", attrs)
       assert json_response(conn, 404)
     end
 
     test "returns 404 for non-existent slug" do
-      attrs = %{
-        "name" => "Lead",
-        "email" => "lead@test.com",
-        "phone" => "+91 99999 88888"
-      }
-
-      conn = build_conn() |> post("/v1/public/coaches/ghost/leads", attrs)
+      attrs = build(:inquiry_attrs)
+      conn = build_conn() |> post("/v1/public/coaches/ghost/inquiries", attrs)
       assert json_response(conn, 404)
     end
 
     test "ignores invalid offer_id gracefully", %{} do
-      attrs = %{
-        "name" => "Bad Offer",
-        "email" => "badoffer@test.com",
-        "phone" => "+91 11111 22222",
-        "offer_id" => Ecto.UUID.generate()
-      }
+      attrs = build(:inquiry_attrs) |> Map.put("offer_id", Ecto.UUID.generate())
 
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/leads", attrs)
+      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
       assert %{"data" => _data} = json_response(conn, 201)
+    end
+
+    test "auto-fills program fields from offer", %{business: business} do
+      offer = insert(:offer, business: business, name: "Fat Loss", price: 4999, currency: "INR")
+      attrs = build(:inquiry_attrs) |> Map.put("offer_id", offer.id)
+
+      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
+      assert %{"data" => data} = json_response(conn, 201)
+
+      # Verify the client was created with offer data by fetching via coach endpoint
+      client = Easy.Repo.get!(Easy.Clients.Client, data["id"])
+      assert client.program_name == "Fat Loss"
+      assert client.payment_amount == 4999
+      assert client.payment_currency == "INR"
+      assert client.offer_id == offer.id
+      assert client.source == "storefront"
     end
   end
 end

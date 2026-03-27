@@ -153,19 +153,13 @@ defmodule EasyWeb.Router do
     get "/testimonials/:id", TestimonialController, :show
     patch "/testimonials/:id", TestimonialController, :update
     delete "/testimonials/:id", TestimonialController, :delete
-
-    get "/leads", LeadController, :index
-    get "/leads/:id", LeadController, :show
-    patch "/leads/:id", LeadController, :update
-    post "/leads/:id/convert", LeadController, :convert
-    delete "/leads/:id", LeadController, :delete
   end
 
   scope "/v1/public", EasyWeb.Public do
     pipe_through :api
 
     get "/coaches/:slug/profile", StorefrontController, :show
-    post "/coaches/:slug/leads", StorefrontController, :create_lead
+    post "/coaches/:slug/inquiries", StorefrontController, :create_inquiry
   end
 
   # scope "/api/coach", EasyWeb.Coaches do

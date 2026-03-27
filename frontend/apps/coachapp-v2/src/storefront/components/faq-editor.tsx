@@ -1,4 +1,4 @@
-import {Button, Description, Input, TextArea} from '@heroui/react';
+import {Button, Card, Description, Input, TextArea} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
 import {useFieldArray, type UseFormReturn} from 'react-hook-form';
 
@@ -16,40 +16,39 @@ export default function FaqEditor({form}: {form: UseFormReturn<EditorFormValues>
       <Description>Common questions visitors might have. Helps overcome hesitation.</Description>
 
       {fields.map((field, index) => (
-        <div
-          className="flex flex-col gap-2 rounded-xl border border-divider bg-content1 p-3"
-          key={field.id}
-        >
-          <div className="flex items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <Input
-                aria-label="Question"
-                placeholder="How does the coaching work?"
-                {...register(`faq_items.${index}.question`)}
-              />
-              {errors.faq_items?.[index]?.question ? (
-                <p className="text-xs text-danger">{errors.faq_items[index].question.message}</p>
-              ) : null}
+        <Card key={field.id}>
+          <Card.Content className="flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <Input
+                  aria-label="Question"
+                  placeholder="How does the coaching work?"
+                  {...register(`faq_items.${index}.question`)}
+                />
+                {errors.faq_items?.[index]?.question ? (
+                  <p className="text-xs text-danger">{errors.faq_items[index].question.message}</p>
+                ) : null}
+              </div>
+              <Button
+                isIconOnly
+                onPress={() => remove(index)}
+                size="sm"
+                variant="ghost"
+              >
+                <X size={14} />
+              </Button>
             </div>
-            <Button
-              isIconOnly
-              onPress={() => remove(index)}
-              size="sm"
-              variant="ghost"
-            >
-              <X size={14} />
-            </Button>
-          </div>
-          <TextArea
-            aria-label="Answer"
-            placeholder="After you apply, I'll review your details and create a custom plan..."
-            rows={2}
-            {...register(`faq_items.${index}.answer`)}
-          />
-          {errors.faq_items?.[index]?.answer ? (
-            <p className="text-xs text-danger">{errors.faq_items[index].answer.message}</p>
-          ) : null}
-        </div>
+            <TextArea
+              aria-label="Answer"
+              placeholder="After you apply, I'll review your details and create a custom plan..."
+              rows={2}
+              {...register(`faq_items.${index}.answer`)}
+            />
+            {errors.faq_items?.[index]?.answer ? (
+              <p className="text-xs text-danger">{errors.faq_items[index].answer.message}</p>
+            ) : null}
+          </Card.Content>
+        </Card>
       ))}
 
       <Button

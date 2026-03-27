@@ -1,9 +1,15 @@
-import {Avatar, Button, Chip, Spinner, toast} from '@heroui/react';
+import {Alert, AlertDialog, Avatar, Button, Chip, Separator, Spinner, toast} from '@heroui/react';
 import {
+  AlertTriangle,
+  Archive,
   ArrowLeft,
-  ClipboardCopy,
+  Calendar,
+  Check,
   ClipboardList,
+  Clock,
+  CreditCard,
   Dumbbell,
+  Instagram,
   Mail,
   MessageCircle,
   Pencil,
@@ -16,22 +22,34 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useGetClientQuery, useResendClientInviteMutation} from '@/api/clients';
+import {
+  type Client,
+  type ClientStatus,
+  type PaymentStatus,
+  useGetClientQuery,
+  useUpdateClientMutation,
+} from '@/api/clients';
 import {type NutritionPlan, useAssignNutritionPlanMutation, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 import {type TrainingPlan, useAssignTrainingPlanMutation, useListTrainingPlansQuery} from '@/api/trainingPlans';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
 
-type StatusConfig = {
-  color: 'danger' | 'default' | 'success' | 'warning';
-  label: string;
+// ── Helpers ──────────────────────────────────────────────────
+
+const STATUS_CHIP_COLOR: Record<ClientStatus, 'danger' | 'default' | 'success' | 'warning'> = {
+  active: 'success',
+  expiring: 'warning',
+  expired: 'danger',
+  pending: 'default',
+  inactive: 'default',
+  archived: 'default',
 };
 
-const STATUS_MAP: Record<string, StatusConfig> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'danger', label: 'Archived'},
-  inactive: {color: 'default', label: 'Inactive'},
-  invited: {color: 'warning', label: 'Invited'},
+const PAYMENT_CHIP_COLOR: Record<PaymentStatus, 'success' | 'warning'> = {
+  paid: 'success',
+  free: 'success',
+  pending: 'warning',
+  partial: 'warning',
 };
 
 const PLAN_STATUS_MAP: Record<string, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> = {
@@ -50,7 +68,8 @@ function getFullName(firstName: null | string, lastName: null | string): string 
   return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: null | string): string {
+  if (!dateString) return '';
   return new Date(dateString).toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',
@@ -58,154 +77,71 @@ function formatDate(dateString: string): string {
   });
 }
 
-function InfoRow({
-  action,
-  icon,
-  label,
-  value,
-}: {
-  action?: React.ReactNode;
-  icon: React.ReactNode;
-  label: string;
-  value: null | string;
-}) {
-  if (!value) return null;
-  return (
-    <div className="flex items-start gap-3 py-2">
-      <span className="mt-0.5 text-foreground-400">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-foreground-400">{label}</p>
-        <p className="text-sm">{value}</p>
-      </div>
-      {action}
-    </div>
-  );
+function timeAgo(dateString: string): string {
+  const now = Date.now();
+  const then = new Date(dateString).getTime();
+  const diffMs = now - then;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays < 1) return 'today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 30) return `${diffDays} days ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths === 1) return '1 month ago';
+  return `${diffMonths} months ago`;
 }
 
-function getWhatsAppUrl(phone: string, message?: string): string {
+function timeRemaining(endDate: string): string {
+  const now = Date.now();
+  const end = new Date(endDate).getTime();
+  const diffMs = end - now;
+  if (diffMs <= 0) return 'Ended';
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 1) return '1 day left';
+  if (diffDays < 30) return `${diffDays} days left`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffDays < 60) return `${diffWeeks} weeks left`;
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths} months left`;
+}
+
+function getWhatsAppUrl(phone: string): string {
   const cleanPhone = phone.replace(/\D/g, '');
-  if (message) {
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-  }
   return `https://wa.me/${cleanPhone}`;
 }
 
-/**
- * Invite management section — shown only for invited clients.
- * Displays invite link with copy/share actions, and resend email option.
- */
-function ClientInviteSection({
-  clientEmail,
-  clientId,
-  clientName,
-  clientPhone,
-  insertedAt,
-  inviteUrl,
-}: {
-  clientEmail: null | string;
-  clientId: string;
-  clientName: string;
-  clientPhone: null | string;
-  insertedAt: string;
-  inviteUrl: null | string;
-}) {
-  const [resendInvite, {isLoading: isResending}] = useResendClientInviteMutation();
+function getSubtitle(client: Client): string {
+  if (client.status === 'pending') {
+    if (client.offer) return `Applied for ${client.offer.name}`;
+    return `Invited ${timeAgo(client.inserted_at)}`;
+  }
+  if (client.status === 'active' || client.status === 'expiring') {
+    const parts: string[] = [];
+    if (client.program_name) parts.push(client.program_name);
+    if (client.program_end) parts.push(timeRemaining(client.program_end));
+    if (client.payment_status) parts.push(client.payment_status);
+    if (parts.length > 0) return parts.join(' \u00B7 ');
+  }
+  return client.email ?? client.phone ?? '';
+}
 
-  const handleCopyLink = async () => {
-    if (!inviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      toast.success('Invite link copied to clipboard');
-    } catch {
-      toast.danger('Failed to copy link');
-    }
-  };
-
-  const handleResendEmail = async () => {
-    try {
-      await resendInvite(clientId).unwrap();
-      toast.success('Invite email resent');
-    } catch {
-      toast.danger('Failed to resend invite email.');
-    }
-  };
-
-  const whatsAppMessage = inviteUrl
-    ? clientName && clientName !== 'No name'
-      ? `Hi ${clientName}, I've set up your coaching profile! Use this link to get started: ${inviteUrl}`
-      : `I've set up your coaching profile! Use this link to get started: ${inviteUrl}`
-    : undefined;
-
-  return (
-    <section className="border-t border-divider py-4">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Invite</h3>
-      <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
-        <p className="mb-3 text-sm text-foreground-500">
-          Invite sent {formatDate(insertedAt)}
-          {clientEmail ? ` to ${clientEmail}` : ''}
-        </p>
-
-        {inviteUrl ? (
-          <>
-            <div className="mb-3 flex items-center gap-2 rounded-lg border border-divider bg-content1 p-2.5">
-              <p className="min-w-0 flex-1 truncate text-sm text-foreground-500">{inviteUrl}</p>
-              <Button
-                aria-label="Copy invite link"
-                onPress={handleCopyLink}
-                size="sm"
-                variant="ghost"
-              >
-                <ClipboardCopy size={16} />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {clientPhone && whatsAppMessage && (
-                <a
-                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
-                  href={getWhatsAppUrl(clientPhone, whatsAppMessage)}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <MessageCircle size={16} />
-                  WhatsApp
-                </a>
-              )}
-              <Button
-                onPress={handleCopyLink}
-                size="sm"
-                variant="secondary"
-              >
-                <ClipboardCopy size={16} />
-                Copy link
-              </Button>
-              {clientEmail && (
-                <Button
-                  isPending={isResending}
-                  onPress={handleResendEmail}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <RefreshCw size={14} />
-                  Resend email
-                </Button>
-              )}
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-foreground-400">
-            Invite link will be available once the backend is updated to include it.
-          </p>
-        )}
-      </div>
-    </section>
+function hasProgramData(client: Client): boolean {
+  return !!(
+    client.program_name ||
+    client.program_start ||
+    client.program_end ||
+    client.payment_status ||
+    client.payment_amount
   );
 }
 
-/**
- * Client nutrition plans section — shows plans assigned to this client.
- * The picker visibility is controlled by the parent via showPicker prop,
- * so the "Assign Plan" button can live in the parent's top nav bar.
- */
+// ── Section heading ──────────────────────────────────────────
+
+function SectionHeading({title}: {title: string}) {
+  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">{title}</h3>;
+}
+
+// ── Client Nutrition Plans ───────────────────────────────────
+
 function ClientNutritionPlans({
   clientId,
   onAssigned,
@@ -233,11 +169,11 @@ function ClientNutritionPlans({
   };
 
   return (
-    <section className="border-t border-divider py-4">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Nutrition Plans</h3>
+    <section className="py-4">
+      <Separator className="mb-4" />
+      <SectionHeading title="Nutrition Plans" />
 
-      {/* Assign from template — revealed inline when parent toggles showPicker */}
-      {showPicker && (
+      {showPicker ? (
         <div className="mb-3 rounded-xl border border-divider bg-content1 p-3">
           <p className="mb-2 text-sm text-foreground-500">
             Search for a nutrition plan template to copy to this client.
@@ -246,16 +182,15 @@ function ClientNutritionPlans({
             onSelect={handleAssign}
             placeholder="Search nutrition plans..."
           />
-          {isAssigning && (
+          {isAssigning ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
               <Spinner size="sm" />
               Assigning plan...
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {/* List of assigned plans */}
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
           <Spinner size="sm" />
@@ -278,14 +213,14 @@ function ClientNutritionPlans({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{plan.name}</p>
-                  {plan.meals.length > 0 && (
+                  {plan.meals.length > 0 ? (
                     <p className="text-xs text-foreground-500">
                       {plan.meals.length} meal
                       {plan.meals.length !== 1 ? 's' : ''}
                     </p>
-                  )}
+                  ) : null}
                 </div>
-                {planStatus && (
+                {planStatus ? (
                   <Chip
                     color={planStatus.color}
                     size="sm"
@@ -293,7 +228,7 @@ function ClientNutritionPlans({
                   >
                     {planStatus.label}
                   </Chip>
-                )}
+                ) : null}
               </Link>
             );
           })}
@@ -305,10 +240,8 @@ function ClientNutritionPlans({
   );
 }
 
-/**
- * Client training plans section — shows plans assigned to this client.
- * Mirrors ClientNutritionPlans in structure and behavior.
- */
+// ── Client Training Plans ────────────────────────────────────
+
 function ClientTrainingPlans({
   clientId,
   onAssigned,
@@ -336,10 +269,11 @@ function ClientTrainingPlans({
   };
 
   return (
-    <section className="border-t border-divider py-4">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Training Plans</h3>
+    <section className="py-4">
+      <Separator className="mb-4" />
+      <SectionHeading title="Training Plans" />
 
-      {showPicker && (
+      {showPicker ? (
         <div className="mb-3 rounded-xl border border-divider bg-content1 p-3">
           <p className="mb-2 text-sm text-foreground-500">
             Search for a training plan template to copy to this client.
@@ -348,14 +282,14 @@ function ClientTrainingPlans({
             onSelect={handleAssign}
             placeholder="Search training plans..."
           />
-          {isAssigning && (
+          {isAssigning ? (
             <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
               <Spinner size="sm" />
               Assigning plan...
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
@@ -380,13 +314,13 @@ function ClientTrainingPlans({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{plan.name}</p>
-                  {workoutCount > 0 && (
+                  {workoutCount > 0 ? (
                     <p className="text-xs text-foreground-500">
                       {workoutCount} workout{workoutCount !== 1 ? 's' : ''}
                     </p>
-                  )}
+                  ) : null}
                 </div>
-                {planStatus && (
+                {planStatus ? (
                   <Chip
                     color={planStatus.color}
                     size="sm"
@@ -394,7 +328,7 @@ function ClientTrainingPlans({
                   >
                     {planStatus.label}
                   </Chip>
-                )}
+                ) : null}
               </Link>
             );
           })}
@@ -406,10 +340,13 @@ function ClientTrainingPlans({
   );
 }
 
+// ── Main component ───────────────────────────────────────────
+
 export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetClientQuery(id!);
+  const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
   const [showNutritionPicker, setShowNutritionPicker] = useState(false);
   const [showTrainingPicker, setShowTrainingPicker] = useState(false);
 
@@ -436,24 +373,46 @@ export default function ClientDetail() {
             Back
           </Button>
         </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load client. They may not exist or you don&apos;t have access.
-        </div>
+        <Alert status="danger">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Failed to load client</Alert.Title>
+            <Alert.Description>They may not exist or you don&apos;t have access.</Alert.Description>
+          </Alert.Content>
+        </Alert>
       </PageLayout>
     );
   }
 
   const client = data.data;
-  const status = STATUS_MAP[client.status] ?? {
-    color: 'default' as const,
-    label: client.status,
-  };
   const fullName = getFullName(client.first_name, client.last_name);
   const initials = getInitials(client.first_name, client.last_name);
+  const subtitle = getSubtitle(client);
+  const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
+  const canArchive = client.status === 'pending' || client.status === 'expired';
+
+  const handleMarkAsPaid = async () => {
+    try {
+      await updateClient({id: client.id, body: {payment_status: 'paid'}}).unwrap();
+      toast.success('Marked as paid');
+    } catch {
+      toast.danger('Failed to update payment status.');
+    }
+  };
+
+  const handleArchive = async () => {
+    try {
+      await updateClient({id: client.id, body: {status_override: 'archived'}}).unwrap();
+      toast.success('Client archived');
+      navigate(ROUTES.CLIENTS);
+    } catch {
+      toast.danger('Failed to archive client.');
+    }
+  };
 
   return (
     <PageLayout title="Client">
-      {/* Navigation bar */}
+      {/* ── Header bar ──────────────────────────────────── */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button
           onPress={() => navigate(ROUTES.CLIENTS)}
@@ -471,6 +430,17 @@ export default function ClientDetail() {
           <Pencil size={16} />
           Edit
         </Button>
+        {client.phone ? (
+          <a
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
+            href={getWhatsAppUrl(client.phone)}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <MessageCircle size={16} />
+            WhatsApp
+          </a>
+        ) : null}
         <Button
           onPress={() => {
             setShowNutritionPicker((v) => !v);
@@ -493,9 +463,52 @@ export default function ClientDetail() {
           <Dumbbell size={14} />
           Training
         </Button>
+        {canArchive ? (
+          <AlertDialog>
+            <Button
+              size="sm"
+              variant="danger"
+            >
+              <Archive size={14} />
+              Archive
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-[400px]">
+                  <AlertDialog.CloseTrigger />
+                  <AlertDialog.Header>
+                    <AlertDialog.Icon status="danger" />
+                    <AlertDialog.Heading>Archive client?</AlertDialog.Heading>
+                  </AlertDialog.Header>
+                  <AlertDialog.Body>
+                    <p>
+                      This will archive <strong>{fullName}</strong>. You can change this later from the edit page.
+                    </p>
+                  </AlertDialog.Body>
+                  <AlertDialog.Footer>
+                    <Button
+                      slot="close"
+                      variant="tertiary"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      isPending={isUpdating}
+                      onPress={handleArchive}
+                      variant="danger"
+                    >
+                      {isUpdating ? 'Archiving...' : 'Archive'}
+                    </Button>
+                  </AlertDialog.Footer>
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        ) : null}
       </div>
+
       <div className="max-w-lg">
-        {/* Profile header */}
+        {/* ── Profile header card ───────────────────────── */}
         <div className="flex items-center gap-4 pb-6">
           <Avatar
             className="size-14"
@@ -505,66 +518,243 @@ export default function ClientDetail() {
           </Avatar>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-semibold">{fullName}</h2>
-            <div className="mt-1">
+            {subtitle ? <p className="mt-0.5 truncate text-sm text-foreground-500">{subtitle}</p> : null}
+            <div className="mt-1.5">
               <Chip
-                color={status.color}
+                color={statusColor}
                 size="sm"
                 variant="soft"
               >
-                {status.label}
+                {client.status}
               </Chip>
             </div>
           </div>
         </div>
 
-        {/* Invite section — only for invited clients */}
-        {client.status === 'invited' && (
-          <ClientInviteSection
-            clientEmail={client.email}
-            clientId={client.id}
-            clientName={fullName}
-            clientPhone={client.phone}
-            insertedAt={client.inserted_at}
-            inviteUrl={client.invite_url}
-          />
-        )}
+        {/* ── Program section ───────────────────────────── */}
+        {hasProgramData(client) ? (
+          <section className="py-4">
+            <Separator className="mb-4" />
+            <SectionHeading title="Program" />
+            <div className="flex flex-col gap-3">
+              {client.program_name ? (
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-foreground-400">
+                    <ClipboardList size={16} />
+                  </span>
+                  <div>
+                    <p className="text-xs text-foreground-400">Program</p>
+                    <p className="text-sm">{client.program_name}</p>
+                  </div>
+                </div>
+              ) : null}
 
-        {/* Contact info */}
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Contact</h3>
-          <div className="divide-y divide-divider">
-            <InfoRow
-              icon={<Mail size={16} />}
-              label="Email"
-              value={client.email}
-            />
-            <InfoRow
-              action={
-                client.phone ? (
-                  <a
-                    aria-label="Message on WhatsApp"
-                    className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 active:bg-default-200"
-                    href={getWhatsAppUrl(client.phone)}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <MessageCircle size={18} />
-                  </a>
-                ) : undefined
-              }
-              icon={<Phone size={16} />}
-              label="Phone"
-              value={client.phone}
-            />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {client.program_start ? (
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-foreground-400">
+                      <Calendar size={16} />
+                    </span>
+                    <div>
+                      <p className="text-xs text-foreground-400">Start date</p>
+                      <p className="text-sm">{formatDate(client.program_start)}</p>
+                    </div>
+                  </div>
+                ) : null}
+                {client.program_end ? (
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-foreground-400">
+                      <Calendar size={16} />
+                    </span>
+                    <div>
+                      <p className="text-xs text-foreground-400">End date</p>
+                      <p className="text-sm">{formatDate(client.program_end)}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {client.program_end ? (
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-foreground-400">
+                    <Clock size={16} />
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <p className="text-xs text-foreground-400">Time remaining</p>
+                      <p className="text-sm">{timeRemaining(client.program_end)}</p>
+                    </div>
+                    {client.status === 'expiring' ? (
+                      <AlertTriangle
+                        className="text-warning"
+                        size={16}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Payment */}
+              {client.payment_status || client.payment_amount ? (
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 text-foreground-400">
+                    <CreditCard size={16} />
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div>
+                      <p className="text-xs text-foreground-400">Payment</p>
+                      <p className="text-sm">
+                        {client.payment_amount != null ? `${client.payment_amount}` : ''}
+                        {client.payment_currency ? ` ${client.payment_currency}` : ''}
+                      </p>
+                    </div>
+                    {client.payment_status ? (
+                      <Chip
+                        color={PAYMENT_CHIP_COLOR[client.payment_status] ?? 'default'}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {client.payment_status}
+                      </Chip>
+                    ) : null}
+                    {client.payment_status !== 'paid' && client.payment_status !== 'free' ? (
+                      <Button
+                        isPending={isUpdating}
+                        onPress={handleMarkAsPaid}
+                        size="sm"
+                        variant="ghost"
+                      >
+                        <Check size={14} />
+                        Mark as paid
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Renew button */}
+              {client.status === 'expiring' || client.status === 'expired' ? (
+                <Button
+                  onPress={() => navigate(`/clients/${client.id}/edit?renew=true`)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  <RefreshCw size={14} />
+                  Renew Program
+                </Button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── Intake section ────────────────────────────── */}
+        {client.intake_answers != null ? (
+          <section className="py-4">
+            <Separator className="mb-4" />
+            <SectionHeading title="Intake" />
+            <div className="flex flex-col gap-3">
+              {client.offer ? (
+                <p className="text-sm text-foreground-500">
+                  Applied for: <span className="font-medium text-foreground">{client.offer.name}</span>
+                  {client.offer.price_display ? ` \u00B7 ${client.offer.price_display}` : ''}
+                </p>
+              ) : null}
+              {client.source ? (
+                <p className="text-sm text-foreground-500">
+                  Source: {client.source} &middot; {timeAgo(client.inserted_at)}
+                </p>
+              ) : null}
+
+              <div className="overflow-hidden rounded-lg border border-divider">
+                <table className="w-full text-sm">
+                  <tbody>
+                    {Object.entries(client.intake_answers).map(([key, value]) => (
+                      <tr
+                        className="border-b border-divider last:border-b-0"
+                        key={key}
+                      >
+                        <td className="bg-content2 px-3 py-2 font-medium text-foreground-500">{key}</td>
+                        <td className="px-3 py-2">{String(value ?? '')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── Nutrition Plans ───────────────────────────── */}
+        <ClientNutritionPlans
+          clientId={client.id}
+          onAssigned={() => setShowNutritionPicker(false)}
+          showPicker={showNutritionPicker}
+        />
+
+        {/* ── Training Plans ────────────────────────────── */}
+        <ClientTrainingPlans
+          clientId={client.id}
+          onAssigned={() => setShowTrainingPicker(false)}
+          showPicker={showTrainingPicker}
+        />
+
+        {/* ── Contact section ───────────────────────────── */}
+        <section className="py-4">
+          <Separator className="mb-4" />
+          <SectionHeading title="Contact" />
+          <div className="flex flex-col gap-3">
+            {client.email ? (
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-foreground-400">
+                  <Mail size={16} />
+                </span>
+                <div>
+                  <p className="text-xs text-foreground-400">Email</p>
+                  <p className="text-sm">{client.email}</p>
+                </div>
+              </div>
+            ) : null}
+            {client.phone ? (
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-foreground-400">
+                  <Phone size={16} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-foreground-400">Phone</p>
+                  <p className="text-sm">{client.phone}</p>
+                </div>
+                <a
+                  aria-label="Message on WhatsApp"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 active:bg-default-200"
+                  href={getWhatsAppUrl(client.phone)}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <MessageCircle size={18} />
+                </a>
+              </div>
+            ) : null}
+            {client.instagram_handle ? (
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-foreground-400">
+                  <Instagram size={16} />
+                </span>
+                <div>
+                  <p className="text-xs text-foreground-400">Instagram</p>
+                  <p className="text-sm">@{client.instagram_handle}</p>
+                </div>
+              </div>
+            ) : null}
+            {!client.email && !client.phone && !client.instagram_handle ? (
+              <p className="text-sm text-foreground-400">No contact information available.</p>
+            ) : null}
           </div>
-          {!client.email && !client.phone && (
-            <p className="py-2 text-sm text-foreground-400">No contact information available.</p>
-          )}
         </section>
 
-        {/* Notes */}
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Notes</h3>
+        {/* ── Notes section ─────────────────────────────── */}
+        <section className="py-4">
+          <Separator className="mb-4" />
+          <SectionHeading title="Notes" />
           {client.notes ? (
             <p className="whitespace-pre-wrap text-sm">{client.notes}</p>
           ) : (
@@ -572,23 +762,10 @@ export default function ClientDetail() {
           )}
         </section>
 
-        {/* Nutrition Plans */}
-        <ClientNutritionPlans
-          clientId={client.id}
-          onAssigned={() => setShowNutritionPicker(false)}
-          showPicker={showNutritionPicker}
-        />
-
-        {/* Training Plans */}
-        <ClientTrainingPlans
-          clientId={client.id}
-          onAssigned={() => setShowTrainingPicker(false)}
-          showPicker={showTrainingPicker}
-        />
-
-        {/* Meta */}
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
+        {/* ── Details section ───────────────────────────── */}
+        <section className="py-4">
+          <Separator className="mb-4" />
+          <SectionHeading title="Details" />
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-xs text-foreground-400">Added</p>

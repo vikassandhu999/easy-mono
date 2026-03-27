@@ -197,7 +197,7 @@ paths:
   /v1/coach/clients/invite:
     post:
       summary: Invite client
-      description: Creates a client invitation. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
+      description: Creates a client invitation with status pending and source invite. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
       operationId: inviteClient
       security:
         - bearerAuth: []
@@ -237,7 +237,8 @@ paths:
                       last_name: Sandhu
                       phone: "+91 98765 43210"
                       notes: Interested in fat loss program
-                      status: invited
+                      status: pending
+                      source: invite
                       invite_url: "https://app.coachapp.com/invite/abc123def456"
                       inserted_at: "2026-03-26T10:00:00Z"
                       updated_at: "2026-03-26T10:00:00Z"
@@ -248,7 +249,7 @@ paths:
   /v1/coach/clients/{id}/resend-invite:
     post:
       summary: Resend invite email
-      description: Re-sends the invitation email for a client with status invited and an email address. Returns 422 if the client is not in invited status or has no email. Frontend pattern - show loading state on the resend button, display success toast on 200, show error toast on 422.
+      description: Re-sends the invitation email for a client with status pending and an email address. Returns 422 if the client is not in pending status or has no email. Frontend pattern - show loading state on the resend button, display success toast on 200, show error toast on 422.
       operationId: resendClientInvite
       security:
         - bearerAuth: []
@@ -270,7 +271,7 @@ paths:
   /v1/coach/clients/{id}:
     get:
       summary: Get client
-      description: Returns a single client with full details. For clients with status invited, the response includes invite_url so the coach can view, copy, or share the invitation link at any time. Frontend pattern - cache by id, refetch after mutations.
+      description: Returns a single client with full details including program, payment, intake, and offer preload. Status is auto-computed from program dates unless status_override is set. For pending clients with an invitation_token, invite_url is included. Frontend pattern - cache by id, refetch after mutations. Show program section only when program fields are present, intake section only when intake_answers is non-empty.
       operationId: getClient
       security:
         - bearerAuth: []
@@ -289,7 +290,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update client
-      description: Updates client metadata such as contact info and status. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response.
+      description: Updates client contact info, program details, payment tracking, and status override. Setting program_start/program_end causes status to auto-compute (active/expiring/expired). Setting status_override bypasses auto-computation. Clearing status_override (null) re-enables it. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response. The edit form is progressive — coaches can save with minimal fields and add program/payment details later.
       operationId: updateClient
       security:
         - bearerAuth: []
@@ -302,11 +303,19 @@ paths:
             schema:
               $ref: "#/components/schemas/ClientUpdateRequest"
             examples:
-              default:
+              set_program:
                 value:
-                  first_name: "Jane"
-                  last_name: "Doe"
-                  status: active
+                  program_name: Fat Loss 12 Weeks
+                  program_start: "2026-03-01"
+                  program_end: "2026-05-24"
+              mark_paid:
+                value:
+                  payment_status: paid
+                  payment_amount: 4999
+                  payment_notes: UPI received Mar 1
+              archive:
+                value:
+                  status_override: archived
       responses:
         "200":
           description: Client updated
@@ -323,6 +332,7 @@ paths:
   /v1/coach/clients:
     get:
       summary: List clients
+      description: Returns paginated clients with optional status and payment_status filters. The response includes a summary object with badge counts for quick dashboard display (active, expiring, pending, expired, payment_due). Summary is always computed from all business clients regardless of current filters. Frontend pattern - each tab (Active/Expiring/Pending/etc) queries with its status filter, uses summary counts for badge numbers. Search covers first_name, last_name, email, and phone.
       operationId: listClients
       security:
         - bearerAuth: []
@@ -335,9 +345,16 @@ paths:
           required: false
           schema:
             type: string
+            enum: [active, inactive, pending, expired, archived]
+        - name: payment_status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [free, paid, partial, pending]
       responses:
         "200":
-          description: Clients
+          description: Clients with summary counts
           content:
             application/json:
               schema:
@@ -2637,142 +2654,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
   # ── Leads ───────────────────────────────────────────────────
-  /v1/coach/leads:
-    get:
-      summary: List leads
-      description: Returns leads for the coach's business with optional status filter. Powers the leads management section with tab-based filtering (All/New/Contacted/Converted/Rejected). Frontend pattern - fetch with status param on tab change, cache per tab, refetch after status updates.
-      operationId: listLeads
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OffsetQuery"
-        - $ref: "#/components/parameters/LimitQuery"
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [new, contacted, converted, rejected]
-      responses:
-        "200":
-          description: Leads list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LeadListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /v1/coach/leads/{id}:
-    get:
-      summary: Get lead
-      description: Returns a single lead with offer and client preloads for the lead detail page. Shows intake answers, contact info, and conversion status. Frontend pattern - fetch on detail page mount, cache by id.
-      operationId: getLead
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      responses:
-        "200":
-          description: Lead details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LeadResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-    patch:
-      summary: Update lead
-      description: Updates lead status and/or private notes. Used for status progression (new -> contacted -> converted/rejected) and adding coach notes. Frontend pattern - optimistic update on status change, refetch lead list counts.
-      operationId: updateLead
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LeadUpdateRequest"
-            examples:
-              status_change:
-                value:
-                  status: contacted
-              add_note:
-                value:
-                  notes: Followed up via WhatsApp, interested in 8-week program.
-      responses:
-        "200":
-          description: Lead updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LeadResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
-    delete:
-      summary: Delete lead
-      description: Permanently deletes a lead. Frontend pattern - confirm dialog, then remove from local list on 204.
-      operationId: deleteLead
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      responses:
-        "204":
-          description: Lead deleted
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-  /v1/coach/leads/{id}/convert:
-    post:
-      summary: Convert lead to client
-      description: Converts a lead into a client record. Creates a new client with the lead's contact info, sets lead status to converted, and links the client. Frontend pattern - show confirmation dialog, on success navigate to the new client detail page using client.id from the response.
-      operationId: convertLead
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPath"
-      responses:
-        "200":
-          description: Lead converted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LeadResponse"
-              examples:
-                converted:
-                  value:
-                    data:
-                      id: d4e5f6a7-b8c9-0123-def0-123456789abc
-                      name: Vikas
-                      email: vikas@email.com
-                      phone: "+91 98765 43210"
-                      status: converted
-                      client:
-                        id: e5f6a7b8-c9d0-1234-ef01-23456789abcd
-                        email: vikas@email.com
-                        first_name: Vikas
-                      offer:
-                        id: b2c3d4e5-f6a7-8901-bcde-f12345678901
-                        name: Fat Loss Program
-                        price_display: "₹4,999"
-                        duration_text: 8 weeks
-                      inserted_at: "2026-03-26T08:00:00Z"
-                      updated_at: "2026-03-26T10:30:00Z"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
   # ── Public Storefront ───────────────────────────────────────
   /v1/public/coaches/{slug}/profile:
     get:
@@ -2834,11 +2715,11 @@ paths:
                           is_featured: true
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/public/coaches/{slug}/leads:
+  /v1/public/coaches/{slug}/inquiries:
     post:
-      summary: Submit lead from public storefront
-      description: Creates a new lead from the public intake form. No authentication required. Accepts the prospect's contact info and intake form answers. The offer can be specified via offer_id or offer_slug. Frontend pattern - show success message after 201, optionally redirect to a thank-you view.
-      operationId: createPublicLead
+      summary: Submit inquiry from public storefront
+      description: Creates a new client with status pending from the public intake form. No authentication required. Replaces the old /leads endpoint — the storefront now creates clients directly. Accepts contact info, intake form answers, and optional offer reference. If offer_id is provided and valid, program_name, payment_amount, and payment_currency are auto-filled from the offer. The name field is parsed into first_name (split on first space). Frontend pattern - show success message after 201, optionally redirect to a thank-you view.
+      operationId: createPublicInquiry
       parameters:
         - name: slug
           in: path
@@ -2850,11 +2731,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublicLeadCreateRequest"
+              $ref: "#/components/schemas/PublicInquiryRequest"
             examples:
               default:
                 value:
-                  name: Vikas
+                  name: Vikas Sandhu
                   email: vikas@email.com
                   phone: "+91 98765 43210"
                   instagram_handle: "@vikas_fit"
@@ -2865,19 +2746,19 @@ paths:
                     diet_type: Non-veg
       responses:
         "201":
-          description: Lead created
+          description: Client created as pending inquiry
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublicLeadResponse"
+                $ref: "#/components/schemas/PublicInquiryResponse"
               examples:
                 created:
                   value:
                     data:
                       id: d4e5f6a7-b8c9-0123-def0-123456789abc
-                      name: Vikas
+                      first_name: Vikas
                       email: vikas@email.com
-                      status: new
+                      status: pending
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -3182,11 +3063,15 @@ components:
         phone:
           type: string
           nullable: true
+        instagram_handle:
+          type: string
+          nullable: true
         notes:
           type: string
           nullable: true
     ClientUpdateRequest:
       type: object
+      description: All fields optional. Setting program dates transitions status from pending to active automatically. Setting status_override bypasses auto-computation. Setting status_override to null re-enables it.
       properties:
         first_name:
           type: string
@@ -3196,9 +3081,32 @@ components:
           type: string
         notes:
           type: string
-        status:
+        instagram_handle:
           type: string
-          enum: [active, inactive, onboarding]
+        program_name:
+          type: string
+        program_start:
+          type: string
+          format: date
+        program_end:
+          type: string
+          format: date
+        payment_status:
+          type: string
+          enum: [free, paid, partial, pending]
+        payment_amount:
+          type: integer
+          minimum: 0
+          description: Amount in smallest currency unit (paise/cents)
+        payment_currency:
+          type: string
+        payment_notes:
+          type: string
+        status_override:
+          type: string
+          nullable: true
+          enum: [active, inactive, pending, expired, archived]
+          description: Set to override auto-computed status. Set to null to re-enable auto-computation.
     ClientResponse:
       type: object
       required: [data]
@@ -3207,13 +3115,30 @@ components:
           $ref: "#/components/schemas/Client"
     ClientListResponse:
       type: object
-      required: [data, count]
+      required: [data, count, summary]
       properties:
         data:
           type: array
           items:
             $ref: "#/components/schemas/Client"
         count:
+          type: integer
+        summary:
+          $ref: "#/components/schemas/ClientSummary"
+    ClientSummary:
+      type: object
+      description: Badge counts for dashboard tabs. Computed from all business clients regardless of current list filters.
+      required: [active, expiring, pending, expired, payment_due]
+      properties:
+        active:
+          type: integer
+        expiring:
+          type: integer
+        pending:
+          type: integer
+        expired:
+          type: integer
+        payment_due:
           type: integer
     Client:
       type: object
@@ -3234,22 +3159,81 @@ components:
         phone:
           type: string
           nullable: true
+        instagram_handle:
+          type: string
+          nullable: true
         notes:
           type: string
           nullable: true
         status:
           type: string
-          enum: [active, inactive, invited]
+          enum: [active, inactive, pending, expired, expiring, archived]
+          description: Auto-computed from program dates unless status_override is set. Expiring = program_end within 7 days.
+        status_override:
+          type: string
+          nullable: true
+          enum: [active, inactive, pending, expired, archived]
+          description: When set, bypasses auto-computation.
+        program_name:
+          type: string
+          nullable: true
+        program_start:
+          type: string
+          format: date
+          nullable: true
+        program_end:
+          type: string
+          format: date
+          nullable: true
+        payment_status:
+          type: string
+          nullable: true
+          enum: [free, paid, partial, pending]
+        payment_amount:
+          type: integer
+          nullable: true
+          description: Amount in smallest currency unit (paise/cents)
+        payment_currency:
+          type: string
+          nullable: true
+        payment_notes:
+          type: string
+          nullable: true
+        intake_answers:
+          type: object
+          nullable: true
+          additionalProperties: true
+        offer:
+          nullable: true
+          oneOf:
+            - $ref: "#/components/schemas/ClientOffer"
+            - type: "null"
+        source:
+          type: string
+          nullable: true
+          description: How the client was created. One of storefront, invite, manual.
         invite_url:
           type: string
           nullable: true
-          description: Present for clients with status invited. Null for active/inactive clients.
+          description: Present for pending clients with invitation tokens. Null otherwise.
         inserted_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    ClientOffer:
+      type: object
+      description: Minimal offer info preloaded on client.
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price_display:
+          type: string
+          nullable: true
     FoodCreateRequest:
       type: object
       required: [name]
@@ -4665,6 +4649,37 @@ components:
                 type: array
                 items:
                   type: string
+        headline:
+          type: string
+          nullable: true
+          description: Bold hook text shown above the bio in the hero section.
+        trust_stats:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+          description: "Stat badges shown in the trust bar, e.g. [{value: '500+', label: 'Clients'}]"
+        faq_items:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+          description: FAQ accordion items for objection handling.
+        whatsapp_cta_enabled:
+          type: boolean
+          description: Whether to show the floating WhatsApp button on the public page.
+        whatsapp_cta_message:
+          type: string
+          nullable: true
+          description: Pre-filled message for the WhatsApp CTA button.
     StoreProfile:
       type: object
       required: [id, slug, display_name, is_published, inserted_at, updated_at]
@@ -4696,6 +4711,32 @@ components:
           type: array
           items:
             type: object
+        headline:
+          type: string
+          nullable: true
+        trust_stats:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+        faq_items:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+        whatsapp_cta_enabled:
+          type: boolean
+        whatsapp_cta_message:
+          type: string
+          nullable: true
         inserted_at:
           type: string
           format: date-time
@@ -5020,15 +5061,6 @@ components:
         count:
           type: integer
     # ── Lead Schemas ────────────────────────────────────────────
-    LeadUpdateRequest:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [new, contacted, converted, rejected]
-        notes:
-          type: string
-          nullable: true
     OfferBrief:
       type: object
       required: [id, name]
@@ -5057,67 +5089,18 @@ components:
         last_name:
           type: string
           nullable: true
-    Lead:
-      type: object
-      required: [id, name, email, phone, status, inserted_at, updated_at]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        instagram_handle:
-          type: string
-          nullable: true
-        intake_answers:
-          type: object
-          additionalProperties: true
-        status:
-          type: string
-          enum: [new, contacted, converted, rejected]
-        notes:
-          type: string
-          nullable: true
-        source:
-          type: string
-          nullable: true
-        offer:
-          oneOf:
-            - $ref: "#/components/schemas/OfferBrief"
-            - type: "null"
-        client:
-          oneOf:
-            - $ref: "#/components/schemas/ClientBrief"
-            - type: "null"
-        inserted_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-    LeadResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/Lead"
-    LeadListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/Lead"
-        count:
-          type: integer
     # ── Public Storefront Schemas ───────────────────────────────
-    PublicLeadCreateRequest:
+    PublicInquiryRequest:
       type: object
-      required: [name, email, phone]
+      required: [email, phone]
+      description: Creates a pending client from the public intake form. If name is provided, it is split into first_name/last_name on first space. If first_name is provided directly, it takes precedence.
       properties:
         name:
+          type: string
+          description: Full name — parsed into first_name/last_name on server.
+        first_name:
+          type: string
+        last_name:
           type: string
         email:
           type: string
@@ -5129,25 +5112,23 @@ components:
         offer_id:
           type: string
           nullable: true
+          description: If valid, auto-fills program_name, payment_amount, payment_currency from the offer.
         offer_slug:
           type: string
           nullable: true
         intake_answers:
           type: object
           additionalProperties: true
-        source:
-          type: string
-          nullable: true
-    PublicLeadResponse:
+    PublicInquiryResponse:
       type: object
       properties:
         data:
           type: object
-          required: [id, name, email, status]
+          required: [id, first_name, email, status]
           properties:
             id:
               type: string
-            name:
+            first_name:
               type: string
             email:
               type: string
@@ -5180,6 +5161,32 @@ components:
           type: array
           items:
             type: object
+        headline:
+          type: string
+          nullable: true
+        trust_stats:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+        faq_items:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+        whatsapp_cta_enabled:
+          type: boolean
+        whatsapp_cta_message:
+          type: string
+          nullable: true
     PublicOffer:
       type: object
       required: [id, name, slug, is_featured]

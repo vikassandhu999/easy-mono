@@ -9,8 +9,6 @@ export const ROUTES = {
   INVITE_CLIENT: '/clients/invite',
   CLIENT_DETAIL: '/clients/:id',
   EDIT_CLIENT: '/clients/:id/edit',
-  LEADS: '/leads',
-  LEAD_DETAIL: '/leads/:id',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',
   CREATE_EXERCISE: '/library/exercises/create',

@@ -1,6 +1,6 @@
-import {Button, Input, Label, Spinner, TextArea, toast} from '@heroui/react';
+import {Alert, Button, Card, Input, Label, Separator, Spinner, TextArea, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {ArrowLeft, Check, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
+import {ArrowLeft, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
@@ -14,6 +14,7 @@ import {applyFormErrors} from '@/api/shared';
 const schema = z
   .object({
     email: z.string().email('Invalid email address').or(z.literal('')).optional(),
+    instagram_handle: z.string().optional(),
     name: z.string().min(1, 'Name is required'),
     notes: z.string().optional(),
     phone: z.string().optional(),
@@ -76,38 +77,35 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
   return (
     <div className="flex max-w-lg flex-col gap-6">
       {/* Success header */}
-      <div className="flex items-start gap-3 rounded-xl border border-success/20 bg-success/5 p-4">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10">
-          <Check
-            className="text-success"
-            size={16}
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">Invite sent to {contactLabel}</p>
-          <p className="mt-1 text-xs text-foreground-500">
+      <Alert status="success">
+        <Alert.Indicator />
+        <Alert.Content>
+          <Alert.Title>Invite sent to {contactLabel}</Alert.Title>
+          <Alert.Description>
             {client.email
               ? 'The email invite has been sent automatically. You can also share the link below directly.'
               : 'Share the link below with your client to get them started.'}
-          </p>
-        </div>
-      </div>
+          </Alert.Description>
+        </Alert.Content>
+      </Alert>
 
       {/* Invite link section */}
       {inviteUrl ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium">Share the invite link with your client:</p>
-          <div className="flex items-center gap-2 rounded-xl border border-divider bg-content1 p-3">
-            <p className="min-w-0 flex-1 truncate text-sm text-foreground-500">{inviteUrl}</p>
-            <Button
-              aria-label="Copy invite link"
-              onPress={handleCopyLink}
-              size="sm"
-              variant="ghost"
-            >
-              <ClipboardCopy size={16} />
-            </Button>
-          </div>
+          <Card>
+            <Card.Content className="flex items-center gap-2">
+              <p className="min-w-0 flex-1 truncate text-sm text-foreground-500">{inviteUrl}</p>
+              <Button
+                aria-label="Copy invite link"
+                onPress={handleCopyLink}
+                size="sm"
+                variant="ghost"
+              >
+                <ClipboardCopy size={16} />
+              </Button>
+            </Card.Content>
+          </Card>
 
           <div className="flex flex-wrap gap-2">
             <a
@@ -129,15 +127,18 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-divider bg-content1 p-4">
-          <p className="text-sm text-foreground-500">
-            The invite has been sent. The invite link will be available once the backend is updated to return it.
-          </p>
-        </div>
+        <Card>
+          <Card.Content>
+            <p className="text-sm text-foreground-500">
+              The invite has been sent. The invite link will be available once the backend is updated to return it.
+            </p>
+          </Card.Content>
+        </Card>
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2 border-t border-divider pt-4">
+      <Separator />
+      <div className="flex flex-wrap gap-2 pt-4">
         <Button onPress={() => navigate(`/clients/${client.id}`)}>View client</Button>
         <Button
           onPress={onInviteAnother}
@@ -172,6 +173,7 @@ export default function InviteClient() {
       const result = await inviteClient({
         email: data.email || undefined,
         first_name: firstName,
+        instagram_handle: data.instagram_handle || undefined,
         last_name: lastName,
         notes: data.notes || undefined,
         phone: data.phone || undefined,
@@ -223,7 +225,7 @@ export default function InviteClient() {
               placeholder="Vikas Sandhu"
               {...register('name')}
             />
-            {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+            {errors.name ? <p className="text-xs text-danger">{errors.name.message}</p> : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -235,7 +237,7 @@ export default function InviteClient() {
               type="email"
               {...register('email')}
             />
-            {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+            {errors.email ? <p className="text-xs text-danger">{errors.email.message}</p> : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -247,7 +249,17 @@ export default function InviteClient() {
               type="tel"
               {...register('phone')}
             />
-            {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
+            {errors.phone ? <p className="text-xs text-danger">{errors.phone.message}</p> : null}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="instagram_handle">Instagram</Label>
+            <Input
+              id="instagram_handle"
+              placeholder="@vikas_fitness"
+              {...register('instagram_handle')}
+            />
+            {errors.instagram_handle ? <p className="text-xs text-danger">{errors.instagram_handle.message}</p> : null}
           </div>
 
           <p className="text-xs text-foreground-400">At least one of email or phone is required.</p>
@@ -260,10 +272,10 @@ export default function InviteClient() {
               rows={3}
               {...register('notes')}
             />
-            {errors.notes && <p className="text-xs text-danger">{errors.notes.message}</p>}
+            {errors.notes ? <p className="text-xs text-danger">{errors.notes.message}</p> : null}
           </div>
 
-          {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+          {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 
           <div className="flex flex-row gap-2 pt-2">
             <Button

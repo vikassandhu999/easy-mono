@@ -181,7 +181,7 @@ function SelectOptionsEditor({
       <div className="flex flex-wrap gap-2">
         {options.map((option, optionIndex) => (
           <span
-            className="inline-flex items-center gap-1 rounded-full bg-default-100 px-3 py-1 text-xs"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-default-100 px-3 text-xs"
             key={option || optionIndex}
           >
             {option || `Option ${optionIndex + 1}`}

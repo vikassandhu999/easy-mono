@@ -1,4 +1,4 @@
-import {Description, Input, Label, Spinner, Switch} from '@heroui/react';
+import {Card, Description, Input, Label, Spinner, Switch} from '@heroui/react';
 import {Check, ExternalLink, X} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
 import {Controller, type UseFormReturn} from 'react-hook-form';
@@ -156,44 +156,46 @@ export default function SettingsEditor({
       </div>
 
       {/* Publish toggle */}
-      <div className="flex flex-col gap-3 rounded-xl border border-divider bg-content1 p-4">
-        <Controller
-          control={control}
-          name="is_published"
-          render={({field}) => (
-            <Switch
-              isSelected={field.value}
-              onChange={field.onChange}
-            >
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
-              <Switch.Content>
-                <span className="text-sm font-medium">{field.value ? 'Published' : 'Unpublished'}</span>
-              </Switch.Content>
-            </Switch>
-          )}
-        />
-
-        {isPublished ? (
-          <div className="flex flex-col gap-1">
-            <p className="text-xs text-success">Your page is live. Changes appear within 60 seconds after saving.</p>
-            {pageUrl ? (
-              <a
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline"
-                href={`https://${pageUrl}`}
-                rel="noopener noreferrer"
-                target="_blank"
+      <Card>
+        <Card.Content className="flex flex-col gap-3">
+          <Controller
+            control={control}
+            name="is_published"
+            render={({field}) => (
+              <Switch
+                isSelected={field.value}
+                onChange={field.onChange}
               >
-                <ExternalLink size={14} />
-                {pageUrl}
-              </a>
-            ) : null}
-          </div>
-        ) : (
-          <p className="text-xs text-foreground-400">Your page is not visible. Toggle on and save to make it live.</p>
-        )}
-      </div>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Switch.Content>
+                  <span className="text-sm font-medium">{field.value ? 'Published' : 'Unpublished'}</span>
+                </Switch.Content>
+              </Switch>
+            )}
+          />
+
+          {isPublished ? (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-success">Your page is live. Changes appear within 60 seconds after saving.</p>
+              {pageUrl ? (
+                <a
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline"
+                  href={`https://${pageUrl}`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLink size={14} />
+                  {pageUrl}
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-xs text-foreground-400">Your page is not visible. Toggle on and save to make it live.</p>
+          )}
+        </Card.Content>
+      </Card>
     </div>
   );
 }

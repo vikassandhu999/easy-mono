@@ -1,5 +1,5 @@
-import {Button, Input, Tabs} from '@heroui/react';
-import {Plus, Search} from 'lucide-react';
+import {Button, SearchField, Tabs} from '@heroui/react';
+import {Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -8,33 +8,57 @@ import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
-import {type Client, type ListClientsFilters, useClientsInfiniteQuery} from '@/api/clients';
+import {
+  type Client,
+  type ClientSummary,
+  type ListClientsFilters,
+  useClientsInfiniteQuery,
+  useListClientsQuery,
+} from '@/api/clients';
 import ClientCard from '@/clients/components/client-card';
 
-const STATUS_TABS = [
-  {id: 'all', label: 'All'},
-  {id: 'active', label: 'Active'},
-  {id: 'invited', label: 'Invited'},
-  {id: 'inactive', label: 'Inactive'},
-] as const;
+type TabConfig = {
+  id: string;
+  label: string;
+  filter: ListClientsFilters;
+};
+
+const TABS: TabConfig[] = [
+  {id: 'all', label: 'All', filter: {}},
+  {id: 'active', label: 'Active', filter: {status: 'active'}},
+  {id: 'expiring', label: 'Expiring', filter: {status: 'expiring'}},
+  {id: 'payment_due', label: '₹ Due', filter: {payment_status: 'pending,partial'}},
+  {id: 'pending', label: 'Pending', filter: {status: 'pending'}},
+  {id: 'expired', label: 'Expired', filter: {status: 'expired'}},
+  {id: 'archived', label: 'Archived', filter: {status: 'archived'}},
+];
+
+function getTabLabel(tab: TabConfig, summary: ClientSummary | undefined): string {
+  if (!summary) return tab.label;
+  const count = (summary as Record<string, number>)[tab.id];
+  return count ? `${tab.label} ${count}` : tab.label;
+}
 
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   const debouncedSearch = useDebouncedValue(search);
 
+  // Fetch summary counts (lightweight query with limit=0)
+  const {data: summaryData} = useListClientsQuery({limit: 0});
+  const summary = summaryData?.summary;
+
   const queryArg: ListClientsFilters | undefined = useMemo(() => {
-    const filters: ListClientsFilters = {};
+    const tabFilter = TABS.find((t) => t.id === activeTab)?.filter ?? {};
+    const filters: ListClientsFilters = {...tabFilter};
     if (debouncedSearch) filters.search = debouncedSearch;
-    if (statusFilter !== 'all') filters.status = statusFilter;
     return Object.keys(filters).length > 0 ? filters : undefined;
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, activeTab]);
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useClientsInfiniteQuery(queryArg);
 
-  // Flatten all pages into a single array
   const clients = useMemo<Client[]>(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((page) => page.data);
@@ -46,7 +70,7 @@ export default function ListClients() {
     fetchNextPage,
   });
 
-  const isFiltering = search.length > 0 || statusFilter !== 'all';
+  const isFiltering = search.length > 0 || activeTab !== 'all';
 
   return (
     <PageLayout
@@ -61,36 +85,33 @@ export default function ListClients() {
       }
       title="Clients"
     >
-      {/* Search + Filter */}
+      {/* Search */}
       <div className="mb-4 flex flex-col gap-3">
-        <div className="relative">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-400"
-            size={16}
-          />
-          <Input
-            aria-label="Search clients"
-            className="pl-9"
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email..."
-            type="search"
-            value={search}
-          />
-        </div>
+        <SearchField
+          aria-label="Search clients"
+          onChange={setSearch}
+          value={search}
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search by name, email, phone..." />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
 
+        {/* Status filter tabs */}
         <Tabs
-          defaultSelectedKey="all"
-          onSelectionChange={(key) => setStatusFilter(String(key))}
-          selectedKey={statusFilter}
+          onSelectionChange={(key) => setActiveTab(String(key))}
+          selectedKey={activeTab}
         >
           <Tabs.ListContainer>
             <Tabs.List aria-label="Filter by status">
-              {STATUS_TABS.map((tab) => (
+              {TABS.map((tab) => (
                 <Tabs.Tab
                   id={tab.id}
                   key={tab.id}
                 >
-                  {tab.label}
+                  {getTabLabel(tab, summary)}
                   <Tabs.Indicator />
                 </Tabs.Tab>
               ))}

@@ -1,4 +1,4 @@
-import {Button, Spinner, toast} from '@heroui/react';
+import {Alert, Button, Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Eye, Save} from 'lucide-react';
 import {useRef, useState} from 'react';
@@ -91,9 +91,13 @@ export default function StorefrontEditor() {
   if (isError) {
     return (
       <div className="flex h-full items-center justify-center px-4 py-20">
-        <div className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-12">
-          <p className="text-sm text-danger">Failed to load profile.</p>
-        </div>
+        <Alert status="danger">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Failed to load profile</Alert.Title>
+            <Alert.Description>Please try again later.</Alert.Description>
+          </Alert.Content>
+        </Alert>
       </div>
     );
   }
@@ -280,9 +284,12 @@ function EditorInner({
 
       {/* ── Root form error ────────────────────────────────── */}
       {form.formState.errors.root ? (
-        <div className="border-t border-danger/20 bg-danger/5 px-4 py-2">
-          <p className="text-sm text-danger">{form.formState.errors.root.message}</p>
-        </div>
+        <Alert status="danger">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{form.formState.errors.root.message}</Alert.Title>
+          </Alert.Content>
+        </Alert>
       ) : null}
     </form>
   );

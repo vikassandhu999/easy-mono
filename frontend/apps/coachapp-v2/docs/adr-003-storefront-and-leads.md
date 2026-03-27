@@ -1,16 +1,16 @@
-# ADR-003: Coach Storefront & Lead Generation
+# ADR-003: Coach Storefront & Client Acquisition
 
 **Date:** 2026-03-26  
-**Context:** Public storefront for coaches to showcase services and capture leads, replacing WhatsApp-based client acquisition
+**Context:** Public storefront for coaches to showcase services and capture client inquiries, replacing WhatsApp-based client acquisition
 
 ---
 
 ## Context
 
-Indian coaches acquire clients primarily through WhatsApp and Instagram DMs. This is manual, unscalable, and means the coach has no professional online presence. The storefront feature gives each coach a public page where potential clients can view offers, see transformation results, and submit an intake form that creates a lead directly in the coach's dashboard.
+Indian coaches acquire clients primarily through WhatsApp and Instagram DMs. This is manual, unscalable, and means the coach has no professional online presence. The storefront feature gives each coach a public page where potential clients can view offers, see transformation results, and submit an intake form that creates a pending client directly in the coach's dashboard.
 
 The feature spans **two apps**:
-1. **coachapp-v2** (React SPA) — Coach dashboard for managing profile, offers, testimonials, and incoming leads
+1. **coachapp-v2** (React SPA) — Coach dashboard for managing profile, offers, and testimonials
 2. **website** (Next.js) — Server-rendered public storefront at `/coach/{slug}` with ISR
 
 ### Data Model
@@ -39,20 +39,19 @@ Testimonial (many per coach)
 ├── is_featured, status, position
 └── (no nested entities)
 
-Lead (created by public intake form)
-├── name, email, phone, instagram_handle
+Client (created by public intake form with status: pending)
+├── See ADR-004 for full Client type
 ├── intake_answers: Record<string, unknown>
-├── status: new | contacted | converted | rejected
-├── notes, source
-├── offer?: OfferBrief (preloaded)
-└── client?: ClientBrief (after conversion)
+├── offer: ClientOffer | null (preloaded)
+├── source: null | string
+└── status: pending (auto-computed, see ADR-004)
 ```
 
 ---
 
-## Decision: Three Feature Modules + Public Page
+## Decision: Storefront Module + Public Page
 
-The feature is split across three feature modules in coachapp-v2 and one route in the website app:
+The feature is split across the storefront feature module in coachapp-v2 and one route in the website app:
 
 ### 1. `storefront/` — Visual Editor, Offers, Testimonials management
 
@@ -67,9 +66,9 @@ A single `react-hook-form` instance owns all form state in `storefront-editor.ts
 
 Offers and testimonials follow standard CRUD patterns with infinite scroll lists, create/edit forms, and AlertDialog delete confirmations. They are NOT edited inline — the editor shows read-only summaries with links to their dedicated CRUD pages.
 
-### 2. `leads/` — Lead inbox and management
+### 2. Leads eliminated — unified Client model
 
-Leads are a separate feature module (not inside storefront) because they are accessed from the sidebar independently. The lead list has status tab filters (All, New, Contacted, Converted, Rejected). The lead detail page shows contact info, intake answers, status management, notes (RHF + zod), WhatsApp link, convert-to-client, reject, and delete.
+Leads were eliminated. The public intake form now creates a Client directly with `status: pending`. Coaches manage all people (applicants, active clients, past clients) in the unified client list. See ADR-004 for the full Client model and enriched client management.
 
 ### 3. Public Storefront (website app) — `/coach/[slug]`
 
@@ -100,18 +99,6 @@ Types are shared via `@easy/storefront-types` package — the local `types.ts` r
 | Delete testimonial | No, confirmation | **DIALOG** | AlertDialog on edit page |
 | Copy share link | No, single tap | **INLINE** | Button copies to clipboard with toast |
 | Download QR code | No, single tap | **INLINE** | Button triggers SVG download |
-
-### Leads (coachapp-v2)
-
-| Action | Keyboard? | Container | Rationale |
-| --- | --- | --- | --- |
-| Filter leads by status | No, tab selection | **INLINE** | HeroUI Tabs compound component |
-| Change lead status | No, selection | **INLINE** | HeroUI Select on detail page |
-| Save notes | Yes, 1 field | **INLINE** | TextArea + Save button on detail page |
-| Convert to client | No, single tap | **INLINE** | Button press with loading state |
-| Reject lead | No, single tap | **INLINE** | Button press, updates status |
-| Delete lead | No, confirmation | **DIALOG** | AlertDialog on detail page |
-| WhatsApp lead | No, single tap | **INLINE** | External link opens wa.me |
 
 ### Public Storefront (website)
 
@@ -154,19 +141,6 @@ Types are shared via `@easy/storefront-types` package — the local `types.ts` r
 | `offer-card.tsx` | List item card (name, price, type chip, featured badge) | list-offers |
 | `testimonial-form.tsx` | Shared testimonial form (schema + hook). Handles before/after weight type coercion (string from API → number for form → number for API). | create-testimonial, edit-testimonial |
 | `testimonial-card.tsx` | List item card (client name, photo thumbnail, rating stars, result tag, featured badge) | list-testimonials |
-
-### Leads Screens (coachapp-v2)
-
-| File | Route | Purpose |
-| --- | --- | --- |
-| `list-leads.tsx` | `/leads` | Infinite scroll + status tab filters |
-| `lead-detail.tsx` | `/leads/:id` | Contact info, intake answers, status, notes, actions |
-
-### Leads Components (coachapp-v2)
-
-| Component | Purpose | Used by |
-| --- | --- | --- |
-| `lead-card.tsx` | List item card (name, offer, status chip, time ago, status dot) | list-leads |
 
 ### Public Storefront (website app)
 
@@ -221,14 +195,6 @@ create-testimonial.tsx / edit-testimonial.tsx
   ├── useCreateTestimonialMutation / useUpdateTestimonialMutation
   └── useDeleteTestimonialMutation (edit only)
 
-list-leads.tsx
-  └── useLeadsInfiniteQuery({status?})     → filtered paginated leads
-
-lead-detail.tsx
-  ├── useGetLeadQuery(id)                  → lead with offer + client preloads
-  ├── useUpdateLeadMutation                → status change, save notes
-  ├── useConvertLeadMutation               → convert to client (invalidates Client tags)
-  └── useDeleteLeadMutation                → delete lead
 ```
 
 ### Public Storefront (website)
@@ -245,7 +211,7 @@ storefront-client.tsx (Client Component)
   ├── ResultsGrid (photo grid + text quotes)
   ├── FaqSection (accordion, conditional on faq_items.length)
   ├── IntakeForm
-  │   └── fetch(`/v1/public/coaches/${slug}/leads`, POST) → create lead
+  │   └── fetch(`/v1/public/coaches/${slug}/inquiries`, POST) → create pending client
   ├── StickyCta (mobile only, hidden when hero/form visible)
   └── WhatsAppFab (conditional on whatsapp_cta_enabled)
 ```
@@ -303,17 +269,9 @@ The section title adapts: "Results" if photos exist, "What Clients Say" if only 
 
 `intake-form.tsx` renders the standard fields (name, email, phone, instagram) plus dynamic custom questions from `profile.intake_questions`. Select-type questions render as native `<select>` elements. The offer can be pre-selected via the `offer` query param or by clicking an offer's CTA button (which scrolls to the form).
 
-### 12. Lead conversion invalidates Client cache
+### 12. Sidebar structure: Storefront group + Clients with pending badge
 
-`convertLead` mutation invalidates both `Lead` and `Client` cache tags. This ensures the client list updates immediately when a lead is converted, without requiring manual navigation or refresh.
-
-### 13. Lead notes use react-hook-form + zod
-
-The notes field on the lead detail page uses a dedicated `notesForm` instance with `useForm` + `zodResolver`. This follows the AGENTS.md rule that every form must use RHF + zod, even for a single field. The form uses `values: { notes: lead.notes ?? '' }` to sync with server state.
-
-### 14. Sidebar structure: Storefront group + Leads item with badge
-
-The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. "Leads" is a separate top-level sidebar item with a count badge showing the number of new leads, fetched via `useLeadsInfiniteQuery({ status: 'new' })`.
+The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. The "Clients" item has a `PendingClientBadge` showing the count of pending clients (storefront applications) from `ClientSummary`, fetched via `useListClientsQuery({ status: 'pending', limit: 0 })`. The badge is hidden when count is 0.
 
 ---
 
@@ -337,18 +295,13 @@ The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "M
 | `GET /v1/coach/testimonials` (infinite) | `useTestimonialsInfiniteQuery` | Paginated testimonial list |
 | `PATCH /v1/coach/testimonials/:id` | `useUpdateTestimonialMutation` | Update testimonial |
 | `DELETE /v1/coach/testimonials/:id` | `useDeleteTestimonialMutation` | Delete testimonial |
-| `GET /v1/coach/leads/:id` | `useGetLeadQuery` | Fetch lead with preloads |
-| `GET /v1/coach/leads` (infinite) | `useLeadsInfiniteQuery` | Paginated lead list |
-| `PATCH /v1/coach/leads/:id` | `useUpdateLeadMutation` | Update status/notes |
-| `DELETE /v1/coach/leads/:id` | `useDeleteLeadMutation` | Delete lead |
-| `POST /v1/coach/leads/:id/convert` | `useConvertLeadMutation` | Convert lead to client |
 
 ### Public Storefront (website — direct fetch, not RTK Query)
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /v1/public/coaches/:slug/profile` | Fetch profile + offers + testimonials |
-| `POST /v1/public/coaches/:slug/leads` | Submit intake form |
+| `POST /v1/public/coaches/:slug/inquiries` | Submit intake form (creates pending Client) |
 
 ---
 
@@ -366,3 +319,4 @@ The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "M
 - **Share panel / QR code** — removed in visual editor v2, may be re-added as a section
 - **Preview authentication** — `?preview=true` currently relies on the backend accepting the flag; no session token verification in the iframe URL yet
 - **Live-as-you-type preview** — current preview updates on save (Option A). Option B (shared component rendering for instant preview) is deferred
+- **Client deletion** — no delete endpoint or UI for removing clients

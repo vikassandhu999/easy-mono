@@ -22,8 +22,6 @@ import CreateFood from '@/foods/create-food';
 import EditFood from '@/foods/edit-food';
 import FoodDetail from '@/foods/food-detail';
 import ListFoods from '@/foods/list-foods';
-import LeadDetail from '@/leads/lead-detail';
-import ListLeads from '@/leads/list-leads';
 import Library from '@/library/library';
 import CreateNutritionPlan from '@/nutrition-plans/create-nutrition-plan';
 import EditNutritionPlan from '@/nutrition-plans/edit-nutrition-plan';
@@ -195,14 +193,6 @@ export default function App() {
         <Route
           element={<EditTrainingPlan />}
           path={ROUTES.EDIT_TRAINING_PLAN}
-        />
-        <Route
-          element={<ListLeads />}
-          path={ROUTES.LEADS}
-        />
-        <Route
-          element={<LeadDetail />}
-          path={ROUTES.LEAD_DETAIL}
         />
         <Route
           element={<Storefront />}

@@ -1,3 +1,4 @@
+import {Chip, Separator} from '@heroui/react';
 import {
   BookOpen,
   ChevronRight,
@@ -9,7 +10,6 @@ import {
   MessageSquareQuote,
   Settings,
   Store,
-  UserCheck,
   Users,
   UtensilsCrossed,
 } from 'lucide-react';
@@ -17,7 +17,7 @@ import {type ReactNode, useState} from 'react';
 import {NavLink, Outlet, useLocation} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-import {useListLeadsQuery} from '@/api/leads';
+import {useListClientsQuery} from '@/api/clients';
 
 const ICON_SIZE = 20;
 
@@ -43,15 +43,10 @@ const SIDEBAR_TOP: NavItem[] = [
     path: ROUTES.DASHBOARD,
   },
   {
+    badge: <PendingClientBadge />,
     icon: <Users size={ICON_SIZE} />,
     label: 'Clients',
     path: ROUTES.CLIENTS,
-  },
-  {
-    badge: <LeadCountBadge />,
-    icon: <UserCheck size={ICON_SIZE} />,
-    label: 'Leads',
-    path: ROUTES.LEADS,
   },
 ];
 
@@ -150,7 +145,7 @@ function SidebarNavItem({item}: {item: NavItem}) {
   return (
     <NavLink
       className={({isActive}) =>
-        `relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        `relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isActive
             ? 'bg-primary/10 font-semibold text-primary before:absolute before:inset-y-1 before:left-0 before:w-1 before:rounded-full before:bg-primary'
             : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
@@ -165,15 +160,18 @@ function SidebarNavItem({item}: {item: NavItem}) {
   );
 }
 
-/** Small pill that shows the count of new leads. Hidden when 0. */
-function LeadCountBadge() {
-  const {data} = useListLeadsQuery({status: 'new', limit: 0});
-  const count = data?.count ?? 0;
+/** Small pill showing count of pending clients (storefront applications). Hidden when 0. */
+function PendingClientBadge() {
+  const {data} = useListClientsQuery({status: 'pending', limit: 0});
+  const count = data?.summary?.pending ?? 0;
   if (count === 0) return null;
   return (
-    <span className="flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-white">
+    <Chip
+      color="accent"
+      size="sm"
+    >
       {count > 99 ? '99+' : count}
-    </span>
+    </Chip>
   );
 }
 
@@ -185,7 +183,7 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
   return (
     <div>
       <button
-        className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isGroupActive && !open
             ? 'bg-primary/10 font-semibold text-primary'
             : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
@@ -197,12 +195,12 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
         <span className="flex-1 text-left">{group.label}</span>
         <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
       </button>
-      {open && (
+      {open ? (
         <div className="ml-3 mt-1 space-y-0.5 border-l border-divider pl-3">
           {group.items.map((item) => (
             <NavLink
               className={({isActive}) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
                     ? 'bg-primary/10 font-semibold text-primary'
                     : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
@@ -216,7 +214,7 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
             </NavLink>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -267,7 +265,8 @@ export default function AppShell() {
             <SidebarNavGroupSection group={LIBRARY_GROUP} />
             <SidebarNavGroupSection group={STOREFRONT_GROUP} />
           </div>
-          <div className="space-y-1 border-t border-divider pt-4">
+          <Separator className="my-2" />
+          <div className="space-y-1 pt-2">
             {SIDEBAR_BOTTOM.map((item) => (
               <SidebarNavItem
                 item={item}
@@ -284,7 +283,7 @@ export default function AppShell() {
       </main>
 
       {/* Mobile bottom nav — only on top-level pages */}
-      {showBottomNav && (
+      {showBottomNav ? (
         <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-divider bg-background lg:hidden">
           {BOTTOM_NAV.map((item) => (
             <BottomNavItem
@@ -293,7 +292,7 @@ export default function AppShell() {
             />
           ))}
         </nav>
-      )}
+      ) : null}
     </div>
   );
 }

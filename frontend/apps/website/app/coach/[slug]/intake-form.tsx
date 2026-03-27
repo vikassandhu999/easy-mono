@@ -4,7 +4,7 @@ import {useState} from 'react';
 
 import {Lock, MessageCircle, Star} from 'lucide-react';
 
-import type {IntakeQuestion, PublicLeadCreateRequest, PublicOffer, PublicTestimonial} from '@easy/storefront-types';
+import type {IntakeQuestion, PublicInquiryRequest, PublicOffer, PublicTestimonial} from '@easy/storefront-types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -51,18 +51,17 @@ export default function IntakeForm({
     setStatus('submitting');
     setErrorMessage('');
 
-    const body: PublicLeadCreateRequest = {
+    const body: PublicInquiryRequest = {
       email: formState.email,
       instagram_handle: formState.instagram_handle || undefined,
       intake_answers: Object.keys(answers).length > 0 ? answers : undefined,
       name: formState.name,
       offer_id: offerId ?? undefined,
       phone: formState.phone,
-      source: 'storefront',
     };
 
     try {
-      const res = await fetch(`${API_BASE}/v1/public/coaches/${slug}/leads`, {
+      const res = await fetch(`${API_BASE}/v1/public/coaches/${slug}/inquiries`, {
         body: JSON.stringify(body),
         headers: {'Content-Type': 'application/json'},
         method: 'POST',
@@ -173,13 +172,13 @@ export default function IntakeForm({
           <div className="flex flex-col gap-1.5">
             <label
               className="text-sm font-medium text-gray-700"
-              htmlFor="lead_name"
+              htmlFor="inquiry_name"
             >
               Name *
             </label>
             <input
               className="min-h-11 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-              id="lead_name"
+              id="inquiry_name"
               onChange={(e) => handleFieldChange('name', e.target.value)}
               placeholder="Your name"
               required
@@ -191,13 +190,13 @@ export default function IntakeForm({
           <div className="flex flex-col gap-1.5">
             <label
               className="text-sm font-medium text-gray-700"
-              htmlFor="lead_email"
+              htmlFor="inquiry_email"
             >
               Email *
             </label>
             <input
               className="min-h-11 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-              id="lead_email"
+              id="inquiry_email"
               onChange={(e) => handleFieldChange('email', e.target.value)}
               placeholder="you@email.com"
               required
@@ -211,13 +210,13 @@ export default function IntakeForm({
           <div className="flex flex-col gap-1.5">
             <label
               className="text-sm font-medium text-gray-700"
-              htmlFor="lead_phone"
+              htmlFor="inquiry_phone"
             >
               Phone *
             </label>
             <input
               className="min-h-11 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-              id="lead_phone"
+              id="inquiry_phone"
               onChange={(e) => handleFieldChange('phone', e.target.value)}
               placeholder="+91 98765 43210"
               required
@@ -229,13 +228,13 @@ export default function IntakeForm({
           <div className="flex flex-col gap-1.5">
             <label
               className="text-sm font-medium text-gray-700"
-              htmlFor="lead_instagram"
+              htmlFor="inquiry_instagram"
             >
               Instagram
             </label>
             <input
               className="min-h-11 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
-              id="lead_instagram"
+              id="inquiry_instagram"
               onChange={(e) => handleFieldChange('instagram_handle', e.target.value)}
               placeholder="@your_handle"
               type="text"

@@ -1,6 +1,7 @@
+import type {Key} from '@heroui/react';
 import type {UseFormReturn} from 'react-hook-form';
 
-import {ChevronDown} from 'lucide-react';
+import {Accordion} from '@heroui/react';
 import {useState} from 'react';
 import {useWatch} from 'react-hook-form';
 
@@ -112,7 +113,7 @@ export default function EditorPanel({
   originalSlug: string | undefined;
   testimonials: Testimonial[];
 }) {
-  const [openSection, setOpenSection] = useState<null | SectionId>('hero');
+  const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set(['hero']));
   const watched = useWatch({
     control: form.control,
     name: ['display_name', 'slug', 'trust_stats', 'faq_items', 'intake_questions', 'is_published'],
@@ -155,40 +156,38 @@ export default function EditorPanel({
   }
 
   return (
-    <div className="flex flex-col">
+    <Accordion
+      className="flex flex-col"
+      expandedKeys={expandedKeys}
+      onExpandedChange={setExpandedKeys}
+    >
       {SECTIONS.map((section) => {
-        const isOpen = openSection === section.id;
         const status = statuses[section.id];
 
         return (
-          <div
-            className="border-b border-divider"
+          <Accordion.Item
+            id={section.id}
             key={section.id}
           >
-            {/* Section header — always visible */}
-            <button
-              className="flex w-full min-h-11 items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-default-50 active:bg-default-100"
-              onClick={() => setOpenSection(isOpen ? null : section.id)}
-              type="button"
-            >
-              <StatusDot status={status} />
-              <div className="flex-1">
-                <span className="text-sm font-semibold">{section.label}</span>
-                <span className="ml-2 text-xs text-foreground-400">
-                  {section.sublabel(values, activeOffers.length, activeTestimonials.length)}
-                </span>
-              </div>
-              <span className="text-[10px] text-foreground-400">{statusLabel(status)}</span>
-              <ChevronDown
-                className={`h-4 w-4 shrink-0 text-foreground-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            {/* Section body — only rendered when open */}
-            {isOpen ? <div className="px-4 pb-5 pt-1">{renderSectionBody(section.id)}</div> : null}
-          </div>
+            <Accordion.Heading>
+              <Accordion.Trigger className="flex min-h-11 w-full items-center gap-3 px-4 py-3">
+                <StatusDot status={status} />
+                <div className="flex-1 text-left">
+                  <span className="text-sm font-semibold">{section.label}</span>
+                  <span className="ml-2 text-xs text-foreground-400">
+                    {section.sublabel(values, activeOffers.length, activeTestimonials.length)}
+                  </span>
+                </div>
+                <span className="text-xs text-foreground-400">{statusLabel(status)}</span>
+                <Accordion.Indicator />
+              </Accordion.Trigger>
+            </Accordion.Heading>
+            <Accordion.Panel>
+              <Accordion.Body className="px-4 pb-5 pt-1">{renderSectionBody(section.id)}</Accordion.Body>
+            </Accordion.Panel>
+          </Accordion.Item>
         );
       })}
-    </div>
+    </Accordion>
   );
 }

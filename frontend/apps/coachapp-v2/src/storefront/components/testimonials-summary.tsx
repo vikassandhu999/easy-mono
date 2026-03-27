@@ -1,11 +1,13 @@
+import {Button} from '@heroui/react';
 import {Camera, MessageSquareQuote, Star} from 'lucide-react';
-import {Link} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
 import type {Testimonial} from '@/api/testimonials';
 
 import {ROUTES} from '@/@config/routes';
 
 export default function TestimonialsSummary({testimonials}: {testimonials: Testimonial[]}) {
+  const navigate = useNavigate();
   const featured = testimonials.filter((t) => t.is_featured);
   const withPhotos = testimonials.filter((t) => t.before_image_url && t.after_image_url);
 
@@ -15,13 +17,14 @@ export default function TestimonialsSummary({testimonials}: {testimonials: Testi
         <p className="text-sm text-foreground-500">
           No testimonials yet. Add client results and reviews to build trust.
         </p>
-        <Link
-          className="inline-flex min-h-11 items-center gap-2 self-start rounded-lg border border-divider px-3 py-2 text-sm font-medium hover:bg-default-100 active:bg-default-200"
-          to={ROUTES.STOREFRONT_TESTIMONIALS}
+        <Button
+          onPress={() => navigate(ROUTES.STOREFRONT_TESTIMONIALS)}
+          size="sm"
+          variant="secondary"
         >
           <MessageSquareQuote size={14} />
           Go to Testimonials
-        </Link>
+        </Button>
       </div>
     );
   }
@@ -72,13 +75,14 @@ export default function TestimonialsSummary({testimonials}: {testimonials: Testi
         </div>
       ) : null}
 
-      <Link
-        className="inline-flex min-h-11 items-center gap-2 self-start rounded-lg border border-divider px-3 py-2 text-sm font-medium hover:bg-default-100 active:bg-default-200"
-        to={ROUTES.STOREFRONT_TESTIMONIALS}
+      <Button
+        onPress={() => navigate(ROUTES.STOREFRONT_TESTIMONIALS)}
+        size="sm"
+        variant="secondary"
       >
         <MessageSquareQuote size={14} />
         Manage Testimonials
-      </Link>
+      </Button>
     </div>
   );
 }

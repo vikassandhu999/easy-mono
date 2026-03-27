@@ -76,13 +76,14 @@ export type PublicStorefront = {
   testimonials: PublicTestimonial[];
 };
 
-export type PublicLeadCreateRequest = {
-  name: string;
+export type PublicInquiryRequest = {
   email: string;
-  phone: string;
+  first_name?: string;
   instagram_handle?: null | string;
+  intake_answers?: Record<string, unknown>;
+  last_name?: string;
+  name?: string;
   offer_id?: null | string;
   offer_slug?: null | string;
-  intake_answers?: Record<string, unknown>;
-  source?: null | string;
+  phone: string;
 };

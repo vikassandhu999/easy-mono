@@ -1,6 +1,6 @@
 import {Star} from 'lucide-react';
 
-import type {PublicTestimonial} from './types';
+import type {PublicTestimonial} from '@easy/storefront-types';
 
 /**
  * Categorize testimonials into three groups:

@@ -4,7 +4,7 @@ import {useState} from 'react';
 
 import {Lock, MessageCircle, Star} from 'lucide-react';
 
-import type {IntakeQuestion, PublicLeadCreateRequest, PublicOffer, PublicTestimonial} from './types';
+import type {IntakeQuestion, PublicLeadCreateRequest, PublicOffer, PublicTestimonial} from '@easy/storefront-types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 

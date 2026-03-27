@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 
 import {notFound} from 'next/navigation';
 
-import type {PublicStorefront} from './types';
+import type {PublicStorefront} from '@easy/storefront-types';
 
 import HeroSection from './hero-section';
 import StorefrontClient from './storefront-client';
@@ -17,17 +17,18 @@ const THEME_COLORS: Record<string, string> = {
 
 // const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
-async function getStorefront(slug: string): Promise<PublicStorefront | null> {
+async function getStorefront(slug: string, isPreview: boolean): Promise<PublicStorefront | null> {
   try {
-    const res = await fetch(`http://192.168.1.8:4000/v1/public/coaches/${slug}/profile`, {
-      next: {revalidate: 60}, // ISR: revalidate every 60 seconds
+    const url = `http://192.168.1.8:4000/v1/public/coaches/${slug}/profile${isPreview ? '?preview=true' : ''}`;
+    const res = await fetch(url, {
+      next: isPreview ? {revalidate: 0} : {revalidate: 60},
     });
     if (!res.ok) return null;
     const json = (await res.json()) as {data: PublicStorefront};
     return json.data;
   } catch {
     return null;
-  } 
+  }
 }
 
 // ── Dynamic metadata ─────────────────────────────────────────
@@ -36,7 +37,7 @@ type PageParams = {params: Promise<{slug: string}>};
 
 export async function generateMetadata({params}: PageParams): Promise<Metadata> {
   const {slug} = await params;
-  const data = await getStorefront(slug);
+  const data = await getStorefront(slug, false);
   if (!data) return {title: 'Coach Not Found'};
 
   return {
@@ -59,7 +60,8 @@ export default async function CoachStorefrontPage({
 }: PageParams & {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
   const {slug} = await params;
   const resolvedSearchParams = await searchParams;
-  const data = await getStorefront(slug);
+  const isPreview = resolvedSearchParams.preview === 'true';
+  const data = await getStorefront(slug, isPreview);
 
   if (!data) notFound();
 

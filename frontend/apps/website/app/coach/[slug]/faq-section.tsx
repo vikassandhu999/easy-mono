@@ -3,7 +3,7 @@
 import {ChevronDown} from 'lucide-react';
 import {useState} from 'react';
 
-import type {PublicStoreProfile} from './types';
+import type {PublicStoreProfile} from '@easy/storefront-types';
 
 /**
  * FAQ accordion — one item open at a time. Full-row tappable.

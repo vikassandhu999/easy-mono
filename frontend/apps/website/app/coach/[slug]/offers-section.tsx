@@ -1,6 +1,6 @@
 import {Check, Star} from 'lucide-react';
 
-import type {PublicOffer} from './types';
+import type {PublicOffer} from '@easy/storefront-types';
 
 export default function OffersSection({
   offers,

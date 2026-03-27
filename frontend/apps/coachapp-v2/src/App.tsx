@@ -40,7 +40,7 @@ import EditTestimonial from '@/storefront/edit-testimonial';
 import ListOffers from '@/storefront/list-offers';
 import ListTestimonials from '@/storefront/list-testimonials';
 import Storefront from '@/storefront/storefront';
-import StorefrontPage from '@/storefront/storefront-page';
+import StorefrontEditor from '@/storefront/storefront-editor';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
@@ -209,7 +209,7 @@ export default function App() {
           path={ROUTES.STOREFRONT}
         />
         <Route
-          element={<StorefrontPage />}
+          element={<StorefrontEditor />}
           path={ROUTES.STOREFRONT_PAGE}
         />
         <Route

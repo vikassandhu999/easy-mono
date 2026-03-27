@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState} from 'react';
 
-import type {PublicOffer} from './types';
+import type {PublicOffer} from '@easy/storefront-types';
 
 /**
  * Sticky mobile CTA bar — fixed bottom, visible only on mobile (md:hidden).

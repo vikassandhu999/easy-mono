@@ -1,4 +1,27 @@
-// ── Public storefront types (mirrors the API contract) ───────
+// ── Shared storefront types ──────────────────────────────────
+// Used by both coachapp-v2 (editor) and website (public page).
+// Single source of truth — no duplicated type definitions.
+
+export type StoreProfileThemeColor = 'blue' | 'green' | 'orange' | 'purple';
+
+export type IntakeQuestion = {
+  label: string;
+  type: 'number' | 'select' | 'text';
+  required?: boolean;
+  options?: string[];
+};
+
+export type TrustStat = {
+  label: string;
+  value: string;
+};
+
+export type FaqItem = {
+  answer: string;
+  question: string;
+};
+
+// ── Public types (returned by /v1/public/coaches/:slug/profile) ──
 
 export type PublicStoreProfile = {
   slug: string;
@@ -8,19 +31,12 @@ export type PublicStoreProfile = {
   photo_url: null | string;
   cover_image_url: null | string;
   social_links: Record<string, string>;
-  theme_color: string;
+  theme_color: StoreProfileThemeColor;
   intake_questions: IntakeQuestion[];
-  trust_stats: {label: string; value: string}[];
-  faq_items: {answer: string; question: string}[];
+  trust_stats: TrustStat[];
+  faq_items: FaqItem[];
   whatsapp_cta_enabled: boolean;
   whatsapp_cta_message: null | string;
-};
-
-export type IntakeQuestion = {
-  label: string;
-  type: 'number' | 'select' | 'text';
-  required?: boolean;
-  options?: string[];
 };
 
 export type PublicOffer = {

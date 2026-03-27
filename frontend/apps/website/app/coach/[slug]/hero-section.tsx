@@ -1,6 +1,6 @@
 import {Instagram, MessageCircle, Youtube} from 'lucide-react';
 
-import type {PublicStoreProfile} from './types';
+import type {PublicStoreProfile} from '@easy/storefront-types';
 
 import HeroCtaButton from './hero-cta-button';
 

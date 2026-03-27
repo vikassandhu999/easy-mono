@@ -2,7 +2,7 @@
 
 import {useMemo, useState} from 'react';
 
-import type {PublicStorefront} from './types';
+import type {PublicStorefront} from '@easy/storefront-types';
 
 import FaqSection from './faq-section';
 import IntakeForm from './intake-form';

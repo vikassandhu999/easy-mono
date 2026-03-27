@@ -54,11 +54,18 @@ Lead (created by public intake form)
 
 The feature is split across three feature modules in coachapp-v2 and one route in the website app:
 
-### 1. `storefront/` — Profile, Offers, Testimonials management
+### 1. `storefront/` — Visual Editor, Offers, Testimonials management
 
-The storefront landing page (`storefront.tsx`) is a hub linking to three sub-sections: My Page, Offers, and Testimonials. The profile editor (`storefront-page.tsx`) is the most complex screen — it manages the store profile with slug checking, social links, theme color, publish toggle, intake question builder, and share panel with QR code.
+The storefront landing page (`storefront.tsx`) is a hub linking to three sub-sections: My Page, Offers, and Testimonials. The profile editor (`storefront-editor.tsx`) is a split-view visual editor:
 
-Offers and testimonials follow standard CRUD patterns with infinite scroll lists, create/edit forms, and AlertDialog delete confirmations.
+- **Desktop (>=1024px):** 40/60 split with a scrollable accordion editor panel on the left and a live iframe preview of the public page on the right. The preview has a desktop/mobile device toggle (375px centered vs full width).
+- **Mobile (<1024px):** Full-width accordion editor with a dedicated "Preview" button that opens a full-screen iframe overlay with a "Back to editor" button.
+
+The editor panel uses collapsible accordion sections with status indicators (green = complete, yellow = partial, gray = optional). Only one section is open at a time. Sections: Hero, Trust Stats, Offers (read-only summary with link), Testimonials (read-only summary with link), FAQ, Intake Questions, Settings.
+
+A single `react-hook-form` instance owns all form state in `storefront-editor.tsx`. Each section editor receives the form via props. Saving triggers `PATCH /v1/coach/storefront/profile` then reloads the preview iframe after 500ms.
+
+Offers and testimonials follow standard CRUD patterns with infinite scroll lists, create/edit forms, and AlertDialog delete confirmations. They are NOT edited inline — the editor shows read-only summaries with links to their dedicated CRUD pages.
 
 ### 2. `leads/` — Lead inbox and management
 
@@ -66,9 +73,13 @@ Leads are a separate feature module (not inside storefront) because they are acc
 
 ### 3. Public Storefront (website app) — `/coach/[slug]`
 
-Server-rendered Next.js page with ISR (60s revalidation). Fetches the public storefront API (profile + offers + testimonials in one response). The page is split into server and client components:
-- **Server:** `page.tsx` (data fetching, metadata), `hero-section.tsx` (static profile display)
-- **Client:** `storefront-client.tsx` (wrapper for interactivity), `offers-section.tsx` (offer selection → scroll to form), `results-section.tsx` (testimonial display), `intake-form.tsx` (form submission)
+Server-rendered Next.js page with ISR (60s revalidation). Fetches the public storefront API (profile + offers + testimonials in one response). Supports `?preview=true` query param which bypasses ISR cache (`revalidate: 0`) and passes the flag to the API for draft data rendering.
+
+The page is split into server and client components:
+- **Server:** `page.tsx` (data fetching, metadata, preview mode), `hero-section.tsx` (static profile display), `trust-bar.tsx` (stat value/label pairs)
+- **Client:** `storefront-client.tsx` (wrapper), `offers-section.tsx` (offer selection → scroll), `results-section.tsx` (spotlight + grid + quotes), `faq-section.tsx` (accordion), `intake-form.tsx` (form), `sticky-cta.tsx` (mobile bottom bar), `whatsapp-fab.tsx` (floating button), `hero-cta-button.tsx` (scroll CTA)
+
+Types are shared via `@easy/storefront-types` package — the local `types.ts` re-exports from the shared package.
 
 ---
 
@@ -78,9 +89,10 @@ Server-rendered Next.js page with ISR (60s revalidation). Fetches the public sto
 
 | Action | Keyboard? | Container | Rationale |
 | --- | --- | --- | --- |
-| Edit store profile (all fields) | Yes, many fields | **INLINE** (same page) | Single large form, not a separate page — profile is the page itself |
-| Check slug availability | Yes, 1 field | **INLINE** | Debounced check as user types, status indicator inline |
-| Add intake question | Yes, 2+ fields | **INLINE** | useFieldArray adds row within the form |
+| Edit store profile (split-view editor) | Yes, many fields | **NEW PAGE** | Full-screen split-view editor replaces PageLayout. Desktop: accordion left + iframe preview right. Mobile: accordion-only with preview button. |
+| Preview storefront | No, view only | **INLINE** (desktop) / **Full-screen overlay** (mobile) | Desktop: always-visible iframe. Mobile: full-screen overlay triggered by Preview button. |
+| Check slug availability | Yes, 1 field | **INLINE** | Debounced check on slug input onChange, status indicator inline |
+| Add intake question | Yes, 2+ fields | **INLINE** | useFieldArray adds row within the accordion section |
 | Add select option to question | Yes, 1 field | **INLINE** | Input + Add button within the question row |
 | Create/edit offer | Yes, 5+ fields | **NEW PAGE** | Multiple inputs including features list |
 | Delete offer | No, confirmation | **DIALOG** | AlertDialog on edit page |
@@ -117,7 +129,7 @@ Server-rendered Next.js page with ISR (60s revalidation). Fetches the public sto
 | File | Route | Purpose |
 | --- | --- | --- |
 | `storefront.tsx` | `/storefront` | Hub page linking to My Page, Offers, Testimonials |
-| `storefront-page.tsx` | `/storefront/page` | Profile editor + share panel |
+| `storefront-editor.tsx` | `/storefront/page` | Split-view visual editor (form + iframe preview) |
 | `list-offers.tsx` | `/storefront/offers` | Infinite scroll offer list |
 | `create-offer.tsx` | `/storefront/offers/create` | Create offer form |
 | `edit-offer.tsx` | `/storefront/offers/:id/edit` | Edit offer + delete |
@@ -129,12 +141,19 @@ Server-rendered Next.js page with ISR (60s revalidation). Fetches the public sto
 
 | Component | Purpose | Used by |
 | --- | --- | --- |
-| `storefront-page-form.tsx` | Profile form (~600 lines): slug check, social links, theme picker, publish toggle, intake question builder with useFieldArray, select options editor | storefront-page screen |
+| `editor-panel.tsx` | Left panel: accordion container with 7 collapsible sections and status indicators (complete/partial/optional). One section open at a time. | storefront-editor |
+| `preview-panel.tsx` | Right panel: iframe pointing to public page with desktop/mobile device toggle (375px vs full width). | storefront-editor |
+| `hero-editor.tsx` | Hero section: photo/cover thumbnails, display name, headline, bio, social links. Contextual hints. | editor-panel |
+| `trust-stats-editor.tsx` | Trust stats section: value/label rows via useFieldArray, max 4, suggested hints. | editor-panel |
+| `faq-editor.tsx` | FAQ section: question/answer cards via useFieldArray, suggested questions. | editor-panel |
+| `intake-questions-editor.tsx` | Intake questions section: dynamic question rows with type/required/options. Contains IntakeQuestionRow and SelectOptionsEditor sub-components. | editor-panel |
+| `settings-editor.tsx` | Settings section: slug with debounced availability check, theme color picker, WhatsApp CTA toggle+message, publish toggle with status display. | editor-panel |
+| `offers-summary.tsx` | Read-only summary of active offers with names, prices, featured badges, and link to /storefront/offers. | editor-panel |
+| `testimonials-summary.tsx` | Read-only summary of active testimonials with featured/photo counts and link to /storefront/testimonials. | editor-panel |
 | `offer-form.tsx` | Shared offer form (schema + hook + component). Features managed via useFieldArray with `{value: string}[]` shape. Exports `featuresToFormValues`/`formValuesToFeatures` converters. | create-offer, edit-offer |
 | `offer-card.tsx` | List item card (name, price, type chip, featured badge) | list-offers |
 | `testimonial-form.tsx` | Shared testimonial form (schema + hook). Handles before/after weight type coercion (string from API → number for form → number for API). | create-testimonial, edit-testimonial |
 | `testimonial-card.tsx` | List item card (client name, photo thumbnail, rating stars, result tag, featured badge) | list-testimonials |
-| `share-panel.tsx` | Share links (page URL + per-offer deep links) with copy buttons, QR code SVG with download. Uses `qrcode.react`. | storefront-page screen |
 
 ### Leads Screens (coachapp-v2)
 
@@ -153,13 +172,18 @@ Server-rendered Next.js page with ISR (60s revalidation). Fetches the public sto
 
 | File | Path | Rendering | Purpose |
 | --- | --- | --- | --- |
-| `page.tsx` | `/coach/[slug]` | Server | Data fetching (ISR 60s), metadata generation, layout |
-| `types.ts` | — | — | Public storefront TypeScript types (mirrors API) |
-| `hero-section.tsx` | — | Server | Cover image, avatar, name, bio, social links |
-| `storefront-client.tsx` | — | Client | Client wrapper for offers, results, intake form |
-| `offers-section.tsx` | — | Client | Offer cards grid, CTA buttons scroll to intake form |
-| `results-section.tsx` | — | Client | Three display modes: spotlight, photo grid, text quotes |
-| `intake-form.tsx` | — | Client | Form with dynamic intake questions, offer pre-selection |
+| `page.tsx` | `/coach/[slug]` | Server | Data fetching (ISR 60s, 0 in preview), metadata, `--theme` CSS var, preview mode |
+| `types.ts` | — | — | Re-exports from `@easy/storefront-types` shared package |
+| `hero-section.tsx` | — | Server | Cover image, avatar, name, headline, bio, CTA buttons, social links |
+| `hero-cta-button.tsx` | — | Client | Thin client component for "Get started" scroll button |
+| `trust-bar.tsx` | — | Server | Horizontal stat value/label bar below hero |
+| `storefront-client.tsx` | — | Client | Orchestrates section order, manages selectedOfferId state |
+| `offers-section.tsx` | — | Client | Pricing cards, featured first sort, themed CTAs |
+| `results-section.tsx` | — | Client | Exports `categorizeTestimonials`, `ResultsSpotlight`, `ResultsGrid` |
+| `faq-section.tsx` | — | Client | Accordion with single-open pattern |
+| `intake-form.tsx` | — | Client | Form with dynamic intake questions, offer pre-selection, success state |
+| `sticky-cta.tsx` | — | Client | Mobile-only fixed bottom bar, hidden when hero/form visible |
+| `whatsapp-fab.tsx` | — | Client | Floating WhatsApp button with delayed animation |
 
 ---
 
@@ -168,16 +192,23 @@ Server-rendered Next.js page with ISR (60s revalidation). Fetches the public sto
 ### Coach Dashboard (coachapp-v2)
 
 ```
-storefront-page.tsx
+storefront-editor.tsx
   ├── useGetStoreProfileQuery()            → profile data (or null for first-time)
-  ├── useListOffersQuery()                 → offers for share panel deep links
+  ├── useListOffersQuery()                 → offers for summary display
+  ├── useListTestimonialsQuery()           → testimonials for summary display
+  ├── useForm<EditorFormValues>()          → single form instance for all sections
+  ├── useUpsertStoreProfileMutation        → create or update profile on Save
   │
-  ├── StorefrontPageForm
-  │   ├── useUpsertStoreProfileMutation    → create or update profile
-  │   └── useCheckSlugAvailabilityMutation → debounced slug check
+  ├── EditorPanel (receives form + offers + testimonials)
+  │   ├── HeroEditor (form props)
+  │   ├── TrustStatsEditor (form props + useFieldArray)
+  │   ├── OffersSummary (read-only offers list)
+  │   ├── TestimonialsSummary (read-only testimonials list)
+  │   ├── FaqEditor (form props + useFieldArray)
+  │   ├── IntakeQuestionsEditor (form props + useFieldArray)
+  │   └── SettingsEditor (form props + useCheckSlugAvailabilityMutation)
   │
-  └── SharePanel
-      └── (read-only — generates URLs from slug + offers)
+  └── PreviewPanel (iframe src = public page URL + ?preview=true)
 
 list-offers.tsx / list-testimonials.tsx
   └── useOffersInfiniteQuery / useTestimonialsInfiniteQuery → paginated lists
@@ -204,18 +235,19 @@ lead-detail.tsx
 
 ```
 page.tsx (Server Component)
-  └── fetch(`/v1/public/coaches/${slug}/profile`) → { profile, offers, testimonials }
-      └── ISR: revalidate every 60 seconds
+  └── fetch(`/v1/public/coaches/${slug}/profile?preview=true`) → { profile, offers, testimonials }
+      └── ISR: revalidate 60s (normal) or 0 (preview mode)
 
 storefront-client.tsx (Client Component)
+  ├── ResultsSpotlight (featured transformations, if ≥3 total)
   ├── OffersSection
   │   └── onSelectOffer → smooth scroll to IntakeForm + set offer_id
-  │
-  ├── ResultsSection
-  │   └── (read-only — categorizes testimonials into spotlight/grid/quotes)
-  │
-  └── IntakeForm
-      └── fetch(`/v1/public/coaches/${slug}/leads`, POST) → create lead
+  ├── ResultsGrid (photo grid + text quotes)
+  ├── FaqSection (accordion, conditional on faq_items.length)
+  ├── IntakeForm
+  │   └── fetch(`/v1/public/coaches/${slug}/leads`, POST) → create lead
+  ├── StickyCta (mobile only, hidden when hero/form visible)
+  └── WhatsAppFab (conditional on whatsapp_cta_enabled)
 ```
 
 ---
@@ -228,15 +260,15 @@ storefront-client.tsx (Client Component)
 
 ### 2. Slug availability check with debounce
 
-The slug field in `storefront-page-form.tsx` runs a debounced availability check (300ms) as the user types. Three states: checking (spinner), available (green check), taken (red X). The check is skipped if the slug matches the current profile's slug (no false "taken" on self).
+The slug field in `settings-editor.tsx` runs a debounced availability check (300ms) via the input's `onChange` handler (not `useEffect`, which would violate React Compiler rules). Three states: checking (spinner), available (green check), taken (red X). The check is skipped if the slug matches the current profile's slug (no false "taken" on self).
 
 ### 3. Intake questions use useFieldArray, not separate CRUD
 
-Intake questions are an inline JSON array on the StoreProfile, not separate entities. The form uses `useFieldArray` for the questions list and a nested `useFieldArray` for select options. This avoids the complexity of individual question CRUD endpoints.
+Intake questions are an inline JSON array on the StoreProfile, not separate entities. The `intake-questions-editor.tsx` section editor uses `useFieldArray` for the questions list and a nested `useFieldArray` for select options within each question. This avoids the complexity of individual question CRUD endpoints.
 
 ### 4. Select options editor with @ts-expect-error
 
-The `SelectOptionsEditor` component uses `useFieldArray` on a nested string array path (`intake_questions.${index}.options`). TypeScript's typing for nested `useFieldArray` paths doesn't support `string[]` arrays well, requiring `@ts-expect-error` annotations. This is a known react-hook-form limitation.
+The `SelectOptionsEditor` component (inside `intake-questions-editor.tsx`) uses `useFieldArray` on a nested string array path (`intake_questions.${index}.options`). TypeScript's typing for nested `useFieldArray` paths doesn't support `string[]` arrays well, requiring `@ts-expect-error` annotations. This is a known react-hook-form limitation.
 
 ### 5. Offer features use {value: string}[] wrapper
 
@@ -246,17 +278,17 @@ The `SelectOptionsEditor` component uses `useFieldArray` on a nested string arra
 
 The API returns `before_weight`/`after_weight` as strings on the Testimonial response but expects numbers on create/update requests. The form schema uses `z.union([z.number(), z.literal('')])` and the submit handler explicitly checks `typeof value === 'number' && !isNaN(value)` before including in the request.
 
-### 7. Share panel with per-offer deep links
+### 7. Split-view visual editor with iframe preview
 
-The share panel generates a base page URL (`coacheasy.app/coach/{slug}`) and per-offer deep links (`?offer={offer_slug}`). The public page reads the `offer` query param and pre-selects that offer in the intake form. Each link has a copy-to-clipboard button with visual feedback (icon changes to checkmark for 2s).
+The storefront editor uses a split-view layout (40% editor / 60% preview) on desktop. The preview is an iframe pointing to the actual public page URL with `?preview=true`. This guarantees visual accuracy — no rendering divergence between preview and production. The iframe reloads 500ms after save. On mobile, the preview is a full-screen overlay triggered by a dedicated button, since side-by-side doesn't fit at 375px.
 
-### 8. QR code via qrcode.react
+### 8. Shared types package eliminates duplication
 
-The share panel renders a QR code SVG using `qrcode.react`. The download button serializes the SVG to a Blob and triggers a download. No server-side QR generation needed.
+`@easy/storefront-types` is a shared workspace package containing all public storefront types (`PublicStoreProfile`, `PublicOffer`, `PublicTestimonial`, etc.). Both coachapp-v2 and the website app import from it. The website's `types.ts` re-exports from the shared package. The coachapp-v2 `storefront.ts` API file imports `IntakeQuestion`, `TrustStat`, `FaqItem`, and `StoreProfileThemeColor` from the shared package for use in the coach-private `StoreProfile` type.
 
-### 9. Public storefront uses ISR, not client-side fetch
+### 9. Public storefront uses ISR with preview mode bypass
 
-The website's `/coach/[slug]/page.tsx` is a Next.js Server Component that fetches at build/request time with `{ next: { revalidate: 60 } }`. This gives SEO-friendly server rendering with 60-second staleness. The hero section is fully server-rendered; interactive parts (offer selection, form submission) are client components.
+The website's `/coach/[slug]/page.tsx` is a Next.js Server Component that fetches at build/request time with `{ next: { revalidate: 60 } }`. When `?preview=true` is present, revalidation is set to 0 (always fresh) and the flag is passed to the API so the backend can return draft/unpublished data. This enables the iframe preview in the editor to show the latest saved state without waiting for ISR.
 
 ### 10. Results section categorizes testimonials into three display modes
 
@@ -331,3 +363,6 @@ The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "M
 - **Analytics** — no page view or conversion tracking
 - **Image upload** — photo/cover/testimonial images are URL-only, no upload UI or CDN integration
 - **Rich text bio** — bio is plain text, no markdown/HTML editor
+- **Share panel / QR code** — removed in visual editor v2, may be re-added as a section
+- **Preview authentication** — `?preview=true` currently relies on the backend accepting the flag; no session token verification in the iframe URL yet
+- **Live-as-you-type preview** — current preview updates on save (Option A). Option B (shared component rendering for instant preview) is deferred

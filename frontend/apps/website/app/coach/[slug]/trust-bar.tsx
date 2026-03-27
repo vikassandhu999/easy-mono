@@ -1,4 +1,4 @@
-import type {PublicStoreProfile} from './types';
+import type {PublicStoreProfile} from '@easy/storefront-types';
 
 /**
  * Trust bar — horizontal strip of stats immediately below the hero.

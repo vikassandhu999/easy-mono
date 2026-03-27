@@ -1,38 +1,22 @@
+import type {
+  FaqItem,
+  IntakeQuestion,
+  PublicStoreProfile,
+  StoreProfileThemeColor,
+  TrustStat,
+} from '@easy/storefront-types';
+
 import {api} from '@/api/base';
 import {ApiResponse} from '@/api/shared';
 
-// ── Intake question shape (inline in StoreProfile) ──────────
+// ── Store Profile (extends public profile with coach-private fields) ──
 
-export type IntakeQuestion = {
-  label: string;
-  type: 'number' | 'select' | 'text';
-  required?: boolean;
-  options?: string[];
-};
-
-// ── Store Profile ────────────────────────────────────────────
-
-export type StoreProfile = {
+export type StoreProfile = PublicStoreProfile & {
   id: string;
-  slug: string;
-  display_name: string;
-  headline: null | string;
-  bio: null | string;
-  photo_url: null | string;
-  cover_image_url: null | string;
-  social_links: Record<string, string>;
-  theme_color: string;
   is_published: boolean;
-  intake_questions: IntakeQuestion[];
-  trust_stats: {label: string; value: string}[];
-  faq_items: {answer: string; question: string}[];
-  whatsapp_cta_enabled: boolean;
-  whatsapp_cta_message: null | string;
   inserted_at: string;
   updated_at: string;
 };
-
-export type StoreProfileThemeColor = 'blue' | 'green' | 'orange' | 'purple';
 
 export type StoreProfileUpsertRequest = {
   slug: string;
@@ -45,8 +29,8 @@ export type StoreProfileUpsertRequest = {
   theme_color?: StoreProfileThemeColor;
   is_published?: boolean;
   intake_questions?: IntakeQuestion[];
-  trust_stats?: {label: string; value: string}[];
-  faq_items?: {answer: string; question: string}[];
+  trust_stats?: TrustStat[];
+  faq_items?: FaqItem[];
   whatsapp_cta_enabled?: boolean;
   whatsapp_cta_message?: null | string;
 };

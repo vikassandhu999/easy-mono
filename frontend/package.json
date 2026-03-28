@@ -8,10 +8,10 @@
     "build": "pnpm --recursive build",
     "lint": "pnpm --recursive lint",
     "clean": "pnpm --recursive clean",
-    "dev:clientapp": "pnpm --filter @easy/clientapp dev",
+    "dev:clientapp-v2": "pnpm --filter @easy/clientapp-v2 dev",
     "dev:coachapp": "pnpm --filter @easy/coachapp-v2 dev",
     "dev:website": "pnpm --filter @easy/website dev",
-    "build:clientapp": "pnpm --filter @easy/clientapp build",
+    "build:clientapp-v2": "pnpm --filter @easy/clientapp-v2 build",
     "build:coachapp": "pnpm --filter @easy/coachapp-v2 build",
     "build:website": "pnpm --filter @easy/website build"
   },

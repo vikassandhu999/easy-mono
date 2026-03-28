@@ -1,10 +1,12 @@
 defmodule EasyWeb.Coaches.TrainingPlanJSON do
   alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, TrainingPlan, WorkoutElement}
 
+  @spec show(map()) :: map()
   def show(%{plan: plan}) do
     %{data: data(plan)}
   end
 
+  @spec index(map()) :: map()
   def index(%{plans: plans, count: count}) do
     %{data: Enum.map(plans, &data/1), count: count}
   end

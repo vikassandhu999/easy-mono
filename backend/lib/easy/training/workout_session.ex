@@ -100,6 +100,44 @@ defmodule Easy.Training.WorkoutSession do
     from(s in query, preload: [performed_sets: ^set_query])
   end
 
+  @spec ensure_no_active(String.t(), String.t()) :: :ok | {:error, Easy.Error.t()}
+  def ensure_no_active(business_id, client_id) do
+    exists =
+      __MODULE__
+      |> for_business(business_id)
+      |> for_client(client_id)
+      |> with_state(:active)
+      |> Repo.exists?()
+
+    if exists do
+      {:error,
+       Easy.Error.unprocessable(%{
+         session: ["you already have an active workout session — finish or discard it first"]
+       })}
+    else
+      :ok
+    end
+  end
+
+  @spec accessible?(String.t(), String.t()) :: boolean()
+  def accessible?(business_id, session_id) do
+    __MODULE__
+    |> for_business(business_id)
+    |> Repo.get(session_id)
+    |> is_struct(__MODULE__)
+  end
+
+  @spec accessible_workout?(String.t(), String.t() | nil) :: boolean()
+  def accessible_workout?(_business_id, nil), do: true
+  def accessible_workout?(_business_id, ""), do: true
+
+  def accessible_workout?(business_id, planned_workout_id) do
+    PlannedWorkout
+    |> PlannedWorkout.for_business(business_id)
+    |> Repo.get(planned_workout_id)
+    |> is_struct(PlannedWorkout)
+  end
+
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, client_id, attrs) do
     attrs =

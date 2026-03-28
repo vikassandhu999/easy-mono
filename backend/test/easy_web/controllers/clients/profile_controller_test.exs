@@ -27,12 +27,12 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["first_name"] == client.first_name
       assert data["last_name"] == client.last_name
       assert data["program_name"] == "12 Week Shred"
-      assert data["business_id"] == coach.business_id
+      refute Map.has_key?(data, "business_id")
     end
 
-    test "returns 401 without auth token" do
+    test "returns 403 without auth token" do
       conn = build_conn() |> get("/v1/client/me")
-      assert json_response(conn, 401)
+      assert json_response(conn, 403)
     end
 
     test "returns 403 with coach auth token" do

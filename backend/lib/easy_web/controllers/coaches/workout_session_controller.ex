@@ -3,16 +3,15 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
 
   alias Easy.Clients.Client
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, WorkoutSession}
+  alias Easy.Training.WorkoutSession
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
+    planned_workout_id = Map.get(params, "planned_workout_id")
 
-    planned_workout_id =
-      Map.get(params, "planned_workout_id") || Map.get(params, :planned_workout_id)
-
-    with true <- client_accessible?(business_id, client_id),
-         true <- planned_workout_optional_accessible?(business_id, planned_workout_id),
+    with true <- Client.accessible?(business_id, client_id),
+         true <- WorkoutSession.accessible_workout?(business_id, planned_workout_id),
          {:ok, session} <- WorkoutSession.create(business_id, client_id, params) do
       conn
       |> put_status(:created)
@@ -23,6 +22,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -35,6 +35,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -61,6 +62,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     render(conn, :index, sessions: sessions, count: count)
   end
 
+  @spec complete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def complete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -78,6 +80,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     end
   end
 
+  @spec discard(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def discard(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -95,6 +98,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -115,21 +119,4 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
   defp maybe_for_client(query, nil), do: query
   defp maybe_for_client(query, ""), do: query
   defp maybe_for_client(query, client_id), do: WorkoutSession.for_client(query, client_id)
-
-  defp client_accessible?(business_id, client_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
-    |> is_struct(Client)
-  end
-
-  defp planned_workout_optional_accessible?(_business_id, nil), do: true
-  defp planned_workout_optional_accessible?(_business_id, ""), do: true
-
-  defp planned_workout_optional_accessible?(business_id, planned_workout_id) do
-    PlannedWorkout
-    |> PlannedWorkout.for_business(business_id)
-    |> Repo.get(planned_workout_id)
-    |> is_struct(PlannedWorkout)
-  end
 end

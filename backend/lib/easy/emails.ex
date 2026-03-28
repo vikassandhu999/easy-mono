@@ -1,8 +1,4 @@
 defmodule Easy.Emails do
-  @moduledoc """
-  Email templates for the Coach Easy platform.
-  """
-
   import Swoosh.Email
 
   # Get from email from configuration
@@ -11,11 +7,6 @@ defmodule Easy.Emails do
       {"Coach Easy", "noreply@coacheasy.app"}
   end
 
-  @doc """
-  Creates an OTP verification email for new user registration.
-
-  This email is sent when a coach registers for the first time and needs to verify their email.
-  """
   def otp_verification_email(email, code) do
     new()
     |> to(email)
@@ -25,11 +16,6 @@ defmodule Easy.Emails do
     |> html_body(otp_verification_html(code))
   end
 
-  @doc """
-  Creates a login OTP email for existing users.
-
-  This email is sent when a user requests to log in using OTP authentication.
-  """
   def login_otp_email(email, code) do
     new()
     |> to(email)
@@ -39,11 +25,6 @@ defmodule Easy.Emails do
     |> html_body(login_otp_html(code))
   end
 
-  @doc """
-  Creates a client invitation email.
-
-  This email is sent when a coach invites a client to join the platform.
-  """
   def client_invitation_email(email, invitation_token, coach_name, business_name) do
     invitation_url = build_invitation_url(invitation_token)
 

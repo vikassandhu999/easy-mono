@@ -1,4 +1,4 @@
-defmodule EasyWeb.Coaches.WorkoutSessionJSON do
+defmodule EasyWeb.Clients.WorkoutSessionJSON do
   alias Easy.Training.{Exercise, PerformedSet, WorkoutSession}
 
   @spec show(map()) :: map()
@@ -19,8 +19,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       state: session.state,
       soreness_rating: session.soreness_rating,
       notes: session.notes,
-      client_id: session.client_id,
-      business_id: session.business_id,
       planned_workout_id: session.planned_workout_id,
       planned_snapshot: session.planned_snapshot,
       performed_sets: performed_sets_data(session.performed_sets),

@@ -4,10 +4,11 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
   alias Easy.Repo
   alias Easy.Training.{PlannedWorkout, TrainingPlan}
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    if training_plan_accessible?(business_id, plan_id) do
+    if TrainingPlan.accessible?(business_id, plan_id) do
       with {:ok, workout} <- PlannedWorkout.create(plan_id, business_id, params) do
         conn
         |> put_status(:created)
@@ -18,6 +19,7 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -30,6 +32,7 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -44,6 +47,7 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -58,10 +62,11 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    if training_plan_accessible?(business_id, plan_id) do
+    if TrainingPlan.accessible?(business_id, plan_id) do
       offset = parse_integer(params, "offset", 0)
       limit = parse_integer(params, "limit", 50)
 
@@ -83,12 +88,5 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     else
       {:error, :not_found}
     end
-  end
-
-  defp training_plan_accessible?(business_id, plan_id) do
-    TrainingPlan
-    |> TrainingPlan.for_business(business_id)
-    |> Repo.get(plan_id)
-    |> is_struct(TrainingPlan)
   end
 end

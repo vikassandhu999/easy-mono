@@ -1,24 +1,39 @@
-defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
-  alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, WorkoutElement}
+defmodule EasyWeb.Clients.TrainingPlanJSON do
+  alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, TrainingPlan, WorkoutElement}
 
   @spec show(map()) :: map()
-  def show(%{workout: workout}) do
-    %{data: data(workout)}
+  def show(%{plan: plan}) do
+    %{data: data(plan)}
   end
 
   @spec index(map()) :: map()
-  def index(%{workouts: workouts, count: count}) do
-    %{data: Enum.map(workouts, &data/1), count: count}
+  def index(%{plans: plans, count: count}) do
+    %{data: Enum.map(plans, &data/1), count: count}
   end
 
-  defp data(%PlannedWorkout{} = workout) do
+  defp data(%TrainingPlan{} = plan) do
+    %{
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      status: plan.status,
+      start_date: plan.start_date,
+      end_date: plan.end_date,
+      planned_workouts: workouts_data(plan.planned_workouts),
+      inserted_at: plan.inserted_at,
+      updated_at: plan.updated_at
+    }
+  end
+
+  defp workouts_data(workouts) when is_list(workouts), do: Enum.map(workouts, &workout_data/1)
+  defp workouts_data(_), do: []
+
+  defp workout_data(%PlannedWorkout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
       notes: workout.notes,
       day_number: workout.day_number,
-      training_plan_id: workout.training_plan_id,
-      business_id: workout.business_id,
       workout_elements: elements_data(workout.workout_elements),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
@@ -35,8 +50,6 @@ defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      planned_workout_id: element.planned_workout_id,
-      business_id: element.business_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,
@@ -45,7 +58,13 @@ defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
   end
 
   defp exercise_data(%Exercise{} = exercise) do
-    %{id: exercise.id, name: exercise.name, mechanics: exercise.mechanics, force: exercise.force}
+    %{
+      id: exercise.id,
+      name: exercise.name,
+      mechanics: exercise.mechanics,
+      force: exercise.force,
+      images: exercise.images
+    }
   end
 
   defp exercise_data(_), do: nil

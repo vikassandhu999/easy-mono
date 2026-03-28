@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.WorkoutElementJSON do
   alias Easy.Training.{Exercise, PlannedSet, WorkoutElement}
 
+  @spec show(map()) :: map()
   def show(%{element: element}) do
     %{data: data(element)}
   end

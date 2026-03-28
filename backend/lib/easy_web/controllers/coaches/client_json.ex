@@ -2,10 +2,12 @@ defmodule EasyWeb.Coaches.ClientJSON do
   alias Easy.Clients.Client
   alias Easy.Storefront.Offer
 
+  @spec show(map()) :: map()
   def show(%{client: client}) do
     %{data: data(client)}
   end
 
+  @spec index(map()) :: map()
   def index(%{clients: clients, count: count, summary: summary}) do
     %{data: Enum.map(clients, &data/1), count: count, summary: summary}
   end

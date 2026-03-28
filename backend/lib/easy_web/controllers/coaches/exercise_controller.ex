@@ -4,6 +4,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   alias Easy.Repo
   alias Easy.Training.Exercise
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -14,6 +15,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -26,6 +28,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -40,6 +43,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -54,6 +58,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
+  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -73,6 +78,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 

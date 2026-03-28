@@ -8,11 +8,13 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
     %{conn: conn, coach: coach, business: coach.business}
   end
 
-  describe "POST /v1/coach/sessions" do
+  describe "POST /v1/coach/workout_sessions" do
     test "creates session without plan", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
 
-      conn = post(conn, "/v1/coach/sessions", %{"client_id" => client.id, "notes" => "Start"})
+      conn =
+        post(conn, "/v1/coach/workout_sessions", %{"client_id" => client.id, "notes" => "Start"})
+
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["client_id"] == client.id
@@ -52,7 +54,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
         )
 
       conn =
-        post(conn, "/v1/coach/sessions", %{
+        post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
           "planned_workout_id" => workout.id
         })
@@ -94,7 +96,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
         insert(:planned_workout, training_plan: other_plan, business: other.business)
 
       conn =
-        post(conn, "/v1/coach/sessions", %{
+        post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
           "planned_workout_id" => other_workout.id,
           "notes" => "Start"
@@ -104,23 +106,23 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
     end
   end
 
-  describe "GET /v1/coach/sessions" do
+  describe "GET /v1/coach/workout_sessions" do
     test "lists sessions", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
       insert(:workout_session, client: client, business: business)
 
-      conn = get(conn, "/v1/coach/sessions")
+      conn = get(conn, "/v1/coach/workout_sessions")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
     end
   end
 
-  describe "GET /v1/coach/sessions/:id" do
+  describe "GET /v1/coach/workout_sessions/:id" do
     test "shows session with performed sets", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
       session = insert(:workout_session, client: client, business: business, state: :active)
 
-      conn = get(conn, "/v1/coach/sessions/#{session.id}")
+      conn = get(conn, "/v1/coach/workout_sessions/#{session.id}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == session.id
@@ -132,17 +134,17 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       other_client = insert(:client, creator: other, business: other.business)
       session = insert(:workout_session, client: other_client, business: other.business)
 
-      conn = get(conn, "/v1/coach/sessions/#{session.id}")
+      conn = get(conn, "/v1/coach/workout_sessions/#{session.id}")
       assert json_response(conn, 404)
     end
   end
 
-  describe "PATCH /v1/coach/sessions/:id/complete" do
+  describe "POST /v1/coach/workout_sessions/:id/complete" do
     test "completes session", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
       session = insert(:workout_session, client: client, business: business, state: :active)
 
-      conn = patch(conn, "/v1/coach/sessions/#{session.id}/complete", %{"notes" => "Done"})
+      conn = post(conn, "/v1/coach/workout_sessions/#{session.id}/complete", %{"notes" => "Done"})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["state"] == "completed"
@@ -151,24 +153,24 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
     end
   end
 
-  describe "PATCH /v1/coach/sessions/:id/discard" do
+  describe "POST /v1/coach/workout_sessions/:id/discard" do
     test "discards session", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
       session = insert(:workout_session, client: client, business: business, state: :active)
 
-      conn = patch(conn, "/v1/coach/sessions/#{session.id}/discard")
+      conn = post(conn, "/v1/coach/workout_sessions/#{session.id}/discard")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["state"] == "discarded"
     end
   end
 
-  describe "DELETE /v1/coach/sessions/:id" do
+  describe "DELETE /v1/coach/workout_sessions/:id" do
     test "deletes session", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business)
       session = insert(:workout_session, client: client, business: business)
 
-      conn = delete(conn, "/v1/coach/sessions/#{session.id}")
+      conn = delete(conn, "/v1/coach/workout_sessions/#{session.id}")
       assert response(conn, 204)
     end
   end

@@ -6,6 +6,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   alias Easy.Repo
   alias Easy.Training.TrainingPlan
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     claims = conn.assigns.claims
 
@@ -17,6 +18,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -29,6 +31,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -43,6 +46,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -57,6 +61,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -87,6 +92,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     render(conn, :index, plans: plans, count: count)
   end
 
+  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -106,6 +112,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     end
   end
 
+  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def assign(conn, %{"id" => id, "client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -114,7 +121,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
            |> TrainingPlan.for_business(business_id)
            |> TrainingPlan.with_workouts()
            |> Repo.get(id),
-         true <- client_accessible?(business_id, client_id),
+         true <- Client.accessible?(business_id, client_id),
          {:ok, assigned} <-
            TrainingPlan.assign_to_client(
              plan,
@@ -135,11 +142,4 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   defp maybe_for_client(query, nil), do: query
   defp maybe_for_client(query, ""), do: query
   defp maybe_for_client(query, client_id), do: TrainingPlan.for_client(query, client_id)
-
-  defp client_accessible?(business_id, client_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
-    |> is_struct(Client)
-  end
 end

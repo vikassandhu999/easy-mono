@@ -2,9 +2,6 @@ defmodule Easy.Utils do
   import Ecto.Query, only: [from: 2]
   require Logger
 
-  @doc """
-  Parses a string (from query params) into a boolean atom (true, false, or nil).
-  """
   def parse_boolean(nil), do: nil
 
   def parse_boolean(bool_string) when is_binary(bool_string) do
@@ -80,9 +77,6 @@ defmodule Easy.Utils do
     :calendar.time_to_seconds(time) - days * 24 * 60 * 60
   end
 
-  @doc """
-  Determine if a given timestamp is less than a day (86400 seconds) old
-  """
   def within_last_day?(nil), do: false
 
   def within_last_day?(a) do
@@ -170,9 +164,6 @@ defmodule Easy.Utils do
     "#{preview_url}/preview/#{package_name}/#{version}"
   end
 
-  @doc """
-  Returns a RFC 2822 format string from a UTC datetime.
-  """
   def datetime_to_rfc2822(%DateTime{calendar: Calendar.ISO, time_zone: "Etc/UTC"} = datetime) do
     Calendar.strftime(datetime, "%a, %d %b %Y %H:%M:%S GMT")
   end

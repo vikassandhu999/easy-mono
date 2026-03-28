@@ -52,6 +52,8 @@ defmodule EasyWeb.Endpoint do
     origin: [
       # Development URLs
       "http://localhost:2020",
+      "http://localhost:2021",
+      "http://localhost:1314",
       "http://localhost:3000",
       "http://localhost:1313",
       "http://localhost:3001",

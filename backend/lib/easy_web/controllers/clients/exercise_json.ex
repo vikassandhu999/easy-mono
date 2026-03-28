@@ -1,4 +1,4 @@
-defmodule EasyWeb.Coaches.ExerciseJSON do
+defmodule EasyWeb.Clients.ExerciseJSON do
   alias Easy.Training.{Equipment, Exercise, Muscle}
 
   @spec show(map()) :: map()
@@ -20,7 +20,6 @@ defmodule EasyWeb.Coaches.ExerciseJSON do
       mechanics: exercise.mechanics,
       force: exercise.force,
       images: exercise.images || [],
-      business_id: exercise.business_id,
       muscles: muscles_data(exercise.muscles),
       equipment: equipment_data(exercise.equipment),
       inserted_at: exercise.inserted_at,

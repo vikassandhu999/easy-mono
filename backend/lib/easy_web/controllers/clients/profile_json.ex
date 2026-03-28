@@ -18,7 +18,6 @@ defmodule EasyWeb.Clients.ProfileJSON do
       program_name: client.program_name,
       program_start: client.program_start,
       program_end: client.program_end,
-      business_id: client.business_id,
       inserted_at: client.inserted_at,
       updated_at: client.updated_at
     }

@@ -160,6 +160,14 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, preload: [planned_workouts: ^workout_query])
   end
 
+  @spec accessible?(String.t(), String.t()) :: boolean()
+  def accessible?(business_id, plan_id) do
+    __MODULE__
+    |> for_business(business_id)
+    |> Repo.get(plan_id)
+    |> is_struct(__MODULE__)
+  end
+
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, author_id, attrs) do
     insert_changeset(business_id, author_id, attrs)

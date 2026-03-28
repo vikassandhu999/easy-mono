@@ -3,10 +3,8 @@ defmodule EasyWeb.Plugs.EnsureRole do
   alias Easy.Identity.Token
   alias EasyWeb.FallbackController
 
-  @doc false
   def init(opts), do: opts
 
-  @doc false
   def call(conn, opts) do
     required_role = opts[:role]
     claims = conn.assigns[:claims] || %{}

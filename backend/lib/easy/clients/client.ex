@@ -160,6 +160,14 @@ defmodule Easy.Clients.Client do
     })
   end
 
+  @spec get_for_user(String.t(), String.t()) :: {:ok, t()} | {:error, :not_found}
+  def get_for_user(business_id, user_id) do
+    case __MODULE__ |> for_business(business_id) |> for_user(user_id) |> Repo.one() do
+      nil -> {:error, :not_found}
+      client -> {:ok, client}
+    end
+  end
+
   # Queries for invitation
 
   @spec get_by_invitation_token(String.t()) :: t() | nil
@@ -254,6 +262,14 @@ defmodule Easy.Clients.Client do
   @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_preloads(query \\ __MODULE__) do
     from(c in query, preload: [:user, :business, :creator, :offer])
+  end
+
+  @spec accessible?(String.t(), String.t()) :: boolean()
+  def accessible?(business_id, client_id) do
+    __MODULE__
+    |> for_business(business_id)
+    |> Repo.get(client_id)
+    |> is_struct(__MODULE__)
   end
 
   # Actions
@@ -393,13 +409,14 @@ defmodule Easy.Clients.Client do
   @spec resend_invitation(t(), Orgs.Coach.t()) :: {:ok, t()} | {:error, Easy.Error.t()}
   def resend_invitation(%__MODULE__{status: :pending, email: email} = client, coach)
       when is_binary(email) and email != "" do
-    updated =
-      client
-      |> change(%{invitation_sent_at: DateTime.utc_now(:second)})
-      |> Repo.update!()
+    case client |> change(%{invitation_sent_at: DateTime.utc_now(:second)}) |> Repo.update() do
+      {:ok, updated} ->
+        maybe_send_invitation_email(updated, coach)
+        {:ok, updated}
 
-    maybe_send_invitation_email(updated, coach)
-    {:ok, updated}
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   def resend_invitation(%__MODULE__{status: :pending, email: nil}, _coach) do

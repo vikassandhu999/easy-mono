@@ -4,22 +4,23 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   alias Easy.Repo
   alias Easy.Training.{Exercise, PlannedWorkout, WorkoutElement}
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"planned_workout_id" => planned_workout_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with true <- planned_workout_accessible?(business_id, planned_workout_id),
-         :ok <- validate_exercise_access(business_id, params),
+    with true <- PlannedWorkout.accessible?(business_id, planned_workout_id),
+         true <- Exercise.accessible?(business_id, Map.get(params, "exercise_id")),
          {:ok, element} <- WorkoutElement.create(planned_workout_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, element: element)
     else
       false -> {:error, :not_found}
-      {:error, :not_found} -> {:error, :not_found}
       error -> error
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -32,6 +33,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -40,16 +42,17 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
            |> WorkoutElement.for_business(business_id)
            |> WorkoutElement.with_exercise()
            |> Repo.get(id),
-         :ok <- validate_exercise_access(business_id, conn.body_params),
+         true <- Exercise.accessible?(business_id, Map.get(conn.body_params, "exercise_id")),
          {:ok, updated} <- WorkoutElement.update(element, conn.body_params) do
       render(conn, :show, element: updated)
     else
       nil -> {:error, :not_found}
-      {:error, :not_found} -> {:error, :not_found}
+      false -> {:error, :not_found}
       error -> error
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -61,28 +64,6 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
         with {:ok, _element} <- WorkoutElement.delete(element) do
           send_resp(conn, :no_content, "")
         end
-    end
-  end
-
-  defp planned_workout_accessible?(business_id, planned_workout_id) do
-    PlannedWorkout
-    |> PlannedWorkout.for_business(business_id)
-    |> Repo.get(planned_workout_id)
-    |> is_struct(PlannedWorkout)
-  end
-
-  defp validate_exercise_access(business_id, attrs) do
-    case Map.get(attrs, "exercise_id") || Map.get(attrs, :exercise_id) do
-      nil ->
-        :ok
-
-      exercise_id ->
-        exercise =
-          Exercise
-          |> Exercise.for_business(business_id)
-          |> Repo.get(exercise_id)
-
-        if is_struct(exercise, Exercise), do: :ok, else: {:error, :not_found}
     end
   end
 end

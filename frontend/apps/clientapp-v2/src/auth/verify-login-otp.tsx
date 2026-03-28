@@ -7,8 +7,16 @@ import {z} from 'zod';
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
+
+const EMAIL_MASK_REGEX = /(.{2})(.*)(@.*)/;
+
+const LOGIN_ERROR_MESSAGES: Record<string, string> = {
+  otp_invalid: 'Invalid code, please try again.',
+  otp_expired: 'Code expired. Tap Resend to get a new one.',
+  unauthorized: 'No active client account found.',
+};
 
 interface VerifyLoginOtpLocationState {
   email: string;
@@ -51,7 +59,7 @@ export default function VerifyLoginOtp() {
     );
   }
 
-  const maskedEmail = state.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+  const maskedEmail = state.email.replace(EMAIL_MASK_REGEX, '$1***$3');
 
   const onSubmit = async (data: VerifyLoginOtpFormValues) => {
     try {
@@ -64,7 +72,16 @@ export default function VerifyLoginOtp() {
       setTokens(result);
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Invalid code. Please try again.', setError);
+      const code = getApiErrorCode(err);
+
+      // Email not verified — redirect to verify-email flow
+      if (code === 'email_not_confirmed') {
+        navigate(ROUTES.VERIFY_EMAIL, {replace: true, state: {email: state.email}});
+        return;
+      }
+
+      const fallback = LOGIN_ERROR_MESSAGES[code ?? ''] ?? 'Verification failed. Please try again.';
+      applyFormErrors(err, fallback, setError);
       reset({otp: ''});
     }
   };
@@ -115,10 +132,10 @@ export default function VerifyLoginOtp() {
               </InputOTP>
             )}
           />
-          {errors.otp && <p className="text-xs text-danger">{errors.otp.message}</p>}
+          {errors.otp ? <p className="text-xs text-danger">{errors.otp.message}</p> : null}
         </div>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 
         <Button
           fullWidth

@@ -59,6 +59,15 @@ export const getApiErrorMessage = (error: unknown, fallback: string): string => 
   return fallback;
 };
 
+/** Extract the `error_code` string from an RTK Query error, or null if not present. */
+export const getApiErrorCode = (error: unknown): null | string => {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = (error as {data?: ErrorResponse}).data;
+    return data?.error_code ?? null;
+  }
+  return null;
+};
+
 /**
  * Bridges server errors into react-hook-form's setError.
  * - Field errors → setError('fieldName', {message}) per field
@@ -83,5 +92,3 @@ export const applyFormErrors = (
 
   setError('root', {message: formError});
 };
-
-

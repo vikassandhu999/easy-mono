@@ -1,4 +1,4 @@
-import {Button, Input, Label, Link, Spinner} from '@heroui/react';
+import {Button, Input, Label, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
@@ -57,10 +57,10 @@ export default function Login() {
             type="email"
             {...register('email')}
           />
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+          {errors.email ? <p className="text-xs text-danger">{errors.email.message}</p> : null}
         </div>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 
         <Button
           fullWidth
@@ -82,13 +82,7 @@ export default function Login() {
       </form>
 
       <p className="mt-6 text-center text-sm text-foreground-500">
-        Don&apos;t have an account?{' '}
-        <Link
-          className="text-sm text-foreground underline"
-          href={ROUTES.SIGNUP}
-        >
-          Sign up
-        </Link>
+        Your coach will send you an invitation link to get started.
       </p>
     </AuthLayout>
   );

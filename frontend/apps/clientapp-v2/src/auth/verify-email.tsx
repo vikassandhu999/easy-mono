@@ -5,12 +5,19 @@ import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
-import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
+import {useExchangeTokenMutation, useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
 import {setTokens} from '@/api/authStorage';
-import {applyFormErrors} from '@/api/shared';
+import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
-interface VerifySignupOtpLocationState {
+const EMAIL_MASK_REGEX = /(.{2})(.*)(@.*)/;
+
+const VERIFY_ERROR_MESSAGES: Record<string, string> = {
+  otp_invalid: 'Invalid code, please try again.',
+  otp_expired: 'Code expired. Tap Resend to get a new one.',
+};
+
+interface VerifyEmailLocationState {
   email: string;
 }
 
@@ -18,15 +25,18 @@ const schema = z.object({
   otp: z.string().length(6, 'Enter all 6 digits'),
 });
 
-type VerifySignupOtpFormValues = z.infer<typeof schema>;
+type VerifyEmailFormValues = z.infer<typeof schema>;
 
-export default function VerifySignupOtp() {
+export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as null | VerifySignupOtpLocationState;
+  const state = location.state as null | VerifyEmailLocationState;
 
-  const [verifyOtp, {isLoading}] = useVerifyOtpMutation();
+  const [verifyOtp, {isLoading: isVerifying}] = useVerifyOtpMutation();
+  const [exchangeToken, {isLoading: isUpgrading}] = useExchangeTokenMutation();
   const [sendOtp, {isLoading: isResending}] = useSendOtpMutation();
+
+  const isLoading = isVerifying || isUpgrading;
 
   const {
     control,
@@ -34,35 +44,47 @@ export default function VerifySignupOtp() {
     handleSubmit,
     reset,
     setError,
-  } = useForm<VerifySignupOtpFormValues>({
+  } = useForm<VerifyEmailFormValues>({
     defaultValues: {otp: ''},
     resolver: zodResolver(schema),
   });
 
   const otpValue = useWatch({control, name: 'otp'});
 
-  // Guard: must arrive via signup with email in state
+  // Guard: must arrive with email in state (from accept-invite)
   if (!state?.email) {
     return (
       <Navigate
         replace
-        to={ROUTES.SIGNUP}
+        to={ROUTES.LOGIN}
       />
     );
   }
 
-  const maskedEmail = state.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+  const maskedEmail = state.email.replace(EMAIL_MASK_REGEX, '$1***$3');
 
-  const onSubmit = async (data: VerifySignupOtpFormValues) => {
+  const onSubmit = async (data: VerifyEmailFormValues) => {
     try {
-      const result = await verifyOtp({
+      // Step 1: Verify email — returns guest-scoped tokens
+      const guestResult = await verifyOtp({
         email: state.email,
         otp: data.otp,
       }).unwrap();
-      setTokens(result);
+
+      // Step 2: Upgrade guest session to client session via refresh token
+      const clientResult = await exchangeToken({
+        grant_type: 'refresh_token',
+        refresh_token: guestResult.refresh_token,
+        role: 'client',
+      }).unwrap();
+
+      // Store client-scoped tokens and navigate to dashboard
+      setTokens(clientResult);
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Invalid code. Please try again.', setError);
+      const code = getApiErrorCode(err);
+      const fallback = VERIFY_ERROR_MESSAGES[code ?? ''] ?? 'Verification failed. Please try again.';
+      applyFormErrors(err, fallback, setError);
       reset({otp: ''});
     }
   };
@@ -81,7 +103,7 @@ export default function VerifySignupOtp() {
   return (
     <AuthLayout
       description={`We sent a 6-digit code to ${maskedEmail}`}
-      title="Confirm your email"
+      title="Verify your email"
     >
       <form
         className="flex flex-col gap-4"
@@ -116,10 +138,10 @@ export default function VerifySignupOtp() {
               </InputOTP>
             )}
           />
-          {errors.otp && <p className="text-xs text-danger">{errors.otp.message}</p>}
+          {errors.otp ? <p className="text-xs text-danger">{errors.otp.message}</p> : null}
         </div>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 
         <Button
           fullWidth

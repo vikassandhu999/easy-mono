@@ -5,14 +5,13 @@ import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
+import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
-import Signup from '@/auth/signup';
+import VerifyEmail from '@/auth/verify-email';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
-import VerifySignupOtp from '@/auth/verify-signup-otp';
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
-const SignupScreen = withNotAuth(Signup);
 
 // Protected screens
 const AppShellScreen = withAuth(AppShell);
@@ -29,22 +28,22 @@ function Placeholder({title}: {title: string}) {
 export default function App() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public — invitation + auth */}
+      <Route
+        element={<AcceptInvite />}
+        path={ROUTES.ACCEPT_INVITE}
+      />
+      <Route
+        element={<VerifyEmail />}
+        path={ROUTES.VERIFY_EMAIL}
+      />
       <Route
         element={<LoginScreen />}
         path={ROUTES.LOGIN}
       />
       <Route
-        element={<SignupScreen />}
-        path={ROUTES.SIGNUP}
-      />
-      <Route
         element={<VerifyLoginOtp />}
         path={ROUTES.VERIFY_LOGIN_OTP}
-      />
-      <Route
-        element={<VerifySignupOtp />}
-        path={ROUTES.VERIFY_SIGNUP_OTP}
       />
 
       {/* App (protected, with shell) */}

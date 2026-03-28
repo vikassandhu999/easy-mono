@@ -1,8 +1,8 @@
 export const ROUTES = {
   LOGIN: '/login',
-  SIGNUP: '/signup',
   VERIFY_LOGIN_OTP: '/verify-login',
-  VERIFY_SIGNUP_OTP: '/verify-signup',
+  ACCEPT_INVITE: '/invite/:token',
+  VERIFY_EMAIL: '/verify-email',
   DASHBOARD: '/dashboard',
   SETTINGS: '/settings',
 } as const;

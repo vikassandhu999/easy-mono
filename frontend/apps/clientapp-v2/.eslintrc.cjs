@@ -1,6 +1,6 @@
 module.exports = {
   extends: ["@easy/eslint-config"],
-  ignorePatterns: ["node_modules", "dist", "dev-dist", "ios", "android"],
+  ignorePatterns: ["node_modules", "dist", "dev-dist", "ios", "android", "capacitor.config.ts"],
   parserOptions: {
     ecmaFeatures: {
       jsx: true,

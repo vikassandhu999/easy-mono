@@ -4,7 +4,7 @@ defmodule Easy.Training.WorkoutSession do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, PerformedSet}
+  alias Easy.Training.{PlannedWorkout, WorkoutElement, PerformedSet}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -25,6 +25,7 @@ defmodule Easy.Training.WorkoutSession do
     field :state, Ecto.Enum, values: @states, default: :active
     field :soreness_rating, :integer
     field :notes, :string
+    field :planned_snapshot, :map
 
     belongs_to :client, Clients.Client
     belongs_to :business, Orgs.Business
@@ -106,9 +107,68 @@ defmodule Easy.Training.WorkoutSession do
       |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
       |> Map.put("started_at", DateTime.utc_now())
 
-    insert_changeset(business_id, client_id, attrs)
+    changeset = insert_changeset(business_id, client_id, attrs)
+
+    changeset
+    |> maybe_put_snapshot()
     |> Repo.insert()
     |> preload_result()
+  end
+
+  defp maybe_put_snapshot(changeset) do
+    case get_field(changeset, :planned_workout_id) do
+      nil -> changeset
+      workout_id -> put_change(changeset, :planned_snapshot, build_snapshot(workout_id))
+    end
+  end
+
+  @spec build_snapshot(String.t()) :: map()
+  defp build_snapshot(workout_id) do
+    element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
+
+    workout =
+      PlannedWorkout
+      |> Repo.get(workout_id)
+      |> Repo.preload(workout_elements: element_query)
+
+    case workout do
+      nil ->
+        nil
+
+      workout ->
+        %{
+          "workout_name" => workout.name,
+          "day_number" => workout.day_number,
+          "elements" =>
+            Enum.map(workout.workout_elements, fn element ->
+              %{
+                "element_id" => element.id,
+                "position" => element.position,
+                "superset_group_id" => element.superset_group_id,
+                "notes" => element.notes,
+                "exercise_id" => element.exercise_id,
+                "exercise_name" => element.exercise.name,
+                "planned_sets" =>
+                  Enum.map(element.planned_sets, fn set ->
+                    %{
+                      "set_type" => set.set_type && Atom.to_string(set.set_type),
+                      "target_reps" => set.target_reps,
+                      "load_value" => set.load_value && Decimal.to_string(set.load_value),
+                      "load_unit" => set.load_unit && Atom.to_string(set.load_unit),
+                      "rest_seconds" => set.rest_seconds,
+                      "duration_seconds" => set.duration_seconds,
+                      "distance_value" =>
+                        set.distance_value && Decimal.to_string(set.distance_value),
+                      "distance_unit" => set.distance_unit && Atom.to_string(set.distance_unit),
+                      "intensity_target" => set.intensity_target,
+                      "tempo" => set.tempo,
+                      "notes" => set.notes
+                    }
+                  end)
+              }
+            end)
+        }
+    end
   end
 
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}

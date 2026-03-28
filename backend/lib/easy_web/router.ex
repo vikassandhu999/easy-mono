@@ -32,6 +32,7 @@ defmodule EasyWeb.Router do
     pipe_through :api
 
     post "/signup", AuthController, :signup
+    post "/accept-invite", AuthController, :accept_invite
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
@@ -137,6 +138,10 @@ defmodule EasyWeb.Router do
     patch "/sessions/:id/discard", WorkoutSessionController, :discard
     delete "/sessions/:id", WorkoutSessionController, :delete
 
+    post "/performed_sets", PerformedSetController, :create
+    patch "/performed_sets/:id", PerformedSetController, :update
+    delete "/performed_sets/:id", PerformedSetController, :delete
+
     # Storefront
     get "/storefront/profile", StoreProfileController, :show
     patch "/storefront/profile", StoreProfileController, :update
@@ -153,6 +158,12 @@ defmodule EasyWeb.Router do
     get "/testimonials/:id", TestimonialController, :show
     patch "/testimonials/:id", TestimonialController, :update
     delete "/testimonials/:id", TestimonialController, :delete
+  end
+
+  scope "/v1/client", EasyWeb.Clients do
+    pipe_through :require_client
+
+    get "/me", ProfileController, :show
   end
 
   scope "/v1/public", EasyWeb.Public do

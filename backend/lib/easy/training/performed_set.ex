@@ -3,7 +3,7 @@ defmodule Easy.Training.PerformedSet do
 
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{WorkoutSession, Exercise}
+  alias Easy.Training.{WorkoutSession, WorkoutElement, Exercise}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -33,6 +33,7 @@ defmodule Easy.Training.PerformedSet do
     field :notes, :string
 
     belongs_to :workout_session, WorkoutSession
+    belongs_to :workout_element, WorkoutElement
     belongs_to :exercise, Exercise
     belongs_to :business, Orgs.Business
 
@@ -53,7 +54,8 @@ defmodule Easy.Training.PerformedSet do
     :tempo_actual,
     :completed,
     :notes,
-    :exercise_id
+    :exercise_id,
+    :workout_element_id
   ]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
@@ -76,6 +78,7 @@ defmodule Easy.Training.PerformedSet do
       message: "position already exists in this workout session"
     )
     |> foreign_key_constraint(:workout_session_id)
+    |> foreign_key_constraint(:workout_element_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
   end
@@ -97,6 +100,7 @@ defmodule Easy.Training.PerformedSet do
       message: "position already exists in this workout session"
     )
     |> foreign_key_constraint(:workout_session_id)
+    |> foreign_key_constraint(:workout_element_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
   end

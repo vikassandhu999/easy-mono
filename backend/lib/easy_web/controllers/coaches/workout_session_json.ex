@@ -20,6 +20,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       client_id: session.client_id,
       business_id: session.business_id,
       planned_workout_id: session.planned_workout_id,
+      planned_snapshot: session.planned_snapshot,
       performed_sets: performed_sets_data(session.performed_sets),
       inserted_at: session.inserted_at,
       updated_at: session.updated_at
@@ -46,6 +47,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       completed: set.completed,
       notes: set.notes,
       exercise_id: set.exercise_id,
+      workout_element_id: set.workout_element_id,
       workout_session_id: set.workout_session_id,
       business_id: set.business_id,
       exercise: exercise_data(set.exercise),

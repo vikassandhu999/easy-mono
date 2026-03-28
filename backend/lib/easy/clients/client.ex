@@ -150,6 +150,30 @@ defmodule Easy.Clients.Client do
   defp blank?(""), do: true
   defp blank?(_), do: false
 
+  @spec accept_invite_changeset(t(), String.t()) :: Ecto.Changeset.t()
+  def accept_invite_changeset(client, user_id) do
+    client
+    |> change(%{
+      user_id: user_id,
+      status: :active,
+      invitation_token: nil
+    })
+  end
+
+  # Queries for invitation
+
+  @spec get_by_invitation_token(String.t()) :: t() | nil
+  def get_by_invitation_token(token) do
+    __MODULE__
+    |> where([c], c.invitation_token == ^token and c.status == :pending)
+    |> Repo.one()
+  end
+
+  @spec for_user(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_user(query \\ __MODULE__, user_id) do
+    from(c in query, where: c.user_id == ^user_id)
+  end
+
   # Status auto-computation
 
   @status_override_map Map.new(@client_statuses, &{Atom.to_string(&1), &1})

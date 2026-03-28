@@ -19,6 +19,21 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  def accept_invite(conn, %{"invitation_token" => _} = params) do
+    with {:ok, user} <- Identity.accept_invite(params) do
+      conn
+      |> put_status(201)
+      |> json(%{
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email_confirmed: not is_nil(user.email_confirmed_at),
+        confirmation_sent_at: user.confirmation_sent_at
+      })
+    end
+  end
+
   def verify(conn, %{"token" => token_hash}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"

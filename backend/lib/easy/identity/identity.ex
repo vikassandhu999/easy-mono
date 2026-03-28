@@ -1,4 +1,5 @@
 defmodule Easy.Identity do
+  alias Easy.Clients.Client
   alias Easy.Orgs
   alias Easy.Identity.UserSessions
   alias Easy.Identity.UserSession
@@ -7,7 +8,6 @@ defmodule Easy.Identity do
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.Token
   alias Easy.Repo
-  alias Easy.Orgs
 
   # TODO: Add rate limiting to signup and otp sending
   @spec signup(map()) :: {:ok, User.t()} | {:error, any()}
@@ -32,6 +32,62 @@ defmodule Easy.Identity do
           Repo.rollback(reason)
       end
     end)
+  end
+
+  @spec accept_invite(map()) :: {:ok, User.t()} | {:error, any()}
+  def accept_invite(%{"invitation_token" => token, "email" => _} = attrs) do
+    otp = generate_otp()
+
+    Repo.transaction(fn ->
+      with client when not is_nil(client) <- Client.get_by_invitation_token(token),
+           {:ok, user} <- find_or_create_user(client, attrs, otp),
+           {:ok, _client} <- accept_client_invite(client, user) do
+        user
+      else
+        nil ->
+          Repo.rollback(Easy.Error.not_found("invitation", "Invalid or expired invitation token"))
+
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp find_or_create_user(client, attrs, otp) do
+    email = attrs["email"] || client.email
+
+    case Users.get_by_email(email) do
+      {:ok, user} ->
+        if User.is_email_confirmed?(user) do
+          {:ok, user}
+        else
+          OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation)
+          OneTimeTokens.create_token(user, :email_confirmation, otp)
+          send_otp_email(email, otp)
+          {:ok, user}
+        end
+
+      {:error, _} ->
+        user_attrs =
+          Map.merge(attrs, %{
+            "email" => email,
+            "first_name" => attrs["first_name"] || client.first_name || "",
+            "last_name" => attrs["last_name"] || client.last_name || "",
+            "confirmation_sent_at" => DateTime.utc_now(:second)
+          })
+
+        with {:ok, user} <- Users.create(user_attrs),
+             {:ok, _token} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
+          send_otp_email(email, otp)
+          {:ok, user}
+        end
+    end
+  end
+
+  defp accept_client_invite(client, user) do
+    client
+    |> Client.accept_invite_changeset(user.id)
+    |> Repo.update()
   end
 
   @spec verify(String.t(), map()) :: {:ok, auth_token()} | {:error, any()}
@@ -158,6 +214,18 @@ defmodule Easy.Identity do
 
           nil ->
             {:error, Easy.Error.unauthorized("User is not associated with any business")}
+        end
+
+      :client ->
+        case Client
+             |> Client.for_user(user.id)
+             |> Client.with_status(:active)
+             |> Repo.one() do
+          %Client{business_id: business_id} ->
+            {:ok, %{role: :client, business_id: business_id}}
+
+          nil ->
+            {:error, Easy.Error.unauthorized("No active client account found")}
         end
 
       _ ->

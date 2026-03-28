@@ -97,6 +97,84 @@ paths:
                 $ref: "#/components/schemas/AuthTokenResponse"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  /v1/auth/accept-invite:
+    post:
+      summary: Accept client invitation
+      description: >-
+        Called when a client clicks their invitation link. Accepts the invitation token,
+        creates a User account (or links to an existing one if the email matches),
+        links the client record to the user, sets client status to active, and sends
+        an email confirmation OTP. The client must then verify their email via
+        POST /v1/auth/verify and login via POST /v1/auth/token with role=client.
+        Frontend pattern - call from the invitation landing page; on success, redirect
+        to OTP verification screen.
+      operationId: authAcceptInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInviteRequest"
+            examples:
+              default:
+                value:
+                  invitation_token: abc123def456
+                  email: client@example.com
+      responses:
+        "201":
+          description: Invitation accepted and user account created/linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptInviteResponse"
+              example:
+                id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                email: client@example.com
+                first_name: Vikas
+                last_name: Sandhu
+                email_confirmed: false
+                confirmation_sent_at: "2026-03-28T10:00:00Z"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  # ── Client Endpoints ─────────────────────────────────────────
+  /v1/client/me:
+    get:
+      summary: Get client profile
+      description: >-
+        Returns the authenticated client's own profile. Includes program info,
+        contact details, and status. Frontend pattern - fetch on app launch and
+        cache locally; refetch after profile updates.
+      operationId: getClientProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Client profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileResponse"
+              example:
+                data:
+                  id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                  email: client@example.com
+                  first_name: Vikas
+                  last_name: Sandhu
+                  phone: "+91 98765 43210"
+                  instagram_handle: null
+                  status: active
+                  program_name: 12 Week Shred
+                  program_start: "2026-03-01"
+                  program_end: "2026-05-24"
+                  business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                  inserted_at: "2026-03-01T10:00:00Z"
+                  updated_at: "2026-03-01T10:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden - requires client role
   /v1/businesses:
     post:
       summary: Create business
@@ -2244,6 +2322,132 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  # ── Performed Sets ────────────────────────────────────────────
+  /v1/coach/performed_sets:
+    post:
+      summary: Log a performed set
+      description: >-
+        Records a single performed set within an active workout session. Called each time
+        the client completes (or skips) a set during a workout. When logging against a planned
+        workout, include workout_element_id to link the set to the planned exercise slot.
+        For freestyle exercises (not in the plan), omit workout_element_id.
+        Frontend pattern - call immediately after user taps "Log set" or the one-tap checkbox;
+        optimistic update to the set table, reconcile with response.
+      operationId: createPerformedSet
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformedSetCreateRequest"
+            examples:
+              default:
+                value:
+                  workout_session_id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+                  exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
+                  workout_element_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  position: 0
+                  actual_reps: "10"
+                  load_value: 80
+                  load_unit: kg
+                  completed: true
+      responses:
+        "201":
+          description: Performed set created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformedSetResponse"
+              example:
+                data:
+                  id: b2c3d4e5-f6a7-8901-bcde-f01234567890
+                  position: 0
+                  actual_reps: "10"
+                  load_value: 80
+                  load_unit: kg
+                  intensity_felt: null
+                  rpe: null
+                  rir: null
+                  duration_seconds: null
+                  distance_value: null
+                  distance_unit: none
+                  tempo_actual: null
+                  completed: true
+                  notes: null
+                  exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
+                  workout_element_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  workout_session_id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+                  business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                  exercise:
+                    id: f0e1d2c3-b4a5-6789-0abc-def012345678
+                    name: Barbell Bench Press
+                    mechanics: compound
+                    force: push
+                  inserted_at: "2026-02-14T10:20:00Z"
+                  updated_at: "2026-02-14T10:20:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/performed_sets/{id}:
+    patch:
+      summary: Update a performed set
+      description: >-
+        Updates a previously logged set. Used when the client corrects reps, load,
+        or other values after initial logging. Frontend pattern - call on blur/save
+        from the set editing UI; optimistic update, reconcile with response.
+      operationId: updatePerformedSet
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformedSetUpdateRequest"
+            examples:
+              default:
+                value:
+                  actual_reps: "8"
+                  load_value: 75
+                  notes: Dropped weight on last set
+      responses:
+        "200":
+          description: Performed set updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformedSetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete a performed set
+      description: >-
+        Removes a logged set from the session. Used when the client accidentally logs
+        a duplicate or wants to undo a set entry. Frontend pattern - call from swipe-to-delete
+        or undo action; remove from local state immediately.
+      operationId: deletePerformedSet
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Performed set deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   # ── Storefront ──────────────────────────────────────────────
   /v1/coach/storefront/profile:
     get:
@@ -2968,6 +3172,94 @@ components:
           type: string
         scope:
           type: string
+    AcceptInviteRequest:
+      type: object
+      required: [invitation_token, email]
+      properties:
+        invitation_token:
+          type: string
+          description: The token from the invitation email link.
+        email:
+          type: string
+          format: email
+          description: >-
+            The email the client wants to use for login. Can differ from the
+            email the coach used when sending the invite.
+        first_name:
+          type: string
+          description: Optional override for the client's first name.
+        last_name:
+          type: string
+          description: Optional override for the client's last name.
+    AcceptInviteResponse:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email_confirmed:
+          type: boolean
+          description: True if the user's email was already confirmed (existing account).
+        confirmation_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+    ClientProfile:
+      type: object
+      required: [id, status, business_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        instagram_handle:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive, pending, expired, expiring, archived]
+        program_name:
+          type: string
+          nullable: true
+        program_start:
+          type: string
+          format: date
+          nullable: true
+        program_end:
+          type: string
+          format: date
+          nullable: true
+        business_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientProfile"
     BusinessCreateRequest:
       type: object
       required: [name, handle]
@@ -4438,6 +4730,28 @@ components:
           client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
           business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
           planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+          planned_snapshot:
+            workout_name: Push Day
+            day_number: 1
+            elements:
+              - element_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                position: 0
+                superset_group_id: null
+                notes: null
+                exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
+                exercise_name: Barbell Bench Press
+                planned_sets:
+                  - set_type: working
+                    target_reps: "8-10"
+                    load_value: "80"
+                    load_unit: kg
+                    rest_seconds: 120
+                    duration_seconds: null
+                    distance_value: null
+                    distance_unit: null
+                    intensity_target: null
+                    tempo: null
+                    notes: null
           performed_sets: []
           inserted_at: "2026-02-14T10:15:00Z"
           updated_at: "2026-02-14T10:15:00Z"
@@ -4495,6 +4809,81 @@ components:
         planned_workout_id:
           type: string
           nullable: true
+        planned_snapshot:
+          type: object
+          nullable: true
+          description: >-
+            Point-in-time snapshot of the planned workout captured when the session starts.
+            Null for freestyle sessions (no plan). Contains workout_name, day_number,
+            and elements array with exercise details and planned sets. Used for
+            plan-vs-actual comparison that survives plan edits.
+          properties:
+            workout_name:
+              type: string
+            day_number:
+              type: integer
+              minimum: 1
+              maximum: 7
+            elements:
+              type: array
+              items:
+                type: object
+                properties:
+                  element_id:
+                    type: string
+                  position:
+                    type: integer
+                  superset_group_id:
+                    type: string
+                    nullable: true
+                  notes:
+                    type: string
+                    nullable: true
+                  exercise_id:
+                    type: string
+                  exercise_name:
+                    type: string
+                  planned_sets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        set_type:
+                          type: string
+                          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
+                          nullable: true
+                        target_reps:
+                          type: string
+                          nullable: true
+                        load_value:
+                          type: string
+                          nullable: true
+                        load_unit:
+                          type: string
+                          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+                          nullable: true
+                        rest_seconds:
+                          type: integer
+                          nullable: true
+                        duration_seconds:
+                          type: integer
+                          nullable: true
+                        distance_value:
+                          type: string
+                          nullable: true
+                        distance_unit:
+                          type: string
+                          enum: [meters, km, miles, yards, none]
+                          nullable: true
+                        intensity_target:
+                          type: string
+                          nullable: true
+                        tempo:
+                          type: string
+                          nullable: true
+                        notes:
+                          type: string
+                          nullable: true
         performed_sets:
           type: array
           items:
@@ -4560,6 +4949,13 @@ components:
           nullable: true
         exercise_id:
           type: string
+        workout_element_id:
+          type: string
+          nullable: true
+          description: >-
+            Links this performed set to a specific planned exercise slot.
+            Null for freestyle exercises (not in the plan). Used with
+            planned_snapshot to determine replacements and skips.
         workout_session_id:
           type: string
         business_id:
@@ -4573,6 +4969,121 @@ components:
         updated_at:
           type: string
           format: date-time
+    PerformedSetCreateRequest:
+      type: object
+      required: [workout_session_id, exercise_id, position]
+      example:
+        workout_session_id: 95ea7c0a-6de3-48a7-9b8a-c66f73e4a6f5
+        exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
+        workout_element_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        position: 0
+        actual_reps: "10"
+        load_value: 80
+        load_unit: kg
+        completed: true
+      properties:
+        workout_session_id:
+          type: string
+        exercise_id:
+          type: string
+        workout_element_id:
+          type: string
+          nullable: true
+          description: Links to the planned exercise slot. Null for freestyle exercises.
+        position:
+          type: integer
+          minimum: 0
+        actual_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_felt:
+          type: string
+          nullable: true
+        rpe:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+        rir:
+          type: integer
+          nullable: true
+          minimum: 0
+        duration_seconds:
+          type: integer
+          nullable: true
+          minimum: 0
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        tempo_actual:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+    PerformedSetUpdateRequest:
+      type: object
+      example:
+        actual_reps: "8"
+        load_value: 75
+        notes: Dropped weight on last set
+      properties:
+        actual_reps:
+          type: string
+          nullable: true
+        load_value:
+          type: number
+          nullable: true
+        load_unit:
+          type: string
+          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
+        intensity_felt:
+          type: string
+          nullable: true
+        rpe:
+          type: number
+          nullable: true
+          minimum: 1
+          maximum: 10
+        rir:
+          type: integer
+          nullable: true
+          minimum: 0
+        duration_seconds:
+          type: integer
+          nullable: true
+          minimum: 0
+        distance_value:
+          type: number
+          nullable: true
+        distance_unit:
+          type: string
+          enum: [meters, km, miles, yards, none]
+        tempo_actual:
+          type: string
+          nullable: true
+        completed:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+    PerformedSetResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/PerformedSet"
     ExerciseBrief:
       type: object
       required: [id, name]

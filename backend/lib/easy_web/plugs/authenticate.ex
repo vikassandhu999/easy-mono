@@ -2,16 +2,20 @@ defmodule EasyWeb.Plugs.Authenticate do
   import Plug.Conn
   require Logger
   alias Easy.Identity.Token
+  alias Easy.Utils
   alias EasyWeb.FallbackController
+
+  @allowed_roles ["owner", "coach", "client", "guest"]
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, %{} = claims} <- Token.verify_access_token(token) do
+         {:ok, %{} = claims} <- Token.verify_access_token(token),
+         role when not is_nil(role) <- Utils.safe_to_atom(claims["role"], @allowed_roles) do
       assign(conn, :claims, %{
         user_id: claims["user_id"],
-        role: String.to_atom(claims["role"]),
+        role: role,
         business_id: claims["business_id"],
         session_id: claims["session_id"]
       })

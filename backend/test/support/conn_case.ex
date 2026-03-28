@@ -36,6 +36,23 @@ defmodule Easy.ConnCase do
     Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
   end
 
+  @spec authenticate_client(Plug.Conn.t(), Easy.Clients.Client.t()) :: Plug.Conn.t()
+  def authenticate_client(conn, client) do
+    token =
+      Joken.generate_and_sign!(
+        Easy.Identity.Token.token_config(),
+        %{
+          user_id: client.user_id,
+          session_id: Ecto.UUID.generate(),
+          role: "client",
+          business_id: client.business_id
+        },
+        Easy.Identity.Token.signer()
+      )
+
+    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
+  end
+
   @spec training_tables_ready?() :: boolean()
   def training_tables_ready? do
     required_tables = [

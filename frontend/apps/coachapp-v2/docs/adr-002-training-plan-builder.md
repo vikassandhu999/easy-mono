@@ -1,7 +1,7 @@
-# ADR-002: Training Plan Builder
+# ADR-002: Training Plan Builder + Workout Logging
 
-**Date:** 2026-03-26  
-**Context:** Training plan creation and management in coachapp-v2
+**Date:** 2026-03-29  
+**Context:** Training plan creation (coachapp-v2), workout session viewing (coachapp-v2), and workout logging (clientapp-v2)
 
 ---
 
@@ -23,6 +23,25 @@ TrainingPlan
 ```
 
 Key difference from nutrition plans: `planned_sets` is an inline array on the `WorkoutElement`, not a separate API entity. This means sets are created/updated atomically when the workout element is saved, rather than requiring individual CRUD calls per set.
+
+The workout logging layer adds two more entities:
+
+```
+WorkoutSession
+├── state: active | completed | discarded
+├── started_at, ended_at, soreness_rating, notes
+├── planned_workout_id (nullable — null for freestyle)
+├── planned_snapshot (jsonb — frozen copy of the plan at session start)
+│   ├── workout_name, day_number
+│   └── elements[] { element_id, exercise_id, exercise_name, position, planned_sets[] }
+└── performed_sets[]
+    ├── exercise_id, workout_element_id (nullable — null for unplanned exercises)
+    ├── position (globally unique per session, not per exercise)
+    ├── actual_reps, load_value, load_unit, completed
+    └── rpe, rir, intensity_felt, tempo_actual, distance_*, duration_seconds, notes
+```
+
+`planned_snapshot` is critical for change resilience: when a coach tweaks a client's plan mid-program, past session comparisons read from the snapshot (what was planned at session start), not the live plan. `workout_element_id` on `PerformedSet` links to the specific exercise slot in the plan, enabling precise plan-vs-actual comparison even when the same exercise appears in multiple slots.
 
 ---
 
@@ -246,7 +265,184 @@ This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-firs
 
 ---
 
+## Coach-Side: Workout Session Viewing
+
+The coach views a client's workout history from the client detail page. This is read-only — the coach doesn't edit client logs.
+
+### Component Architecture
+
+| Component | Location | Purpose |
+| --- | --- | --- |
+| `ClientWorkoutHistory` | `clients/components/client-workout-history.tsx` | Paginated session list using `useWorkoutSessionsInfiniteQuery({client_id})`. Renders session cards with workout name (from `planned_snapshot`), date, duration, exercise count, replacement count, effort rating, state chip. "Load more" button for pagination. Placed on `client-detail.tsx` between Training Plans and Contact sections. |
+| `SessionDetail` | `clients/session-detail.tsx` | Plan-vs-done comparison screen at `/clients/:clientId/sessions/:sessionId`. Groups `performed_sets` by `workout_element_id`, detects replacements (exercise_id mismatch), skips (no sets for element), and client-added exercises (null element_id). Renders per-exercise tables with Plan/Done/Load columns. |
+| `session-helpers.ts` | `clients/components/session-helpers.ts` | Shared constants and formatters for the clients feature: `DAY_NAMES`, `SESSION_STATE_CHIP`, `formatDuration`, `formatSessionDate`, `formatSessionDateLong`. |
+
+### Container Decisions (coach session viewing)
+
+| Action | Keyboard? | Container | Rationale |
+| --- | --- | --- | --- |
+| View workout history | No | **INLINE** | Section on client detail page |
+| View session detail | No | **NEW PAGE** | Read-only comparison, too much content for inline |
+
+### Data Flow (coach session viewing)
+
+```
+client-detail.tsx
+  └── ClientWorkoutHistory
+      └── useWorkoutSessionsInfiniteQuery({client_id}) → paginated sessions
+
+session-detail.tsx
+  └── useGetWorkoutSessionQuery(sessionId)
+      → session with planned_snapshot + performed_sets[]
+      → buildExerciseGroups() derives replacement/skip/added status
+```
+
+### API Endpoints (coach session viewing)
+
+| Endpoint | Hook | Purpose |
+| --- | --- | --- |
+| `GET /v1/coach/workout_sessions` (infinite) | `useWorkoutSessionsInfiniteQuery` | Paginated session list (filtered by `client_id`) |
+| `GET /v1/coach/workout_sessions/:id` | `useGetWorkoutSessionQuery` | Session with performed_sets for detail view |
+| `DELETE /v1/coach/workout_sessions/:id` | `useDeleteWorkoutSessionMutation` | Delete a session (wired, not yet used in UI) |
+| `POST /v1/coach/workout_sessions` | `useCreateWorkoutSessionMutation` | Create session (wired, not yet used in UI) |
+| `POST /v1/coach/workout_sessions/:id/complete` | `useCompleteWorkoutSessionMutation` | Complete session (wired, not yet used in UI) |
+| `POST /v1/coach/workout_sessions/:id/discard` | `useDiscardWorkoutSessionMutation` | Discard session (wired, not yet used in UI) |
+| `PATCH /v1/coach/workout_sessions/:id` | `useUpdateWorkoutSessionMutation` | Update session (wired, not yet used in UI) |
+| `POST /v1/coach/performed_sets` | `useCreatePerformedSetMutation` | Create performed set (wired, not yet used in UI) |
+| `PATCH /v1/coach/performed_sets/:id` | `useUpdatePerformedSetMutation` | Update performed set (wired, not yet used in UI) |
+| `DELETE /v1/coach/performed_sets/:id` | `useDeletePerformedSetMutation` | Delete performed set (wired, not yet used in UI) |
+
+---
+
+## Client-Side: Workout Logging (clientapp-v2)
+
+The client app (`clientapp-v2`) is a separate Vite SPA at port 1314 with its own API layer pointing to `/v1/client/*` endpoints. The client authenticates with a client JWT (`client_id` + `business_id`). Plans and exercises are read-only; workout sessions and performed sets are full CRUD.
+
+### Design Philosophy
+
+The plan is guidance, not a mandate. The client's job is to log what they actually did. Deviations (replacing an exercise, adjusting load, skipping a set) are normal outcomes, not errors. The UI treats them as first-class: no red warnings, no "didn't follow plan" indicators. The comparison is for the coach's analysis, not the client's judgment.
+
+### Screen Architecture
+
+| File | Route | Purpose |
+| --- | --- | --- |
+| `dashboard/dashboard.tsx` | `/dashboard` | Home screen: today's workout card (matched by weekday to `day_number`), other days, freestyle option, active session resume banner |
+| `workout/active-workout.tsx` | `/workout` | Active workout: exercise list from `planned_snapshot`, expand/collapse accordion, set logging, replace/skip/add exercise, finish workout |
+| `history/workout-history.tsx` | `/history` | Paginated list of past sessions with infinite scroll |
+| `history/session-detail.tsx` | `/history/:sessionId` | Read-only plan-vs-done comparison (same logic as coach view) |
+
+### Components (`workout/components/`)
+
+| Component | Purpose | Used by |
+| --- | --- | --- |
+| `workout-types.ts` | `WorkoutExercise` type, `ExerciseStatus` type, `buildWorkoutExercises()` builder, `deriveExerciseStatus()` helper. Derives exercise list from snapshot + performed sets + client-side skip/replace/add state. | active-workout |
+| `exercise-row.tsx` | Collapsed/expanded exercise row. Collapsed: status icon + name + set summary. Expanded: Replace/Skip buttons, exercise picker, children (set logger). Only one expanded at a time. | active-workout |
+| `set-logger.tsx` | Core logging interaction. Set table with Plan/Done/Load columns. `LoggedSetRow` (read-only with inline edit), `PendingSetRow` (one-tap pre-fill or expanded editor), `AddSetRow` (freestyle). Calls `useLogPerformedSetMutation` with global position counter. Triggers rest timer on successful log. | exercise-row (as children) |
+| `exercise-picker.tsx` | Autocomplete for searching/selecting exercises from client's business library. Uses `useListClientExercisesQuery` with debounced search. | exercise-row (replace), active-workout (add) |
+| `finish-workout.tsx` | Inline finish panel: duration, adherence counts (completed/replaced/skipped/added), soreness rating (1-5 tappable buttons), notes textarea. Calls `useCompleteWorkoutSessionMutation` or `useDiscardWorkoutSessionMutation`. | active-workout |
+| `rest-timer.tsx` | Client-side countdown from `rest_seconds`. Progress bar, "Skip" button. Auto-starts after logging a set. No API calls. | set-logger |
+
+### Shared Utilities (`@utils/`)
+
+| File | Exports | Used by |
+| --- | --- | --- |
+| `workout-helpers.ts` | `DAY_NAMES`, `SESSION_STATE_CHIP`, `formatDuration`, `formatDurationFromNow`, `formatSessionDate`, `formatSessionDateLong`, `getWorkoutTitle` | dashboard, workout-history, session-detail, finish-workout, active-workout |
+
+### Container Decisions (client logging)
+
+| Action | Keyboard? | Container | Rationale |
+| --- | --- | --- | --- |
+| Start workout | No, single tap | **INLINE** | Button on dashboard card |
+| Log a set (one-tap) | No | **INLINE** | Checkbox tap, pre-fills from plan |
+| Log a set (custom) | Yes, 2 fields | **INLINE** | Reps + Load inputs in the set row, fits mobile |
+| Edit a logged set | Yes, 2 fields | **INLINE** | Tap row to toggle inline edit |
+| Replace exercise | Yes, search | **INLINE** | ExercisePicker autocomplete within the exercise row |
+| Skip exercise | No, single tap | **INLINE** | Button, toggles state (no API call) |
+| Add unplanned exercise | Yes, search | **INLINE** | ExercisePicker autocomplete below exercise list |
+| Finish workout | Yes, 1 optional field | **INLINE** | Panel replaces the "Finish" button — tappable soreness + optional notes |
+| Discard workout | No, single tap | **INLINE** | Button at bottom of finish panel (no confirmation dialog — deliberate) |
+
+### Data Flow (client logging)
+
+```
+dashboard.tsx
+  ├── useListClientTrainingPlansQuery({status: 'active'}) → active plan with workouts
+  ├── useGetActiveWorkoutSessionQuery()                   → resume active session
+  └── useStartWorkoutSessionMutation()                    → create session → navigate to /workout
+
+active-workout.tsx
+  ├── useGetActiveWorkoutSessionQuery()         → session with planned_snapshot + performed_sets
+  ├── Client-side state:
+  │   ├── skippedElementIds: Set<string>        ← skip is absence of data, not an API call
+  │   ├── replacements: Map<string, {id, name}> ← swap exercise, keep workout_element_id
+  │   └── addedExercises: Array<{id, name}>     ← freestyle additions, workout_element_id = null
+  ├── buildWorkoutExercises()                   → derives exercise list from snapshot + state
+  │
+  ├── SetLogger (per expanded exercise)
+  │   ├── useLogPerformedSetMutation()          → POST /v1/client/performed_sets
+  │   ├── useUpdatePerformedSetMutation()       → PATCH /v1/client/performed_sets/:id
+  │   └── RestTimer (after successful log)      → client-side countdown, no API
+  │
+  └── FinishWorkout (inline panel)
+      ├── useCompleteWorkoutSessionMutation()   → POST /v1/client/workout_sessions/:id/complete
+      └── useDiscardWorkoutSessionMutation()    → POST /v1/client/workout_sessions/:id/discard
+```
+
+### Key Design Decisions (client logging)
+
+### 15. Skip = absence of data, not an API call
+
+Skipping an exercise creates no `PerformedSet` records for that `workout_element_id`. The coach's comparison view detects the skip by finding zero performed sets for an element. This avoids explicit skip records and keeps the data model simple. Un-skip is just toggling the client-side `skippedElementIds` set.
+
+### 16. Replace = client-side state until sets are logged
+
+Replacing an exercise swaps the `exerciseId` in client-side state while keeping the original `workout_element_id`. No API call happens until the client logs sets. The logged sets carry `exercise_id` = replacement and `workout_element_id` = original slot. The coach detects the replacement by comparing `performed_set.exercise_id` vs `planned_snapshot.element.exercise_id`.
+
+### 17. Global position counter for performed sets
+
+`PerformedSet.position` is globally unique per session, not per exercise. Position 0 might be Bench Press set 1, position 1 might be Bench Press set 2, position 2 might be Overhead Press set 1. The client app uses `session.performed_sets.length` as the next position. The `exercise_id` groups sets by exercise on read.
+
+### 18. One-tap set logging with pre-fill
+
+The primary interaction: tap a checkbox to log a set with values pre-filled from the planned set (`target_reps`, `load_value`, `load_unit`). For the 70% case where the client follows the plan, this is zero extra taps. The "edit" button expands an inline editor for the remaining 30%.
+
+### 19. planned_snapshot makes past sessions self-contained
+
+`WorkoutSession.planned_snapshot` is a JSONB column populated at session start. It freezes the plan state so past sessions can be compared against what was planned at the time, not the current (potentially modified) plan. Both the coach's `session-detail.tsx` and the client's `history/session-detail.tsx` read from the snapshot.
+
+### 20. Derived expanded index without effects
+
+`activeExpandedIndex` in `active-workout.tsx` is derived via `useMemo`, not `useEffect` + `setState`. Before the user manually toggles, it auto-selects the first not-started/in-progress exercise. After the first manual toggle, `userHasToggled` flag switches to user-controlled state. This avoids the React Compiler lint rule against `setState` in effects.
+
+### 21. Rest timer is purely client-side
+
+`RestTimer` counts down from `rest_seconds` (from the planned set). It auto-starts after a successful `logPerformedSet` call. No API calls — the timer is ephemeral. "Skip" dismisses it immediately. When it reaches 0, it auto-dismisses via the `onDone` callback.
+
+### API Endpoints (client logging)
+
+| Endpoint | Hook | Purpose |
+| --- | --- | --- |
+| `GET /v1/client/training_plans` | `useListClientTrainingPlansQuery` | List assigned plans (dashboard) |
+| `GET /v1/client/training_plans/:id` | `useGetClientTrainingPlanQuery` | Get plan with workouts + elements (wired, not yet used in UI) |
+| `GET /v1/client/exercises` | `useListClientExercisesQuery` | Search exercises for replace/add picker |
+| `GET /v1/client/exercises/:id` | `useGetClientExerciseQuery` | Get exercise detail (wired, not yet used in UI) |
+| `GET /v1/client/exercises` (infinite) | `useClientExercisesInfiniteQuery` | Paginated exercise search (wired, not yet used in UI) |
+| `POST /v1/client/workout_sessions` | `useStartWorkoutSessionMutation` | Start a workout (from dashboard) |
+| `GET /v1/client/workout_sessions/active` | `useGetActiveWorkoutSessionQuery` | Resume interrupted workout |
+| `GET /v1/client/workout_sessions` (infinite) | `useClientWorkoutSessionsInfiniteQuery` | Workout history list |
+| `GET /v1/client/workout_sessions/:id` | `useGetClientWorkoutSessionQuery` | Session detail view |
+| `PATCH /v1/client/workout_sessions/:id` | `useUpdateClientWorkoutSessionMutation` | Update notes/rating (wired, not yet used in UI) |
+| `POST /v1/client/workout_sessions/:id/complete` | `useCompleteWorkoutSessionMutation` | Finish workout |
+| `POST /v1/client/workout_sessions/:id/discard` | `useDiscardWorkoutSessionMutation` | Abandon workout |
+| `POST /v1/client/performed_sets` | `useLogPerformedSetMutation` | Log a set during workout |
+| `PATCH /v1/client/performed_sets/:id` | `useUpdatePerformedSetMutation` | Edit a logged set |
+| `DELETE /v1/client/performed_sets/:id` | `useDeletePerformedSetMutation` | Remove a logged set (wired, not yet used in UI) |
+
+---
+
 ## What's Not Built Yet
+
+### Plan builder (coach)
 
 - **Superset grouping** — `superset_group_id` field exists on `WorkoutElement`, UI deferred. Would allow grouping exercises into supersets/circuits.
 - **Workout element reordering** — `position` field exists, drag-and-drop UI deferred.
@@ -255,3 +451,16 @@ This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-firs
 - **Workout notes** — `notes` field exists on `PlannedWorkout`, not exposed in UI.
 - **Set-level notes/tempo/distance/duration/intensity** — fields exist on `PlannedSet` type, not exposed in set editors.
 - **Workout-level macros/volume tracking** — no API endpoint exists for computed totals (unlike nutrition plan macros).
+
+### Session viewing (coach)
+
+- **Delete session from UI** — `useDeleteWorkoutSessionMutation` is wired but no delete button exists on the session detail screen yet.
+- **Coach-initiated sessions** — `useCreateWorkoutSessionMutation` is wired for coaches to start sessions on behalf of clients. No UI for this yet.
+
+### Workout logging (client)
+
+- **RPE/RIR logging** — fields exist on `ClientLogSetRequest` and `ClientPerformedSet`, not exposed in the set logger UI. Would add optional RPE/RIR inputs to the expanded set editor.
+- **Duration/distance set logging** — `duration_seconds` and `distance_value`/`distance_unit` fields exist on `ClientLogSetRequest`, not exposed. Needed for timed sets (planks, cardio) and distance sets (running, rowing).
+- **Delete performed set from UI** — `useDeletePerformedSetMutation` is wired but no delete/undo UI exists in the set logger.
+- **Session notes editing during workout** — `useUpdateClientWorkoutSessionMutation` is wired but not used during the active workout (notes are only entered at finish time).
+- **Workout day override** — the dashboard matches today's weekday to `day_number`, but there's no way for the client to start a different day's workout from a quick-access menu (they can tap the "Other workouts" card).

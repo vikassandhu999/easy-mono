@@ -1,0 +1,256 @@
+import {Alert, Button, Spinner} from '@heroui/react';
+import {ArrowLeft, Clock, Dumbbell, Plus} from 'lucide-react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+
+import type {WorkoutExercise} from '@/workout/components/workout-types';
+
+import PageLayout from '@/@components/page-layout';
+import {ROUTES} from '@/@config/routes';
+import {getWorkoutTitle} from '@/@utils/workout-helpers';
+import {useGetActiveWorkoutSessionQuery} from '@/api/workoutSessions';
+import ExercisePicker from '@/workout/components/exercise-picker';
+import ExerciseRow from '@/workout/components/exercise-row';
+import FinishWorkout from '@/workout/components/finish-workout';
+import SetLogger from '@/workout/components/set-logger';
+import {buildWorkoutExercises} from '@/workout/components/workout-types';
+
+// ── Timer hook ───────────────────────────────────────────────
+
+function useElapsedTimer(startedAt: null | string): string {
+  const [now, setNow] = useState(() => Date.now());
+  const startMs = useMemo(() => (startedAt ? new Date(startedAt).getTime() : null), [startedAt]);
+
+  useEffect(() => {
+    if (!startMs) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [startMs]);
+
+  if (!startMs) return '0:00';
+  const diffSec = Math.max(0, Math.floor((now - startMs) / 1000));
+  const hrs = Math.floor(diffSec / 3600);
+  const mins = Math.floor((diffSec % 3600) / 60);
+  const secs = diffSec % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return hrs > 0 ? `${hrs}:${pad(mins)}:${pad(secs)}` : `${mins}:${pad(secs)}`;
+}
+
+// ── Main component ───────────────────────────────────────────
+
+export default function ActiveWorkout() {
+  const navigate = useNavigate();
+  const {data, isError, isLoading} = useGetActiveWorkoutSessionQuery(undefined, {
+    pollingInterval: 0,
+    refetchOnMountOrArgChange: true,
+  });
+
+  // Client-side state for skips, replacements, and added exercises
+  const [skippedElementIds, setSkippedElementIds] = useState<Set<string>>(() => new Set());
+  const [replacements, setReplacements] = useState<Map<string, {exerciseId: string; exerciseName: string}>>(
+    () => new Map(),
+  );
+  const [addedExercises, setAddedExercises] = useState<Array<{exerciseId: string; exerciseName: string}>>([]);
+  const [expandedIndex, setExpandedIndex] = useState<null | number>(null);
+  const [userHasToggled, setUserHasToggled] = useState(false);
+
+  const session = data?.data;
+  const snapshot = session?.planned_snapshot;
+  const elapsed = useElapsedTimer(session?.started_at ?? null);
+
+  // Build exercise list from snapshot + performed sets + client-side state
+  const exercises: WorkoutExercise[] = useMemo(() => {
+    if (!session) return [];
+    return buildWorkoutExercises(
+      snapshot?.elements ?? [],
+      session.performed_sets,
+      skippedElementIds,
+      addedExercises,
+      replacements,
+    );
+  }, [session, snapshot?.elements, skippedElementIds, addedExercises, replacements]);
+
+  // Derive initial expanded index: first non-done exercise, until user manually toggles
+  const activeExpandedIndex = useMemo(() => {
+    if (userHasToggled) return expandedIndex;
+    if (exercises.length === 0) return null;
+    const firstActive = exercises.findIndex((ex) => ex.status === 'not_started' || ex.status === 'in_progress');
+    return firstActive >= 0 ? firstActive : null;
+  }, [exercises, expandedIndex, userHasToggled]);
+
+  const handleToggle = useCallback((index: number) => {
+    setUserHasToggled(true);
+    setExpandedIndex((prev) => (prev === index ? null : index));
+  }, []);
+
+  const handleSkip = useCallback((elementId: null | string) => {
+    if (!elementId) return;
+    setSkippedElementIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(elementId)) {
+        next.delete(elementId);
+      } else {
+        next.add(elementId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleReplace = useCallback((elementId: null | string, selected: {id: string; name: string}) => {
+    if (!elementId) return;
+    setReplacements((prev) => {
+      const next = new Map(prev);
+      next.set(elementId, {exerciseId: selected.id, exerciseName: selected.name});
+      return next;
+    });
+  }, []);
+
+  const [showAddPicker, setShowAddPicker] = useState(false);
+  const [showFinish, setShowFinish] = useState(false);
+
+  const handleAddExercise = useCallback((selected: {id: string; name: string}) => {
+    setAddedExercises((prev) => [...prev, {exerciseId: selected.id, exerciseName: selected.name}]);
+    setShowAddPicker(false);
+  }, []);
+
+  // Loading
+  if (isLoading) {
+    return (
+      <PageLayout title="Workout">
+        <div className="flex items-center justify-center py-20">
+          <Spinner color="accent" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // No active session
+  if (isError || !session) {
+    return (
+      <PageLayout title="Workout">
+        <div className="mb-4">
+          <Button
+            onPress={() => navigate(ROUTES.DASHBOARD)}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </Button>
+        </div>
+        <Alert status="default">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>No active workout</Alert.Title>
+            <Alert.Description>Start a workout from the dashboard to begin logging.</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      </PageLayout>
+    );
+  }
+
+  const workoutTitle = getWorkoutTitle(snapshot ?? null);
+
+  return (
+    <PageLayout title={workoutTitle}>
+      {/* Timer bar */}
+      <div className="mb-4 flex items-center gap-3">
+        <Button
+          onPress={() => navigate(ROUTES.DASHBOARD)}
+          size="sm"
+          variant="ghost"
+        >
+          <ArrowLeft size={16} />
+        </Button>
+        <div className="flex items-center gap-1.5 text-sm font-medium text-foreground-500">
+          <Clock size={14} />
+          {elapsed}
+        </div>
+        <div className="flex-1" />
+        <div className="flex items-center gap-1.5 text-xs text-foreground-400">
+          <Dumbbell size={12} />
+          {session.performed_sets.length} set{session.performed_sets.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      {/* Exercise list */}
+      <div className="overflow-hidden rounded-xl border border-divider bg-content1">
+        {exercises.length > 0 ? (
+          exercises.map((exercise, index) => (
+            <ExerciseRow
+              exercise={exercise}
+              isExpanded={activeExpandedIndex === index}
+              key={exercise.workoutElementId ?? `added_${exercise.exerciseId}_${index}`}
+              onReplace={(selected) => handleReplace(exercise.workoutElementId, selected)}
+              onSkip={() => handleSkip(exercise.workoutElementId)}
+              onToggle={() => handleToggle(index)}
+            >
+              {activeExpandedIndex === index ? (
+                <SetLogger
+                  exercise={exercise}
+                  sessionId={session.id}
+                  totalSetsInSession={session.performed_sets.length}
+                />
+              ) : null}
+            </ExerciseRow>
+          ))
+        ) : (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm text-foreground-400">
+              {snapshot ? 'All exercises completed!' : 'No exercises yet. Add one to start logging.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Add exercise */}
+      <div className="mt-3">
+        {showAddPicker ? (
+          <div className="rounded-xl border border-divider bg-content1 p-4">
+            <p className="mb-2 text-sm font-semibold">Add exercise</p>
+            <ExercisePicker
+              onSelect={handleAddExercise}
+              placeholder="Search exercises to add..."
+            />
+            <button
+              className="mt-2 text-xs text-foreground-400 hover:text-foreground-500"
+              onClick={() => setShowAddPicker(false)}
+              type="button"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <Button
+            className="w-full"
+            onPress={() => setShowAddPicker(true)}
+            variant="secondary"
+          >
+            <Plus size={16} />
+            Add exercise
+          </Button>
+        )}
+      </div>
+
+      {/* Finish workout */}
+      <div className="mt-4">
+        {showFinish ? (
+          <FinishWorkout
+            exercises={exercises}
+            onCancel={() => setShowFinish(false)}
+            sessionId={session.id}
+            startedAt={session.started_at}
+          />
+        ) : (
+          <Button
+            className="w-full"
+            onPress={() => setShowFinish(true)}
+            variant="primary"
+          >
+            Finish workout
+          </Button>
+        )}
+      </div>
+    </PageLayout>
+  );
+}

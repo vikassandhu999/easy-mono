@@ -1,6 +1,495 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/* ============================================================
+   CoachEasy Client App — HeroUI v3 Custom Theme
+   Deep Teal Palette · Premium & Minimal
+   
+   Usage:
+   1. Save as src/themes/coacheasy.css
+   2. Import in your global CSS:
+   
+      @layer theme, base, components, utilities;
+      @import "tailwindcss";
+      @import "@heroui/styles";
+      @import "./src/themes/coacheasy.css" layer(theme);
+   
+   3. Apply in your root HTML:
+      <html data-theme="coacheasy" class="light">
+      <html data-theme="coacheasy-dark" class="dark">
+   ============================================================ */
+
+@layer theme {
+
+  /* ─────────────────────────────────────────────
+     CoachEasy Light Theme
+     ───────────────────────────────────────────── */
+  :root,
+  .light,
+  [data-theme="light"] {
+    color-scheme: light;
+
+    /* == Primitive Colors (shared across light/dark) == */
+    --white: oklch(100% 0 0);
+    --black: oklch(0% 0 0);
+    --snow: oklch(0.9911 0 0);
+    --eclipse: oklch(0.2077 0.0398 265.75);
+    /* #0F172A — our heading black */
+
+    /* == Spacing == */
+    --spacing: 0.25rem;
+
+    /* == Border == */
+    --border-width: 1px;
+    --field-border-width: 1px;
+    --disabled-opacity: 0.5;
+
+    /* == Ring offset for focus == */
+    --ring-offset-width: 2px;
+
+    /* == Cursor == */
+    --cursor-interactive: pointer;
+    --cursor-disabled: not-allowed;
+
+    /* == Radius — slightly larger for premium rounded feel == */
+    --radius: 0.75rem;
+    /* 12px base — rounder than default 8px */
+    --field-radius: calc(var(--radius) * 1.25);
+
+    /* ── Base Colors ── */
+    --background: oklch(0.9839 0.0025 228.78);
+    /* #F8FAFB — page bg */
+    --foreground: oklch(0.2077 0.0398 265.75);
+    /* #0F172A — heading black */
+
+    /* ── Surface: cards, accordions, disclosure groups ── */
+    --surface: var(--white);
+    /* #FFFFFF */
+    --surface-foreground: var(--foreground);
+    --surface-secondary: oklch(0.9683 0.0069 247.9);
+    /* #F1F5F9 */
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary: oklch(0.9288 0.0126 255.51);
+    /* #E2E8F0 */
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* ── Overlay: modals, popovers, tooltips ── */
+    --overlay: var(--white);
+    --overlay-foreground: var(--foreground);
+
+    /* ── Muted & Default ── */
+    --muted: oklch(0.5544 0.0407 257.42);
+    /* #64748B */
+    --scrollbar: oklch(0.7107 0.0351 256.79);
+    /* #94A3B8 */
+    --default: oklch(0.9683 0.0069 247.9);
+    /* #F1F5F9 */
+    --default-foreground: var(--eclipse);
+
+    /* ── Accent: Deep Teal — your brand color ── */
+    --accent: oklch(0.6002 0.1038 184.7);
+    /* #0D9488 */
+    --accent-foreground: var(--snow);
+    /* White text on teal */
+
+    /* ── Accent Soft: light teal for secondary actions ── */
+    --accent-soft: oklch(0.9836 0.0142 180.72);
+    /* #F0FDFA */
+    --accent-soft-foreground: oklch(0.437 0.0705 188.22);
+    /* #115E59 */
+
+    /* ── Form Fields ── */
+    --field-background: var(--white);
+    --field-foreground: var(--foreground);
+    --field-placeholder: oklch(0.7107 0.0351 256.79);
+    /* #94A3B8 */
+    --field-border: oklch(0.9288 0.0126 255.51);
+    /* #E2E8F0 */
+
+    /* ── Status Colors ── */
+    --success: oklch(0.7227 0.192 149.58);
+    /* #22C55E */
+    --success-foreground: var(--eclipse);
+    --warning: oklch(0.7686 0.1647 70.08);
+    /* #F59E0B */
+    --warning-foreground: var(--eclipse);
+    --danger: oklch(0.6368 0.2078 25.33);
+    /* #EF4444 */
+    --danger-foreground: var(--snow);
+
+    /* ── Component Colors ── */
+    --segment: var(--white);
+    --segment-foreground: var(--eclipse);
+
+    /* ── Misc Colors ── */
+    --border: oklch(0.9288 0.0126 255.51);
+    /* #E2E8F0 */
+    --separator: oklch(0.9683 0.0069 247.9);
+    /* #F1F5F9 */
+    --focus: var(--accent);
+    /* Teal focus ring */
+    --link: oklch(0.6002 0.1038 184.7);
+    /* Teal links */
+
+    /* ── Shadows — subtle, premium feel ── */
+    --surface-shadow:
+      0 1px 3px 0 rgba(0, 0, 0, 0.03),
+      0 1px 2px 0 rgba(0, 0, 0, 0.04);
+
+    --overlay-shadow:
+      0 4px 16px 0 rgba(0, 0, 0, 0.06),
+      0 -2px 8px 0 rgba(0, 0, 0, 0.02),
+      0 8px 24px 0 rgba(0, 0, 0, 0.08);
+
+    --field-shadow:
+      0 1px 2px 0 rgba(0, 0, 0, 0.04),
+      0 0 1px 0 rgba(0, 0, 0, 0.04);
+
+    /* ── Skeleton Animation ── */
+    --skeleton-animation: shimmer;
+  }
+
+  /* ─────────────────────────────────────────────
+     CoachEasy Dark Theme
+     ───────────────────────────────────────────── */
+  .dark,
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    /* ── Base Colors ── */
+    --background: oklch(0.16 0.005 185);
+    /* Dark with subtle teal tint */
+    --foreground: var(--snow);
+
+    /* ── Surface ── */
+    --surface: oklch(0.22 0.008 185);
+    /* Slightly lighter than bg */
+    --surface-foreground: var(--foreground);
+    --surface-secondary: oklch(0.26 0.006 185);
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary: oklch(0.30 0.005 185);
+    --surface-tertiary-foreground: var(--foreground);
+
+    /* ── Overlay ── */
+    --overlay: oklch(0.22 0.008 185);
+    --overlay-foreground: var(--foreground);
+
+    /* ── Muted & Default ── */
+    --muted: oklch(0.65 0.015 250);
+    --scrollbar: oklch(0.55 0.012 250);
+    --default: oklch(0.28 0.006 185);
+    --default-foreground: var(--snow);
+
+    /* ── Accent: Slightly brighter teal for dark bg ── */
+    --accent: oklch(0.65 0.11 184.7);
+    /* Brighter teal */
+    --accent-foreground: oklch(0.15 0.01 185);
+    /* Dark text on teal */
+
+    /* ── Accent Soft ── */
+    --accent-soft: oklch(0.25 0.03 185);
+    --accent-soft-foreground: oklch(0.85 0.06 180);
+
+    /* ── Form Fields ── */
+    --field-background: oklch(0.22 0.008 185);
+    --field-foreground: var(--foreground);
+    --field-placeholder: oklch(0.55 0.012 250);
+    --field-border: oklch(0.32 0.008 185);
+
+    /* ── Status Colors (brighter for dark mode) ── */
+    --warning: oklch(0.82 0.14 76);
+    --warning-foreground: var(--eclipse);
+    --danger: oklch(0.594 0.197 24.63);
+    --danger-foreground: var(--snow);
+
+    /* ── Component Colors ── */
+    --segment: oklch(0.35 0.01 185);
+    --segment-foreground: var(--foreground);
+
+    /* ── Misc Colors ── */
+    --border: oklch(0.30 0.008 185);
+    --separator: oklch(0.26 0.006 185);
+    --focus: var(--accent);
+    --link: oklch(0.7 0.09 180);
+
+    /* ── Shadows — minimal in dark mode ── */
+    --surface-shadow: 0 0 0 0 transparent inset;
+    --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.15) inset;
+    --field-shadow: 0 0 0 0 transparent inset;
+  }
+}
+
+
+/* ============================================================
+   COMPONENT STYLE OVERRIDES
+   
+   These use HeroUI v3 BEM classes to give components
+   a premium, polished feel matching the CoachEasy design.
+   ============================================================ */
+
+@layer components {
+
+  /* ── Buttons ── */
+  .button {
+    @apply font-semibold tracking-wide;
+    transition: all 0.2s ease;
+  }
+
+  .button--primary {
+    border-radius: calc(var(--radius) * 1.25);
+  }
+
+  .button--primary:hover,
+  .button--primary[data-hovered="true"] {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px oklch(0.6002 0.1038 184.7 / 0.3);
+  }
+
+  .button--primary:active,
+  .button--primary[data-pressed="true"] {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* ── Cards — clean, premium shadows ── */
+  .card {
+    border-radius: calc(var(--radius) * 1.5);
+    border: 0.5px solid var(--border);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card:hover,
+  .card[data-hovered="true"] {
+    box-shadow:
+      0 4px 12px 0 rgba(0, 0, 0, 0.04),
+      0 1px 4px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  /* ── Inputs — teal focus ring ── */
+  .input__wrapper:focus-within,
+  .input__wrapper[data-focused="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px oklch(0.6002 0.1038 184.7 / 0.15);
+  }
+
+  /* ── Chip / Badge ── */
+  .chip--solid {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Modal / Dialog — refined overlay ── */
+  .modal {
+    border-radius: calc(var(--radius) * 2);
+  }
+
+  /* ── Tabs — pill-style tab bar ── */
+  .tabs__tab-list {
+    border-radius: var(--radius);
+    padding: 3px;
+  }
+
+  .tabs__tab--selected {
+    border-radius: calc(var(--radius) * 0.75);
+  }
+
+  /* ── Bottom navigation pattern (custom) ── */
+  .nav-bottom {
+    background: var(--surface);
+    border-top: 0.5px solid var(--border);
+    padding: 8px 0 max(env(safe-area-inset-bottom), 12px);
+  }
+
+  .nav-bottom__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: color 0.15s ease;
+  }
+
+  .nav-bottom__item--active {
+    color: var(--accent);
+  }
+}
+
+
+/* ============================================================
+   CUSTOM UTILITY CLASSES
+   
+   Handy utilities specific to the CoachEasy client app.
+   ============================================================ */
+
+@layer utilities {
+
+  /* Teal gradient for hero cards */
+  .bg-teal-gradient {
+    background: linear-gradient(135deg,
+        oklch(0.6002 0.1038 184.7),
+        oklch(0.5109 0.0861 186.39));
+  }
+
+  /* Subtle teal tint background */
+  .bg-teal-tint {
+    background: oklch(0.9836 0.0142 180.72);
+    /* #F0FDFA */
+  }
+
+  /* Teal text on light backgrounds */
+  .text-teal-on-light {
+    color: oklch(0.437 0.0705 188.22);
+    /* #115E59 */
+  }
+
+  /* Progress bar fill */
+  .bg-teal-progress {
+    background: linear-gradient(90deg,
+        oklch(0.6002 0.1038 184.7),
+        oklch(0.5109 0.0861 186.39));
+  }
+
+  /* Set dot — completed */
+  .set-dot-done {
+    background: oklch(0.6002 0.1038 184.7);
+    color: white;
+  }
+
+  /* Set dot — current */
+  .set-dot-current {
+    background: oklch(0.9527 0.0498 180.8);
+    /* #CCFBF1 */
+    color: oklch(0.6002 0.1038 184.7);
+    border: 1.5px solid oklch(0.6002 0.1038 184.7);
+  }
+
+  /* Set dot — pending */
+  .set-dot-pending {
+    background: oklch(0.9683 0.0069 247.9);
+    /* #F1F5F9 */
+    color: oklch(0.7107 0.0351 256.79);
+  }
+
+  /* Streak dot — completed */
+  .streak-done {
+    background: oklch(0.6002 0.1038 184.7);
+    color: white;
+  }
+
+  /* Streak dot — today */
+  .streak-today {
+    background: linear-gradient(135deg,
+        oklch(0.6002 0.1038 184.7),
+        oklch(0.5109 0.0861 186.39));
+    color: white;
+    border: 2px solid oklch(0.9527 0.0498 180.8);
+  }
+
+  /* Streak dot — rest day */
+  .streak-rest {
+    background: oklch(0.9527 0.0498 180.8);
+    /* #CCFBF1 */
+    color: oklch(0.437 0.0705 188.22);
+  }
+
+  /* Coach note card */
+  .coach-note {
+    background: oklch(0.9836 0.0142 180.72);
+    border: 0.5px solid oklch(0.9527 0.0498 180.8);
+  }
+
+  /* Status pill — logged */
+  .pill-logged {
+    background: oklch(0.962 0.044 156.74);
+    /* light green bg */
+    color: oklch(0.532 0.149 150.06);
+    /* dark green text */
+  }
+
+  /* Status pill — pending */
+  .pill-pending {
+    background: oklch(0.9683 0.0069 247.9);
+    color: oklch(0.7107 0.0351 256.79);
+  }
+
+  /* Chat bubble — coach */
+  .chat-coach {
+    background: oklch(0.9836 0.0142 180.72);
+    color: var(--foreground);
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  /* Chat bubble — client */
+  .chat-client {
+    background: oklch(0.6002 0.1038 184.7);
+    color: white;
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  /* Macro ring borders */
+  .ring-calories {
+    border-color: oklch(0.6002 0.1038 184.7);
+  }
+
+  /* Teal */
+  .ring-protein {
+    border-color: oklch(0.588 0.158 254.13);
+  }
+
+  /* Blue */
+  .ring-carbs {
+    border-color: oklch(0.7686 0.1647 70.08);
+  }
+
+  /* Amber */
+  .ring-fats {
+    border-color: oklch(0.6368 0.2078 25.33);
+  }
+
+  /* Red */
+}
+
+
+/* ============================================================
+   FONT CONFIGURATION
+   
+   Recommended fonts for the CoachEasy client app.
+   Import in your HTML <head> or CSS:
+   
+   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+   
+   Then override Tailwind's font:
+   ============================================================ */
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+
+/* ============================================================
+   COLOR REFERENCE (for quick lookup)
+   
+   Primary teal:      #0D9488  oklch(0.6002 0.1038 184.7)
+   Primary dark:      #0F766E  oklch(0.5109 0.0861 186.39)
+   Primary deeper:    #134E4A  oklch(0.3861 0.059 188.42)
+   Teal 50:           #F0FDFA  oklch(0.9836 0.0142 180.72)
+   Teal 100:          #CCFBF1  oklch(0.9527 0.0498 180.8)
+   Teal 200:          #99F6E4  oklch(0.91 0.0927 180.43)
+   Teal text:         #115E59  oklch(0.437 0.0705 188.22)
+   Heading black:     #0F172A  oklch(0.2077 0.0398 265.75)
+   Dark surface:      #1E293B  oklch(0.2795 0.0368 260.03)
+   Body text:         #334155  oklch(0.3717 0.0392 257.29)
+   Muted text:        #64748B  oklch(0.5544 0.0407 257.42)
+   Placeholder:       #94A3B8  oklch(0.7107 0.0351 256.79)
+   Border:            #E2E8F0  oklch(0.9288 0.0126 255.51)
+   Light border:      #F1F5F9  oklch(0.9683 0.0069 247.9)
+   Page bg:           #F8FAFB  oklch(0.9839 0.0025 228.78)
+   Success:           #22C55E  oklch(0.7227 0.192 149.58)
+   Warning:           #F59E0B  oklch(0.7686 0.1647 70.08)
+   Danger:            #EF4444  oklch(0.6368 0.2078 25.33)
+   ============================================================ */
+
 html,
 body,
 #root {

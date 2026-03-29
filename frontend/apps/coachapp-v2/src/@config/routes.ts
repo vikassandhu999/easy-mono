@@ -8,6 +8,7 @@ export const ROUTES = {
   CLIENTS: '/clients',
   INVITE_CLIENT: '/clients/invite',
   CLIENT_DETAIL: '/clients/:id',
+  CLIENT_SESSION_DETAIL: '/clients/:clientId/sessions/:sessionId',
   EDIT_CLIENT: '/clients/:id/edit',
   LIBRARY: '/library',
   EXERCISES: '/library/exercises',

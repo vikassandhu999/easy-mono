@@ -14,6 +14,7 @@ import ClientDetail from '@/clients/client-detail';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
+import SessionDetail from '@/clients/session-detail';
 import CreateExercise from '@/exercises/create-exercise';
 import EditExercise from '@/exercises/edit-exercise';
 import ExerciseDetail from '@/exercises/exercise-detail';
@@ -101,6 +102,10 @@ export default function App() {
         <Route
           element={<InviteClient />}
           path={ROUTES.INVITE_CLIENT}
+        />
+        <Route
+          element={<SessionDetail />}
+          path={ROUTES.CLIENT_SESSION_DETAIL}
         />
         <Route
           element={<ClientDetail />}

@@ -9,6 +9,10 @@ import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
 import VerifyEmail from '@/auth/verify-email';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
+import Dashboard from '@/dashboard/dashboard';
+import SessionDetail from '@/history/session-detail';
+import WorkoutHistory from '@/history/workout-history';
+import ActiveWorkout from '@/workout/active-workout';
 
 // Public screens (redirect away if already authenticated)
 const LoginScreen = withNotAuth(Login);
@@ -49,8 +53,20 @@ export default function App() {
       {/* App (protected, with shell) */}
       <Route element={<AppShellScreen />}>
         <Route
-          element={<Placeholder title="Dashboard" />}
+          element={<Dashboard />}
           path={ROUTES.DASHBOARD}
+        />
+        <Route
+          element={<ActiveWorkout />}
+          path={ROUTES.WORKOUT_ACTIVE}
+        />
+        <Route
+          element={<WorkoutHistory />}
+          path={ROUTES.WORKOUT_HISTORY}
+        />
+        <Route
+          element={<SessionDetail />}
+          path={ROUTES.SESSION_DETAIL}
         />
         <Route
           element={<Placeholder title="Settings" />}

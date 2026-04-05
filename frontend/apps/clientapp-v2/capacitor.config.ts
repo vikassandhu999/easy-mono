@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
     // url: 'http://192.168.x.x:1314',
     // cleartext: true,
   },
+  // Note: vite-plugin-pwa generates sw.js in dist/, which gets copied to
+  // native projects by `cap sync`. The service worker is NOT registered on
+  // native — src/pwa.ts checks Capacitor.isNativePlatform() and skips it.
 };
 
 export default config;

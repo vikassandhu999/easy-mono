@@ -4,6 +4,7 @@ import {Provider} from 'react-redux';
 import {BrowserRouter} from 'react-router-dom';
 
 import App from './App';
+import {registerPWA} from './pwa';
 import {store} from './store';
 import './index.css';
 
@@ -21,3 +22,6 @@ createRoot(rootElement).render(
     </Provider>
   </StrictMode>,
 );
+
+// Register PWA service worker
+registerPWA();

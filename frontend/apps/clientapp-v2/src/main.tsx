@@ -5,6 +5,7 @@ import {BrowserRouter} from 'react-router-dom';
 
 import './index.css';
 import App from './App';
+import {registerPWA} from './pwa';
 import {store} from './store';
 
 const rootElement = document.getElementById('root');
@@ -21,3 +22,6 @@ createRoot(rootElement).render(
     </Provider>
   </StrictMode>,
 );
+
+// Register PWA service worker (web only — skipped on native Capacitor)
+registerPWA();

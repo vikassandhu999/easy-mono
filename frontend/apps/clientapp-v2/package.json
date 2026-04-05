@@ -16,12 +16,12 @@
     "native": "pnpm build && cap sync"
   },
   "dependencies": {
-    "@easy/utils": "workspace:^",
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.3.0",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/keyboard": "^8.0.2",
     "@capacitor/status-bar": "^8.0.2",
+    "@easy/utils": "workspace:^",
     "@heroui/react": "3.0.1",
     "@heroui/styles": "3.0.1",
     "@hookform/resolvers": "^3.9.1",
@@ -35,6 +35,7 @@
     "react-router": "^7.8.2",
     "react-router-dom": "7.13.1",
     "tailwindcss": "^4.1.18",
+    "workbox-window": "^7.4.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -48,6 +49,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.3",
     "vite": "5.4.8",
+    "vite-plugin-pwa": "^1.2.0",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }

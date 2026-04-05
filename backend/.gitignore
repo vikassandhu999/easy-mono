@@ -42,3 +42,7 @@ id_ed25519*
 
 # macOS
 .DS_Store
+
+# Large seed data files (seeded manually, not in Docker image)
+priv/repo/exercises.json
+priv/repo/foods_database.csv

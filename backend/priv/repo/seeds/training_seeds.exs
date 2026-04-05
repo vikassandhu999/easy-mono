@@ -43,6 +43,13 @@ defmodule Easy.Repo.Seeds.Training do
   def run do
     seed_muscles()
     seed_equipment()
+    :ok
+  end
+
+  @spec run_exercises() :: :ok
+  def run_exercises do
+    seed_muscles()
+    seed_equipment()
     seed_exercises()
     :ok
   end

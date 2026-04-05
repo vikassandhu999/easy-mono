@@ -7,7 +7,7 @@ defmodule Easy.Repo.Seeds.Foods do
 
   import Ecto.Query
 
-  @batch_size 500
+  @batch_size 200
   @source "system"
   @food_categories ["I", "PF"]
 
@@ -19,7 +19,7 @@ defmodule Easy.Repo.Seeds.Foods do
       true ->
         existing_count = Repo.aggregate(system_foods_query(), :count, :id)
 
-        if existing_count > 0 do
+        if existing_count > 2000 do
           IO.puts("  Skipping foods — #{existing_count} system foods already exist")
         else
           seed_foods(csv_path)
@@ -51,7 +51,7 @@ defmodule Easy.Repo.Seeds.Foods do
       |> Stream.map(&build_food_entry(&1, now))
       |> Stream.chunk_every(@batch_size)
       |> Enum.reduce({0, 0}, fn batch, {total, _} ->
-        {count, _} = Repo.insert_all(Food, batch)
+        {count, _} = Repo.insert_all(Food, batch, timeout: 120_000)
         inserted = total + count
         IO.write("\r  Inserted #{inserted} foods...")
         {inserted, 0}

@@ -215,7 +215,7 @@ function ClientNutritionPlans({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{plan.name}</p>
-                  {plan.meals.length > 0 ? (
+                  {plan.meals && plan.meals.length > 0 ? (
                     <p className="text-xs text-foreground-500">
                       {plan.meals.length} meal
                       {plan.meals.length !== 1 ? 's' : ''}

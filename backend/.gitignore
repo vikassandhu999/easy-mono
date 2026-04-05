@@ -39,3 +39,6 @@ easy-*.tar
 id_rsa*
 id_ed25519*
 *.pub
+
+# macOS
+.DS_Store

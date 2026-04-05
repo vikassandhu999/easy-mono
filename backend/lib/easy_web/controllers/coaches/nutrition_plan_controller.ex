@@ -6,6 +6,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   alias Easy.Orgs.Coaches
   alias Easy.Repo
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     claims = conn.assigns.claims
 
@@ -17,6 +18,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -30,6 +32,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -42,6 +45,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -54,6 +58,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -83,7 +88,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     |> render(:index, count: count, plans: plans)
   end
 
-  def assign(conn, %{"id" => plan_id, "client_id" => client_id}) do
+  @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def assign(conn, %{"id" => plan_id, "client_id" => client_id} = params) do
     claims = conn.assigns.claims
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
@@ -91,7 +97,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
            Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
          client when not is_nil(client) <-
            Client |> Client.for_business(claims.business_id) |> Repo.get(client_id),
-         {:ok, new_plan} <- Plan.assign_to_client(plan, client_id, coach.id) do
+         {:ok, new_plan} <- Plan.assign_to_client(plan, client_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -101,6 +107,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, %{"id" => plan_id}) do
     claims = conn.assigns.claims
 
@@ -117,6 +124,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec shopping_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def shopping_list(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -132,6 +140,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec macros(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def macros(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -147,6 +156,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     end
   end
 
+  @spec copy_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def copy_day(conn, %{"id" => plan_id} = params) do
     claims = conn.assigns.claims
 

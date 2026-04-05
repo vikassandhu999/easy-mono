@@ -142,6 +142,11 @@ defmodule EasyWeb.Router do
     patch "/performed_sets/:id", PerformedSetController, :update
     delete "/performed_sets/:id", PerformedSetController, :delete
 
+    # Food logs (view client nutrition data)
+    get "/food_logs", FoodLogController, :index
+    get "/food_logs/summary", FoodLogController, :summary
+    delete "/food_logs/:id", FoodLogController, :delete
+
     # Storefront
     get "/storefront/profile", StoreProfileController, :show
     patch "/storefront/profile", StoreProfileController, :update
@@ -186,6 +191,27 @@ defmodule EasyWeb.Router do
     post "/performed_sets", PerformedSetController, :create
     patch "/performed_sets/:id", PerformedSetController, :update
     delete "/performed_sets/:id", PerformedSetController, :delete
+
+    # Nutrition plans (read-only)
+    get "/nutrition_plans", NutritionPlanController, :index
+    get "/nutrition_plans/today", NutritionPlanController, :today
+    get "/nutrition_plans/:id", NutritionPlanController, :show
+
+    # Foods (read-only)
+    get "/foods", FoodController, :index
+    get "/foods/:id", FoodController, :show
+
+    # Recipes (read-only)
+    get "/recipes", RecipeController, :index
+    get "/recipes/:id", RecipeController, :show
+
+    # Food logs
+    get "/food_logs", FoodLogController, :index
+    post "/food_logs", FoodLogController, :create
+    post "/food_logs/log_meal", FoodLogController, :log_meal
+    post "/food_logs/log_day", FoodLogController, :log_day
+    patch "/food_logs/:id", FoodLogController, :update
+    delete "/food_logs/:id", FoodLogController, :delete
   end
 
   scope "/v1/public", EasyWeb.Public do

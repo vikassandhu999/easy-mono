@@ -35,6 +35,9 @@ defmodule Easy.Nutrition.Plan do
     field :type, Ecto.Enum, values: @plan_types, default: :template
     field :status, Ecto.Enum, values: @plan_statuses, default: :draft
 
+    field :start_date, :date
+    field :end_date, :date
+
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
     belongs_to :client, Client
@@ -45,7 +48,7 @@ defmodule Easy.Nutrition.Plan do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :description, :tags, :macros_goal, :type, :status]
+  @cast_fields [:name, :description, :tags, :macros_goal, :type, :status, :start_date, :end_date]
 
   # Changesets
 
@@ -56,12 +59,28 @@ defmodule Easy.Nutrition.Plan do
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
     |> validate_required([:name, :business_id, :creator_id])
+    |> validate_date_range()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan, attrs) do
     plan
-    |> cast(attrs, [:name, :description, :tags, :macros_goal, :status])
+    |> cast(attrs, [:name, :description, :tags, :macros_goal, :status, :start_date, :end_date])
+    |> validate_date_range()
+  end
+
+  defp validate_date_range(changeset) do
+    case {get_field(changeset, :start_date), get_field(changeset, :end_date)} do
+      {%Date{} = s, %Date{} = e} ->
+        if Date.compare(s, e) == :gt do
+          add_error(changeset, :end_date, "must be on or after start_date")
+        else
+          changeset
+        end
+
+      _ ->
+        changeset
+    end
   end
 
   # Queries
@@ -103,6 +122,17 @@ defmodule Easy.Nutrition.Plan do
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(p in query, order_by: [desc: p.inserted_at])
+  end
+
+  @spec active_for_client(Ecto.Queryable.t(), String.t(), Date.t()) :: Ecto.Query.t()
+  def active_for_client(query \\ __MODULE__, client_id, date) do
+    from(p in query,
+      where: p.client_id == ^client_id,
+      where: p.type == :personal,
+      where: p.status == :active,
+      where: is_nil(p.start_date) or p.start_date <= ^date,
+      where: is_nil(p.end_date) or p.end_date >= ^date
+    )
   end
 
   @spec with_meals(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -199,13 +229,15 @@ defmodule Easy.Nutrition.Plan do
     end
   end
 
-  @spec assign_to_client(t(), String.t(), String.t()) :: {:ok, t()} | {:error, any()}
-  def assign_to_client(plan, client_id, creator_id) do
+  @spec assign_to_client(t(), String.t(), String.t(), map()) :: {:ok, t()} | {:error, any()}
+  def assign_to_client(plan, client_id, creator_id, attrs \\ %{}) do
     copy_plan(plan, creator_id,
       type: :personal,
       client_id: client_id,
       source_template_id: plan.id,
-      status: plan.status
+      status: plan.status,
+      start_date: Map.get(attrs, "start_date") || Map.get(attrs, :start_date),
+      end_date: Map.get(attrs, "end_date") || Map.get(attrs, :end_date)
     )
   end
 
@@ -220,7 +252,6 @@ defmodule Easy.Nutrition.Plan do
     )
   end
 
-  @spec copy_plan(t(), String.t(), keyword()) :: {:ok, t()} | {:error, any()}
   defp copy_plan(plan, creator_id, opts) do
     Repo.transaction(fn ->
       plan =
@@ -233,7 +264,9 @@ defmodule Easy.Nutrition.Plan do
         tags: plan.tags,
         macros_goal: plan.macros_goal,
         type: Keyword.get(opts, :type, plan.type),
-        status: Keyword.get(opts, :status, plan.status)
+        status: Keyword.get(opts, :status, plan.status),
+        start_date: Keyword.get(opts, :start_date),
+        end_date: Keyword.get(opts, :end_date)
       }
 
       changeset =

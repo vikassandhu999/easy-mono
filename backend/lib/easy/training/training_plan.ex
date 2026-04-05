@@ -186,7 +186,7 @@ defmodule Easy.Training.TrainingPlan do
   @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def duplicate(plan) do
     copy_name = generate_copy_name(plan.name, plan.business_id)
-    plan = Repo.preload(plan, planned_workouts: [workout_elements: [:planned_sets]])
+    plan = Repo.preload(plan, planned_workouts: [:workout_elements])
 
     Repo.transaction(fn ->
       attrs = %{
@@ -210,7 +210,7 @@ defmodule Easy.Training.TrainingPlan do
   @spec assign_to_client(t(), String.t(), String.t() | nil, String.t() | nil) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def assign_to_client(plan, client_id, start_date, end_date) do
-    plan = Repo.preload(plan, planned_workouts: [workout_elements: [:planned_sets]])
+    plan = Repo.preload(plan, planned_workouts: [:workout_elements])
 
     Repo.transaction(fn ->
       attrs = %{

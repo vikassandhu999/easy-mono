@@ -4,8 +4,8 @@ defmodule EasyWeb.Coaches.FoodController do
   alias Easy.Nutrition.Food
   alias Easy.Orgs.Coaches
   alias Easy.Repo
-  alias EasyWeb.FallbackController
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     claims = conn.assigns.claims
 
@@ -17,6 +17,7 @@ defmodule EasyWeb.Coaches.FoodController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
@@ -27,10 +28,11 @@ defmodule EasyWeb.Coaches.FoodController do
         |> render(:show, food: food)
 
       nil ->
-        FallbackController.not_found_response(conn, "Food not found.")
+        {:error, :not_found}
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
@@ -43,10 +45,11 @@ defmodule EasyWeb.Coaches.FoodController do
         end
 
       nil ->
-        FallbackController.not_found_response(conn, "Food not found.")
+        {:error, :not_found}
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
@@ -55,11 +58,12 @@ defmodule EasyWeb.Coaches.FoodController do
          {:ok, _deleted} <- Food.delete(food) do
       send_resp(conn, :no_content, "")
     else
-      nil -> FallbackController.not_found_response(conn, "Food not found.")
+      nil -> {:error, :not_found}
       error -> error
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     claims = conn.assigns.claims
 

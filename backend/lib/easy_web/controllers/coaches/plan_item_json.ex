@@ -1,10 +1,12 @@
 defmodule EasyWeb.Coaches.PlanItemJSON do
   alias Easy.Nutrition.PlanItem
 
+  @spec show(map()) :: map()
   def show(%{plan_item: plan_item}) do
     %{data: data(plan_item)}
   end
 
+  @spec index(map()) :: map()
   def index(%{plan_items: plan_items}) do
     %{data: Enum.map(plan_items, &data/1)}
   end

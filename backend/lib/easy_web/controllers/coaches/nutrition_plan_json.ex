@@ -4,27 +4,32 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanItem
 
+  @spec show(map()) :: map()
   def show(%{plan: plan}) do
     %{data: data(plan)}
   end
 
+  @spec index(map()) :: map()
   def index(%{plans: plans, count: count}) do
-    %{data: Enum.map(plans, &data/1), count: count}
+    %{data: Enum.map(plans, &summary_data/1), count: count}
   end
 
+  @spec shopping_list(map()) :: map()
   def shopping_list(%{items: items}) do
     %{data: items}
   end
 
+  @spec macros(map()) :: map()
   def macros(%{macros: macros}) do
     %{data: macros}
   end
 
+  @spec plan_items(map()) :: map()
   def plan_items(%{plan_items: plan_items}) do
     %{data: Enum.map(plan_items, &plan_item_data/1)}
   end
 
-  defp data(%Plan{} = plan) do
+  defp summary_data(%Plan{} = plan) do
     %{
       id: plan.id,
       name: plan.name,
@@ -33,15 +38,23 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       macros_goal: plan.macros_goal,
       type: plan.type,
       status: plan.status,
+      start_date: plan.start_date,
+      end_date: plan.end_date,
       client_id: plan.client_id,
       source_template_id: plan.source_template_id,
-      meals: meals_data(plan.meals),
-      plan_items: plan_items_data(plan.plan_items),
       creator_id: plan.creator_id,
       business_id: plan.business_id,
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
+  end
+
+  defp data(%Plan{} = plan) do
+    summary_data(plan)
+    |> Map.merge(%{
+      meals: meals_data(plan.meals),
+      plan_items: plan_items_data(plan.plan_items)
+    })
   end
 
   defp meals_data(meals) when is_list(meals) do

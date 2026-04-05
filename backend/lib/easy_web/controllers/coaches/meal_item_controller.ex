@@ -7,6 +7,7 @@ defmodule EasyWeb.Coaches.MealItemController do
   alias Easy.Nutrition.Recipe
   alias Easy.Repo
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"meal_id" => meal_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -22,6 +23,7 @@ defmodule EasyWeb.Coaches.MealItemController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => meal_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -36,6 +38,7 @@ defmodule EasyWeb.Coaches.MealItemController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => meal_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -49,6 +52,7 @@ defmodule EasyWeb.Coaches.MealItemController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"meal_id" => meal_id}) do
     %{business_id: business_id} = conn.assigns.claims
 

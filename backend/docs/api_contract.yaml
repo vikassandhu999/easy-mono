@@ -631,6 +631,379 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Client Nutrition ──────────────────────────────────────
+  /v1/client/nutrition_plans:
+    get:
+      summary: List my nutrition plans
+      description: >-
+        Returns nutrition plans assigned to the authenticated client. Only personal
+        (non-template) plans scoped to this client are returned. The index response
+        is lightweight — no meals or plan_items included. Use the detail endpoint
+        for full plan data. Frontend pattern — fetch on nutrition tab load, display
+        plan cards.
+      operationId: listClientNutritionPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, draft, archived]
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: List of assigned nutrition plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientNutritionPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/client/nutrition_plans/today:
+    get:
+      summary: Get today's planned meals
+      description: >-
+        Resolves the client's active nutrition plan for a given date (defaults to today),
+        determines the weekday, and returns all planned meals for that day with full food/recipe
+        detail. Returns 404 if no active plan exists or the plan's date range does not cover the
+        requested date. Frontend pattern — primary data source for the daily nutrition view. Call
+        on nutrition tab open and when swiping between days.
+      operationId: getClientTodayPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: ISO date to resolve meals for (defaults to today)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Today's planned meals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientTodayPlanResponse"
+              example:
+                data:
+                  date: "2026-03-25"
+                  day: monday
+                  plan_id: "a1b2c3d4-..."
+                  meals:
+                    - meal_slot: breakfast
+                      meal_id: "m1..."
+                      meal_name: Breakfast
+                      items:
+                        - meal_item_id: "mi1..."
+                          food_id: "f1..."
+                          food_name: Oats
+                          amount: 100
+                          unit: g
+                          weight_g: 100
+                          macros: { calories_per_100g: 389, protein_g: 16.9, carbs_g: 66.3, fat_g: 6.9 }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/client/nutrition_plans/{id}:
+    get:
+      summary: Get nutrition plan detail
+      description: >-
+        Returns a single nutrition plan with full preloaded tree — meals with meal items
+        (including nested food/recipe name + macros + serving sizes) and plan items (weekly
+        schedule). Frontend pattern — call when user taps into a plan, cache for offline viewing.
+      operationId: getClientNutritionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Nutrition plan with full detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientNutritionPlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/client/foods:
+    get:
+      summary: Search foods
+      description: >-
+        Search foods available to the client — includes system foods and the coach's
+        business foods. Supports full-text search via the search param. When search is
+        active, results are ordered by relevance; otherwise by newest. Frontend pattern —
+        powers the food picker when logging unplanned food or replacing a planned item.
+      operationId: listClientFoods
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: List of foods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/client/foods/{id}:
+    get:
+      summary: Get food detail
+      description: >-
+        Returns a single food with macros and serving sizes. Frontend pattern — call
+        when user selects a food from search results to show detail before logging.
+      operationId: getClientFood
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Food detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/client/recipes:
+    get:
+      summary: Search recipes
+      description: >-
+        Search recipes created by the coach for this business. Supports name search.
+        Frontend pattern — powers the recipe picker when logging food.
+      operationId: listClientRecipes
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecipeListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/client/recipes/{id}:
+    get:
+      summary: Get recipe detail
+      description: >-
+        Returns a single recipe with ingredients (each with nested food detail).
+        Frontend pattern — call when user selects a recipe to view before logging.
+      operationId: getClientRecipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Recipe detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientRecipeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/client/food_logs:
+    get:
+      summary: List my food logs
+      description: >-
+        Returns the client's food log entries. Use the date param to filter to a single day.
+        Without a date filter, returns all logs ordered by date/meal_slot/time. Frontend
+        pattern — fetch daily logs alongside today's planned meals to compute logged vs
+        planned status for each item.
+      operationId: listClientFoodLogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter to a single date (ISO format)
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of food log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodLogListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Log a food entry
+      description: >-
+        Creates a single food log entry. Server auto-populates macros_snapshot and
+        food_name_snapshot from the referenced food or recipe. Set meal_item_id when
+        logging a planned item; leave null for freestyle/unplanned food. Frontend
+        pattern — call on single-item log, then refetch daily logs or optimistically
+        update the local list.
+      operationId: createClientFoodLog
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientCreateFoodLogRequest"
+            example:
+              date: "2026-03-25"
+              meal_slot: breakfast
+              food_id: "f1..."
+              meal_item_id: "mi1..."
+              amount: 100
+              unit: g
+              weight_g: 100
+      responses:
+        "201":
+          description: Food log created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/client/food_logs/log_meal:
+    post:
+      summary: Log all items in a meal
+      description: >-
+        Bulk-logs all unlogged items in a meal for a given date and meal slot. Items already
+        logged (matched by meal_item_id) are skipped. Returns only the newly created entries.
+        Frontend pattern — powers the "Log all" button per meal slot. After success, refetch
+        daily logs.
+      operationId: clientLogMeal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientLogMealRequest"
+            example:
+              date: "2026-03-25"
+              meal_slot: breakfast
+              meal_id: "m1..."
+      responses:
+        "201":
+          description: Newly created food log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodLogBulkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/client/food_logs/log_day:
+    post:
+      summary: Log all meals for a day
+      description: >-
+        Bulk-logs all unlogged items across all meals scheduled for a given date from a plan.
+        Resolves the weekday from the date, finds all plan_items for that day, and logs each
+        meal's items. Already-logged items are skipped. Frontend pattern — powers the
+        "Log all meals" button at the bottom of the daily view.
+      operationId: clientLogDay
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientLogDayRequest"
+            example:
+              date: "2026-03-25"
+              plan_id: "p1..."
+      responses:
+        "201":
+          description: All newly created food log entries for the day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodLogBulkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/client/food_logs/{id}:
+    patch:
+      summary: Update a food log entry
+      description: >-
+        Updates amount, unit, weight_g, or notes on an existing food log entry.
+        Cannot change the food/recipe or date — delete and re-create instead.
+        Frontend pattern — call when user adjusts portion size after logging.
+      operationId: updateClientFoodLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdateFoodLogRequest"
+      responses:
+        "200":
+          description: Updated food log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientFoodLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Delete a food log entry
+      description: >-
+        Removes a food log entry. Frontend pattern — call when user swipes to delete
+        a logged item, then remove from local state.
+      operationId: deleteClientFoodLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Food log deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /v1/businesses:
     post:
       summary: Create business
@@ -3313,6 +3686,119 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  # ── Coach Food Logs ──────────────────────────────────────
+  /v1/coach/food_logs:
+    get:
+      summary: List client food logs
+      description: >-
+        Returns food log entries for a specific client. Requires client_id query param.
+        Supports filtering by single date or date range (from/to). Date takes priority
+        over range when both provided. Frontend pattern — powers the coach's view of
+        client nutrition adherence. Fetch when coach opens client nutrition detail.
+      operationId: listCoachFoodLogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Client's food logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachFoodLogListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/coach/food_logs/summary:
+    get:
+      summary: Daily macro summaries
+      description: >-
+        Returns per-day macro totals for a client over a date range. Computes calories,
+        protein, carbs, and fat from food log snapshots. Frontend pattern — powers the
+        weekly adherence strip on the client detail page. Fetch with a 7-day window.
+      operationId: getCoachFoodLogSummary
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Daily macro summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachFoodLogSummaryResponse"
+              example:
+                data:
+                  - date: "2026-03-25"
+                    total_entries: 8
+                    totals:
+                      calories: 1650.5
+                      protein_g: 88.2
+                      carbs_g: 185.0
+                      fat_g: 52.3
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/coach/food_logs/{id}:
+    delete:
+      summary: Delete a client food log entry
+      description: >-
+        Allows coach to remove incorrect or test data from a client's food logs.
+        Frontend pattern — call from coach nutrition detail view when removing
+        bad data.
+      operationId: deleteCoachFoodLog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Food log deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   # ── Leads ───────────────────────────────────────────────────
   # ── Public Storefront ───────────────────────────────────────
   /v1/public/coaches/{slug}/profile:
@@ -4342,6 +4828,14 @@ components:
           type: string
         business_id:
           type: string
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
         inserted_at:
           type: string
           format: date-time
@@ -4491,8 +4985,10 @@ components:
           type: string
         day:
           type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         meal_type:
           type: string
+          enum: [breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack]
         meal_id:
           type: string
         plan_id:
@@ -6695,3 +7191,497 @@ components:
         notes:
           type: string
           nullable: true
+    # ── Client Nutrition Schemas ───────────────────────────────
+    ClientNutritionPlanSummary:
+      type: object
+      required: [id, name, status, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        macros_goal:
+          type: object
+          nullable: true
+        status:
+          type: string
+          enum: [active, draft, archived]
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ClientNutritionPlan:
+      allOf:
+        - $ref: "#/components/schemas/ClientNutritionPlanSummary"
+        - type: object
+          properties:
+            meals:
+              type: array
+              items:
+                $ref: "#/components/schemas/ClientNutritionMeal"
+            plan_items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ClientNutritionPlanItem"
+
+    ClientNutritionMeal:
+      type: object
+      required: [id, name, meal_items]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          type: object
+          nullable: true
+        meal_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientNutritionMealItem"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ClientNutritionMealItem:
+      type: object
+      required: [id, food_id, recipe_id]
+      properties:
+        id:
+          type: string
+        weight_g:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        food_id:
+          type: string
+          nullable: true
+        recipe_id:
+          type: string
+          nullable: true
+        food:
+          $ref: "#/components/schemas/FoodSummary"
+          nullable: true
+        recipe:
+          $ref: "#/components/schemas/RecipeSummary"
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    FoodSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          type: object
+          nullable: true
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+
+    RecipeSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        macros:
+          type: object
+          nullable: true
+        serving_sizes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServingSize"
+
+    ClientNutritionPlanItem:
+      type: object
+      required: [id, day, meal_type, meal_id]
+      properties:
+        id:
+          type: string
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        meal_type:
+          type: string
+          enum: [breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack]
+        meal_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TodayPlanMealItem:
+      type: object
+      required: [meal_item_id]
+      properties:
+        meal_item_id:
+          type: string
+        food_id:
+          type: string
+          nullable: true
+        recipe_id:
+          type: string
+          nullable: true
+        food_name:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        weight_g:
+          type: number
+          nullable: true
+        macros:
+          type: object
+          nullable: true
+
+    TodayPlanMeal:
+      type: object
+      required: [meal_slot, meal_id]
+      properties:
+        meal_slot:
+          type: string
+        meal_id:
+          type: string
+        meal_name:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TodayPlanMealItem"
+
+    TodayPlan:
+      type: object
+      required: [date, day, plan_id, meals]
+      properties:
+        date:
+          type: string
+          format: date
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        plan_id:
+          type: string
+        meals:
+          type: array
+          items:
+            $ref: "#/components/schemas/TodayPlanMeal"
+
+    FoodLog:
+      type: object
+      required: [id, date, meal_slot, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        meal_slot:
+          type: string
+          enum: [breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack]
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        weight_g:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        macros_snapshot:
+          type: object
+          nullable: true
+        food_name_snapshot:
+          type: string
+          nullable: true
+        food_id:
+          type: string
+          nullable: true
+        recipe_id:
+          type: string
+          nullable: true
+        meal_item_id:
+          type: string
+          nullable: true
+        food:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            macros:
+              type: object
+        recipe:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            macros:
+              type: object
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CoachFoodLog:
+      allOf:
+        - $ref: "#/components/schemas/FoodLog"
+        - type: object
+          properties:
+            client_id:
+              type: string
+
+    DailyMacroSummary:
+      type: object
+      required: [date, total_entries, totals]
+      properties:
+        date:
+          type: string
+          format: date
+        total_entries:
+          type: integer
+        totals:
+          type: object
+          properties:
+            calories:
+              type: number
+            protein_g:
+              type: number
+            carbs_g:
+              type: number
+            fat_g:
+              type: number
+
+    # ── Client Nutrition Response Schemas ──────────────────────
+    ClientNutritionPlanResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientNutritionPlan"
+
+    ClientNutritionPlanListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientNutritionPlanSummary"
+        count:
+          type: integer
+
+    ClientTodayPlanResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/TodayPlan"
+
+    ClientFoodResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Food"
+
+    ClientFoodListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Food"
+        count:
+          type: integer
+
+    ClientRecipeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/Recipe"
+
+    ClientRecipeListResponse:
+      type: object
+      required: [data, count]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recipe"
+        count:
+          type: integer
+
+    ClientFoodLogResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/FoodLog"
+
+    ClientFoodLogListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FoodLog"
+
+    ClientFoodLogBulkResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FoodLog"
+
+    CoachFoodLogListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoachFoodLog"
+
+    CoachFoodLogSummaryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMacroSummary"
+
+    # ── Client Nutrition Request Schemas ───────────────────────
+    ClientCreateFoodLogRequest:
+      type: object
+      required: [date, meal_slot]
+      properties:
+        date:
+          type: string
+          format: date
+        meal_slot:
+          type: string
+          enum: [breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack]
+        food_id:
+          type: string
+          nullable: true
+        recipe_id:
+          type: string
+          nullable: true
+        meal_item_id:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        weight_g:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ClientUpdateFoodLogRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        weight_g:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ClientLogMealRequest:
+      type: object
+      required: [date, meal_slot, meal_id]
+      properties:
+        date:
+          type: string
+          format: date
+        meal_slot:
+          type: string
+          enum: [breakfast, morning_snack, lunch, afternoon_snack, dinner, evening_snack]
+        meal_id:
+          type: string
+
+    ClientLogDayRequest:
+      type: object
+      required: [date, plan_id]
+      properties:
+        date:
+          type: string
+          format: date
+        plan_id:
+          type: string

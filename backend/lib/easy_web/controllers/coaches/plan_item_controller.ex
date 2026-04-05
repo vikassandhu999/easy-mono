@@ -7,6 +7,7 @@ defmodule EasyWeb.Coaches.PlanItemController do
   alias Easy.Orgs.Coaches
   alias Easy.Repo
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     claims = conn.assigns.claims
     meal_id = Map.get(params, "meal_id")
@@ -25,6 +26,7 @@ defmodule EasyWeb.Coaches.PlanItemController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => plan_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
     meal_id = Map.get(conn.body_params, "meal_id")
@@ -40,6 +42,7 @@ defmodule EasyWeb.Coaches.PlanItemController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => plan_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -53,6 +56,7 @@ defmodule EasyWeb.Coaches.PlanItemController do
     end
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"plan_id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 

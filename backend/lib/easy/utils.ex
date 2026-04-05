@@ -119,6 +119,20 @@ defmodule Easy.Utils do
     from(q in query, offset: ^offset, limit: ^limit)
   end
 
+  @spec weekday_name(Date.t()) :: String.t()
+  def weekday_name(%Date{} = date) do
+    date |> Date.day_of_week() |> weekday_number_to_name()
+  end
+
+  @spec weekday_number_to_name(1..7) :: String.t()
+  def weekday_number_to_name(1), do: "monday"
+  def weekday_number_to_name(2), do: "tuesday"
+  def weekday_number_to_name(3), do: "wednesday"
+  def weekday_number_to_name(4), do: "thursday"
+  def weekday_number_to_name(5), do: "friday"
+  def weekday_number_to_name(6), do: "saturday"
+  def weekday_number_to_name(7), do: "sunday"
+
   def parse_ip(ip) do
     parts = String.split(ip, ".")
 

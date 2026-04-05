@@ -5,10 +5,10 @@ config :easy, :environment, :dev
 
 # Configure your database
 config :easy, Easy.Repo,
-  username: "easy_backend",
-  password: "I8hGcGf0gWGubxR",
+  username: "admin",
+  password: "L2KjxOH9al",
   hostname: "localhost",
-  database: "easy_backend",
+  database: "easy_dev_refactoring",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

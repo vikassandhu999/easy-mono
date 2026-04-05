@@ -19,7 +19,7 @@ defmodule Easy.Repo.Seeds.Foods do
       true ->
         existing_count = Repo.aggregate(system_foods_query(), :count, :id)
 
-        if existing_count > 2000 do
+        if existing_count > 5000 do
           IO.puts("  Skipping foods — #{existing_count} system foods already exist")
         else
           seed_foods(csv_path)

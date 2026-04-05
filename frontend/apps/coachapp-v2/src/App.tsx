@@ -32,14 +32,15 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
-import CreateOffer from '@/storefront/create-offer';
-import CreateTestimonial from '@/storefront/create-testimonial';
-import EditOffer from '@/storefront/edit-offer';
-import EditTestimonial from '@/storefront/edit-testimonial';
-import ListOffers from '@/storefront/list-offers';
-import ListTestimonials from '@/storefront/list-testimonials';
-import Storefront from '@/storefront/storefront';
-import StorefrontEditor from '@/storefront/storefront-editor';
+// Storefront hidden for MVP — uncomment for v2 release
+// import CreateOffer from '@/storefront/create-offer';
+// import CreateTestimonial from '@/storefront/create-testimonial';
+// import EditOffer from '@/storefront/edit-offer';
+// import EditTestimonial from '@/storefront/edit-testimonial';
+// import ListOffers from '@/storefront/list-offers';
+// import ListTestimonials from '@/storefront/list-testimonials';
+// import Storefront from '@/storefront/storefront';
+// import StorefrontEditor from '@/storefront/storefront-editor';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
@@ -199,38 +200,15 @@ export default function App() {
           element={<EditTrainingPlan />}
           path={ROUTES.EDIT_TRAINING_PLAN}
         />
-        <Route
-          element={<Storefront />}
-          path={ROUTES.STOREFRONT}
-        />
-        <Route
-          element={<StorefrontEditor />}
-          path={ROUTES.STOREFRONT_PAGE}
-        />
-        <Route
-          element={<ListOffers />}
-          path={ROUTES.STOREFRONT_OFFERS}
-        />
-        <Route
-          element={<CreateOffer />}
-          path={ROUTES.CREATE_OFFER}
-        />
-        <Route
-          element={<EditOffer />}
-          path={ROUTES.EDIT_OFFER}
-        />
-        <Route
-          element={<ListTestimonials />}
-          path={ROUTES.STOREFRONT_TESTIMONIALS}
-        />
-        <Route
-          element={<CreateTestimonial />}
-          path={ROUTES.CREATE_TESTIMONIAL}
-        />
-        <Route
-          element={<EditTestimonial />}
-          path={ROUTES.EDIT_TESTIMONIAL}
-        />
+        {/* Storefront routes hidden for MVP — uncomment for v2 release */}
+        {/* <Route element={<Storefront />} path={ROUTES.STOREFRONT} /> */}
+        {/* <Route element={<StorefrontEditor />} path={ROUTES.STOREFRONT_PAGE} /> */}
+        {/* <Route element={<ListOffers />} path={ROUTES.STOREFRONT_OFFERS} /> */}
+        {/* <Route element={<CreateOffer />} path={ROUTES.CREATE_OFFER} /> */}
+        {/* <Route element={<EditOffer />} path={ROUTES.EDIT_OFFER} /> */}
+        {/* <Route element={<ListTestimonials />} path={ROUTES.STOREFRONT_TESTIMONIALS} /> */}
+        {/* <Route element={<CreateTestimonial />} path={ROUTES.CREATE_TESTIMONIAL} /> */}
+        {/* <Route element={<EditTestimonial />} path={ROUTES.EDIT_TESTIMONIAL} /> */}
         <Route
           element={<Placeholder title="Settings" />}
           path={ROUTES.SETTINGS}

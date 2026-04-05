@@ -231,6 +231,10 @@ Every file, route, component, and endpoint listed in an ADR must exist in the co
 
 ## Existing ADRs
 
-| ADR                                                                      | Feature                |
-| ------------------------------------------------------------------------ | ---------------------- |
-| [ADR-001](../../apps/coachapp-v2/docs/adr-001-nutrition-plan-builder.md) | Nutrition Plan Builder |
+| ADR | Feature |
+| --- | --- |
+| [ADR-000](../../apps/coachapp-v2/docs/adr-000-architecture-and-stack.md) | Architecture & Stack |
+| [ADR-001](../../apps/coachapp-v2/docs/adr-001-nutrition-plan-builder.md) | Nutrition Plan Builder + Meal Logging |
+| [ADR-002](../../apps/coachapp-v2/docs/adr-002-training-plan-builder.md) | Training Plan Builder + Workout Logging |
+| [ADR-003](../../apps/coachapp-v2/docs/adr-003-storefront-and-leads.md) | Coach Storefront & Client Acquisition (hidden for MVP) |
+| [ADR-004](../../apps/coachapp-v2/docs/adr-004-client-invitation-and-onboarding.md) | Client Invitation & Onboarding |

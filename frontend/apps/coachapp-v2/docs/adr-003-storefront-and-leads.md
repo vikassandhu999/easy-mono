@@ -1,6 +1,7 @@
 # ADR-003: Coach Storefront & Client Acquisition
 
-**Date:** 2026-03-26  
+**Date:** 2026-04-05  
+**Status:** Hidden for MVP — sidebar nav and routes commented out in `app-shell.tsx` and `App.tsx`. All code, API endpoints, and the public website remain intact for v2 release.  
 **Context:** Public storefront for coaches to showcase services and capture client inquiries, replacing WhatsApp-based client acquisition
 
 ---
@@ -271,7 +272,7 @@ The section title adapts: "Results" if photos exist, "What Clients Say" if only 
 
 ### 12. Sidebar structure: Storefront group + Clients with pending badge
 
-The sidebar (`app-shell.tsx`) has a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. The "Clients" item has a `PendingClientBadge` showing the count of pending clients (storefront applications) from `ClientSummary`, fetched via `useListClientsQuery({ status: 'pending', limit: 0 })`. The badge is hidden when count is 0.
+The sidebar (`app-shell.tsx`) defines a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. **For MVP, this group is commented out** — the storefront feature module, API endpoints, and public website pages remain intact but are not navigable from the coach app UI. The "Clients" item has a `PendingClientBadge` showing the count of pending clients (storefront applications) from `ClientSummary`, fetched via `useListClientsQuery({ status: 'pending', limit: 0 })`. The badge is hidden when count is 0.
 
 ---
 

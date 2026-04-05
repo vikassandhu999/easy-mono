@@ -3,7 +3,7 @@ import {BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError} 
 
 import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
 
-let baseURL = import.meta.env.API_BASE_URL || 'http://localhost:4000';
+let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 if (window.location.hostname.startsWith('192.168.')) {
   // If we're running on a local network, use the local IP for API requests to avoid CORS issues with localhost

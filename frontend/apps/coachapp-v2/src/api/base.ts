@@ -83,6 +83,7 @@ export const api = createApi({
     'Equipment',
     'Exercise',
     'Food',
+    'FoodLog',
     'Lead',
     'Meal',
     'MealItem',

@@ -1,5 +1,5 @@
 import {Separator} from '@heroui/react';
-import {Dumbbell, History, LayoutDashboard, Settings} from 'lucide-react';
+import {Dumbbell, History, LayoutDashboard, Settings, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, useLocation} from 'react-router-dom';
 
@@ -20,6 +20,11 @@ const SIDEBAR_TOP: NavItem[] = [
     icon: <LayoutDashboard size={ICON_SIZE} />,
     label: 'Dashboard',
     path: ROUTES.DASHBOARD,
+  },
+  {
+    icon: <UtensilsCrossed size={ICON_SIZE} />,
+    label: 'Nutrition',
+    path: ROUTES.NUTRITION,
   },
   {
     icon: <Dumbbell size={ICON_SIZE} />,
@@ -48,6 +53,11 @@ const BOTTOM_NAV: NavItem[] = [
     icon: <LayoutDashboard size={ICON_SIZE} />,
     label: 'Home',
     path: ROUTES.DASHBOARD,
+  },
+  {
+    icon: <UtensilsCrossed size={ICON_SIZE} />,
+    label: 'Nutrition',
+    path: ROUTES.NUTRITION,
   },
   {
     icon: <Dumbbell size={ICON_SIZE} />,

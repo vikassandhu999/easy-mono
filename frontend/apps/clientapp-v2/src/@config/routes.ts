@@ -4,6 +4,8 @@ export const ROUTES = {
   ACCEPT_INVITE: '/invite/:token',
   VERIFY_EMAIL: '/verify-email',
   DASHBOARD: '/dashboard',
+  NUTRITION: '/nutrition',
+  NUTRITION_ADD_FOOD: '/nutrition/add-food',
   WORKOUT_ACTIVE: '/workout',
   WORKOUT_HISTORY: '/history',
   SESSION_DETAIL: '/history/:sessionId',

@@ -31,6 +31,7 @@ import {
 } from '@/api/clients';
 import {type NutritionPlan, useAssignNutritionPlanMutation, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 import {type TrainingPlan, useAssignTrainingPlanMutation, useListTrainingPlansQuery} from '@/api/trainingPlans';
+import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
@@ -691,6 +692,9 @@ export default function ClientDetail() {
           onAssigned={() => setShowNutritionPicker(false)}
           showPicker={showNutritionPicker}
         />
+
+        {/* ── Nutrition Adherence ────────────────────────── */}
+        <ClientNutritionAdherence clientId={client.id} />
 
         {/* ── Training Plans ────────────────────────────── */}
         <ClientTrainingPlans

@@ -59,6 +59,9 @@ export default function ListClients() {
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useClientsInfiniteQuery(queryArg);
 
+  // Use queryArg as key to force InfiniteList remount when filters change
+  const queryArgStr = useMemo(() => JSON.stringify(queryArg), [queryArg]);
+
   const clients = useMemo<Client[]>(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((page) => page.data);
@@ -151,6 +154,7 @@ export default function ListClients() {
         isFetchingNextPage={isFetchingNextPage}
         isLoading={isLoading}
         items={clients}
+        key={queryArgStr}
         keyExtractor={(client) => client.id}
         renderItem={(client) => <ClientCard client={client} />}
         sentinelRef={sentinelRef}

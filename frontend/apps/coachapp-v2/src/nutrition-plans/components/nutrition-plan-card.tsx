@@ -18,7 +18,7 @@ const STATUS_MAP: Record<
 
 export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
   const status = plan.status ? STATUS_MAP[plan.status] : null;
-  const mealCount = plan.meals.length;
+  const mealCount = plan.meals?.length ?? 0;
 
   return (
     <Link

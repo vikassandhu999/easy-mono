@@ -15,8 +15,8 @@ export type NutritionPlan = {
   status: string;
   client_id: null | string;
   source_template_id: null | string;
-  meals: Meal[];
-  plan_items: PlanItem[];
+  meals?: Meal[];
+  plan_items?: PlanItem[];
   creator_id: string;
   business_id: string;
   inserted_at: string;

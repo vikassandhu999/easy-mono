@@ -1,5 +1,7 @@
+import {formatDateISO, sumMacros} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
-import {Activity, ChevronRight, Dumbbell, Play, Plus} from 'lucide-react';
+import {Activity, ChevronRight, Dumbbell, Play, Plus, UtensilsCrossed} from 'lucide-react';
+import {useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import type {ClientPlannedWorkout, ClientTrainingPlan} from '@/api/trainingPlans';
@@ -8,6 +10,7 @@ import type {ClientWorkoutSession} from '@/api/workoutSessions';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {DAY_NAMES} from '@/@utils/workout-helpers';
+import {useListMyFoodLogsQuery} from '@/api/foodLogs';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import {useGetActiveWorkoutSessionQuery, useStartWorkoutSessionMutation} from '@/api/workoutSessions';
 
@@ -29,6 +32,48 @@ function getTotalSets(workout: ClientPlannedWorkout): number {
     count += el.planned_sets.length;
   }
   return count;
+}
+
+// ── Today's nutrition summary ─────────────────────────────────
+
+function TodayNutritionSummary() {
+  const navigate = useNavigate();
+  const todayISO = formatDateISO(new Date());
+  const {data: logsData} = useListMyFoodLogsQuery({date: todayISO});
+
+  const logs = useMemo(() => logsData?.data ?? [], [logsData]);
+  const macros = useMemo(() => sumMacros(logs), [logs]);
+  const logCount = logs.length;
+
+  return (
+    <button
+      className="mb-6 flex w-full items-start gap-3 rounded-xl border border-divider bg-content1 p-4 text-left transition-colors hover:bg-content2 active:bg-content2"
+      onClick={() => navigate(ROUTES.NUTRITION)}
+      type="button"
+    >
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+        <UtensilsCrossed
+          className="text-accent"
+          size={20}
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">Nutrition</p>
+        {logCount > 0 ? (
+          <p className="mt-0.5 text-sm text-foreground-500">
+            {Math.round(macros.calories)} cal &middot; {Math.round(macros.protein)}g protein &middot; {logCount} item
+            {logCount !== 1 ? 's' : ''} logged
+          </p>
+        ) : (
+          <p className="mt-0.5 text-sm text-foreground-400">No food logged yet today</p>
+        )}
+      </div>
+      <ChevronRight
+        className="mt-1 shrink-0 text-foreground-300"
+        size={16}
+      />
+    </button>
+  );
 }
 
 // ── Active session banner ────────────────────────────────────
@@ -234,6 +279,9 @@ export default function Dashboard() {
       <div className="max-w-lg">
         {/* Active session banner */}
         {activeSession ? <ActiveSessionBanner session={activeSession} /> : null}
+
+        {/* Today's nutrition summary */}
+        <TodayNutritionSummary />
 
         {/* Today's workout */}
         <div className="mb-6">

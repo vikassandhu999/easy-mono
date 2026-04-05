@@ -84,40 +84,11 @@ export const applyFormErrors = (
   setError('root', {message: formError});
 };
 
-export type Macros = Record<string, number>;
+// Re-export shared nutrition utilities from @easy/utils
+export {type Macros, normalizeMacros} from '@easy/utils';
 
 export type ServingSize = {
   unit: string;
   weight_g: null | number;
   amount: null | number;
 };
-
-/**
- * Mapping from system-imported (short) macro keys to canonical (long) form keys.
- * System foods use: calories, protein, carbs, fat, fiber, sugar
- * Coach-created foods use: calories_per_100g, protein_g, carbs_g, fats_g, fiber_g, sugar_g
- */
-const MACRO_KEY_ALIASES: Record<string, string> = {
-  calories: 'calories_per_100g',
-  protein: 'protein_g',
-  carbs: 'carbs_g',
-  fat: 'fats_g',
-  fiber: 'fiber_g',
-  sugar: 'sugar_g',
-};
-
-/**
- * Normalise a macros map so that every key uses the canonical (coach-format) key.
- * System-imported short keys are remapped; already-canonical keys pass through unchanged.
- * Unknown keys (not in the alias table and not already canonical) are kept as-is.
- */
-export function normalizeMacros(macros: Macros): Macros {
-  const result: Macros = {};
-  for (const [key, value] of Object.entries(macros)) {
-    const canonical = MACRO_KEY_ALIASES[key] ?? key;
-    // If both the alias and the canonical key exist, prefer the canonical key's value
-    if (canonical in result) continue;
-    result[canonical] = value;
-  }
-  return result;
-}

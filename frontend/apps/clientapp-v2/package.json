@@ -16,6 +16,7 @@
     "native": "pnpm build && cap sync"
   },
   "dependencies": {
+    "@easy/utils": "workspace:^",
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.3.0",
     "@capacitor/haptics": "^8.0.2",

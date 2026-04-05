@@ -12,6 +12,8 @@ import VerifyLoginOtp from '@/auth/verify-login-otp';
 import Dashboard from '@/dashboard/dashboard';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
+import AddFood from '@/nutrition/add-food';
+import NutritionDaily from '@/nutrition/nutrition-daily';
 import ActiveWorkout from '@/workout/active-workout';
 
 // Public screens (redirect away if already authenticated)
@@ -55,6 +57,14 @@ export default function App() {
         <Route
           element={<Dashboard />}
           path={ROUTES.DASHBOARD}
+        />
+        <Route
+          element={<NutritionDaily />}
+          path={ROUTES.NUTRITION}
+        />
+        <Route
+          element={<AddFood />}
+          path={ROUTES.NUTRITION_ADD_FOOD}
         />
         <Route
           element={<ActiveWorkout />}

@@ -1,3 +1,4 @@
+import {DAY_NAMES, formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
 import {Alert, Button, Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -6,12 +7,6 @@ import type {PerformedSet, PlannedSnapshotElement, WorkoutSession} from '@/api/w
 
 import PageLayout from '@/@components/page-layout';
 import {useGetWorkoutSessionQuery} from '@/api/workoutSessions';
-import {
-  DAY_NAMES,
-  formatDuration,
-  formatSessionDateLong,
-  SESSION_STATE_CHIP,
-} from '@/clients/components/session-helpers';
 
 // ── Helpers ──────────────────────────────────────────────────
 

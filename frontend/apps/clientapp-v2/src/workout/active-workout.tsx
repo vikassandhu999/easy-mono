@@ -1,3 +1,4 @@
+import {getWorkoutTitle} from '@easy/utils';
 import {Alert, Button, Spinner} from '@heroui/react';
 import {ArrowLeft, Clock, Dumbbell, Plus} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -7,12 +8,12 @@ import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {getWorkoutTitle} from '@/@utils/workout-helpers';
 import {useGetActiveWorkoutSessionQuery} from '@/api/workoutSessions';
 import ExercisePicker from '@/workout/components/exercise-picker';
 import ExerciseRow from '@/workout/components/exercise-row';
 import FinishWorkout from '@/workout/components/finish-workout';
 import SetLogger from '@/workout/components/set-logger';
+import {useWorkoutLocalState} from '@/workout/components/use-workout-local-state';
 import {buildWorkoutExercises} from '@/workout/components/workout-types';
 
 // ── Timer hook ───────────────────────────────────────────────
@@ -45,16 +46,13 @@ export default function ActiveWorkout() {
     refetchOnMountOrArgChange: true,
   });
 
-  // Client-side state for skips, replacements, and added exercises
-  const [skippedElementIds, setSkippedElementIds] = useState<Set<string>>(() => new Set());
-  const [replacements, setReplacements] = useState<Map<string, {exerciseId: string; exerciseName: string}>>(
-    () => new Map(),
-  );
-  const [addedExercises, setAddedExercises] = useState<Array<{exerciseId: string; exerciseName: string}>>([]);
+  const session = data?.data;
+
+  // Client-side state for skips, replacements, and added exercises — persisted to sessionStorage
+  const {addedExercises, replacements, setAddedExercises, setReplacements, setSkippedElementIds, skippedElementIds} =
+    useWorkoutLocalState(session?.id ?? null);
   const [expandedIndex, setExpandedIndex] = useState<null | number>(null);
   const [userHasToggled, setUserHasToggled] = useState(false);
-
-  const session = data?.data;
   const snapshot = session?.planned_snapshot;
   const elapsed = useElapsedTimer(session?.started_at ?? null);
 
@@ -83,35 +81,44 @@ export default function ActiveWorkout() {
     setExpandedIndex((prev) => (prev === index ? null : index));
   }, []);
 
-  const handleSkip = useCallback((elementId: null | string) => {
-    if (!elementId) return;
-    setSkippedElementIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(elementId)) {
-        next.delete(elementId);
-      } else {
-        next.add(elementId);
-      }
-      return next;
-    });
-  }, []);
+  const handleSkip = useCallback(
+    (elementId: null | string) => {
+      if (!elementId) return;
+      setSkippedElementIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(elementId)) {
+          next.delete(elementId);
+        } else {
+          next.add(elementId);
+        }
+        return next;
+      });
+    },
+    [setSkippedElementIds],
+  );
 
-  const handleReplace = useCallback((elementId: null | string, selected: {id: string; name: string}) => {
-    if (!elementId) return;
-    setReplacements((prev) => {
-      const next = new Map(prev);
-      next.set(elementId, {exerciseId: selected.id, exerciseName: selected.name});
-      return next;
-    });
-  }, []);
+  const handleReplace = useCallback(
+    (elementId: null | string, selected: {id: string; name: string}) => {
+      if (!elementId) return;
+      setReplacements((prev) => {
+        const next = new Map(prev);
+        next.set(elementId, {exerciseId: selected.id, exerciseName: selected.name});
+        return next;
+      });
+    },
+    [setReplacements],
+  );
 
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [showFinish, setShowFinish] = useState(false);
 
-  const handleAddExercise = useCallback((selected: {id: string; name: string}) => {
-    setAddedExercises((prev) => [...prev, {exerciseId: selected.id, exerciseName: selected.name}]);
-    setShowAddPicker(false);
-  }, []);
+  const handleAddExercise = useCallback(
+    (selected: {id: string; name: string}) => {
+      setAddedExercises((prev) => [...prev, {exerciseId: selected.id, exerciseName: selected.name}]);
+      setShowAddPicker(false);
+    },
+    [setAddedExercises],
+  );
 
   // Loading
   if (isLoading) {

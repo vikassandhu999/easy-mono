@@ -100,7 +100,7 @@ export type PlannedWorkoutCreateRequest = {
 export type PlannedWorkoutUpdateRequest = {
   day_number?: number;
   name?: string;
-  notes?: string;
+  notes?: null | string;
 };
 
 export type WorkoutElementCreateRequest = {
@@ -114,7 +114,7 @@ export type WorkoutElementCreateRequest = {
 
 export type WorkoutElementUpdateRequest = {
   exercise_id?: string;
-  notes?: string;
+  notes?: null | string;
   planned_sets?: PlannedSet[];
   position?: number;
   superset_group_id?: string;

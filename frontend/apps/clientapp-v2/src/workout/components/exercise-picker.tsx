@@ -10,19 +10,33 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useListClientExercisesQuery} from '@/api/exercises';
 
 type ExercisePickerProps = {
+  /** Comma-separated muscle IDs to pre-filter suggestions (e.g. for exercise replacement) */
+  defaultMuscleIds?: string;
   /** Called when the user selects an exercise */
   onSelect: (exercise: {id: string; name: string}) => void;
   /** Optional placeholder text */
   placeholder?: string;
 };
 
-export default function ExercisePicker({onSelect, placeholder = 'Search exercises...'}: ExercisePickerProps) {
+export default function ExercisePicker({
+  defaultMuscleIds,
+  onSelect,
+  placeholder = 'Search exercises...',
+}: ExercisePickerProps) {
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const hasSearch = debouncedSearch.length >= 1;
+  // Show suggestions when we have muscle IDs even without search text
+  const shouldQuery = hasSearch || !!defaultMuscleIds;
 
   const {data, isFetching} = useListClientExercisesQuery(
-    shouldQuery ? {search: debouncedSearch, limit: 10} : undefined,
+    shouldQuery
+      ? {
+          ...(hasSearch && {search: debouncedSearch}),
+          ...(defaultMuscleIds && !hasSearch && {muscle_ids: defaultMuscleIds}),
+          limit: 10,
+        }
+      : undefined,
     {skip: !shouldQuery},
   );
 
@@ -86,7 +100,11 @@ export default function ExercisePicker({onSelect, placeholder = 'Search exercise
           <ListBox
             className="max-h-[280px] overflow-y-auto"
             items={exercises}
-            renderEmptyState={() => <EmptyState>{shouldQuery ? 'No exercises found' : 'Type to search'}</EmptyState>}
+            renderEmptyState={() => (
+              <EmptyState>
+                {hasSearch ? 'No exercises found' : defaultMuscleIds ? 'No similar exercises found' : 'Type to search'}
+              </EmptyState>
+            )}
           >
             {(exercise: ClientExercise) => {
               const muscleNames = exercise.muscles.map((m) => m.name).join(', ');

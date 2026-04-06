@@ -1,9 +1,10 @@
 import {Chip} from '@heroui/react';
 import {Check, ChevronDown, ChevronUp, Plus, RefreshCw, SkipForward} from 'lucide-react';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 
 import type {WorkoutExercise} from '@/workout/components/workout-types';
 
+import {useGetClientExerciseQuery} from '@/api/exercises';
 import ExercisePicker from '@/workout/components/exercise-picker';
 
 // ── Status badge ─────────────────────────────────────────────
@@ -54,6 +55,17 @@ export default function ExerciseRow({
   onToggle: () => void;
 }) {
   const [showReplacePicker, setShowReplacePicker] = useState(false);
+
+  // Fetch the original exercise's muscles for smart replacement suggestions
+  const {data: exerciseDetail} = useGetClientExerciseQuery(exercise.exerciseId, {
+    skip: !showReplacePicker,
+  });
+  const replaceMuscleIds = useMemo(() => {
+    const muscles = exerciseDetail?.data?.muscles;
+    if (!muscles || muscles.length === 0) return undefined;
+    return muscles.map((m) => m.id).join(',');
+  }, [exerciseDetail]);
+
   const statusConfig = STATUS_CONFIG[exercise.status];
   const summary = formatCollapsedSummary(exercise);
   const canSkip = exercise.status === 'not_started' && !exercise.isAdded;
@@ -174,6 +186,7 @@ export default function ExerciseRow({
           {showReplacePicker && onReplace ? (
             <div className="mb-3">
               <ExercisePicker
+                defaultMuscleIds={replaceMuscleIds}
                 onSelect={(selected) => {
                   onReplace(selected);
                   setShowReplacePicker(false);

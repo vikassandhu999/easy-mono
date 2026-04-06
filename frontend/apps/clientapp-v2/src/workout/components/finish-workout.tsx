@@ -1,4 +1,5 @@
-import {Button, Separator, TextArea} from '@heroui/react';
+import {formatDurationFromNow} from '@easy/utils';
+import {AlertDialog, Button, Separator, TextArea} from '@heroui/react';
 import {Check, Clock, Dumbbell, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -6,8 +7,8 @@ import {useNavigate} from 'react-router-dom';
 import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 import {ROUTES} from '@/@config/routes';
-import {formatDurationFromNow} from '@/@utils/workout-helpers';
 import {useCompleteWorkoutSessionMutation, useDiscardWorkoutSessionMutation} from '@/api/workoutSessions';
+import {clearWorkoutLocalState} from '@/workout/components/use-workout-local-state';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ export default function FinishWorkout({
         },
         id: sessionId,
       }).unwrap();
+      clearWorkoutLocalState(sessionId);
       navigate(ROUTES.DASHBOARD);
     } catch {
       // Error handled by RTK Query
@@ -90,6 +92,7 @@ export default function FinishWorkout({
   const handleDiscard = async () => {
     try {
       await discardSession(sessionId).unwrap();
+      clearWorkoutLocalState(sessionId);
       navigate(ROUTES.DASHBOARD);
     } catch {
       // Error handled by RTK Query
@@ -181,16 +184,45 @@ export default function FinishWorkout({
 
       <Separator className="my-3" />
 
-      {/* Discard */}
-      <Button
-        className="w-full text-danger"
-        isPending={isDiscarding}
-        onPress={handleDiscard}
-        variant="ghost"
-      >
-        <Trash2 size={14} />
-        Discard workout
-      </Button>
+      {/* Discard — with confirmation dialog */}
+      <AlertDialog>
+        <Button
+          className="w-full text-danger"
+          variant="ghost"
+        >
+          <Trash2 size={14} />
+          Discard workout
+        </Button>
+        <AlertDialog.Backdrop>
+          <AlertDialog.Container>
+            <AlertDialog.Dialog className="sm:max-w-[400px]">
+              <AlertDialog.CloseTrigger />
+              <AlertDialog.Header>
+                <AlertDialog.Icon status="danger" />
+                <AlertDialog.Heading>Discard workout?</AlertDialog.Heading>
+              </AlertDialog.Header>
+              <AlertDialog.Body>
+                <p>All logged sets will be lost. This cannot be undone.</p>
+              </AlertDialog.Body>
+              <AlertDialog.Footer>
+                <Button
+                  slot="close"
+                  variant="tertiary"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  isPending={isDiscarding}
+                  onPress={handleDiscard}
+                  variant="danger"
+                >
+                  {isDiscarding ? 'Discarding...' : 'Discard'}
+                </Button>
+              </AlertDialog.Footer>
+            </AlertDialog.Dialog>
+          </AlertDialog.Container>
+        </AlertDialog.Backdrop>
+      </AlertDialog>
     </div>
   );
 }

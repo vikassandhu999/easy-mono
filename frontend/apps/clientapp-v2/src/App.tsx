@@ -14,6 +14,7 @@ import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
 import AddFood from '@/nutrition/add-food';
 import NutritionDaily from '@/nutrition/nutrition-daily';
+import TrainingPlanDetail from '@/training/training-plan-detail';
 import ActiveWorkout from '@/workout/active-workout';
 
 // Public screens (redirect away if already authenticated)
@@ -65,6 +66,10 @@ export default function App() {
         <Route
           element={<AddFood />}
           path={ROUTES.NUTRITION_ADD_FOOD}
+        />
+        <Route
+          element={<TrainingPlanDetail />}
+          path={ROUTES.TRAINING_PLAN}
         />
         <Route
           element={<ActiveWorkout />}

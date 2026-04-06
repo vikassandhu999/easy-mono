@@ -1,3 +1,5 @@
+// ── Day names (weekday mapping for training plans) ──────────
+
 export const DAY_NAMES: Record<number, string> = {
   1: 'Monday',
   2: 'Tuesday',
@@ -8,6 +10,8 @@ export const DAY_NAMES: Record<number, string> = {
   7: 'Sunday',
 };
 
+// ── Session state chip config ────────────────────────────────
+
 export const SESSION_STATE_CHIP: Record<string, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> =
   {
     active: {color: 'warning', label: 'In Progress'},
@@ -15,10 +19,9 @@ export const SESSION_STATE_CHIP: Record<string, {color: 'danger' | 'default' | '
     discarded: {color: 'default', label: 'Discarded'},
   };
 
-export function formatDuration(startedAt: string, endedAt: null | string): null | string {
-  if (!endedAt) return null;
-  const diffMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
-  const mins = Math.round(diffMs / 60_000);
+// ── Duration formatting ──────────────────────────────────────
+
+function formatMinutes(mins: number): string {
   if (mins < 1) return '<1 min';
   if (mins < 60) return `${mins} min`;
   const hrs = Math.floor(mins / 60);
@@ -26,15 +29,18 @@ export function formatDuration(startedAt: string, endedAt: null | string): null 
   return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`;
 }
 
+export function formatDuration(startedAt: string, endedAt: null | string): null | string {
+  if (!endedAt) return null;
+  const diffMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+  return formatMinutes(Math.round(diffMs / 60_000));
+}
+
 export function formatDurationFromNow(startedAt: string): string {
   const diffMs = Date.now() - new Date(startedAt).getTime();
-  const mins = Math.round(diffMs / 60_000);
-  if (mins < 1) return '<1 min';
-  if (mins < 60) return `${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  const remainMins = mins % 60;
-  return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`;
+  return formatMinutes(Math.round(diffMs / 60_000));
 }
+
+// ── Date formatting ──────────────────────────────────────────
 
 export function formatSessionDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString(undefined, {
@@ -50,6 +56,8 @@ export function formatSessionDateLong(dateString: string): string {
     year: 'numeric',
   });
 }
+
+// ── Workout title ────────────────────────────────────────────
 
 export function getWorkoutTitle(snapshot: null | {workout_name: string}): string {
   return snapshot ? snapshot.workout_name : 'Freestyle workout';

@@ -1,3 +1,4 @@
+import {DAY_NAMES, formatDuration, formatSessionDate, getWorkoutTitle, SESSION_STATE_CHIP} from '@easy/utils';
 import {Button, Chip, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
@@ -5,13 +6,6 @@ import {Link} from 'react-router-dom';
 import type {ClientWorkoutSession, PlannedSnapshot} from '@/api/workoutSessions';
 
 import PageLayout from '@/@components/page-layout';
-import {
-  DAY_NAMES,
-  formatDuration,
-  formatSessionDate,
-  getWorkoutTitle,
-  SESSION_STATE_CHIP,
-} from '@/@utils/workout-helpers';
 import {useClientWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
 
 // ── Helpers ──────────────────────────────────────────────────

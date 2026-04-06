@@ -223,6 +223,7 @@ export class Result<T> {
 
 export * from './format-start-end';
 export * from './nutrition';
+export * from './workout';
 
 export const withThrottling =
   ({wait, leading, trailing}: {wait: number; leading?: boolean; trailing?: boolean}) =>

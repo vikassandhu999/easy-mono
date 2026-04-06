@@ -74,13 +74,18 @@ export function buildWorkoutExercises(
     const sets = setsByElement.get(el.element_id) ?? [];
     const isSkipped = skippedElementIds.has(el.element_id);
 
+    // When replaced, keep reps/rest scheme but clear load (different exercise = different weight)
+    const plannedSets = isReplaced
+      ? el.planned_sets.map((ps) => ({...ps, load_unit: null, load_value: null}))
+      : el.planned_sets;
+
     exercises.push({
       exerciseId: isReplaced ? replacement.exerciseId : el.exercise_id,
       exerciseName: isReplaced ? replacement.exerciseName : el.exercise_name,
       isAdded: false,
       isReplaced,
       originalExerciseName: isReplaced ? el.exercise_name : null,
-      plannedSets: el.planned_sets,
+      plannedSets,
       sets: [...sets].sort((a, b) => a.position - b.position),
       status: deriveExerciseStatus(el.planned_sets, sets, isSkipped),
       workoutElementId: el.element_id,

@@ -1,4 +1,4 @@
-import {formatDateISO, sumMacros} from '@easy/utils';
+import {DAY_NAMES, formatDateISO, sumMacros} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell, Play, Plus, UtensilsCrossed} from 'lucide-react';
 import {useMemo} from 'react';
@@ -9,7 +9,6 @@ import type {ClientWorkoutSession} from '@/api/workoutSessions';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {DAY_NAMES} from '@/@utils/workout-helpers';
 import {useListMyFoodLogsQuery} from '@/api/foodLogs';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import {useGetActiveWorkoutSessionQuery, useStartWorkoutSessionMutation} from '@/api/workoutSessions';
@@ -351,9 +350,13 @@ export default function Dashboard() {
           ) : null}
         </div>
 
-        {/* No plan chip */}
+        {/* Active plan link */}
         {activePlan ? (
-          <div className="mt-6 flex items-center gap-2">
+          <button
+            className="mt-6 flex min-h-11 w-full items-center gap-2 rounded-lg px-1 text-left transition-colors hover:bg-content2 active:bg-content2"
+            onClick={() => navigate(`/plan/${activePlan.id}`)}
+            type="button"
+          >
             <Chip
               color="success"
               size="sm"
@@ -362,7 +365,11 @@ export default function Dashboard() {
               Active
             </Chip>
             <span className="text-sm text-foreground-500">{activePlan.name}</span>
-          </div>
+            <ChevronRight
+              className="ml-auto shrink-0 text-foreground-300"
+              size={14}
+            />
+          </button>
         ) : null}
       </div>
     </PageLayout>

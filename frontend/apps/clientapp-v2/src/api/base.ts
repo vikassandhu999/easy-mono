@@ -69,6 +69,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
   const result = await rawBaseQuery(args, api, extra);
   if ('error' in result && result.error) {
     const status = result.error.status;
+    // BUG: this is also wrong as we can have insufficient permissions error as well.
     if (status === 401 || status === 403) {
       clearTokens();
       toast.danger('Session expired. Please sign in again.');

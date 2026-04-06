@@ -6,6 +6,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   NUTRITION: '/nutrition',
   NUTRITION_ADD_FOOD: '/nutrition/add-food',
+  TRAINING_PLAN: '/plan/:planId',
   WORKOUT_ACTIVE: '/workout',
   WORKOUT_HISTORY: '/history',
   SESSION_DETAIL: '/history/:sessionId',

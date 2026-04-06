@@ -91,6 +91,32 @@ export default function WorkoutSection({allWorkouts, planId, sectionRef, workout
     if (node) node.focus();
   }, []);
 
+  // ── Inline workout notes editing ────────────────────────────────
+
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editNotes, setEditNotes] = useState(workout.notes ?? '');
+
+  const handleSaveNotes = async () => {
+    const trimmed = editNotes.trim();
+    const current = workout.notes ?? '';
+    if (trimmed === current) {
+      setIsEditingNotes(false);
+      return;
+    }
+    try {
+      await updateWorkout({id: workout.id, planId, body: {notes: trimmed || null}}).unwrap();
+      setIsEditingNotes(false);
+    } catch {
+      setEditNotes(workout.notes ?? '');
+      setIsEditingNotes(false);
+      toast.danger('Failed to update notes.');
+    }
+  };
+
+  const notesInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node) node.focus();
+  }, []);
+
   // ── Delete workout ─────────────────────────────────────────────
 
   const handleDeleteWorkout = async () => {
@@ -338,9 +364,41 @@ export default function WorkoutSection({allWorkouts, planId, sectionRef, workout
               />
             </button>
           )}
-          {workout.notes && !isEditingName && (
-            <p className="mt-0.5 truncate px-1 text-xs text-foreground-400">{workout.notes}</p>
-          )}
+          {!isEditingName &&
+            (isEditingNotes ? (
+              <div className="mt-1 flex items-center gap-2 px-1">
+                <Input
+                  aria-label="Workout notes"
+                  className="flex-1"
+                  onBlur={handleSaveNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      (e.target as HTMLInputElement).blur();
+                    }
+                    if (e.key === 'Escape') {
+                      setEditNotes(workout.notes ?? '');
+                      setIsEditingNotes(false);
+                    }
+                  }}
+                  placeholder="Add notes..."
+                  ref={notesInputRef}
+                  value={editNotes}
+                />
+              </div>
+            ) : (
+              <button
+                className="mt-0.5 flex min-h-11 items-center rounded-md px-1 text-left text-xs text-foreground-400 transition-colors hover:bg-content2"
+                onClick={() => {
+                  setEditNotes(workout.notes ?? '');
+                  setIsEditingNotes(true);
+                }}
+                type="button"
+              >
+                {workout.notes || 'Add notes...'}
+              </button>
+            ))}
         </div>
 
         {/* Header actions: copy workout + delete workout */}

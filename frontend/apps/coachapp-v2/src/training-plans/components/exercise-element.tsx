@@ -1,4 +1,4 @@
-import {Button, toast} from '@heroui/react';
+import {Button, Input, toast} from '@heroui/react';
 import {ChevronDown, ChevronUp, Copy, Dumbbell, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -128,15 +128,19 @@ export default function ExerciseElement({
   // Local editing state — not persisted until Save
   const [localScheme, setLocalScheme] = useState<SetSchemeValues>(() => deriveSchemeFromSets(element.planned_sets));
   const [localSets, setLocalSets] = useState<PlannedSet[]>(() => [...element.planned_sets]);
+  const [localNotes, setLocalNotes] = useState(element.notes ?? '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Reset local state when server data changes (e.g. after a save completes)
   const serverSetsKey = JSON.stringify(element.planned_sets);
-  const [lastServerKey, setLastServerKey] = useState(serverSetsKey);
-  if (serverSetsKey !== lastServerKey) {
-    setLastServerKey(serverSetsKey);
+  const serverNotesKey = element.notes ?? '';
+  const [lastServerKey, setLastServerKey] = useState(serverSetsKey + serverNotesKey);
+  const currentServerKey = serverSetsKey + serverNotesKey;
+  if (currentServerKey !== lastServerKey) {
+    setLastServerKey(currentServerKey);
     setLocalScheme(deriveSchemeFromSets(element.planned_sets));
     setLocalSets([...element.planned_sets]);
+    setLocalNotes(element.notes ?? '');
     setHasUnsavedChanges(false);
     setEditorMode(areSetsUniform(element.planned_sets) ? 'uniform' : 'detail');
   }
@@ -153,16 +157,17 @@ export default function ExerciseElement({
 
   const handleSave = async () => {
     const sets = editorMode === 'uniform' ? buildPlannedSetsFromScheme(localScheme) : localSets;
+    const trimmedNotes = localNotes.trim();
     try {
       await updateElement({
         id: element.id,
         planId,
         plannedWorkoutId: element.planned_workout_id,
-        body: {planned_sets: sets},
+        body: {planned_sets: sets, notes: trimmedNotes || null},
       }).unwrap();
       setHasUnsavedChanges(false);
     } catch {
-      toast.danger('Failed to save sets');
+      toast.danger('Failed to save');
     }
   };
 
@@ -192,7 +197,10 @@ export default function ExerciseElement({
           onClick={onToggleExpand}
           type="button"
         >
-          <span className="min-w-0 flex-1 truncate text-sm">{exerciseName}</span>
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-sm">{exerciseName}</span>
+            {element.notes ? <span className="block truncate text-xs text-foreground-400">{element.notes}</span> : null}
+          </div>
           <span className="shrink-0 text-xs text-foreground-500">{summary.scheme}</span>
           {summary.rest && <span className="shrink-0 text-xs text-foreground-400">{summary.rest}</span>}
         </button>
@@ -247,6 +255,19 @@ export default function ExerciseElement({
           sets={localSets}
         />
       )}
+
+      {/* Notes */}
+      <div className="mt-3">
+        <Input
+          aria-label="Exercise notes"
+          onChange={(e) => {
+            setLocalNotes(e.target.value);
+            setHasUnsavedChanges(true);
+          }}
+          placeholder="Notes (optional)"
+          value={localNotes}
+        />
+      </div>
 
       {/* Actions */}
       <div className="mt-3 flex flex-wrap items-center gap-2">

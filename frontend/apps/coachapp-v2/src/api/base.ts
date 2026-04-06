@@ -52,10 +52,15 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
         },
       );
     } else {
-      clearTokens();
-      toast.danger('Session expired. Please sign in again.');
-      if (typeof window !== 'undefined') {
-        window.location.assign('/login');
+      const isServerError =
+        'error' in refreshResult && refreshResult.error && typeof refreshResult.error.status === 'number';
+
+      if (isServerError) {
+        clearTokens();
+        toast.danger('Session expired. Please sign in again.');
+        if (typeof window !== 'undefined') {
+          window.location.assign('/login');
+        }
       }
       return refreshResult as {error: FetchBaseQueryError};
     }

@@ -1,22 +1,5 @@
-import {Alert, AlertDialog, Avatar, Button, Chip, Separator, Spinner, toast} from '@heroui/react';
-import {
-  AlertTriangle,
-  Archive,
-  ArrowLeft,
-  Calendar,
-  Check,
-  ClipboardList,
-  Clock,
-  CreditCard,
-  Dumbbell,
-  Instagram,
-  Mail,
-  MessageCircle,
-  Pencil,
-  Phone,
-  RefreshCw,
-  UtensilsCrossed,
-} from 'lucide-react';
+import {Alert, AlertDialog, Avatar, Button, Chip, Separator, Spinner, TextArea, toast} from '@heroui/react';
+import {Archive, ArrowLeft, Check, MessageCircle, Pencil, Phone, RefreshCw} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
@@ -79,6 +62,13 @@ function formatDate(dateString: null | string): string {
   });
 }
 
+function formatDateShort(dateString: string): string {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 function timeAgo(dateString: string): string {
   const now = Date.now();
   const then = new Date(dateString).getTime();
@@ -116,7 +106,7 @@ function getSubtitle(client: Client): string {
     if (client.offer) return `Applied for ${client.offer.name}`;
     return `Invited ${timeAgo(client.inserted_at)}`;
   }
-  if (client.status === 'active' || client.status === 'expiring') {
+  if (client.status === 'active' || client.status === 'expiring' || client.status === 'expired') {
     const parts: string[] = [];
     if (client.program_name) parts.push(client.program_name);
     if (client.program_end) parts.push(timeRemaining(client.program_end));
@@ -126,145 +116,44 @@ function getSubtitle(client: Client): string {
   return client.email ?? client.phone ?? '';
 }
 
-function hasProgramData(client: Client): boolean {
-  return !!(
-    client.program_name ||
-    client.program_start ||
-    client.program_end ||
-    client.payment_status ||
-    client.payment_amount
-  );
-}
-
 // ── Section heading ──────────────────────────────────────────
 
 function SectionHeading({title}: {title: string}) {
   return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">{title}</h3>;
 }
 
-// ── Client Nutrition Plans ───────────────────────────────────
+// ── Client Plans (unified) ───────────────────────────────────
 
-function ClientNutritionPlans({
-  clientId,
-  onAssigned,
-  showPicker,
-}: {
-  clientId: string;
-  onAssigned: () => void;
-  showPicker: boolean;
-}) {
-  const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
-  const {data, isLoading} = useListNutritionPlansQuery({
-    client_id: clientId,
-  });
+function ClientPlans({clientId}: {clientId: string}) {
+  const [showNutritionPicker, setShowNutritionPicker] = useState(false);
+  const [showTrainingPicker, setShowTrainingPicker] = useState(false);
 
-  const plans = data?.data ?? [];
+  const [assignNutrition, {isLoading: isAssigningNutrition}] = useAssignNutritionPlanMutation();
+  const [assignTraining, {isLoading: isAssigningTraining}] = useAssignTrainingPlanMutation();
 
-  const handleAssign = async (plan: NutritionPlan) => {
+  const {data: nutritionData, isLoading: isLoadingNutrition} = useListNutritionPlansQuery({client_id: clientId});
+  const {data: trainingData, isLoading: isLoadingTraining} = useListTrainingPlansQuery({client_id: clientId});
+
+  const nutritionPlans = nutritionData?.data ?? [];
+  const trainingPlans = trainingData?.data ?? [];
+  const isLoading = isLoadingNutrition || isLoadingTraining;
+  const hasPlans = nutritionPlans.length > 0 || trainingPlans.length > 0;
+
+  const handleAssignNutrition = async (plan: NutritionPlan) => {
     try {
-      await assignPlan({id: plan.id, body: {client_id: clientId}}).unwrap();
+      await assignNutrition({id: plan.id, body: {client_id: clientId}}).unwrap();
       toast.success(`"${plan.name}" assigned to client`);
-      onAssigned();
+      setShowNutritionPicker(false);
     } catch {
       toast.danger('Failed to assign nutrition plan.');
     }
   };
 
-  return (
-    <section className="py-4">
-      <Separator className="mb-4" />
-      <SectionHeading title="Nutrition Plans" />
-
-      {showPicker ? (
-        <div className="mb-3 rounded-xl border border-divider bg-content1 p-3">
-          <p className="mb-2 text-sm text-foreground-500">
-            Search for a nutrition plan template to copy to this client.
-          </p>
-          <NutritionPlanPicker
-            onSelect={handleAssign}
-            placeholder="Search nutrition plans..."
-          />
-          {isAssigning ? (
-            <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
-              <Spinner size="sm" />
-              Assigning plan...
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-6">
-          <Spinner size="sm" />
-        </div>
-      ) : plans.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {plans.map((plan) => {
-            const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
-            return (
-              <Link
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
-                key={plan.id}
-                to={`/library/nutrition-plans/${plan.id}`}
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
-                  <ClipboardList
-                    className="text-foreground-400"
-                    size={16}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{plan.name}</p>
-                  {plan.meals && plan.meals.length > 0 ? (
-                    <p className="text-xs text-foreground-500">
-                      {plan.meals.length} meal
-                      {plan.meals.length !== 1 ? 's' : ''}
-                    </p>
-                  ) : null}
-                </div>
-                {planStatus ? (
-                  <Chip
-                    color={planStatus.color}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {planStatus.label}
-                  </Chip>
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-sm text-foreground-400">No nutrition plans assigned yet.</p>
-      )}
-    </section>
-  );
-}
-
-// ── Client Training Plans ────────────────────────────────────
-
-function ClientTrainingPlans({
-  clientId,
-  onAssigned,
-  showPicker,
-}: {
-  clientId: string;
-  onAssigned: () => void;
-  showPicker: boolean;
-}) {
-  const [assignPlan, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
-  const {data, isLoading} = useListTrainingPlansQuery({
-    client_id: clientId,
-  });
-
-  const plans = data?.data ?? [];
-
-  const handleAssign = async (plan: TrainingPlan) => {
+  const handleAssignTraining = async (plan: TrainingPlan) => {
     try {
-      await assignPlan({id: plan.id, body: {client_id: clientId}}).unwrap();
+      await assignTraining({id: plan.id, body: {client_id: clientId}}).unwrap();
       toast.success(`"${plan.name}" assigned to client`);
-      onAssigned();
+      setShowTrainingPicker(false);
     } catch {
       toast.danger('Failed to assign training plan.');
     }
@@ -273,72 +162,215 @@ function ClientTrainingPlans({
   return (
     <section className="py-4">
       <Separator className="mb-4" />
-      <SectionHeading title="Training Plans" />
-
-      {showPicker ? (
-        <div className="mb-3 rounded-xl border border-divider bg-content1 p-3">
-          <p className="mb-2 text-sm text-foreground-500">
-            Search for a training plan template to copy to this client.
-          </p>
-          <TrainingPlanPicker
-            onSelect={handleAssign}
-            placeholder="Search training plans..."
-          />
-          {isAssigning ? (
-            <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
-              <Spinner size="sm" />
-              Assigning plan...
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <SectionHeading title="Plans" />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6">
           <Spinner size="sm" />
         </div>
-      ) : plans.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {plans.map((plan) => {
-            const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
-            const workoutCount = plan.planned_workouts.length;
-            return (
-              <Link
-                className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
-                key={plan.id}
-                to={`/library/training-plans/${plan.id}`}
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
-                  <Dumbbell
-                    className="text-foreground-400"
-                    size={16}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{plan.name}</p>
-                  {workoutCount > 0 ? (
-                    <p className="text-xs text-foreground-500">
-                      {workoutCount} workout{workoutCount !== 1 ? 's' : ''}
-                    </p>
-                  ) : null}
-                </div>
-                {planStatus ? (
-                  <Chip
-                    color={planStatus.color}
-                    size="sm"
-                    variant="soft"
-                  >
-                    {planStatus.label}
-                  </Chip>
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
       ) : (
-        <p className="text-sm text-foreground-400">No training plans assigned yet.</p>
+        <>
+          {/* Plan cards */}
+          {hasPlans ? (
+            <div className="flex flex-col gap-2">
+              {nutritionPlans.map((plan) => {
+                const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
+                return (
+                  <Link
+                    className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
+                    key={plan.id}
+                    to={`/library/nutrition-plans/${plan.id}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{plan.name}</p>
+                      <p className="text-xs text-foreground-500">
+                        Nutrition
+                        {plan.meals && plan.meals.length > 0
+                          ? ` \u00B7 ${plan.meals.length} meal${plan.meals.length !== 1 ? 's' : ''}`
+                          : ''}
+                      </p>
+                    </div>
+                    {planStatus ? (
+                      <Chip
+                        color={planStatus.color}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {planStatus.label}
+                      </Chip>
+                    ) : null}
+                  </Link>
+                );
+              })}
+              {trainingPlans.map((plan) => {
+                const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
+                const workoutCount = plan.planned_workouts.length;
+                return (
+                  <Link
+                    className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
+                    key={plan.id}
+                    to={`/library/training-plans/${plan.id}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{plan.name}</p>
+                      <p className="text-xs text-foreground-500">
+                        Training
+                        {workoutCount > 0 ? ` \u00B7 ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
+                      </p>
+                    </div>
+                    {planStatus ? (
+                      <Chip
+                        color={planStatus.color}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {planStatus.label}
+                      </Chip>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-400">No plans assigned yet.</p>
+          )}
+
+          {/* Assign buttons */}
+          <div className="mt-2 flex gap-2">
+            <Button
+              className="text-foreground-500"
+              onPress={() => {
+                setShowNutritionPicker((v) => !v);
+                setShowTrainingPicker(false);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              + Nutrition plan
+            </Button>
+            <Button
+              className="text-foreground-500"
+              onPress={() => {
+                setShowTrainingPicker((v) => !v);
+                setShowNutritionPicker(false);
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              + Training plan
+            </Button>
+          </div>
+
+          {/* Inline pickers */}
+          {showNutritionPicker ? (
+            <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
+              <p className="mb-2 text-sm text-foreground-500">
+                Search for a nutrition plan template to copy to this client.
+              </p>
+              <NutritionPlanPicker
+                onSelect={handleAssignNutrition}
+                placeholder="Search nutrition plans..."
+              />
+              {isAssigningNutrition ? (
+                <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
+                  <Spinner size="sm" />
+                  Assigning plan...
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {showTrainingPicker ? (
+            <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
+              <p className="mb-2 text-sm text-foreground-500">
+                Search for a training plan template to copy to this client.
+              </p>
+              <TrainingPlanPicker
+                onSelect={handleAssignTraining}
+                placeholder="Search training plans..."
+              />
+              {isAssigningTraining ? (
+                <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
+                  <Spinner size="sm" />
+                  Assigning plan...
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       )}
     </section>
+  );
+}
+
+// ── Inline Notes ─────────────────────────────────────────────
+
+function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [updateClient] = useUpdateClientMutation();
+
+  const startEditing = () => {
+    setDraft(initialNotes ?? '');
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateClient({id: clientId, body: {notes: draft || null}}).unwrap();
+      setIsEditing(false);
+    } catch {
+      toast.danger('Failed to save notes.');
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-2">
+        <TextArea
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Add notes about this client..."
+          ref={(el) => el?.focus()}
+          rows={3}
+          value={draft}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            onPress={() => setIsEditing(false)}
+            size="sm"
+            variant="ghost"
+          >
+            Cancel
+          </Button>
+          <Button
+            onPress={handleSave}
+            size="sm"
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="-mx-2 cursor-pointer rounded-lg p-2 transition-colors hover:bg-content2 active:bg-content2"
+      onClick={startEditing}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          startEditing();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
+      {initialNotes ? (
+        <p className="whitespace-pre-wrap text-sm">{initialNotes}</p>
+      ) : (
+        <p className="text-sm text-foreground-400">Tap to add notes...</p>
+      )}
+    </div>
   );
 }
 
@@ -349,8 +381,6 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const {data, isError, isLoading} = useGetClientQuery(id!);
   const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
-  const [showNutritionPicker, setShowNutritionPicker] = useState(false);
-  const [showTrainingPicker, setShowTrainingPicker] = useState(false);
 
   if (isLoading) {
     return (
@@ -415,7 +445,7 @@ export default function ClientDetail() {
   return (
     <PageLayout title="Client">
       {/* ── Header bar ──────────────────────────────────── */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex items-center justify-between">
         <Button
           onPress={() => navigate(ROUTES.CLIENTS)}
           size="sm"
@@ -432,222 +462,163 @@ export default function ClientDetail() {
           <Pencil size={16} />
           Edit
         </Button>
-        {client.phone ? (
-          <a
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
-            href={getWhatsAppUrl(client.phone)}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <MessageCircle size={16} />
-            WhatsApp
-          </a>
-        ) : null}
-        <Button
-          onPress={() => {
-            setShowNutritionPicker((v) => !v);
-            setShowTrainingPicker(false);
-          }}
-          size="sm"
-          variant="secondary"
-        >
-          <UtensilsCrossed size={14} />
-          Nutrition
-        </Button>
-        <Button
-          onPress={() => {
-            setShowTrainingPicker((v) => !v);
-            setShowNutritionPicker(false);
-          }}
-          size="sm"
-          variant="secondary"
-        >
-          <Dumbbell size={14} />
-          Training
-        </Button>
-        {canArchive ? (
-          <AlertDialog>
-            <Button
-              size="sm"
-              variant="danger"
-            >
-              <Archive size={14} />
-              Archive
-            </Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  <AlertDialog.CloseTrigger />
-                  <AlertDialog.Header>
-                    <AlertDialog.Icon status="danger" />
-                    <AlertDialog.Heading>Archive client?</AlertDialog.Heading>
-                  </AlertDialog.Header>
-                  <AlertDialog.Body>
-                    <p>
-                      This will archive <strong>{fullName}</strong>. You can change this later from the edit page.
-                    </p>
-                  </AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button
-                      slot="close"
-                      variant="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      isPending={isUpdating}
-                      onPress={handleArchive}
-                      variant="danger"
-                    >
-                      {isUpdating ? 'Archiving...' : 'Archive'}
-                    </Button>
-                  </AlertDialog.Footer>
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        ) : null}
       </div>
 
       <div className="max-w-lg">
-        {/* ── Profile header card ───────────────────────── */}
-        <div className="flex items-center gap-4 pb-6">
-          <Avatar
-            className="size-14"
-            color="accent"
-          >
-            <Avatar.Fallback className="text-lg">{initials}</Avatar.Fallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-lg font-semibold">{fullName}</h2>
-            {subtitle ? <p className="mt-0.5 truncate text-sm text-foreground-500">{subtitle}</p> : null}
-            <div className="mt-1.5">
-              <Chip
-                color={statusColor}
-                size="sm"
-                variant="soft"
-              >
-                {client.status}
-              </Chip>
+        {/* ── Hero card ──────────────────────────────────── */}
+        <div className="rounded-xl border border-divider bg-content1 p-4">
+          {/* Identity row */}
+          <div className="flex items-center gap-3">
+            <Avatar
+              className="size-12"
+              color="accent"
+            >
+              <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-lg font-semibold">{fullName}</h2>
+              {subtitle ? <p className="truncate text-sm text-foreground-500">{subtitle}</p> : null}
             </div>
+            <Chip
+              color={statusColor}
+              size="sm"
+              variant="soft"
+            >
+              {client.status}
+            </Chip>
           </div>
-        </div>
 
-        {/* ── Program section ───────────────────────────── */}
-        {hasProgramData(client) ? (
-          <section className="py-4">
-            <Separator className="mb-4" />
-            <SectionHeading title="Program" />
-            <div className="flex flex-col gap-3">
-              {client.program_name ? (
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-foreground-400">
-                    <ClipboardList size={16} />
-                  </span>
-                  <div>
-                    <p className="text-xs text-foreground-400">Program</p>
-                    <p className="text-sm">{client.program_name}</p>
-                  </div>
-                </div>
+          {/* Action buttons — only rendered when there are actions */}
+          {client.phone || client.status === 'expiring' || client.status === 'expired' || canArchive ? (
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-divider pt-3">
+              {client.phone ? (
+                <a
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
+                  href={getWhatsAppUrl(client.phone)}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </a>
               ) : null}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {client.program_start ? (
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 text-foreground-400">
-                      <Calendar size={16} />
-                    </span>
-                    <div>
-                      <p className="text-xs text-foreground-400">Start date</p>
-                      <p className="text-sm">{formatDate(client.program_start)}</p>
-                    </div>
-                  </div>
-                ) : null}
-                {client.program_end ? (
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 text-foreground-400">
-                      <Calendar size={16} />
-                    </span>
-                    <div>
-                      <p className="text-xs text-foreground-400">End date</p>
-                      <p className="text-sm">{formatDate(client.program_end)}</p>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-              {client.program_end ? (
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-foreground-400">
-                    <Clock size={16} />
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <p className="text-xs text-foreground-400">Time remaining</p>
-                      <p className="text-sm">{timeRemaining(client.program_end)}</p>
-                    </div>
-                    {client.status === 'expiring' ? (
-                      <AlertTriangle
-                        className="text-warning"
-                        size={16}
-                      />
-                    ) : null}
-                  </div>
-                </div>
+              {client.phone ? (
+                <a
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
+                  href={`tel:${client.phone}`}
+                >
+                  <Phone size={16} />
+                  Call
+                </a>
               ) : null}
-
-              {/* Payment */}
-              {client.payment_status || client.payment_amount ? (
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-foreground-400">
-                    <CreditCard size={16} />
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div>
-                      <p className="text-xs text-foreground-400">Payment</p>
-                      <p className="text-sm">
-                        {client.payment_amount != null ? `${client.payment_amount}` : ''}
-                        {client.payment_currency ? ` ${client.payment_currency}` : ''}
-                      </p>
-                    </div>
-                    {client.payment_status ? (
-                      <Chip
-                        color={PAYMENT_CHIP_COLOR[client.payment_status] ?? 'default'}
-                        size="sm"
-                        variant="soft"
-                      >
-                        {client.payment_status}
-                      </Chip>
-                    ) : null}
-                    {client.payment_status !== 'paid' && client.payment_status !== 'free' ? (
-                      <Button
-                        isPending={isUpdating}
-                        onPress={handleMarkAsPaid}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        <Check size={14} />
-                        Mark as paid
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Renew button */}
               {client.status === 'expiring' || client.status === 'expired' ? (
                 <Button
+                  className="flex-1"
                   onPress={() => navigate(`/clients/${client.id}/edit?renew=true`)}
                   size="sm"
                   variant="secondary"
                 >
                   <RefreshCw size={14} />
-                  Renew Program
+                  Renew
                 </Button>
               ) : null}
+              {canArchive ? (
+                <AlertDialog>
+                  <Button
+                    className="flex-1"
+                    size="sm"
+                    variant="danger"
+                  >
+                    <Archive size={14} />
+                    Archive
+                  </Button>
+                  <AlertDialog.Backdrop>
+                    <AlertDialog.Container>
+                      <AlertDialog.Dialog className="sm:max-w-[400px]">
+                        <AlertDialog.CloseTrigger />
+                        <AlertDialog.Header>
+                          <AlertDialog.Icon status="danger" />
+                          <AlertDialog.Heading>Archive client?</AlertDialog.Heading>
+                        </AlertDialog.Header>
+                        <AlertDialog.Body>
+                          <p>
+                            This will archive <strong>{fullName}</strong>. You can change this later from the edit page.
+                          </p>
+                        </AlertDialog.Body>
+                        <AlertDialog.Footer>
+                          <Button
+                            slot="close"
+                            variant="tertiary"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            isPending={isUpdating}
+                            onPress={handleArchive}
+                            variant="danger"
+                          >
+                            {isUpdating ? 'Archiving...' : 'Archive'}
+                          </Button>
+                        </AlertDialog.Footer>
+                      </AlertDialog.Dialog>
+                    </AlertDialog.Container>
+                  </AlertDialog.Backdrop>
+                </AlertDialog>
+              ) : null}
             </div>
-          </section>
+          ) : null}
+        </div>
+
+        {/* ── Program strip ──────────────────────────────── */}
+        {client.program_name || client.program_start ? (
+          <div className="mt-3 rounded-lg border border-divider bg-content2 px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-sm font-medium">{client.program_name || 'Program'}</p>
+              {client.payment_status ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <Chip
+                    color={PAYMENT_CHIP_COLOR[client.payment_status] ?? 'default'}
+                    size="sm"
+                    variant="soft"
+                  >
+                    {client.payment_status}
+                  </Chip>
+                  {client.payment_status !== 'paid' && client.payment_status !== 'free' ? (
+                    <Button
+                      isPending={isUpdating}
+                      onPress={handleMarkAsPaid}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Check size={14} />
+                      Paid
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            {client.program_start && client.program_end ? (
+              <p className="text-xs text-foreground-500">
+                {formatDateShort(client.program_start)} &rarr; {formatDateShort(client.program_end)}
+                {' \u00B7 '}
+                {timeRemaining(client.program_end)}
+              </p>
+            ) : null}
+          </div>
         ) : null}
+
+        {/* ── Plans (nutrition + training) ────────────── */}
+        <ClientPlans clientId={client.id} />
+
+        {/* ── Notes section (inline-editable) ────────────── */}
+        <section className="py-4">
+          <Separator className="mb-4" />
+          <SectionHeading title="Notes" />
+          <InlineNotes
+            clientId={client.id}
+            initialNotes={client.notes}
+          />
+        </section>
 
         {/* ── Intake section ────────────────────────────── */}
         {client.intake_answers != null ? (
@@ -686,89 +657,11 @@ export default function ClientDetail() {
           </section>
         ) : null}
 
-        {/* ── Nutrition Plans ───────────────────────────── */}
-        <ClientNutritionPlans
-          clientId={client.id}
-          onAssigned={() => setShowNutritionPicker(false)}
-          showPicker={showNutritionPicker}
-        />
-
         {/* ── Nutrition Adherence ────────────────────────── */}
         <ClientNutritionAdherence clientId={client.id} />
 
-        {/* ── Training Plans ────────────────────────────── */}
-        <ClientTrainingPlans
-          clientId={client.id}
-          onAssigned={() => setShowTrainingPicker(false)}
-          showPicker={showTrainingPicker}
-        />
-
         {/* ── Workout History ───────────────────────────── */}
         <ClientWorkoutHistory clientId={client.id} />
-
-        {/* ── Contact section ───────────────────────────── */}
-        <section className="py-4">
-          <Separator className="mb-4" />
-          <SectionHeading title="Contact" />
-          <div className="flex flex-col gap-3">
-            {client.email ? (
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-foreground-400">
-                  <Mail size={16} />
-                </span>
-                <div>
-                  <p className="text-xs text-foreground-400">Email</p>
-                  <p className="text-sm">{client.email}</p>
-                </div>
-              </div>
-            ) : null}
-            {client.phone ? (
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-foreground-400">
-                  <Phone size={16} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-foreground-400">Phone</p>
-                  <p className="text-sm">{client.phone}</p>
-                </div>
-                <a
-                  aria-label="Message on WhatsApp"
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 active:bg-default-200"
-                  href={getWhatsAppUrl(client.phone)}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <MessageCircle size={18} />
-                </a>
-              </div>
-            ) : null}
-            {client.instagram_handle ? (
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 text-foreground-400">
-                  <Instagram size={16} />
-                </span>
-                <div>
-                  <p className="text-xs text-foreground-400">Instagram</p>
-                  <p className="text-sm">@{client.instagram_handle}</p>
-                </div>
-              </div>
-            ) : null}
-            {!client.email && !client.phone && !client.instagram_handle ? (
-              <p className="text-sm text-foreground-400">No contact information available.</p>
-            ) : null}
-          </div>
-        </section>
-
-        {/* ── Notes section ─────────────────────────────── */}
-        <section className="py-4">
-          <Separator className="mb-4" />
-          <SectionHeading title="Notes" />
-          {client.notes ? (
-            <p className="whitespace-pre-wrap text-sm">{client.notes}</p>
-          ) : (
-            <p className="text-sm text-foreground-400">No notes yet.</p>
-          )}
-        </section>
 
         {/* ── Details section ───────────────────────────── */}
         <section className="py-4">

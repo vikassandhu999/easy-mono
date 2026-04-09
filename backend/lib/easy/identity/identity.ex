@@ -219,7 +219,7 @@ defmodule Easy.Identity do
       :client ->
         case Client
              |> Client.for_user(user.id)
-             |> Client.with_status(:active)
+             |> Client.accepted()
              |> Repo.one() do
           %Client{business_id: business_id} ->
             {:ok, %{role: :client, business_id: business_id}}

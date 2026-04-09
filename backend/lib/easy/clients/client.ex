@@ -227,6 +227,14 @@ defmodule Easy.Clients.Client do
     from(c in query, where: c.business_id == ^business_id)
   end
 
+  @spec accepted(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def accepted(query \\ __MODULE__) do
+    from(c in query,
+      where:
+        c.status == :active and (is_nil(c.status_override) or c.status_override != "archived")
+    )
+  end
+
   @spec search(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def search(query \\ __MODULE__, term)
   def search(query, nil), do: query
@@ -242,10 +250,76 @@ defmodule Easy.Clients.Client do
     )
   end
 
-  @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
+  @spec with_status(Ecto.Queryable.t(), String.t() | atom() | nil) :: Ecto.Query.t()
   def with_status(query \\ __MODULE__, status)
   def with_status(query, nil), do: query
-  def with_status(query, status), do: from(c in query, where: c.status == ^status)
+  def with_status(query, ""), do: query
+
+  def with_status(query, "expiring") do
+    today = Date.utc_today()
+    expiring_threshold = Date.add(today, @expiring_days)
+
+    from(c in query,
+      where:
+        is_nil(c.status_override) and
+          c.status not in [:pending, :archived] and
+          not is_nil(c.program_end) and
+          c.program_end >= ^today and
+          c.program_end <= ^expiring_threshold
+    )
+  end
+
+  def with_status(query, "expired") do
+    today = Date.utc_today()
+
+    from(c in query,
+      where:
+        c.status_override == "expired" or
+          (is_nil(c.status_override) and
+             c.status not in [:pending, :archived] and
+             not is_nil(c.program_end) and
+             c.program_end < ^today)
+    )
+  end
+
+  def with_status(query, "active") do
+    today = Date.utc_today()
+    expiring_threshold = Date.add(today, @expiring_days)
+
+    from(c in query,
+      where:
+        c.status_override == "active" or
+          (is_nil(c.status_override) and
+             c.status not in [:pending, :archived] and
+             ((not is_nil(c.program_end) and c.program_end > ^expiring_threshold) or
+                (is_nil(c.program_end) and
+                   (not is_nil(c.program_start) or not is_nil(c.program_name))) or
+                (is_nil(c.program_end) and is_nil(c.program_start) and is_nil(c.program_name) and
+                   c.status == :active)))
+    )
+  end
+
+  def with_status(query, "inactive") do
+    from(c in query,
+      where:
+        c.status_override == "inactive" or
+          (is_nil(c.status_override) and
+             c.status not in [:pending, :archived, :active] and
+             is_nil(c.program_end) and is_nil(c.program_start) and is_nil(c.program_name))
+    )
+  end
+
+  def with_status(query, status) when is_binary(status) do
+    from(c in query,
+      where:
+        c.status_override == ^status or
+          (is_nil(c.status_override) and c.status == ^status)
+    )
+  end
+
+  def with_status(query, status) when is_atom(status) do
+    with_status(query, Atom.to_string(status))
+  end
 
   @spec with_payment_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def with_payment_status(query \\ __MODULE__, payment_status)
@@ -310,11 +384,15 @@ defmodule Easy.Clients.Client do
             count(
               fragment(
                 """
-                CASE WHEN ? IS NULL AND ? NOT IN ('archived', 'pending', 'inactive') AND (
+                CASE WHEN ? = 'active' THEN 1
+                WHEN ? IS NULL AND ? NOT IN ('archived', 'pending') AND (
                   (? IS NOT NULL OR ? IS NOT NULL OR ? IS NOT NULL)
                   AND (? IS NULL OR ? > ?)
-                ) THEN 1 END
+                ) THEN 1
+                WHEN ? IS NULL AND ? = 'active' AND ? IS NULL AND ? IS NULL AND ? IS NULL THEN 1
+                END
                 """,
+                c.status_override,
                 c.status_override,
                 c.status,
                 c.program_end,
@@ -322,49 +400,46 @@ defmodule Easy.Clients.Client do
                 c.program_name,
                 c.program_end,
                 c.program_end,
-                ^expiring_threshold
+                ^expiring_threshold,
+                c.status_override,
+                c.status,
+                c.program_end,
+                c.program_start,
+                c.program_name
               )
-            ) +
-              count(
-                fragment(
-                  "CASE WHEN ? = 'active' AND ? IS NULL AND ? IS NULL AND ? IS NULL AND ? IS NULL THEN 1 END",
-                  c.status,
-                  c.program_end,
-                  c.program_start,
-                  c.program_name,
-                  c.status_override
-                )
-              ),
+            ),
           expiring:
             count(
               fragment(
-                "CASE WHEN ? IS NOT NULL AND ? >= ? AND ? <= ? AND ? NOT IN ('pending', 'archived') AND ? IS NULL THEN 1 END",
+                "CASE WHEN ? IS NULL AND ? NOT IN ('pending', 'archived') AND ? IS NOT NULL AND ? >= ? AND ? <= ? THEN 1 END",
+                c.status_override,
+                c.status,
                 c.program_end,
                 c.program_end,
                 ^today,
                 c.program_end,
-                ^expiring_threshold,
-                c.status,
-                c.status_override
+                ^expiring_threshold
               )
             ),
           pending:
             count(
               fragment(
-                "CASE WHEN ? = 'pending' AND ? IS NULL THEN 1 END",
-                c.status,
-                c.status_override
+                "CASE WHEN ? = 'pending' THEN 1 WHEN ? IS NULL AND ? = 'pending' THEN 1 END",
+                c.status_override,
+                c.status_override,
+                c.status
               )
             ),
           expired:
             count(
               fragment(
-                "CASE WHEN ? IS NOT NULL AND ? < ? AND ? NOT IN ('pending', 'archived') AND ? IS NULL THEN 1 END",
-                c.program_end,
-                c.program_end,
-                ^today,
+                "CASE WHEN ? = 'expired' THEN 1 WHEN ? IS NULL AND ? NOT IN ('pending', 'archived') AND ? IS NOT NULL AND ? < ? THEN 1 END",
+                c.status_override,
+                c.status_override,
                 c.status,
-                c.status_override
+                c.program_end,
+                c.program_end,
+                ^today
               )
             ),
           payment_due:

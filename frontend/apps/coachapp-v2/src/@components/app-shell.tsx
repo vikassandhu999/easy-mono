@@ -1,18 +1,21 @@
-import {Chip, Separator} from '@heroui/react';
+import {Button, Chip, Separator} from '@heroui/react';
 import {
   BookOpen,
   ChevronRight,
   ClipboardList,
+  Download,
   Dumbbell,
   FolderOpen,
   LayoutDashboard,
   Settings,
   Users,
   UtensilsCrossed,
+  X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
 import {NavLink, Outlet, useLocation} from 'react-router-dom';
 
+import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
 import {useListClientsQuery} from '@/api/clients';
 
@@ -231,13 +234,18 @@ const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV.map((item) => item.path));
 export default function AppShell() {
   const location = useLocation();
   const showBottomNav = BOTTOM_NAV_PATHS.has(location.pathname);
+  const {canInstall, dismiss, promptInstall} = useInstallPrompt();
 
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">
-          <img alt="CoachEasy" className="h-7" src="/TextLogo.webp" />
+          <img
+            alt="CoachEasy"
+            className="h-7"
+            src="/TextLogo.webp"
+          />
         </div>
         <nav className="flex flex-1 flex-col px-3 py-4">
           <div className="flex-1 space-y-1">
@@ -260,6 +268,29 @@ export default function AppShell() {
               />
             ))}
           </div>
+          {/* Desktop install prompt */}
+          {canInstall ? (
+            <div className="mx-1 mt-3 rounded-lg border border-divider bg-content2 p-3">
+              <p className="text-xs text-foreground-500">Install the app for quick access</p>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  className="flex-1"
+                  onPress={promptInstall}
+                  size="sm"
+                >
+                  <Download size={14} />
+                  Install
+                </Button>
+                <Button
+                  onPress={dismiss}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <X size={14} />
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </nav>
       </aside>
 
@@ -267,6 +298,33 @@ export default function AppShell() {
       <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
         <Outlet />
       </main>
+
+      {/* Mobile install banner — above bottom nav */}
+      {canInstall && showBottomNav ? (
+        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-divider bg-content1 px-4 py-2.5 lg:hidden">
+          <div className="flex items-center gap-3">
+            <img
+              alt=""
+              className="size-8 rounded-lg"
+              src="/icons/icon-192x192.webp"
+            />
+            <p className="flex-1 text-xs text-foreground-500">Install CoachEasy for quick access</p>
+            <Button
+              onPress={promptInstall}
+              size="sm"
+            >
+              Install
+            </Button>
+            <button
+              className="flex min-h-11 min-w-11 items-center justify-center text-foreground-400"
+              onClick={dismiss}
+              type="button"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (

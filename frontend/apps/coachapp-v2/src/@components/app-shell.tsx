@@ -237,7 +237,7 @@ export default function AppShell() {
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">
-          <span className="text-lg font-semibold">CoachApp</span>
+          <img alt="CoachEasy" className="h-7" src="/TextLogo.webp" />
         </div>
         <nav className="flex flex-1 flex-col px-3 py-4">
           <div className="flex-1 space-y-1">

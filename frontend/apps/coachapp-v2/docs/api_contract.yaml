@@ -1250,9 +1250,10 @@ paths:
         - name: status
           in: query
           required: false
+          description: Filters by computed status. Expiring and expired are date-derived — expiring means program_end within 7 days, expired means program_end in the past. Active excludes expiring/expired clients. Clients with status_override are matched by override value.
           schema:
             type: string
-            enum: [active, inactive, pending, expired, archived]
+            enum: [active, expiring, pending, expired, inactive, archived]
         - name: payment_status
           in: query
           required: false

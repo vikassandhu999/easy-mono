@@ -166,7 +166,7 @@ function PendingClientBadge() {
 function SidebarNavGroupSection({group}: {group: NavGroup}) {
   const location = useLocation();
   const isGroupActive = location.pathname.startsWith(group.pathPrefix);
-  const [open, setOpen] = useState(isGroupActive);
+  const [open, setOpen] = useState(true);
 
   return (
     <div>

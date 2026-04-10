@@ -14,7 +14,6 @@ import {applyFormErrors} from '@/api/shared';
 const schema = z
   .object({
     email: z.string().email('Invalid email address').or(z.literal('')).optional(),
-    instagram_handle: z.string().optional(),
     name: z.string().min(1, 'Name is required'),
     notes: z.string().optional(),
     phone: z.string().optional(),
@@ -173,7 +172,6 @@ export default function InviteClient() {
       const result = await inviteClient({
         email: data.email || undefined,
         first_name: firstName,
-        instagram_handle: data.instagram_handle || undefined,
         last_name: lastName,
         notes: data.notes || undefined,
         phone: data.phone || undefined,
@@ -250,16 +248,6 @@ export default function InviteClient() {
               {...register('phone')}
             />
             {errors.phone ? <p className="text-xs text-danger">{errors.phone.message}</p> : null}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="instagram_handle">Instagram</Label>
-            <Input
-              id="instagram_handle"
-              placeholder="@vikas_fitness"
-              {...register('instagram_handle')}
-            />
-            {errors.instagram_handle ? <p className="text-xs text-danger">{errors.instagram_handle.message}</p> : null}
           </div>
 
           <p className="text-xs text-foreground-400">At least one of email or phone is required.</p>

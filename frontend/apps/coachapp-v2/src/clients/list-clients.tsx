@@ -1,4 +1,6 @@
-import {Button, SearchField, Tabs} from '@heroui/react';
+import type {Key} from '@heroui/react';
+
+import {Autocomplete, Button, EmptyState, ListBox, SearchField, useFilter} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -17,32 +19,38 @@ import {
 } from '@/api/clients';
 import ClientCard from '@/clients/components/client-card';
 
-type TabConfig = {
+// ── Filter options ───────────────────────────────────────────
+
+type FilterOption = {
   id: string;
   label: string;
   filter: ListClientsFilters;
+  summaryKey?: string;
 };
 
-const TABS: TabConfig[] = [
+const FILTER_OPTIONS: FilterOption[] = [
   {id: 'all', label: 'All', filter: {}},
-  {id: 'active', label: 'Active', filter: {status: 'active'}},
-  {id: 'expiring', label: 'Expiring', filter: {status: 'expiring'}},
-  {id: 'payment_due', label: '₹ Due', filter: {payment_status: 'pending,partial'}},
-  {id: 'pending', label: 'Pending', filter: {status: 'pending'}},
-  {id: 'expired', label: 'Expired', filter: {status: 'expired'}},
+  {id: 'active', label: 'Active', filter: {status: 'active'}, summaryKey: 'active'},
+  {id: 'expiring', label: 'Expiring', filter: {status: 'expiring'}, summaryKey: 'expiring'},
+  {id: 'payment_due', label: 'Payment Due', filter: {payment_status: 'pending,partial'}, summaryKey: 'payment_due'},
+  {id: 'pending', label: 'Pending', filter: {status: 'pending'}, summaryKey: 'pending'},
+  {id: 'expired', label: 'Expired', filter: {status: 'expired'}, summaryKey: 'expired'},
   {id: 'archived', label: 'Archived', filter: {status: 'archived'}},
 ];
 
-function getTabLabel(tab: TabConfig, summary: ClientSummary | undefined): string {
-  if (!summary) return tab.label;
-  const count = (summary as Record<string, number>)[tab.id];
-  return count ? `${tab.label} ${count}` : tab.label;
+function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined): string {
+  if (!summary || !option.summaryKey) return option.label;
+  const count = (summary as Record<string, number>)[option.summaryKey];
+  return count ? `${option.label} (${count})` : option.label;
 }
+
+// ── Main component ───────────────────────────────────────────
 
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<Key | null>('all');
+  const {contains} = useFilter({sensitivity: 'base'});
 
   const debouncedSearch = useDebouncedValue(search);
 
@@ -51,11 +59,11 @@ export default function ListClients() {
   const summary = summaryData?.summary;
 
   const queryArg: ListClientsFilters | undefined = useMemo(() => {
-    const tabFilter = TABS.find((t) => t.id === activeTab)?.filter ?? {};
-    const filters: ListClientsFilters = {...tabFilter};
+    const option = FILTER_OPTIONS.find((o) => o.id === activeFilter);
+    const filters: ListClientsFilters = {...(option?.filter ?? {})};
     if (debouncedSearch) filters.search = debouncedSearch;
     return Object.keys(filters).length > 0 ? filters : undefined;
-  }, [debouncedSearch, activeTab]);
+  }, [debouncedSearch, activeFilter]);
 
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useClientsInfiniteQuery(queryArg);
 
@@ -73,7 +81,7 @@ export default function ListClients() {
     fetchNextPage,
   });
 
-  const isFiltering = search.length > 0 || activeTab !== 'all';
+  const isFiltering = search.length > 0 || activeFilter !== 'all';
 
   return (
     <PageLayout
@@ -88,39 +96,53 @@ export default function ListClients() {
       }
       title="Clients"
     >
-      {/* Search */}
-      <div className="mb-4 flex flex-col gap-3">
-        <SearchField
-          aria-label="Search clients"
-          onChange={setSearch}
-          value={search}
-        >
-          <SearchField.Group>
-            <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search by name, email, phone..." />
-            <SearchField.ClearButton />
-          </SearchField.Group>
-        </SearchField>
+      {/* Search + status filter */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <SearchField
+            aria-label="Search clients"
+            onChange={setSearch}
+            value={search}
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search by name, email, phone..." />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
+        </div>
 
-        {/* Status filter tabs */}
-        <Tabs
-          onSelectionChange={(key) => setActiveTab(String(key))}
-          selectedKey={activeTab}
+        {/* Status filter */}
+        <Autocomplete
+          aria-label="Filter by status"
+          className="w-full sm:w-44"
+          onChange={(key) => setActiveFilter(key ?? 'all')}
+          placeholder="All clients"
+          selectionMode="single"
+          value={activeFilter}
         >
-          <Tabs.ListContainer>
-            <Tabs.List aria-label="Filter by status">
-              {TABS.map((tab) => (
-                <Tabs.Tab
-                  id={tab.id}
-                  key={tab.id}
-                >
-                  {getTabLabel(tab, summary)}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
-        </Tabs>
+          <Autocomplete.Trigger>
+            <Autocomplete.Value />
+            <Autocomplete.ClearButton />
+            <Autocomplete.Indicator />
+          </Autocomplete.Trigger>
+          <Autocomplete.Popover>
+            <Autocomplete.Filter filter={contains}>
+              <ListBox renderEmptyState={() => <EmptyState>No filters found</EmptyState>}>
+                {FILTER_OPTIONS.map((option) => (
+                  <ListBox.Item
+                    id={option.id}
+                    key={option.id}
+                    textValue={option.label}
+                  >
+                    {getOptionLabel(option, summary)}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </ListBox>
+            </Autocomplete.Filter>
+          </Autocomplete.Popover>
+        </Autocomplete>
       </div>
 
       <InfiniteList

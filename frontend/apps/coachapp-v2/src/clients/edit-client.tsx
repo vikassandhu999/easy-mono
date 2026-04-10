@@ -4,7 +4,6 @@ import {
   DateField,
   DatePicker,
   Description,
-  Fieldset,
   Input,
   Label,
   ListBox,
@@ -14,8 +13,9 @@ import {
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {parseDate} from '@internationalized/date';
-import {ArrowLeft} from 'lucide-react';
-import {Controller, useForm} from 'react-hook-form';
+import {ArrowLeft, ChevronRight} from 'lucide-react';
+import {type ReactNode, useState} from 'react';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -61,6 +61,41 @@ const STATUS_OVERRIDE_OPTIONS = [
   {label: 'Archived', value: 'archived'},
 ];
 
+// ── Collapsible section ──────────────────────────────────────
+
+function FormSection({
+  children,
+  defaultOpen = false,
+  subtitle,
+  title,
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+  subtitle?: string;
+  title: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-lg border border-divider">
+      <button
+        className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-content2 active:bg-content2"
+        onClick={() => setOpen((v) => !v)}
+        type="button"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{title}</p>
+          {!open && subtitle ? <p className="mt-0.5 truncate text-xs text-foreground-500">{subtitle}</p> : null}
+        </div>
+        <ChevronRight
+          className={`size-4 shrink-0 text-foreground-400 transition-transform ${open ? 'rotate-90' : ''}`}
+        />
+      </button>
+      {open ? <div className="flex flex-col gap-4 border-t border-divider px-4 py-4">{children}</div> : null}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export default function EditClient() {
@@ -84,6 +119,9 @@ export default function EditClient() {
     resolver: zodResolver(schema),
     values: client ? getFormValues(client, isRenew) : undefined,
   });
+
+  // Watch values for section subtitles
+  const watched = useWatch({control});
 
   if (isFetching || !client) {
     return (
@@ -121,6 +159,36 @@ export default function EditClient() {
     }
   };
 
+  // ── Subtitle summaries ──────────────────────────────────
+  const personalParts = [
+    [watched.first_name, watched.last_name].filter(Boolean).join(' '),
+    watched.phone,
+    watched.email,
+  ].filter(Boolean);
+  const personalSubtitle = personalParts.join(' · ') || 'No info set';
+
+  const programParts = [
+    watched.program_name,
+    watched.program_start && watched.program_end ? `${watched.program_start} → ${watched.program_end}` : '',
+  ].filter(Boolean);
+  const programSubtitle = programParts.join(' · ') || 'Not set';
+
+  const paymentLabel = PAYMENT_STATUS_OPTIONS.find((o) => o.value === watched.payment_status)?.label;
+  const paymentParts = [
+    watched.payment_amount ? `${watched.payment_amount} ${watched.payment_currency || ''}`.trim() : '',
+    paymentLabel && watched.payment_status ? paymentLabel : '',
+  ].filter(Boolean);
+  const paymentSubtitle = paymentParts.join(' · ') || 'Not set';
+
+  const notesSubtitle = watched.notes
+    ? watched.notes.length > 60
+      ? `${watched.notes.slice(0, 60)}...`
+      : watched.notes
+    : 'No notes';
+
+  const statusLabel = STATUS_OVERRIDE_OPTIONS.find((o) => o.value === watched.status_override)?.label;
+  const statusSubtitle = watched.status_override ? `Override: ${statusLabel}` : `Automatic (${client.status})`;
+
   return (
     <PageLayout title="Edit Client">
       <div className="mb-4">
@@ -135,13 +203,15 @@ export default function EditClient() {
       </div>
 
       <form
-        className="flex max-w-lg flex-col gap-6"
+        className="flex max-w-lg flex-col gap-3"
         onSubmit={handleSubmit(onSubmit)}
       >
         {/* ── Personal Info ──────────────────────────────── */}
-        <Fieldset>
-          <Fieldset.Legend>Personal Info</Fieldset.Legend>
-
+        <FormSection
+          defaultOpen
+          subtitle={personalSubtitle}
+          title="Personal Info"
+        >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="first_name">First name</Label>
@@ -194,12 +264,14 @@ export default function EditClient() {
               {...register('instagram_handle')}
             />
           </div>
-        </Fieldset>
+        </FormSection>
 
         {/* ── Program ────────────────────────────────────── */}
-        <Fieldset>
-          <Fieldset.Legend>Program</Fieldset.Legend>
-
+        <FormSection
+          defaultOpen={isRenew}
+          subtitle={programSubtitle}
+          title="Program"
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="program_name">Program name</Label>
             <Input
@@ -289,12 +361,13 @@ export default function EditClient() {
               )}
             />
           </div>
-        </Fieldset>
+        </FormSection>
 
         {/* ── Payment ────────────────────────────────────── */}
-        <Fieldset>
-          <Fieldset.Legend>Payment</Fieldset.Legend>
-
+        <FormSection
+          subtitle={paymentSubtitle}
+          title="Payment"
+        >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="payment_amount">Amount</Label>
@@ -355,23 +428,26 @@ export default function EditClient() {
               {...register('payment_notes')}
             />
           </div>
-        </Fieldset>
+        </FormSection>
 
         {/* ── Notes ──────────────────────────────────────── */}
-        <Fieldset>
-          <Fieldset.Legend>Notes</Fieldset.Legend>
+        <FormSection
+          subtitle={notesSubtitle}
+          title="Notes"
+        >
           <TextArea
             id="notes"
             placeholder="Any notes about this client..."
             rows={3}
             {...register('notes')}
           />
-        </Fieldset>
+        </FormSection>
 
         {/* ── Status Override ────────────────────────────── */}
-        <Fieldset>
-          <Fieldset.Legend>Status Override</Fieldset.Legend>
-
+        <FormSection
+          subtitle={statusSubtitle}
+          title="Status Override"
+        >
           <Controller
             control={control}
             name="status_override"
@@ -405,7 +481,7 @@ export default function EditClient() {
           <Description>
             Currently computed as: <strong>{client.status}</strong>. Set a manual override only if needed.
           </Description>
-        </Fieldset>
+        </FormSection>
 
         {/* ── Form errors + actions ──────────────────────── */}
         {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}

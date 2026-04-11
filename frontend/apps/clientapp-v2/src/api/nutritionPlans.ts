@@ -11,7 +11,7 @@ export type ServingSize = {
   weight_g: null | number;
 };
 
-export type NutritionPlanStatus = 'active' | 'archived' | 'draft';
+export type NutritionPlanStatus = 'active' | 'archived';
 
 // ── Plan summary (list view) ────────────────────────────────
 

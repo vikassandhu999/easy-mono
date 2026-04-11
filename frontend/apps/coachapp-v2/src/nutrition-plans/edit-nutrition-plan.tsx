@@ -37,14 +37,12 @@ export default function EditNutritionPlan() {
   const form = useNutritionPlanForm({
     values: plan
       ? {
-          name: plan.name,
-          description: plan.description ?? '',
-          type: plan.type ?? 'standard',
-          status: plan.status ?? 'draft',
           calories: plan.macros_goal?.calories ?? '',
-          protein_g: plan.macros_goal?.protein_g ?? '',
           carbs_g: plan.macros_goal?.carbs_g ?? '',
+          description: plan.description ?? '',
           fats_g: plan.macros_goal?.fats_g ?? '',
+          name: plan.name,
+          protein_g: plan.macros_goal?.protein_g ?? '',
         }
       : undefined,
   });
@@ -63,9 +61,8 @@ export default function EditNutritionPlan() {
     try {
       const macrosGoal = buildMacrosGoal(formData);
       const body = {
-        name: formData.name,
         description: formData.description || undefined,
-        status: formData.status || undefined,
+        name: formData.name,
         ...(macrosGoal ? {macros_goal: macrosGoal} : {}),
       };
       await updatePlan({body, id: id!}).unwrap();

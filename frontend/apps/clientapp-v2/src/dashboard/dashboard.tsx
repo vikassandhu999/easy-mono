@@ -234,7 +234,7 @@ export default function Dashboard() {
   const todayWorkouts: ClientPlannedWorkout[] = [];
   const otherWorkouts: ClientPlannedWorkout[] = [];
   if (activePlan) {
-    for (const w of activePlan.planned_workouts) {
+    for (const w of activePlan.planned_workouts ?? []) {
       if (w.day_number === todayDayNumber) {
         todayWorkouts.push(w);
       } else {

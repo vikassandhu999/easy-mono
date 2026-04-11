@@ -26,8 +26,9 @@ type NutritionPlanPickerProps = {
  *
  * Container decision: INLINE — single text input that opens a popover with results.
  *
- * Searches all nutrition plan templates (no client_id filter) so the coach can
- * pick a template to assign/copy to a specific client.
+ * Backed by the library endpoint (`GET /v1/coach/nutrition_plans`), which
+ * strictly returns templates only. Used by client detail page to pick a
+ * template to assign to a client.
  */
 export default function NutritionPlanPicker({
   onSelect,

@@ -7,8 +7,18 @@ import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type ClientStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
-import {type NutritionPlan, useAssignNutritionPlanMutation, useListNutritionPlansQuery} from '@/api/nutritionPlans';
-import {type TrainingPlan, useAssignTrainingPlanMutation, useListTrainingPlansQuery} from '@/api/trainingPlans';
+import {
+  type NutritionPlan,
+  type NutritionPlanStatus,
+  useAssignNutritionPlanMutation,
+  useListClientNutritionPlansQuery,
+} from '@/api/nutritionPlans';
+import {
+  type TrainingPlan,
+  type TrainingPlanStatus,
+  useAssignTrainingPlanMutation,
+  useListClientTrainingPlansQuery,
+} from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
@@ -23,11 +33,16 @@ const STATUS_CHIP_COLOR: Record<ClientStatus, 'default' | 'success'> = {
   archived: 'default',
 };
 
-const PLAN_STATUS_MAP: Record<string, {color: 'danger' | 'default' | 'success' | 'warning'; label: string}> = {
+type PlanStatus = NutritionPlanStatus | TrainingPlanStatus;
+
+const PLAN_STATUS_MAP: Record<PlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
-  draft: {color: 'default', label: 'Draft'},
   archived: {color: 'warning', label: 'Archived'},
 };
+
+// Fallback for statuses the backend might return that we don't recognize (e.g. legacy `draft` rows
+// that escaped migration). Keeps the UI resilient instead of crashing on undefined lookups.
+const UNKNOWN_PLAN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 function getInitials(firstName: null | string, lastName: null | string): string {
   const first = firstName?.charAt(0)?.toUpperCase() ?? '';
@@ -67,8 +82,8 @@ function ClientPlans({clientId}: {clientId: string}) {
   const [assignNutrition, {isLoading: isAssigningNutrition}] = useAssignNutritionPlanMutation();
   const [assignTraining, {isLoading: isAssigningTraining}] = useAssignTrainingPlanMutation();
 
-  const {data: nutritionData, isLoading: isLoadingNutrition} = useListNutritionPlansQuery({client_id: clientId});
-  const {data: trainingData, isLoading: isLoadingTraining} = useListTrainingPlansQuery({client_id: clientId});
+  const {data: nutritionData, isLoading: isLoadingNutrition} = useListClientNutritionPlansQuery({clientId});
+  const {data: trainingData, isLoading: isLoadingTraining} = useListClientTrainingPlansQuery({clientId});
 
   const nutritionPlans = nutritionData?.data ?? [];
   const trainingPlans = trainingData?.data ?? [];
@@ -109,8 +124,9 @@ function ClientPlans({clientId}: {clientId: string}) {
           {/* Plan cards */}
           {hasPlans ? (
             <div className="flex flex-col gap-2">
-              {nutritionPlans.map((plan) => {
-                const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
+              {nutritionPlans.map((plan: NutritionPlan) => {
+                const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
+                const mealCount = plan.meals?.length ?? 0;
                 return (
                   <Link
                     className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
@@ -120,27 +136,23 @@ function ClientPlans({clientId}: {clientId: string}) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{plan.name}</p>
                       <p className="text-xs text-foreground-500">
-                        Nutrition
-                        {plan.meals && plan.meals.length > 0
-                          ? ` \u00B7 ${plan.meals.length} meal${plan.meals.length !== 1 ? 's' : ''}`
-                          : ''}
+                        Nutrition{mealCount > 0 ? ` \u00B7 ${mealCount} meal${mealCount !== 1 ? 's' : ''}` : ''}
                       </p>
                     </div>
-                    {planStatus ? (
-                      <Chip
-                        color={planStatus.color}
-                        size="sm"
-                        variant="soft"
-                      >
-                        {planStatus.label}
-                      </Chip>
-                    ) : null}
+                    <Chip
+                      color={planStatus.color}
+                      size="sm"
+                      variant="soft"
+                    >
+                      {planStatus.label}
+                    </Chip>
                   </Link>
                 );
               })}
-              {trainingPlans.map((plan) => {
-                const planStatus = plan.status ? PLAN_STATUS_MAP[plan.status] : null;
-                const workoutCount = plan.planned_workouts.length;
+              {trainingPlans.map((plan: TrainingPlan) => {
+                const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
+                // Guard against list endpoint not preloading workouts (same pattern as nutrition).
+                const workoutCount = plan.planned_workouts?.length ?? 0;
                 return (
                   <Link
                     className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
@@ -154,15 +166,13 @@ function ClientPlans({clientId}: {clientId: string}) {
                         {workoutCount > 0 ? ` \u00B7 ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
                       </p>
                     </div>
-                    {planStatus ? (
-                      <Chip
-                        color={planStatus.color}
-                        size="sm"
-                        variant="soft"
-                      >
-                        {planStatus.label}
-                      </Chip>
-                    ) : null}
+                    <Chip
+                      color={planStatus.color}
+                      size="sm"
+                      variant="soft"
+                    >
+                      {planStatus.label}
+                    </Chip>
                   </Link>
                 );
               })}

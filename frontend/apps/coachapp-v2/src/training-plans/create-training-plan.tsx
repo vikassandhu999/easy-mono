@@ -24,8 +24,6 @@ export default function CreateTrainingPlan() {
       const body = {
         name: data.name,
         ...(data.description && {description: data.description}),
-        ...(data.status && {status: data.status}),
-        ...(data.is_template !== undefined && {is_template: data.is_template}),
         ...(data.start_date && {start_date: data.start_date}),
         ...(data.end_date && {end_date: data.end_date}),
       };

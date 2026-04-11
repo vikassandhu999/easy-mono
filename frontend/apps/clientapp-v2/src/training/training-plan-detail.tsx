@@ -3,7 +3,7 @@ import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {ArrowLeft, Calendar, Dumbbell} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
-import type {ClientPlannedWorkout, ClientWorkoutElement, PlannedSet} from '@/api/trainingPlans';
+import type {ClientPlannedWorkout, ClientWorkoutElement, PlannedSet, TrainingPlanStatus} from '@/api/trainingPlans';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
@@ -12,11 +12,12 @@ import {useGetClientTrainingPlanQuery} from '@/api/trainingPlans';
 
 // ── Helpers ──────────────────────────────────────────────────
 
-const STATUS_MAP: Record<string, {color: 'default' | 'success' | 'warning'; label: string}> = {
+const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'warning', label: 'Archived'},
-  draft: {color: 'default', label: 'Draft'},
 };
+
+const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 function formatLoad(set: PlannedSet): string {
   if (!set.load_value) return '';
@@ -178,8 +179,9 @@ export default function TrainingPlanDetail() {
   }
 
   const plan = data.data;
-  const statusChip = STATUS_MAP[plan.status];
-  const workouts = [...plan.planned_workouts].sort((a, b) => a.day_number - b.day_number);
+  const statusChip = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
+  const plannedWorkouts = plan.planned_workouts ?? [];
+  const workouts = [...plannedWorkouts].sort((a, b) => a.day_number - b.day_number);
   const totalExercises = workouts.reduce((sum, w) => sum + w.workout_elements.length, 0);
 
   return (
@@ -201,15 +203,13 @@ export default function TrainingPlanDetail() {
 
         {/* Meta chips */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {statusChip ? (
-            <Chip
-              color={statusChip.color}
-              size="sm"
-              variant="soft"
-            >
-              {statusChip.label}
-            </Chip>
-          ) : null}
+          <Chip
+            color={statusChip.color}
+            size="sm"
+            variant="soft"
+          >
+            {statusChip.label}
+          </Chip>
           <span className="text-xs text-foreground-400">
             {workouts.length} workout{workouts.length !== 1 ? 's' : ''} &middot; {totalExercises} exercise
             {totalExercises !== 1 ? 's' : ''}

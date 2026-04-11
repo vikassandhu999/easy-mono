@@ -38,8 +38,6 @@ export default function CreateNutritionPlan() {
       const body = {
         name: data.name,
         ...(data.description && {description: data.description}),
-        ...(data.type && {type: data.type}),
-        ...(data.status && {status: data.status}),
         ...(macrosGoal && {macros_goal: macrosGoal}),
       };
       const result = await createPlan(body).unwrap();

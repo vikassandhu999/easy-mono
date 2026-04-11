@@ -19,8 +19,9 @@ type TrainingPlanPickerProps = {
 /**
  * Inline training plan search + select using HeroUI Autocomplete.
  *
- * Shows only templates (is_template: true) for assignment workflows.
- * Cross-feature picker exception — may be imported from client detail page.
+ * Backed by the library endpoint (`GET /v1/coach/training_plans`), which
+ * strictly returns templates only. Used by client detail page to pick a
+ * template to assign to a client.
  */
 export default function TrainingPlanPicker({
   excludeIds = [],
@@ -31,10 +32,9 @@ export default function TrainingPlanPicker({
   const debouncedSearch = useDebouncedValue(searchInput);
   const shouldQuery = debouncedSearch.length >= 1;
 
-  const {data, isFetching} = useListTrainingPlansQuery(
-    shouldQuery ? {search: debouncedSearch, is_template: true, limit: 10} : undefined,
-    {skip: !shouldQuery},
-  );
+  const {data, isFetching} = useListTrainingPlansQuery(shouldQuery ? {limit: 10, search: debouncedSearch} : undefined, {
+    skip: !shouldQuery,
+  });
 
   const plans = useMemo(() => data?.data ?? [], [data]);
 
@@ -102,7 +102,7 @@ export default function TrainingPlanPicker({
             )}
           >
             {(plan: TrainingPlan) => {
-              const workoutCount = plan.planned_workouts.length;
+              const workoutCount = plan.planned_workouts?.length ?? 0;
               return (
                 <ListBox.Item
                   id={plan.id}

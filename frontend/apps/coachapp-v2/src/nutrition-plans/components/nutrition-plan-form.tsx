@@ -1,41 +1,26 @@
 import {Button, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-export const PLAN_TYPE_OPTIONS = [
-  {label: 'Standard', value: 'standard'},
-  {label: 'Template', value: 'template'},
-] as const;
-
-export const PLAN_STATUS_OPTIONS = [
-  {label: 'Draft', value: 'draft'},
-  {label: 'Active', value: 'active'},
-  {label: 'Archived', value: 'archived'},
-] as const;
-
 export const nutritionPlanFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  type: z.string().optional(),
-  status: z.string().optional(),
   calories: z.coerce.number().min(0).optional().or(z.literal('')),
-  protein_g: z.coerce.number().min(0).optional().or(z.literal('')),
   carbs_g: z.coerce.number().min(0).optional().or(z.literal('')),
+  description: z.string().optional(),
   fats_g: z.coerce.number().min(0).optional().or(z.literal('')),
+  name: z.string().min(1, 'Name is required'),
+  protein_g: z.coerce.number().min(0).optional().or(z.literal('')),
 });
 
 export type NutritionPlanFormValues = z.infer<typeof nutritionPlanFormSchema>;
 
 export const NUTRITION_PLAN_FORM_DEFAULTS: NutritionPlanFormValues = {
-  name: '',
-  description: '',
-  type: 'standard',
-  status: 'draft',
   calories: '',
-  protein_g: '',
   carbs_g: '',
+  description: '',
   fats_g: '',
+  name: '',
+  protein_g: '',
 };
 
 /** Hook wrapper so screens don't need to import zod/resolver separately */
@@ -49,23 +34,22 @@ export function useNutritionPlanForm(options?: {values?: NutritionPlanFormValues
 
 type NutritionPlanFormProps = {
   form: ReturnType<typeof useNutritionPlanForm>;
-  onSubmit: (data: NutritionPlanFormValues) => void;
   isSubmitting: boolean;
+  onCancel: () => void;
+  onSubmit: (data: NutritionPlanFormValues) => void;
   submitLabel: string;
   submittingLabel: string;
-  onCancel: () => void;
 };
 
 export default function NutritionPlanForm({
   form,
-  onSubmit,
   isSubmitting,
+  onCancel,
+  onSubmit,
   submitLabel,
   submittingLabel,
-  onCancel,
 }: NutritionPlanFormProps) {
   const {
-    control,
     formState: {errors},
     handleSubmit,
     register,
@@ -99,58 +83,6 @@ export default function NutritionPlanForm({
           {...register('description')}
         />
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
-      </div>
-
-      {/* Type + Status side by side on md */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="type">Type</Label>
-          <Controller
-            control={control}
-            name="type"
-            render={({field}) => (
-              <select
-                className="min-h-11 rounded-lg border border-divider bg-content1 px-3 text-sm outline-none focus:ring-2 focus:ring-accent"
-                id="type"
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                {PLAN_TYPE_OPTIONS.map((opt) => (
-                  <option
-                    key={opt.value}
-                    value={opt.value}
-                  >
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="status">Status</Label>
-          <Controller
-            control={control}
-            name="status"
-            render={({field}) => (
-              <select
-                className="min-h-11 rounded-lg border border-divider bg-content1 px-3 text-sm outline-none focus:ring-2 focus:ring-accent"
-                id="status"
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                {PLAN_STATUS_OPTIONS.map((opt) => (
-                  <option
-                    key={opt.value}
-                    value={opt.value}
-                  >
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          />
-        </div>
       </div>
 
       {/* Macros goal */}

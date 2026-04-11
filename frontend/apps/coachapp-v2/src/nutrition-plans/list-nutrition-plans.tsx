@@ -27,10 +27,10 @@ export default function ListNutritionPlans() {
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
     useNutritionPlansInfiniteQuery(queryArg);
 
-  // Only show templates (plans not assigned to a client) in the library listing
+  // Backend returns templates only from /v1/coach/nutrition_plans — no client-side filter needed
   const plans = useMemo<NutritionPlan[]>(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.data).filter((plan) => plan.client_id === null);
+    return data.pages.flatMap((page) => page.data);
   }, [data]);
 
   const {sentinelRef} = useInfiniteScroll({

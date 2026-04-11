@@ -26,24 +26,20 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
   const form = useTrainingPlanForm({
     values: {
-      name: plan.name,
       description: plan.description ?? '',
-      status: (plan.status as 'active' | 'archived' | 'draft') ?? 'draft',
-      is_template: plan.is_template,
-      start_date: plan.start_date ?? '',
       end_date: plan.end_date ?? '',
+      name: plan.name,
+      start_date: plan.start_date ?? '',
     },
   });
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
       const body = {
-        name: formData.name,
         description: formData.description || undefined,
-        status: formData.status || undefined,
-        is_template: formData.is_template,
-        start_date: formData.start_date || undefined,
         end_date: formData.end_date || undefined,
+        name: formData.name,
+        start_date: formData.start_date || undefined,
       };
       await updatePlan({body, id: planId}).unwrap();
       navigate(backPath);

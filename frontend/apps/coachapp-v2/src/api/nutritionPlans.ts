@@ -1,43 +1,51 @@
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
+import type {PlanClient} from '@/api/trainingPlans';
 
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
 
+export type NutritionPlanStatus = 'active' | 'archived';
+
+/**
+ * Nutrition plan shape. Note that `meals` and `plan_items` are only preloaded
+ * on the `show` endpoint (`GET /v1/coach/nutrition_plans/:id`). List endpoints
+ * (`/v1/coach/nutrition_plans` and `/v1/coach/clients/:id/nutrition_plans`)
+ * do not include them, so they are optional here and must be accessed defensively.
+ */
 export type NutritionPlan = {
-  id: string;
-  name: string;
-  description: null | string;
-  tags: string[];
-  macros_goal?: Macros;
-  type: string;
-  status: string;
-  client_id: null | string;
-  source_template_id: null | string;
-  meals?: Meal[];
-  plan_items?: PlanItem[];
-  creator_id: string;
   business_id: string;
+  client: null | PlanClient;
+  client_id: null | string;
+  creator_id: string;
+  description: null | string;
+  id: string;
   inserted_at: string;
+  macros_goal?: Macros;
+  meals?: Meal[];
+  name: string;
+  plan_items?: PlanItem[];
+  source_template_id: null | string;
+  status: NutritionPlanStatus;
+  tags: string[];
   updated_at: string;
 };
 
 export type NutritionPlanCreateRequest = {
-  name: string;
   description?: string;
-  tags?: string[];
   macros_goal?: Macros;
-  type?: string;
-  status?: string;
+  name: string;
+  status?: NutritionPlanStatus;
+  tags?: string[];
 };
 
 export type NutritionPlanUpdateRequest = {
-  name?: string;
   description?: string;
-  tags?: string[];
   macros_goal?: Macros;
-  status?: string;
+  name?: string;
+  status?: NutritionPlanStatus;
+  tags?: string[];
 };
 
 export type PlanItem = {
@@ -73,20 +81,26 @@ export type AssignNutritionPlanRequest = {
   client_id: string;
 };
 
+/** Params for listing nutrition plan templates (library). Only templates — no client_id. */
 export type ListNutritionPlansParams = {
-  client_id?: string;
-  offset?: number;
   limit?: number;
+  offset?: number;
   search?: string;
-  status?: string;
-  type?: string;
+  status?: NutritionPlanStatus;
 };
 
-/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+/** Filter params for the templates infinite query — pagination is handled by infiniteQuery */
 export type ListNutritionPlansFilters = {
   search?: string;
-  status?: string;
-  type?: string;
+  status?: NutritionPlanStatus;
+};
+
+/** Params for listing a single client's nutrition plans. */
+export type ListClientNutritionPlansParams = {
+  clientId: string;
+  limit?: number;
+  offset?: number;
+  status?: NutritionPlanStatus;
 };
 
 export type ShoppingListItem = {
@@ -121,10 +135,13 @@ export const nutritionPlansApi = api.injectEndpoints({
 
         const plan = (planResult.data as ApiResponse<NutritionPlan>).data;
 
-        // 2. Collect unique food_ids and recipe_ids from all meal items
+        // 2. Collect unique food_ids and recipe_ids from all meal items.
+        // `plan.meals` is always preloaded on the show endpoint, but typed as optional
+        // because list endpoints don't preload it — fall back to [] for safety.
+        const meals = plan.meals ?? [];
         const foodIds = new Set<string>();
         const recipeIds = new Set<string>();
-        for (const meal of plan.meals) {
+        for (const meal of meals) {
           for (const item of meal.meal_items) {
             if (item.food_id && !item.food) foodIds.add(item.food_id);
             if (item.recipe_id && !item.recipe) recipeIds.add(item.recipe_id);
@@ -154,7 +171,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         }
 
         // 4. Merge food/recipe into each meal_item
-        const hydratedMeals: Meal[] = plan.meals.map((meal) => ({
+        const hydratedMeals: Meal[] = meals.map((meal) => ({
           ...meal,
           meal_items: meal.meal_items.map((item) => ({
             ...item,
@@ -191,7 +208,7 @@ export const nutritionPlansApi = api.injectEndpoints({
           : [{type: 'NutritionPlan' as const, id: 'LIST'}],
     }),
     /**
-     * Infinite-scroll variant of listNutritionPlans.
+     * Infinite-scroll variant of listNutritionPlans — templates only.
      * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
      * Hook: useNutritionPlansInfiniteQuery
      */
@@ -201,7 +218,6 @@ export const nutritionPlansApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
-          ...(queryArg?.type && {type: queryArg.type}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },
@@ -226,6 +242,26 @@ export const nutritionPlansApi = api.injectEndpoints({
             ]
           : [{type: 'NutritionPlan' as const, id: 'LIST'}],
     }),
+    /**
+     * List nutrition plans assigned to a single client.
+     * Separate from the template list — cached under CLIENT_LIST.
+     */
+    listClientNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListClientNutritionPlansParams>({
+      query: ({clientId, ...params}) => ({
+        params,
+        url: `/v1/coach/clients/${clientId}/nutrition_plans`,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((plan) => ({
+                type: 'NutritionPlan' as const,
+                id: plan.id,
+              })),
+              {type: 'NutritionPlan' as const, id: 'CLIENT_LIST'},
+            ]
+          : [{type: 'NutritionPlan' as const, id: 'CLIENT_LIST'}],
+    }),
     updateNutritionPlan: build.mutation<ApiResponse<NutritionPlan>, {body: NutritionPlanUpdateRequest; id: string}>({
       query: ({body, id}) => ({
         url: `/v1/coach/nutrition_plans/${id}`,
@@ -235,6 +271,7 @@ export const nutritionPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, {id}) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
+        {type: 'NutritionPlan', id: 'CLIENT_LIST'},
       ],
     }),
     deleteNutritionPlan: build.mutation<void, string>({
@@ -245,6 +282,7 @@ export const nutritionPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, id) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
+        {type: 'NutritionPlan', id: 'CLIENT_LIST'},
         {type: 'Meal', id: getPlanScopedId(id)},
         {type: 'PlanItem', id: getPlanScopedId(id)},
       ],
@@ -258,6 +296,7 @@ export const nutritionPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, {body, id}) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
+        {type: 'NutritionPlan', id: 'CLIENT_LIST'},
         {type: 'Client', id: 'LIST'},
         {type: 'Client', id: body.client_id},
       ],
@@ -352,6 +391,7 @@ export const {
   useGetNutritionPlanMacrosQuery,
   useGetNutritionPlanQuery,
   useGetNutritionPlanShoppingListQuery,
+  useListClientNutritionPlansQuery,
   useListNutritionPlansQuery,
   useListPlanItemsQuery,
   useNutritionPlansInfiniteQuery,

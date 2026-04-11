@@ -8,7 +8,7 @@ export type DistanceUnit = 'km' | 'meters' | 'miles' | 'none' | 'yards';
 export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
 export type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 export type ExerciseForce = 'pull' | 'push' | 'static';
-export type TrainingPlanStatus = 'active' | 'archived' | 'draft';
+export type TrainingPlanStatus = 'active' | 'archived';
 
 // ── PlannedSet (shared schema — same as coach) ───────────────
 

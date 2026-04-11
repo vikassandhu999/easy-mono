@@ -1,45 +1,23 @@
-import {
-  Button,
-  Calendar,
-  DateField,
-  DatePicker,
-  Input,
-  Label,
-  ListBox,
-  Select,
-  Spinner,
-  Switch,
-  TextArea,
-} from '@heroui/react';
+import {Button, Calendar, DateField, DatePicker, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {type CalendarDate, parseDate} from '@internationalized/date';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-export const PLAN_STATUS_OPTIONS = [
-  {label: 'Draft', value: 'draft'},
-  {label: 'Active', value: 'active'},
-  {label: 'Archived', value: 'archived'},
-] as const;
-
 export const trainingPlanFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  status: z.enum(['draft', 'active', 'archived']).optional(),
-  is_template: z.boolean().optional(),
-  start_date: z.string().optional(),
   end_date: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
+  start_date: z.string().optional(),
 });
 
 export type TrainingPlanFormValues = z.infer<typeof trainingPlanFormSchema>;
 
 export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
-  name: '',
   description: '',
-  status: 'draft',
-  is_template: true,
-  start_date: '',
   end_date: '',
+  name: '',
+  start_date: '',
 };
 
 /** Convert ISO date string (e.g. "2026-04-01") to CalendarDate, or null if empty/invalid */
@@ -113,64 +91,6 @@ export default function TrainingPlanForm({
           {...register('description')}
         />
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
-      </div>
-
-      {/* Status + Template side by side on md */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Controller
-            control={control}
-            name="status"
-            render={({field}) => (
-              <Select
-                onSelectionChange={(key) => field.onChange(key)}
-                placeholder="Select status"
-                selectedKey={field.value || null}
-              >
-                <Label>Status</Label>
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {PLAN_STATUS_OPTIONS.map((opt) => (
-                      <ListBox.Item
-                        id={opt.value}
-                        key={opt.value}
-                        textValue={opt.label}
-                      >
-                        {opt.label}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            )}
-          />
-          {errors.status && <p className="text-xs text-danger">{errors.status.message}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Template</Label>
-          <Controller
-            control={control}
-            name="is_template"
-            render={({field}) => (
-              <Switch
-                isSelected={field.value ?? true}
-                onChange={field.onChange}
-              >
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content>
-                  <span className="text-sm">Save as template</span>
-                </Switch.Content>
-              </Switch>
-            )}
-          />
-        </div>
       </div>
 
       {/* Start date + End date */}

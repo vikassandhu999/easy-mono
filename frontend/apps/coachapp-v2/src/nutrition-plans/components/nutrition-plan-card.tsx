@@ -2,22 +2,17 @@ import {Chip} from '@heroui/react';
 import {ClipboardList} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
-import type {NutritionPlan} from '@/api/nutritionPlans';
+import type {NutritionPlan, NutritionPlanStatus} from '@/api/nutritionPlans';
 
-const STATUS_MAP: Record<
-  string,
-  {
-    color: 'accent' | 'danger' | 'default' | 'success' | 'warning';
-    label: string;
-  }
-> = {
+const STATUS_MAP: Record<NutritionPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
-  draft: {color: 'default', label: 'Draft'},
   archived: {color: 'warning', label: 'Archived'},
 };
 
+const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
+
 export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
-  const status = plan.status ? STATUS_MAP[plan.status] : null;
+  const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
   const mealCount = plan.meals?.length ?? 0;
 
   return (
@@ -49,23 +44,13 @@ export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
 
       {/* Status chip — hidden on small screens */}
       <div className="hidden gap-1.5 sm:flex">
-        {status && (
-          <Chip
-            color={status.color}
-            size="sm"
-            variant="soft"
-          >
-            {status.label}
-          </Chip>
-        )}
-        {plan.type && (
-          <Chip
-            size="sm"
-            variant="soft"
-          >
-            {plan.type}
-          </Chip>
-        )}
+        <Chip
+          color={status.color}
+          size="sm"
+          variant="soft"
+        >
+          {status.label}
+        </Chip>
       </div>
     </Link>
   );

@@ -1,11 +1,13 @@
 import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
-import {ArrowLeft, Copy, Pencil, Plus, Trash2} from 'lucide-react';
+import {Archive, ArchiveRestore, ArrowLeft, Copy, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import type {Client} from '@/api/clients';
+import type {NutritionPlanStatus} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 
+import ClientPlanBanner from '@/@components/client-plan-banner';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -15,22 +17,18 @@ import {
   useDeleteNutritionPlanMutation,
   useGetNutritionPlanMacrosQuery,
   useGetNutritionPlanQuery,
+  useUpdateNutritionPlanMutation,
 } from '@/api/nutritionPlans';
 import ClientPicker from '@/clients/components/client-picker';
 import DayPlanner from '@/nutrition-plans/components/day-planner';
 import MealSection from '@/nutrition-plans/components/meal-section';
 
-const STATUS_MAP: Record<
-  string,
-  {
-    color: 'accent' | 'danger' | 'default' | 'success' | 'warning';
-    label: string;
-  }
-> = {
+const STATUS_MAP: Record<NutritionPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
-  draft: {color: 'default', label: 'Draft'},
   archived: {color: 'warning', label: 'Archived'},
 };
+
+const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   calories: {label: 'Calories', unit: ''},
@@ -116,6 +114,7 @@ export default function NutritionPlanDetail() {
   const [deletePlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
   const [createMeal, {isLoading: isCreatingMeal}] = useCreateMealMutation();
+  const [updatePlan, {isLoading: isUpdatingStatus}] = useUpdateNutritionPlanMutation();
   const {data: macrosData} = useGetNutritionPlanMacrosQuery(id!);
 
   // Inline copy-to-client state
@@ -154,6 +153,15 @@ export default function NutritionPlanDetail() {
       navigate(ROUTES.NUTRITION_PLANS, {replace: true});
     } catch {
       // Error handled by RTK Query cache
+    }
+  };
+
+  const handleToggleArchive = async (nextStatus: NutritionPlanStatus) => {
+    try {
+      await updatePlan({id: id!, body: {status: nextStatus}}).unwrap();
+      toast.success(nextStatus === 'archived' ? 'Plan archived' : 'Plan restored');
+    } catch {
+      toast.danger('Failed to update plan status');
     }
   };
 
@@ -203,9 +211,15 @@ export default function NutritionPlanDetail() {
   }
 
   const plan = data.data;
-  const status = plan.status ? STATUS_MAP[plan.status] : null;
+  const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
+  // Defensive: matches both `null` and `undefined` in case the backend omits the key.
+  const isTemplate = !plan.client_id;
   const macrosGoalEntries = plan.macros_goal ? Object.entries(plan.macros_goal) : [];
-  const sortedMeals = [...plan.meals].sort((a, b) => a.position - b.position);
+  // `meals` and `plan_items` are preloaded on the show endpoint but typed as optional
+  // since list endpoints don't include them — default to [] to satisfy the type system.
+  const meals = plan.meals ?? [];
+  const planItems = plan.plan_items ?? [];
+  const sortedMeals = [...meals].sort((a, b) => a.position - b.position);
 
   return (
     <PageLayout title="Nutrition Plan">
@@ -235,6 +249,27 @@ export default function NutritionPlanDetail() {
           <Copy size={14} />
           Copy to Client
         </Button>
+        {plan.status === 'active' ? (
+          <Button
+            isPending={isUpdatingStatus}
+            onPress={() => handleToggleArchive('archived')}
+            size="sm"
+            variant="secondary"
+          >
+            <Archive size={16} />
+            Archive
+          </Button>
+        ) : (
+          <Button
+            isPending={isUpdatingStatus}
+            onPress={() => handleToggleArchive('active')}
+            size="sm"
+            variant="secondary"
+          >
+            <ArchiveRestore size={16} />
+            Unarchive
+          </Button>
+        )}
         <AlertDialog>
           <Button
             size="sm"
@@ -298,28 +333,30 @@ export default function NutritionPlanDetail() {
       )}
 
       <div className="min-w-0 max-w-2xl overflow-hidden">
+        {/* Personal-plan client banner — only shown when assigned to a client */}
+        {plan.client ? <ClientPlanBanner client={plan.client} /> : null}
+
         {/* Plan header */}
         <div className="pb-6">
           <h2 className="text-lg font-semibold">{plan.name}</h2>
           {plan.description && <p className="mt-1 text-sm text-foreground-500">{plan.description}</p>}
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {status && (
+            <Chip
+              color={status.color}
+              size="sm"
+              variant="soft"
+            >
+              {status.label}
+            </Chip>
+            {isTemplate ? (
               <Chip
-                color={status.color}
+                color="default"
                 size="sm"
                 variant="soft"
               >
-                {status.label}
+                Template
               </Chip>
-            )}
-            {plan.type && (
-              <Chip
-                size="sm"
-                variant="soft"
-              >
-                {plan.type}
-              </Chip>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -351,7 +388,7 @@ export default function NutritionPlanDetail() {
         )}
 
         {/* Daily totals vs goal */}
-        {macrosData?.data && plan.meals.some((m) => m.meal_items.length > 0) && (
+        {macrosData?.data && meals.some((m) => m.meal_items.length > 0) && (
           <DailyTotals
             goal={plan.macros_goal}
             totals={macrosData.data}
@@ -442,7 +479,7 @@ export default function NutritionPlanDetail() {
           <DayPlanner
             meals={sortedMeals}
             planId={plan.id}
-            planItems={plan.plan_items}
+            planItems={planItems}
           />
         </section>
 

@@ -27,10 +27,10 @@ export default function ListTrainingPlans() {
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} =
     useTrainingPlansInfiniteQuery(queryArg);
 
-  // Only show templates (plans not assigned to a client) in the library listing
+  // Backend returns templates only from /v1/coach/training_plans — no client-side filter needed
   const plans = useMemo<TrainingPlan[]>(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.data).filter((plan) => plan.client_id === null);
+    return data.pages.flatMap((page) => page.data);
   }, [data]);
 
   const {sentinelRef} = useInfiniteScroll({

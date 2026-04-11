@@ -192,7 +192,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [active, draft, archived]
+            enum: [active, archived]
         - name: offset
           in: query
           schema:
@@ -649,7 +649,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [active, draft, archived]
+            enum: [active, archived]
         - $ref: "#/components/parameters/OffsetQuery"
         - $ref: "#/components/parameters/LimitQuery"
       responses:
@@ -1257,6 +1257,70 @@ paths:
                 $ref: "#/components/schemas/ClientListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /v1/coach/clients/{client_id}/training_plans:
+    get:
+      summary: List client training plans
+      description: Returns only training plans assigned to this client (scoped by client_id). Used on the client detail page plans tab. Frontend pattern - call with client ID from route params, cache with CLIENT_LIST tag and invalidate after assign.
+      operationId: listClientTrainingPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, archived]
+      responses:
+        "200":
+          description: Client training plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/clients/{client_id}/nutrition_plans:
+    get:
+      summary: List client nutrition plans
+      description: Returns only nutrition plans assigned to this client (type=personal, scoped by client_id). Used on the client detail page plans tab. Frontend pattern - call with client ID from route params, cache with CLIENT_LIST tag and invalidate after assign.
+      operationId: listClientNutritionPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/OffsetQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, archived]
+      responses:
+        "200":
+          description: Client nutrition plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionPlanListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/coach/foods:
     post:
       summary: Create food
@@ -1637,8 +1701,7 @@ paths:
                     carbs: 320
                     fats: 80
                     calories: 2720
-                  type: template
-                  status: draft
+                  status: active
       responses:
         "201":
           description: Nutrition plan created
@@ -1659,8 +1722,7 @@ paths:
                         carbs: 320
                         fats: 80
                         calories: 2720
-                      type: template
-                      status: draft
+                      status: active
                       client_id: null
                       source_template_id: null
                       meals: []
@@ -1674,8 +1736,8 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
-      summary: List nutrition plans
-      description: Lists nutrition plans for library tables and assignment workflows with pagination and optional status/type filtering. Frontend pattern - cache by filter key and invalidate after create, update, delete, assign, or duplicate.
+      summary: List nutrition plan templates
+      description: Returns only templates (plans where client_id is null). Client-specific plans are fetched via /v1/coach/clients/{client_id}/nutrition_plans. Frontend pattern - use for the plan library page, cache by filter key and invalidate after create, update, delete, assign, or duplicate.
       operationId: listNutritionPlans
       security:
         - bearerAuth: []
@@ -1687,19 +1749,10 @@ paths:
           required: false
           schema:
             type: string
-        - name: type
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: client_id
-          in: query
-          required: false
-          schema:
-            type: string
+            enum: [active, archived]
       responses:
         "200":
-          description: Nutrition plans
+          description: Nutrition plan templates
           content:
             application/json:
               schema:
@@ -1709,7 +1762,7 @@ paths:
   /v1/coach/nutrition_plans/{id}:
     get:
       summary: Get nutrition plan
-      description: Returns one nutrition plan with nested meals and plan items for full plan-builder hydration. Frontend pattern - treat this endpoint as source of truth for the nutrition plan detail screen.
+      description: Returns any plan (template or personal) with nested meals, plan items, and preloaded client. For personal plans, client object contains id/first_name/last_name for the client banner. Frontend pattern - treat this endpoint as source of truth for the nutrition plan detail screen.
       operationId: getNutritionPlan
       security:
         - bearerAuth: []
@@ -1817,9 +1870,9 @@ paths:
                         carbs: 320
                         fats: 80
                         calories: 2720
-                      type: personal
-                      status: draft
+                      status: active
                       client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
+                      client: null
                       source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
                       meals: []
                       plan_items: []
@@ -1862,8 +1915,7 @@ paths:
                         carbs: 320
                         fats: 80
                         calories: 2720
-                      type: template
-                      status: draft
+                      status: active
                       client_id: null
                       source_template_id: 6d8fcaef-1d3a-46ce-8c7f-09fcbbf87f4a
                       meals: []
@@ -2553,7 +2605,6 @@ paths:
                 value:
                   name: 12-Week Strength Base
                   description: Structured novice strength cycle.
-                  is_template: true
                   status: active
       responses:
         "201":
@@ -2569,7 +2620,6 @@ paths:
                       id: 28355076-c303-47d6-b595-a4a69f9ef50d
                       name: 12-Week Strength Base
                       description: Structured novice strength cycle.
-                      is_template: true
                       status: active
                       start_date: null
                       end_date: null
@@ -2585,8 +2635,8 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
-      summary: List training plans
-      description: Drives plan list pages and client assignment dashboards with pagination, search, and status/template filters. Frontend pattern - cache by filter page key and invalidate after plan create/update/delete/assign.
+      summary: List training plan templates
+      description: Returns only templates (plans where client_id is null). Client-specific plans are fetched via /v1/coach/clients/{client_id}/training_plans. Frontend pattern - use for the plan library page, cache by filter key and invalidate after plan create/update/delete/assign.
       operationId: listTrainingPlans
       security:
         - bearerAuth: []
@@ -2599,20 +2649,10 @@ paths:
           required: false
           schema:
             type: string
-            enum: [active, draft, archived]
-        - name: is_template
-          in: query
-          required: false
-          schema:
-            type: boolean
-        - name: client_id
-          in: query
-          required: false
-          schema:
-            type: string
+            enum: [active, archived]
       responses:
         "200":
-          description: Training plans
+          description: Training plan templates
           content:
             application/json:
               schema:
@@ -2622,7 +2662,7 @@ paths:
   /v1/coach/training_plans/{id}:
     get:
       summary: Get training plan
-      description: Returns a plan with nested workouts/elements so frontend can render full plan detail and editor views. Frontend pattern - treat this as source of truth for the plan builder screen state.
+      description: Returns any plan (template or personal) with nested workouts/elements and preloaded client. For personal plans, client object contains id/first_name/last_name for the client banner. Frontend pattern - treat this as source of truth for the plan builder screen state.
       operationId: getTrainingPlan
       security:
         - bearerAuth: []
@@ -4645,12 +4685,9 @@ components:
             type: string
         macros_goal:
           $ref: "#/components/schemas/Macros"
-        type:
-          type: string
-          enum: [template, personal]
         status:
           type: string
-          enum: [draft, active, archived]
+          enum: [active, archived]
     NutritionPlanUpdateRequest:
       type: object
       properties:
@@ -4666,7 +4703,7 @@ components:
           $ref: "#/components/schemas/Macros"
         status:
           type: string
-          enum: [draft, active, archived]
+          enum: [active, archived]
     NutritionPlanResponse:
       type: object
       required: [data]
@@ -4690,7 +4727,6 @@ components:
           id,
           name,
           tags,
-          type,
           status,
           meals,
           plan_items,
@@ -4713,13 +4749,15 @@ components:
             type: string
         macros_goal:
           $ref: "#/components/schemas/Macros"
-        type:
-          type: string
         status:
           type: string
         client_id:
           type: string
           nullable: true
+        client:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/PlanClient"
         source_template_id:
           type: string
           nullable: true
@@ -5189,18 +5227,15 @@ components:
       example:
         name: 12-Week Strength Base
         description: Structured novice strength cycle.
-        is_template: true
         status: active
       properties:
         name:
           type: string
         description:
           type: string
-        is_template:
-          type: boolean
         status:
           type: string
-          enum: [active, draft, archived]
+          enum: [active, archived]
         client_id:
           type: string
         start_date:
@@ -5218,11 +5253,9 @@ components:
           type: string
         description:
           type: string
-        is_template:
-          type: boolean
         status:
           type: string
-          enum: [active, draft, archived]
+          enum: [active, archived]
         client_id:
           type: string
         start_date:
@@ -5257,7 +5290,6 @@ components:
           id: 28355076-c303-47d6-b595-a4a69f9ef50d
           name: 12-Week Strength Base
           description: Structured novice strength cycle.
-          is_template: true
           status: active
           start_date: null
           end_date: null
@@ -5287,7 +5319,6 @@ components:
         [
           id,
           name,
-          is_template,
           status,
           planned_workouts,
           author_id,
@@ -5303,8 +5334,6 @@ components:
         description:
           type: string
           nullable: true
-        is_template:
-          type: boolean
         status:
           type: string
         start_date:
@@ -5318,6 +5347,10 @@ components:
         client_id:
           type: string
           nullable: true
+        client:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/PlanClient"
         author_id:
           type: string
         business_id:
@@ -5335,6 +5368,19 @@ components:
         updated_at:
           type: string
           format: date-time
+    PlanClient:
+      type: object
+      description: Minimal client info embedded in plan responses for client banner display.
+      required: [id]
+      properties:
+        id:
+          type: string
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
     PlannedWorkoutCreateRequest:
       type: object
       required: [name, day_number]
@@ -6652,7 +6698,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, draft, archived]
+          enum: [active, archived]
         start_date:
           type: string
           format: date
@@ -7106,7 +7152,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [active, draft, archived]
+          enum: [active, archived]
         start_date:
           type: string
           format: date

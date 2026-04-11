@@ -46,43 +46,53 @@ export type PlannedWorkout = {
   workout_elements: WorkoutElement[];
 };
 
+/** Minimal client info embedded in plan responses for banner display. */
+export type PlanClient = {
+  first_name: null | string;
+  id: string;
+  last_name: null | string;
+};
+
+export type TrainingPlanStatus = 'active' | 'archived';
+
+/**
+ * Training plan shape. Unlike nutrition plans, all coach-facing list endpoints
+ * (`/v1/coach/training_plans` and `/v1/coach/clients/:id/training_plans`) preload
+ * `planned_workouts`, so the field is non-optional here.
+ */
 export type TrainingPlan = {
   author_id: string;
   business_id: string;
+  client: null | PlanClient;
   client_id: null | string;
   description: null | string;
   end_date: null | string;
   id: string;
   inserted_at: string;
-  is_template: boolean;
   name: string;
   original_template_id: null | string;
   planned_workouts: PlannedWorkout[];
   start_date: null | string;
-  status: string;
+  status: TrainingPlanStatus;
   updated_at: string;
 };
 
 export type TrainingPlanCreateRequest = {
-  client_id?: string;
   description?: string;
   end_date?: string;
-  is_template?: boolean;
   name: string;
   original_template_id?: string;
   start_date?: string;
-  status?: 'active' | 'archived' | 'draft';
+  status?: TrainingPlanStatus;
 };
 
 export type TrainingPlanUpdateRequest = {
-  client_id?: string;
   description?: string;
   end_date?: string;
-  is_template?: boolean;
   name?: string;
   original_template_id?: string;
   start_date?: string;
-  status?: 'active' | 'archived' | 'draft';
+  status?: TrainingPlanStatus;
 };
 
 export type TrainingPlanAssignRequest = {
@@ -120,21 +130,26 @@ export type WorkoutElementUpdateRequest = {
   superset_group_id?: string;
 };
 
+/** Params for listing training plan templates (library). Only templates — no client_id. */
 export type ListTrainingPlansParams = {
-  client_id?: string;
-  is_template?: boolean;
   limit?: number;
   offset?: number;
   search?: string;
-  status?: 'active' | 'archived' | 'draft';
+  status?: TrainingPlanStatus;
 };
 
-/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
+/** Filter params for the templates infinite query — pagination is handled by infiniteQuery */
 export type ListTrainingPlansFilters = {
-  client_id?: string;
-  is_template?: boolean;
   search?: string;
-  status?: 'active' | 'archived' | 'draft';
+  status?: TrainingPlanStatus;
+};
+
+/** Params for listing a single client's training plans. */
+export type ListClientTrainingPlansParams = {
+  clientId: string;
+  limit?: number;
+  offset?: number;
+  status?: TrainingPlanStatus;
 };
 
 export type ListPlannedWorkoutsParams = {
@@ -177,7 +192,7 @@ export const trainingPlansApi = api.injectEndpoints({
           : [{type: 'TrainingPlan' as const, id: 'LIST'}],
     }),
     /**
-     * Infinite-scroll variant of listTrainingPlans.
+     * Infinite-scroll variant of listTrainingPlans — templates only.
      * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
      * Hook: useTrainingPlansInfiniteQuery
      */
@@ -187,8 +202,6 @@ export const trainingPlansApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
-          ...(queryArg?.is_template !== undefined && {is_template: queryArg.is_template}),
-          ...(queryArg?.client_id && {client_id: queryArg.client_id}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },
@@ -213,6 +226,26 @@ export const trainingPlansApi = api.injectEndpoints({
             ]
           : [{type: 'TrainingPlan' as const, id: 'LIST'}],
     }),
+    /**
+     * List training plans assigned to a single client.
+     * Separate from the template list — cached under CLIENT_LIST.
+     */
+    listClientTrainingPlans: build.query<ApiListResponse<TrainingPlan>, ListClientTrainingPlansParams>({
+      query: ({clientId, ...params}) => ({
+        params,
+        url: `/v1/coach/clients/${clientId}/training_plans`,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((plan) => ({
+                type: 'TrainingPlan' as const,
+                id: plan.id,
+              })),
+              {type: 'TrainingPlan' as const, id: 'CLIENT_LIST'},
+            ]
+          : [{type: 'TrainingPlan' as const, id: 'CLIENT_LIST'}],
+    }),
     getTrainingPlan: build.query<ApiResponse<TrainingPlan>, string>({
       query: (id) => `/v1/coach/training_plans/${id}`,
       providesTags: (_, __, id) => [
@@ -229,6 +262,7 @@ export const trainingPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, {id}) => [
         {type: 'TrainingPlan', id},
         {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'CLIENT_LIST'},
       ],
     }),
     deleteTrainingPlan: build.mutation<void, string>({
@@ -239,6 +273,7 @@ export const trainingPlansApi = api.injectEndpoints({
       invalidatesTags: (_, __, id) => [
         {type: 'TrainingPlan', id},
         {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'CLIENT_LIST'},
         {type: 'PlannedWorkout', id: getPlanScopedId(id)},
       ],
     }),
@@ -248,10 +283,12 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${id}/assign`,
       }),
-      invalidatesTags: (_, __, {id}) => [
+      invalidatesTags: (_, __, {body, id}) => [
         {type: 'TrainingPlan', id},
         {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'CLIENT_LIST'},
         {type: 'Client', id: 'LIST'},
+        {type: 'Client', id: body.client_id},
       ],
     }),
     duplicateTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, string>({
@@ -401,6 +438,7 @@ export const {
   useGetPlannedWorkoutQuery,
   useGetTrainingPlanQuery,
   useGetWorkoutElementQuery,
+  useListClientTrainingPlansQuery,
   useListPlannedWorkoutsQuery,
   useListTrainingPlansQuery,
   useTrainingPlansInfiniteQuery,

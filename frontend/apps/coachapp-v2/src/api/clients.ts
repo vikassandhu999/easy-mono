@@ -5,55 +5,21 @@ const PAGE_SIZE = 20;
 
 // ── Enums ────────────────────────────────────────────────────
 
-export type ClientStatus = 'active' | 'archived' | 'expired' | 'expiring' | 'inactive' | 'pending';
-export type PaymentStatus = 'free' | 'paid' | 'partial' | 'pending';
+export type ClientStatus = 'active' | 'archived' | 'inactive' | 'pending';
 
 // ── Client ───────────────────────────────────────────────────
 
-export type ClientOffer = {
-  id: string;
-  name: string;
-  price_display: null | string;
-};
-
 export type Client = {
   id: string;
-
-  // Contact
   email: null | string;
   first_name: null | string;
   last_name: null | string;
   phone: null | string;
-  instagram_handle: null | string;
-
-  // Program tracking
-  program_name: null | string;
-  program_start: null | string;
-  program_end: null | string;
-
-  // Payment tracking
-  payment_status: null | PaymentStatus;
-  payment_amount: null | number;
-  payment_currency: null | string;
-  payment_notes: null | string;
-
-  // Intake (from storefront application)
-  intake_answers: null | Record<string, unknown>;
-  offer_id: null | string;
-  source: null | string;
-
-  // Status
-  status: ClientStatus;
-  status_override: null | string;
-
-  // Meta
   notes: null | string;
+  status: ClientStatus;
   invite_url: null | string;
   inserted_at: string;
   updated_at: string;
-
-  // Preloads
-  offer: ClientOffer | null;
 };
 
 // ── Request types ────────────────────────────────────────────
@@ -61,35 +27,26 @@ export type Client = {
 export type ClientInviteRequest = {
   email?: string;
   first_name?: string;
-  instagram_handle?: string;
   last_name?: string;
   notes?: string;
   phone?: string;
 };
 
 export type ClientUpdateRequest = {
+  email?: null | string;
   first_name?: string;
-  instagram_handle?: null | string;
   last_name?: string;
   notes?: null | string;
-  payment_amount?: null | number;
-  payment_currency?: null | string;
-  payment_notes?: null | string;
-  payment_status?: null | PaymentStatus;
   phone?: null | string;
-  program_end?: null | string;
-  program_name?: null | string;
-  program_start?: null | string;
-  status_override?: null | string;
+  status?: ClientStatus;
 };
 
 // ── List response with summary ───────────────────────────────
 
 export type ClientSummary = {
   active: number;
-  expired: number;
-  expiring: number;
-  payment_due: number;
+  archived: number;
+  inactive: number;
   pending: number;
 };
 
@@ -102,13 +59,11 @@ export type ClientListResponse = {
 export type ListClientsParams = {
   limit?: number;
   offset?: number;
-  payment_status?: string;
   search?: string;
   status?: string;
 };
 
 export type ListClientsFilters = {
-  payment_status?: string;
   search?: string;
   status?: string;
 };
@@ -154,7 +109,6 @@ export const clientsApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
-          ...(queryArg?.payment_status && {payment_status: queryArg.payment_status}),
           offset: pageParam,
           limit: PAGE_SIZE,
         },

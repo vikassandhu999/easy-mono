@@ -5,15 +5,13 @@ import {Link} from 'react-router-dom';
 import type {Client, ClientStatus} from '@/api/clients';
 
 type StatusConfig = {
-  color: 'danger' | 'default' | 'success' | 'warning';
+  color: 'default' | 'success';
   label: string;
 };
 
 const STATUS_MAP: Record<ClientStatus, StatusConfig> = {
   active: {color: 'success', label: 'Active'},
   archived: {color: 'default', label: 'Archived'},
-  expired: {color: 'danger', label: 'Expired'},
-  expiring: {color: 'warning', label: 'Expiring'},
   inactive: {color: 'default', label: 'Inactive'},
   pending: {color: 'default', label: 'Pending'},
 };
@@ -32,40 +30,18 @@ function formatTimeAgo(dateString: string): string {
   return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
 }
 
-function formatTimeRemaining(endDate: string): string {
-  const now = Date.now();
-  const end = new Date(endDate).getTime();
-  const diffMs = end - now;
-  if (diffMs <= 0) return 'ended';
-  const diffDays = Math.ceil(diffMs / 86400000);
-  if (diffDays === 1) return '1 day left';
-  if (diffDays < 7) return `${diffDays} days left`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks < 8) return `${diffWeeks} weeks left`;
-  const diffMonths = Math.floor(diffDays / 30);
-  return `${diffMonths} months left`;
+function formatDateShort(dateString: string): string {
+  return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
 }
 
 function getSubtitle(client: Client): string {
-  // Pending: show offer name + time ago
-  if (client.status === 'pending' && client.offer) {
-    return `${client.offer.name} · ${formatTimeAgo(client.inserted_at)}`;
+  if (client.status === 'active') {
+    return `Active \u00B7 since ${formatDateShort(client.inserted_at)}`;
   }
-
-  // Has program + end date: show program name + time remaining + payment
-  if (client.program_name && client.program_end) {
-    const parts = [client.program_name, formatTimeRemaining(client.program_end)];
-    if (client.payment_amount && client.payment_status) {
-      parts.push(client.payment_status === 'paid' ? 'paid' : `₹ ${client.payment_status}`);
-    }
-    return parts.join(' · ');
+  if (client.status === 'pending') {
+    return `Invited \u00B7 ${formatTimeAgo(client.inserted_at)}`;
   }
-
-  // Has program name only
-  if (client.program_name) return client.program_name;
-
-  // Fallback
-  return client.email ?? client.phone ?? 'No details';
+  return client.email ?? client.phone ?? client.status;
 }
 
 function getDisplayName(client: Client): string {

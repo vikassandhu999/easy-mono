@@ -149,7 +149,7 @@ function SidebarNavItem({item}: {item: NavItem}) {
   );
 }
 
-/** Small pill showing count of pending clients (storefront applications). Hidden when 0. */
+/** Small pill showing count of pending (invited) clients. Hidden when 0. */
 function PendingClientBadge() {
   const {data} = useListClientsQuery({status: 'pending', limit: 0});
   const count = data?.summary?.pending ?? 0;

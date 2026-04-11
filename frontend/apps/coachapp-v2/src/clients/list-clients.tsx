@@ -31,11 +31,9 @@ type FilterOption = {
 const FILTER_OPTIONS: FilterOption[] = [
   {id: 'all', label: 'All', filter: {}},
   {id: 'active', label: 'Active', filter: {status: 'active'}, summaryKey: 'active'},
-  {id: 'expiring', label: 'Expiring', filter: {status: 'expiring'}, summaryKey: 'expiring'},
-  {id: 'payment_due', label: 'Payment Due', filter: {payment_status: 'pending,partial'}, summaryKey: 'payment_due'},
   {id: 'pending', label: 'Pending', filter: {status: 'pending'}, summaryKey: 'pending'},
-  {id: 'expired', label: 'Expired', filter: {status: 'expired'}, summaryKey: 'expired'},
-  {id: 'archived', label: 'Archived', filter: {status: 'archived'}},
+  {id: 'inactive', label: 'Inactive', filter: {status: 'inactive'}, summaryKey: 'inactive'},
+  {id: 'archived', label: 'Archived', filter: {status: 'archived'}, summaryKey: 'archived'},
 ];
 
 function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined): string {

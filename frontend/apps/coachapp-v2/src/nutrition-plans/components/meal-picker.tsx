@@ -9,12 +9,14 @@ import type {Meal} from '@/api/meals';
 const CREATE_NEW_ID = '__create_new__';
 
 type MealPickerProps = {
+  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
+  autoFocus?: boolean;
   /** The plan's existing meals to pick from */
   meals: Meal[];
-  /** Called when the user selects an existing meal */
-  onSelect: (meal: Meal) => void;
   /** Called when the user picks the "New meal" option. Receives the typed name (may be empty). */
   onCreate?: (name: string) => void;
+  /** Called when the user selects an existing meal */
+  onSelect: (meal: Meal) => void;
   /** Optional placeholder text */
   placeholder?: string;
 };
@@ -32,7 +34,13 @@ type PickerItem = {id: string; kind: 'create'; name: string} | {id: string; kind
  * Client-side filtering from the meals array prop.
  * After selection, the input clears and onSelect/onCreate fires.
  */
-export default function MealPicker({meals, onSelect, onCreate, placeholder = 'Search meals...'}: MealPickerProps) {
+export default function MealPicker({
+  autoFocus = false,
+  meals,
+  onCreate,
+  onSelect,
+  placeholder = 'Search meals...',
+}: MealPickerProps) {
   const [searchInput, setSearchInput] = useState('');
 
   const filteredMeals = useMemo(() => {
@@ -90,6 +98,7 @@ export default function MealPicker({meals, onSelect, onCreate, placeholder = 'Se
     <Autocomplete
       allowsEmptyCollection
       className="w-full"
+      defaultOpen={autoFocus}
       onChange={handleChange}
       placeholder={placeholder}
       selectionMode="single"
@@ -105,6 +114,8 @@ export default function MealPicker({meals, onSelect, onCreate, placeholder = 'Se
           onInputChange={setSearchInput}
         >
           <SearchField
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="meal-search"
             variant="secondary"

@@ -300,6 +300,8 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                   <div className="flex min-w-0 items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <MealPicker
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
                         meals={meals}
                         onCreate={(name) => handleCreateAndAssign(selectedDay, mealType.value, name)}
                         onSelect={(meal) => handleAssign(selectedDay, mealType.value, meal)}

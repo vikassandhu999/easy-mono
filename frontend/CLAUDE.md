@@ -9,21 +9,22 @@ pnpm monorepo (`pnpm@10.27.0`) containing multiple React apps and shared package
 ## Common Commands
 
 ```bash
-# Development (all apps)
+# Development (all apps in parallel)
 pnpm dev
 
 # Development (individual apps)
-pnpm dev:coachapp-v2     # port 2021 - active development focus
-pnpm dev:clientapp       # port 1313
-pnpm dev:coachapp        # port 2020 (legacy, being migrated to v2)
-pnpm dev:website         # port 3000 (Next.js)
+pnpm dev:coachapp         # port 2021 — runs @easy/coachapp-v2 (primary coach app)
+pnpm dev:clientapp-v2     # port 1314 — client-facing PWA + Capacitor shell
+pnpm dev:website          # port 3000 — Next.js marketing site
 
 # Build (runs tsc --noEmit then vite build per app)
-pnpm build
-pnpm build:coachapp-v2
+pnpm build                # builds all packages
+pnpm build:coachapp       # builds @easy/coachapp-v2
+pnpm build:clientapp-v2
+pnpm build:website
 
 # Lint & Format
-pnpm lint                # eslint --fix across all packages
+pnpm lint                 # eslint --fix across all packages
 ```
 
 There are no tests configured in this repository.
@@ -32,10 +33,11 @@ There are no tests configured in this repository.
 
 ### Apps (`apps/`)
 
-- **coachapp-v2** — Primary app under active development. Coaching platform for managing clients, training plans, nutrition plans, and exercise/food/recipe libraries. React 19 + Vite + HeroUI (beta) + TailwindCSS v4.
-- **clientapp** — Client-facing app. React 19 + Mantine UI + React Router v6. Has PWA support.
-- **coachapp** — Legacy coach app being replaced by coachapp-v2. Mantine UI. Don't touch at all.
+- **coachapp-v2** — Primary coach app. Coaching platform for managing clients, training plans, nutrition plans, and exercise/food/recipe libraries. React 19 + Vite + HeroUI v3 + TailwindCSS v4 + Redux Toolkit + RTK Query + react-router v7 (data mode) + react-hook-form + zod. The `dev:coachapp` / `build:coachapp` scripts point at this package (there is no separate `coachapp` / `dev:coachapp-v2` script).
+- **clientapp-v2** — Client-facing PWA. React 19 + Vite + HeroUI v3 + TailwindCSS v4 + Redux Toolkit + RTK Query + react-router v7 + react-hook-form + zod. Wrapped in Capacitor 8 for iOS/Android native shells. Has PWA support via `vite-plugin-pwa`.
 - **website** — Marketing site. Next.js 16 with App Router + TailwindCSS v4.
+
+Legacy `coachapp` (Mantine) and `clientapp` (Mantine) folders no longer exist — they were removed after migration to the v2 apps.
 
 ### Shared Packages (`packages/`)
 

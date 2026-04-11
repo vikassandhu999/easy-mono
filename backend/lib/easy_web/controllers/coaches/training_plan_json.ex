@@ -1,4 +1,5 @@
 defmodule EasyWeb.Coaches.TrainingPlanJSON do
+  alias Easy.Clients.Client
   alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, TrainingPlan, WorkoutElement}
 
   @spec show(map()) :: map()
@@ -16,11 +17,11 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       id: plan.id,
       name: plan.name,
       description: plan.description,
-      is_template: plan.is_template,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,
+      client: client_data(plan.client),
       author_id: plan.author_id,
       business_id: plan.business_id,
       original_template_id: plan.original_template_id,
@@ -90,4 +91,14 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       notes: set.notes
     }
   end
+
+  defp client_data(%Client{} = client) do
+    %{
+      id: client.id,
+      first_name: client.first_name,
+      last_name: client.last_name
+    }
+  end
+
+  defp client_data(_), do: nil
 end

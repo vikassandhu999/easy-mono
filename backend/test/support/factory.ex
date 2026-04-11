@@ -173,8 +173,7 @@ defmodule Easy.Factory do
       description: "Weekly plan",
       tags: ["balanced"],
       macros_goal: %{"calories" => 2000, "protein" => 150, "carbs" => 200, "fat" => 60},
-      type: :template,
-      status: :draft,
+      status: :active,
       creator: creator,
       business: business
     }
@@ -186,8 +185,7 @@ defmodule Easy.Factory do
       "description" => "Plan created via test",
       "tags" => ["test"],
       "macros_goal" => %{"calories" => 1800, "protein" => 120, "carbs" => 180, "fat" => 50},
-      "type" => "template",
-      "status" => "draft"
+      "status" => "active"
     }
   end
 
@@ -299,7 +297,6 @@ defmodule Easy.Factory do
     %TrainingPlan{
       name: sequence(:training_plan_name, &"Training Plan #{&1}"),
       description: "Weekly strength plan",
-      is_template: true,
       status: :active,
       author: author,
       business: business
@@ -310,7 +307,6 @@ defmodule Easy.Factory do
     %{
       "name" => sequence(:training_plan_attr_name, &"Training Plan Attr #{&1}"),
       "description" => "Created via test",
-      "is_template" => true,
       "status" => "active"
     }
   end

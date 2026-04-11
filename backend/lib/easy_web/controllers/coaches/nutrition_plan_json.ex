@@ -1,4 +1,5 @@
 defmodule EasyWeb.Coaches.NutritionPlanJSON do
+  alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
@@ -36,11 +37,11 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       description: plan.description,
       tags: plan.tags || [],
       macros_goal: plan.macros_goal,
-      type: plan.type,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
       client_id: plan.client_id,
+      client: client_data(plan.client),
       source_template_id: plan.source_template_id,
       creator_id: plan.creator_id,
       business_id: plan.business_id,
@@ -124,4 +125,14 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   end
 
   defp plan_item_data(_), do: nil
+
+  defp client_data(%Client{} = client) do
+    %{
+      id: client.id,
+      first_name: client.first_name,
+      last_name: client.last_name
+    }
+  end
+
+  defp client_data(_), do: nil
 end

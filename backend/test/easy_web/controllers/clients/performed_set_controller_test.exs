@@ -50,7 +50,6 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          is_template: false,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-31]
         )

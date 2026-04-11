@@ -27,7 +27,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
          |> TrainingPlan.with_workouts()
          |> Repo.get(id) do
       nil -> {:error, :not_found}
-      plan -> render(conn, :show, plan: plan)
+      plan -> render(conn, :show, plan: Repo.preload(plan, :client))
     end
   end
 
@@ -68,17 +68,14 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 50)
     search = Map.get(params, "search", "")
-    client_id = Map.get(params, "client_id")
     status = parse_enum(params, "status", TrainingPlan.statuses())
-    template = parse_boolean(params, "is_template")
 
     base =
       TrainingPlan
       |> TrainingPlan.for_business(business_id)
       |> TrainingPlan.search(search)
       |> TrainingPlan.with_status(status)
-      |> TrainingPlan.is_template(template)
-      |> maybe_for_client(client_id)
+      |> TrainingPlan.templates()
 
     count = Repo.aggregate(base, :count, :id)
 
@@ -138,8 +135,4 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       error -> error
     end
   end
-
-  defp maybe_for_client(query, nil), do: query
-  defp maybe_for_client(query, ""), do: query
-  defp maybe_for_client(query, client_id), do: TrainingPlan.for_client(query, client_id)
 end

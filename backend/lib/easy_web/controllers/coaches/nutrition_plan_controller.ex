@@ -28,7 +28,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
          |> Plan.with_plan_items()
          |> Repo.get(plan_id) do
       nil -> {:error, :not_found}
-      plan -> render(conn, :show, plan: plan)
+      plan -> render(conn, :show, plan: Repo.preload(plan, :client))
     end
   end
 
@@ -65,15 +65,12 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
     status = parse_enum(params, "status", Plan.statuses())
-    type = parse_enum(params, "type", Plan.types())
-    client_id = Map.get(params, "client_id")
 
     base =
       Plan
       |> Plan.for_business(business_id)
       |> Plan.with_status(status)
-      |> Plan.with_type(type)
-      |> Plan.with_client(client_id)
+      |> Plan.templates()
 
     count = Repo.aggregate(base, :count, :id)
 

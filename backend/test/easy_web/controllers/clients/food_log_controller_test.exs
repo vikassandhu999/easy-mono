@@ -156,8 +156,7 @@ defmodule EasyWeb.Clients.FoodLogControllerTest do
         insert(:plan,
           creator: ctx.coach,
           business: ctx.business,
-          client_id: ctx.client.id,
-          type: :personal
+          client_id: ctx.client.id
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
@@ -224,8 +223,7 @@ defmodule EasyWeb.Clients.FoodLogControllerTest do
         insert(:plan,
           creator: ctx.coach,
           business: ctx.business,
-          client_id: ctx.client.id,
-          type: :personal
+          client_id: ctx.client.id
         )
 
       meal1 =
@@ -293,8 +291,7 @@ defmodule EasyWeb.Clients.FoodLogControllerTest do
         insert(:plan,
           creator: ctx.coach,
           business: ctx.business,
-          client_id: other_client.id,
-          type: :personal
+          client_id: other_client.id
         )
 
       conn =
@@ -351,8 +348,7 @@ defmodule EasyWeb.Clients.FoodLogControllerTest do
         insert(:plan,
           creator: ctx.coach,
           business: ctx.business,
-          client_id: ctx.client.id,
-          type: :personal
+          client_id: ctx.client.id
         )
 
       meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)

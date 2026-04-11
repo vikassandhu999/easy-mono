@@ -18,7 +18,6 @@ defmodule EasyWeb.Clients.TrainingPlanController do
         TrainingPlan
         |> TrainingPlan.for_business(business_id)
         |> TrainingPlan.for_client(client.id)
-        |> TrainingPlan.is_template(false)
         |> TrainingPlan.with_status(status)
 
       count = Repo.aggregate(base, :count, :id)
@@ -42,7 +41,6 @@ defmodule EasyWeb.Clients.TrainingPlanController do
       case TrainingPlan
            |> TrainingPlan.for_business(business_id)
            |> TrainingPlan.for_client(client.id)
-           |> TrainingPlan.is_template(false)
            |> TrainingPlan.with_workouts()
            |> Repo.get(id) do
         nil -> {:error, :not_found}

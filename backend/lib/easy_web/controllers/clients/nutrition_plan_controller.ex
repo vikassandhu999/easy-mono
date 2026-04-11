@@ -21,7 +21,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
         Plan
         |> Plan.for_business(business_id)
         |> Plan.for_client(client.id)
-        |> Plan.with_type(:personal)
         |> Plan.with_status(status)
 
       count = Repo.aggregate(base, :count, :id)
@@ -44,7 +43,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
       case Plan
            |> Plan.for_business(business_id)
            |> Plan.for_client(client.id)
-           |> Plan.with_type(:personal)
            |> Plan.with_meals()
            |> Plan.with_plan_items()
            |> Repo.get(id) do

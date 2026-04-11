@@ -15,12 +15,11 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
         status: :active
       )
 
       # Template — should not appear
-      insert(:plan, creator: ctx.coach, business: ctx.business, type: :template)
+      insert(:plan, creator: ctx.coach, business: ctx.business)
 
       # Assigned to another client — should not appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
@@ -28,8 +27,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       insert(:plan,
         creator: ctx.coach,
         business: ctx.business,
-        client_id: other_client.id,
-        type: :personal
+        client_id: other_client.id
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans")
@@ -51,7 +49,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
         status: :active
       )
 
@@ -59,8 +56,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
-        status: :draft
+        status: :archived
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans", %{"status" => "active"})
@@ -81,7 +77,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          type: :personal,
           status: :active
         )
 
@@ -121,8 +116,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         insert(:plan,
           creator: ctx.coach,
           business: ctx.business,
-          client_id: other_client.id,
-          type: :personal
+          client_id: other_client.id
         )
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans/#{plan.id}")
@@ -130,7 +124,7 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
     end
 
     test "returns 404 for template plan", ctx do
-      plan = insert(:plan, creator: ctx.coach, business: ctx.business, type: :template)
+      plan = insert(:plan, creator: ctx.coach, business: ctx.business)
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans/#{plan.id}")
       assert json_response(conn, 404)
@@ -144,7 +138,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          type: :personal,
           status: :active
         )
 
@@ -192,13 +185,12 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
     end
 
     test "returns 404 when no active plan", ctx do
-      # Only a draft plan
+      # Only an archived plan
       insert(:plan,
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
-        status: :draft
+        status: :archived
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
@@ -210,7 +202,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
         status: :active
       )
 
@@ -226,7 +217,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          type: :personal,
           status: :active
         )
 
@@ -256,7 +246,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
         creator: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        type: :personal,
         status: :active,
         start_date: ~D[2025-01-01],
         end_date: ~D[2025-12-31]

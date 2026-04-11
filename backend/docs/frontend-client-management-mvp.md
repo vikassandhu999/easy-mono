@@ -198,15 +198,15 @@ Plans are fetched and assigned via separate endpoints. The client detail page ne
 
 **Nutrition plans:**
 ```
-GET /v1/coach/nutrition_plans?client_id={clientId}
+GET /v1/coach/clients/{clientId}/nutrition_plans
 ```
 
 **Training plans:**
 ```
-GET /v1/coach/training_plans?client_id={clientId}
+GET /v1/coach/clients/{clientId}/training_plans
 ```
 
-Both support the `client_id` query parameter to filter plans assigned to a specific client.
+Client-scoped plan lists use dedicated endpoints with the client ID in the URL path. The library endpoints (`GET /v1/coach/nutrition_plans`, `GET /v1/coach/training_plans`) return only templates.
 
 **Nutrition plan list item shape:**
 ```json
@@ -216,16 +216,18 @@ Both support the `client_id` query parameter to filter plans assigned to a speci
   "description": "...",
   "tags": ["cutting"],
   "macros_goal": { "protein": 180, "carbs": 200, "fats": 60, "calories": 2060 },
-  "type": "personal",
   "status": "active",
   "start_date": "2026-04-01",
   "end_date": "2026-06-01",
   "client_id": "uuid",
+  "client": { "id": "uuid", "first_name": "Jane", "last_name": "Doe" },
   "source_template_id": "uuid",
   "inserted_at": "...",
   "updated_at": "..."
 }
 ```
+
+A plan is a template when `client_id` is `null`; otherwise it is a personal plan assigned to that client.
 
 **Training plan list item shape:**
 ```json
@@ -233,11 +235,11 @@ Both support the `client_id` query parameter to filter plans assigned to a speci
   "id": "uuid",
   "name": "Push Pull Legs",
   "description": "...",
-  "is_template": false,
   "status": "active",
   "start_date": "2026-04-01",
   "end_date": "2026-06-01",
   "client_id": "uuid",
+  "client": { "id": "uuid", "first_name": "Jane", "last_name": "Doe" },
   "original_template_id": "uuid",
   "planned_workouts": [{ ... }],
   "inserted_at": "...",
@@ -251,16 +253,16 @@ For the plan card in CM-7, you need:
 
 ### Fetching available plans for the picker
 
-To populate the NutritionPlanPicker and TrainingPlanPicker dropdowns, fetch template plans:
+To populate the NutritionPlanPicker and TrainingPlanPicker dropdowns, fetch template plans. Both library endpoints now return only templates by default:
 
 **Nutrition templates:**
 ```
-GET /v1/coach/nutrition_plans?type=template&status=active
+GET /v1/coach/nutrition_plans?status=active
 ```
 
 **Training templates:**
 ```
-GET /v1/coach/training_plans?is_template=true&status=active
+GET /v1/coach/training_plans?status=active
 ```
 
 Both return paginated results. The training plan index also supports a `search` parameter for filtering by name.
@@ -292,8 +294,8 @@ Both return **201** with the newly created plan (a clone of the template, assign
 Returns 404 if the plan or client doesn't exist / doesn't belong to the business.
 
 **Frontend pattern for CM-7:**
-1. On client detail load, fetch nutrition and training plans with `?client_id={id}`
-2. When coach clicks "+ Nutrition plan", show picker with templates from `?type=template&status=active`
+1. On client detail load, fetch plans via `GET /v1/coach/clients/{id}/nutrition_plans` and `GET /v1/coach/clients/{id}/training_plans`
+2. When coach clicks "+ Nutrition plan", show picker with templates from `GET /v1/coach/nutrition_plans?status=active`
 3. On select, POST to `/assign` with the client_id
 4. Refetch the client's plans to update the list
 

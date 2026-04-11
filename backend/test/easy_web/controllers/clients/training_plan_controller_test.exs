@@ -16,13 +16,12 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         author: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        is_template: false,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-03-31]
       )
 
       # Template — should not appear
-      insert(:training_plan, author: ctx.coach, business: ctx.business, is_template: true)
+      insert(:training_plan, author: ctx.coach, business: ctx.business)
 
       # Assigned to another client — should not appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
@@ -31,7 +30,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         author: ctx.coach,
         business: ctx.business,
         client_id: other_client.id,
-        is_template: false,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-03-31]
       )
@@ -52,7 +50,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         author: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        is_template: false,
         status: :active,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-03-31]
@@ -62,7 +59,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         author: ctx.coach,
         business: ctx.business,
         client_id: ctx.client.id,
-        is_template: false,
         status: :archived,
         start_date: ~D[2026-01-01],
         end_date: ~D[2026-03-31]
@@ -95,7 +91,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          is_template: false,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-31]
         )
@@ -146,7 +141,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: other_client.id,
-          is_template: false,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-31]
         )
@@ -156,7 +150,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
     end
 
     test "returns 404 for template plans", ctx do
-      plan = insert(:training_plan, author: ctx.coach, business: ctx.business, is_template: true)
+      plan = insert(:training_plan, author: ctx.coach, business: ctx.business)
 
       conn = get(ctx.conn, "/v1/client/training_plans/#{plan.id}")
       assert json_response(conn, 404)
@@ -168,7 +162,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          is_template: false,
           start_date: ~D[2026-01-01],
           end_date: ~D[2026-03-31]
         )
@@ -177,7 +170,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       refute Map.has_key?(data, "author_id")
       refute Map.has_key?(data, "business_id")
-      refute Map.has_key?(data, "is_template")
       refute Map.has_key?(data, "client_id")
       refute Map.has_key?(data, "original_template_id")
     end

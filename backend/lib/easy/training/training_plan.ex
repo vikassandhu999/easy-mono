@@ -14,7 +14,7 @@ defmodule Easy.Training.TrainingPlan do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @statuses [:active, :draft, :archived]
+  @statuses [:active, :archived]
 
   @spec statuses() :: [atom()]
   def statuses, do: @statuses
@@ -22,7 +22,6 @@ defmodule Easy.Training.TrainingPlan do
   schema "training_plans" do
     field :name, :string
     field :description, :string
-    field :is_template, :boolean, default: true
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :start_date, :date
     field :end_date, :date
@@ -40,7 +39,6 @@ defmodule Easy.Training.TrainingPlan do
   @cast_fields [
     :name,
     :description,
-    :is_template,
     :status,
     :client_id,
     :start_date,
@@ -57,7 +55,6 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_required([:name, :business_id, :author_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_template_or_client()
     |> validate_date_range()
     |> check_constraint(:start_date,
       name: :valid_date_range,
@@ -79,43 +76,26 @@ defmodule Easy.Training.TrainingPlan do
     |> cast(attrs, @cast_fields)
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_template_or_client()
     |> validate_date_range()
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:original_template_id)
   end
 
-  defp validate_template_or_client(changeset) do
-    is_template = get_field(changeset, :is_template)
-    client_id = get_field(changeset, :client_id)
-
-    cond do
-      is_template && client_id ->
-        add_error(changeset, :client_id, "template cannot have a client assigned")
-
-      !is_template && is_nil(client_id) ->
-        add_error(changeset, :client_id, "assigned plan must have a client")
-
-      true ->
-        changeset
-    end
-  end
-
   defp validate_date_range(changeset) do
     start_date = get_field(changeset, :start_date)
     end_date = get_field(changeset, :end_date)
-    is_template = get_field(changeset, :is_template)
+    client_id = get_field(changeset, :client_id)
 
     cond do
-      is_template ->
+      is_nil(client_id) ->
         changeset
 
-      !is_template && (is_nil(start_date) || is_nil(end_date)) ->
+      is_nil(start_date) || is_nil(end_date) ->
         changeset
         |> add_error(:start_date, "assigned plan must have a start date")
         |> add_error(:end_date, "assigned plan must have an end date")
 
-      start_date && end_date && Date.compare(end_date, start_date) == :lt ->
+      Date.compare(end_date, start_date) == :lt ->
         add_error(changeset, :end_date, "must be after or equal to start date")
 
       true ->
@@ -133,10 +113,10 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, where: t.client_id == ^client_id)
   end
 
-  @spec is_template(Ecto.Queryable.t(), boolean() | nil) :: Ecto.Query.t()
-  def is_template(query \\ __MODULE__, value)
-  def is_template(query, nil), do: query
-  def is_template(query, value), do: from(t in query, where: t.is_template == ^value)
+  @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def templates(query \\ __MODULE__) do
+    from(t in query, where: is_nil(t.client_id))
+  end
 
   @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def with_status(query \\ __MODULE__, status)
@@ -192,7 +172,6 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: copy_name,
         description: plan.description,
-        is_template: true,
         original_template_id: plan.id
       }
 
@@ -216,7 +195,6 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: plan.name,
         description: plan.description,
-        is_template: false,
         client_id: client_id,
         start_date: start_date,
         end_date: end_date,

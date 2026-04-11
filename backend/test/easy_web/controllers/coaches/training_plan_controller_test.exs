@@ -19,51 +19,63 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
   end
 
   describe "GET /v1/coach/training_plans" do
-    test "lists plans by business", %{conn: conn, coach: coach, business: business} do
+    test "lists only templates for this business", %{conn: conn, coach: coach, business: business} do
       insert(:training_plan, author: coach, business: business)
+
+      # Personal plan — should NOT appear
+      client = insert(:client, creator: coach, business: business)
+
+      insert(:training_plan,
+        author: coach,
+        business: business,
+        client_id: client.id,
+        start_date: ~D[2026-01-01],
+        end_date: ~D[2026-01-31]
+      )
+
+      # Other business template — should NOT appear
       other = insert(:coach)
       insert(:training_plan, author: other, business: other.business)
 
       conn = get(conn, "/v1/coach/training_plans")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
       assert length(data) == 1
-    end
-
-    test "filters plans by client_id", %{conn: conn, coach: coach, business: business} do
-      client1 = insert(:client, creator: coach, business: business)
-      client2 = insert(:client, creator: coach, business: business)
-
-      insert(:training_plan,
-        author: coach,
-        business: business,
-        client_id: client1.id,
-        is_template: false,
-        start_date: ~D[2026-01-01],
-        end_date: ~D[2026-01-31]
-      )
-
-      insert(:training_plan,
-        author: coach,
-        business: business,
-        client_id: client2.id,
-        is_template: false,
-        start_date: ~D[2026-01-01],
-        end_date: ~D[2026-01-31]
-      )
-
-      conn = get(conn, "/v1/coach/training_plans", %{"client_id" => client1.id})
-      assert %{"data" => data, "count" => 1} = json_response(conn, 200)
-      assert hd(data)["client_id"] == client1.id
+      assert hd(data)["client_id"] == nil
     end
   end
 
   describe "GET /v1/coach/training_plans/:id" do
-    test "shows plan", %{conn: conn, coach: coach, business: business} do
+    test "shows template with client as nil", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
 
       conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
+      assert data["client"] == nil
+    end
+
+    test "shows personal plan with client preloaded", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+
+      plan =
+        insert(:training_plan,
+          author: coach,
+          business: business,
+          client_id: client.id,
+          start_date: ~D[2026-01-01],
+          end_date: ~D[2026-01-31]
+        )
+
+      conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == plan.id
+      assert data["client"]["id"] == client.id
+      assert data["client"]["first_name"] == client.first_name
+      assert data["client"]["last_name"] == client.last_name
     end
   end
 
@@ -79,7 +91,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
   describe "POST /v1/coach/training_plans/:id/assign" do
     test "assigns template to client", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business, is_template: true)
+      plan = insert(:training_plan, author: coach, business: business)
       client = insert(:client, creator: coach, business: business)
 
       conn =
@@ -91,7 +103,6 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["client_id"] == client.id
-      assert data["is_template"] == false
       assert data["original_template_id"] == plan.id
     end
   end

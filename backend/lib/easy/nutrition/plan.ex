@@ -16,11 +16,7 @@ defmodule Easy.Nutrition.Plan do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  @plan_types [:template, :personal]
-  @plan_statuses [:draft, :active, :archived]
-
-  @spec types() :: [atom()]
-  def types, do: @plan_types
+  @plan_statuses [:active, :archived]
 
   @spec statuses() :: [atom()]
   def statuses, do: @plan_statuses
@@ -32,8 +28,7 @@ defmodule Easy.Nutrition.Plan do
 
     field :macros_goal, :map
 
-    field :type, Ecto.Enum, values: @plan_types, default: :template
-    field :status, Ecto.Enum, values: @plan_statuses, default: :draft
+    field :status, Ecto.Enum, values: @plan_statuses, default: :active
 
     field :start_date, :date
     field :end_date, :date
@@ -48,7 +43,7 @@ defmodule Easy.Nutrition.Plan do
     timestamps(type: :utc_datetime)
   end
 
-  @cast_fields [:name, :description, :tags, :macros_goal, :type, :status, :start_date, :end_date]
+  @cast_fields [:name, :description, :tags, :macros_goal, :status, :start_date, :end_date]
 
   # Changesets
 
@@ -95,14 +90,6 @@ defmodule Easy.Nutrition.Plan do
     from(p in query, where: p.client_id == ^client_id)
   end
 
-  @spec with_client(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def with_client(query \\ __MODULE__, client_id)
-  def with_client(query, nil), do: query
-
-  def with_client(query, client_id) do
-    from(p in query, where: p.client_id == ^client_id)
-  end
-
   @spec with_status(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
   def with_status(query \\ __MODULE__, status)
   def with_status(query, nil), do: query
@@ -111,12 +98,9 @@ defmodule Easy.Nutrition.Plan do
     from(p in query, where: p.status == ^status)
   end
 
-  @spec with_type(Ecto.Queryable.t(), atom() | nil) :: Ecto.Query.t()
-  def with_type(query \\ __MODULE__, type)
-  def with_type(query, nil), do: query
-
-  def with_type(query, type) do
-    from(p in query, where: p.type == ^type)
+  @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def templates(query \\ __MODULE__) do
+    from(p in query, where: is_nil(p.client_id))
   end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -128,7 +112,6 @@ defmodule Easy.Nutrition.Plan do
   def active_for_client(query \\ __MODULE__, client_id, date) do
     from(p in query,
       where: p.client_id == ^client_id,
-      where: p.type == :personal,
       where: p.status == :active,
       where: is_nil(p.start_date) or p.start_date <= ^date,
       where: is_nil(p.end_date) or p.end_date >= ^date
@@ -232,10 +215,9 @@ defmodule Easy.Nutrition.Plan do
   @spec assign_to_client(t(), String.t(), String.t(), map()) :: {:ok, t()} | {:error, any()}
   def assign_to_client(plan, client_id, creator_id, attrs \\ %{}) do
     copy_plan(plan, creator_id,
-      type: :personal,
       client_id: client_id,
       source_template_id: plan.id,
-      status: plan.status,
+      status: :active,
       start_date: Map.get(attrs, "start_date") || Map.get(attrs, :start_date),
       end_date: Map.get(attrs, "end_date") || Map.get(attrs, :end_date)
     )
@@ -245,10 +227,9 @@ defmodule Easy.Nutrition.Plan do
   def duplicate(plan, creator_id) do
     copy_plan(plan, creator_id,
       name: "#{plan.name} (Copy)",
-      type: plan.type,
       client_id: nil,
       source_template_id: plan.source_template_id || plan.id,
-      status: :draft
+      status: :active
     )
   end
 
@@ -263,7 +244,6 @@ defmodule Easy.Nutrition.Plan do
         description: plan.description,
         tags: plan.tags,
         macros_goal: plan.macros_goal,
-        type: Keyword.get(opts, :type, plan.type),
         status: Keyword.get(opts, :status, plan.status),
         start_date: Keyword.get(opts, :start_date),
         end_date: Keyword.get(opts, :end_date)

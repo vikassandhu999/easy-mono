@@ -42,7 +42,7 @@ The detail page consolidates the header, contact, and status into a single hero 
 
 ### Section Order
 
-1. **Header bar** — Back (left) + Edit (right). Two buttons only.
+1. **Header bar** — Back (left, via `useGoBack`) + Edit (right). Two buttons only.
 2. **Hero card** — bordered card containing:
    - Identity row: Avatar (size-12), full name, program subtitle (`getSubtitle`), status chip
    - Action buttons (conditional, below divider): WhatsApp link, Call link, Renew button, Archive AlertDialog
@@ -56,7 +56,7 @@ The detail page consolidates the header, contact, and status into a single hero 
 5. **Notes** — `InlineNotes` component: tap-to-edit, no page navigation
 6. **Intake** — conditional (only when `intake_answers` exists)
 7. **Nutrition Adherence** — `ClientNutritionAdherence` component
-8. **Workout History** — `ClientWorkoutHistory` component
+8. **Workout History** — `ClientWorkoutHistory` component (preview: 7 most recent, "View all" links to `/clients/:id/workout-history`)
 9. **Details** — added date, last updated date
 
 ### What Was Removed
@@ -126,7 +126,8 @@ Each collapsed section shows a **subtitle summary** of current values via `useWa
 | File | Route | Purpose |
 | --- | --- | --- |
 | `list-clients.tsx` | `/clients` | Infinite scroll list + search + Autocomplete status filter |
-| `client-detail.tsx` | `/clients/:id` | Hero card + program strip + plans + notes + intake + history |
+| `client-detail.tsx` | `/clients/:id` | Hero card + program strip + plans + notes + intake + history preview |
+| `client-workout-history-page.tsx` | `/clients/:id/workout-history` | Full paginated workout history with infinite scroll |
 | `edit-client.tsx` | `/clients/:id/edit` | Collapsible form sections with subtitle summaries |
 | `invite-client.tsx` | `/clients/invite` | Invite form (name, email, phone, notes) + confirmation |
 
@@ -147,7 +148,7 @@ Each collapsed section shows a **subtitle summary** of current values via `useWa
 | `ClientPicker` | `client-picker.tsx` | Autocomplete for selecting clients (used by plan detail pages) |
 | `ClientNutritionAdherence` | `client-nutrition-adherence.tsx` | Weekly adherence strip with day drill-down |
 | `ClientNutritionDetail` | `client-nutrition-detail.tsx` | Per-day food log table |
-| `ClientWorkoutHistory` | `client-workout-history.tsx` | Paginated session list |
+| `ClientWorkoutHistory` | `client-workout-history.tsx` | Preview (7 recent sessions) + "View all" link. Exports `SessionCard` for reuse. |
 
 ---
 
@@ -216,6 +217,10 @@ The action buttons bar (WhatsApp, Call, Renew, Archive) is wrapped in a conditio
 ### 8. `getSubtitle` handles all statuses
 
 The `getSubtitle` function on the detail page handles `active`, `expiring`, and `expired` statuses — all show program name + time remaining. Pending clients show offer name + time ago. Fallback is email or phone.
+
+### 9. Back navigation uses `useGoBack` for scroll restoration
+
+All Back buttons use `useGoBack(fallback)` from `@/@hooks/use-go-back`. This triggers `navigate(-1)` (pop navigation) when history exists, enabling `<ScrollRestoration />` to restore the scroll position. On deep links (no history), it falls back to the specified route. This pattern is used across all screens in the app, not just clients.
 
 ---
 

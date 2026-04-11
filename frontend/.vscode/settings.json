@@ -15,7 +15,7 @@
   "window.zoomLevel": 1,
   "eslint.format.enable": true,
   "tailwindCSS.experimental.configFile": [
-    "apps/coachapp/src/index.css",
+    "apps/clientapp-v2/src/index.css",
     "apps/coachapp-v2/src/index.css"
   ],
 }

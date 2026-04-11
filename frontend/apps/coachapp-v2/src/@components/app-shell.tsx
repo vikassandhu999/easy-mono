@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import {type ReactNode, useState} from 'react';
-import {NavLink, Outlet, useLocation} from 'react-router-dom';
+import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
 import {useInstallPrompt} from '@/@components/use-install-prompt';
 import {ROUTES} from '@/@config/routes';
@@ -140,6 +140,7 @@ function SidebarNavItem({item}: {item: NavItem}) {
         }`
       }
       to={item.path}
+      viewTransition
     >
       {item.icon}
       <span className="flex-1">{item.label}</span>
@@ -297,6 +298,7 @@ export default function AppShell() {
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
         <Outlet />
+        <ScrollRestoration />
       </main>
 
       {/* Mobile install banner — above bottom nav */}

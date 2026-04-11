@@ -27,7 +27,7 @@ Key constraints that shaped decisions:
 | **Vite**         | 5.4.8   | Fast HMR, native ESM, simple config. SPA, no SSR needed.                    |
 | **React**        | 19.1    | Latest stable. Needed for React Compiler compatibility (lint rules).        |
 | **TypeScript**   | 5.5+    | Strict mode enabled. `tsc --noEmit` runs before every build.                |
-| **react-router** | 7.x     | Backward-compatible with v6 patterns in library mode. No framework lock-in. |
+| **react-router** | 7.x     | Data mode (`createBrowserRouter` + `RouterProvider`). Enables `<ScrollRestoration />`, `useBlocker`, route-level error boundaries. |
 
 ### UI Layer
 
@@ -52,7 +52,7 @@ Key constraints that shaped decisions:
 
 **Why RTK Query over TanStack Query?** Redux Toolkit was already needed for possible client-side state. RTK Query's tag-based cache invalidation maps well to the REST API's entity model. Having one state management library instead of two reduces conceptual overhead.
 
-**Why not TanStack Router?** It was initially considered but dropped. react-router v7 in library mode provides the same file-based-free routing with less lock-in. The app uses a single `App.tsx` route assembly — no file-system routing needed.
+**Why not TanStack Router?** It was initially considered but dropped. react-router v7 data mode provides the same file-based-free routing with less lock-in. The app uses a single `router.tsx` route assembly — no file-system routing needed.
 
 ---
 
@@ -80,8 +80,8 @@ src/
 ├── library/               # Library landing page
 ├── dashboard/             # Dashboard (placeholder)
 ├── settings/              # Settings (placeholder)
-├── App.tsx                # Route assembly (zero business logic)
-├── main.tsx               # Entry: StrictMode + Provider + BrowserRouter
+├── router.tsx             # Route assembly — createBrowserRouter + route objects
+├── main.tsx               # Entry: StrictMode + Provider + RouterProvider
 ├── store.ts               # Redux store
 └── index.css              # Tailwind + HeroUI imports
 ```
@@ -99,7 +99,7 @@ src/
 ### Data Flow
 
 ```
-App.tsx route → withAuth HOC → Feature screen → RTK Query hook → Component (via props)
+router.tsx route → withAuth HOC → Feature screen → RTK Query hook → Component (via props)
 ```
 
 - Screens call RTK Query hooks and handle loading/error states.
@@ -178,7 +178,7 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 
 | Component         | File                | Purpose                                                         |
 | ----------------- | ------------------- | --------------------------------------------------------------- |
-| `AppShell`        | `app-shell.tsx`     | Desktop sidebar (Library group open by default, collapsible) + mobile bottom nav + PWA install prompt |
+| `AppShell`        | `app-shell.tsx`     | Desktop sidebar (Library group open by default, collapsible) + mobile bottom nav + PWA install prompt + `<ScrollRestoration />` |
 | `PageLayout`      | `page-layout.tsx`   | Consistent page wrapper with title + optional `action` slot     |
 | `InfiniteList<T>` | `infinite-list.tsx` | Generic infinite scroll list with loading/empty/error states    |
 
@@ -189,6 +189,7 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 | `useInfiniteScroll` | `use-infinite-scroll.ts` | IntersectionObserver for infinite scroll trigger |
 | `useDebouncedValue` | `use-debounced-value.ts` | Debounces any value (used for search inputs)     |
 | `useInstallPrompt`  | `use-install-prompt.ts`  | Captures `beforeinstallprompt` event for PWA install banner (sessionStorage dismiss) |
+| `useGoBack`         | `use-go-back.ts`         | Back navigation: `navigate(-1)` if history exists (enables scroll restore), fallback route on deep links |
 
 ### Route Protection (`@hoc/`)
 
@@ -199,7 +200,7 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 
 ### Route Constants (`@config/routes.ts`)
 
-All route paths centralized. `App.tsx` and `useNavigate()` calls reference `ROUTES.X` constants, never raw strings.
+All route paths centralized. `router.tsx` uses `ROUTES.X` constants for route registration. Navigation uses `useGoBack(fallback)` for Back buttons and `useNavigate()` for forward navigation.
 
 ---
 

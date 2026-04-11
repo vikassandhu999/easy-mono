@@ -2,7 +2,7 @@
 
 ## Stack
 
-Vite + React 19 + TypeScript (strict) | HeroUI v3 + Tailwind CSS v4 | Redux Toolkit + RTK Query | react-hook-form + zod | react-router v7
+Vite + React 19 + TypeScript (strict) | HeroUI v3 + Tailwind CSS v4 | Redux Toolkit + RTK Query | react-hook-form + zod | react-router v7 (data mode)
 
 ## Commands
 
@@ -65,8 +65,8 @@ src/
 ├── settings/                     # Settings feature module
 │   └── components/
 │
-├── App.tsx                       # All routes — imports feature screens
-├── main.tsx                      # Entry: providers + BrowserRouter
+├── router.tsx                     # Route config — createBrowserRouter + route objects
+├── main.tsx                      # Entry: providers + RouterProvider
 ├── store.ts                      # Redux store
 └── index.css                     # Tailwind + HeroUI
 ```
@@ -89,7 +89,7 @@ src/clients/
 └── edit-client.tsx               # Screen: edit client form
 ```
 
-- **Screen files** sit at the root of the feature folder. These are the entry points that `App.tsx` imports.
+- **Screen files** sit at the root of the feature folder. These are the entry points that `router.tsx` imports.
 - **`components/`** holds UI pieces specific to this feature. If a component is only used by one screen, it can also live right in the screen file.
 - Screen files call RTK Query hooks, handle loading/error, compose components.
 - Feature modules import from `@/api/*` for data, from `@/@components/*` for shared UI, and from their own `./components/*`. They never import from other feature modules.
@@ -102,24 +102,32 @@ The `@` prefix visually separates infrastructure from features when scanning `sr
 | -------------- | ---------------------------------------------------------------- |
 | `api/`         | All RTK Query endpoint definitions + types. One file per domain. |
 | `@components/` | UI components shared across 2+ features.                         |
+| `@hooks/`      | Shared hooks (`useInfiniteScroll`, `useDebouncedValue`, `useGoBack`, `useInstallPrompt`). |
 | `@hoc/`        | `withAuth` and `withNotAuth` route protection HOCs.              |
 | `@config/`     | App-wide constants (routes, etc).                                |
 
-### `App.tsx` — Route Assembly
+### `router.tsx` — Route Assembly (Data Mode)
 
-`App.tsx` is the single source of truth for routing. It imports screen components from features and wraps them with `withAuth`/`withNotAuth`:
+`router.tsx` is the single source of truth for routing. It uses `createBrowserRouter()` (React Router 7 data mode) to define route objects. Screen components are imported and assigned as `Component` values:
 
 ```tsx
+import { createBrowserRouter } from "react-router-dom";
 import { withAuth } from "@/@hoc/with-auth";
-import ListClients from "@/clients/list-clients";
+import AppShell from "@/@components/app-shell";
 
-const ClientsScreen = withAuth(ListClients);
+const AppShellScreen = withAuth(AppShell);
 
-// In routes:
-<Route element={<ClientsScreen />} path={ROUTES.CLIENTS} />;
+export const router = createBrowserRouter([
+  {
+    Component: AppShellScreen,
+    children: [
+      { path: "/clients", Component: ListClients },
+    ],
+  },
+]);
 ```
 
-This mirrors v3-nblik's thin `pages/` layer: `App.tsx` does zero business logic — it only assembles features into routes.
+Data mode enables `<ScrollRestoration />` (rendered in AppShell), `useBlocker`, route-level error boundaries, and lazy routes. All data fetching remains in RTK Query — no route loaders are used.
 
 ---
 
@@ -135,7 +143,7 @@ This mirrors v3-nblik's thin `pages/` layer: `App.tsx` does zero business logic 
 | A new API endpoint                   | The matching file in `src/api/`. New domain = new file.            |
 | A new feature entirely               | New folder at `src/{feature}/` with `components/` inside.          |
 | A form                               | In the feature's `components/` folder. Uses react-hook-form + zod. |
-| A new route                          | Add to `App.tsx` + add path to `@config/routes.ts`.                |
+| A new route                          | Add to `router.tsx` + add path to `@config/routes.ts`.             |
 | An HOC or guard                      | `src/@hoc/`                                                        |
 
 ### Naming
@@ -147,7 +155,7 @@ This mirrors v3-nblik's thin `pages/` layer: `App.tsx` does zero business logic 
 ### Data Flow
 
 ```
-App.tsx route → Feature screen → RTK Query hook (from api/) → Component (via props)
+router.tsx route → withAuth HOC → Feature screen → RTK Query hook (from api/) → Component (via props)
 ```
 
 - Screens call RTK Query hooks. Components receive data via props.
@@ -224,6 +232,7 @@ import { ROUTES } from "@/@config/routes";
 - Don't use `any`. Use `unknown` and narrow.
 - Don't create new CSS files. Tailwind classes only.
 - Don't use `window.location` for navigation. Use react-router.
+- Don't use `navigate('/path')` for Back buttons. Use `useGoBack(fallback)` from `@/@hooks/use-go-back` — it uses `navigate(-1)` (pop) when history exists, enabling `<ScrollRestoration />`, and falls back to the given route on deep links.
 - Don't put types in separate files. Types live next to the code that uses them (API types in `api/*.ts`, component props inline).
 
 ---

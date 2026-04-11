@@ -11,6 +11,7 @@ import Signup from '@/auth/signup';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import VerifySignupOtp from '@/auth/verify-signup-otp';
 import ClientDetail from '@/clients/client-detail';
+import ClientWorkoutHistoryPage from '@/clients/client-workout-history-page';
 import EditClient from '@/clients/edit-client';
 import InviteClient from '@/clients/invite-client';
 import ListClients from '@/clients/list-clients';
@@ -103,6 +104,10 @@ export default function App() {
         <Route
           element={<InviteClient />}
           path={ROUTES.INVITE_CLIENT}
+        />
+        <Route
+          element={<ClientWorkoutHistoryPage />}
+          path={ROUTES.CLIENT_WORKOUT_HISTORY}
         />
         <Route
           element={<SessionDetail />}

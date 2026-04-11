@@ -1,11 +1,13 @@
 import {DAY_NAMES, formatDuration, formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
-import {Button, Chip, Separator, Spinner} from '@heroui/react';
+import {Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
 import type {PlannedSnapshot, WorkoutSession} from '@/api/workoutSessions';
 
-import {useWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
+import {useListWorkoutSessionsQuery} from '@/api/workoutSessions';
+
+const PREVIEW_LIMIT = 7;
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -75,9 +77,9 @@ function buildSubtitle(session: WorkoutSession): string {
   return parts.join(' \u00B7 ');
 }
 
-// ── Session card ─────────────────────────────────────────────
+// ── Session card (exported for reuse) ────────────────────────
 
-function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
+export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
   const title = getWorkoutTitle(session);
   const dayLabel = getDayLabel(session.planned_snapshot);
   const dateStr = formatSessionDate(session.started_at);
@@ -134,14 +136,17 @@ function SessionCard({clientId, session}: {clientId: string; session: WorkoutSes
   );
 }
 
-// ── Main component ───────────────────────────────────────────
+// ── Preview component (for client detail page) ───────────────
 
 export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
-  const {data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading} = useWorkoutSessionsInfiniteQuery({
+  const {data, isLoading} = useListWorkoutSessionsQuery({
     client_id: clientId,
+    limit: PREVIEW_LIMIT,
   });
 
-  const sessions = data?.pages.flatMap((page) => page.data) ?? [];
+  const sessions = data?.data ?? [];
+  const totalCount = data?.count ?? 0;
+  const hasMore = totalCount > PREVIEW_LIMIT;
 
   return (
     <section className="py-4">
@@ -161,16 +166,14 @@ export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
               session={session}
             />
           ))}
-          {hasNextPage ? (
-            <Button
-              className="mt-1"
-              isPending={isFetchingNextPage}
-              onPress={() => fetchNextPage()}
-              size="sm"
-              variant="ghost"
+          {hasMore ? (
+            <Link
+              className="mt-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground-500 transition-colors hover:bg-default-100 active:bg-default-200"
+              to={`/clients/${clientId}/workout-history`}
             >
-              {isFetchingNextPage ? 'Loading...' : 'Load more'}
-            </Button>
+              View all workouts
+              <ChevronRight size={14} />
+            </Link>
           ) : null}
         </div>
       ) : (

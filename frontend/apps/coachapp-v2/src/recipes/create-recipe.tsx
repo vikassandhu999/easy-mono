@@ -72,7 +72,7 @@ export default function CreateRecipe() {
         ...(recipeIngredients && {recipe_ingredients: recipeIngredients}),
       };
       const result = await createRecipe(body).unwrap();
-      navigate(`/library/recipes/${result.data.id}`);
+      navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to create recipe. Please try again.', form.setError);
     }

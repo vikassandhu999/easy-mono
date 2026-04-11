@@ -2,7 +2,7 @@ import {Button, Input, Label, ListBox, Select, Spinner, TextArea} from '@heroui/
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft} from 'lucide-react';
 import {Controller, useForm} from 'react-hook-form';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import PageLayout from '@/@components/page-layout';
@@ -34,13 +34,12 @@ type EditClientFormValues = z.infer<typeof schema>;
 
 export default function EditClient() {
   const {id} = useParams<{id: string}>();
-  const navigate = useNavigate();
-  const goBack = useGoBack(`/clients/${id}`);
+  const backPath = `/clients/${id}`;
+  const goBack = useGoBack(backPath);
 
   const {data, isLoading: isFetching} = useGetClientQuery(id!);
   const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
   const client = data?.data;
-  const backPath = `/clients/${id}`;
 
   const {
     control,
@@ -85,7 +84,7 @@ export default function EditClient() {
         },
         id: id!,
       }).unwrap();
-      navigate(backPath);
+      goBack();
     } catch (err) {
       applyFormErrors(err, 'Failed to update client.', setError);
     }
@@ -202,7 +201,7 @@ export default function EditClient() {
 
         <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
           <Button
-            onPress={() => navigate(backPath)}
+            onPress={goBack}
             variant="ghost"
           >
             Cancel

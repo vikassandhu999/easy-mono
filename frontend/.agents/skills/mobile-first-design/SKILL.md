@@ -193,6 +193,8 @@ See [Container Decisions Reference](./references/container-decisions.md) for the
 </form>
 ```
 
+**Navigation after save is NOT a layout concern — see the app's `AGENTS.md` "Form Navigation After Save" section.** In short: create forms `navigate(target, {replace: true})`, edit forms call `goBack()` from `useGoBack(backPath)`. Never plain `navigate(path)` on submit success.
+
 ---
 
 ## Verification

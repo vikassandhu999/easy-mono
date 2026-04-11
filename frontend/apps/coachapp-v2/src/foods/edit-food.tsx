@@ -1,7 +1,7 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
-import {Navigate, useNavigate, useParams} from 'react-router-dom';
+import {Navigate, useParams} from 'react-router-dom';
 
 import type {ServingSize} from '@/api/shared';
 
@@ -30,7 +30,6 @@ function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
  * which the React Compiler lint rule forbids.
  */
 function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
-  const navigate = useNavigate();
   const goBack = useGoBack(backPath);
   const {data} = useGetFoodQuery(foodId);
   const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
@@ -67,7 +66,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
         serving_sizes: servingSizes,
       };
       await updateFood({body, id: foodId}).unwrap();
-      navigate(backPath);
+      goBack();
     } catch (err) {
       applyFormErrors(err, 'Failed to update food. Please try again.', form.setError);
     }
@@ -92,7 +91,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
       <FoodForm
         form={form}
         isSubmitting={isUpdating}
-        onCancel={() => navigate(backPath)}
+        onCancel={goBack}
         onServingSizesChange={setServingSizes}
         onSubmit={onSubmit}
         servingSizes={servingSizes}

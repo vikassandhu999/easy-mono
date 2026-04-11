@@ -41,7 +41,7 @@ export default function CreateNutritionPlan() {
         ...(macrosGoal && {macros_goal: macrosGoal}),
       };
       const result = await createPlan(body).unwrap();
-      navigate(`/library/nutrition-plans/${result.data.id}`);
+      navigate(`/library/nutrition-plans/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to create nutrition plan. Please try again.', form.setError);
     }

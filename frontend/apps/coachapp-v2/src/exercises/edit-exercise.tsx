@@ -1,7 +1,7 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
-import {Navigate, useNavigate, useParams} from 'react-router-dom';
+import {Navigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -26,7 +26,6 @@ function EditExerciseForm({
   exercise: Exercise;
   exerciseId: string;
 }) {
-  const navigate = useNavigate();
   const goBack = useGoBack(backPath);
   const [updateExercise, {isLoading: isUpdating}] = useUpdateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
@@ -60,7 +59,7 @@ function EditExerciseForm({
         images,
       };
       await updateExercise({body, id: exerciseId}).unwrap();
-      navigate(backPath);
+      goBack();
     } catch (err) {
       applyFormErrors(err, 'Failed to update exercise. Please try again.', form.setError);
     }
@@ -88,7 +87,7 @@ function EditExerciseForm({
         images={images}
         isSubmitting={isUpdating}
         muscles={musclesData?.data ?? []}
-        onCancel={() => navigate(backPath)}
+        onCancel={goBack}
         onImagesChange={setImages}
         onSubmit={onSubmit}
         submitLabel="Save Changes"

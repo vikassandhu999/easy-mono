@@ -56,3 +56,19 @@ Enforced via `@easy/eslint-config` (ESLint + Prettier):
 - **Imports**: Sorted naturally via `eslint-plugin-perfectionist` (ascending, natural order)
 - **TypeScript**: Strict mode, `@typescript-eslint/no-unused-vars` is error-level
 - JSX props sorted alphabetically (perfectionist)
+
+## Shared Conventions (apply to all React apps)
+
+### Form Navigation After Save
+
+Both `coachapp-v2` and `clientapp-v2` follow the same rule for navigating after a form's successful save:
+
+- **Create forms** → `navigate(targetPath, {replace: true})`. The create route must not remain in history; Back from the new detail page should skip the empty form.
+- **Edit forms** → `goBack()` from `useGoBack(backPath)` (in `src/@hooks/use-go-back.ts` of each app). Pops history with `backPath` as the deep-link fallback.
+- **Cancel on edit forms** → same `goBack()` call as Save.
+- **Cancel on create forms** → plain `navigate(listRoute)` push (abandoning is a fresh navigation).
+- **Combined create/update forms** (e.g. `clientapp-v2/nutrition/add-food.tsx`) → branch on the mode flag: `isReplacement ? goBack() : navigate(target, {replace: true})`.
+
+Exceptions (flag before deviating): in-place confirmation screens, live-preview editors, and multi-step wizard forward steps that must remain reachable via browser back.
+
+See `apps/coachapp-v2/AGENTS.md` → "Form Navigation After Save" for the full pattern with code examples, and `apps/coachapp-v2/docs/adr-000-architecture-and-stack.md` Discovery #12 for the rationale.

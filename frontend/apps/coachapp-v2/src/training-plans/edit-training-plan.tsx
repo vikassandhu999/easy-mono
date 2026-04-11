@@ -1,6 +1,6 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -17,7 +17,6 @@ import TrainingPlanForm, {
  * which the React Compiler lint rule forbids.
  */
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
-  const navigate = useNavigate();
   const goBack = useGoBack(backPath);
   const {data} = useGetTrainingPlanQuery(planId);
   const [updatePlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
@@ -42,7 +41,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
         start_date: formData.start_date || undefined,
       };
       await updatePlan({body, id: planId}).unwrap();
-      navigate(backPath);
+      goBack();
     } catch (err) {
       applyFormErrors(err, 'Failed to update training plan. Please try again.', form.setError);
     }
@@ -67,7 +66,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
       <TrainingPlanForm
         form={form}
         isSubmitting={isUpdating}
-        onCancel={() => navigate(backPath)}
+        onCancel={goBack}
         onSubmit={onSubmit}
         submitLabel="Save Changes"
         submittingLabel="Saving..."

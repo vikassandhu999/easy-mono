@@ -1,7 +1,7 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import type {RecipeIngredientInput} from '@/api/recipes';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
@@ -49,7 +49,6 @@ function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] {
  * which the React Compiler lint rule forbids.
  */
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
-  const navigate = useNavigate();
   const goBack = useGoBack(backPath);
   const {data} = useGetRecipeQuery(recipeId);
   const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
@@ -104,7 +103,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         recipe_ingredients: recipeIngredients,
       };
       await updateRecipe({body, id: recipeId}).unwrap();
-      navigate(backPath);
+      goBack();
     } catch (err) {
       applyFormErrors(err, 'Failed to update recipe. Please try again.', form.setError);
     }
@@ -130,7 +129,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         form={form}
         ingredients={ingredients}
         isSubmitting={isUpdating}
-        onCancel={() => navigate(backPath)}
+        onCancel={goBack}
         onIngredientsChange={setIngredients}
         onSubmit={onSubmit}
         submitLabel="Save Changes"

@@ -75,7 +75,11 @@ export default function AddFood() {
         weight_g: weightG || null,
       }).unwrap();
       toast.success(`${selectedItem.name} logged`);
-      navigate(ROUTES.NUTRITION);
+      if (isReplacement) {
+        goBack();
+      } else {
+        navigate(ROUTES.NUTRITION, {replace: true});
+      }
     } catch {
       toast.danger('Failed to log food.');
     }

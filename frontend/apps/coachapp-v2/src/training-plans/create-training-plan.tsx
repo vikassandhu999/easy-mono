@@ -28,7 +28,7 @@ export default function CreateTrainingPlan() {
         ...(data.end_date && {end_date: data.end_date}),
       };
       const result = await createPlan(body).unwrap();
-      navigate(`/library/training-plans/${result.data.id}`);
+      navigate(`/library/training-plans/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to create training plan. Please try again.', form.setError);
     }

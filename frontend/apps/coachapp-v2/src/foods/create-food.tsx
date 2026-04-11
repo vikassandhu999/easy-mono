@@ -68,7 +68,7 @@ export default function CreateFood() {
         ...(servingSizes.length > 0 && {serving_sizes: servingSizes}),
       };
       const result = await createFood(body).unwrap();
-      navigate(`/library/foods/${result.data.id}`);
+      navigate(`/library/foods/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to create food. Please try again.', form.setError);
     }

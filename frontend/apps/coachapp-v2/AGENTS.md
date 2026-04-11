@@ -212,6 +212,58 @@ Rules:
 - Form components call the RTK Query mutation in their own `onSubmit`.
 - Forms live in `{feature}/components/` or directly in screen files if simple.
 
+### Form Navigation After Save (MANDATORY)
+
+**Create vs edit forms navigate differently after a successful save.** This keeps the browser back button sensible — pressing Back from the new detail page should never return the user to a stale empty form.
+
+| Form kind | After successful save | Rationale |
+| --- | --- | --- |
+| **Create** | `navigate(targetPath, {replace: true})` | Replaces the create route in history so Back skips it. `targetPath` is usually the new resource's detail page. |
+| **Edit** | `goBack()` (from `useGoBack(backPath)`) | Pops history so Back returns the user to wherever they came from, with `backPath` as the deep-link fallback. |
+| **Cancel (edit forms)** | `goBack()` | Matches Save — Cancel and Back behave identically. |
+| **Cancel (create forms)** | `navigate(listRoute)` (push) | Abandoning a new entity is a fresh navigation to the list, not a history pop. |
+
+Pattern for a create form:
+
+```tsx
+const navigate = useNavigate();
+const goBack = useGoBack(ROUTES.FOOS); // for the Back button only
+
+const onSubmit = async (data: FormValues) => {
+  try {
+    const result = await createFoo(body).unwrap();
+    navigate(`/library/foos/${result.data.id}`, {replace: true}); // ← replace
+  } catch (err) {
+    applyFormErrors(err, 'Failed to create foo.', form.setError);
+  }
+};
+```
+
+Pattern for an edit form:
+
+```tsx
+const backPath = `/library/foos/${id}`;
+const goBack = useGoBack(backPath);
+
+const onSubmit = async (formData: FormValues) => {
+  try {
+    await updateFoo({body, id}).unwrap();
+    goBack(); // ← pop history, fallback to backPath on deep-link
+  } catch (err) {
+    applyFormErrors(err, 'Failed to update foo.', form.setError);
+  }
+};
+
+// Cancel uses the same callback:
+<FooForm onCancel={goBack} onSubmit={onSubmit} ... />
+```
+
+Exceptions (flag before deviating):
+
+- **Forms that don't navigate on save** (in-place confirmation screens, live-preview editors like storefront) — leave as-is.
+- **Multi-step wizards** where the forward step must remain reachable via browser back — use push navigation, not replace.
+- **Combined create/update forms** (like `clientapp-v2/nutrition/add-food.tsx` which branches on `location.state.replace`) — apply both rules conditionally: `isReplacement ? goBack() : navigate(target, {replace: true})`.
+
 ### Imports
 
 Direct file paths. No barrel files. No re-exports.
@@ -233,6 +285,8 @@ import { ROUTES } from "@/@config/routes";
 - Don't create new CSS files. Tailwind classes only.
 - Don't use `window.location` for navigation. Use react-router.
 - Don't use `navigate('/path')` for Back buttons. Use `useGoBack(fallback)` from `@/@hooks/use-go-back` — it uses `navigate(-1)` (pop) when history exists, enabling `<ScrollRestoration />`, and falls back to the given route on deep links.
+- Don't use plain `navigate(target)` after saving a **create** form. Use `navigate(target, {replace: true})` so the empty create route is removed from history.
+- Don't use plain `navigate(backPath)` after saving an **edit** form. Use `goBack()` from `useGoBack(backPath)` so Back pops history instead of pushing a new entry.
 - Don't put types in separate files. Types live next to the code that uses them (API types in `api/*.ts`, component props inline).
 
 ---

@@ -37,7 +37,7 @@ export default function CreateExercise() {
         ...(images.length > 0 && {images}),
       };
       const result = await createExercise(body).unwrap();
-      navigate(`/library/exercises/${result.data.id}`);
+      navigate(`/library/exercises/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, 'Failed to create exercise. Please try again.', form.setError);
     }

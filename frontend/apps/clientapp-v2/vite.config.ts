@@ -17,9 +17,19 @@ export default defineConfig({
 
       // Workbox config
       workbox: {
+        // Take over the page as soon as the new SW activates. Combined with
+        // skipWaiting, this ensures a refresh picks up the latest build
+        // without the user having to close every tab first.
+        clientsClaim: true,
+        skipWaiting: true,
+        // Remove precaches from previous SW versions so stale chunks don't
+        // linger on disk.
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Don't precache source maps
         globIgnores: ['**/*.map'],
+        // Don't let the SPA navigation fallback capture API requests.
+        navigateFallbackDenylist: [/^\/v1\//],
         // Network-first for API calls, cache-first for assets
         runtimeCaching: [
           {

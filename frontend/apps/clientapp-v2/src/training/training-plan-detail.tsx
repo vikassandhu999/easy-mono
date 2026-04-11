@@ -1,12 +1,13 @@
 import {DAY_NAMES} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {ArrowLeft, Calendar, Dumbbell} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import type {ClientPlannedWorkout, ClientWorkoutElement, PlannedSet} from '@/api/trainingPlans';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientTrainingPlanQuery} from '@/api/trainingPlans';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -139,7 +140,7 @@ function WorkoutDaySection({workout}: {workout: ClientPlannedWorkout}) {
 
 export default function TrainingPlanDetail() {
   const {planId} = useParams<{planId: string}>();
-  const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.DASHBOARD);
   const {data, isError, isLoading} = useGetClientTrainingPlanQuery(planId!);
 
   if (isLoading) {
@@ -157,7 +158,7 @@ export default function TrainingPlanDetail() {
       <PageLayout title="Training Plan">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.DASHBOARD)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -187,7 +188,7 @@ export default function TrainingPlanDetail() {
       <div className="mb-6">
         <Button
           className="mb-3"
-          onPress={() => navigate(ROUTES.DASHBOARD)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

@@ -1,7 +1,7 @@
 import {Separator} from '@heroui/react';
 import {Dumbbell, History, LayoutDashboard, Settings, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
-import {NavLink, Outlet, useLocation} from 'react-router-dom';
+import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 
@@ -128,7 +128,11 @@ export default function AppShell() {
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">
-          <img alt="CoachEasy" className="h-7" src="/TextLogo.webp" />
+          <img
+            alt="CoachEasy"
+            className="h-7"
+            src="/TextLogo.webp"
+          />
         </div>
         <nav className="flex flex-1 flex-col px-3 py-4">
           <div className="flex-1 space-y-1">
@@ -155,6 +159,9 @@ export default function AppShell() {
       <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
         <Outlet />
       </main>
+
+      {/* Scroll restoration — must be outside scrollable containers */}
+      <ScrollRestoration />
 
       {/* Mobile bottom nav — only on top-level pages */}
       {showBottomNav ? (

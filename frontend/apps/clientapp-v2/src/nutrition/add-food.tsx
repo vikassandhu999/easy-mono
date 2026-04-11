@@ -7,6 +7,7 @@ import type {PickedItem} from '@/nutrition/components/food-search-picker';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {computeMacrosFromSnapshot, formatMacroValue, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@/@utils/nutrition-helpers';
 import {useLogFoodMutation} from '@/api/foodLogs';
 import FoodSearchPicker from '@/nutrition/components/food-search-picker';
@@ -27,6 +28,7 @@ export default function AddFood() {
   const location = useLocation();
   const state = (location.state as LocationState) ?? {};
 
+  const goBack = useGoBack(ROUTES.NUTRITION);
   const dateISO = state.date ?? new Date().toISOString().slice(0, 10);
   const isReplacement = state.replace === true;
   const mealItemId = state.mealItemId ?? null;
@@ -79,9 +81,7 @@ export default function AddFood() {
     }
   };
 
-  const handleBack = () => {
-    navigate(ROUTES.NUTRITION);
-  };
+  const handleBack = goBack;
 
   return (
     <PageLayout title={isReplacement ? 'Replace food' : 'Add food'}>

@@ -2,12 +2,12 @@ import {getWorkoutTitle} from '@easy/utils';
 import {Alert, Button, Spinner} from '@heroui/react';
 import {ArrowLeft, Clock, Dumbbell, Plus} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
 
 import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetActiveWorkoutSessionQuery} from '@/api/workoutSessions';
 import ExercisePicker from '@/workout/components/exercise-picker';
 import ExerciseRow from '@/workout/components/exercise-row';
@@ -40,7 +40,7 @@ function useElapsedTimer(startedAt: null | string): string {
 // ── Main component ───────────────────────────────────────────
 
 export default function ActiveWorkout() {
-  const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.DASHBOARD);
   const {data, isError, isLoading} = useGetActiveWorkoutSessionQuery(undefined, {
     pollingInterval: 0,
     refetchOnMountOrArgChange: true,
@@ -137,7 +137,7 @@ export default function ActiveWorkout() {
       <PageLayout title="Workout">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.DASHBOARD)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -163,7 +163,7 @@ export default function ActiveWorkout() {
       {/* Timer bar */}
       <div className="mb-4 flex items-center gap-3">
         <Button
-          onPress={() => navigate(ROUTES.DASHBOARD)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

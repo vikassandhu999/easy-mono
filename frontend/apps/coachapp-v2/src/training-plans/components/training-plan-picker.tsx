@@ -8,12 +8,14 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type TrainingPlan, useListTrainingPlansQuery} from '@/api/trainingPlans';
 
 type TrainingPlanPickerProps = {
+  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
+  autoFocus?: boolean;
+  /** IDs of plans to exclude (shown as disabled) */
+  excludeIds?: string[];
   /** Called when the user selects a training plan */
   onSelect: (plan: TrainingPlan) => void;
   /** Optional placeholder text */
   placeholder?: string;
-  /** IDs of plans to exclude (shown as disabled) */
-  excludeIds?: string[];
 };
 
 /**
@@ -24,6 +26,7 @@ type TrainingPlanPickerProps = {
  * template to assign to a client.
  */
 export default function TrainingPlanPicker({
+  autoFocus = false,
   excludeIds = [],
   onSelect,
   placeholder = 'Search training plans...',
@@ -64,6 +67,7 @@ export default function TrainingPlanPicker({
     <Autocomplete
       allowsEmptyCollection
       className="w-full"
+      defaultOpen={autoFocus}
       disabledKeys={excludeIds}
       onChange={handleChange}
       placeholder={placeholder}
@@ -80,6 +84,8 @@ export default function TrainingPlanPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="training-plan-search"
             variant="secondary"

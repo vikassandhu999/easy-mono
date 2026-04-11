@@ -8,16 +8,18 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type NutritionPlan, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 
 type NutritionPlanPickerProps = {
-  /** Called when the user selects a nutrition plan template from the list */
-  onSelect: (plan: NutritionPlan) => void;
-  /** Optional label text */
-  label?: string;
+  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
+  autoFocus?: boolean;
   /** Optional description text */
   description?: string;
-  /** Optional placeholder text */
-  placeholder?: string;
   /** IDs of plans to exclude (shown as disabled) */
   excludeIds?: string[];
+  /** Optional label text */
+  label?: string;
+  /** Called when the user selects a nutrition plan template from the list */
+  onSelect: (plan: NutritionPlan) => void;
+  /** Optional placeholder text */
+  placeholder?: string;
 };
 
 /**
@@ -31,11 +33,12 @@ type NutritionPlanPickerProps = {
  * template to assign to a client.
  */
 export default function NutritionPlanPicker({
-  onSelect,
-  label,
+  autoFocus = false,
   description,
-  placeholder = 'Search nutrition plans...',
   excludeIds = [],
+  label,
+  onSelect,
+  placeholder = 'Search nutrition plans...',
 }: NutritionPlanPickerProps) {
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebouncedValue(searchInput);
@@ -74,6 +77,7 @@ export default function NutritionPlanPicker({
     <Autocomplete
       allowsEmptyCollection
       className="w-full"
+      defaultOpen={autoFocus}
       disabledKeys={excludeIds}
       onChange={handleChange}
       placeholder={placeholder}
@@ -92,6 +96,8 @@ export default function NutritionPlanPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="nutrition-plan-search"
             variant="secondary"

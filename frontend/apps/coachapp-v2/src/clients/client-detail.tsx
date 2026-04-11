@@ -214,6 +214,8 @@ function ClientPlans({clientId}: {clientId: string}) {
                 Search for a nutrition plan template to copy to this client.
               </p>
               <NutritionPlanPicker
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
                 onSelect={handleAssignNutrition}
                 placeholder="Search nutrition plans..."
               />
@@ -231,6 +233,8 @@ function ClientPlans({clientId}: {clientId: string}) {
                 Search for a training plan template to copy to this client.
               </p>
               <TrainingPlanPicker
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
                 onSelect={handleAssignTraining}
                 placeholder="Search training plans..."
               />

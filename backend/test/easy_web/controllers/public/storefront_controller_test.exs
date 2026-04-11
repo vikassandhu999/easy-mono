@@ -99,24 +99,14 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
   end
 
   describe "POST /v1/public/coaches/:slug/inquiries" do
-    test "creates client from public inquiry with offer", %{business: business} do
-      offer = insert(:offer, business: business)
-      attrs = build(:inquiry_attrs) |> Map.put("offer_id", offer.id)
+    test "creates client from public inquiry", %{} do
+      attrs = build(:inquiry_attrs)
 
       conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["first_name"] == "Vikas"
       assert data["email"] == attrs["email"]
-      assert data["status"] == "pending"
-    end
-
-    test "creates client without offer", %{} do
-      attrs = build(:inquiry_attrs)
-
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
-      assert %{"data" => data} = json_response(conn, 201)
-      assert data["first_name"] == "Vikas"
       assert data["status"] == "pending"
     end
 
@@ -152,29 +142,6 @@ defmodule EasyWeb.Public.StorefrontControllerTest do
       attrs = build(:inquiry_attrs)
       conn = build_conn() |> post("/v1/public/coaches/ghost/inquiries", attrs)
       assert json_response(conn, 404)
-    end
-
-    test "ignores invalid offer_id gracefully", %{} do
-      attrs = build(:inquiry_attrs) |> Map.put("offer_id", Ecto.UUID.generate())
-
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
-      assert %{"data" => _data} = json_response(conn, 201)
-    end
-
-    test "auto-fills program fields from offer", %{business: business} do
-      offer = insert(:offer, business: business, name: "Fat Loss", price: 4999, currency: "INR")
-      attrs = build(:inquiry_attrs) |> Map.put("offer_id", offer.id)
-
-      conn = build_conn() |> post("/v1/public/coaches/test-coach/inquiries", attrs)
-      assert %{"data" => data} = json_response(conn, 201)
-
-      # Verify the client was created with offer data by fetching via coach endpoint
-      client = Easy.Repo.get!(Easy.Clients.Client, data["id"])
-      assert client.program_name == "Fat Loss"
-      assert client.payment_amount == 4999
-      assert client.payment_currency == "INR"
-      assert client.offer_id == offer.id
-      assert client.source == "storefront"
     end
   end
 end

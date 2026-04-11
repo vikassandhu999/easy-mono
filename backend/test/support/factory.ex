@@ -89,9 +89,7 @@ defmodule Easy.Factory do
     %{
       "name" => "Vikas Sandhu",
       "email" => sequence(:inquiry_email, &"inquiry-#{&1}@test.com"),
-      "phone" => "+91 98765 43210",
-      "instagram_handle" => "@vikas_fit",
-      "intake_answers" => %{"weight" => "90", "goal" => "Fat loss"}
+      "phone" => "+91 98765 43210"
     }
   end
 

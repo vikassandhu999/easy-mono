@@ -39,7 +39,7 @@ defmodule EasyWeb.Coaches.ClientController do
            |> Repo.get(client_id),
          {:ok, updated_client} <- Client.update(client, conn.body_params),
          updated_client <-
-           Repo.preload(updated_client, [:user, :business, :creator, :offer], force: true) do
+           Repo.preload(updated_client, [:user, :business, :creator], force: true) do
       render(conn, :show, client: updated_client)
     else
       nil -> {:error, Error.not_found("Client not found")}
@@ -70,14 +70,12 @@ defmodule EasyWeb.Coaches.ClientController do
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
     status = Map.get(params, "status")
-    payment_status = Map.get(params, "payment_status")
 
     base =
       Client
       |> Client.for_business(business_id)
       |> Client.search(search_term)
       |> Client.with_status(status)
-      |> Client.with_payment_status(payment_status)
 
     count = Repo.aggregate(base, :count, :id)
     summary = Client.summary(Client.for_business(business_id))

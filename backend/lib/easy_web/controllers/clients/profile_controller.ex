@@ -9,7 +9,7 @@ defmodule EasyWeb.Clients.ProfileController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id) do
-      client = Repo.preload(client, [:user, :business, :creator, :offer])
+      client = Repo.preload(client, [:user, :business, :creator])
       render(conn, :show, client: client)
     end
   end

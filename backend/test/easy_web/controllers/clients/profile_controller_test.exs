@@ -11,8 +11,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
           business: coach.business,
           creator: coach,
           user: user,
-          status: :active,
-          program_name: "12 Week Shred"
+          status: :active
         )
 
       conn =
@@ -26,7 +25,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["email"] == client.email
       assert data["first_name"] == client.first_name
       assert data["last_name"] == client.last_name
-      assert data["program_name"] == "12 Week Shred"
+      assert data["status"] == "active"
       refute Map.has_key?(data, "business_id")
     end
 

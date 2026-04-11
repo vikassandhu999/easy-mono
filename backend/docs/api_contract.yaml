@@ -1104,7 +1104,7 @@ paths:
   /v1/coach/clients/invite:
     post:
       summary: Invite client
-      description: Creates a client invitation with status pending and source invite. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
+      description: Creates a client with status pending. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
       operationId: inviteClient
       security:
         - bearerAuth: []
@@ -1145,7 +1145,6 @@ paths:
                       phone: "+91 98765 43210"
                       notes: Interested in fat loss program
                       status: pending
-                      source: invite
                       invite_url: "https://app.coachapp.com/invite/abc123def456"
                       inserted_at: "2026-03-26T10:00:00Z"
                       updated_at: "2026-03-26T10:00:00Z"
@@ -1178,7 +1177,7 @@ paths:
   /v1/coach/clients/{id}:
     get:
       summary: Get client
-      description: Returns a single client with full details including program, payment, intake, and offer preload. Status is auto-computed from program dates unless status_override is set. For pending clients with an invitation_token, invite_url is included. Frontend pattern - cache by id, refetch after mutations. Show program section only when program fields are present, intake section only when intake_answers is non-empty.
+      description: Returns a single client with contact info and status. Status is set manually by the coach. For pending clients with an invitation_token, invite_url is included. Frontend pattern - cache by id, refetch after mutations.
       operationId: getClient
       security:
         - bearerAuth: []
@@ -1197,7 +1196,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update client
-      description: Updates client contact info, program details, payment tracking, and status override. Setting program_start/program_end causes status to auto-compute (active/expiring/expired). Setting status_override bypasses auto-computation. Clearing status_override (null) re-enables it. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response. The edit form is progressive — coaches can save with minimal fields and add program/payment details later.
+      description: Updates client contact info and status. Status is a simple enum (active, pending, inactive, archived) set manually by the coach. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response.
       operationId: updateClient
       security:
         - bearerAuth: []
@@ -1210,19 +1209,14 @@ paths:
             schema:
               $ref: "#/components/schemas/ClientUpdateRequest"
             examples:
-              set_program:
+              update_contact:
                 value:
-                  program_name: Fat Loss 12 Weeks
-                  program_start: "2026-03-01"
-                  program_end: "2026-05-24"
-              mark_paid:
+                  first_name: Vikas
+                  last_name: Sandhu
+                  phone: "+91 98765 43210"
+              change_status:
                 value:
-                  payment_status: paid
-                  payment_amount: 4999
-                  payment_notes: UPI received Mar 1
-              archive:
-                value:
-                  status_override: archived
+                  status: archived
       responses:
         "200":
           description: Client updated
@@ -1239,7 +1233,7 @@ paths:
   /v1/coach/clients:
     get:
       summary: List clients
-      description: Returns paginated clients with optional status and payment_status filters. The response includes a summary object with badge counts for quick dashboard display (active, expiring, pending, expired, payment_due). Summary is always computed from all business clients regardless of current filters. Frontend pattern - each tab (Active/Expiring/Pending/etc) queries with its status filter, uses summary counts for badge numbers. Search covers first_name, last_name, email, and phone.
+      description: Returns paginated clients with optional status filter. The response includes a summary object with badge counts for dashboard tabs (active, pending, inactive, archived). Summary is always computed from all business clients regardless of current filters. Frontend pattern - each tab queries with its status filter, uses summary counts for badge numbers. Search covers first_name, last_name, email, and phone.
       operationId: listClients
       security:
         - bearerAuth: []
@@ -1250,16 +1244,10 @@ paths:
         - name: status
           in: query
           required: false
-          description: Filters by computed status. Expiring and expired are date-derived — expiring means program_end within 7 days, expired means program_end in the past. Active excludes expiring/expired clients. Clients with status_override are matched by override value.
+          description: Filters by client status. Status is set manually by the coach.
           schema:
             type: string
-            enum: [active, expiring, pending, expired, inactive, archived]
-        - name: payment_status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [free, paid, partial, pending]
+            enum: [active, pending, inactive, archived]
       responses:
         "200":
           description: Clients with summary counts
@@ -4296,15 +4284,12 @@ components:
         phone:
           type: string
           nullable: true
-        instagram_handle:
-          type: string
-          nullable: true
         notes:
           type: string
           nullable: true
     ClientUpdateRequest:
       type: object
-      description: All fields optional. Setting program dates transitions status from pending to active automatically. Setting status_override bypasses auto-computation. Setting status_override to null re-enables it.
+      description: All fields optional. Status is a simple enum set manually by the coach.
       properties:
         first_name:
           type: string
@@ -4312,34 +4297,15 @@ components:
           type: string
         phone:
           type: string
+        email:
+          type: string
+          format: email
         notes:
           type: string
-        instagram_handle:
+        status:
           type: string
-        program_name:
-          type: string
-        program_start:
-          type: string
-          format: date
-        program_end:
-          type: string
-          format: date
-        payment_status:
-          type: string
-          enum: [free, paid, partial, pending]
-        payment_amount:
-          type: integer
-          minimum: 0
-          description: Amount in smallest currency unit (paise/cents)
-        payment_currency:
-          type: string
-        payment_notes:
-          type: string
-        status_override:
-          type: string
-          nullable: true
-          enum: [active, inactive, pending, expired, archived]
-          description: Set to override auto-computed status. Set to null to re-enable auto-computation.
+          enum: [active, pending, inactive, archived]
+          description: Client status. Set manually by the coach.
     ClientResponse:
       type: object
       required: [data]
@@ -4361,17 +4327,15 @@ components:
     ClientSummary:
       type: object
       description: Badge counts for dashboard tabs. Computed from all business clients regardless of current list filters.
-      required: [active, expiring, pending, expired, payment_due]
+      required: [active, pending, inactive, archived]
       properties:
         active:
           type: integer
-        expiring:
-          type: integer
         pending:
           type: integer
-        expired:
+        inactive:
           type: integer
-        payment_due:
+        archived:
           type: integer
     Client:
       type: object
@@ -4392,59 +4356,13 @@ components:
         phone:
           type: string
           nullable: true
-        instagram_handle:
-          type: string
-          nullable: true
         notes:
           type: string
           nullable: true
         status:
           type: string
-          enum: [active, inactive, pending, expired, expiring, archived]
-          description: Auto-computed from program dates unless status_override is set. Expiring = program_end within 7 days.
-        status_override:
-          type: string
-          nullable: true
-          enum: [active, inactive, pending, expired, archived]
-          description: When set, bypasses auto-computation.
-        program_name:
-          type: string
-          nullable: true
-        program_start:
-          type: string
-          format: date
-          nullable: true
-        program_end:
-          type: string
-          format: date
-          nullable: true
-        payment_status:
-          type: string
-          nullable: true
-          enum: [free, paid, partial, pending]
-        payment_amount:
-          type: integer
-          nullable: true
-          description: Amount in smallest currency unit (paise/cents)
-        payment_currency:
-          type: string
-          nullable: true
-        payment_notes:
-          type: string
-          nullable: true
-        intake_answers:
-          type: object
-          nullable: true
-          additionalProperties: true
-        offer:
-          nullable: true
-          oneOf:
-            - $ref: "#/components/schemas/ClientOffer"
-            - type: "null"
-        source:
-          type: string
-          nullable: true
-          description: How the client was created. One of storefront, invite, manual.
+          enum: [active, pending, inactive, archived]
+          description: Client status. Set manually by the coach.
         invite_url:
           type: string
           nullable: true
@@ -4455,18 +4373,6 @@ components:
         updated_at:
           type: string
           format: date-time
-    ClientOffer:
-      type: object
-      description: Minimal offer info preloaded on client.
-      required: [id, name]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        price_display:
-          type: string
-          nullable: true
     FoodCreateRequest:
       type: object
       required: [name]
@@ -6568,19 +6474,6 @@ components:
           type: string
         phone:
           type: string
-        instagram_handle:
-          type: string
-          nullable: true
-        offer_id:
-          type: string
-          nullable: true
-          description: If valid, auto-fills program_name, payment_amount, payment_currency from the offer.
-        offer_slug:
-          type: string
-          nullable: true
-        intake_answers:
-          type: object
-          additionalProperties: true
     PublicInquiryResponse:
       type: object
       properties:

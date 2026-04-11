@@ -13,11 +13,7 @@ defmodule EasyWeb.Clients.ProfileJSON do
       first_name: client.first_name,
       last_name: client.last_name,
       phone: client.phone,
-      instagram_handle: client.instagram_handle,
-      status: Client.compute_status(client),
-      program_name: client.program_name,
-      program_start: client.program_start,
-      program_end: client.program_end,
+      status: client.status,
       inserted_at: client.inserted_at,
       updated_at: client.updated_at
     }

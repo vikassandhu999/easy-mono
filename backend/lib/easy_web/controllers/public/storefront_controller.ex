@@ -37,10 +37,9 @@ defmodule EasyWeb.Public.StorefrontController do
         {:error, :not_found}
 
       profile ->
-        offer = resolve_offer(params, profile.business_id)
         inquiry_params = parse_inquiry_params(params)
 
-        with {:ok, client} <- Client.create_inquiry(profile.business_id, inquiry_params, offer) do
+        with {:ok, client} <- Client.create_inquiry(profile.business_id, inquiry_params) do
           conn
           |> put_status(:created)
           |> render(:inquiry, client: client)
@@ -62,22 +61,4 @@ defmodule EasyWeb.Public.StorefrontController do
   end
 
   defp parse_inquiry_params(params), do: params
-
-  defp resolve_offer(params, business_id) do
-    resolve_offer_by_id(params, business_id) ||
-      resolve_offer_by_slug(params, business_id)
-  end
-
-  defp resolve_offer_by_id(%{"offer_id" => offer_id}, business_id) when is_binary(offer_id) do
-    Offer |> Offer.for_business(business_id) |> Repo.get(offer_id)
-  end
-
-  defp resolve_offer_by_id(_, _), do: nil
-
-  defp resolve_offer_by_slug(%{"offer_slug" => offer_slug}, business_id)
-       when is_binary(offer_slug) do
-    Offer |> Offer.for_business(business_id) |> Repo.get_by(slug: offer_slug)
-  end
-
-  defp resolve_offer_by_slug(_, _), do: nil
 end

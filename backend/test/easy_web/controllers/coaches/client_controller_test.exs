@@ -21,7 +21,6 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["phone"] == attrs["phone"]
       assert data["notes"] == attrs["notes"]
       assert data["status"] == "pending"
-      assert data["source"] == "invite"
       assert data["id"]
       assert data["inserted_at"]
       assert data["invite_url"] =~ "/invite/"
@@ -52,42 +51,42 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
   end
 
   describe "GET /v1/coach/clients/:id" do
-    test "returns a client by id with all fields", %{conn: conn, coach: coach, business: business} do
-      offer = insert(:offer, business: business)
-
+    test "returns a client by id with MVP fields", %{conn: conn, coach: coach, business: business} do
       client =
         insert(:client,
           creator: coach,
           business: business,
-          instagram_handle: "@test_fit",
-          program_name: "Fat Loss 12 Weeks",
-          program_start: ~D[2026-03-01],
-          program_end: ~D[2026-05-24],
-          payment_status: :paid,
-          payment_amount: 4999,
-          payment_currency: "INR",
-          payment_notes: "UPI received",
-          intake_answers: %{"weight" => "90"},
-          offer: offer,
-          source: "storefront"
+          email: "vikas@test.com",
+          first_name: "Vikas",
+          last_name: "Sandhu",
+          phone: "+91 98765 43210",
+          notes: "Test notes"
         )
 
       conn = get(conn, "/v1/coach/clients/#{client.id}")
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == client.id
-      assert data["instagram_handle"] == "@test_fit"
-      assert data["program_name"] == "Fat Loss 12 Weeks"
-      assert data["program_start"] == "2026-03-01"
-      assert data["program_end"] == "2026-05-24"
-      assert data["payment_status"] == "paid"
-      assert data["payment_amount"] == 4999
-      assert data["payment_currency"] == "INR"
-      assert data["payment_notes"] == "UPI received"
-      assert data["intake_answers"] == %{"weight" => "90"}
-      assert data["source"] == "storefront"
-      assert data["offer"]["id"] == offer.id
-      assert data["offer"]["name"] == offer.name
+      assert data["email"] == "vikas@test.com"
+      assert data["first_name"] == "Vikas"
+      assert data["last_name"] == "Sandhu"
+      assert data["phone"] == "+91 98765 43210"
+      assert data["notes"] == "Test notes"
+      assert data["status"] == "active"
+      assert data["inserted_at"]
+      assert data["updated_at"]
+
+      # Post-MVP fields should not be in response
+      refute Map.has_key?(data, "instagram_handle")
+      refute Map.has_key?(data, "program_name")
+      refute Map.has_key?(data, "program_start")
+      refute Map.has_key?(data, "program_end")
+      refute Map.has_key?(data, "payment_status")
+      refute Map.has_key?(data, "payment_amount")
+      refute Map.has_key?(data, "status_override")
+      refute Map.has_key?(data, "offer")
+      refute Map.has_key?(data, "source")
+      refute Map.has_key?(data, "intake_answers")
     end
 
     test "returns invite_url for pending clients", %{conn: conn, coach: coach, business: business} do
@@ -116,6 +115,20 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["invite_url"] == nil
     end
 
+    test "status is the DB value directly (no auto-computation)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      for status <- [:active, :pending, :inactive, :archived] do
+        client = insert(:client, creator: coach, business: business, status: status)
+
+        conn = get(conn, "/v1/coach/clients/#{client.id}")
+        assert %{"data" => data} = json_response(conn, 200)
+        assert data["status"] == Atom.to_string(status)
+      end
+    end
+
     test "returns 404 for non-existent client", %{conn: conn} do
       conn = get(conn, "/v1/coach/clients/#{Ecto.UUID.generate()}")
       assert json_response(conn, 404)
@@ -127,100 +140,6 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       conn = get(conn, "/v1/coach/clients/#{other_client.id}")
       assert json_response(conn, 404)
-    end
-  end
-
-  describe "GET /v1/coach/clients/:id - status auto-computation" do
-    test "computes active when program_end is far away", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 30)
-        )
-
-      conn = get(conn, "/v1/coach/clients/#{client.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "active"
-    end
-
-    test "computes expiring when program_end within 7 days", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 3)
-        )
-
-      conn = get(conn, "/v1/coach/clients/#{client.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "expiring"
-    end
-
-    test "computes expired when program_end in the past", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), -5)
-        )
-
-      conn = get(conn, "/v1/coach/clients/#{client.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "expired"
-    end
-
-    test "status_override bypasses auto-computation", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 3),
-          status_override: "archived"
-        )
-
-      conn = get(conn, "/v1/coach/clients/#{client.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "archived"
-      assert data["status_override"] == "archived"
-    end
-
-    test "pending stays pending regardless of dates", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :pending,
-          program_end: Date.add(Date.utc_today(), 3)
-        )
-
-      conn = get(conn, "/v1/coach/clients/#{client.id}")
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "pending"
     end
   end
 
@@ -293,59 +212,73 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["first_name"] == "Updated Name"
     end
 
-    test "updates program fields", %{conn: conn, coach: coach, business: business} do
+    test "updates status to archived", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "archived"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "archived"
+    end
+
+    test "updates status to inactive", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "inactive"
+    end
+
+    test "updates status from pending to active", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "active"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "active"
+    end
+
+    test "rejects invalid status", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "expired"})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects garbage status", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "garbage"})
+      assert json_response(conn, 422)
+    end
+
+    test "updates email", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+
+      conn =
+        patch(conn, "/v1/coach/clients/#{client.id}", %{"email" => "new@test.com"})
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["email"] == "new@test.com"
+    end
+
+    test "updates multiple fields at once", %{conn: conn, coach: coach, business: business} do
       client = insert(:client, creator: coach, business: business, status: :pending)
 
       attrs = %{
-        "program_name" => "Fat Loss 12 Weeks",
-        "program_start" => "2026-03-01",
-        "program_end" => "2026-05-24"
+        "first_name" => "Vikas",
+        "last_name" => "Sandhu",
+        "phone" => "+91 98765 43210",
+        "notes" => "Started coaching",
+        "status" => "active"
       }
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", attrs)
       assert %{"data" => data} = json_response(conn, 200)
 
-      assert data["program_name"] == "Fat Loss 12 Weeks"
-      assert data["program_start"] == "2026-03-01"
-      assert data["program_end"] == "2026-05-24"
-    end
-
-    test "updates payment fields", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business)
-
-      attrs = %{
-        "payment_status" => "paid",
-        "payment_amount" => 4999,
-        "payment_currency" => "INR",
-        "payment_notes" => "UPI received"
-      }
-
-      conn = patch(conn, "/v1/coach/clients/#{client.id}", attrs)
-      assert %{"data" => data} = json_response(conn, 200)
-
-      assert data["payment_status"] == "paid"
-      assert data["payment_amount"] == 4999
-      assert data["payment_notes"] == "UPI received"
-    end
-
-    test "updates status_override", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business, status: :active)
-
-      conn =
-        patch(conn, "/v1/coach/clients/#{client.id}", %{"status_override" => "archived"})
-
-      assert %{"data" => data} = json_response(conn, 200)
-      assert data["status"] == "archived"
-      assert data["status_override"] == "archived"
-    end
-
-    test "rejects invalid status_override", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business)
-
-      conn =
-        patch(conn, "/v1/coach/clients/#{client.id}", %{"status_override" => "garbage"})
-
-      assert json_response(conn, 422)
+      assert data["first_name"] == "Vikas"
+      assert data["last_name"] == "Sandhu"
+      assert data["phone"] == "+91 98765 43210"
+      assert data["notes"] == "Started coaching"
+      assert data["status"] == "active"
     end
 
     test "returns 404 for non-existent client", %{conn: conn} do
@@ -358,26 +291,16 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
     test "returns paginated list with summary", %{conn: conn, coach: coach, business: business} do
       insert(:client, creator: coach, business: business, status: :active)
       insert(:client, creator: coach, business: business, status: :pending)
-
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        payment_status: :pending
-      )
+      insert(:client, creator: coach, business: business, status: :inactive)
 
       conn = get(conn, "/v1/coach/clients")
       assert %{"data" => clients, "count" => 3, "summary" => summary} = json_response(conn, 200)
 
       assert length(clients) == 3
-      assert is_map(summary)
-      assert Map.has_key?(summary, "active")
-      assert Map.has_key?(summary, "expiring")
-      assert Map.has_key?(summary, "pending")
-      assert Map.has_key?(summary, "expired")
-      assert Map.has_key?(summary, "payment_due")
+      assert summary["active"] == 1
       assert summary["pending"] == 1
-      assert summary["payment_due"] == 1
+      assert summary["inactive"] == 1
+      assert summary["archived"] == 0
     end
 
     test "paginates results with offset and limit", %{
@@ -413,6 +336,9 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       conn = get(conn, "/v1/coach/clients")
       assert %{"data" => [], "count" => 0, "summary" => summary} = json_response(conn, 200)
       assert summary["active"] == 0
+      assert summary["pending"] == 0
+      assert summary["inactive"] == 0
+      assert summary["archived"] == 0
     end
 
     test "filters by search term", %{conn: conn, coach: coach, business: business} do
@@ -437,396 +363,93 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       assert client["email"] == "jane@test.com"
     end
-
-    test "filters by status", %{conn: conn, coach: coach, business: business} do
-      insert(:client, status: :active, creator: coach, business: business)
-      insert(:client, status: :inactive, creator: coach, business: business)
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "inactive"})
-      assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
-
-      assert Enum.all?(clients, &(&1["status"] == "inactive"))
-    end
-
-    test "filters by payment_status", %{conn: conn, coach: coach, business: business} do
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        payment_status: :pending
-      )
-
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        payment_status: :paid
-      )
-
-      insert(:client, creator: coach, business: business, status: :active, payment_status: nil)
-
-      conn = get(conn, "/v1/coach/clients", %{"payment_status" => "pending"})
-      assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
-      assert hd(clients)["payment_status"] == "pending"
-    end
   end
 
-  describe "GET /v1/coach/clients - computed status filtering" do
-    test "filters by expiring returns only clients with program_end within 7 days", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # expiring: program_end in 3 days
-      expiring =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 3)
-        )
-
-      # active: program_end in 30 days
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 30)
-      )
-
-      # expired: program_end 5 days ago
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), -5)
-      )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expiring"})
-      assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
-      assert hd(clients)["id"] == expiring.id
-      assert hd(clients)["status"] == "expiring"
-    end
-
-    test "filters by expired returns only clients with program_end in the past", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # expired: program_end 5 days ago
-      expired =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), -5)
-        )
-
-      # expiring: program_end in 3 days
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 3)
-      )
-
-      # active: program_end in 30 days
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 30)
-      )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expired"})
-      assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
-      assert hd(clients)["id"] == expired.id
-      assert hd(clients)["status"] == "expired"
-    end
-
-    test "filters by active excludes expiring and expired clients", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # active with far future program_end
-      active_dated =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 30)
-        )
-
-      # active with program_name only (no dates)
-      active_name =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_name: "Fat Loss"
-        )
-
-      # active with no program fields (plain db active)
-      active_plain = insert(:client, creator: coach, business: business, status: :active)
-
-      # expiring — should be excluded
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 3)
-      )
-
-      # expired — should be excluded
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), -5)
-      )
+  describe "GET /v1/coach/clients - status filtering" do
+    test "filters by active status", %{conn: conn, coach: coach, business: business} do
+      active = insert(:client, status: :active, creator: coach, business: business)
+      insert(:client, status: :pending, creator: coach, business: business)
+      insert(:client, status: :inactive, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/clients", %{"status" => "active"})
-      assert %{"data" => clients, "count" => 3} = json_response(conn, 200)
-
-      ids = Enum.map(clients, & &1["id"]) |> MapSet.new()
-      assert MapSet.member?(ids, active_dated.id)
-      assert MapSet.member?(ids, active_name.id)
-      assert MapSet.member?(ids, active_plain.id)
-      assert Enum.all?(clients, &(&1["status"] == "active"))
+      assert %{"data" => [client], "count" => 1} = json_response(conn, 200)
+      assert client["id"] == active.id
+      assert client["status"] == "active"
     end
 
-    test "pending clients with program dates are excluded from expiring filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # pending with expiring dates — should NOT show in expiring filter
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :pending,
-        program_end: Date.add(Date.utc_today(), 3)
-      )
+    test "filters by pending status", %{conn: conn, coach: coach, business: business} do
+      insert(:client, status: :active, creator: coach, business: business)
+      pending = insert(:client, status: :pending, creator: coach, business: business)
 
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expiring"})
-      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
+      conn = get(conn, "/v1/coach/clients", %{"status" => "pending"})
+      assert %{"data" => [client], "count" => 1} = json_response(conn, 200)
+      assert client["id"] == pending.id
+      assert client["status"] == "pending"
     end
 
-    test "archived clients with expired dates are excluded from expired filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :archived,
-        program_end: Date.add(Date.utc_today(), -10)
-      )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expired"})
-      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
-    end
-
-    test "status_override is respected in active filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # client with expiring dates but override to active
-      overridden =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 3),
-          status_override: "active"
-        )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "active"})
-      assert %{"data" => clients, "count" => 1} = json_response(conn, 200)
-      assert hd(clients)["id"] == overridden.id
-      assert hd(clients)["status"] == "active"
-    end
-
-    test "status_override to archived excludes from expiring filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # client with expiring dates but override to archived
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 3),
-        status_override: "archived"
-      )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expiring"})
-      assert %{"data" => [], "count" => 0} = json_response(conn, 200)
-    end
-
-    test "boundary: program_end today is expiring not expired", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.utc_today()
-        )
-
-      # Should appear in expiring
-      conn_exp = get(conn, "/v1/coach/clients", %{"status" => "expiring"})
-      assert %{"data" => [c], "count" => 1} = json_response(conn_exp, 200)
-      assert c["id"] == client.id
-      assert c["status"] == "expiring"
-
-      # Should NOT appear in expired
-      conn_expired = get(conn, "/v1/coach/clients", %{"status" => "expired"})
-      assert %{"data" => [], "count" => 0} = json_response(conn_expired, 200)
-    end
-
-    test "boundary: program_end at today+7 is expiring not active", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 7)
-        )
-
-      # Should appear in expiring
-      conn_exp = get(conn, "/v1/coach/clients", %{"status" => "expiring"})
-      assert %{"data" => [c], "count" => 1} = json_response(conn_exp, 200)
-      assert c["id"] == client.id
-
-      # Should NOT appear in active
-      conn_active = get(conn, "/v1/coach/clients", %{"status" => "active"})
-      assert %{"data" => [], "count" => 0} = json_response(conn_active, 200)
-    end
-
-    test "status_override expired appears in expired filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # Client with active dates but override to expired
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_end: Date.add(Date.utc_today(), 30),
-          status_override: "expired"
-        )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "expired"})
-      assert %{"data" => [c], "count" => 1} = json_response(conn, 200)
-      assert c["id"] == client.id
-      assert c["status"] == "expired"
-    end
-
-    test "client with only program_name (no dates) appears in active filter", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :active,
-          program_name: "Fat Loss"
-        )
-
-      conn = get(conn, "/v1/coach/clients", %{"status" => "active"})
-      assert %{"data" => [c], "count" => 1} = json_response(conn, 200)
-      assert c["id"] == client.id
-      assert c["status"] == "active"
-    end
-
-    test "inactive filter catches client with non-inactive DB status and no program fields", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # DB status is :expired but no program fields — compute_status returns :inactive
-      client =
-        insert(:client,
-          creator: coach,
-          business: business,
-          status: :expired
-        )
+    test "filters by inactive status", %{conn: conn, coach: coach, business: business} do
+      insert(:client, status: :active, creator: coach, business: business)
+      inactive = insert(:client, status: :inactive, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/clients", %{"status" => "inactive"})
-      assert %{"data" => [c], "count" => 1} = json_response(conn, 200)
-      assert c["id"] == client.id
-      assert c["status"] == "inactive"
+      assert %{"data" => [client], "count" => 1} = json_response(conn, 200)
+      assert client["id"] == inactive.id
+      assert client["status"] == "inactive"
     end
 
-    test "summary counts include clients with status_override", %{
-      conn: conn,
-      coach: coach,
-      business: business
-    } do
-      # Override to active (dates say expired)
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), -10),
-        status_override: "active"
-      )
+    test "filters by archived status", %{conn: conn, coach: coach, business: business} do
+      insert(:client, status: :active, creator: coach, business: business)
+      archived = insert(:client, status: :archived, creator: coach, business: business)
 
-      # Override to expired (dates say active)
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        program_end: Date.add(Date.utc_today(), 30),
-        status_override: "expired"
-      )
+      conn = get(conn, "/v1/coach/clients", %{"status" => "archived"})
+      assert %{"data" => [client], "count" => 1} = json_response(conn, 200)
+      assert client["id"] == archived.id
+      assert client["status"] == "archived"
+    end
 
-      # Override to pending
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :active,
-        status_override: "pending"
-      )
+    test "no filter returns all statuses", %{conn: conn, coach: coach, business: business} do
+      insert(:client, status: :active, creator: coach, business: business)
+      insert(:client, status: :pending, creator: coach, business: business)
+      insert(:client, status: :inactive, creator: coach, business: business)
+      insert(:client, status: :archived, creator: coach, business: business)
+
+      conn = get(conn, "/v1/coach/clients")
+      assert %{"data" => clients, "count" => 4} = json_response(conn, 200)
+      assert length(clients) == 4
+    end
+
+    test "summary counts all statuses correctly", %{conn: conn, coach: coach, business: business} do
+      insert(:client, status: :active, creator: coach, business: business)
+      insert(:client, status: :active, creator: coach, business: business)
+      insert(:client, status: :pending, creator: coach, business: business)
+      insert(:client, status: :inactive, creator: coach, business: business)
+      insert(:client, status: :archived, creator: coach, business: business)
+      insert(:client, status: :archived, creator: coach, business: business)
 
       conn = get(conn, "/v1/coach/clients")
       assert %{"summary" => summary} = json_response(conn, 200)
-      assert summary["active"] == 1
-      assert summary["expired"] == 1
+      assert summary["active"] == 2
       assert summary["pending"] == 1
+      assert summary["inactive"] == 1
+      assert summary["archived"] == 2
     end
 
-    test "summary counts client with inactive DB status and program fields as active", %{
+    test "summary is unaffected by status filter", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      insert(:client,
-        creator: coach,
-        business: business,
-        status: :inactive,
-        program_name: "Strength Program"
-      )
+      insert(:client, status: :active, creator: coach, business: business)
+      insert(:client, status: :pending, creator: coach, business: business)
+      insert(:client, status: :inactive, creator: coach, business: business)
 
-      conn = get(conn, "/v1/coach/clients")
-      assert %{"summary" => summary} = json_response(conn, 200)
+      # Filter by active, but summary should still count all
+      conn = get(conn, "/v1/coach/clients", %{"status" => "active"})
+      assert %{"data" => clients, "count" => 1, "summary" => summary} = json_response(conn, 200)
+      assert length(clients) == 1
       assert summary["active"] == 1
+      assert summary["pending"] == 1
+      assert summary["inactive"] == 1
     end
   end
 end

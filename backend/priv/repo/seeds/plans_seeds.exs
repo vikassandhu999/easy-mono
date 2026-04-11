@@ -1,7 +1,4 @@
 defmodule Easy.Repo.Seeds.Plans do
-  @moduledoc """
-  Seeds for subscription plans.
-  """
   alias Easy.Repo
   alias Easy.Orgs.Plan
 

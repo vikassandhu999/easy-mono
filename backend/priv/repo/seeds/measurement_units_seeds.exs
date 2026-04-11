@@ -1,7 +1,4 @@
 defmodule Easy.Repo.Seeds.MeasurementUnits do
-  @moduledoc """
-  Seeds for measurement units (nutrition).
-  """
   alias Easy.Repo
   alias Easy.Nutrition.MeasurementUnit
 

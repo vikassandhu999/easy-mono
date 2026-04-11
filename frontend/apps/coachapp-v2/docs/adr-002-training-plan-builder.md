@@ -1,6 +1,7 @@
 # ADR-002: Training Plan Builder + Workout Logging
 
-**Date:** 2026-03-29  
+**Date:** 2026-03-29
+**Last updated:** 2026-04-11 (strict template/personal separation — removed `is_template`, removed `draft` status, split endpoints, added client banner + archive button)
 **Context:** Training plan creation (coachapp-v2), workout session viewing (coachapp-v2), and workout logging (clientapp-v2)
 
 ---
@@ -11,7 +12,9 @@ A training plan is a multi-layered, server-persisted builder — structurally pa
 
 ```
 TrainingPlan
-├── name, description, status, is_template, start_date, end_date, client_id
+├── name, description, status, start_date, end_date
+├── client: null | PlanClient             ← null for templates, set for personal plans
+├── client_id: null | string               ← template-vs-personal is derived from this
 └── planned_workouts[]                    ← created via separate API mutation
     ├── name, day_number, notes
     └── workout_elements[]                ← created via separate API mutation
@@ -21,6 +24,8 @@ TrainingPlan
             ├── target_reps, load_value, load_unit
             └── rest_seconds, tempo, distance_*, duration_seconds, intensity_target, notes
 ```
+
+`TrainingPlanStatus = 'active' | 'archived'`. There is no `draft` status and no `is_template` field — a plan is a template when `client_id` is null and a personal plan when it points at a client. Unlike nutrition plans, both the library and client-scoped list endpoints preload `planned_workouts` on the backend, so the field is non-optional on the TypeScript type (though the frontend still guards with `plan.planned_workouts ?? []` for resilience).
 
 Key difference from nutrition plans: `planned_sets` is an inline array on the `WorkoutElement`, not a separate API entity. This means sets are created/updated atomically when the workout element is saved, rather than requiring individual CRUD calls per set.
 
@@ -52,19 +57,20 @@ Same pattern as nutrition plans (ADR-001):
 ### Step 1: Create Plan (NEW PAGE)
 
 `create-training-plan.tsx` collects plan metadata using the shared `TrainingPlanForm` component:
-- Name (required), description, status (draft/active/archived), is_template toggle, start_date, end_date
+- Name (required), description, start_date, end_date
 - HeroUI `DatePicker` compound components with `Calendar` for date fields
-- HeroUI `Select` compound component for status, `Switch` compound component for template toggle
+- No status or `is_template` field — created plans default to `active` server-side, and the archive/unarchive button on the detail page manages status afterwards. Template-vs-personal is determined by whether the plan has a `client_id` set, which only happens via the `assign` mutation.
 - On submit: `createTrainingPlan` mutation → navigate to plan detail/builder
 
 ### Step 2: Build on Detail Page (NEW PAGE)
 
-`training-plan-detail.tsx` serves as both the detail view and the builder. All operations are live server mutations. The detail page has four sections:
+`training-plan-detail.tsx` serves as both the detail view and the builder. All operations are live server mutations. The detail page has five sections:
 
-1. **Header** — plan name, description, status/template chips, start/end dates, edit/delete/duplicate/copy-to-client navigation
-2. **Copy to Client** — inline panel with `ClientPicker`, optional start/end date inputs
-3. **Workouts Builder** — add/remove workouts, each workout is a `WorkoutSection` with exercises
-4. **Meta** — created/updated timestamps
+1. **Client banner** (personal plans only) — `ClientPlanBanner` at the top of the page, tappable link back to the client, avatar + full name + start/end dates + Personal chip. Hidden for templates.
+2. **Header** — plan name, description, status chip, Template chip (when `!plan.client_id`), start/end dates (hidden when the banner shows them), edit / copy-to-client / duplicate / archive / unarchive / delete actions. Archive and Unarchive are mutually exclusive and toggle the plan status via `updateTrainingPlan`.
+3. **Copy to Client** — inline panel with `ClientPicker`, optional start/end date inputs
+4. **Workouts Builder** — add/remove workouts, each workout is a `WorkoutSection` with exercises
+5. **Meta** — created/updated timestamps
 
 ---
 
@@ -86,6 +92,7 @@ Same pattern as nutrition plans (ADR-001):
 | Duplicate plan | No, single tap | **INLINE** | Button press, navigates to new plan on success |
 | Copy workout | No, single tap | **INLINE** | Creates copy with "(copy)" suffix |
 | Copy exercise to another workout | No, selection | **INLINE** | Popover with workout list to choose target |
+| Archive / Unarchive plan | No, single tap | **INLINE** | Toggle button in detail page action bar |
 
 ---
 
@@ -95,17 +102,17 @@ Same pattern as nutrition plans (ADR-001):
 
 | File | Route | Purpose |
 | --- | --- | --- |
-| `list-training-plans.tsx` | `/library/training-plans` | Infinite scroll list + search, templates only |
+| `list-training-plans.tsx` | `/library/training-plans` | Infinite scroll list + search (templates only — server-side) |
 | `create-training-plan.tsx` | `/library/training-plans/create` | Step 1 form |
-| `training-plan-detail.tsx` | `/library/training-plans/:id` | Builder + detail view |
+| `training-plan-detail.tsx` | `/library/training-plans/:id` | Builder + detail view (handles both templates and personal plans) |
 | `edit-training-plan.tsx` | `/library/training-plans/:id/edit` | Edit plan metadata |
 
 ### Components (`training-plans/components/`)
 
 | Component | Purpose | Used by |
 | --- | --- | --- |
-| `training-plan-form.tsx` | Shared form (schema + hook + component) for create/edit. Exports `useTrainingPlanForm` hook wrapper. | create, edit screens |
-| `training-plan-card.tsx` | List item card (name, workout/exercise counts, status/template chips) | list screen |
+| `training-plan-form.tsx` | Shared form (schema + hook + component) for create/edit. Four fields only (name, description, start_date, end_date) — no status or template toggle. | create, edit screens |
+| `training-plan-card.tsx` | List item card (name, workout/exercise counts, status chip) | list screen |
 | `workout-section.tsx` | Single workout: inline name editing, exercise list, add/remove/copy exercises, copy workout, delete workout AlertDialog | detail screen |
 | `exercise-element.tsx` | Single exercise within a workout. Collapsed (1-line summary) or expanded (set editor). Auto-detects uniform vs mixed sets. | workout-section |
 | `set-scheme-input.tsx` | Compact uniform set editor: Sets × Reps @ Load Unit, Rest. Preset chips (3×10, 4×8-12, 5×5, 3×15). Exports `buildPlannedSetsFromScheme` and `deriveSchemeFromSets`. | exercise-element, workout-section (add flow) |
@@ -118,6 +125,7 @@ Same pattern as nutrition plans (ADR-001):
 | Component | From | Used for |
 | --- | --- | --- |
 | `ClientPicker` | `clients/components/` | Copy plan to client (search + select client) |
+| `ClientPlanBanner` | `@components/` | Personal-plan banner at the top of the detail page (shared with nutrition plans) |
 | `AlertDialog` | HeroUI | Delete confirmations (workout, plan) |
 | `InfiniteList` | `@components/` | Plan list screen |
 | `PageLayout` | `@components/` | All screens |
@@ -155,13 +163,17 @@ training-plan-detail.tsx
 
 client-detail.tsx (ClientPlans section — unified nutrition + training)
   │
-  ├── useListTrainingPlansQuery({client_id}) → plans assigned to this client
+  ├── useListClientTrainingPlansQuery({clientId}) → GET /v1/coach/clients/:id/training_plans
   │
   └── "+ Training plan" button (inline picker)
       └── useAssignTrainingPlanMutation    → copy selected template to this client
 ```
 
-All mutations invalidate the `TrainingPlan` tag, so `useGetTrainingPlanQuery` automatically refetches with updated `planned_workouts[]`. The `assignTrainingPlan` mutation also invalidates the `Client` tag to refresh client-specific plan lists.
+Cache invalidation:
+
+- Mutations against a specific plan (`updateTrainingPlan`, `deletePlannedWorkout`, `updateWorkoutElement`, etc.) invalidate `{type: 'TrainingPlan', id}` so `useGetTrainingPlanQuery` refetches with updated `planned_workouts[]`.
+- `updateTrainingPlan`, `deleteTrainingPlan`, and `assignTrainingPlan` invalidate both `{type: 'TrainingPlan', id: 'LIST'}` (library) and `{type: 'TrainingPlan', id: 'CLIENT_LIST'}` (all client detail pages), since a status change or assignment can move a plan between the two scopes.
+- `assignTrainingPlan` additionally invalidates `{type: 'Client', id: 'LIST'}` and `{type: 'Client', id: body.client_id}` to refresh the destination client's detail page.
 
 ---
 
@@ -227,9 +239,16 @@ After creating a workout (from the inline "Add Workout" or from copy), the page 
 
 `edit-training-plan.tsx` renders `EditTrainingPlanForm` as an inner component only when plan data is available. This avoids using `useEffect` to sync server state into `useForm` (which the React Compiler lint rule forbids). Instead, `useForm({ values })` receives server data directly.
 
-### 13. Library listing shows templates only
+### 13. Strict endpoint separation between library templates and personal plans
 
-Same as nutrition plans (ADR-001 decision #8): the list screen client-side filters out plans where `client_id !== null`. Only template plans appear in the library. Client-assigned copies are shown on the client detail page.
+Same pattern as nutrition plans (ADR-001 decision #8). Templates and personal plans are served by two completely distinct endpoints:
+
+- `GET /v1/coach/training_plans` — library endpoint, returns templates only. Used by `list-training-plans.tsx` and `TrainingPlanPicker`. Cached under `TrainingPlan LIST`.
+- `GET /v1/coach/clients/:id/training_plans` — client-scoped endpoint, returns that client's plans only. Used by `client-detail.tsx` via `useListClientTrainingPlansQuery`. Cached under `TrainingPlan CLIENT_LIST`.
+
+Both responses include the `client` preload (a minimal `PlanClient` object with `id`, `first_name`, `last_name`) so the UI can render the banner without a second fetch. The `PlanClient` type lives in `api/trainingPlans.ts` and is re-imported by `api/nutritionPlans.ts` so both plan domains share the exact same minimal shape.
+
+The template-vs-personal distinction is derived from `!plan.client_id` (covers both `null` and `undefined`). The Template chip on the detail header is shown when this is true; the `ClientPlanBanner` is shown when `plan.client` is set.
 
 ### 14. Mobile-responsive set detail editor
 
@@ -238,6 +257,16 @@ Same as nutrition plans (ADR-001 decision #8): the list screen client-side filte
 - **Mobile (<sm)**: Stacked cards per set with `flex-wrap` field pairs, load unit shown as text label instead of Select to save space
 
 This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-first design skill.
+
+### 15. Two-status model with archive button
+
+`TrainingPlanStatus` has only two values: `active` and `archived`. There is no `draft` status and no status field on the create/edit form. New plans are created as `active` server-side. The coach transitions a plan to `archived` via the Archive button in the detail header (which calls `updateTrainingPlan` with `{status: 'archived'}`) and back to active via the Unarchive button. Status is displayed as a chip in the header with a defensive `STATUS_MAP[plan.status] ?? UNKNOWN_STATUS` fallback in case the backend returns a value outside the enum. The same pattern is used by clientapp-v2 in `training-plan-detail.tsx`.
+
+### 16. Personal plan banner (shared with nutrition plans)
+
+When a plan has a non-null `client` preload, `ClientPlanBanner` renders at the top of the detail page (above the plan header). The banner is a `<Link>` back to `/clients/:id`, with a soft Avatar showing the client's initials, the client's full name, optional start/end dates, and a "Personal" chip. This gives the coach a one-tap route back to the client context they came from, and makes the template-vs-personal distinction visually obvious.
+
+The banner component is defined once in `@components/client-plan-banner.tsx` and reused by both `training-plan-detail.tsx` and `nutrition-plan-detail.tsx`. When the banner is shown, the detail header suppresses its own start/end date row to avoid duplication.
 
 ---
 
@@ -250,7 +279,8 @@ This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-firs
 | `PATCH /v1/coach/training_plans/:id` | `useUpdateTrainingPlanMutation` | Edit metadata |
 | `DELETE /v1/coach/training_plans/:id` | `useDeleteTrainingPlanMutation` | Delete plan |
 | `GET /v1/coach/training_plans` (infinite) | `useTrainingPlansInfiniteQuery` | List with pagination |
-| `GET /v1/coach/training_plans` (list) | `useListTrainingPlansQuery` | List (used by picker + client detail) |
+| `GET /v1/coach/training_plans` (list) | `useListTrainingPlansQuery` | List (used by picker) |
+| `GET /v1/coach/clients/:id/training_plans` | `useListClientTrainingPlansQuery` | List plans assigned to a client |
 | `POST /v1/coach/training_plans/:id/assign` | `useAssignTrainingPlanMutation` | Copy plan to a client |
 | `POST /v1/coach/training_plans/:id/duplicate` | `useDuplicateTrainingPlanMutation` | Server-side plan duplication |
 | `POST /v1/coach/training_plans/:id/planned_workouts` | `useCreatePlannedWorkoutMutation` | Add workout to plan |
@@ -261,7 +291,6 @@ This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-firs
 | `DELETE /v1/coach/workout_elements/:id` | `useDeleteWorkoutElementMutation` | Remove exercise |
 | `GET /v1/coach/exercises` | `useListExercisesQuery` | Exercise search in picker |
 | `GET /v1/coach/clients` | `useListClientsQuery` | Client search in ClientPicker |
-| `GET /v1/coach/training_plans?client_id=X` | `useListTrainingPlansQuery` | List plans assigned to a client |
 
 ---
 

@@ -1,7 +1,7 @@
 # ADR-005: Client Management
 
 **Date:** 2026-04-11
-**Last updated:** 2026-04-11 (simplified for MVP — removed program, payment, intake, offer, status_override)
+**Last updated:** 2026-04-11 (Plans section now uses client-scoped endpoints for strict template/personal separation; see ADR-001 and ADR-002)
 **Context:** Client list, detail, and edit screens for coachapp-v2 MVP
 
 ---
@@ -160,8 +160,8 @@ client-detail.tsx
   ├── useGetClientQuery(id)                      → client data
   │
   ├── ClientPlans
-  │   ├── useListNutritionPlansQuery({client_id})
-  │   ├── useListTrainingPlansQuery({client_id})
+  │   ├── useListClientNutritionPlansQuery({clientId})  → GET /v1/coach/clients/:id/nutrition_plans
+  │   ├── useListClientTrainingPlansQuery({clientId})   → GET /v1/coach/clients/:id/training_plans
   │   ├── useAssignNutritionPlanMutation         → inline picker
   │   └── useAssignTrainingPlanMutation          → inline picker
   │
@@ -198,6 +198,8 @@ No program names, no time remaining, no payment status, no offer names.
 
 `ClientNutritionPlans` and `ClientTrainingPlans` were merged into a single `ClientPlans` component. Plan cards show type as subtitle text ("Nutrition · 3 meals"). Assign buttons (`+ Nutrition plan`, `+ Training plan`) are ghost buttons within the section. Pickers appear inline when toggled.
 
+Data comes from the client-scoped endpoints (`useListClientNutritionPlansQuery` / `useListClientTrainingPlansQuery`), which return that client's plans only. The library endpoints are reserved for templates — see ADR-001 decision #8 and ADR-002 decision #13 for the full template/personal separation. Meal and workout counts are rendered defensively (`plan.meals?.length ?? 0`, `plan.planned_workouts?.length ?? 0`) because the nutrition list endpoint does not preload `meals` (only the show endpoint does).
+
 ### 4. Inline notes with draft pattern
 
 `InlineNotes` uses a `draft` state that's initialized from `initialNotes` only when entering edit mode (via `startEditing()`). Read mode always displays `initialNotes` directly from RTK Query cache. This avoids the stale closure problem with `useState(prop)` and eliminates the need for `useEffect` to sync.
@@ -229,8 +231,8 @@ All Back buttons use `useGoBack(fallback)` from `@/@hooks/use-go-back`. This tri
 | `GET /v1/coach/clients/:id` | `useGetClientQuery` | Client detail |
 | `PATCH /v1/coach/clients/:id` | `useUpdateClientMutation` | Edit, save notes, change status |
 | `POST /v1/coach/clients/invite` | `useInviteClientMutation` | Create pending client with invite |
-| `GET /v1/coach/nutrition_plans?client_id=X` | `useListNutritionPlansQuery` | Plans assigned to client |
-| `GET /v1/coach/training_plans?client_id=X` | `useListTrainingPlansQuery` | Plans assigned to client |
+| `GET /v1/coach/clients/:id/nutrition_plans` | `useListClientNutritionPlansQuery` | Plans assigned to client |
+| `GET /v1/coach/clients/:id/training_plans` | `useListClientTrainingPlansQuery` | Plans assigned to client |
 | `POST /v1/coach/nutrition_plans/:id/assign` | `useAssignNutritionPlanMutation` | Copy plan template to client |
 | `POST /v1/coach/training_plans/:id/assign` | `useAssignTrainingPlanMutation` | Copy plan template to client |
 

@@ -1,6 +1,7 @@
 # ADR-001: Nutrition Plan Builder + Meal Logging
 
-**Date:** 2026-04-05  
+**Date:** 2026-04-05
+**Last updated:** 2026-04-11 (strict template/personal separation — removed `type`, removed `draft` status, split endpoints, added client banner + archive button)
 **Context:** Nutrition plan creation (coachapp-v2), food log viewing (coachapp-v2), and meal logging (clientapp-v2)
 
 ---
@@ -11,17 +12,21 @@ A nutrition plan is the most complex entity in the coaching platform. Unlike exe
 
 ```
 NutritionPlan
-├── name, description, tags, macros_goal, type, status
-├── meals[]                    ← created via separate API mutation
+├── name, description, tags, macros_goal, status
+├── client: null | PlanClient   ← null for templates, set for personal plans
+├── client_id: null | string    ← template-vs-personal is derived from this
+├── meals[]                     ← created via separate API mutation (show endpoint only)
 │   ├── name, position, macros
-│   └── meal_items[]           ← created via separate API mutation
+│   └── meal_items[]            ← created via separate API mutation
 │       ├── food_id OR recipe_id
 │       └── amount, unit, weight_g, position
-└── plan_items[]               ← assigns meals to day+meal_type slots
+└── plan_items[]                ← assigns meals to day+meal_type slots (show endpoint only)
     ├── day: "monday"..."sunday"
     ├── meal_type: "breakfast" | "lunch" | "dinner" | "snack"
     └── meal_id
 ```
+
+`NutritionPlanStatus = 'active' | 'archived'`. There is no `draft` status and no `type` field — a plan is a template when `client_id` is null and a personal plan when it points at a client. `meals` and `plan_items` are only preloaded on `GET /v1/coach/nutrition_plans/:id` (the show endpoint); list endpoints omit them, so the types are optional and must be accessed defensively.
 
 Each nested entity (`Meal`, `MealItem`, `PlanItem`) is managed through its own API endpoint, not submitted as part of a single create request. This fundamentally shapes the UX architecture.
 
@@ -33,8 +38,9 @@ Each nested entity (`Meal`, `MealItem`, `PlanItem`) is managed through its own A
 
 A standard form page (`create-nutrition-plan.tsx`) collects plan metadata:
 
-- Name (required), description, type (standard/template), status (draft/active/archived), macros goal (calories, protein, carbs, fats)
+- Name (required), description, tags, macros goal (calories, protein, carbs, fats)
 - Uses the shared `NutritionPlanForm` component (react-hook-form + zod)
+- No status or type fields — created plans default to `active` server-side, and the archive/unarchive button on the detail page manages status afterwards
 - On submit: `createNutritionPlan` mutation -> navigate to plan detail/builder
 
 **Why not a single-page builder?** The API creates entities individually. A client-side accumulator that fires a chain of dependent API calls on save would be fragile (partial failures, no incremental saving). The server-persisted approach means every action is immediately durable.
@@ -43,13 +49,14 @@ A standard form page (`create-nutrition-plan.tsx`) collects plan metadata:
 
 After creation, the coach lands on `nutrition-plan-detail.tsx` which serves as both the **detail view** and the **builder**. All operations are live server mutations with RTK Query cache invalidation providing reactivity.
 
-The detail page has five sections:
+The detail page has six sections:
 
-1. **Header** -- plan name, status/type chips, edit/delete navigation, copy-to-client
-2. **Macros Goal** -- daily target grid (if set); zero values display as em-dash, not "0g"
-3. **Daily Totals** -- computed totals vs. goal with color-coded progress bars (green/yellow/red), powered by `useGetNutritionPlanMacrosQuery`
-4. **Meals Builder** -- add/remove meals, add foods/recipes to meals, inline editing of names and amounts
-5. **Weekly Schedule** (Day Planner) -- assign meals to day+meal_type slots, copy day via dialog
+1. **Client banner** (personal plans only) — `ClientPlanBanner` at the top of the page, tappable link back to the client, avatar + full name + Personal chip. Hidden for templates.
+2. **Header** — plan name, status chip, Template chip (when `!plan.client_id`), edit/duplicate/copy-to-client/archive/unarchive/delete actions. Archive and Unarchive are mutually exclusive and toggle the plan status.
+3. **Macros Goal** — daily target grid (if set); zero values display as em-dash, not "0g"
+4. **Daily Totals** — computed totals vs. goal with color-coded progress bars (green/yellow/red), powered by `useGetNutritionPlanMacrosQuery`
+5. **Meals Builder** — add/remove meals, add foods/recipes to meals, inline editing of names and amounts
+6. **Weekly Schedule** (Day Planner) — assign meals to day+meal_type slots, copy day via dialog
 
 ---
 
@@ -74,6 +81,7 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 | Edit meal item amounts  | Yes, 3 fields     | **INLINE**   | Tap amounts to toggle inline inputs, save/cancel  |
 | Copy plan to client     | Yes, search       | **INLINE**   | ClientPicker autocomplete in top nav toggle panel |
 | Assign plan from client | Yes, search       | **INLINE**   | NutritionPlanPicker autocomplete in section panel |
+| Archive / Unarchive plan | No, single tap   | **INLINE**   | Toggle button in detail page action bar          |
 
 ---
 
@@ -103,13 +111,14 @@ Every interaction was evaluated against the mobile-first container hierarchy:
 
 ### Reused from other features
 
-| Component      | From                  | Used for                                                 |
-| -------------- | --------------------- | -------------------------------------------------------- |
-| `FoodPicker`   | `foods/components/`   | Not used directly anymore (replaced by `MealItemPicker`) |
-| `ClientPicker` | `clients/components/` | Copy plan to client (search + select client)             |
-| `AlertDialog`  | HeroUI                | Delete confirmations (meal, plan)                        |
-| `InfiniteList` | `@components/`        | Plan list screen                                         |
-| `PageLayout`   | `@components/`        | All screens                                              |
+| Component           | From                  | Used for                                                 |
+| ------------------- | --------------------- | -------------------------------------------------------- |
+| `FoodPicker`        | `foods/components/`   | Not used directly anymore (replaced by `MealItemPicker`) |
+| `ClientPicker`      | `clients/components/` | Copy plan to client (search + select client)             |
+| `ClientPlanBanner`  | `@components/`        | Personal-plan banner at the top of the detail page       |
+| `AlertDialog`       | HeroUI                | Delete confirmations (meal, plan)                        |
+| `InfiniteList`      | `@components/`        | Plan list screen                                         |
+| `PageLayout`        | `@components/`        | All screens                                              |
 
 ---
 
@@ -145,13 +154,17 @@ nutrition-plan-detail.tsx
 
 client-detail.tsx (ClientPlans section — unified nutrition + training)
   │
-  ├── useListNutritionPlansQuery({client_id}) → plans assigned to this client
+  ├── useListClientNutritionPlansQuery({clientId}) → GET /v1/coach/clients/:id/nutrition_plans
   │
   └── "+ Nutrition plan" button (inline picker)
       └── useAssignNutritionPlanMutation → copy selected template to this client
 ```
 
-All mutations invalidate the `NutritionPlan` cache tag, so `useGetNutritionPlanQuery` automatically refetches with updated `meals[]` and `plan_items[]`. The `assignNutritionPlan` mutation also invalidates the `Client` tag to refresh client-specific plan lists.
+Cache invalidation:
+
+- Mutations against a specific plan (`updateNutritionPlan`, `deleteNutritionPlan`, `createMeal`, `updateMealItem`, etc.) invalidate `{type: 'NutritionPlan', id}` so `useGetNutritionPlanQuery` refetches with updated `meals[]` and `plan_items[]`.
+- `updateNutritionPlan`, `deleteNutritionPlan`, and `assignNutritionPlan` invalidate both `{type: 'NutritionPlan', id: 'LIST'}` (library) and `{type: 'NutritionPlan', id: 'CLIENT_LIST'}` (all client detail pages), since a status change or assignment can move a plan between the two scopes.
+- `assignNutritionPlan` additionally invalidates `{type: 'Client', id: 'LIST'}` and `{type: 'Client', id: body.client_id}` to refresh the destination client's detail page (and any list counts).
 
 ---
 
@@ -190,9 +203,16 @@ A plan can be assigned to a client from two entry points:
 
 Both use the same `assignNutritionPlan` mutation (`POST /nutrition_plans/:id/assign`). The API creates a copy of the plan for the client (the original template remains unchanged).
 
-### 8. Library listing shows templates only
+### 8. Strict endpoint separation between library templates and personal plans
 
-The nutrition plans list screen (`/library/nutrition-plans`) client-side filters out plans where `client_id !== null`. Only template plans (unassigned) appear in the library. Client-assigned copies are shown on the client detail page in the "Nutrition Plans" section.
+Templates and personal plans are served by two completely distinct endpoints — no client-side filtering, no shared query:
+
+- `GET /v1/coach/nutrition_plans` — library endpoint, returns templates only. Used by `list-nutrition-plans.tsx` and `NutritionPlanPicker`. Cached under `NutritionPlan LIST`.
+- `GET /v1/coach/clients/:id/nutrition_plans` — client-scoped endpoint, returns that client's plans only. Used by `client-detail.tsx` via `useListClientNutritionPlansQuery`. Cached under `NutritionPlan CLIENT_LIST`.
+
+Both responses include the `client` preload (a minimal `PlanClient` object with `id`, `first_name`, `last_name`) so the UI can render the banner without a second fetch. Mutations that can move a plan between the two scopes (`update`, `delete`, `assign`) invalidate both `LIST` and `CLIENT_LIST` to keep the library and all client detail pages in sync. The `assign` mutation additionally invalidates `{type: 'Client', id: body.client_id}` to refresh the destination client's page.
+
+The template-vs-personal distinction is derived from `!plan.client_id` (covers both `null` and `undefined`). The Template chip on the detail header is shown when this is true; the `ClientPlanBanner` is shown when `plan.client` is set.
 
 ### 9. Daily totals vs goal with progress bars
 
@@ -218,6 +238,16 @@ When adding a food/recipe to a meal, `MealSection` renders the item's `serving_s
 
 The macros goal grid in the detail page displays an em-dash (`—`) in dimmed color for zero/unset values instead of "0g". This prevents the impression that the coach deliberately set a target of 0.
 
+### 15. Two-status model with archive button
+
+`NutritionPlanStatus` has only two values: `active` and `archived`. There is no `draft` status and no status field on the create/edit form. New plans are created as `active` server-side. The coach transitions a plan to `archived` via the Archive button in the detail header (which calls `updateNutritionPlan` with `{status: 'archived'}`) and back to active via the Unarchive button. Status is displayed as a chip in the header with a defensive `STATUS_MAP[plan.status] ?? UNKNOWN_STATUS` fallback in case the backend returns a value outside the enum.
+
+### 16. Personal plan banner
+
+When a plan has a non-null `client` preload, `ClientPlanBanner` renders at the top of the detail page (above the plan header). The banner is a `<Link>` back to `/clients/:id`, with a soft Avatar showing the client's initials, the client's full name, optional start/end dates, and a "Personal" chip. This gives the coach a one-tap route back to the client context they came from, and makes the template-vs-personal distinction visually obvious.
+
+The `PlanClient` type used by the banner is defined in `api/trainingPlans.ts` and re-imported by `api/nutritionPlans.ts` so both plan domains share the exact same minimal shape. The banner component lives in `@components/client-plan-banner.tsx` and is reused by both `training-plan-detail.tsx` and `nutrition-plan-detail.tsx`.
+
 ---
 
 ## API Endpoints Used
@@ -240,7 +270,7 @@ The macros goal grid in the detail page displays an em-dash (`—`) in dimmed co
 | `POST /v1/coach/nutrition_plans/:id/copy-day`   | `useCopyNutritionPlanDayMutation` | Copy day assignments               |
 | `POST /v1/coach/nutrition_plans/:id/assign`     | `useAssignNutritionPlanMutation`  | Copy plan to a client              |
 | `GET /v1/coach/nutrition_plans/:id/macros`      | `useGetNutritionPlanMacrosQuery`  | Computed daily macro totals        |
-| `GET /v1/coach/nutrition_plans?client_id=X`     | `useListNutritionPlansQuery`      | List plans assigned to a client    |
+| `GET /v1/coach/clients/:id/nutrition_plans`     | `useListClientNutritionPlansQuery` | List plans assigned to a client   |
 | `GET /v1/coach/foods`                           | `useListFoodsQuery`               | Food search in picker              |
 | `GET /v1/coach/recipes`                         | `useListRecipesQuery`             | Recipe search in picker            |
 | `GET /v1/coach/clients`                         | `useListClientsQuery`             | Client search in ClientPicker      |

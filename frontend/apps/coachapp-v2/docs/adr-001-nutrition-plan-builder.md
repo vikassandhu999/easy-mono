@@ -143,11 +143,11 @@ nutrition-plan-detail.tsx
   └── Copy to Client (inline panel)
       └── useAssignNutritionPlanMutation → copy plan to selected client
 
-client-detail.tsx (ClientNutritionPlans section)
+client-detail.tsx (ClientPlans section — unified nutrition + training)
   │
   ├── useListNutritionPlansQuery({client_id}) → plans assigned to this client
   │
-  └── Assign Plan (inline panel)
+  └── "+ Nutrition plan" button (inline picker)
       └── useAssignNutritionPlanMutation → copy selected template to this client
 ```
 
@@ -186,7 +186,7 @@ Copying a day's assignments to another day uses an `AlertDialog` with a HeroUI `
 A plan can be assigned to a client from two entry points:
 
 - **From plan detail page:** "Copy to Client" button in the top nav bar reveals an inline `ClientPicker` panel below the nav bar. The coach searches for a client, and the API copies the plan template to that client.
-- **From client detail page:** "Assign Plan" button in the top nav bar reveals an inline `NutritionPlanPicker` within the Nutrition Plans section. The coach searches plan templates and assigns one.
+- **From client detail page:** `+ Nutrition plan` button within the unified Plans section reveals an inline `NutritionPlanPicker`. The coach searches plan templates and assigns one. (See [ADR-005](adr-005-client-management.md) for the unified Plans section design.)
 
 Both use the same `assignNutritionPlan` mutation (`POST /nutrition_plans/:id/assign`). The API creates a copy of the plan for the client (the original template remains unchanged).
 

@@ -178,7 +178,7 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 
 | Component         | File                | Purpose                                                         |
 | ----------------- | ------------------- | --------------------------------------------------------------- |
-| `AppShell`        | `app-shell.tsx`     | Desktop sidebar (collapsible Library group) + mobile bottom nav |
+| `AppShell`        | `app-shell.tsx`     | Desktop sidebar (Library group open by default, collapsible) + mobile bottom nav + PWA install prompt |
 | `PageLayout`      | `page-layout.tsx`   | Consistent page wrapper with title + optional `action` slot     |
 | `InfiniteList<T>` | `infinite-list.tsx` | Generic infinite scroll list with loading/empty/error states    |
 
@@ -188,6 +188,7 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 | ------------------- | ------------------------ | ------------------------------------------------ |
 | `useInfiniteScroll` | `use-infinite-scroll.ts` | IntersectionObserver for infinite scroll trigger |
 | `useDebouncedValue` | `use-debounced-value.ts` | Debounces any value (used for search inputs)     |
+| `useInstallPrompt`  | `use-install-prompt.ts`  | Captures `beforeinstallprompt` event for PWA install banner (sessionStorage dismiss) |
 
 ### Route Protection (`@hoc/`)
 
@@ -300,8 +301,8 @@ These were discovered during implementation, not planned upfront:
 | Module              | Screens                                                               | Key Components                                                                                                                              |
 | ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Auth**            | Login, Signup, Verify Login OTP, Verify Signup OTP, Register Business | `AuthLayout`                                                                                                                                |
-| **App Shell**       | (layout)                                                              | Desktop sidebar, mobile bottom nav, Library group                                                                                           |
-| **Clients**         | List, Detail, Invite, Edit                                            | `ClientCard`, `ClientPicker`, `InviteConfirmation`                                                                                          |
+| **App Shell**       | (layout)                                                              | Desktop sidebar (Library group open by default), mobile bottom nav, PWA install prompt (`useInstallPrompt`)                                 |
+| **Clients**         | List, Detail, Invite, Edit                                            | `ClientCard`, `ClientPicker`, `ClientPlans`, `InlineNotes`, `FormSection`, `InviteConfirmation`. See [ADR-005](adr-005-client-management.md). |
 | **Exercises**       | List, Create, Detail, Edit                                            | `ExerciseForm`, `ExerciseCard`                                                                                                              |
 | **Foods**           | List, Create, Detail, Edit                                            | `FoodForm`, `FoodCard`, `FoodPicker`, `IngredientList`                                                                                      |
 | **Recipes**         | List, Create, Detail, Edit                                            | `RecipeForm`, `RecipeCard`                                                                                                                  |

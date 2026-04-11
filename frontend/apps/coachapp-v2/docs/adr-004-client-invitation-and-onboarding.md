@@ -66,7 +66,7 @@ The client module was expanded from a simple invite+list flow to a full client l
 
 Two states on the same page:
 
-1. **Form state** — Name (required, single field), Email (optional), Phone (optional), Instagram (optional), Notes. At least one of email or phone required (zod `.refine()`). On submit: `inviteClient` mutation → store result in `inviteResult` state.
+1. **Form state** — Name (required, single field), Email (optional), Phone (optional), Notes. At least one of email or phone required (zod `.refine()`). Instagram was removed from the invite form — it can be added later from the edit page. On submit: `inviteClient` mutation → store result in `inviteResult` state.
 
 2. **Confirmation state** — Replaces the form (no navigation). Shows:
    - Success banner with contextual message (email sent vs. share manually)
@@ -76,45 +76,15 @@ Two states on the same page:
    - "View client" → navigates to client detail
    - "Invite another" → resets form via `reset()` and clears `inviteResult`
 
-### Client Detail — Enriched View (client-detail.tsx)
+### Client Detail, List & Edit
 
-The detail page shows contextual sections based on client data:
-
-**Program section** (shown when any program field or payment data is set):
-- Program name, start/end dates, time remaining countdown
-- Payment status chip (color-coded), amount + currency
-- "Mark as paid" button (PATCH payment_status → 'paid') — shown when not already paid/free
-- "Renew Program" button (navigates to edit with `?renew=true`) — shown for expiring/expired
-
-**Intake section** (shown when `intake_answers` is non-null):
-- Offer reference (name + price_display from preloaded `offer`)
-- Source + time ago
-- Intake answers as key-value table
-
-**Contact section**: Email, phone with WhatsApp icon, Instagram handle (@prefixed)
-
-**Quick actions** in header bar: Back, Edit, WhatsApp (if phone), Nutrition picker, Training picker, Archive (if pending/expired — AlertDialog confirmation)
-
-### Client Detail — Plan Assignment
-
-`ClientNutritionPlans` and `ClientTrainingPlans` sections for assigning plan templates:
-- Lists plans assigned via `useListNutritionPlansQuery/useListTrainingPlansQuery({ client_id })`
-- Inline picker for assignment via `useAssignNutritionPlanMutation/useAssignTrainingPlanMutation`
-- Action bar split into two buttons: "Nutrition" and "Training" (mutually exclusive pickers)
-
-### Client List & Card
-
-- **Tabs**: All, Active, Expiring, ₹ Due, Pending, Expired, Archived
-- **Badge counts** from `ClientSummary` (fetched via `useListClientsQuery({ limit: 0 })`) — tabs show counts inline (e.g. "Active 5")
-- **Card subtitle logic**: pending = offer name + time ago; active/expiring = program name + time remaining + payment status; fallback = email ?? phone
-- **PendingClientBadge** on sidebar Clients item showing pending count from `ClientSummary`
-- WhatsApp icon button on `ClientCard` (only when phone exists, `stopPropagation` to prevent navigation)
+See [ADR-005: Client Management](adr-005-client-management.md) for the full client detail page redesign (hero card, program strip, unified plans section, inline notes), client list filtering (Autocomplete dropdown replacing tabs), and edit form (collapsible sections).
 
 ### Edit Client (edit-client.tsx)
 
-Five form sections: **Personal Info** (first name, last name, email, phone, instagram), **Program** (name, start date, end date), **Payment** (amount, currency, payment status select, payment notes), **Notes** (textarea), **Status Override** (select with Automatic/Active/Inactive/Pending/Expired/Archived options).
+Five collapsible form sections using `FormSection` component: **Personal Info** (first name, last name, email, phone, instagram — default open), **Program** (name, start date, end date — default open only in renew mode), **Payment** (amount, currency, payment status select, payment notes), **Notes** (textarea), **Status Override** (select with Automatic/Active/Inactive/Pending/Expired/Archived options). Each collapsed section shows a subtitle summary of its current values via `useWatch`. See [ADR-005](adr-005-client-management.md).
 
-**Renew support**: When navigated with `?renew=true`, the form pre-fills with shifted dates (new start = old end or today, new end = start + same duration) and resets payment status to "pending". This is triggered from the "Renew Program" button on the detail page.
+**Renew support**: When navigated with `?renew=true`, the form pre-fills with shifted dates (new start = old end or today, new end = start + same duration), resets payment status to "pending", and opens the Program section by default. This is triggered from the "Renew" button on the detail page hero card.
 
 ---
 
@@ -122,7 +92,7 @@ Five form sections: **Personal Info** (first name, last name, email, phone, inst
 
 | Action | Keyboard? | Container | Rationale |
 | --- | --- | --- | --- |
-| Invite client (form) | Yes, 5 fields | **NEW PAGE** | Multiple inputs (name, email, phone, instagram, notes) |
+| Invite client (form) | Yes, 4 fields | **NEW PAGE** | Multiple inputs (name, email, phone, notes) |
 | Post-invite confirmation | No | **INLINE** (same page) | Replaces form — invite link is the focus |
 | Copy invite link | No, single tap | **INLINE** | Clipboard + toast |
 | Share via WhatsApp | No, single tap | **INLINE** | External `wa.me` link |

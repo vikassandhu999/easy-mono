@@ -153,11 +153,11 @@ training-plan-detail.tsx
   └── Delete Plan (AlertDialog)
       └── useDeleteTrainingPlanMutation    → delete plan + navigate to list
 
-client-detail.tsx (ClientTrainingPlans section)
+client-detail.tsx (ClientPlans section — unified nutrition + training)
   │
   ├── useListTrainingPlansQuery({client_id}) → plans assigned to this client
   │
-  └── Assign Plan (inline panel)
+  └── "+ Training plan" button (inline picker)
       └── useAssignTrainingPlanMutation    → copy selected template to this client
 ```
 
@@ -273,7 +273,7 @@ The coach views a client's workout history from the client detail page. This is 
 
 | Component | Location | Purpose |
 | --- | --- | --- |
-| `ClientWorkoutHistory` | `clients/components/client-workout-history.tsx` | Paginated session list using `useWorkoutSessionsInfiniteQuery({client_id})`. Renders session cards with workout name (from `planned_snapshot`), date, duration, exercise count, replacement count, effort rating, state chip. "Load more" button for pagination. Placed on `client-detail.tsx` between Training Plans and Contact sections. |
+| `ClientWorkoutHistory` | `clients/components/client-workout-history.tsx` | Paginated session list using `useWorkoutSessionsInfiniteQuery({client_id})`. Renders session cards with workout name (from `planned_snapshot`), date, duration, exercise count, replacement count, effort rating, state chip. "Load more" button for pagination. Placed on `client-detail.tsx` after Nutrition Adherence section. |
 | `SessionDetail` | `clients/session-detail.tsx` | Plan-vs-done comparison screen at `/clients/:clientId/sessions/:sessionId`. Groups `performed_sets` by `workout_element_id`, detects replacements (exercise_id mismatch), skips (no sets for element), and client-added exercises (null element_id). Renders per-exercise tables with Plan/Done/Load columns. |
 | `session-helpers.ts` | `clients/components/session-helpers.ts` | Shared constants and formatters for the clients feature: `DAY_NAMES`, `SESSION_STATE_CHIP`, `formatDuration`, `formatSessionDate`, `formatSessionDateLong`. |
 

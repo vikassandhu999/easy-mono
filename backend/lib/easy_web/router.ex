@@ -63,6 +63,10 @@ defmodule EasyWeb.Router do
     patch "/clients/:id", ClientController, :update
     get "/clients", ClientController, :index
 
+    # Client-scoped plan lists
+    get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
+    get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
+
     post "/foods", FoodController, :create
     get "/foods/:id", FoodController, :show
     patch "/foods/:id", FoodController, :update

@@ -8,6 +8,7 @@ import type {Macros} from '@/api/shared';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateMealMutation} from '@/api/meals';
 import {
   useAssignNutritionPlanMutation,
@@ -110,6 +111,7 @@ function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
 export default function NutritionPlanDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
   const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
@@ -185,7 +187,7 @@ export default function NutritionPlanDetail() {
       <PageLayout title="Nutrition Plan">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.NUTRITION_PLANS)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -210,7 +212,7 @@ export default function NutritionPlanDetail() {
       {/* Navigation */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button
-          onPress={() => navigate(ROUTES.NUTRITION_PLANS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

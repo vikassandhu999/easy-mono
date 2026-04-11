@@ -3,6 +3,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
@@ -17,6 +18,7 @@ import TrainingPlanForm, {
  */
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
   const navigate = useNavigate();
+  const goBack = useGoBack(backPath);
   const {data} = useGetTrainingPlanQuery(planId);
   const [updatePlan, {isLoading: isUpdating}] = useUpdateTrainingPlanMutation();
 
@@ -57,7 +59,7 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >
@@ -80,9 +82,9 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
 
 export default function EditTrainingPlan() {
   const {id} = useParams<{id: string}>();
-  const navigate = useNavigate();
   const {data, isError, isLoading: isFetching} = useGetTrainingPlanQuery(id!);
   const backPath = `/library/training-plans/${id}`;
+  const goBackOuter = useGoBack(backPath);
 
   if (isFetching || !data) {
     return (
@@ -99,7 +101,7 @@ export default function EditTrainingPlan() {
       <PageLayout title="Edit Training Plan">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(backPath)}
+            onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >

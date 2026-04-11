@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
@@ -26,6 +27,7 @@ function buildMacrosGoal(data: NutritionPlanFormValues): Record<string, number> 
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.NUTRITION_PLANS);
   const [createPlan, {isLoading}] = useCreateNutritionPlanMutation();
 
   const form = useNutritionPlanForm();
@@ -54,7 +56,7 @@ export default function CreateNutritionPlan() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.NUTRITION_PLANS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

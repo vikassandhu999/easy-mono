@@ -4,6 +4,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteExerciseMutation, useDuplicateExerciseMutation, useGetExerciseQuery} from '@/api/exercises';
 
 const MECHANICS_LABEL: Record<string, string> = {
@@ -29,6 +30,7 @@ function formatDate(dateString: string): string {
 export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.EXERCISES);
   const {data, isError, isLoading} = useGetExerciseQuery(id!);
   const [deleteExercise, {isLoading: isDeleting}] = useDeleteExerciseMutation();
   const [duplicateExercise, {isLoading: isDuplicating}] = useDuplicateExerciseMutation();
@@ -67,7 +69,7 @@ export default function ExerciseDetail() {
       <PageLayout title="Exercise">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.EXERCISES)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -94,7 +96,7 @@ export default function ExerciseDetail() {
       {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
-          onPress={() => navigate(ROUTES.EXERCISES)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

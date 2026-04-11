@@ -8,6 +8,7 @@ import {z} from 'zod';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 
@@ -153,6 +154,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
 export default function InviteClient() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.CLIENTS);
   const [inviteClient, {isLoading}] = useInviteClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
 
@@ -194,7 +196,7 @@ export default function InviteClient() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.CLIENTS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

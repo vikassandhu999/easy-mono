@@ -298,8 +298,10 @@ export default function AppShell() {
       {/* Main content — only add bottom padding when bottom nav is visible */}
       <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
         <Outlet />
-        <ScrollRestoration />
       </main>
+
+      {/* Scroll restoration — must be outside scrollable containers */}
+      <ScrollRestoration />
 
       {/* Mobile install banner — above bottom nav */}
       {canInstall && showBottomNav ? (

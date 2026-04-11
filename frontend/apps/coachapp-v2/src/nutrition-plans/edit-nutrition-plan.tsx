@@ -3,6 +3,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
@@ -31,6 +32,7 @@ export default function EditNutritionPlan() {
 
   const plan = data?.data;
   const backPath = `/library/nutrition-plans/${id}`;
+  const goBack = useGoBack(backPath);
 
   const form = useNutritionPlanForm({
     values: plan
@@ -80,7 +82,7 @@ export default function EditNutritionPlan() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

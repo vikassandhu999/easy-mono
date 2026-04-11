@@ -20,6 +20,7 @@ import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {type PaymentStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 
@@ -101,6 +102,7 @@ function FormSection({
 export default function EditClient() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(`/clients/${id}`);
   const [searchParams] = useSearchParams();
   const isRenew = searchParams.get('renew') === 'true';
 
@@ -193,7 +195,7 @@ export default function EditClient() {
     <PageLayout title="Edit Client">
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

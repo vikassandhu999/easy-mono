@@ -6,6 +6,7 @@ import {Navigate, useNavigate, useParams} from 'react-router-dom';
 import type {ServingSize} from '@/api/shared';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
@@ -30,6 +31,7 @@ function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
  */
 function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   const navigate = useNavigate();
+  const goBack = useGoBack(backPath);
   const {data} = useGetFoodQuery(foodId);
   const [updateFood, {isLoading: isUpdating}] = useUpdateFoodMutation();
 
@@ -78,7 +80,7 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >
@@ -103,9 +105,9 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
 
 export default function EditFood() {
   const {id} = useParams<{id: string}>();
-  const navigate = useNavigate();
   const {data, isError, isLoading: isFetching} = useGetFoodQuery(id!);
   const backPath = `/library/foods/${id}`;
+  const goBackOuter = useGoBack(backPath);
 
   if (isFetching || !data) {
     return (
@@ -122,7 +124,7 @@ export default function EditFood() {
       <PageLayout title="Edit Food">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(backPath)}
+            onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >

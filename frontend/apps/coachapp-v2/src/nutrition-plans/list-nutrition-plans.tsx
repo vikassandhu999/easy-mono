@@ -7,12 +7,14 @@ import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {type ListNutritionPlansFilters, type NutritionPlan, useNutritionPlansInfiniteQuery} from '@/api/nutritionPlans';
 import NutritionPlanCard from '@/nutrition-plans/components/nutrition-plan-card';
 
 export default function ListNutritionPlans() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
 
   const debouncedSearch = useDebouncedValue(search);
@@ -55,7 +57,7 @@ export default function ListNutritionPlans() {
       {/* Back to library */}
       <Button
         className="mb-4"
-        onPress={() => navigate(ROUTES.LIBRARY)}
+        onPress={goBack}
         size="sm"
         variant="ghost"
       >

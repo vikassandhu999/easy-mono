@@ -7,12 +7,14 @@ import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {type ListTrainingPlansFilters, type TrainingPlan, useTrainingPlansInfiniteQuery} from '@/api/trainingPlans';
 import TrainingPlanCard from '@/training-plans/components/training-plan-card';
 
 export default function ListTrainingPlans() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
 
   const debouncedSearch = useDebouncedValue(search);
@@ -55,7 +57,7 @@ export default function ListTrainingPlans() {
       {/* Back to library */}
       <Button
         className="mb-4"
-        onPress={() => navigate(ROUTES.LIBRARY)}
+        onPress={goBack}
         size="sm"
         variant="ghost"
       >

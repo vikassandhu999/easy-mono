@@ -8,6 +8,7 @@ import type {ServingSize} from '@/api/shared';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateFoodMutation} from '@/api/foods';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
@@ -28,6 +29,7 @@ function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
 export default function CreateFood() {
   const navigate = useNavigate();
   const location = useLocation();
+  const goBack = useGoBack(ROUTES.FOODS);
   const [createFood, {isLoading}] = useCreateFoodMutation();
 
   // Duplicate pre-fill: read food data passed via route state
@@ -79,7 +81,7 @@ export default function CreateFood() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.FOODS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

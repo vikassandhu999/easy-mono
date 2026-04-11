@@ -7,12 +7,14 @@ import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {type Food, type ListFoodsFilters, useFoodsInfiniteQuery} from '@/api/foods';
 import FoodCard from '@/foods/components/food-card';
 
 export default function ListFoods() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
 
   const debouncedSearch = useDebouncedValue(search);
@@ -53,7 +55,7 @@ export default function ListFoods() {
       {/* Back to library */}
       <Button
         className="mb-4"
-        onPress={() => navigate(ROUTES.LIBRARY)}
+        onPress={goBack}
         size="sm"
         variant="ghost"
       >

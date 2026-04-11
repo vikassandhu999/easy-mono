@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {Navigate, useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {
   type Exercise,
   useGetExerciseQuery,
@@ -26,6 +27,7 @@ function EditExerciseForm({
   exerciseId: string;
 }) {
   const navigate = useNavigate();
+  const goBack = useGoBack(backPath);
   const [updateExercise, {isLoading: isUpdating}] = useUpdateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
   const {data: equipmentData} = useListEquipmentQuery();
@@ -71,7 +73,7 @@ function EditExerciseForm({
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

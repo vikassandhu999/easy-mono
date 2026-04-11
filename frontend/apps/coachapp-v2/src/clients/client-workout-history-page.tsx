@@ -1,12 +1,13 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import type {WorkoutSession} from '@/api/workoutSessions';
 
 import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {useGetClientQuery} from '@/api/clients';
 import {useWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
@@ -14,7 +15,7 @@ import {SessionCard} from '@/clients/components/client-workout-history';
 
 export default function ClientWorkoutHistoryPage() {
   const {id} = useParams<{id: string}>();
-  const navigate = useNavigate();
+  const goBack = useGoBack(`/clients/${id}`);
   const {data: clientData, isLoading: isLoadingClient} = useGetClientQuery(id!);
   const client = clientData?.data;
 
@@ -49,7 +50,7 @@ export default function ClientWorkoutHistoryPage() {
     <PageLayout title={`${clientName} — Workout History`}>
       <div className="mb-4">
         <Button
-          onPress={() => navigate(`/clients/${id}`)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

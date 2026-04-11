@@ -7,6 +7,7 @@ import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {
   type Exercise,
@@ -18,6 +19,7 @@ import ExerciseCard from '@/exercises/components/exercise-card';
 
 export default function ListExercises() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
@@ -74,7 +76,7 @@ export default function ListExercises() {
       {/* Back to library */}
       <Button
         className="mb-4"
-        onPress={() => navigate(ROUTES.LIBRARY)}
+        onPress={goBack}
         size="sm"
         variant="ghost"
       >

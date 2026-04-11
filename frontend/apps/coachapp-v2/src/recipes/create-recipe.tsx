@@ -8,6 +8,7 @@ import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
@@ -46,6 +47,7 @@ function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] | un
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.RECIPES);
   const [createRecipe, {isLoading}] = useCreateRecipeMutation();
   const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
 
@@ -83,7 +85,7 @@ export default function CreateRecipe() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.RECIPES)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

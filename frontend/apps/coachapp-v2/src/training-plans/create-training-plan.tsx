@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
@@ -13,6 +14,7 @@ import TrainingPlanForm, {
 
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.TRAINING_PLANS);
   const [createPlan, {isLoading}] = useCreateTrainingPlanMutation();
 
   const form = useTrainingPlanForm();
@@ -41,7 +43,7 @@ export default function CreateTrainingPlan() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.TRAINING_PLANS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

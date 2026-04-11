@@ -1,11 +1,12 @@
 import {DAY_NAMES, formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
 import {Alert, Button, Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import type {PerformedSet, PlannedSnapshotElement, WorkoutSession} from '@/api/workoutSessions';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetWorkoutSessionQuery} from '@/api/workoutSessions';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -244,7 +245,7 @@ function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
 
 export default function SessionDetail() {
   const {clientId, sessionId} = useParams<{clientId: string; sessionId: string}>();
-  const navigate = useNavigate();
+  const goBack = useGoBack(`/clients/${clientId}`);
   const {data, isError, isLoading} = useGetWorkoutSessionQuery(sessionId!);
 
   if (isLoading) {
@@ -262,7 +263,7 @@ export default function SessionDetail() {
       <PageLayout title="Workout Session">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(`/clients/${clientId}`)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -297,7 +298,7 @@ export default function SessionDetail() {
       {/* Back button */}
       <div className="mb-4">
         <Button
-          onPress={() => navigate(`/clients/${clientId}`)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

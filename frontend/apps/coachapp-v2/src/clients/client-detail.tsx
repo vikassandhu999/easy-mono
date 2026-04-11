@@ -5,6 +5,7 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {
   type Client,
   type ClientStatus,
@@ -379,6 +380,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.CLIENTS);
   const {data, isError, isLoading} = useGetClientQuery(id!);
   const [updateClient, {isLoading: isUpdating}] = useUpdateClientMutation();
 
@@ -397,7 +399,7 @@ export default function ClientDetail() {
       <PageLayout title="Client">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.CLIENTS)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -447,7 +449,7 @@ export default function ClientDetail() {
       {/* ── Header bar ──────────────────────────────────── */}
       <div className="mb-4 flex items-center justify-between">
         <Button
-          onPress={() => navigate(ROUTES.CLIENTS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

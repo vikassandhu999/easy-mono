@@ -5,12 +5,14 @@ import {useNavigate} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/components/exercise-form';
 
 export default function CreateExercise() {
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.EXERCISES);
   const [createExercise, {isLoading}] = useCreateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
   const {data: equipmentData} = useListEquipmentQuery();
@@ -48,7 +50,7 @@ export default function CreateExercise() {
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(ROUTES.EXERCISES)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

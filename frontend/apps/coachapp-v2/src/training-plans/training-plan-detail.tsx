@@ -7,6 +7,7 @@ import type {Client} from '@/api/clients';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {
   useAssignTrainingPlanMutation,
   useCreatePlannedWorkoutMutation,
@@ -40,6 +41,7 @@ function formatDate(dateString: string): string {
 export default function TrainingPlanDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.TRAINING_PLANS);
   const {data, isError, isLoading} = useGetTrainingPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteTrainingPlanMutation();
   const [duplicatePlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlanMutation();
@@ -139,7 +141,7 @@ export default function TrainingPlanDetail() {
       <PageLayout title="Training Plan">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.TRAINING_PLANS)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -164,7 +166,7 @@ export default function TrainingPlanDetail() {
       {/* Navigation + action buttons */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button
-          onPress={() => navigate(ROUTES.TRAINING_PLANS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

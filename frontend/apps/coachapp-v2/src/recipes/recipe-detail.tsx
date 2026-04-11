@@ -4,6 +4,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/recipes';
 import {normalizeMacros} from '@/api/shared';
 
@@ -28,6 +29,7 @@ function formatDate(dateString: string): string {
 export default function RecipeDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.RECIPES);
   const {data, isError, isLoading} = useGetRecipeQuery(id!);
   const [deleteRecipe, {isLoading: isDeleting}] = useDeleteRecipeMutation();
 
@@ -55,7 +57,7 @@ export default function RecipeDetail() {
       <PageLayout title="Recipe">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.RECIPES)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -81,7 +83,7 @@ export default function RecipeDetail() {
       {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
-          onPress={() => navigate(ROUTES.RECIPES)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

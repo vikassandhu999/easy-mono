@@ -7,6 +7,7 @@ import type {RecipeIngredientInput} from '@/api/recipes';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
 import PageLayout from '@/@components/page-layout';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
@@ -49,6 +50,7 @@ function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] {
  */
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
   const navigate = useNavigate();
+  const goBack = useGoBack(backPath);
   const {data} = useGetRecipeQuery(recipeId);
   const [updateRecipe, {isLoading: isUpdating}] = useUpdateRecipeMutation();
 
@@ -115,7 +117,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
     >
       <div className="mb-4">
         <Button
-          onPress={() => navigate(backPath)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >
@@ -140,9 +142,9 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
 
 export default function EditRecipe() {
   const {id} = useParams<{id: string}>();
-  const navigate = useNavigate();
   const {data, isError, isLoading: isFetching} = useGetRecipeQuery(id!);
   const backPath = `/library/recipes/${id}`;
+  const goBackOuter = useGoBack(backPath);
 
   if (isFetching || !data) {
     return (
@@ -159,7 +161,7 @@ export default function EditRecipe() {
       <PageLayout title="Edit Recipe">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(backPath)}
+            onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >

@@ -4,6 +4,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
 import {normalizeMacros} from '@/api/shared';
 
@@ -28,6 +29,7 @@ function formatDate(dateString: string): string {
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
+  const goBack = useGoBack(ROUTES.FOODS);
   const {data, isError, isLoading} = useGetFoodQuery(id!);
   const [deleteFood, {isLoading: isDeleting}] = useDeleteFoodMutation();
 
@@ -55,7 +57,7 @@ export default function FoodDetail() {
       <PageLayout title="Food">
         <div className="mb-4">
           <Button
-            onPress={() => navigate(ROUTES.FOODS)}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -82,7 +84,7 @@ export default function FoodDetail() {
       {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
-          onPress={() => navigate(ROUTES.FOODS)}
+          onPress={goBack}
           size="sm"
           variant="ghost"
         >

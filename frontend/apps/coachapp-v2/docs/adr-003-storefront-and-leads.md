@@ -1,7 +1,8 @@
 # ADR-003: Coach Storefront & Client Acquisition
 
-**Date:** 2026-04-05  
-**Status:** Hidden for MVP — sidebar nav and routes commented out in `app-shell.tsx` and `App.tsx`. All code, API endpoints, and the public website remain intact for v2 release.  
+**Date:** 2026-04-05
+**Last updated:** 2026-04-11 (MVP client simplification — intake_answers/offer/source removed from Client; see ADR-005)
+**Status:** Hidden for MVP — sidebar nav and routes commented out in `app-shell.tsx`. All code, API endpoints, and the public website remain intact for v2 release.
 **Context:** Public storefront for coaches to showcase services and capture client inquiries, replacing WhatsApp-based client acquisition
 
 ---
@@ -40,13 +41,11 @@ Testimonial (many per coach)
 ├── is_featured, status, position
 └── (no nested entities)
 
-Client (created by public intake form with status: pending)
-├── See ADR-004 for full Client type
-├── intake_answers: Record<string, unknown>
-├── offer: ClientOffer | null (preloaded)
-├── source: null | string
-└── status: pending (auto-computed, see ADR-004)
+Client (v2: will be created by public intake form with status: pending)
+└── See ADR-005 for the current MVP Client type (first_name, last_name, email, phone, notes, status, invite_url)
 ```
+
+> **MVP status:** The public intake form is not wired in MVP. When the storefront ships in v2, the intake form will create a Client with `status: pending` — the same status that manual invites use today. Fields like `intake_answers`, `offer_id`, and `source` were removed from the Client model for MVP and will be reintroduced (or stored on a separate inquiry entity) when the storefront is re-enabled.
 
 ---
 
@@ -67,9 +66,9 @@ A single `react-hook-form` instance owns all form state in `storefront-editor.ts
 
 Offers and testimonials follow standard CRUD patterns with infinite scroll lists, create/edit forms, and AlertDialog delete confirmations. They are NOT edited inline — the editor shows read-only summaries with links to their dedicated CRUD pages.
 
-### 2. Leads eliminated — unified Client model
+### 2. No Lead entity — unified Client model
 
-Leads were eliminated. The public intake form now creates a Client directly with `status: pending`. Coaches manage all people (applicants, active clients, past clients) in the unified client list. See ADR-004 for the full Client model and enriched client management.
+There is no separate `Lead` entity. When the storefront ships in v2, the public intake form will create a `Client` directly with `status: pending` — the same status manual invites use today. Coaches manage all people (applicants, active clients, past clients) in one list. See [ADR-005](adr-005-client-management.md) for the current MVP client model and [ADR-004](adr-004-client-invitation-and-onboarding.md) for the invite flow.
 
 ### 3. Public Storefront (website app) — `/coach/[slug]`
 

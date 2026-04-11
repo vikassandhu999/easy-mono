@@ -28,7 +28,7 @@ Everything else is backlog. No storefront, no dashboard, no messaging, no check-
 |---|---------|-------------|-------------|-------------|
 | **1** | Training plan builder | Coach | ✅ Spec complete | ❌ Not built |
 | **2** | Nutrition plan builder | Coach | ✅ Built + improvements spec'd | ✅ Built |
-| **3** | Client management (simplified) | Coach | ⚠️ Needs simplified spec | ✅ Partially built |
+| **3** | Client management (simplified) | Coach | ✅ Spec complete | ✅ Built |
 | **4** | Training logging | Client | ❌ Needs spec | ❌ Not built |
 | **5** | Nutrition logging | Client | ❌ Needs spec | ❌ Not built |
 | **6** | Weight tracker | Client | ❌ Needs spec | ❌ Not built |
@@ -71,43 +71,39 @@ Everything else from the improvement specs can wait.
 
 ### #3 — Client Management (Simplified for MVP)
 
-**Previous spec:** `ux-spec-enriched-client-management.md` — comprehensive with payment tracking, offer links, intake answers, etc.
+**Spec:** [ADR-005: Client Management](adr-005-client-management.md) and [ADR-004: Client Invitation](adr-004-client-invitation-and-onboarding.md).
 
-**MVP simplification:** Strip it down to what the coach actually needs for the first 10 clients:
+**Status:** Built. Simplified to the minimum a coach needs to run the core coaching loop with the first 10-20 clients.
 
 ```
 Client (MVP fields)
 ├── first_name, last_name
 ├── email (nullable), phone (nullable)
-├── instagram_handle (nullable)
 ├── notes
-├── status: active | pending | expired | archived
-├── program_name (nullable)        ← "Fat Loss 12 Weeks"
-├── program_start (nullable)       ← date
-├── program_end (nullable)         ← date
-├── inserted_at, updated_at
+├── status: active | pending | inactive | archived
+├── invite_url (nullable)
+└── inserted_at, updated_at
 ```
 
-**What's CUT from the full spec for MVP:**
-- Payment tracking (payment_status, payment_amount, payment_notes) — coaches track this on WhatsApp/UPI for now
-- Offer linkage (offer_id) — no storefront in MVP
-- Intake answers — no storefront forms in MVP
-- Source tracking — no storefront in MVP
-- "Payment due" filter tab — no payment tracking
-- "Mark as paid" quick action — no payment tracking
-- Lead/inquiry creation from public form — no storefront
+**What's CUT from the pre-MVP design:**
+- Program tracking (`program_name`, `program_start`, `program_end`) — no program dates in MVP
+- Payment tracking (`payment_status`, `payment_amount`, `payment_notes`) — tracked on WhatsApp/UPI
+- Instagram handle — not collected in MVP, deferred
+- Offer linkage (`offer_id`), intake answers (`intake_answers`), source tracking — no storefront in MVP
+- Status auto-computation — status is now manual via the edit form
+- `expired` and `expiring` statuses — no program dates to expire
+- `status_override` field — direct `status` instead
+- Renew flow — no program dates to renew
+- Hero action buttons (WhatsApp, Call) — deferred
+- Mark as paid / Archive quick actions — archive via edit form status dropdown
 
 **What STAYS:**
-- Status auto-computation from program_end dates (active/expiring/expired)
-- Client list with filter tabs: [All] [Active] [Expiring] [Expired] [Pending] [Archived]
-- Client detail with program section (name, dates, time remaining)
+- Client list with Autocomplete status filter: All / Active / Pending / Inactive / Archived
+- Client detail with unified plans section (nutrition + training)
+- Inline-editable notes on the detail page
+- Nutrition adherence + workout history sections on the detail page
 - Invite flow with shareable link + WhatsApp share
-- Training plans section on client detail (assign + view)
-- Nutrition plans section on client detail (already built)
-- WhatsApp deep links on client card and detail
-- Renew flow (shift dates forward)
-
-**Needs:** Simplified spec (subset of the full enriched client management spec). Small backend change (add program_name, program_start, program_end to Client model). Frontend: updated card, detail page program section, filter tabs.
+- Pending-client badge on the sidebar "Clients" item
 
 ---
 
@@ -274,7 +270,7 @@ PHASE 4 — Nutrition logging (Weeks 8-12)
 
 Ordered by expected impact:
 
-1. Coach dashboard (pending/expiring/recent activity overview)
+1. Coach dashboard (pending clients + recent activity overview)
 2. Storefront page + offers + testimonials
 3. Storefront visual editor
 4. Check-in forms (custom weekly forms)

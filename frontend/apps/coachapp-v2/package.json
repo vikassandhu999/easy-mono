@@ -12,8 +12,8 @@
   "dependencies": {
     "@easy/storefront-types": "workspace:^",
     "@easy/utils": "workspace:^",
-    "@heroui/react": "3.0.1",
-    "@heroui/styles": "3.0.1",
+    "@heroui/react": "3.0.2",
+    "@heroui/styles": "3.0.2",
     "@hookform/resolvers": "^3.9.1",
     "@internationalized/date": "^3.11.0",
     "@reduxjs/toolkit": "^2.9.0",

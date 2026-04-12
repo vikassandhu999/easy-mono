@@ -114,8 +114,6 @@ export default function MealPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="meal-search"
             variant="secondary"

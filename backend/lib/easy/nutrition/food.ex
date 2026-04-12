@@ -22,6 +22,7 @@ defmodule Easy.Nutrition.Food do
     field :tags, {:array, :string}
     field :notes, :string
     field :image_url, :string
+    field :import_id, :string
 
     embeds_many :serving_sizes, Nutrition.ServingSize, on_replace: :delete
 

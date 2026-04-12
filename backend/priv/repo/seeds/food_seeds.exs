@@ -1,39 +1,36 @@
 NimbleCSV.define(FoodsCSVParser, separator: ",", escape: "\"")
 
 defmodule Easy.Repo.Seeds.Foods do
-  alias Easy.Nutrition.Food
-  alias Easy.Nutrition.ServingSize
+  alias Easy.Nutrition.{Food, ServingSize}
   alias Easy.Repo
 
-  import Ecto.Query
-
-  @batch_size 200
+  @batch_size 500
   @source "system"
   @food_categories ["I", "PF"]
+
+  @food_fields [
+    :name,
+    :macros,
+    :serving_sizes,
+    :source,
+    :category,
+    :tags,
+    :notes,
+    :image_url,
+    :import_id
+  ]
 
   @spec run() :: :ok
   def run do
     csv_path = Path.join(:code.priv_dir(:easy), "repo/foods_database.csv")
 
-    case File.exists?(csv_path) do
-      true ->
-        existing_count = Repo.aggregate(system_foods_query(), :count, :id)
-
-        if existing_count > 5000 do
-          IO.puts("  Skipping foods — #{existing_count} system foods already exist")
-        else
-          seed_foods(csv_path)
-        end
-
-      false ->
-        IO.puts("  Skipping foods — foods_database.csv not found")
+    if File.exists?(csv_path) do
+      seed_foods(csv_path)
+    else
+      IO.puts("  Skipping foods — foods_database.csv not found")
     end
 
     :ok
-  end
-
-  defp system_foods_query do
-    from(f in Food, where: is_nil(f.business_id) and f.source == @source)
   end
 
   defp seed_foods(csv_path) do
@@ -41,7 +38,7 @@ defmodule Easy.Repo.Seeds.Foods do
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    {count, _} =
+    count =
       csv_path
       |> File.stream!([:trim_bom])
       |> FoodsCSVParser.parse_stream(skip_headers: true)
@@ -50,14 +47,20 @@ defmodule Easy.Repo.Seeds.Foods do
       |> Stream.filter(&(&1["food"]["food_category"] in @food_categories))
       |> Stream.map(&build_food_entry(&1, now))
       |> Stream.chunk_every(@batch_size)
-      |> Enum.reduce({0, 0}, fn batch, {total, _} ->
-        {count, _} = Repo.insert_all(Food, batch, timeout: 120_000)
+      |> Enum.reduce(0, fn batch, total ->
+        {count, _} =
+          Repo.insert_all(Food, batch,
+            on_conflict: {:replace, @food_fields ++ [:updated_at]},
+            conflict_target: {:unsafe_fragment, ~s|("import_id") WHERE import_id IS NOT NULL|},
+            timeout: 120_000
+          )
+
         inserted = total + count
-        IO.write("\r  Inserted #{inserted} foods...")
-        {inserted, 0}
+        IO.write("\r  Upserted #{inserted} foods...")
+        inserted
       end)
 
-    IO.puts("\r  Inserted #{count} foods            ")
+    IO.puts("\r  Foods: #{count} upserted            ")
   end
 
   defp parse_row([_id, json_string]) do
@@ -74,6 +77,8 @@ defmodule Easy.Repo.Seeds.Foods do
     measures = data["food_measures"] || []
 
     %{
+      id: Ecto.UUID.generate(),
+      import_id: to_string(food["food_id"]),
       name: food["food_name"] |> String.trim(),
       macros: build_macros(food),
       serving_sizes: build_serving_sizes(measures),

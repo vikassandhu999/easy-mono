@@ -20,6 +20,7 @@ defmodule Easy.Training.Exercise do
     field :mechanics, Ecto.Enum, values: [:compound, :isolation, :isometric]
     field :force, Ecto.Enum, values: [:push, :pull, :static]
     field :images, {:array, :string}, default: []
+    field :import_id, :string
 
     belongs_to :business, Orgs.Business
 
@@ -138,6 +139,9 @@ defmodule Easy.Training.Exercise do
   def with_preloads(query \\ __MODULE__) do
     from(e in query, preload: [:equipment, :muscles])
   end
+
+  @spec system(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def system(query \\ __MODULE__), do: from(e in query, where: is_nil(e.business_id))
 
   @spec create(String.t() | nil, map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, attrs) do

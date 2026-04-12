@@ -75,6 +75,7 @@ export type PlanItemUpdateRequest = {
 export type CopyDayRequest = {
   source_day: string;
   target_day: string;
+  clear_existing?: boolean;
 };
 
 export type AssignNutritionPlanRequest = {

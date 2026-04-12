@@ -1931,7 +1931,14 @@ paths:
   /v1/coach/nutrition_plans/{id}/copy-day:
     post:
       summary: Copy nutrition plan day
-      description: Replaces a target day with items copied from a source day inside the same plan from day-management UX. Frontend pattern - trigger from copy-day action and replace local day items with returned payload.
+      description: >-
+        Copies meals from a source day to a target day inside the same plan.
+        When clear_existing is true (default), all existing target-day items are
+        deleted before copying (replace mode). When false, source items are
+        added alongside existing target-day items (merge mode). Frontend
+        pattern - trigger from copy-day dialog, pass clear_existing based on
+        user choice, replace local day items with returned payload, then
+        navigate to the target day tab.
       operationId: copyNutritionPlanDay
       security:
         - bearerAuth: []
@@ -1944,10 +1951,18 @@ paths:
             schema:
               $ref: "#/components/schemas/CopyDayRequest"
             examples:
-              default:
+              replace:
+                summary: Replace target day meals (default)
                 value:
                   source_day: monday
                   target_day: thursday
+                  clear_existing: true
+              merge:
+                summary: Merge with existing target day meals
+                value:
+                  source_day: monday
+                  target_day: thursday
+                  clear_existing: false
       responses:
         "200":
           description: Plan items copied
@@ -4795,6 +4810,13 @@ components:
           type: string
         target_day:
           type: string
+        clear_existing:
+          type: boolean
+          default: true
+          description: >-
+            When true (default), existing target-day items are deleted before
+            copying. When false, copied items are added alongside existing
+            target-day items.
     ShoppingListResponse:
       type: object
       required: [data]

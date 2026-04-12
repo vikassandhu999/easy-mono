@@ -1,6 +1,4 @@
-import type {Key} from '@heroui/react';
-
-import {AlertDialog, Button, ListBox, Select, Spinner} from '@heroui/react';
+import {AlertDialog, Button, Label, Radio, RadioGroup, Spinner, toast} from '@heroui/react';
 import {Copy, Plus, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -61,7 +59,8 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
   const [savingSlot, setSavingSlot] = useState<null | string>(null);
 
   // Copy day state
-  const [copyTargetDay, setCopyTargetDay] = useState('');
+  const [copyTargetDay, setCopyTargetDay] = useState<null | string>(null);
+  const [clearExisting, setClearExisting] = useState(true);
 
   // Build a lookup: { day: { meal_type: PlanItem } }
   const planItemMap = useMemo(() => {
@@ -174,6 +173,10 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
         <div className="mb-3">
           <AlertDialog>
             <Button
+              onPress={() => {
+                setCopyTargetDay(null);
+                setClearExisting(true);
+              }}
               size="sm"
               variant="secondary"
             >
@@ -183,77 +186,105 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
             <AlertDialog.Backdrop>
               <AlertDialog.Container>
                 <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  {(renderProps) => (
-                    <>
-                      <AlertDialog.CloseTrigger />
-                      <AlertDialog.Header>
-                        <AlertDialog.Heading>
-                          Copy {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)} Meals to
-                        </AlertDialog.Heading>
-                      </AlertDialog.Header>
-                      <AlertDialog.Body>
-                        <p className="mb-3 text-sm text-foreground-500">
-                          Select a day to copy all meal assignments to.
-                        </p>
-                        <Select
-                          className="w-full"
-                          onChange={(value: Key | Key[] | null) => setCopyTargetDay(value ? String(value) : '')}
-                          placeholder="Select target day..."
-                          value={copyTargetDay || null}
-                          variant="secondary"
-                        >
-                          <Select.Trigger>
-                            <Select.Value />
-                            <Select.Indicator />
-                          </Select.Trigger>
-                          <Select.Popover>
-                            <ListBox>
-                              {DAYS.filter((d) => d.value !== selectedDay).map((day) => (
-                                <ListBox.Item
-                                  id={day.value}
-                                  key={day.value}
-                                  textValue={day.label}
-                                >
-                                  {day.label}
-                                  <ListBox.ItemIndicator />
-                                </ListBox.Item>
-                              ))}
-                            </ListBox>
-                          </Select.Popover>
-                        </Select>
-                      </AlertDialog.Body>
-                      <AlertDialog.Footer>
-                        <Button
-                          onPress={() => {
-                            setCopyTargetDay('');
-                            renderProps.close();
-                          }}
-                          variant="tertiary"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          isDisabled={!copyTargetDay}
-                          isPending={isCopying}
-                          onPress={async () => {
-                            if (!copyTargetDay || copyTargetDay === selectedDay) return;
-                            try {
-                              await copyDay({
-                                id: planId,
-                                body: {source_day: selectedDay, target_day: copyTargetDay},
-                              }).unwrap();
-                              setCopyTargetDay('');
+                  {(renderProps) => {
+                    const targetHasMeals = copyTargetDay ? planItems.some((item) => item.day === copyTargetDay) : false;
+
+                    return (
+                      <>
+                        <AlertDialog.CloseTrigger />
+                        <AlertDialog.Header>
+                          <AlertDialog.Heading>
+                            Copy {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}&apos;s meals to&hellip;
+                          </AlertDialog.Heading>
+                        </AlertDialog.Header>
+                        <AlertDialog.Body>
+                          {/* Day selector — tap to pick target day */}
+                          <p className="mb-2 text-sm font-medium text-foreground-500">Target day</p>
+                          <div className="mb-4 flex flex-wrap gap-2">
+                            {DAYS.filter((d) => d.value !== selectedDay).map((day) => (
+                              <Button
+                                key={day.value}
+                                onPress={() => {
+                                  setCopyTargetDay(day.value);
+                                  setClearExisting(true);
+                                }}
+                                size="sm"
+                                variant={copyTargetDay === day.value ? 'primary' : 'outline'}
+                              >
+                                {day.label}
+                              </Button>
+                            ))}
+                          </div>
+
+                          {/* Merge option — only when target day already has meals */}
+                          {copyTargetDay && targetHasMeals && (
+                            <RadioGroup
+                              aria-label="How to handle existing meals"
+                              onChange={(value) => setClearExisting(value === 'replace')}
+                              value={clearExisting ? 'replace' : 'keep'}
+                            >
+                              <Radio value="replace">
+                                <Radio.Control>
+                                  <Radio.Indicator />
+                                </Radio.Control>
+                                <Radio.Content>
+                                  <Label>Replace existing meals</Label>
+                                </Radio.Content>
+                              </Radio>
+                              <Radio value="keep">
+                                <Radio.Control>
+                                  <Radio.Indicator />
+                                </Radio.Control>
+                                <Radio.Content>
+                                  <Label>Keep existing and add copied meals</Label>
+                                </Radio.Content>
+                              </Radio>
+                            </RadioGroup>
+                          )}
+                        </AlertDialog.Body>
+                        <AlertDialog.Footer>
+                          <Button
+                            onPress={() => {
+                              setCopyTargetDay(null);
+                              setClearExisting(true);
                               renderProps.close();
-                            } catch {
-                              // Error handled by RTK Query
-                            }
-                          }}
-                        >
-                          {isCopying ? 'Copying...' : 'Copy'}
-                        </Button>
-                      </AlertDialog.Footer>
-                    </>
-                  )}
+                            }}
+                            variant="tertiary"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            isDisabled={!copyTargetDay}
+                            isPending={isCopying}
+                            onPress={async () => {
+                              if (!copyTargetDay) return;
+                              try {
+                                await copyDay({
+                                  id: planId,
+                                  body: {
+                                    source_day: selectedDay,
+                                    target_day: copyTargetDay,
+                                    clear_existing: clearExisting,
+                                  },
+                                }).unwrap();
+                                toast.success(
+                                  `Copied to ${copyTargetDay.charAt(0).toUpperCase() + copyTargetDay.slice(1)}`,
+                                );
+                                setSelectedDay(copyTargetDay);
+                                setCopyTargetDay(null);
+                                setClearExisting(true);
+                                renderProps.close();
+                              } catch {
+                                toast.danger('Failed to copy meals.');
+                              }
+                            }}
+                          >
+                            {isCopying ? 'Copying...' : 'Copy'}
+                          </Button>
+                        </AlertDialog.Footer>
+                      </>
+                    );
+                  }}
                 </AlertDialog.Dialog>
               </AlertDialog.Container>
             </AlertDialog.Backdrop>

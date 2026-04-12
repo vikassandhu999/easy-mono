@@ -1,6 +1,6 @@
-import {Button, Input} from '@heroui/react';
-import {ArrowLeft, Plus, Search, X} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {Button, Input, Surface} from '@heroui/react';
+import {ArrowLeft, Plus, Search} from 'lucide-react';
+import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import InfiniteList from '@/@components/infinite-list';
@@ -9,13 +9,9 @@ import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
-import {
-  type Exercise,
-  type ListExercisesFilters,
-  useExercisesInfiniteQuery,
-  useListMusclesQuery,
-} from '@/api/exercises';
+import {type Exercise, type ListExercisesFilters, useExercisesInfiniteQuery} from '@/api/exercises';
 import ExerciseCard from '@/exercises/components/exercise-card';
+import MusclePicker from '@/exercises/components/muscle-picker';
 
 export default function ListExercises() {
   const navigate = useNavigate();
@@ -23,16 +19,7 @@ export default function ListExercises() {
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
-  const {data: musclesData} = useListMusclesQuery();
-  const muscles = musclesData?.data ?? [];
-
   const debouncedSearch = useDebouncedValue(search);
-
-  const toggleMuscle = useCallback((muscleId: string) => {
-    setSelectedMuscleIds((prev) =>
-      prev.includes(muscleId) ? prev.filter((id) => id !== muscleId) : [...prev, muscleId],
-    );
-  }, []);
 
   const queryArg: ListExercisesFilters | undefined = useMemo(() => {
     const hasSearch = Boolean(debouncedSearch);
@@ -102,36 +89,13 @@ export default function ListExercises() {
         </div>
       </div>
 
-      {/* Muscle group filter chips */}
-      {muscles.length > 0 && (
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
-          {muscles.map((muscle) => {
-            const isActive = selectedMuscleIds.includes(muscle.id);
-            return (
-              <button
-                className={`min-h-8 shrink-0 rounded-full px-3 text-xs font-medium transition-colors ${
-                  isActive ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
-                }`}
-                key={muscle.id}
-                onClick={() => toggleMuscle(muscle.id)}
-                type="button"
-              >
-                {muscle.name}
-              </button>
-            );
-          })}
-          {selectedMuscleIds.length > 0 && (
-            <button
-              className="flex min-h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium text-foreground-400 transition-colors hover:text-foreground-500"
-              onClick={() => setSelectedMuscleIds([])}
-              type="button"
-            >
-              <X size={12} />
-              Clear
-            </button>
-          )}
-        </div>
-      )}
+      {/* Muscle group filter */}
+      <div className="max-w-[220px] sm:max-w-xs space-y-4 rounded-3xl mb-4">
+        <MusclePicker
+          onChange={setSelectedMuscleIds}
+          value={selectedMuscleIds}
+        />
+      </div>
 
       <InfiniteList
         emptyState={

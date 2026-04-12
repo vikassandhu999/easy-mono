@@ -139,7 +139,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
       {/* Actions */}
       <Separator />
       <div className="flex flex-wrap gap-2 pt-4">
-        <Button onPress={() => navigate(`/clients/${client.id}`)}>View client</Button>
+        <Button onPress={() => navigate(`/clients/${client.id}`, {replace: true})}>View client</Button>
         <Button
           onPress={onInviteAnother}
           variant="secondary"
@@ -153,7 +153,6 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 }
 
 export default function InviteClient() {
-  const navigate = useNavigate();
   const goBack = useGoBack(ROUTES.CLIENTS);
   const [inviteClient, {isLoading}] = useInviteClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
@@ -285,7 +284,7 @@ export default function InviteClient() {
               )}
             </Button>
             <Button
-              onPress={() => navigate(ROUTES.CLIENTS)}
+              onPress={() => goBack()}
               variant="ghost"
             >
               Cancel

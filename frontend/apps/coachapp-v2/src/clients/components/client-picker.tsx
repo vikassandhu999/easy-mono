@@ -18,6 +18,11 @@ type ClientPickerProps = {
   placeholder?: string;
   /** IDs of clients to exclude (shown as disabled) */
   excludeIds?: string[];
+  /** Whether the picker is disabled (e.g. during a mutation) */
+  isDisabled?: boolean;
+  // eslint-disable-next-line jsx-a11y/no-autofocus -- opt-in per call site
+  /** Auto-focus the search input when the picker mounts */
+  autoFocus?: boolean;
 };
 
 function getFullName(firstName: null | string, lastName: null | string): string {
@@ -39,6 +44,8 @@ export default function ClientPicker({
   description,
   placeholder = 'Search clients...',
   excludeIds = [],
+  isDisabled = false,
+  autoFocus = false,
 }: ClientPickerProps) {
   const [searchInput, setSearchInput] = useState('');
   const debouncedSearch = useDebouncedValue(searchInput);
@@ -76,7 +83,9 @@ export default function ClientPicker({
     <Autocomplete
       allowsEmptyCollection
       className="w-full"
+      defaultOpen={autoFocus}
       disabledKeys={excludeIds}
+      isDisabled={isDisabled}
       onChange={handleChange}
       placeholder={placeholder}
       selectionMode="single"
@@ -94,6 +103,8 @@ export default function ClientPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="client-search"
             variant="secondary"

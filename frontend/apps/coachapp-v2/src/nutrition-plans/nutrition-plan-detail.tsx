@@ -1,5 +1,5 @@
 import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
-import {Archive, ArchiveRestore, ArrowLeft, Copy, Pencil, Plus, Trash2} from 'lucide-react';
+import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import type {NutritionPlanStatus} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 
 import ClientPlanBanner from '@/@components/client-plan-banner';
+import CopyMenu from '@/@components/copy-menu';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -15,6 +16,7 @@ import {useCreateMealMutation} from '@/api/meals';
 import {
   useAssignNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
+  useDuplicateNutritionPlanMutation,
   useGetNutritionPlanMacrosQuery,
   useGetNutritionPlanQuery,
   useUpdateNutritionPlanMutation,
@@ -113,6 +115,7 @@ export default function NutritionPlanDetail() {
   const {data, isError, isLoading} = useGetNutritionPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteNutritionPlanMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignNutritionPlanMutation();
+  const [duplicatePlan] = useDuplicateNutritionPlanMutation();
   const [createMeal, {isLoading: isCreatingMeal}] = useCreateMealMutation();
   const [updatePlan, {isLoading: isUpdatingStatus}] = useUpdateNutritionPlanMutation();
   const {data: macrosData} = useGetNutritionPlanMacrosQuery(id!);
@@ -122,12 +125,34 @@ export default function NutritionPlanDetail() {
 
   const handleCopyToClient = async (client: Client) => {
     try {
-      await assignPlan({id: id!, body: {client_id: client.id}}).unwrap();
+      const result = await assignPlan({id: id!, body: {client_id: client.id}}).unwrap();
       const clientName = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email;
-      toast.success(`Plan copied to ${clientName}`);
+      toast.success(`Copied to ${clientName}`, {
+        actionProps: {
+          children: 'View',
+          onPress: () => navigate(`/library/nutrition-plans/${result.data.id}`),
+          variant: 'tertiary',
+        },
+      });
       setShowCopyToClient(false);
     } catch {
       toast.danger('Failed to copy plan to client.');
+    }
+  };
+
+  const handleDuplicate = async () => {
+    try {
+      const result = await duplicatePlan(id!).unwrap();
+      const label = data?.data.client_id ? 'Saved as template' : 'Duplicated as template';
+      toast.success(label, {
+        actionProps: {
+          children: 'View',
+          onPress: () => navigate(`/library/nutrition-plans/${result.data.id}`),
+          variant: 'tertiary',
+        },
+      });
+    } catch {
+      toast.danger('Failed to duplicate plan.');
     }
   };
 
@@ -241,14 +266,11 @@ export default function NutritionPlanDetail() {
           <Pencil size={16} />
           Edit
         </Button>
-        <Button
-          onPress={() => setShowCopyToClient((v) => !v)}
-          size="sm"
-          variant="secondary"
-        >
-          <Copy size={14} />
-          Copy to Client
-        </Button>
+        <CopyMenu
+          clientId={plan.client_id}
+          onCopyToClient={() => setShowCopyToClient((v) => !v)}
+          onDuplicate={handleDuplicate}
+        />
         {plan.status === 'active' ? (
           <Button
             isPending={isUpdatingStatus}
@@ -320,6 +342,9 @@ export default function NutritionPlanDetail() {
             Search for a client to copy this plan to. A new plan will be created for the selected client.
           </p>
           <ClientPicker
+            autoFocus
+            excludeIds={plan.client_id ? [plan.client_id] : undefined}
+            isDisabled={isAssigning}
             onSelect={handleCopyToClient}
             placeholder="Search clients..."
           />

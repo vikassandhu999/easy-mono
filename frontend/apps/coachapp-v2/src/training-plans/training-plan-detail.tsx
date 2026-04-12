@@ -1,5 +1,5 @@
 import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
-import {Archive, ArchiveRestore, ArrowLeft, Copy, Pencil, Plus, Trash2, UserPlus} from 'lucide-react';
+import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -7,6 +7,7 @@ import type {Client} from '@/api/clients';
 import type {TrainingPlanStatus} from '@/api/trainingPlans';
 
 import ClientPlanBanner from '@/@components/client-plan-banner';
+import CopyMenu from '@/@components/copy-menu';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -42,7 +43,7 @@ export default function TrainingPlanDetail() {
   const goBack = useGoBack(ROUTES.TRAINING_PLANS);
   const {data, isError, isLoading} = useGetTrainingPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteTrainingPlanMutation();
-  const [duplicatePlan, {isLoading: isDuplicating}] = useDuplicateTrainingPlanMutation();
+  const [duplicatePlan] = useDuplicateTrainingPlanMutation();
   const [createWorkout, {isLoading: isCreatingWorkout}] = useCreatePlannedWorkoutMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
   const [updatePlan, {isLoading: isUpdatingStatus}] = useUpdateTrainingPlanMutation();
@@ -54,7 +55,7 @@ export default function TrainingPlanDetail() {
 
   const handleCopyToClient = async (client: Client) => {
     try {
-      await assignPlan({
+      const result = await assignPlan({
         id: id!,
         body: {
           client_id: client.id,
@@ -63,7 +64,13 @@ export default function TrainingPlanDetail() {
         },
       }).unwrap();
       const clientName = [client.first_name, client.last_name].filter(Boolean).join(' ') || client.email;
-      toast.success(`Plan copied to ${clientName}`);
+      toast.success(`Copied to ${clientName}`, {
+        actionProps: {
+          children: 'View',
+          onPress: () => navigate(`/library/training-plans/${result.data.id}`),
+          variant: 'tertiary',
+        },
+      });
       setShowCopyToClient(false);
       setAssignStartDate('');
       setAssignEndDate('');
@@ -91,10 +98,16 @@ export default function TrainingPlanDetail() {
   const handleDuplicate = async () => {
     try {
       const result = await duplicatePlan(id!).unwrap();
-      toast.success('Training plan duplicated');
-      navigate(`/library/training-plans/${result.data.id}`);
+      const label = data?.data.client_id ? 'Saved as template' : 'Duplicated as template';
+      toast.success(label, {
+        actionProps: {
+          children: 'View',
+          onPress: () => navigate(`/library/training-plans/${result.data.id}`),
+          variant: 'tertiary',
+        },
+      });
     } catch {
-      toast.danger('Failed to duplicate training plan');
+      toast.danger('Failed to duplicate plan.');
     }
   };
 
@@ -194,23 +207,11 @@ export default function TrainingPlanDetail() {
           <Pencil size={16} />
           Edit
         </Button>
-        <Button
-          onPress={() => setShowCopyToClient((v) => !v)}
-          size="sm"
-          variant="secondary"
-        >
-          <UserPlus size={16} />
-          Copy to Client
-        </Button>
-        <Button
-          isPending={isDuplicating}
-          onPress={handleDuplicate}
-          size="sm"
-          variant="secondary"
-        >
-          <Copy size={16} />
-          Duplicate
-        </Button>
+        <CopyMenu
+          clientId={plan.client_id}
+          onCopyToClient={() => setShowCopyToClient((v) => !v)}
+          onDuplicate={handleDuplicate}
+        />
         {plan.status === 'active' ? (
           <Button
             isPending={isUpdatingStatus}
@@ -312,6 +313,9 @@ export default function TrainingPlanDetail() {
             </div>
           </div>
           <ClientPicker
+            autoFocus
+            excludeIds={plan.client_id ? [plan.client_id] : undefined}
+            isDisabled={isAssigning}
             onSelect={handleCopyToClient}
             placeholder="Search clients..."
           />

@@ -3,6 +3,7 @@ defmodule Easy.Utils do
   require Logger
 
   def parse_boolean(nil), do: nil
+  def parse_boolean(value) when is_boolean(value), do: value
 
   def parse_boolean(bool_string) when is_binary(bool_string) do
     case String.downcase(bool_string) do

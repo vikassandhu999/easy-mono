@@ -183,9 +183,9 @@ defmodule Easy.Nutrition.Plan do
     {:ok, totals}
   end
 
-  @spec copy_day(t(), String.t(), String.t(), String.t()) ::
+  @spec copy_day(t(), String.t(), String.t(), String.t(), boolean()) ::
           {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day(plan, source_day, target_day, creator_id) do
+  def copy_day(plan, source_day, target_day, creator_id, clear_existing) do
     with :ok <- validate_copy_day(source_day, target_day) do
       Repo.transaction(fn ->
         source_items =
@@ -194,10 +194,12 @@ defmodule Easy.Nutrition.Plan do
           |> PlanItem.for_day(source_day)
           |> Repo.all()
 
-        PlanItem
-        |> PlanItem.for_plan(plan.id)
-        |> PlanItem.for_day(target_day)
-        |> Repo.delete_all()
+        if clear_existing do
+          PlanItem
+          |> PlanItem.for_plan(plan.id)
+          |> PlanItem.for_day(target_day)
+          |> Repo.delete_all()
+        end
 
         Enum.map(source_items, fn item ->
           attrs = %{day: target_day, meal_type: item.meal_type, meal_id: item.meal_id}

@@ -297,5 +297,91 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert item["meal_type"] == "breakfast"
       assert item["meal_id"] == meal.id
     end
+
+    test "replaces existing target day items when clear_existing is true", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      source_meal = insert(:meal, plan: plan, creator: coach, business: business)
+      target_meal = insert(:meal, plan: plan, creator: coach, business: business)
+
+      insert(:plan_item,
+        plan: plan,
+        meal: source_meal,
+        creator: coach,
+        business: business,
+        day: "monday",
+        meal_type: "breakfast"
+      )
+
+      insert(:plan_item,
+        plan: plan,
+        meal: target_meal,
+        creator: coach,
+        business: business,
+        day: "tuesday",
+        meal_type: "lunch"
+      )
+
+      conn =
+        post(conn, "/v1/coach/nutrition_plans/#{plan.id}/copy-day", %{
+          "source_day" => "monday",
+          "target_day" => "tuesday",
+          "clear_existing" => true
+        })
+
+      assert %{"data" => items} = json_response(conn, 200)
+      assert length(items) == 1
+      assert hd(items)["meal_type"] == "breakfast"
+      assert hd(items)["meal_id"] == source_meal.id
+    end
+
+    test "keeps existing target day items when clear_existing is false", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:plan, creator: coach, business: business)
+      source_meal = insert(:meal, plan: plan, creator: coach, business: business)
+      target_meal = insert(:meal, plan: plan, creator: coach, business: business)
+
+      insert(:plan_item,
+        plan: plan,
+        meal: source_meal,
+        creator: coach,
+        business: business,
+        day: "monday",
+        meal_type: "breakfast"
+      )
+
+      existing_item =
+        insert(:plan_item,
+          plan: plan,
+          meal: target_meal,
+          creator: coach,
+          business: business,
+          day: "tuesday",
+          meal_type: "lunch"
+        )
+
+      conn =
+        post(conn, "/v1/coach/nutrition_plans/#{plan.id}/copy-day", %{
+          "source_day" => "monday",
+          "target_day" => "tuesday",
+          "clear_existing" => false
+        })
+
+      assert %{"data" => items} = json_response(conn, 200)
+
+      # Response only contains newly copied items
+      assert length(items) == 1
+      assert hd(items)["meal_type"] == "breakfast"
+      assert hd(items)["meal_id"] == source_meal.id
+
+      # Existing target item is preserved in DB
+      assert Easy.Repo.get(Easy.Nutrition.PlanItem, existing_item.id)
+    end
   end
 end

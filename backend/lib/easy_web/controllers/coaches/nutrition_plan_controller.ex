@@ -156,6 +156,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   @spec copy_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def copy_day(conn, %{"id" => plan_id} = params) do
     claims = conn.assigns.claims
+    clear_existing = parse_boolean(params, "clear_existing") != false
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
          plan when not is_nil(plan) <-
@@ -165,7 +166,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
              plan,
              Map.get(params, "source_day"),
              Map.get(params, "target_day"),
-             coach.id
+             coach.id,
+             clear_existing
            ) do
       render(conn, :plan_items, plan_items: items)
     else

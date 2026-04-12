@@ -1830,7 +1830,13 @@ paths:
   /v1/coach/nutrition_plans/{id}/assign:
     post:
       summary: Assign nutrition plan to client
-      description: Clones a template plan to a client-owned personal plan from assignment modals in coach UX. Frontend pattern - submit from assign dialog and append returned personal plan to the client plan list.
+      description: >-
+        Deep-copies any nutrition plan (template or personal) to a new
+        client-owned personal plan. Used by the unified Copy menu as "Copy to
+        client" (from templates) or "Copy to another client" (from personal
+        plans). Frontend pattern - trigger from client picker in copy dialog,
+        stay on the current plan after success, show a toast with a "View"
+        link to the new plan.
       operationId: assignNutritionPlan
       security:
         - bearerAuth: []
@@ -1841,11 +1847,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [client_id]
-              properties:
-                client_id:
-                  type: string
+              $ref: "#/components/schemas/NutritionPlanAssignRequest"
             examples:
               default:
                 value:
@@ -1889,7 +1891,12 @@ paths:
   /v1/coach/nutrition_plans/{id}/duplicate:
     post:
       summary: Duplicate nutrition plan
-      description: Creates a copy of an existing nutrition plan for quick iteration and versioning in template libraries. Frontend pattern - add duplicated plan to current collection and open rename/edit state.
+      description: >-
+        Creates a template copy (client_id: null) of any nutrition plan. Used
+        by the unified Copy menu as "Duplicate as template" (from templates)
+        or "Save as template" (from personal plans). Frontend pattern - stay
+        on the current plan after success, show a toast with a "View" link to
+        the new template.
       operationId: duplicateNutritionPlan
       security:
         - bearerAuth: []
@@ -2745,7 +2752,13 @@ paths:
   /v1/coach/training_plans/{id}/assign:
     post:
       summary: Assign training plan
-      description: Copies a template to a client-specific plan with dates; frontend should use this from client onboarding and plan assignment UX. Frontend pattern - trigger from assign modal and redirect to returned assigned plan.
+      description: >-
+        Deep-copies any training plan (template or personal) to a new
+        client-owned personal plan with optional dates. Used by the unified
+        Copy menu as "Copy to client" (from templates) or "Copy to another
+        client" (from personal plans). Frontend pattern - trigger from client
+        picker in copy dialog, stay on the current plan after success, show a
+        toast with a "View" link to the new plan.
       operationId: assignTrainingPlan
       security:
         - bearerAuth: []
@@ -2779,7 +2792,12 @@ paths:
   /v1/coach/training_plans/{id}/duplicate:
     post:
       summary: Duplicate training plan
-      description: Creates a template copy for rapid iteration, commonly triggered by clone actions in plan libraries. Frontend pattern - add duplicated plan to current collection and optionally open rename/edit state.
+      description: >-
+        Creates a template copy (client_id: null) of any training plan. Used
+        by the unified Copy menu as "Duplicate as template" (from templates)
+        or "Save as template" (from personal plans). Frontend pattern - stay
+        on the current plan after success, show a toast with a "View" link to
+        the new template.
       operationId: duplicateTrainingPlan
       security:
         - bearerAuth: []
@@ -4802,6 +4820,18 @@ components:
         updated_at:
           type: string
           format: date-time
+    NutritionPlanAssignRequest:
+      type: object
+      required: [client_id]
+      properties:
+        client_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
     CopyDayRequest:
       type: object
       required: [source_day, target_day]

@@ -1,5 +1,5 @@
 defmodule EasyWeb.Coaches.ExerciseJSON do
-  alias Easy.Training.{Equipment, Exercise, Muscle}
+  alias Easy.Training.Exercise
 
   @spec show(map()) :: map()
   def show(%{exercise: exercise}) do
@@ -21,26 +21,26 @@ defmodule EasyWeb.Coaches.ExerciseJSON do
       force: exercise.force,
       images: exercise.images || [],
       business_id: exercise.business_id,
-      muscles: muscles_data(exercise.muscles),
-      equipment: equipment_data(exercise.equipment),
+      muscles: muscles_data(exercise.exercise_muscles),
+      equipment: equipment_data(exercise.exercise_equipment),
       inserted_at: exercise.inserted_at,
       updated_at: exercise.updated_at
     }
   end
 
-  defp muscles_data(muscles) when is_list(muscles), do: Enum.map(muscles, &muscle_data/1)
+  defp muscles_data(exercise_muscles) when is_list(exercise_muscles) do
+    Enum.map(exercise_muscles, fn em ->
+      %{id: em.muscle.id, name: em.muscle.name, description: em.muscle.description}
+    end)
+  end
+
   defp muscles_data(_), do: []
 
-  defp muscle_data(%Muscle{} = muscle) do
-    %{id: muscle.id, name: muscle.name, description: muscle.description}
+  defp equipment_data(exercise_equipment) when is_list(exercise_equipment) do
+    Enum.map(exercise_equipment, fn ee ->
+      %{id: ee.equipment.id, name: ee.equipment.name, description: ee.equipment.description}
+    end)
   end
-
-  defp equipment_data(equipment) when is_list(equipment),
-    do: Enum.map(equipment, &equipment_item/1)
 
   defp equipment_data(_), do: []
-
-  defp equipment_item(%Equipment{} = equipment) do
-    %{id: equipment.id, name: equipment.name, description: equipment.description}
-  end
 end

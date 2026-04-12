@@ -137,7 +137,24 @@ defmodule Easy.Training.Exercise do
 
   @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_preloads(query \\ __MODULE__) do
-    from(e in query, preload: [:equipment, :muscles])
+    muscles_query =
+      from(em in ExerciseMuscle,
+        join: m in assoc(em, :muscle),
+        preload: [muscle: m]
+      )
+
+    equipment_query =
+      from(ee in ExerciseEquipment,
+        join: eq in assoc(ee, :equipment),
+        preload: [equipment: eq]
+      )
+
+    from(e in query,
+      preload: [
+        exercise_muscles: ^muscles_query,
+        exercise_equipment: ^equipment_query
+      ]
+    )
   end
 
   @spec system(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -209,6 +226,25 @@ defmodule Easy.Training.Exercise do
     if copy_count == 0, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{copy_count + 1})"
   end
 
-  defp preload_result({:ok, record}), do: {:ok, Repo.preload(record, [:equipment, :muscles])}
+  defp preload_result({:ok, record}) do
+    muscles_query =
+      from(em in ExerciseMuscle,
+        join: m in assoc(em, :muscle),
+        preload: [muscle: m]
+      )
+
+    equipment_query =
+      from(ee in ExerciseEquipment,
+        join: eq in assoc(ee, :equipment),
+        preload: [equipment: eq]
+      )
+
+    {:ok,
+     Repo.preload(record,
+       exercise_muscles: muscles_query,
+       exercise_equipment: equipment_query
+     )}
+  end
+
   defp preload_result(error), do: error
 end

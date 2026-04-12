@@ -1,4 +1,4 @@
-import {Separator} from '@heroui/react';
+import {Separator, Toast} from '@heroui/react';
 import {Dumbbell, History, LayoutDashboard, Settings, UtensilsCrossed} from 'lucide-react';
 import {type ReactNode} from 'react';
 import {NavLink, Outlet, ScrollRestoration, useLocation} from 'react-router-dom';
@@ -125,6 +125,9 @@ export default function AppShell() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Global toast renderer — queued via toast() from @heroui/react */}
+      <Toast.Provider placement="bottom end" />
+
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">

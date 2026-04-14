@@ -7,8 +7,9 @@ defmodule Easy.Factory do
   alias Easy.Orgs.Business
   alias Easy.Orgs.Coach
   alias Easy.Nutrition.Food
-  alias Easy.Nutrition.FoodLog
+  alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
+  alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanItem
@@ -500,37 +501,49 @@ defmodule Easy.Factory do
     }
   end
 
-  def food_log_factory do
+  def meal_log_factory do
     coach = build(:coach)
     client = build(:client, creator: coach, business: coach.business)
-    food = build(:food, creator: coach, business: coach.business)
 
-    %FoodLog{
+    %MealLog{
       date: Date.utc_today(),
       meal_slot: "breakfast",
+      planned_snapshot: nil,
+      planned_calories: nil,
+      logged_calories: 0.0,
+      client: client,
+      business: coach.business
+    }
+  end
+
+  def food_log_entry_factory do
+    meal_log = build(:meal_log)
+    food = build(:food, creator: meal_log.client.creator, business: meal_log.business)
+
+    %FoodLogEntry{
+      food_name: "Oats",
       amount: 100.0,
       unit: "g",
       weight_g: 100.0,
-      macros_snapshot: %{
-        "calories_per_100g" => 389,
-        "protein_g" => 16.9,
-        "carbs_g" => 66.3,
-        "fat_g" => 6.9
-      },
-      food_name_snapshot: "Oats",
-      client: client,
-      business: coach.business,
+      calories: 389.0,
+      protein_g: 16.9,
+      carbs_g: 66.3,
+      fat_g: 6.9,
+      source: :planned,
+      planned_item_index: 0,
+      meal_log: meal_log,
       food: food
     }
   end
 
-  def food_log_attrs_factory do
+  def food_log_entry_attrs_factory do
     %{
       "date" => Date.to_iso8601(Date.utc_today()),
       "meal_slot" => "breakfast",
       "amount" => 100.0,
       "unit" => "g",
-      "weight_g" => 100.0
+      "weight_g" => 100.0,
+      "source" => "planned"
     }
   end
 end

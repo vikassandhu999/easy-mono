@@ -1,45 +1,19 @@
-defmodule EasyWeb.Clients.FoodLogController do
+defmodule EasyWeb.Clients.FoodLogEntryController do
   use EasyWeb, :controller
 
   alias Easy.Clients.Client
-  alias Easy.Nutrition.FoodLog
-  alias Easy.Repo
+  alias Easy.Nutrition.FoodLogEntry
+  alias Easy.Nutrition.MealLog
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, log} <- FoodLog.create(business_id, client.id, params) do
-      log = Repo.preload(log, [:food, :recipe])
-
+         {:ok, entry} <- MealLog.log_entry(business_id, client.id, params) do
       conn
       |> put_status(:created)
-      |> render(:show, food_log: log)
-    end
-  end
-
-  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-
-    with {:ok, client} <- Client.get_for_user(business_id, user_id) do
-      date = Easy.Utils.safe_date(params["date"])
-
-      base =
-        FoodLog
-        |> FoodLog.for_business(business_id)
-        |> FoodLog.for_client(client.id)
-
-      base = if date, do: FoodLog.for_date(base, date), else: base
-
-      logs =
-        base
-        |> FoodLog.ordered()
-        |> FoodLog.with_associations()
-        |> Repo.all()
-
-      render(conn, :index, food_logs: logs)
+      |> render(:show, food_log_entry: entry)
     end
   end
 
@@ -48,10 +22,9 @@ defmodule EasyWeb.Clients.FoodLogController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, log} <- get_client_log(business_id, client.id, id),
-         {:ok, updated} <- FoodLog.update(log, conn.body_params) do
-      updated = Repo.preload(updated, [:food, :recipe])
-      render(conn, :show, food_log: updated)
+         {:ok, entry} <- get_client_entry(business_id, client.id, id),
+         {:ok, updated} <- MealLog.update_entry(entry, conn.body_params) do
+      render(conn, :show, food_log_entry: updated)
     end
   end
 
@@ -60,8 +33,8 @@ defmodule EasyWeb.Clients.FoodLogController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, log} <- get_client_log(business_id, client.id, id),
-         {:ok, _} <- FoodLog.delete(log) do
+         {:ok, entry} <- get_client_entry(business_id, client.id, id),
+         {:ok, _} <- MealLog.delete_entry(entry) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -72,10 +45,10 @@ defmodule EasyWeb.Clients.FoodLogController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str),
-         {:ok, logs} <- FoodLog.log_meal(business_id, client.id, date, meal_slot, meal_id) do
+         {:ok, entries} <- MealLog.log_meal(business_id, client.id, date, meal_slot, meal_id) do
       conn
       |> put_status(:created)
-      |> render(:bulk, food_logs: logs)
+      |> render(:bulk, food_log_entries: entries)
     end
   end
 
@@ -85,10 +58,10 @@ defmodule EasyWeb.Clients.FoodLogController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str),
-         {:ok, logs} <- FoodLog.log_day(business_id, client.id, date, plan_id) do
+         {:ok, entries} <- MealLog.log_day(business_id, client.id, date, plan_id) do
       conn
       |> put_status(:created)
-      |> render(:bulk, food_logs: logs)
+      |> render(:bulk, food_log_entries: entries)
     end
   end
 
@@ -103,14 +76,10 @@ defmodule EasyWeb.Clients.FoodLogController do
     {:error, Easy.Error.unprocessable(%{fields: %{date: ["can't be blank"]}})}
   end
 
-  defp get_client_log(business_id, client_id, log_id) do
-    case FoodLog
-         |> FoodLog.for_business(business_id)
-         |> FoodLog.for_client(client_id)
-         |> FoodLog.with_associations()
-         |> Repo.get(log_id) do
+  defp get_client_entry(business_id, client_id, entry_id) do
+    case FoodLogEntry.get_for_client(business_id, client_id, entry_id) do
       nil -> {:error, :not_found}
-      log -> {:ok, log}
+      entry -> {:ok, entry}
     end
   end
 end

@@ -1,6 +1,6 @@
-import type {MacroTotals} from '@/@utils/nutrition-helpers';
+import type {MacroTotals} from '@easy/utils';
 
-import {formatMacroValue} from '@/@utils/nutrition-helpers';
+import {formatMacroValue} from '@easy/utils';
 
 type MacroBarProps = {
   consumed: number;

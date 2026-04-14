@@ -1,21 +1,91 @@
-import {computePlannedMacros, formatDateISO, MEAL_SLOTS, sumMacros} from '@easy/utils';
+import {computeMacrosFromSnapshot, formatDateISO, MEAL_SLOTS, normalizeMacros, sumMacrosFromEntries} from '@easy/utils';
 import {Alert, Button, Spinner, toast} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import type {FoodLog} from '@/api/foodLogs';
-import type {TodayPlanMealItem} from '@/api/nutritionPlans';
+import type {FoodLogEntry, MealLog, PlannedSnapshotItem} from '@/api/mealLogs';
+import type {TodayPlanMeal} from '@/api/nutritionPlans';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useListMyFoodLogsQuery, useLogDayMutation} from '@/api/foodLogs';
-import {useGetTodayPlanQuery} from '@/api/nutritionPlans';
+import {useListMyMealLogsQuery, useLogDayMutation} from '@/api/mealLogs';
+import {useGetTodayPlanQuery, useListMyNutritionPlansQuery} from '@/api/nutritionPlans';
 import DailyMacroProgress from '@/nutrition/components/daily-macro-progress';
 import DateNavigator from '@/nutrition/components/date-navigator';
 import EditLogInline from '@/nutrition/components/edit-log-inline';
 import LogItemInline from '@/nutrition/components/log-item-inline';
 import MealSlotSection from '@/nutrition/components/meal-slot-section';
+import WeeklySummaryStrip from '@/nutrition/components/weekly-summary-strip';
+
+// ── Helpers ──────────────────────────────────────────────────
+
+type MealSlotData = {
+  /** FoodLogEntries for this slot (from the MealLog, or empty if no MealLog yet) */
+  entries: FoodLogEntry[];
+  /** The MealLog for this slot, if one exists */
+  mealLog: MealLog | null;
+  /** Meal ID from the plan (for log_meal bulk action) */
+  mealId: null | string;
+  /** The meal slot key */
+  mealSlot: string;
+  /** Planned items: from MealLog.planned_snapshot if available, else from today's plan */
+  plannedItems: PlannedSnapshotItem[];
+};
+
+/**
+ * Merge today's plan data with MealLog data to build a unified list of meal slots.
+ * - Slots with a MealLog use the snapshot for planned items.
+ * - Slots without a MealLog fall back to the plan's meal items.
+ * - Slots with only unplanned logs (no plan) still appear.
+ */
+function buildMealSlots(mealLogs: MealLog[], todayPlanMeals: null | TodayPlanMeal[]): MealSlotData[] {
+  const slotMap = new Map<string, MealSlotData>();
+
+  // Seed from plan first (to include unlogged meal slots)
+  if (todayPlanMeals) {
+    for (const meal of todayPlanMeals) {
+      slotMap.set(meal.meal_slot, {
+        entries: [],
+        mealLog: null,
+        mealId: meal.meal_id,
+        mealSlot: meal.meal_slot,
+        plannedItems: meal.items.map((item) => {
+          const computed = computeMacrosFromSnapshot(item.macros, item.weight_g);
+          return {
+            amount: item.amount ?? 0,
+            calories: computed.calories,
+            carbs_g: computed.carbs,
+            fat_g: computed.fat,
+            food_name: item.food_name ?? 'Unknown',
+            protein_g: computed.protein,
+            unit: item.unit ?? 'g',
+            weight_g: item.weight_g ?? 0,
+          };
+        }),
+      });
+    }
+  }
+
+  // Overlay MealLog data (overrides plan data for slots that have logs)
+  for (const ml of mealLogs) {
+    const existing = slotMap.get(ml.meal_slot);
+    slotMap.set(ml.meal_slot, {
+      entries: ml.food_log_entries,
+      mealLog: ml,
+      mealId: existing?.mealId ?? null,
+      mealSlot: ml.meal_slot,
+      plannedItems: ml.planned_snapshot?.items ?? existing?.plannedItems ?? [],
+    });
+  }
+
+  // Sort by canonical meal slot order
+  return [...slotMap.values()].sort(
+    (a, b) =>
+      MEAL_SLOTS.indexOf(a.mealSlot as (typeof MEAL_SLOTS)[number]) -
+      MEAL_SLOTS.indexOf(b.mealSlot as (typeof MEAL_SLOTS)[number]),
+  );
+}
 
 // ── Main component ───────────────────────────────────────────
 
@@ -24,48 +94,99 @@ export default function NutritionDaily() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const dateISO = formatDateISO(selectedDate);
 
-  // Fetch today's plan + logs in parallel
+  // Fetch meal logs + today's plan + plan list (for macros_goal) in parallel
+  const {data: mealLogsData, isLoading: isLogsLoading} = useListMyMealLogsQuery({date: dateISO});
   const {data: todayPlanData, isError: isPlanError, isLoading: isPlanLoading} = useGetTodayPlanQuery({date: dateISO});
-  const {data: logsData, isError: isLogsError, isLoading: isLogsLoading} = useListMyFoodLogsQuery({date: dateISO});
+  const {data: plansData} = useListMyNutritionPlansQuery({status: 'active'});
 
   const [logDay, {isLoading: isLoggingDay}] = useLogDayMutation();
 
   // Inline states
-  const [activeLogItem, setActiveLogItem] = useState<null | {item: TodayPlanMealItem; mealSlot: string}>(null);
-  const [editingLog, setEditingLog] = useState<FoodLog | null>(null);
+  const [activeLogItem, setActiveLogItem] = useState<null | {
+    item: PlannedSnapshotItem;
+    mealSlot: string;
+    plannedItemIndex: number;
+  }>(null);
+  const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
 
   const todayPlan = todayPlanData?.data;
-  const logs: FoodLog[] = useMemo(() => logsData?.data ?? [], [logsData]);
+  const mealLogs: MealLog[] = useMemo(() => mealLogsData?.data ?? [], [mealLogsData]);
   const isLoading = isPlanLoading || isLogsLoading;
 
-  // Compute macro totals
-  const plannedMacros = useMemo(
-    () => (todayPlan ? computePlannedMacros(todayPlan.meals) : {calories: 0, carbs: 0, fat: 0, protein: 0}),
-    [todayPlan],
-  );
-  const consumedMacros = useMemo(() => sumMacros(logs), [logs]);
+  // Build merged meal slot data
+  const mealSlots = useMemo(() => buildMealSlots(mealLogs, todayPlan?.meals ?? null), [mealLogs, todayPlan]);
 
-  // Check if all planned items are logged
-  const allPlannedLogged = useMemo(() => {
-    if (!todayPlan || todayPlan.meals.length === 0) return true;
-    for (const meal of todayPlan.meals) {
-      for (const item of meal.items) {
-        if (!logs.some((log) => log.meal_item_id === item.meal_item_id)) {
-          return false;
+  // Compute macro totals from MealLogs
+  const allEntries = useMemo(() => mealLogs.flatMap((ml) => ml.food_log_entries), [mealLogs]);
+  const consumedMacros = useMemo(() => sumMacrosFromEntries(allEntries), [allEntries]);
+
+  // Resolve daily macro target: 1) plan's macros_goal, 2) sum of planned meal macros, 3) null
+  // macros_goal stores daily targets. Keys may be short-form (calories, protein, carbs, fat)
+  // or long-form (calories_per_100g, protein_g, carbs_g, fats_g). normalizeMacros maps to canonical long-form.
+  const activePlanGoal = useMemo(() => {
+    const plan = plansData?.data?.[0];
+    const goal = plan?.macros_goal;
+    if (!goal) return null;
+    const n = normalizeMacros(goal);
+    const calories = Number(n.calories_per_100g ?? 0);
+    if (calories <= 0) return null;
+    return {
+      calories,
+      carbs: Number(n.carbs_g ?? 0),
+      fat: Number(n.fats_g ?? 0),
+      protein: Number(n.protein_g ?? 0),
+    };
+  }, [plansData]);
+
+  const plannedMacros = useMemo(() => {
+    // Priority 1: explicit macros_goal from the plan
+    if (activePlanGoal) return activePlanGoal;
+
+    // Priority 2: sum macros from all planned meal slots
+    let calories = 0;
+    let protein = 0;
+    let carbs = 0;
+    let fat = 0;
+    for (const slot of mealSlots) {
+      const ml = slot.mealLog;
+      if (ml?.planned_snapshot) {
+        calories += ml.planned_snapshot.total_calories ?? 0;
+        protein += ml.planned_snapshot.total_protein_g ?? 0;
+        carbs += ml.planned_snapshot.total_carbs_g ?? 0;
+        fat += ml.planned_snapshot.total_fat_g ?? 0;
+      } else {
+        for (const item of slot.plannedItems) {
+          calories += item.calories ?? 0;
+          protein += item.protein_g ?? 0;
+          carbs += item.carbs_g ?? 0;
+          fat += item.fat_g ?? 0;
         }
       }
     }
-    return true;
-  }, [todayPlan, logs]);
+    return {calories, carbs, fat, protein};
+  }, [activePlanGoal, mealSlots]);
 
-  const handleTapItem = useCallback((item: TodayPlanMealItem, mealSlot: string) => {
-    setEditingLog(null);
-    setActiveLogItem({item, mealSlot});
+  // Check if all planned items are logged
+  const allPlannedLogged = useMemo(() => {
+    if (mealSlots.length === 0) return true;
+    for (const slot of mealSlots) {
+      if (slot.plannedItems.length === 0) continue;
+      for (let i = 0; i < slot.plannedItems.length; i++) {
+        const hasEntry = slot.entries.some((e) => e.planned_item_index === i);
+        if (!hasEntry) return false;
+      }
+    }
+    return true;
+  }, [mealSlots]);
+
+  const handleTapItem = useCallback((item: PlannedSnapshotItem, mealSlot: string, plannedItemIndex: number) => {
+    setEditingEntry(null);
+    setActiveLogItem({item, mealSlot, plannedItemIndex});
   }, []);
 
-  const handleEditLog = useCallback((log: FoodLog) => {
+  const handleEditEntry = useCallback((entry: FoodLogEntry) => {
     setActiveLogItem(null);
-    setEditingLog(log);
+    setEditingEntry(entry);
   }, []);
 
   const handleLogAllDay = async () => {
@@ -88,6 +209,10 @@ export default function NutritionDaily() {
     );
   }
 
+  const hasPlan = todayPlan && todayPlan.meals.length > 0;
+  const hasAnyData = mealSlots.length > 0;
+  const isFuture = dateISO > formatDateISO(new Date());
+
   return (
     <PageLayout title="Nutrition">
       <div className="max-w-lg">
@@ -99,8 +224,16 @@ export default function NutritionDaily() {
           />
         </div>
 
+        {/* Weekly summary strip */}
+        <div className="mb-4">
+          <WeeklySummaryStrip
+            onSelectDate={setSelectedDate}
+            selectedDate={selectedDate}
+          />
+        </div>
+
         {/* Daily macro progress — show for plan OR freestyle (consumed-only) */}
-        {todayPlan || logs.length > 0 ? (
+        {hasAnyData || allEntries.length > 0 ? (
           <div className="mb-4">
             <DailyMacroProgress
               consumed={consumedMacros}
@@ -110,7 +243,7 @@ export default function NutritionDaily() {
         ) : null}
 
         {/* No plan state */}
-        {!todayPlan && isPlanError ? (
+        {!hasPlan && isPlanError ? (
           <div className="mb-4">
             <Alert status="default">
               <Alert.Indicator />
@@ -124,23 +257,8 @@ export default function NutritionDaily() {
           </div>
         ) : null}
 
-        {/* Logs fetch error state */}
-        {isLogsError ? (
-          <div className="mb-4">
-            <Alert status="default">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>Failed to load food logs</Alert.Title>
-                <Alert.Description>
-                  We couldn&apos;t load your food logs. Please try refreshing the page.
-                </Alert.Description>
-              </Alert.Content>
-            </Alert>
-          </div>
-        ) : null}
-
-        {/* Inline log new item */}
-        {activeLogItem ? (
+        {/* Inline log new item (hidden for future dates) */}
+        {activeLogItem && !isFuture ? (
           <div className="mb-4">
             <LogItemInline
               date={dateISO}
@@ -152,65 +270,63 @@ export default function NutritionDaily() {
                 navigate(ROUTES.NUTRITION_ADD_FOOD, {
                   state: {
                     date: dateISO,
-                    mealItemId: activeLogItem.item.meal_item_id,
                     mealSlot: activeLogItem.mealSlot,
+                    plannedItemIndex: activeLogItem.plannedItemIndex,
                     replace: true,
                   },
                 });
               }}
+              plannedItemIndex={activeLogItem.plannedItemIndex}
             />
           </div>
         ) : null}
 
-        {/* Inline edit existing log */}
-        {editingLog ? (
+        {/* Inline edit existing entry (hidden for future dates) */}
+        {editingEntry && !isFuture ? (
           <div className="mb-4">
             <EditLogInline
-              log={editingLog}
-              onClose={() => setEditingLog(null)}
+              entry={editingEntry}
+              onClose={() => setEditingEntry(null)}
             />
           </div>
         ) : null}
 
-        {/* Meal slots */}
-        {todayPlan ? (
+        {/* Meal slots (with plan data) */}
+        {mealSlots.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {todayPlan.meals
-              .sort(
-                (a, b) =>
-                  MEAL_SLOTS.indexOf(a.meal_slot as (typeof MEAL_SLOTS)[number]) -
-                  MEAL_SLOTS.indexOf(b.meal_slot as (typeof MEAL_SLOTS)[number]),
-              )
-              .map((meal) => (
-                <MealSlotSection
-                  date={dateISO}
-                  key={meal.meal_slot}
-                  logs={logs}
-                  meal={meal}
-                  onEditLog={handleEditLog}
-                  onTapItem={(item) => handleTapItem(item, meal.meal_slot)}
-                />
-              ))}
+            {mealSlots.map((slot) => (
+              <MealSlotSection
+                date={dateISO}
+                entries={slot.entries}
+                isFuture={isFuture}
+                key={slot.mealSlot}
+                mealId={slot.mealId}
+                mealSlot={slot.mealSlot}
+                onEditEntry={handleEditEntry}
+                onTapItem={(item, index) => handleTapItem(item, slot.mealSlot, index)}
+                plannedItems={slot.plannedItems}
+              />
+            ))}
           </div>
         ) : null}
 
-        {/* Freestyle logs (no plan, but has logs) */}
-        {!todayPlan && logs.length > 0 ? (
+        {/* Freestyle logs (no plan, no meal slots from above, but has logs) */}
+        {!hasPlan && mealSlots.length === 0 && allEntries.length > 0 ? (
           <div className="mb-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Logged today</p>
             <div className="flex flex-col gap-1 rounded-xl bg-default p-3">
-              {logs.map((log) => (
+              {allEntries.map((entry) => (
                 <button
                   className="flex min-h-11 w-full items-center gap-3 py-1 text-left"
-                  key={log.id}
-                  onClick={() => handleEditLog(log)}
+                  key={entry.id}
+                  onClick={() => handleEditEntry(entry)}
                   type="button"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{log.food_name_snapshot ?? 'Unknown'}</p>
+                    <p className="truncate text-sm">{entry.food_name}</p>
                     <p className="text-xs text-foreground-400">
-                      {log.amount ?? ''}
-                      {log.unit ?? ''}
+                      {entry.amount ?? ''}
+                      {entry.unit ?? ''}
                     </p>
                   </div>
                 </button>
@@ -219,29 +335,31 @@ export default function NutritionDaily() {
           </div>
         ) : null}
 
-        {/* Bottom actions */}
-        <div className="mt-4 flex flex-col gap-2">
-          <Button
-            className="w-full"
-            onPress={() => navigate(ROUTES.NUTRITION_ADD_FOOD, {state: {date: dateISO}})}
-            variant="secondary"
-          >
-            <Plus size={16} />
-            Add food
-          </Button>
-
-          {todayPlan && !allPlannedLogged ? (
+        {/* Bottom actions (hidden for future dates) */}
+        {!isFuture ? (
+          <div className="mt-4 flex flex-col gap-2">
             <Button
               className="w-full"
-              isDisabled={isLoggingDay}
-              isPending={isLoggingDay}
-              onPress={handleLogAllDay}
-              variant="ghost"
+              onPress={() => navigate(ROUTES.NUTRITION_ADD_FOOD, {state: {date: dateISO}})}
+              variant="secondary"
             >
-              Log all meals
+              <Plus size={16} />
+              Add food
             </Button>
-          ) : null}
-        </div>
+
+            {hasPlan && !allPlannedLogged ? (
+              <Button
+                className="w-full"
+                isDisabled={isLoggingDay}
+                isPending={isLoggingDay}
+                onPress={handleLogAllDay}
+                variant="ghost"
+              >
+                Log all meals
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </PageLayout>
   );

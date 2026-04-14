@@ -1,17 +1,24 @@
+import {normalizeMacros} from '@easy/utils';
 import {ListBox, SearchField} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
-import {normalizeMacros} from '@/@utils/nutrition-helpers';
 import {useListClientFoodsQuery} from '@/api/foods';
 import {useListClientRecipesQuery} from '@/api/recipes';
 
 // ── Types ───────────────────────────────────────────────────
 
+export type PickedServingSize = {
+  amount: null | number;
+  unit: string;
+  weight_g: null | number;
+};
+
 export type PickedItem = {
   id: string;
   macros: null | Record<string, number>;
   name: string;
+  serving_sizes: PickedServingSize[];
   type: 'food' | 'recipe';
 };
 
@@ -55,12 +62,24 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
     const result: PickedItem[] = [];
     if (foodsData) {
       for (const food of foodsData.data) {
-        result.push({id: food.id, macros: food.macros, name: food.name, type: 'food'});
+        result.push({
+          id: food.id,
+          macros: food.macros,
+          name: food.name,
+          serving_sizes: food.serving_sizes ?? [],
+          type: 'food',
+        });
       }
     }
     if (recipesData) {
       for (const recipe of recipesData.data) {
-        result.push({id: recipe.id, macros: recipe.macros, name: recipe.name, type: 'recipe'});
+        result.push({
+          id: recipe.id,
+          macros: recipe.macros,
+          name: recipe.name,
+          serving_sizes: recipe.serving_sizes ?? [],
+          type: 'recipe',
+        });
       }
     }
     return result;

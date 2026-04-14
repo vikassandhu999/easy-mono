@@ -87,7 +87,7 @@ export const api = createApi({
   tagTypes: [
     'Exercise',
     'Food',
-    'FoodLog',
+    'MealLog',
     'NutritionPlan',
     'PerformedSet',
     'Recipe',

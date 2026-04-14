@@ -1,10 +1,10 @@
 import {Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
-import type {DailyMacroSummary} from '@/api/foodLogs';
+import type {DailyNutritionSummary} from '@/api/mealLogs';
 import type {Macros} from '@/api/shared';
 
-import {useGetCoachFoodLogSummaryQuery} from '@/api/foodLogs';
+import {useGetCoachMealLogSummaryQuery} from '@/api/mealLogs';
 import {useListNutritionPlansQuery} from '@/api/nutritionPlans';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
 
@@ -50,15 +50,16 @@ function isFutureDate(dateStr: string): boolean {
 type AdherenceLevel = 'future' | 'high' | 'low' | 'medium' | 'none';
 
 function getAdherenceLevel(
-  summary: DailyMacroSummary | undefined,
+  summary: DailyNutritionSummary | undefined,
   dateStr: string,
   plannedCalories: number,
 ): AdherenceLevel {
   if (isFutureDate(dateStr)) return 'future';
   if (!summary || summary.total_entries === 0) return 'none';
+  // When no plan exists, show high if client logged anything, none if not
   if (plannedCalories <= 0) return summary.total_entries > 0 ? 'high' : 'none';
 
-  const percent = (summary.totals.calories / plannedCalories) * 100;
+  const percent = (summary.logged_calories / plannedCalories) * 100;
   if (percent >= 80) return 'high';
   if (percent >= 50) return 'medium';
   return 'low';
@@ -82,7 +83,7 @@ export default function ClientNutritionAdherence({
   macrosGoal?: Macros | null;
 }) {
   const {from, to} = useMemo(() => getWeekRange(), []);
-  const {data, isLoading} = useGetCoachFoodLogSummaryQuery({client_id: clientId, from, to});
+  const {data, isLoading} = useGetCoachMealLogSummaryQuery({client_id: clientId, from, to});
   const {data: plansData} = useListNutritionPlansQuery({client_id: clientId});
   const [selectedDate, setSelectedDate] = useState<null | string>(null);
 
@@ -110,8 +111,9 @@ export default function ClientNutritionAdherence({
       const summary = summaries.find((s) => s.date === dateStr);
       const level = getAdherenceLevel(summary, dateStr, plannedCalories);
       const style = ADHERENCE_STYLES[level];
+      // Show percentage only when there's a plan target
       const percent =
-        summary && plannedCalories > 0 ? Math.round((summary.totals.calories / plannedCalories) * 100) : null;
+        summary && plannedCalories > 0 ? Math.round((summary.logged_calories / plannedCalories) * 100) : null;
 
       return {dateStr, label, level, percent, style, summary};
     });
@@ -125,7 +127,7 @@ export default function ClientNutritionAdherence({
   return (
     <section className="py-4">
       <Separator className="mb-4" />
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Nutrition Adherence</h3>
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Nutrition</h3>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
@@ -139,7 +141,7 @@ export default function ClientNutritionAdherence({
               <button
                 className="flex flex-1 flex-col items-center gap-1"
                 disabled={day.level === 'future'}
-                key={day.label}
+                key={day.dateStr}
                 onClick={() => handleDayTap(day.dateStr, day.level)}
                 type="button"
               >
@@ -167,6 +169,45 @@ export default function ClientNutritionAdherence({
             <span>{'\u25CB'} &lt;50%</span>
             <span>{'\u2014'} future</span>
           </div>
+
+          {/* Recent days list */}
+          {!selectedDate && summaries.length > 0 ? (
+            <div className="mt-4 flex flex-col gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Recent days</p>
+              {[...summaries]
+                .filter((s) => s.total_entries > 0)
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map((summary) => {
+                  const parts: string[] = [];
+                  if (summary.meals_logged > 0) parts.push(`${summary.meals_logged} meals`);
+                  parts.push(`${summary.total_entries} items`);
+                  if (summary.replacements > 0) parts.push(`${summary.replacements} replaced`);
+                  if (summary.unplanned_count > 0) parts.push(`${summary.unplanned_count} added`);
+
+                  return (
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-divider px-3 py-2 text-left transition-colors hover:bg-content2 active:bg-content2"
+                      key={summary.date}
+                      onClick={() => setSelectedDate(summary.date)}
+                      type="button"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">
+                          {new Date(summary.date + 'T00:00:00').toLocaleDateString(undefined, {
+                            weekday: 'long',
+                          })}
+                          <span className="ml-1 font-normal text-foreground-400">
+                            {Math.round(summary.logged_calories)}
+                            {summary.planned_calories > 0 ? ` / ${Math.round(summary.planned_calories)} cal` : ' cal'}
+                          </span>
+                        </p>
+                        <p className="text-xs text-foreground-400">{parts.join(' \u00B7 ')}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+          ) : null}
 
           {/* Drill-down: daily detail */}
           {selectedDate ? (

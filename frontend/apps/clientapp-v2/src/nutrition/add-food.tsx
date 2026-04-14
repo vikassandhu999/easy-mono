@@ -1,25 +1,38 @@
+import {computeMacrosFromSnapshot, formatMacroValue, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Check} from 'lucide-react';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
+import {useForm} from 'react-hook-form';
 import {useLocation, useNavigate} from 'react-router-dom';
+import {z} from 'zod';
 
 import type {PickedItem} from '@/nutrition/components/food-search-picker';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {computeMacrosFromSnapshot, formatMacroValue, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@/@utils/nutrition-helpers';
-import {useLogFoodMutation} from '@/api/foodLogs';
+import {useCreateFoodLogEntryMutation} from '@/api/mealLogs';
+import {applyFormErrors} from '@/api/shared';
 import FoodSearchPicker from '@/nutrition/components/food-search-picker';
 
 // ── Types ───────────────────────────────────────────────────
 
 type LocationState = {
   date?: string;
-  mealItemId?: string;
   mealSlot?: string;
+  plannedItemIndex?: number;
   replace?: boolean;
 };
+
+// ── Schema ──────────────────────────────────────────────────
+
+const amountSchema = z.object({
+  amount: z.string().min(1, 'Required'),
+  unit: z.string().min(1, 'Required'),
+});
+
+type AmountFormValues = z.infer<typeof amountSchema>;
 
 // ── Component ───────────────────────────────────────────────
 
@@ -31,48 +44,80 @@ export default function AddFood() {
   const goBack = useGoBack(ROUTES.NUTRITION);
   const dateISO = state.date ?? new Date().toISOString().slice(0, 10);
   const isReplacement = state.replace === true;
-  const mealItemId = state.mealItemId ?? null;
+  const plannedItemIndex = state.plannedItemIndex ?? null;
 
-  const [logFood, {isLoading}] = useLogFoodMutation();
+  const [createEntry, {isLoading}] = useCreateFoodLogEntryMutation();
 
-  // Step 1: select meal slot
+  // Step 1: select meal slot (selection state, not a text input)
   const [mealSlot, setMealSlot] = useState(state.mealSlot ?? '');
 
-  // Step 2: pick food/recipe
+  // Step 2: pick food/recipe (selection state)
   const [selectedItem, setSelectedItem] = useState<null | PickedItem>(null);
 
-  // Step 3: set amount
-  const [amount, setAmount] = useState('');
-  const [unit, setUnit] = useState('g');
+  // Step 3: amount form
+  const {
+    formState: {errors},
+    register,
+    setError,
+    setValue,
+    watch,
+  } = useForm<AmountFormValues>({
+    defaultValues: {amount: '', unit: 'g'},
+    resolver: zodResolver(amountSchema),
+  });
+
+  const amount = watch('amount');
+  const unit = watch('unit');
 
   const numericAmount = parseFloat(amount) || 0;
-  // For gram/ml units, weight equals amount. For other units (piece, serving, etc.),
-  // we can't convert client-side without serving size data — use amount as-is and let
-  // the server resolve weight_g from the food's serving sizes.
   const isGramLike = unit === 'g' || unit === 'ml';
-  const weightG = isGramLike ? numericAmount : 0;
+  // For gram/ml units, weight equals amount. For other units, resolve from serving_sizes.
+  const weightG = useMemo(() => {
+    if (isGramLike) return numericAmount;
+    if (!selectedItem) return 0;
+    const serving = selectedItem.serving_sizes.find((s) => s.unit === unit);
+    if (serving?.weight_g && serving.amount) {
+      return (numericAmount / serving.amount) * serving.weight_g;
+    }
+    return 0;
+  }, [isGramLike, numericAmount, selectedItem, unit]);
 
   // Compute macros preview
   const macros = selectedItem ? computeMacrosFromSnapshot(selectedItem.macros, weightG) : null;
 
   const handleSelectItem = (item: PickedItem) => {
     setSelectedItem(item);
-    setAmount('100');
-    setUnit('g');
+    if (item.serving_sizes.length > 0) {
+      const first = item.serving_sizes[0];
+      setValue('amount', String(first.amount ?? 1));
+      setValue('unit', first.unit);
+    } else {
+      setValue('amount', '100');
+      setValue('unit', 'g');
+    }
+  };
+
+  const handleSelectServing = (serving: {amount: null | number; unit: string}) => {
+    setValue('amount', String(serving.amount ?? 1));
+    setValue('unit', serving.unit);
   };
 
   const handleLog = async () => {
     if (!selectedItem || !mealSlot) return;
+
+    const source = isReplacement ? 'replacement' : 'unplanned';
+
     try {
-      await logFood({
-        amount: numericAmount || null,
+      await createEntry({
+        amount: numericAmount || 0,
         date: dateISO,
         food_id: selectedItem.type === 'food' ? selectedItem.id : null,
-        meal_item_id: isReplacement ? mealItemId : null,
         meal_slot: mealSlot,
+        planned_item_index: isReplacement ? plannedItemIndex : null,
         recipe_id: selectedItem.type === 'recipe' ? selectedItem.id : null,
-        unit: unit || null,
-        weight_g: weightG || null,
+        source,
+        unit: unit || 'g',
+        weight_g: weightG || 0,
       }).unwrap();
       toast.success(`${selectedItem.name} logged`);
       if (isReplacement) {
@@ -80,12 +125,10 @@ export default function AddFood() {
       } else {
         navigate(ROUTES.NUTRITION, {replace: true});
       }
-    } catch {
-      toast.danger('Failed to log food.');
+    } catch (err) {
+      applyFormErrors(err, 'Failed to log food.', setError);
     }
   };
-
-  const handleBack = goBack;
 
   return (
     <PageLayout title={isReplacement ? 'Replace food' : 'Add food'}>
@@ -93,7 +136,7 @@ export default function AddFood() {
         {/* Back button */}
         <div className="mb-4">
           <Button
-            onPress={handleBack}
+            onPress={goBack}
             size="sm"
             variant="ghost"
           >
@@ -154,20 +197,44 @@ export default function AddFood() {
                     <Label className="text-xs text-foreground-400">Amount</Label>
                     <Input
                       inputMode="decimal"
-                      onChange={(e) => setAmount(e.target.value)}
                       placeholder="100"
-                      value={amount}
+                      {...register('amount')}
                     />
                   </div>
                   <div className="flex w-20 flex-col gap-1">
                     <Label className="text-xs text-foreground-400">Unit</Label>
                     <Input
-                      onChange={(e) => setUnit(e.target.value)}
                       placeholder="g"
-                      value={unit}
+                      {...register('unit')}
                     />
                   </div>
                 </div>
+
+                {/* Serving size chips */}
+                {selectedItem.serving_sizes.length > 0 ? (
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {selectedItem.serving_sizes.map((s, i) => (
+                      <button
+                        className="min-h-11 rounded-full border border-divider bg-content2 px-3 py-1.5 text-xs transition-colors hover:bg-default active:bg-default"
+                        key={i}
+                        onClick={() => handleSelectServing(s)}
+                        type="button"
+                      >
+                        {s.amount ?? 1} {s.unit}
+                      </button>
+                    ))}
+                    <button
+                      className="min-h-11 rounded-full border border-divider bg-content2 px-3 py-1.5 text-xs transition-colors hover:bg-default active:bg-default"
+                      onClick={() => {
+                        setValue('amount', '100');
+                        setValue('unit', 'g');
+                      }}
+                      type="button"
+                    >
+                      100 g
+                    </button>
+                  </div>
+                ) : null}
 
                 {/* Macros preview */}
                 {macros ? (
@@ -179,11 +246,19 @@ export default function AddFood() {
                   </div>
                 ) : null}
 
+                {/* Warning for unresolvable weight */}
+                {numericAmount > 0 && !isGramLike && weightG <= 0 ? (
+                  <p className="mb-3 text-xs text-warning">Use g, ml, or select a serving size to log this item.</p>
+                ) : null}
+
+                {/* Root error */}
+                {errors.root?.message ? <p className="mb-3 text-xs text-danger">{errors.root.message}</p> : null}
+
                 <Separator className="mb-3" />
 
                 <Button
                   className="w-full"
-                  isDisabled={numericAmount <= 0}
+                  isDisabled={numericAmount <= 0 || (!isGramLike && weightG <= 0)}
                   isPending={isLoading}
                   onPress={handleLog}
                   variant="primary"

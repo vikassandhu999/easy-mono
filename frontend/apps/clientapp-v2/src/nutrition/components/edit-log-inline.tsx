@@ -1,49 +1,84 @@
+import {formatMacroValue} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Check, Trash2, X} from 'lucide-react';
-import {useState} from 'react';
+import {useForm} from 'react-hook-form';
+import {z} from 'zod';
 
-import type {FoodLog} from '@/api/foodLogs';
+import type {FoodLogEntry} from '@/api/mealLogs';
 
-import {computeMacrosFromSnapshot, formatMacroValue} from '@/@utils/nutrition-helpers';
-import {useDeleteFoodLogMutation, useUpdateFoodLogMutation} from '@/api/foodLogs';
+import {useDeleteFoodLogEntryMutation, useUpdateFoodLogEntryMutation} from '@/api/mealLogs';
+import {applyFormErrors} from '@/api/shared';
 
-export default function EditLogInline({log, onClose}: {log: FoodLog; onClose: () => void}) {
-  const [updateLog, {isLoading: isUpdating}] = useUpdateFoodLogMutation();
-  const [deleteLog, {isLoading: isDeleting}] = useDeleteFoodLogMutation();
+// ── Schema ──────────────────────────────────────────────────
 
-  const [amount, setAmount] = useState(String(log.amount ?? ''));
-  const [unit, setUnit] = useState(log.unit ?? 'g');
+const schema = z.object({
+  amount: z.string().min(1, 'Required'),
+  unit: z.string().min(1, 'Required'),
+});
 
-  const displayName = log.food_name_snapshot ?? log.food?.name ?? log.recipe?.name ?? 'Unknown';
+type FormValues = z.infer<typeof schema>;
+
+// ── Component ───────────────────────────────────────────────
+
+export default function EditLogInline({entry, onClose}: {entry: FoodLogEntry; onClose: () => void}) {
+  const [updateEntry, {isLoading: isUpdating}] = useUpdateFoodLogEntryMutation();
+  const [deleteEntry, {isLoading: isDeleting}] = useDeleteFoodLogEntryMutation();
+
+  const {
+    formState: {errors},
+    register,
+    setError,
+    watch,
+  } = useForm<FormValues>({
+    defaultValues: {
+      amount: String(entry.amount ?? ''),
+      unit: entry.unit ?? 'g',
+    },
+    resolver: zodResolver(schema),
+  });
+
+  const amount = watch('amount');
+  const unit = watch('unit');
+
   const numericAmount = parseFloat(amount) || 0;
   const isGramLike = unit === 'g' || unit === 'ml';
   const weightG = isGramLike
     ? numericAmount
-    : log.weight_g && log.amount
-      ? (numericAmount / log.amount) * log.weight_g
+    : entry.weight_g && entry.amount
+      ? (numericAmount / entry.amount) * entry.weight_g
       : numericAmount;
-  const macros = computeMacrosFromSnapshot(log.macros_snapshot, weightG);
+
+  // Estimate macros from current entry values scaled by weight change
+  const originalWeightG = entry.weight_g ?? 0;
+  const factor = originalWeightG > 0 ? weightG / originalWeightG : 0;
+  const previewMacros = {
+    calories: (entry.calories ?? 0) * factor,
+    carbs: (entry.carbs_g ?? 0) * factor,
+    fat: (entry.fat_g ?? 0) * factor,
+    protein: (entry.protein_g ?? 0) * factor,
+  };
 
   const handleUpdate = async () => {
     try {
-      await updateLog({
+      await updateEntry({
         body: {
           amount: numericAmount || null,
           unit: unit || null,
           weight_g: weightG || null,
         },
-        id: log.id,
+        id: entry.id,
       }).unwrap();
       toast.success('Log updated');
       onClose();
-    } catch {
-      toast.danger('Failed to update.');
+    } catch (err) {
+      applyFormErrors(err, 'Failed to update.', setError);
     }
   };
 
   const handleDelete = async () => {
     try {
-      await deleteLog(log.id).unwrap();
+      await deleteEntry(entry.id).unwrap();
       toast.success('Log removed');
       onClose();
     } catch {
@@ -56,7 +91,7 @@ export default function EditLogInline({log, onClose}: {log: FoodLog; onClose: ()
   return (
     <div className="rounded-xl border border-divider bg-default p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-sm font-semibold">{displayName}</h4>
+        <h4 className="text-sm font-semibold">{entry.food_name}</h4>
         <Button
           onPress={onClose}
           size="sm"
@@ -71,28 +106,29 @@ export default function EditLogInline({log, onClose}: {log: FoodLog; onClose: ()
           <Label className="text-xs text-foreground-400">Amount</Label>
           <Input
             inputMode="decimal"
-            onChange={(e) => setAmount(e.target.value)}
             placeholder="Amount"
-            value={amount}
+            {...register('amount')}
           />
         </div>
         <div className="flex w-20 flex-col gap-1">
           <Label className="text-xs text-foreground-400">Unit</Label>
           <Input
-            onChange={(e) => setUnit(e.target.value)}
             placeholder="g"
-            value={unit}
+            {...register('unit')}
           />
         </div>
       </div>
 
       {/* Macros preview */}
       <div className="mb-3 flex gap-3 text-xs text-foreground-400">
-        <span>{formatMacroValue(macros.calories, '')} cal</span>
-        <span>{formatMacroValue(macros.protein, 'g')} protein</span>
-        <span>{formatMacroValue(macros.carbs, 'g')} carbs</span>
-        <span>{formatMacroValue(macros.fat, 'g')} fat</span>
+        <span>{formatMacroValue(previewMacros.calories, '')} cal</span>
+        <span>{formatMacroValue(previewMacros.protein, 'g')} protein</span>
+        <span>{formatMacroValue(previewMacros.carbs, 'g')} carbs</span>
+        <span>{formatMacroValue(previewMacros.fat, 'g')} fat</span>
       </div>
+
+      {/* Root error */}
+      {errors.root?.message ? <p className="mb-2 text-xs text-danger">{errors.root.message}</p> : null}
 
       <Separator className="mb-3" />
 

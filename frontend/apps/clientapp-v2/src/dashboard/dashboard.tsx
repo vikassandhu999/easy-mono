@@ -1,4 +1,4 @@
-import {DAY_NAMES, formatDateISO, sumMacros} from '@easy/utils';
+import {DAY_NAMES, formatDateISO, sumMacrosFromEntries} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell, Play, Plus, UtensilsCrossed} from 'lucide-react';
 import {useMemo} from 'react';
@@ -9,7 +9,7 @@ import type {ClientWorkoutSession} from '@/api/workoutSessions';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
-import {useListMyFoodLogsQuery} from '@/api/foodLogs';
+import {useListMyMealLogsQuery} from '@/api/mealLogs';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import {useGetActiveWorkoutSessionQuery, useStartWorkoutSessionMutation} from '@/api/workoutSessions';
 
@@ -38,11 +38,11 @@ function getTotalSets(workout: ClientPlannedWorkout): number {
 function TodayNutritionSummary() {
   const navigate = useNavigate();
   const todayISO = formatDateISO(new Date());
-  const {data: logsData} = useListMyFoodLogsQuery({date: todayISO});
+  const {data: mealLogsData} = useListMyMealLogsQuery({date: todayISO});
 
-  const logs = useMemo(() => logsData?.data ?? [], [logsData]);
-  const macros = useMemo(() => sumMacros(logs), [logs]);
-  const logCount = logs.length;
+  const allEntries = useMemo(() => (mealLogsData?.data ?? []).flatMap((ml) => ml.food_log_entries), [mealLogsData]);
+  const macros = useMemo(() => sumMacrosFromEntries(allEntries), [allEntries]);
+  const logCount = allEntries.length;
 
   return (
     <button

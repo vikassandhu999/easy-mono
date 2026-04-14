@@ -1,11 +1,23 @@
+import {formatMacroValue} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Check, RefreshCw, X} from 'lucide-react';
-import {useState} from 'react';
+import {useForm} from 'react-hook-form';
+import {z} from 'zod';
 
-import type {TodayPlanMealItem} from '@/api/nutritionPlans';
+import type {PlannedSnapshotItem} from '@/api/mealLogs';
 
-import {computeMacrosFromSnapshot, formatMacroValue} from '@/@utils/nutrition-helpers';
-import {useLogFoodMutation} from '@/api/foodLogs';
+import {useCreateFoodLogEntryMutation} from '@/api/mealLogs';
+import {applyFormErrors} from '@/api/shared';
+
+// ── Schema ──────────────────────────────────────────────────
+
+const schema = z.object({
+  amount: z.string().min(1, 'Required'),
+  unit: z.string().min(1, 'Required'),
+});
+
+type FormValues = z.infer<typeof schema>;
 
 // ── Component ───────────────────────────────────────────────
 
@@ -15,19 +27,35 @@ export default function LogItemInline({
   mealSlot,
   onClose,
   onReplace,
+  plannedItemIndex,
 }: {
   date: string;
-  item: TodayPlanMealItem;
+  item: PlannedSnapshotItem;
   mealSlot: string;
   onClose: () => void;
   onReplace: () => void;
+  plannedItemIndex: number;
 }) {
-  const [logFood, {isLoading}] = useLogFoodMutation();
-  const [amount, setAmount] = useState(String(item.amount ?? ''));
-  const [unit, setUnit] = useState(item.unit ?? 'g');
+  const [createEntry, {isLoading}] = useCreateFoodLogEntryMutation();
+
+  const {
+    formState: {errors},
+    register,
+    setError,
+    watch,
+  } = useForm<FormValues>({
+    defaultValues: {
+      amount: String(item.amount ?? ''),
+      unit: item.unit ?? 'g',
+    },
+    resolver: zodResolver(schema),
+  });
+
+  const amount = watch('amount');
+  const unit = watch('unit');
 
   // Derive weight_g: if unit is 'g'/'ml', weight equals amount.
-  // Otherwise, scale proportionally from the plan's weight_g (e.g. plan: 1 piece=120g → 2 pieces=240g).
+  // Otherwise, scale proportionally from the plan's weight_g.
   const numericAmount = parseFloat(amount) || 0;
   const isGramLike = unit === 'g' || unit === 'ml';
   const weightG = isGramLike
@@ -36,29 +64,33 @@ export default function LogItemInline({
       ? (numericAmount / item.amount) * item.weight_g
       : numericAmount;
 
-  // Compute macros preview
-  const macros = computeMacrosFromSnapshot(item.macros, weightG);
+  // Compute macros preview from planned item's per-unit values
+  const factor = item.weight_g > 0 ? weightG / item.weight_g : 0;
+  const previewMacros = {
+    calories: (item.calories ?? 0) * factor,
+    carbs: (item.carbs_g ?? 0) * factor,
+    fat: (item.fat_g ?? 0) * factor,
+    protein: (item.protein_g ?? 0) * factor,
+  };
 
-  // Planned amounts for reference
   const plannedAmount = item.amount;
   const plannedUnit = item.unit ?? 'g';
 
   const handleLog = async () => {
     try {
-      await logFood({
-        amount: numericAmount || null,
+      await createEntry({
+        amount: numericAmount || 0,
         date,
-        food_id: item.food_id,
-        meal_item_id: item.meal_item_id,
         meal_slot: mealSlot,
-        recipe_id: item.recipe_id,
-        unit: unit || null,
-        weight_g: weightG || null,
+        planned_item_index: plannedItemIndex,
+        source: 'planned',
+        unit: unit || 'g',
+        weight_g: weightG || 0,
       }).unwrap();
       toast.success(`${item.food_name ?? 'Item'} logged`);
       onClose();
-    } catch {
-      toast.danger('Failed to log item.');
+    } catch (err) {
+      applyFormErrors(err, 'Failed to log item.', setError);
     }
   };
 
@@ -81,17 +113,15 @@ export default function LogItemInline({
           <Label className="text-xs text-foreground-400">Amount</Label>
           <Input
             inputMode="decimal"
-            onChange={(e) => setAmount(e.target.value)}
             placeholder="Amount"
-            value={amount}
+            {...register('amount')}
           />
         </div>
         <div className="flex w-20 flex-col gap-1">
           <Label className="text-xs text-foreground-400">Unit</Label>
           <Input
-            onChange={(e) => setUnit(e.target.value)}
             placeholder="g"
-            value={unit}
+            {...register('unit')}
           />
         </div>
       </div>
@@ -106,11 +136,14 @@ export default function LogItemInline({
 
       {/* Macros preview */}
       <div className="mb-3 flex gap-3 text-xs text-foreground-400">
-        <span>{formatMacroValue(macros.calories, '')} cal</span>
-        <span>{formatMacroValue(macros.protein, 'g')} protein</span>
-        <span>{formatMacroValue(macros.carbs, 'g')} carbs</span>
-        <span>{formatMacroValue(macros.fat, 'g')} fat</span>
+        <span>{formatMacroValue(previewMacros.calories, '')} cal</span>
+        <span>{formatMacroValue(previewMacros.protein, 'g')} protein</span>
+        <span>{formatMacroValue(previewMacros.carbs, 'g')} carbs</span>
+        <span>{formatMacroValue(previewMacros.fat, 'g')} fat</span>
       </div>
+
+      {/* Root error */}
+      {errors.root?.message ? <p className="mb-2 text-xs text-danger">{errors.root.message}</p> : null}
 
       <Separator className="mb-3" />
 

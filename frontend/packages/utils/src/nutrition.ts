@@ -107,7 +107,8 @@ export function computeMacrosFromSnapshot(macrosSnapshot: Macros | null, weightG
 }
 
 /**
- * Sum macros across an array of food log entries.
+ * Sum macros across an array of food log entries (old model — per-100g macros_snapshot + weight_g).
+ * @deprecated Use sumMacrosFromEntries for the new FoodLogEntry model with server-computed macros.
  */
 export function sumMacros(logs: Array<{macros_snapshot: Macros | null; weight_g: null | number}>): MacroTotals {
   const totals = {...ZERO_MACROS};
@@ -117,6 +118,23 @@ export function sumMacros(logs: Array<{macros_snapshot: Macros | null; weight_g:
     totals.protein += itemMacros.protein;
     totals.carbs += itemMacros.carbs;
     totals.fat += itemMacros.fat;
+  }
+  return totals;
+}
+
+/**
+ * Sum macros across FoodLogEntry items with server-computed macro fields.
+ * Each entry already has final `calories`, `protein_g`, `carbs_g`, `fat_g` values.
+ */
+export function sumMacrosFromEntries(
+  entries: Array<{calories: null | number; carbs_g: null | number; fat_g: null | number; protein_g: null | number}>,
+): MacroTotals {
+  const totals = {...ZERO_MACROS};
+  for (const entry of entries) {
+    totals.calories += entry.calories ?? 0;
+    totals.protein += entry.protein_g ?? 0;
+    totals.carbs += entry.carbs_g ?? 0;
+    totals.fat += entry.fat_g ?? 0;
   }
   return totals;
 }

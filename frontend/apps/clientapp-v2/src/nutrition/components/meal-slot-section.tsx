@@ -1,65 +1,50 @@
+import {formatMacroValue, MEAL_SLOT_LABELS} from '@easy/utils';
 import {Button, Spinner, toast} from '@heroui/react';
 import {Check, Circle, Pencil, Plus} from 'lucide-react';
 import {useMemo} from 'react';
 
-import type {FoodLog} from '@/api/foodLogs';
-import type {TodayPlanMeal, TodayPlanMealItem} from '@/api/nutritionPlans';
+import type {FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
 
-import {
-  computeMacrosFromSnapshot,
-  formatMacroValue,
-  MEAL_SLOT_LABELS,
-  normalizeMacros,
-} from '@/@utils/nutrition-helpers';
-import {useLogMealMutation} from '@/api/foodLogs';
+import {useLogMealMutation} from '@/api/mealLogs';
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function getItemCalories(item: TodayPlanMealItem): number {
-  if (!item.macros || !item.weight_g) return 0;
-  const normalized = normalizeMacros(item.macros);
-  return ((normalized.calories_per_100g ?? 0) * item.weight_g) / 100;
+function isItemLogged(index: number, entries: FoodLogEntry[]): boolean {
+  return entries.some((e) => e.planned_item_index === index);
 }
 
-function isItemLogged(item: TodayPlanMealItem, logs: FoodLog[]): boolean {
-  return logs.some((log) => log.meal_item_id === item.meal_item_id);
-}
-
-function getLogForItem(item: TodayPlanMealItem, logs: FoodLog[]): FoodLog | undefined {
-  return logs.find((log) => log.meal_item_id === item.meal_item_id);
-}
-
-function isReplacement(item: TodayPlanMealItem, log: FoodLog): boolean {
-  if (item.food_id && log.food_id && item.food_id !== log.food_id) return true;
-  if (item.recipe_id && log.recipe_id && item.recipe_id !== log.recipe_id) return true;
-  return false;
+function getEntryForIndex(index: number, entries: FoodLogEntry[]): FoodLogEntry | undefined {
+  return entries.find((e) => e.planned_item_index === index);
 }
 
 // ── Planned item row ─────────────────────────────────────────
 
 function PlannedItemRow({
+  entry,
+  index,
+  isFuture = false,
   isLogged,
   item,
-  log,
-  onEditLog,
+  onEditEntry,
   onTapItem,
 }: {
+  entry: FoodLogEntry | undefined;
+  index: number;
+  isFuture?: boolean;
   isLogged: boolean;
-  item: TodayPlanMealItem;
-  log: FoodLog | undefined;
-  onEditLog: (log: FoodLog) => void;
-  onTapItem: (item: TodayPlanMealItem) => void;
+  item: PlannedSnapshotItem;
+  onEditEntry: (entry: FoodLogEntry) => void;
+  onTapItem: (item: PlannedSnapshotItem, index: number) => void;
 }) {
-  const calories = getItemCalories(item);
-  const displayAmount = item.amount != null ? `${item.amount}${item.unit ?? 'g'}` : '';
-  const replaced = log ? isReplacement(item, log) : false;
-  const loggedName = log?.food_name_snapshot ?? log?.food?.name ?? log?.recipe?.name;
+  const displayAmount = item.amount ? `${item.amount}${item.unit ?? 'g'}` : '';
+  const isReplacement = entry?.source === 'replacement';
 
   const handlePress = () => {
-    if (isLogged && log) {
-      onEditLog(log);
+    if (isFuture) return;
+    if (isLogged && entry) {
+      onEditEntry(entry);
     } else {
-      onTapItem(item);
+      onTapItem(item, index);
     }
   };
 
@@ -83,21 +68,19 @@ function PlannedItemRow({
         />
       )}
       <div className="min-w-0 flex-1">
-        {replaced ? (
+        {isReplacement && entry ? (
           <>
-            <p className="truncate text-sm text-foreground-400 line-through">{item.food_name ?? 'Unknown item'}</p>
-            <p className="truncate text-sm font-medium">{loggedName}</p>
+            <p className="truncate text-sm text-foreground-400 line-through">{item.food_name}</p>
+            <p className="truncate text-sm font-medium">{entry.food_name}</p>
           </>
         ) : (
-          <p className={`truncate text-sm ${isLogged ? 'text-foreground-400' : 'font-medium'}`}>
-            {item.food_name ?? 'Unknown item'}
-          </p>
+          <p className={`truncate text-sm ${isLogged ? 'text-foreground-400' : 'font-medium'}`}>{item.food_name}</p>
         )}
       </div>
-      {replaced ? <span className="shrink-0 text-xs text-warning">replaced</span> : null}
+      {isReplacement ? <span className="shrink-0 text-xs text-warning">replaced</span> : null}
       {displayAmount ? <span className="shrink-0 text-xs text-foreground-400">{displayAmount}</span> : null}
-      {calories > 0 ? (
-        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(calories, '')} cal</span>
+      {item.calories > 0 ? (
+        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(item.calories, '')} cal</span>
       ) : null}
       {isLogged ? (
         <Pencil
@@ -109,17 +92,15 @@ function PlannedItemRow({
   );
 }
 
-// ── Unplanned log row ────────────────────────────────────────
+// ── Unplanned entry row ──────────────────────────────────────
 
-function UnplannedLogRow({log, onEditLog}: {log: FoodLog; onEditLog: (log: FoodLog) => void}) {
-  const macros = computeMacrosFromSnapshot(log.macros_snapshot, log.weight_g);
-  const displayName = log.food_name_snapshot ?? log.food?.name ?? log.recipe?.name ?? 'Unknown';
-  const displayAmount = log.amount != null ? `${log.amount}${log.unit ?? 'g'}` : '';
+function UnplannedEntryRow({entry, onEditEntry}: {entry: FoodLogEntry; onEditEntry: (entry: FoodLogEntry) => void}) {
+  const displayAmount = entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : '';
 
   return (
     <button
       className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-default active:bg-default"
-      onClick={() => onEditLog(log)}
+      onClick={() => onEditEntry(entry)}
       type="button"
     >
       <div className="flex size-5 shrink-0 items-center justify-center">
@@ -129,11 +110,11 @@ function UnplannedLogRow({log, onEditLog}: {log: FoodLog; onEditLog: (log: FoodL
         />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-foreground-400">{displayName}</p>
+        <p className="truncate text-sm text-foreground-400">{entry.food_name}</p>
       </div>
       {displayAmount ? <span className="shrink-0 text-xs text-foreground-400">{displayAmount}</span> : null}
-      {macros.calories > 0 ? (
-        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(macros.calories, '')} cal</span>
+      {(entry.calories ?? 0) > 0 ? (
+        <span className="shrink-0 text-xs text-foreground-400">{formatMacroValue(entry.calories ?? 0, '')} cal</span>
       ) : null}
       <Pencil
         className="shrink-0 text-foreground-300"
@@ -147,51 +128,65 @@ function UnplannedLogRow({log, onEditLog}: {log: FoodLog; onEditLog: (log: FoodL
 
 export default function MealSlotSection({
   date,
-  logs,
-  meal,
-  onEditLog,
+  entries,
+  isFuture = false,
+  mealId,
+  mealSlot,
+  onEditEntry,
   onTapItem,
+  plannedItems,
 }: {
   date: string;
-  logs: FoodLog[];
-  meal: TodayPlanMeal;
-  onEditLog: (log: FoodLog) => void;
-  onTapItem: (item: TodayPlanMealItem) => void;
+  entries: FoodLogEntry[];
+  isFuture?: boolean;
+  mealId: null | string;
+  mealSlot: string;
+  onEditEntry: (entry: FoodLogEntry) => void;
+  onTapItem: (item: PlannedSnapshotItem, index: number) => void;
+  plannedItems: PlannedSnapshotItem[];
 }) {
   const [logMeal, {isLoading: isLogging}] = useLogMealMutation();
 
-  // Split logs: planned (has meal_item_id) vs unplanned (no meal_item_id)
-  const slotLogs = useMemo(() => logs.filter((log) => log.meal_slot === meal.meal_slot), [logs, meal.meal_slot]);
-  const unplannedLogs = useMemo(() => slotLogs.filter((log) => !log.meal_item_id), [slotLogs]);
+  // Split entries: unplanned (no planned_item_index)
+  const unplannedEntries = useMemo(
+    () => entries.filter((e) => e.source === 'unplanned' || e.planned_item_index == null),
+    [entries],
+  );
 
-  // Compute total calories for this slot
+  // Compute total planned calories for this slot
   const totalCal = useMemo(() => {
     let cal = 0;
-    for (const item of meal.items) {
-      cal += getItemCalories(item);
+    for (const item of plannedItems) {
+      cal += item.calories ?? 0;
     }
     return cal;
-  }, [meal.items]);
+  }, [plannedItems]);
 
   const allLogged = useMemo(
-    () => meal.items.length > 0 && meal.items.every((item) => isItemLogged(item, slotLogs)),
-    [meal.items, slotLogs],
+    () => plannedItems.length > 0 && plannedItems.every((_, index) => isItemLogged(index, entries)),
+    [plannedItems, entries],
+  );
+
+  const someLogged = useMemo(
+    () => plannedItems.some((_, index) => isItemLogged(index, entries)),
+    [plannedItems, entries],
   );
 
   const handleLogAll = async () => {
+    if (!mealId) return;
     try {
       await logMeal({
         date,
-        meal_id: meal.meal_id,
-        meal_slot: meal.meal_slot,
+        meal_id: mealId,
+        meal_slot: mealSlot,
       }).unwrap();
-      toast.success(`${MEAL_SLOT_LABELS[meal.meal_slot] ?? meal.meal_slot} logged`);
+      toast.success(`${MEAL_SLOT_LABELS[mealSlot] ?? mealSlot} logged`);
     } catch {
       toast.danger('Failed to log meal.');
     }
   };
 
-  const slotLabel = MEAL_SLOT_LABELS[meal.meal_slot] ?? meal.meal_slot;
+  const slotLabel = MEAL_SLOT_LABELS[mealSlot] ?? mealSlot;
 
   return (
     <section className="rounded-xl bg-default p-4">
@@ -201,7 +196,9 @@ export default function MealSlotSection({
           <h3 className="text-sm font-semibold uppercase tracking-wide">{slotLabel}</h3>
           {totalCal > 0 ? <p className="text-xs text-foreground-400">{formatMacroValue(totalCal, '')} cal</p> : null}
         </div>
-        {!allLogged && meal.items.length > 0 ? (
+        {allLogged && plannedItems.length > 0 ? (
+          <span className="text-xs text-success">All logged</span>
+        ) : !allLogged && !isFuture && mealId && plannedItems.length > 0 ? (
           <Button
             isDisabled={isLogging}
             isPending={isLogging}
@@ -210,25 +207,27 @@ export default function MealSlotSection({
             variant="ghost"
           >
             {isLogging ? <Spinner size="sm" /> : <Check size={14} />}
-            Log all
+            {someLogged ? 'Log remaining' : 'Log all'}
           </Button>
         ) : null}
       </div>
 
       {/* Planned items */}
-      {meal.items.length > 0 ? (
+      {plannedItems.length > 0 ? (
         <div className="flex flex-col">
-          {meal.items.map((item) => {
-            const logged = isItemLogged(item, slotLogs);
-            const log = logged ? getLogForItem(item, slotLogs) : undefined;
+          {plannedItems.map((item, index) => {
+            const logged = isItemLogged(index, entries);
+            const entry = logged ? getEntryForIndex(index, entries) : undefined;
 
             return (
               <PlannedItemRow
+                entry={entry}
+                index={index}
+                isFuture={isFuture}
                 isLogged={logged}
                 item={item}
-                key={item.meal_item_id}
-                log={log}
-                onEditLog={onEditLog}
+                key={index}
+                onEditEntry={onEditEntry}
                 onTapItem={onTapItem}
               />
             );
@@ -239,13 +238,13 @@ export default function MealSlotSection({
       )}
 
       {/* Unplanned items */}
-      {unplannedLogs.length > 0 ? (
+      {unplannedEntries.length > 0 ? (
         <div className="mt-1 border-t border-divider pt-1">
-          {unplannedLogs.map((log) => (
-            <UnplannedLogRow
-              key={log.id}
-              log={log}
-              onEditLog={onEditLog}
+          {unplannedEntries.map((entry) => (
+            <UnplannedEntryRow
+              entry={entry}
+              key={entry.id}
+              onEditEntry={onEditEntry}
             />
           ))}
         </div>

@@ -42,6 +42,7 @@ import RecipeDetail from '@/recipes/recipe-detail';
 // import ListTestimonials from '@/storefront/list-testimonials';
 // import Storefront from '@/storefront/storefront';
 // import StorefrontEditor from '@/storefront/storefront-editor';
+import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
@@ -117,7 +118,7 @@ export const router = createBrowserRouter([
       // {path: ROUTES.STOREFRONT_TESTIMONIALS, Component: ListTestimonials},
       // {path: ROUTES.CREATE_TESTIMONIAL, Component: CreateTestimonial},
       // {path: ROUTES.EDIT_TESTIMONIAL, Component: EditTestimonial},
-      {path: ROUTES.SETTINGS, element: <Placeholder title="Settings" />},
+      {path: ROUTES.SETTINGS, Component: Settings},
     ],
   },
 

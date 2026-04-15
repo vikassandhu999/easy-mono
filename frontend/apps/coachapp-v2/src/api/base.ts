@@ -86,6 +86,7 @@ export const api = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: [
     'Client',
+    'CoachProfile',
     'Equipment',
     'Exercise',
     'Food',

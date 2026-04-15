@@ -37,6 +37,7 @@ defmodule Easy.Clients.Client do
 
   @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]
   @update_cast_fields [:first_name, :last_name, :phone, :email, :notes, :status]
+  @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
 
   # Changesets
@@ -60,6 +61,12 @@ defmodule Easy.Clients.Client do
     client
     |> cast(attrs, @update_cast_fields)
     |> validate_inclusion(:status, @statuses)
+  end
+
+  @spec self_update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def self_update_changeset(client, attrs) do
+    client
+    |> cast(attrs, @self_update_cast_fields)
   end
 
   @spec inquiry_changeset(String.t(), map()) :: Ecto.Changeset.t()
@@ -197,6 +204,27 @@ defmodule Easy.Clients.Client do
     |> Repo.update()
   end
 
+  @spec get_profile(String.t(), String.t()) ::
+          {:ok, %{client: t(), coach: Orgs.Coach.t()}} | {:error, :not_found}
+  def get_profile(business_id, user_id) do
+    with {:ok, client} <- get_for_user(business_id, user_id) do
+      coach =
+        Orgs.Coach
+        |> Orgs.Coach.for_business(business_id)
+        |> Orgs.Coach.with_preloads()
+        |> Repo.one()
+
+      {:ok, %{client: client, coach: coach}}
+    end
+  end
+
+  @spec self_update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def self_update(client, attrs) do
+    client
+    |> self_update_changeset(attrs)
+    |> Repo.update()
+  end
+
   @spec summary(Ecto.Queryable.t()) :: map()
   def summary(query) do
     counts =
@@ -259,12 +287,13 @@ defmodule Easy.Clients.Client do
 
   defp maybe_send_invitation_email(client, coach) do
     business = Repo.preload(coach, :business).business
+    coach_name = Easy.Orgs.Coach.full_name(coach)
 
     email =
       Easy.Emails.client_invitation_email(
         client.email,
         client.invitation_token,
-        coach.name || "Coach",
+        if(coach_name == "", do: "Coach", else: coach_name),
         business.name
       )
 

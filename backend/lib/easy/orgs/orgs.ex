@@ -34,14 +34,4 @@ defmodule Easy.Orgs do
       {:ok, updated_business}
     end
   end
-
-  def get_coach(coach_id) do
-    Coaches.get_by_id(coach_id)
-  end
-
-  def update_coach(coach, attrs) when is_map(attrs) do
-    with {:ok, updated_coach} <- Coaches.update(coach, attrs) do
-      {:ok, updated_coach}
-    end
-  end
 end

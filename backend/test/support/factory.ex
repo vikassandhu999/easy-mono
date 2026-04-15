@@ -44,7 +44,8 @@ defmodule Easy.Factory do
 
   def coach_factory do
     %Coach{
-      name: "Test Coach",
+      first_name: "Test",
+      last_name: "Coach",
       user: build(:user),
       business: build(:business)
     }

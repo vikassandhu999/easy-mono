@@ -143,15 +143,15 @@ paths:
     get:
       summary: Get client profile
       description: >-
-        Returns the authenticated client's own profile. Includes program info,
-        contact details, and status. Frontend pattern - fetch on app launch and
-        cache locally; refetch after profile updates.
+        Returns the authenticated client's own profile including their coach's
+        contact information. Used by the client settings page. Frontend pattern —
+        fetch on app launch and cache locally; refetch after profile updates.
       operationId: getClientProfile
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Client profile
+          description: Client profile with coach info
           content:
             application/json:
               schema:
@@ -159,21 +159,55 @@ paths:
               example:
                 data:
                   id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
-                  email: client@example.com
                   first_name: Vikas
-                  last_name: Sandhu
+                  last_name: Kumar
+                  email: vikas@email.com
                   phone: "+91 98765 43210"
-                  instagram_handle: null
                   status: active
-                  program_name: 12 Week Shred
-                  program_start: "2026-03-01"
-                  program_end: "2026-05-24"
-                  inserted_at: "2026-03-01T10:00:00Z"
-                  updated_at: "2026-03-01T10:00:00Z"
+                  coach:
+                    first_name: Rajat
+                    last_name: Jain
+                    phone: "+91 99999 12345"
+                    business_name: FitCoach Pro
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Forbidden - requires client role
+          description: Forbidden — requires client role
+    patch:
+      summary: Update client profile
+      description: >-
+        Allows the client to update their own name and phone number. Email and
+        status are not client-editable. Used by the client settings page inline
+        edit rows. Frontend pattern — optimistic update on the cached profile,
+        refetch on error.
+      operationId: updateClientProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileUpdateRequest"
+            examples:
+              default:
+                value:
+                  first_name: Vikas
+                  last_name: Kumar
+                  phone: "+91 98765 43210"
+      responses:
+        "200":
+          description: Updated client profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden — requires client role
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
 
   /v1/client/training_plans:
     get:
@@ -1095,24 +1129,48 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
-  /v1/coaches/me:
+  /v1/coach/me:
     get:
-      summary: Get current coach
-      operationId: getMyCoach
+      summary: Get coach profile
+      description: >-
+        Returns the authenticated coach's profile including their business info
+        (name, slug for invite link). Used by the coach settings page. Frontend
+        pattern — fetch on settings page mount and cache; refetch after profile
+        updates.
+      operationId: getCoachProfile
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Coach
+          description: Coach profile with business info
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CoachResponse"
+                $ref: "#/components/schemas/CoachProfileResponse"
+              example:
+                data:
+                  id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  first_name: Rajat
+                  last_name: Jain
+                  email: rajat@fitcoach.in
+                  phone: "+91 99999 12345"
+                  business:
+                    id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                    name: FitCoach Pro
+                    slug: rajat-jain
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden — requires coach role
     patch:
-      summary: Update current coach
-      operationId: updateMyCoach
+      summary: Update coach profile
+      description: >-
+        Updates the coach's name, phone, and/or business name in a single call.
+        The backend updates both the Coach and Business records transactionally.
+        Used by the coach settings page inline edit rows. Frontend pattern —
+        optimistic update on the cached profile, refetch on error. The business
+        slug is not editable.
+      operationId: updateCoachProfile
       security:
         - bearerAuth: []
       requestBody:
@@ -1120,16 +1178,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CoachUpdateRequest"
+              $ref: "#/components/schemas/CoachProfileUpdateRequest"
+            examples:
+              default:
+                value:
+                  first_name: Rajat
+                  last_name: Jain
+                  phone: "+91 99999 12345"
+                  business_name: FitCoach Pro
       responses:
         "200":
-          description: Coach updated
+          description: Updated coach profile
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CoachResponse"
+                $ref: "#/components/schemas/CoachProfileResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Forbidden — requires coach role
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/clients/invite:
@@ -4251,13 +4318,31 @@ components:
           nullable: true
     ClientProfile:
       type: object
-      required: [id, status, inserted_at, updated_at]
+      required: [id, status]
       properties:
         id:
           type: string
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
         email:
           type: string
           nullable: true
+        phone:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, pending, inactive, archived]
+        coach:
+          $ref: "#/components/schemas/ClientCoach"
+    ClientCoach:
+      type: object
+      description: The client's coach contact info, resolved from the client's business.
+      properties:
         first_name:
           type: string
           nullable: true
@@ -4267,35 +4352,24 @@ components:
         phone:
           type: string
           nullable: true
-        instagram_handle:
+        business_name:
           type: string
-          nullable: true
-        status:
-          type: string
-          enum: [active, inactive, pending, expired, expiring, archived]
-        program_name:
-          type: string
-          nullable: true
-        program_start:
-          type: string
-          format: date
-          nullable: true
-        program_end:
-          type: string
-          format: date
-          nullable: true
-        inserted_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
     ClientProfileResponse:
       type: object
       required: [data]
       properties:
         data:
           $ref: "#/components/schemas/ClientProfile"
+    ClientProfileUpdateRequest:
+      type: object
+      description: Only first_name, last_name, and phone are client-editable. Email and status are ignored.
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
     BusinessCreateRequest:
       type: object
       required: [name, handle]
@@ -4338,42 +4412,54 @@ components:
         updated_at:
           type: string
           format: date-time
-    CoachUpdateRequest:
+    CoachProfileUpdateRequest:
       type: object
+      description: Updates coach name, phone, and/or business name. All fields optional — only provided fields are updated.
       properties:
-        name:
+        first_name:
           type: string
-        title:
+        last_name:
           type: string
-        bio:
+        phone:
           type: string
-    CoachResponse:
+        business_name:
+          type: string
+    CoachProfileResponse:
       type: object
       required: [data]
       properties:
         data:
-          $ref: "#/components/schemas/Coach"
-    Coach:
+          $ref: "#/components/schemas/CoachProfile"
+    CoachProfile:
       type: object
-      required: [id, name, title, bio, inserted_at, updated_at]
+      required: [id, business]
+      properties:
+        id:
+          type: string
+        first_name:
+          type: string
+          nullable: true
+        last_name:
+          type: string
+          nullable: true
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        business:
+          $ref: "#/components/schemas/CoachProfileBusiness"
+    CoachProfileBusiness:
+      type: object
+      required: [id, name, slug]
       properties:
         id:
           type: string
         name:
           type: string
-          nullable: true
-        title:
+        slug:
           type: string
-          nullable: true
-        bio:
-          type: string
-          nullable: true
-        inserted_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+          description: Used for the client invite link (coachapp.in/join/{slug})
     ClientInviteRequest:
       type: object
       description: At least one of email or phone is required. If only phone is provided, no invitation email is sent.

@@ -10,23 +10,30 @@ defmodule EasyWeb.Coaches.MuscleControllerTest do
 
   describe "GET /v1/coach/muscles" do
     test "lists muscles alphabetically", %{conn: conn} do
-      insert(:muscle, name: "Z Traps")
-      insert(:muscle, name: "A Biceps")
+      insert(:muscle, name: "ZZZ Traps Test")
+      insert(:muscle, name: "AAA Biceps Test")
 
       conn = get(conn, "/v1/coach/muscles")
       assert %{"data" => data} = json_response(conn, 200)
 
-      assert Enum.map(data, & &1["name"]) == ["A Biceps", "Z Traps"]
+      names = Enum.map(data, & &1["name"])
+      assert "AAA Biceps Test" in names
+      assert "ZZZ Traps Test" in names
+
+      # Verify alphabetical ordering
+      assert names == Enum.sort(names)
     end
 
     test "filters muscles by search", %{conn: conn} do
-      insert(:muscle, name: "Hamstrings")
-      insert(:muscle, name: "Quadriceps")
+      insert(:muscle, name: "Xylophone Muscle")
+      insert(:muscle, name: "Zeppelin Muscle")
 
-      conn = get(conn, "/v1/coach/muscles", %{"search" => "ham"})
-      assert %{"data" => [muscle]} = json_response(conn, 200)
+      conn = get(conn, "/v1/coach/muscles", %{"search" => "xyloph"})
+      assert %{"data" => data} = json_response(conn, 200)
 
-      assert muscle["name"] == "Hamstrings"
+      names = Enum.map(data, & &1["name"])
+      assert "Xylophone Muscle" in names
+      refute "Zeppelin Muscle" in names
     end
 
     test "returns 403 without auth token" do

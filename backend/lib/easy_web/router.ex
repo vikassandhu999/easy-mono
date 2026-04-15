@@ -47,15 +47,11 @@ defmodule EasyWeb.Router do
     patch "/me", BusinessController, :update
   end
 
-  scope "/v1/coaches", EasyWeb do
-    pipe_through :require_coach
-
-    get "/me", CoachController, :show
-    patch "/me", CoachController, :update
-  end
-
   scope "/v1/coach", EasyWeb.Coaches do
     pipe_through :require_coach
+
+    get "/me", ProfileController, :show
+    patch "/me", ProfileController, :update
 
     post "/clients/invite", ClientController, :invite
     post "/clients/:id/resend-invite", ClientController, :resend_invite
@@ -173,6 +169,7 @@ defmodule EasyWeb.Router do
     pipe_through :require_client
 
     get "/me", ProfileController, :show
+    patch "/me", ProfileController, :update
 
     # Training plans (read-only)
     get "/training_plans", TrainingPlanController, :index

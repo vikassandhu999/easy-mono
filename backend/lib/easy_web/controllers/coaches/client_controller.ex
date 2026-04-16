@@ -47,6 +47,20 @@ defmodule EasyWeb.Coaches.ClientController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def delete(conn, %{"id" => client_id}) do
+    business_id = conn.assigns.claims.business_id
+
+    with client when not is_nil(client) <-
+           Client |> Client.for_business(business_id) |> Repo.get(client_id),
+         {:ok, _deleted} <- Client.revoke_invitation(client) do
+      send_resp(conn, :no_content, "")
+    else
+      nil -> {:error, Error.not_found("Client not found")}
+      error -> error
+    end
+  end
+
   @spec resend_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def resend_invite(conn, %{"id" => client_id}) do
     %{business_id: business_id, user_id: user_id} = conn.assigns.claims

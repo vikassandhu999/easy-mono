@@ -12,7 +12,8 @@ defmodule Easy.Identity.OneTimeToken do
 
   @token_types [
     :email_confirmation,
-    :authentication
+    :authentication,
+    :invitation_acceptance
   ]
 
   schema "one_time_tokens" do

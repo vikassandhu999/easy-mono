@@ -1,6 +1,7 @@
 defmodule Easy.Clients.Client do
   use Ecto.Schema
 
+  alias Easy.Identity.User
   alias Easy.Orgs
   alias Easy.Orgs.Coaches
   alias Easy.Repo
@@ -14,6 +15,7 @@ defmodule Easy.Clients.Client do
   @type t :: %__MODULE__{}
 
   @statuses [:active, :pending, :inactive, :archived]
+  @invitation_validity_days 30
 
   schema "clients" do
     field :email, :string
@@ -36,9 +38,18 @@ defmodule Easy.Clients.Client do
   end
 
   @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]
-  @update_cast_fields [:first_name, :last_name, :phone, :email, :notes, :status]
+  @update_cast_fields [:first_name, :last_name, :phone, :email, :notes]
   @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
+
+  # Allowed manual status transitions (coach-driven).
+  # pending -> active is reserved for accept_invite/3 (the accept flow) only.
+  # Nothing may return to pending once a Client has been linked to a User.
+  @allowed_status_transitions %{
+    active: [:inactive, :archived],
+    inactive: [:active, :archived],
+    archived: [:active, :inactive]
+  }
 
   # Changesets
 
@@ -60,8 +71,53 @@ defmodule Easy.Clients.Client do
   def update_changeset(client, attrs) do
     client
     |> cast(attrs, @update_cast_fields)
-    |> validate_inclusion(:status, @statuses)
+    |> validate_status_transition(client.status, attrs)
+    |> unique_constraint(:email, name: :clients_business_id_email_index)
   end
+
+  defp validate_status_transition(changeset, _current, attrs)
+       when not is_map_key(attrs, "status") and not is_map_key(attrs, :status),
+       do: changeset
+
+  defp validate_status_transition(changeset, current, attrs) do
+    new_status_raw = attrs["status"] || attrs[:status]
+
+    case parse_status(new_status_raw) do
+      {:ok, ^current} ->
+        changeset
+
+      {:ok, :pending} ->
+        add_error(changeset, :status, "cannot return to pending")
+
+      {:ok, _} when current == :pending ->
+        add_error(
+          changeset,
+          :status,
+          "pending clients can only become active by accepting the invitation"
+        )
+
+      {:ok, status} ->
+        if status in Map.get(@allowed_status_transitions, current, []) do
+          put_change(changeset, :status, status)
+        else
+          add_error(changeset, :status, "invalid status transition")
+        end
+
+      :error ->
+        add_error(changeset, :status, "is invalid")
+    end
+  end
+
+  defp parse_status(status) when status in @statuses, do: {:ok, status}
+
+  defp parse_status(status) when is_binary(status) do
+    case Enum.find(@statuses, fn s -> Atom.to_string(s) == status end) do
+      nil -> :error
+      s -> {:ok, s}
+    end
+  end
+
+  defp parse_status(_), do: :error
 
   @spec self_update_changeset(t(), map()) :: Ecto.Changeset.t()
   def self_update_changeset(client, attrs) do
@@ -78,16 +134,6 @@ defmodule Easy.Clients.Client do
     |> validate_required([:first_name, :email, :phone, :business_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
     |> unique_constraint(:email, name: :clients_business_id_email_index)
-  end
-
-  @spec accept_invite_changeset(t(), String.t()) :: Ecto.Changeset.t()
-  def accept_invite_changeset(client, user_id) do
-    client
-    |> change(%{
-      user_id: user_id,
-      status: :active,
-      invitation_token: nil
-    })
   end
 
   defp validate_email_or_phone(changeset) do
@@ -115,11 +161,39 @@ defmodule Easy.Clients.Client do
     end
   end
 
-  @spec get_by_invitation_token(String.t()) :: t() | nil
-  def get_by_invitation_token(token) do
-    __MODULE__
-    |> where([c], c.invitation_token == ^token and c.status == :pending)
-    |> Repo.one()
+  @spec resolve_invitation_token(String.t()) ::
+          {:ok, t()} | {:error, :used | :expired | :invalid}
+  def resolve_invitation_token(token) when is_binary(token) and token != "" do
+    case __MODULE__ |> where([c], c.invitation_token == ^token) |> Repo.one() do
+      nil -> {:error, :invalid}
+      %__MODULE__{status: :pending} = client -> check_expiry(client)
+      %__MODULE__{} -> {:error, :used}
+    end
+  end
+
+  def resolve_invitation_token(_), do: {:error, :invalid}
+
+  defp check_expiry(%__MODULE__{} = client) do
+    if invitation_expired?(client) do
+      {:error, :expired}
+    else
+      {:ok, client}
+    end
+  end
+
+  @spec invitation_expired?(t()) :: boolean()
+  def invitation_expired?(%__MODULE__{invitation_sent_at: nil}), do: false
+
+  def invitation_expired?(%__MODULE__{invitation_sent_at: sent_at}) do
+    expires_at = DateTime.add(sent_at, @invitation_validity_days, :day)
+    DateTime.compare(DateTime.utc_now(), expires_at) == :gt
+  end
+
+  @spec invitation_expires_at(t()) :: DateTime.t() | nil
+  def invitation_expires_at(%__MODULE__{invitation_sent_at: nil}), do: nil
+
+  def invitation_expires_at(%__MODULE__{invitation_sent_at: sent_at}) do
+    DateTime.add(sent_at, @invitation_validity_days, :day)
   end
 
   @spec for_user(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -179,16 +253,48 @@ defmodule Easy.Clients.Client do
     |> is_struct(__MODULE__)
   end
 
+  @spec active_for_email(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def active_for_email(query \\ __MODULE__, email) do
+    from(c in query,
+      join: u in User,
+      on: u.id == c.user_id,
+      where: u.email == ^email and c.status == ^:active
+    )
+  end
+
   # Actions
 
   @spec invite(map(), map()) :: {:ok, t()} | {:error, any()}
   def invite(claims, invite_attrs) when is_map(claims) do
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
+         :ok <- validate_not_self_invite(coach, invite_attrs),
+         :ok <- validate_email_has_no_active_client(invite_attrs),
          {:ok, client} <- create_invitation(coach, invite_attrs),
          :ok <- maybe_send_invitation_email(client, coach) do
       {:ok, client}
     end
   end
+
+  defp validate_not_self_invite(%Orgs.Coach{user: %User{email: coach_email}}, %{"email" => email})
+       when is_binary(coach_email) and is_binary(email) and email != "" and coach_email == email do
+    {:error, Easy.Error.unprocessable(%{email: ["you can't invite yourself as a client"]})}
+  end
+
+  defp validate_not_self_invite(_coach, _attrs), do: :ok
+
+  defp validate_email_has_no_active_client(%{"email" => email})
+       when is_binary(email) and email != "" do
+    if Repo.exists?(active_for_email(email)) do
+      {:error,
+       Easy.Error.unprocessable(%{
+         email: ["is already an active client of another business"]
+       })}
+    else
+      :ok
+    end
+  end
+
+  defp validate_email_has_no_active_client(_attrs), do: :ok
 
   @spec create_inquiry(String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create_inquiry(business_id, attrs) do
@@ -202,6 +308,91 @@ defmodule Easy.Clients.Client do
     client
     |> update_changeset(attrs)
     |> Repo.update()
+  end
+
+  @spec accept_invite(t(), String.t(), String.t()) ::
+          {:ok, t()} | {:error, :race_lost | :already_active_elsewhere}
+  def accept_invite(%__MODULE__{id: client_id, business_id: business_id}, user_id, accepted_email) do
+    # "One active Client per User" MVP invariant enforced again at accept time
+    # (the same check runs at invite creation, but two invites can be created
+    # for the same email while the User doesn't yet exist — so we re-check here).
+    if user_has_active_client_elsewhere?(user_id, business_id) do
+      {:error, :already_active_elsewhere}
+    else
+      do_atomic_accept(client_id, user_id, accepted_email)
+    end
+  end
+
+  defp user_has_active_client_elsewhere?(user_id, business_id) do
+    from(c in __MODULE__,
+      where:
+        c.user_id == ^user_id and c.status == ^:active and
+          c.business_id != ^business_id
+    )
+    |> Repo.exists?()
+  end
+
+  defp do_atomic_accept(client_id, user_id, accepted_email) do
+    now = DateTime.utc_now(:second)
+
+    query =
+      from(c in __MODULE__,
+        where: c.id == ^client_id and c.status == ^:pending,
+        select: c
+      )
+
+    case Repo.update_all(query,
+           set: [
+             user_id: user_id,
+             status: :active,
+             email: accepted_email,
+             updated_at: now
+           ]
+         ) do
+      {1, [updated]} -> {:ok, updated}
+      {0, _} -> {:error, :race_lost}
+    end
+  end
+
+  @spec revoke_invitation(t()) :: {:ok, t()} | {:error, Easy.Error.t() | Ecto.Changeset.t()}
+  def revoke_invitation(%__MODULE__{status: :pending} = client) do
+    Repo.transaction(fn ->
+      # Personal plans (assigned to this pending client) are deleted with the client.
+      # Templates (client_id IS NULL) are unaffected. The `:nilify_all` FK would
+      # otherwise convert personal plans into templates, polluting the coach's templates list.
+      from(tp in Easy.Training.TrainingPlan, where: tp.client_id == ^client.id)
+      |> Repo.delete_all()
+
+      from(np in Easy.Nutrition.Plan, where: np.client_id == ^client.id)
+      |> Repo.delete_all()
+
+      # Nilify references from leads so the hard-delete doesn't trip the :on_delete :nothing FK.
+      from(l in Easy.Storefront.Lead, where: l.client_id == ^client.id)
+      |> Repo.update_all(set: [client_id: nil])
+
+      # Use a changeset with foreign_key_constraint entries so any unexpected FK
+      # violation (e.g. workout_sessions with on_delete: :nothing) surfaces as a
+      # clean 422 instead of raising Ecto.ConstraintError.
+      delete_cs =
+        client
+        |> change()
+        |> foreign_key_constraint(:base,
+          name: :workout_sessions_client_id_fkey,
+          message: "client has activity records and cannot be revoked"
+        )
+
+      case Repo.delete(delete_cs) do
+        {:ok, deleted} -> deleted
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  def revoke_invitation(%__MODULE__{}) do
+    {:error,
+     Easy.Error.unprocessable(%{
+       status: ["only pending invitations can be revoked; archive the client instead"]
+     })}
   end
 
   @spec get_profile(String.t(), String.t()) ::
@@ -267,14 +458,13 @@ defmodule Easy.Clients.Client do
   end
 
   @spec build_invite_url(t()) :: String.t() | nil
-  def build_invite_url(%__MODULE__{invitation_token: nil}), do: nil
-
-  def build_invite_url(%__MODULE__{invitation_token: token}) do
-    base_url =
-      Application.get_env(:easy, :client_frontend_url, "http://localhost:1313")
-
+  def build_invite_url(%__MODULE__{status: :pending, invitation_token: token})
+      when is_binary(token) do
+    base_url = Application.get_env(:easy, :client_frontend_url, "http://localhost:1313")
     "#{base_url}/invite/#{token}"
   end
+
+  def build_invite_url(%__MODULE__{}), do: nil
 
   defp create_invitation(coach, invite_attrs) do
     coach

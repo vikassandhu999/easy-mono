@@ -97,18 +97,85 @@ paths:
                 $ref: "#/components/schemas/AuthTokenResponse"
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
+  /v1/auth/invitations/{token}:
+    get:
+      summary: Look up an invitation by token
+      description: >-
+        Public, unauthenticated endpoint called by the invitation landing page to
+        render the welcome screen and detect the invitation's current state.
+        Always returns HTTP 200 — the frontend switches on `data.state`
+        (pending | used | expired | invalid). For `pending`, `business_name`,
+        `coach_first_name`, `prefill_email`, and `expires_at` are included so the
+        frontend can show "Coach Rajat has invited you" and pre-fill the email
+        input. For the other three states, only `state` is returned (no
+        business/coach leak). Frontend pattern - call from the /invite/:token
+        landing route before showing the form; render different UI per state.
+      operationId: authShowInvitation
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: The raw invitation token from the invite URL.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invitation lookup result (state-discriminated body)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationLookupResponse"
+              examples:
+                pending:
+                  summary: Valid pending invitation
+                  value:
+                    data:
+                      state: pending
+                      business_name: FitCoach Pro
+                      coach_first_name: Rajat
+                      prefill_email: vikas@email.com
+                      expires_at: "2026-04-25T10:00:00Z"
+                pending_no_email:
+                  summary: Pending invitation where coach did not enter an email
+                  value:
+                    data:
+                      state: pending
+                      business_name: FitCoach Pro
+                      coach_first_name: Rajat
+                      prefill_email: null
+                      expires_at: "2026-04-25T10:00:00Z"
+                used:
+                  summary: Invitation already accepted
+                  value:
+                    data:
+                      state: used
+                expired:
+                  summary: Invitation older than 30 days
+                  value:
+                    data:
+                      state: expired
+                invalid:
+                  summary: Token unknown or revoked
+                  value:
+                    data:
+                      state: invalid
   /v1/auth/accept-invite:
     post:
-      summary: Accept client invitation
+      summary: Request invitation-acceptance OTP
       description: >-
-        Called when a client clicks their invitation link. Accepts the invitation token,
-        creates a User account (or links to an existing one if the email matches),
-        links the client record to the user, sets client status to active, and sends
-        an email confirmation OTP. The client must then verify their email via
-        POST /v1/auth/verify and login via POST /v1/auth/token with role=client.
-        Frontend pattern - call from the invitation landing page; on success, redirect
-        to OTP verification screen.
-      operationId: authAcceptInvite
+        Phase 1 of the two-step invitation acceptance flow. Validates the
+        invitation token is pending & unexpired, then mails a 6-digit OTP to the
+        supplied email. **No Client or User mutation happens here** — the Client
+        stays pending and no User is created or linked. The caller completes the
+        flow by posting the OTP plus the same `invitation_token` and `email` to
+        POST /v1/auth/accept-invite/verify. The OTP is bound to the tuple
+        `(otp, email, invitation_token)` — it cannot be used to accept a
+        different invitation or with a different email. Re-posting this endpoint
+        for the same email invalidates any prior invitation-acceptance OTP for
+        that email and issues a fresh one. Frontend pattern - call from the
+        invitation landing page after the client enters their email on Screen 1;
+        on 200 navigate to the OTP entry screen (Screen 2).
+      operationId: authAcceptInviteRequest
       requestBody:
         required: true
         content:
@@ -121,23 +188,124 @@ paths:
                   invitation_token: abc123def456
                   email: client@example.com
       responses:
-        "201":
-          description: Invitation accepted and user account created/linked
+        "200":
+          description: OTP sent to the supplied email
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AcceptInviteResponse"
+                $ref: "#/components/schemas/MessageResponse"
               example:
-                id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
-                email: client@example.com
-                first_name: Vikas
-                last_name: Sandhu
-                email_confirmed: false
-                confirmation_sent_at: "2026-03-28T10:00:00Z"
+                message: OTP sent to the provided email.
         "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
+          description: Invitation not found (token does not match any record)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error_code: invitation_invalid
+                error_message: This invitation is no longer valid.
+        "410":
+          description: Invitation has been used or has expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                used:
+                  value:
+                    error_code: invitation_used
+                    error_message: This invitation has already been accepted.
+                expired:
+                  value:
+                    error_code: invitation_expired
+                    error_message: This invitation has expired. Ask your coach to send a new one.
+  /v1/auth/accept-invite/verify:
+    post:
+      summary: Verify invitation-acceptance OTP and issue a client session
+      description: >-
+        Phase 2 of the invitation acceptance flow. Verifies the OTP bound to
+        `(otp, email, invitation_token)`. On success, atomically creates or
+        links the User (confirming their email as a side effect), flips the
+        Client from pending to active with the accepted email, consumes the
+        OTP, and issues a session scoped to the client's business with
+        `scope: "client"`. If the OTP is wrong the Client remains pending and
+        the caller can retry (same OTP until expiry). Frontend pattern - call
+        from the OTP entry screen; on 200 store the returned tokens and route
+        into the authenticated client app. The `scope=client` access token is
+        accepted by all `/v1/client/*` endpoints.
+      operationId: authAcceptInviteVerify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInviteVerifyRequest"
+            examples:
+              default:
+                value:
+                  invitation_token: abc123def456
+                  email: client@example.com
+                  otp: "472819"
+      responses:
+        "200":
+          description: OTP verified, Client linked & activated, session issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                token_type: Bearer
+                expires_in: 300
+                refresh_token: 4f1c8a7e-c2b4-4d3a-9b0e-1f2a3b4c5d6e
+                scope: client
+        "401":
+          description: OTP is incorrect, does not match the supplied (email, invitation_token) tuple, or was consumed on a prior successful verify.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error_code: invalid_otp
+                error_message: Invalid code. Please check and try again.
+        "404":
+          description: Invitation token is unknown (possibly revoked).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error_code: invitation_invalid
+                error_message: This invitation is no longer valid.
+        "409":
+          description: The email is already an active client of another business (MVP one-active-client-per-User invariant).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error_code: already_active_client
+                error_message: This email is already an active client of another business.
+        "410":
+          description: OTP expired (older than 10 minutes), invitation expired (older than 30 days), or invitation already accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                otp_expired:
+                  value:
+                    error_code: otp_expired
+                    error_message: This code has expired. Request a new one.
+                invitation_expired:
+                  value:
+                    error_code: invitation_expired
+                    error_message: This invitation has expired. Ask your coach to send a new one.
+                invitation_used:
+                  value:
+                    error_code: invitation_used
+                    error_message: This invitation has already been accepted.
   # ── Client Endpoints ─────────────────────────────────────────
   /v1/client/me:
     get:
@@ -1204,7 +1372,18 @@ paths:
   /v1/coach/clients/invite:
     post:
       summary: Invite client
-      description: Creates a client with status pending. At least one of email or phone is required. If email is provided, an invitation email is sent automatically. If only phone is provided, the client record is created with an invite link but no email is sent — the coach shares the link manually (e.g. via WhatsApp). The response always includes invite_url for the coach to copy/share. Frontend pattern - on success show the invite_url for sharing, add the new client to the local list.
+      description: >-
+        Creates a client with status pending. At least one of email or phone is
+        required. If email is provided, an invitation email is sent
+        automatically; if only phone is provided, the client record is created
+        with an invite link but no email is sent — the coach shares the link
+        manually (e.g. via WhatsApp). The response always includes `invite_url`,
+        `invitation_sent_at`, and `invitation_expires_at` (30 days after
+        sent_at) for the coach to render the "Share invitation" widget.
+        Rejected with 422 if the email is the coach's own email, or is already
+        an active client of another business (MVP "one active Client per User"
+        invariant). Frontend pattern - on success show the invite_url for
+        sharing, add the new client to the local list.
       operationId: inviteClient
       security:
         - bearerAuth: []
@@ -1246,16 +1425,35 @@ paths:
                       notes: Interested in fat loss program
                       status: pending
                       invite_url: "https://app.coachapp.com/invite/abc123def456"
+                      invitation_sent_at: "2026-03-26T10:00:00Z"
+                      invitation_expires_at: "2026-04-25T10:00:00Z"
                       inserted_at: "2026-03-26T10:00:00Z"
                       updated_at: "2026-03-26T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
-          $ref: "#/components/responses/UnprocessableEntity"
+          description: >-
+            Validation error. In addition to the usual changeset errors, the
+            endpoint returns field-level messages for:
+            `email: ["you can't invite yourself as a client"]` when the coach
+            tries to invite their own email, and
+            `email: ["is already an active client of another business"]` when
+            the email is a currently-active Client anywhere in the system.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
   /v1/coach/clients/{id}/resend-invite:
     post:
       summary: Resend invite email
-      description: Re-sends the invitation email for a client with status pending and an email address. Returns 422 if the client is not in pending status or has no email. Frontend pattern - show loading state on the resend button, display success toast on 200, show error toast on 422.
+      description: >-
+        Re-sends the invitation email for a client with status pending and an
+        email address. Bumps `invitation_sent_at` to now, which resets the
+        30-day expiry window — `invitation_expires_at` in the response will
+        reflect this. Returns 422 if the client is not in pending status or
+        has no email. Frontend pattern - show loading state on the resend
+        button, update the widget's "Invited X ago" timestamp from the
+        response, display success toast on 200, show error toast on 422.
       operationId: resendClientInvite
       security:
         - bearerAuth: []
@@ -1277,7 +1475,14 @@ paths:
   /v1/coach/clients/{id}:
     get:
       summary: Get client
-      description: Returns a single client with contact info and status. Status is set manually by the coach. For pending clients with an invitation_token, invite_url is included. Frontend pattern - cache by id, refetch after mutations.
+      description: >-
+        Returns a single client with contact info and status. `first_name` and
+        `last_name` are authoritative from the linked User when one exists
+        (post-acceptance), falling back to the coach-set Client values for
+        pending clients or when the User's name is blank. For pending clients
+        with an invitation_token, `invite_url`, `invitation_sent_at`, and
+        `invitation_expires_at` are included; otherwise they are null. Frontend
+        pattern - cache by id, refetch after mutations.
       operationId: getClient
       security:
         - bearerAuth: []
@@ -1296,7 +1501,18 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update client
-      description: Updates client contact info and status. Status is a simple enum (active, pending, inactive, archived) set manually by the coach. Frontend pattern - patch local form state optimistically and reconcile canonical payload from the 200 response.
+      description: >-
+        Updates client contact info and optionally transitions status. Status
+        transitions are restricted per the spec's invariants:
+        `active -> inactive | archived`, `inactive -> active | archived`,
+        `archived -> active | inactive`. Nothing may be manually set to
+        `pending` (once a Client has been linked to a User the link is
+        permanent), and pending clients cannot be manually moved to any other
+        status — they only reach `active` via the accept-invite flow. Contact
+        fields (first_name, last_name, phone, email, notes) can still be
+        updated on a pending client so the coach can prepare plans/notes before
+        the client accepts. Frontend pattern - patch local form state
+        optimistically and reconcile canonical payload from the 200 response.
       operationId: updateClient
       security:
         - bearerAuth: []
@@ -1329,7 +1545,45 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
-          $ref: "#/components/responses/UnprocessableEntity"
+          description: >-
+            Validation error. Invalid status transitions return field-level
+            messages such as `status: ["cannot return to pending"]`,
+            `status: ["pending clients can only become active by accepting the invitation"]`,
+            or `status: ["invalid status transition"]`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    delete:
+      summary: Revoke invitation
+      description: >-
+        Hard-deletes a pending client (revokes the invitation). Valid only when
+        `status == pending`; non-pending clients must be archived via PATCH
+        instead. Cascades to personal training/nutrition plans assigned to this
+        client (templates are preserved), and nilifies any `leads.client_id`
+        reference. Frontend pattern - call from the "Revoke invitation" action
+        on the pending client detail page, then remove the client from local
+        lists. The client's invite URL becomes invalid immediately.
+      operationId: revokeClientInvitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Pending client hard-deleted; no content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: >-
+            Client is not pending. Returns
+            `status: ["only pending invitations can be revoked; archive the client instead"]`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
   /v1/coach/clients:
     get:
       summary: List clients
@@ -4208,6 +4462,18 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ValidationErrorResponse"
+    Gone:
+      description: Resource once existed but is no longer usable (e.g. expired or already-consumed invitation or OTP).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with server state (e.g. email is already an active client of another business).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     HealthResponse:
       type: object
@@ -4352,42 +4618,84 @@ components:
     AcceptInviteRequest:
       type: object
       required: [invitation_token, email]
+      description: >-
+        Phase 1 payload. The server validates the invitation, mails an OTP to
+        `email`, and does NOT mutate the Client or create a User. The caller
+        must then post `AcceptInviteVerifyRequest` with the OTP to complete
+        the flow.
       properties:
         invitation_token:
           type: string
-          description: The token from the invitation email link.
+          description: The token from the invitation URL.
         email:
           type: string
           format: email
           description: >-
             The email the client wants to use for login. Can differ from the
-            email the coach used when sending the invite.
-        first_name:
-          type: string
-          description: Optional override for the client's first name.
-        last_name:
-          type: string
-          description: Optional override for the client's last name.
-    AcceptInviteResponse:
+            email the coach used when sending the invite; the final Client
+            record will have this email post-verification.
+    AcceptInviteVerifyRequest:
       type: object
-      required: [id, email]
+      required: [invitation_token, email, otp]
+      description: >-
+        Phase 2 payload. The triple must match the one that was used to
+        request the OTP at Phase 1. The OTP is bound to
+        `(otp, email, invitation_token)` — mismatches return 401.
       properties:
-        id:
+        invitation_token:
           type: string
+          description: Same token used at Phase 1.
         email:
           type: string
           format: email
-        first_name:
+          description: Same email used at Phase 1.
+        otp:
           type: string
-        last_name:
+          description: 6-digit code the client received by email.
+    InvitationLookupResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/InvitationLookup"
+    InvitationLookup:
+      type: object
+      required: [state]
+      description: >-
+        State-discriminated body returned by GET /v1/auth/invitations/{token}.
+        When `state == "pending"`, `business_name`, `coach_first_name`,
+        `prefill_email`, and `expires_at` are populated. For any other state,
+        only `state` is present — no business/coach leak for used/expired/invalid
+        tokens.
+      properties:
+        state:
           type: string
-        email_confirmed:
-          type: boolean
-          description: True if the user's email was already confirmed (existing account).
-        confirmation_sent_at:
+          enum: [pending, used, expired, invalid]
+        business_name:
+          type: string
+          nullable: true
+          description: Present only when state is `pending`.
+        coach_first_name:
+          type: string
+          nullable: true
+          description: >-
+            Inviting coach's first name, or the literal "Coach" if the coach
+            has no first name set. Present only when state is `pending`.
+        prefill_email:
+          type: string
+          format: email
+          nullable: true
+          description: >-
+            The email the coach entered when creating the invite, if any. The
+            frontend uses this to pre-fill Screen 1's email input. The client
+            may edit it before requesting the OTP. Null when the coach did not
+            enter an email (phone-only invite). Present only when state is
+            `pending`.
+        expires_at:
           type: string
           format: date-time
           nullable: true
+          description: invitation_sent_at + 30 days. Present only when state is `pending`.
     ClientProfile:
       type: object
       required: [id, status]
@@ -4554,7 +4862,12 @@ components:
           nullable: true
     ClientUpdateRequest:
       type: object
-      description: All fields optional. Status is a simple enum set manually by the coach.
+      description: >-
+        All fields optional. Status transitions are validated server-side per
+        the spec's invariants table. Clients whose status is currently
+        `pending` only reach `active` via the accept-invite flow — manual
+        transitions from pending are rejected with 422. Nothing can return to
+        `pending` once a Client has been linked to a User.
       properties:
         first_name:
           type: string
@@ -4569,8 +4882,11 @@ components:
           type: string
         status:
           type: string
-          enum: [active, pending, inactive, archived]
-          description: Client status. Set manually by the coach.
+          enum: [active, inactive, archived]
+          description: >-
+            New status. `pending` is intentionally absent from the allowed
+            values for this endpoint — you cannot manually set a Client to
+            pending. Sending `pending` returns 422.
     ClientResponse:
       type: object
       required: [data]
@@ -4612,12 +4928,22 @@ components:
           type: string
           format: email
           nullable: true
+          description: >-
+            Post-acceptance, this is the email the client entered at Screen 1
+            (which may differ from what the coach originally entered).
         first_name:
           type: string
           nullable: true
+          description: >-
+            When the Client is linked to a User, the User's first_name is
+            authoritative. Falls back to the coach-set value if the User's
+            first_name is blank, or for pending clients where no User is linked
+            yet.
         last_name:
           type: string
           nullable: true
+          description: >-
+            See first_name — same User-wins-then-fallback rule applies.
         phone:
           type: string
           nullable: true
@@ -4627,11 +4953,24 @@ components:
         status:
           type: string
           enum: [active, pending, inactive, archived]
-          description: Client status. Set manually by the coach.
+          description: >-
+            Client status. `pending` is only reachable at invite creation and
+            exits via the accept-invite flow. Coaches can transition between
+            active/inactive/archived; nothing may return to pending.
         invite_url:
           type: string
           nullable: true
           description: Present for pending clients with invitation tokens. Null otherwise.
+        invitation_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of when the invitation was created or last resent. Null for non-pending clients.
+        invitation_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: invitation_sent_at + 30 days. Null for non-pending clients.
         inserted_at:
           type: string
           format: date-time

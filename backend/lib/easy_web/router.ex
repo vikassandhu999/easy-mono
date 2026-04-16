@@ -32,7 +32,9 @@ defmodule EasyWeb.Router do
     pipe_through :api
 
     post "/signup", AuthController, :signup
+    get "/invitations/:token", AuthController, :show_invitation
     post "/accept-invite", AuthController, :accept_invite
+    post "/accept-invite/verify", AuthController, :accept_invite_verify
     post "/otp", AuthController, :otp
     post "/verify", AuthController, :verify
     post "/token", AuthController, :token
@@ -57,6 +59,7 @@ defmodule EasyWeb.Router do
     post "/clients/:id/resend-invite", ClientController, :resend_invite
     get "/clients/:id", ClientController, :show
     patch "/clients/:id", ClientController, :update
+    delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
 
     # Client-scoped plan lists

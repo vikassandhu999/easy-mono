@@ -34,18 +34,78 @@ defmodule Easy.Identity do
     end)
   end
 
-  @spec accept_invite(map()) :: {:ok, User.t()} | {:error, any()}
-  def accept_invite(%{"invitation_token" => token, "email" => _} = attrs) do
+  @spec accept_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
+  def accept_invite(%{"invitation_token" => token, "email" => email})
+      when is_binary(email) and email != "" do
     otp = generate_otp()
 
+    # The "one active Client per User" invariant is NOT checked here on purpose:
+    # this endpoint is public, and a pre-flight check would leak whether an
+    # email belongs to an active client somewhere in the system. The invariant
+    # is enforced atomically at verify time, once the caller has proven email
+    # ownership via OTP.
     Repo.transaction(fn ->
-      with client when not is_nil(client) <- Client.get_by_invitation_token(token),
-           {:ok, user} <- find_or_create_user(client, attrs, otp),
-           {:ok, _client} <- accept_client_invite(client, user) do
-        user
+      with {:ok, _client} <- Client.resolve_invitation_token(token),
+           :ok <- rotate_invitation_otp(email),
+           {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
+        send_invitation_otp_email(email, otp)
+        :otp_sent
       else
-        nil ->
-          Repo.rollback(Easy.Error.not_found("invitation", "Invalid or expired invitation token"))
+        {:error, :invalid} -> Repo.rollback(invitation_invalid_error())
+        {:error, :used} -> Repo.rollback(invitation_used_error())
+        {:error, :expired} -> Repo.rollback(invitation_expired_error())
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  defp rotate_invitation_otp(email) do
+    OneTimeTokens.delete_all_for_relates_to_and_type(email, :invitation_acceptance)
+    :ok
+  end
+
+  @spec verify_accept_invite(map(), %{
+          ip: String.t(),
+          user_agent: String.t()
+        }) :: {:ok, auth_token()} | {:error, any()}
+  def verify_accept_invite(
+        %{"invitation_token" => token, "email" => email, "otp" => otp},
+        session_opts
+      )
+      when is_binary(email) and email != "" and is_binary(otp) and otp != "" do
+    token_hash = OneTimeTokens.invitation_acceptance_hash(otp, email, token)
+
+    Repo.transaction(fn ->
+      with {:ok, ott} <- OneTimeTokens.get_by_hash(token_hash, :invitation_acceptance),
+           :ok <- validate_invitation_ott_fresh(ott),
+           {:ok, client} <- Client.resolve_invitation_token(token),
+           {:ok, user} <- find_or_create_confirmed_user(client, email),
+           {:ok, _client} <- Client.accept_invite(client, user.id, email),
+           {:ok, _} <- OneTimeTokens.delete(ott),
+           {:ok, session} <-
+             create_session(user, Map.merge(session_opts, %{role: :client})) do
+        generate_auth_token(user, session)
+      else
+        {:error, :token_not_found} ->
+          Repo.rollback(invalid_otp_error())
+
+        {:error, :otp_expired} ->
+          Repo.rollback(otp_expired_error())
+
+        {:error, :invalid} ->
+          Repo.rollback(invitation_invalid_error())
+
+        {:error, :used} ->
+          Repo.rollback(invitation_used_error())
+
+        {:error, :expired} ->
+          Repo.rollback(invitation_expired_error())
+
+        {:error, :race_lost} ->
+          Repo.rollback(invitation_used_error())
+
+        {:error, :already_active_elsewhere} ->
+          Repo.rollback(already_active_client_error())
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -53,42 +113,91 @@ defmodule Easy.Identity do
     end)
   end
 
-  defp find_or_create_user(client, attrs, otp) do
-    email = attrs["email"] || client.email
+  defp validate_invitation_ott_fresh(ott) do
+    if OneTimeTokens.invitation_acceptance_token_expired?(ott) do
+      {:error, :otp_expired}
+    else
+      :ok
+    end
+  end
 
+  defp find_or_create_confirmed_user(client, email) do
     case Users.get_by_email(email) do
       {:ok, user} ->
         if User.is_email_confirmed?(user) do
           {:ok, user}
         else
-          OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation)
-          OneTimeTokens.create_token(user, :email_confirmation, otp)
-          send_otp_email(email, otp)
-          {:ok, user}
+          Users.confirm_user_email(user)
         end
 
       {:error, _} ->
-        user_attrs =
-          Map.merge(attrs, %{
-            "email" => email,
-            "first_name" => attrs["first_name"] || client.first_name || "",
-            "last_name" => attrs["last_name"] || client.last_name || "",
-            "confirmation_sent_at" => DateTime.utc_now(:second)
-          })
+        user_attrs = %{
+          "email" => email,
+          "first_name" => client.first_name || "",
+          "last_name" => client.last_name || "",
+          "confirmation_sent_at" => DateTime.utc_now(:second)
+        }
 
         with {:ok, user} <- Users.create(user_attrs),
-             {:ok, _token} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
-          send_otp_email(email, otp)
-          {:ok, user}
+             {:ok, confirmed} <- Users.confirm_user_email(user) do
+          {:ok, confirmed}
         end
     end
   end
 
-  defp accept_client_invite(client, user) do
-    client
-    |> Client.accept_invite_changeset(user.id)
-    |> Repo.update()
-  end
+  defp invitation_invalid_error,
+    do:
+      Easy.Error.new(
+        :invitation_invalid,
+        "This invitation is no longer valid.",
+        %{},
+        :not_found
+      )
+
+  defp invitation_used_error,
+    do:
+      Easy.Error.new(
+        :invitation_used,
+        "This invitation has already been accepted.",
+        %{},
+        :gone
+      )
+
+  defp invitation_expired_error,
+    do:
+      Easy.Error.new(
+        :invitation_expired,
+        "This invitation has expired. Ask your coach to send a new one.",
+        %{},
+        :gone
+      )
+
+  defp already_active_client_error,
+    do:
+      Easy.Error.new(
+        :already_active_client,
+        "This email is already an active client of another business.",
+        %{},
+        :conflict
+      )
+
+  defp invalid_otp_error,
+    do:
+      Easy.Error.new(
+        :invalid_otp,
+        "Invalid code. Please check and try again.",
+        %{},
+        :unauthorized
+      )
+
+  defp otp_expired_error,
+    do:
+      Easy.Error.new(
+        :otp_expired,
+        "This code has expired. Request a new one.",
+        %{},
+        :gone
+      )
 
   @spec verify(String.t(), map()) :: {:ok, auth_token()} | {:error, any()}
   def verify(token_hash, opts) do
@@ -337,6 +446,15 @@ defmodule Easy.Identity do
 
     Easy.MailerDelivery.deliver_async(email_struct,
       metadata: %{email: email}
+    )
+  end
+
+  defp send_invitation_otp_email(email, code) do
+    email_struct =
+      Easy.Emails.login_otp_email(email, code)
+
+    Easy.MailerDelivery.deliver_async(email_struct,
+      metadata: %{email: email, purpose: :invitation_acceptance}
     )
   end
 

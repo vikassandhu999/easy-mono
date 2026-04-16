@@ -1,5 +1,7 @@
 defmodule EasyWeb.AuthController do
+  alias Easy.Clients.Client
   alias Easy.Identity
+  alias Easy.Repo
   alias Easy.Utils
   use EasyWeb, :controller
 
@@ -19,20 +21,56 @@ defmodule EasyWeb.AuthController do
     end
   end
 
-  def accept_invite(conn, %{"invitation_token" => _} = params) do
-    with {:ok, user} <- Identity.accept_invite(params) do
+  def accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
+    with {:ok, :otp_sent} <- Identity.accept_invite(params) do
       conn
-      |> put_status(201)
-      |> json(%{
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email_confirmed: not is_nil(user.email_confirmed_at),
-        confirmation_sent_at: user.confirmation_sent_at
-      })
+      |> put_status(200)
+      |> json(%{message: "OTP sent to the provided email."})
     end
   end
+
+  @spec accept_invite_verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def accept_invite_verify(
+        conn,
+        %{"invitation_token" => _, "email" => _, "otp" => _} = params
+      ) do
+    ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
+    user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
+
+    with {:ok, auth_token} <-
+           Identity.verify_accept_invite(params, %{ip: ip, user_agent: user_agent}) do
+      conn
+      |> put_status(200)
+      |> json(auth_token)
+    end
+  end
+
+  @spec show_invitation(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show_invitation(conn, %{"token" => token}) do
+    body =
+      case Client.resolve_invitation_token(token) do
+        {:ok, client} ->
+          client = Repo.preload(client, [:business, :creator])
+
+          %{
+            state: "pending",
+            business_name: client.business.name,
+            coach_first_name: coach_display_name(client.creator),
+            prefill_email: client.email,
+            expires_at: Client.invitation_expires_at(client)
+          }
+
+        {:error, state} ->
+          %{state: Atom.to_string(state)}
+      end
+
+    conn |> put_status(200) |> json(%{data: body})
+  end
+
+  defp coach_display_name(nil), do: "Coach"
+  defp coach_display_name(%{first_name: nil}), do: "Coach"
+  defp coach_display_name(%{first_name: ""}), do: "Coach"
+  defp coach_display_name(%{first_name: name}), do: name
 
   def verify(conn, %{"token" => token_hash}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")

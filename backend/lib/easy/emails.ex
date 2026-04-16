@@ -78,7 +78,7 @@ defmodule Easy.Emails do
 
     #{invitation_url}
 
-    This invitation will expire in 7 days.
+    This invitation will expire in 30 days.
 
     If you didn't expect this invitation, you can safely ignore this email.
 
@@ -191,7 +191,7 @@ defmodule Easy.Emails do
         </p>
 
         <p style="font-size: 14px; color: #666; margin-top: 30px;">
-          <strong>This invitation will expire in 7 days.</strong>
+          <strong>This invitation will expire in 30 days.</strong>
         </p>
 
         <p style="font-size: 14px; color: #666; margin-top: 20px;">

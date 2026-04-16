@@ -48,14 +48,127 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       conn = build_conn() |> post("/v1/coach/clients/invite", %{"email" => "test@test.com"})
       assert json_response(conn, 403)
     end
+
+    test "rejects invite when email is already an active client of another business", %{
+      conn: conn
+    } do
+      other_coach = insert(:coach)
+      existing_user = insert(:user, email: "shared@email.com")
+
+      insert(:client,
+        creator: other_coach,
+        business: other_coach.business,
+        user: existing_user,
+        status: :active
+      )
+
+      attrs = %{"email" => "shared@email.com", "first_name" => "Shared"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert %{"error_detail" => %{"email" => [msg]}} = json_response(conn, 422)
+      assert msg =~ "active client"
+    end
+
+    test "rejects invite when email is already an active client of the same business", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      existing_user = insert(:user, email: "dupe@email.com")
+
+      insert(:client,
+        creator: coach,
+        business: business,
+        user: existing_user,
+        status: :active
+      )
+
+      attrs = %{"email" => "dupe@email.com", "first_name" => "Dupe"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert json_response(conn, 422)
+    end
+
+    test "allows invite when email belongs to an archived client elsewhere", %{conn: conn} do
+      other_coach = insert(:coach)
+      existing_user = insert(:user, email: "archived@email.com")
+
+      insert(:client,
+        creator: other_coach,
+        business: other_coach.business,
+        user: existing_user,
+        status: :archived
+      )
+
+      attrs = %{"email" => "archived@email.com", "first_name" => "Archived"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["status"] == "pending"
+    end
+
+    test "allows invite when email belongs to an inactive client elsewhere", %{conn: conn} do
+      other_coach = insert(:coach)
+      existing_user = insert(:user, email: "inactive@email.com")
+
+      insert(:client,
+        creator: other_coach,
+        business: other_coach.business,
+        user: existing_user,
+        status: :inactive
+      )
+
+      attrs = %{"email" => "inactive@email.com", "first_name" => "Inactive"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert json_response(conn, 201)
+    end
+
+    test "allows invite when email has no User record", %{conn: conn} do
+      attrs = %{"email" => "brand-new@email.com", "first_name" => "Fresh"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert json_response(conn, 201)
+    end
+
+    test "allows invite when email is not provided (phone only)", %{conn: conn} do
+      # Sanity: the new validation must not block phone-only invites
+      attrs = %{"phone" => "+91 98765 11111", "first_name" => "PhoneOnly"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert json_response(conn, 201)
+    end
+
+    test "rejects coach inviting their own email" do
+      user = insert(:user, email: "rajat@coach.com")
+      coach = insert(:coach, user: user)
+      conn = build_conn() |> authenticate_coach(coach)
+
+      attrs = %{"email" => "rajat@coach.com", "first_name" => "Rajat"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert %{"error_detail" => %{"email" => [msg]}} = json_response(conn, 422)
+      assert msg =~ "yourself"
+    end
+
+    test "allows coach inviting a different email", %{conn: conn} do
+      attrs = %{"email" => "someone-else@email.com", "first_name" => "Other"}
+      conn = post(conn, "/v1/coach/clients/invite", attrs)
+
+      assert json_response(conn, 201)
+    end
   end
 
   describe "GET /v1/coach/clients/:id" do
     test "returns a client by id with MVP fields", %{conn: conn, coach: coach, business: business} do
+      # Active client: User is linked and the User's name is authoritative.
+      user = insert(:user, first_name: "Vikas", last_name: "Sandhu")
+
       client =
         insert(:client,
           creator: coach,
           business: business,
+          user: user,
           email: "vikas@test.com",
           first_name: "Vikas",
           last_name: "Sandhu",
@@ -113,6 +226,126 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       conn = get(conn, "/v1/coach/clients/#{client.id}")
       assert %{"data" => data} = json_response(conn, 200)
       assert data["invite_url"] == nil
+    end
+
+    test "prefers User's first/last name over Client's when User is linked", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      user = insert(:user, first_name: "Vikas", last_name: "Kumar")
+
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          user: user,
+          status: :active,
+          first_name: "Vikas K. (Pune gym)",
+          last_name: "coach-override"
+        )
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["first_name"] == "Vikas"
+      assert data["last_name"] == "Kumar"
+    end
+
+    test "falls back to Client's name when User's name is blank", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      user = insert(:user, first_name: "", last_name: "")
+
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          user: user,
+          status: :active,
+          first_name: "Coach-set",
+          last_name: "Name"
+        )
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["first_name"] == "Coach-set"
+      assert data["last_name"] == "Name"
+    end
+
+    test "uses Client's name when User is not linked (pending client)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :pending,
+          first_name: "Invited",
+          last_name: "Client",
+          user: nil,
+          user_id: nil
+        )
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["first_name"] == "Invited"
+      assert data["last_name"] == "Client"
+    end
+
+    test "returns invitation_sent_at and invitation_expires_at for pending clients", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      sent_at = DateTime.utc_now(:second)
+
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :pending,
+          invitation_token: "exp-token",
+          invitation_sent_at: sent_at
+        )
+
+      conn = get(conn, "/v1/coach/clients/#{client.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["invitation_sent_at"]
+      assert data["invitation_expires_at"]
+
+      {:ok, expires_at, _} = DateTime.from_iso8601(data["invitation_expires_at"])
+      expected_expiry = DateTime.add(sent_at, 30, :day)
+      assert DateTime.compare(expires_at, expected_expiry) == :eq
+    end
+
+    test "returns null invitation_expires_at/sent_at for non-pending clients", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      for status <- [:active, :inactive, :archived] do
+        client =
+          insert(:client,
+            creator: coach,
+            business: business,
+            status: status,
+            invitation_token: "retained-token-#{status}",
+            invitation_sent_at: DateTime.utc_now(:second)
+          )
+
+        conn = get(conn, "/v1/coach/clients/#{client.id}")
+        assert %{"data" => data} = json_response(conn, 200)
+        assert data["invitation_sent_at"] == nil
+        assert data["invitation_expires_at"] == nil
+      end
     end
 
     test "status is the DB value directly (no auto-computation)", %{
@@ -203,13 +436,13 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
   describe "PATCH /v1/coach/clients/:id" do
     test "updates basic fields", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business)
+      client = insert(:client, creator: coach, business: business, notes: "before")
 
-      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"first_name" => "Updated Name"})
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"notes" => "after"})
       assert %{"data" => data} = json_response(conn, 200)
 
       assert data["id"] == client.id
-      assert data["first_name"] == "Updated Name"
+      assert data["notes"] == "after"
     end
 
     test "updates status to archived", %{conn: conn, coach: coach, business: business} do
@@ -228,12 +461,80 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["status"] == "inactive"
     end
 
-    test "updates status from pending to active", %{conn: conn, coach: coach, business: business} do
+    test "rejects manual pending -> active (must go through accept-invite)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
       client = insert(:client, creator: coach, business: business, status: :pending)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "active"})
+      assert json_response(conn, 422)
+
+      assert Easy.Repo.get!(Easy.Clients.Client, client.id).status == :pending
+    end
+
+    test "rejects pending -> inactive", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects pending -> archived", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "archived"})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects active -> pending", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "pending"})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects inactive -> pending", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :inactive)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "pending"})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects archived -> pending", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :archived)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "pending"})
+      assert json_response(conn, 422)
+    end
+
+    test "allows inactive -> active", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :inactive)
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "active"})
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "active"
+    end
+
+    test "allows archived -> active (re-engage)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :archived)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "active"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "active"
+    end
+
+    test "allows archived -> inactive", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business, status: :archived)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"status" => "inactive"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "inactive"
     end
 
     test "rejects invalid status", %{conn: conn, coach: coach, business: business} do
@@ -260,15 +561,25 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["email"] == "new@test.com"
     end
 
-    test "updates multiple fields at once", %{conn: conn, coach: coach, business: business} do
-      client = insert(:client, creator: coach, business: business, status: :pending)
+    test "allows updating contact fields on a pending client (plans/notes prep work)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          status: :pending,
+          user: nil,
+          user_id: nil
+        )
 
       attrs = %{
         "first_name" => "Vikas",
         "last_name" => "Sandhu",
         "phone" => "+91 98765 43210",
-        "notes" => "Started coaching",
-        "status" => "active"
+        "notes" => "Started coaching"
       }
 
       conn = patch(conn, "/v1/coach/clients/#{client.id}", attrs)
@@ -278,7 +589,27 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["last_name"] == "Sandhu"
       assert data["phone"] == "+91 98765 43210"
       assert data["notes"] == "Started coaching"
-      assert data["status"] == "active"
+      assert data["status"] == "pending"
+    end
+
+    test "updates multiple contact fields and a valid status transition in one call", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :active)
+
+      attrs = %{
+        "phone" => "+91 98765 43210",
+        "notes" => "archived due to inactivity",
+        "status" => "archived"
+      }
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", attrs)
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["phone"] == "+91 98765 43210"
+      assert data["notes"] == "archived due to inactivity"
+      assert data["status"] == "archived"
     end
 
     test "returns 404 for non-existent client", %{conn: conn} do
@@ -450,6 +781,121 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert summary["active"] == 1
       assert summary["pending"] == 1
       assert summary["inactive"] == 1
+    end
+  end
+
+  describe "DELETE /v1/coach/clients/:id" do
+    test "revokes a pending invitation (hard delete)", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      conn = delete(conn, "/v1/coach/clients/#{client.id}")
+      assert response(conn, 204)
+
+      refute Easy.Repo.get(Easy.Clients.Client, client.id)
+    end
+
+    test "deletes personal training plans assigned to the pending client", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      plan =
+        insert(:training_plan,
+          business: business,
+          author: coach,
+          client_id: client.id,
+          start_date: ~D[2026-01-01],
+          end_date: ~D[2026-03-01]
+        )
+
+      conn = delete(conn, "/v1/coach/clients/#{client.id}")
+      assert response(conn, 204)
+
+      refute Easy.Repo.get(Easy.Training.TrainingPlan, plan.id)
+    end
+
+    test "leaves templates (client_id IS NULL) untouched", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      template =
+        insert(:training_plan, business: business, author: coach, client_id: nil)
+
+      conn = delete(conn, "/v1/coach/clients/#{client.id}")
+      assert response(conn, 204)
+
+      assert Easy.Repo.get(Easy.Training.TrainingPlan, template.id)
+    end
+
+    test "deletes personal nutrition plans assigned to the pending client", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business, status: :pending)
+
+      plan =
+        insert(:plan,
+          business: business,
+          creator: coach,
+          client_id: client.id
+        )
+
+      conn = delete(conn, "/v1/coach/clients/#{client.id}")
+      assert response(conn, 204)
+
+      refute Easy.Repo.get(Easy.Nutrition.Plan, plan.id)
+    end
+
+    test "returns 422 for non-pending clients", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      for status <- [:active, :inactive, :archived] do
+        client = insert(:client, creator: coach, business: business, status: status)
+
+        conn = delete(conn, "/v1/coach/clients/#{client.id}")
+        assert json_response(conn, 422)
+
+        # Client still exists.
+        assert Easy.Repo.get(Easy.Clients.Client, client.id)
+      end
+    end
+
+    test "returns 404 for non-existent client", %{conn: conn} do
+      conn = delete(conn, "/v1/coach/clients/#{Ecto.UUID.generate()}")
+      assert json_response(conn, 404)
+    end
+
+    test "cannot revoke pending client from another business", %{conn: conn} do
+      other_coach = insert(:coach)
+
+      other_client =
+        insert(:client,
+          creator: other_coach,
+          business: other_coach.business,
+          status: :pending
+        )
+
+      conn = delete(conn, "/v1/coach/clients/#{other_client.id}")
+      assert json_response(conn, 404)
+
+      assert Easy.Repo.get(Easy.Clients.Client, other_client.id)
+    end
+
+    test "returns 403 without auth token" do
+      conn = build_conn() |> delete("/v1/coach/clients/#{Ecto.UUID.generate()}")
+      assert json_response(conn, 403)
     end
   end
 end

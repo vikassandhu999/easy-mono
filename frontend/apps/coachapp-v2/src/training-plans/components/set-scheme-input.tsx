@@ -25,33 +25,49 @@ export type SetSchemeValues = {
   reps: string;
   rest: string;
   sets: string;
+  /** Optional warmup sets prepended before working sets (default: empty = 0) */
+  warmupSets: string;
 };
 
-/** Build N identical working sets from the compact scheme values */
+/** Build warmup + working sets from the compact scheme values */
 export function buildPlannedSetsFromScheme(values: SetSchemeValues): PlannedSet[] {
-  const count = Math.max(1, Number(values.sets) || 1);
-  const set: PlannedSet = {
-    set_type: 'working',
+  const warmupCount = Math.max(0, Number(values.warmupSets) || 0);
+  const workingCount = Math.max(1, Number(values.sets) || 1);
+  const loadUnit = (values.loadUnit || 'kg') as PlannedSet['load_unit'];
+
+  const warmups: PlannedSet[] = Array.from({length: warmupCount}, () => ({
+    set_type: 'warmup' as const,
+    ...(values.reps && {target_reps: values.reps}),
+    load_unit: loadUnit,
+    rest_seconds: 60,
+  }));
+
+  const working: PlannedSet[] = Array.from({length: workingCount}, () => ({
+    set_type: 'working' as const,
     ...(values.reps && {target_reps: values.reps}),
     ...(values.loadValue && {load_value: Number(values.loadValue)}),
-    load_unit: (values.loadUnit || 'kg') as PlannedSet['load_unit'],
+    load_unit: loadUnit,
     ...(values.rest && {rest_seconds: Number(values.rest)}),
-  };
-  return Array.from({length: count}, () => ({...set}));
+  }));
+
+  return [...warmups, ...working];
 }
 
 /** Derive SetSchemeValues from an existing planned_sets array (for editing) */
 export function deriveSchemeFromSets(sets: PlannedSet[]): SetSchemeValues {
-  const first = sets[0];
+  const warmups = sets.filter((s) => s.set_type === 'warmup');
+  const working = sets.filter((s) => s.set_type !== 'warmup');
+  const first = working[0] ?? sets[0];
   if (!first) {
-    return {sets: '3', reps: '', loadValue: '', loadUnit: 'kg', rest: ''};
+    return {sets: '3', reps: '', loadValue: '', loadUnit: 'kg', rest: '', warmupSets: ''};
   }
   return {
-    sets: String(sets.length),
+    sets: String(working.length || sets.length),
     reps: first.target_reps ?? '',
     loadValue: first.load_value != null ? String(first.load_value) : '',
     loadUnit: first.load_unit ?? 'kg',
     rest: first.rest_seconds != null ? String(first.rest_seconds) : '',
+    warmupSets: warmups.length > 0 ? String(warmups.length) : '',
   };
 }
 
@@ -99,6 +115,23 @@ export default function SetSchemeInput({onChange, showPresets = false, values}: 
 
       {/* Fields — flex-wrap: 2 per row on mobile, all on 1 row on sm+ */}
       <div className="flex flex-wrap gap-2">
+        <div className="flex w-[calc(50%-4px)] flex-col gap-1 sm:w-16">
+          <label
+            className="text-xs text-foreground-400"
+            htmlFor={`${uid}-warmup`}
+          >
+            Warmup
+          </label>
+          <Input
+            id={`${uid}-warmup`}
+            inputMode="numeric"
+            onChange={(e) => update({warmupSets: e.target.value})}
+            placeholder="0"
+            type="number"
+            value={values.warmupSets}
+          />
+        </div>
+
         <div className="flex w-[calc(50%-4px)] flex-col gap-1 sm:w-12">
           <label
             className="text-xs text-foreground-400"

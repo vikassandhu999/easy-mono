@@ -2,14 +2,13 @@ import {Avatar, Button, Separator, Spinner} from '@heroui/react';
 import {useCallback, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import PageLayout from '@/@components/page-layout';
 import {clearTokens} from '@/api/authStorage';
 import {api} from '@/api/base';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
-import PageLayout from '@/@components/page-layout';
-import {store} from '@/store';
-
 import EditableRow from '@/settings/components/editable-row';
 import SectionHeading from '@/settings/components/section-heading';
+import {store} from '@/store';
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -35,9 +34,9 @@ function ProfileSection({
   onUpdate,
   profile,
 }: {
-  onUpdate: (body: Parameters<ReturnType<typeof useUpdateCoachProfileMutation>[0]>[0]) => ReturnType<
-    ReturnType<typeof useUpdateCoachProfileMutation>[0]
-  >;
+  onUpdate: (
+    body: Parameters<ReturnType<typeof useUpdateCoachProfileMutation>[0]>[0],
+  ) => ReturnType<ReturnType<typeof useUpdateCoachProfileMutation>[0]>;
   profile: CoachProfile;
 }) {
   const fullName = getFullName(profile.first_name, profile.last_name);
@@ -71,7 +70,10 @@ function ProfileSection({
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
         {/* Header with avatar */}
         <div className="flex items-center gap-3 border-b border-divider p-4">
-          <Avatar className="size-12" color="accent">
+          <Avatar
+            className="size-12"
+            color="accent"
+          >
             <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0">
@@ -81,9 +83,22 @@ function ProfileSection({
         </div>
 
         {/* Editable rows */}
-        <EditableRow label="Name" onSave={handleNameSave} value={fullName} />
-        <EditableRow label="Business" onSave={handleBusinessSave} value={profile.business.name} />
-        <EditableRow label="Phone" inputType="tel" onSave={handlePhoneSave} value={profile.phone} />
+        <EditableRow
+          label="Name"
+          onSave={handleNameSave}
+          value={fullName}
+        />
+        <EditableRow
+          label="Business"
+          onSave={handleBusinessSave}
+          value={profile.business.name}
+        />
+        <EditableRow
+          inputType="tel"
+          label="Phone"
+          onSave={handlePhoneSave}
+          value={profile.phone}
+        />
       </div>
     </section>
   );
@@ -107,7 +122,11 @@ function InviteLinkSection({slug}: {slug: string}) {
           <div className="min-w-0 flex-1 truncate rounded-lg bg-content2 px-3 py-2 font-mono text-xs text-foreground-500">
             coachapp.in/join/{slug}
           </div>
-          <Button onPress={handleCopy} size="sm" variant="secondary">
+          <Button
+            onPress={handleCopy}
+            size="sm"
+            variant="secondary"
+          >
             {copied ? 'Copied' : 'Copy'}
           </Button>
         </div>
@@ -167,14 +186,22 @@ export default function Settings() {
   return (
     <PageLayout title="Settings">
       <div className="max-w-lg">
-        <ProfileSection onUpdate={updateProfile} profile={profile} />
+        <ProfileSection
+          onUpdate={updateProfile}
+          profile={profile}
+        />
         <InviteLinkSection slug={profile.business.slug} />
         <AccountSection email={profile.email} />
 
         {/* Logout */}
         <div className="py-4">
           <Separator className="mb-4" />
-          <Button className="w-full" color="danger" onPress={handleLogout} variant="ghost">
+          <Button
+            className="w-full"
+            color="danger"
+            onPress={handleLogout}
+            variant="ghost"
+          >
             Log out
           </Button>
           <p className="mt-4 text-center text-xs text-foreground-400">CoachApp v{__APP_VERSION__}</p>

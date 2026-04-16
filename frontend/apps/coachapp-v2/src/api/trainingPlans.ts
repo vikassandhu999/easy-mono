@@ -72,6 +72,8 @@ export type TrainingPlan = {
   name: string;
   original_template_id: null | string;
   planned_workouts: PlannedWorkout[];
+  /** Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days by the coach. */
+  rest_days: number[];
   start_date: null | string;
   status: TrainingPlanStatus;
   updated_at: string;
@@ -82,6 +84,7 @@ export type TrainingPlanCreateRequest = {
   end_date?: string;
   name: string;
   original_template_id?: string;
+  rest_days?: number[];
   start_date?: string;
   status?: TrainingPlanStatus;
 };
@@ -91,6 +94,7 @@ export type TrainingPlanUpdateRequest = {
   end_date?: string;
   name?: string;
   original_template_id?: string;
+  rest_days?: number[];
   start_date?: string;
   status?: TrainingPlanStatus;
 };
@@ -364,6 +368,22 @@ export const trainingPlansApi = api.injectEndpoints({
         {type: 'TrainingPlan', id: 'LIST'},
       ],
     }),
+    /** Deep-copy a planned workout (with all elements + sets) to a target weekday. */
+    duplicatePlannedWorkout: build.mutation<
+      ApiResponse<PlannedWorkout>,
+      {day_number: number; id: string; planId: string}
+    >({
+      query: ({day_number, id}) => ({
+        body: {day_number},
+        method: 'POST',
+        url: `/v1/coach/planned_workouts/${id}/duplicate`,
+      }),
+      invalidatesTags: (_, __, {planId}) => [
+        {type: 'PlannedWorkout', id: getPlanScopedId(planId)},
+        {type: 'TrainingPlan', id: planId},
+        {type: 'TrainingPlan', id: 'LIST'},
+      ],
+    }),
     createWorkoutElement: build.mutation<
       ApiResponse<WorkoutElement>,
       {
@@ -434,6 +454,7 @@ export const {
   useDeletePlannedWorkoutMutation,
   useDeleteTrainingPlanMutation,
   useDeleteWorkoutElementMutation,
+  useDuplicatePlannedWorkoutMutation,
   useDuplicateTrainingPlanMutation,
   useGetPlannedWorkoutQuery,
   useGetTrainingPlanQuery,

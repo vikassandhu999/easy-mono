@@ -1,5 +1,5 @@
 import {Button, Input, toast} from '@heroui/react';
-import {ChevronDown, ChevronUp, Copy, Dumbbell, X} from 'lucide-react';
+import {ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, CopyPlus, Dumbbell, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
 import type {PlannedSet, WorkoutElement} from '@/api/trainingPlans';
@@ -84,12 +84,18 @@ type ExerciseElementProps = {
   element: WorkoutElement;
   /** Whether this element is currently expanded */
   isExpanded: boolean;
-  /** Called when the coach taps to expand/collapse */
-  onToggleExpand: () => void;
-  /** Called when the coach taps Remove (parent handles undo toast) */
-  onRemove: () => void;
   /** Called when the coach taps Copy (parent shows workout selector) */
   onCopy?: () => void;
+  /** Called when the coach taps Duplicate (same exercise + sets in same workout) */
+  onDuplicate?: () => void;
+  /** Called when the coach taps Move Down (swap with next element) */
+  onMoveDown?: () => void;
+  /** Called when the coach taps Move Up (swap with previous element) */
+  onMoveUp?: () => void;
+  /** Called when the coach taps Remove (parent handles undo toast) */
+  onRemove: () => void;
+  /** Called when the coach taps to expand/collapse */
+  onToggleExpand: () => void;
   planId: string;
 };
 
@@ -107,6 +113,9 @@ export default function ExerciseElement({
   element,
   isExpanded,
   onCopy,
+  onDuplicate,
+  onMoveDown,
+  onMoveUp,
   onRemove,
   onToggleExpand,
   planId,
@@ -131,6 +140,10 @@ export default function ExerciseElement({
   const [localNotes, setLocalNotes] = useState(element.notes ?? '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Bulk edit state (inline uniform editor without full expand)
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkScheme, setBulkScheme] = useState<SetSchemeValues>(() => deriveSchemeFromSets(element.planned_sets));
+
   // Reset local state when server data changes (e.g. after a save completes)
   const serverSetsKey = JSON.stringify(element.planned_sets);
   const serverNotesKey = element.notes ?? '';
@@ -143,6 +156,8 @@ export default function ExerciseElement({
     setLocalNotes(element.notes ?? '');
     setHasUnsavedChanges(false);
     setEditorMode(areSetsUniform(element.planned_sets) ? 'uniform' : 'detail');
+    setBulkScheme(deriveSchemeFromSets(element.planned_sets));
+    setShowBulkEdit(false);
   }
 
   const handleSchemeChange = (values: SetSchemeValues) => {
@@ -185,34 +200,127 @@ export default function ExerciseElement({
     setEditorMode('uniform');
   };
 
+  // ── Bulk edit (inline uniform editor without full expand) ────────
+
+  const handleBulkUpdate = async () => {
+    const sets = buildPlannedSetsFromScheme(bulkScheme);
+    try {
+      await updateElement({
+        id: element.id,
+        planId,
+        plannedWorkoutId: element.planned_workout_id,
+        body: {planned_sets: sets},
+      }).unwrap();
+      setShowBulkEdit(false);
+    } catch {
+      toast.danger('Failed to update sets');
+    }
+  };
+
+  // Check if working sets have per-set customizations (different values across working sets)
+  const workingSets = element.planned_sets.filter((s) => s.set_type !== 'warmup');
+  const hasCustomizedSets = workingSets.length > 1 && !areSetsUniform(workingSets);
+
   // ── Collapsed view ──────────────────────────────────────────────
 
   if (!isExpanded) {
     return (
-      <div className="flex min-h-11 items-center gap-2">
-        <button
-          aria-expanded={false}
-          aria-label={`Edit ${exerciseName}`}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1.5 text-left transition-colors hover:bg-content2 active:bg-content2"
-          onClick={onToggleExpand}
-          type="button"
-        >
-          <div className="min-w-0 flex-1">
-            <span className="block truncate text-sm">{exerciseName}</span>
-            {element.notes ? <span className="block truncate text-xs text-foreground-400">{element.notes}</span> : null}
+      <div>
+        <div className="flex min-h-11 items-center gap-1">
+          <button
+            aria-expanded={false}
+            aria-label={`Edit ${exerciseName}`}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1.5 text-left transition-colors hover:bg-content2 active:bg-content2"
+            onClick={onToggleExpand}
+            type="button"
+          >
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-sm">{exerciseName}</span>
+              {element.notes ? (
+                <span className="block truncate text-xs text-foreground-400">{element.notes}</span>
+              ) : null}
+            </div>
+          </button>
+          <button
+            aria-label="Quick edit sets"
+            className="shrink-0 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-content2 active:bg-content2"
+            onClick={() => {
+              setBulkScheme(deriveSchemeFromSets(element.planned_sets));
+              setShowBulkEdit((v) => !v);
+            }}
+            type="button"
+          >
+            <span className="text-xs text-foreground-500">{summary.scheme}</span>
+            {summary.rest && <span className="ml-1.5 text-xs text-foreground-400">{summary.rest}</span>}
+          </button>
+          {onMoveUp && (
+            <Button
+              aria-label="Move up"
+              isIconOnly
+              onPress={onMoveUp}
+              size="sm"
+              variant="ghost"
+            >
+              <ArrowUp size={14} />
+            </Button>
+          )}
+          {onMoveDown && (
+            <Button
+              aria-label="Move down"
+              isIconOnly
+              onPress={onMoveDown}
+              size="sm"
+              variant="ghost"
+            >
+              <ArrowDown size={14} />
+            </Button>
+          )}
+          <Button
+            aria-label={`Remove ${exerciseName}`}
+            isIconOnly
+            onPress={onRemove}
+            size="sm"
+            variant="ghost"
+          >
+            <X size={14} />
+          </Button>
+        </div>
+
+        {/* Inline bulk editor */}
+        {showBulkEdit && (
+          <div className="mt-1 rounded-lg border border-dashed border-divider p-3">
+            {hasCustomizedSets && (
+              <p className="mb-2 text-xs text-warning">This will overwrite per-set customizations.</p>
+            )}
+            <SetSchemeInput
+              onChange={setBulkScheme}
+              values={bulkScheme}
+            />
+            <div className="mt-2 flex gap-2">
+              <Button
+                isPending={isSaving}
+                onPress={handleBulkUpdate}
+                size="sm"
+              >
+                Update all
+              </Button>
+              <Button
+                onPress={onToggleExpand}
+                size="sm"
+                variant="ghost"
+              >
+                Per-set editor
+              </Button>
+              <Button
+                onPress={() => setShowBulkEdit(false)}
+                size="sm"
+                variant="ghost"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
-          <span className="shrink-0 text-xs text-foreground-500">{summary.scheme}</span>
-          {summary.rest && <span className="shrink-0 text-xs text-foreground-400">{summary.rest}</span>}
-        </button>
-        <Button
-          aria-label={`Remove ${exerciseName}`}
-          isIconOnly
-          onPress={onRemove}
-          size="sm"
-          variant="ghost"
-        >
-          <X size={14} />
-        </Button>
+        )}
       </div>
     );
   }
@@ -309,6 +417,17 @@ export default function ExerciseElement({
           >
             <Copy size={12} />
             Copy
+          </Button>
+        )}
+
+        {onDuplicate && (
+          <Button
+            onPress={onDuplicate}
+            size="sm"
+            variant="ghost"
+          >
+            <CopyPlus size={12} />
+            Duplicate
           </Button>
         )}
 

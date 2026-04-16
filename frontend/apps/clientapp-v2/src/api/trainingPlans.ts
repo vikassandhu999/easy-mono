@@ -71,6 +71,8 @@ export type ClientTrainingPlan = {
   inserted_at: string;
   name: string;
   planned_workouts: ClientPlannedWorkout[];
+  /** Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days. Used to distinguish rest days from empty days. */
+  rest_days: number[];
   start_date: null | string;
   status: TrainingPlanStatus;
   updated_at: string;

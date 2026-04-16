@@ -58,7 +58,10 @@ export default function EditableRow({
 
   if (editing) {
     return (
-      <form className="flex items-center gap-2 border-t border-divider px-4 py-2" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex items-center gap-2 border-t border-divider px-4 py-2"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
         <div className="min-w-0 flex-1">
           <Input
@@ -71,10 +74,26 @@ export default function EditableRow({
           />
           {errorMessage && <p className="mt-0.5 text-xs text-danger">{errorMessage}</p>}
         </div>
-        <Button isPending={isSubmitting} size="sm" type="submit">
-          {isSubmitting ? <Spinner color="current" size="sm" /> : 'Save'}
+        <Button
+          isPending={isSubmitting}
+          size="sm"
+          type="submit"
+        >
+          {isSubmitting ? (
+            <Spinner
+              color="current"
+              size="sm"
+            />
+          ) : (
+            'Save'
+          )}
         </Button>
-        <Button onPress={cancel} size="sm" type="button" variant="ghost">
+        <Button
+          onPress={cancel}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
           Cancel
         </Button>
       </form>
@@ -85,7 +104,11 @@ export default function EditableRow({
     <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
       <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{value || '\u2014'}</span>
-      <button className="shrink-0 text-sm text-accent" onClick={startEdit} type="button">
+      <button
+        className="shrink-0 text-sm text-accent"
+        onClick={startEdit}
+        type="button"
+      >
         Edit
       </button>
     </div>

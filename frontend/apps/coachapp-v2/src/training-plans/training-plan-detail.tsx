@@ -1,5 +1,5 @@
 import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
-import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
+import {Archive, ArchiveRestore, ArrowLeft, Pencil, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -13,14 +13,13 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {
   useAssignTrainingPlanMutation,
-  useCreatePlannedWorkoutMutation,
   useDeleteTrainingPlanMutation,
   useDuplicateTrainingPlanMutation,
   useGetTrainingPlanQuery,
   useUpdateTrainingPlanMutation,
 } from '@/api/trainingPlans';
 import ClientPicker from '@/clients/components/client-picker';
-import WorkoutSection from '@/training-plans/components/workout-section';
+import WeeklyOverview from '@/training-plans/components/weekly-overview';
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
@@ -44,7 +43,6 @@ export default function TrainingPlanDetail() {
   const {data, isError, isLoading} = useGetTrainingPlanQuery(id!);
   const [deletePlan, {isLoading: isDeleting}] = useDeleteTrainingPlanMutation();
   const [duplicatePlan] = useDuplicateTrainingPlanMutation();
-  const [createWorkout, {isLoading: isCreatingWorkout}] = useCreatePlannedWorkoutMutation();
   const [assignPlan, {isLoading: isAssigning}] = useAssignTrainingPlanMutation();
   const [updatePlan, {isLoading: isUpdatingStatus}] = useUpdateTrainingPlanMutation();
 
@@ -79,21 +77,9 @@ export default function TrainingPlanDetail() {
     }
   };
 
-  // Inline add-workout state
-  const [isAddingWorkout, setIsAddingWorkout] = useState(false);
-  const [newWorkoutName, setNewWorkoutName] = useState('');
+  // Scroll-to-new-workout state (managed here, used by WeeklyOverview)
   const [scrollToWorkoutId, setScrollToWorkoutId] = useState<null | string>(null);
-
-  // Callback ref that scrolls a WorkoutSection into view then clears the scroll target
-  const scrollRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node && scrollToWorkoutId) {
-        node.scrollIntoView({behavior: 'smooth', block: 'center'});
-        setScrollToWorkoutId(null);
-      }
-    },
-    [scrollToWorkoutId],
-  );
+  const handleScrollComplete = useCallback(() => setScrollToWorkoutId(null), []);
 
   const handleDuplicate = async () => {
     try {
@@ -126,24 +112,6 @@ export default function TrainingPlanDetail() {
       toast.success(nextStatus === 'archived' ? 'Plan archived' : 'Plan restored');
     } catch {
       toast.danger('Failed to update plan status');
-    }
-  };
-
-  const handleAddWorkout = async () => {
-    if (!newWorkoutName.trim()) return;
-    try {
-      const result = await createWorkout({
-        planId: id!,
-        body: {
-          name: newWorkoutName.trim(),
-          day_number: nextDayNumber,
-        },
-      }).unwrap();
-      setNewWorkoutName('');
-      setIsAddingWorkout(false);
-      setScrollToWorkoutId(result.data.id);
-    } catch {
-      toast.danger('Failed to add workout');
     }
   };
 
@@ -181,11 +149,6 @@ export default function TrainingPlanDetail() {
   const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
   // Defensive: matches both `null` and `undefined` in case the backend omits the key.
   const isTemplate = !plan.client_id;
-  // `planned_workouts` is declared non-optional on the type and the show endpoint
-  // always preloads it, but guard anyway for resilience if the backend ever changes.
-  const plannedWorkouts = plan.planned_workouts ?? [];
-  const sortedWorkouts = [...plannedWorkouts].sort((a, b) => a.day_number - b.day_number);
-  const nextDayNumber = sortedWorkouts.length > 0 ? Math.max(...sortedWorkouts.map((w) => w.day_number)) + 1 : 1;
 
   return (
     <PageLayout title="Training Plan">
@@ -369,85 +332,17 @@ export default function TrainingPlanDetail() {
           ) : null}
         </div>
 
-        {/* Workouts section */}
+        {/* Weekly overview — 7-day layout with expand/collapse */}
         <section className="border-t border-divider py-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Workouts</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Overview</h3>
           </div>
-
-          {sortedWorkouts.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {sortedWorkouts.map((workout) => (
-                <WorkoutSection
-                  allWorkouts={sortedWorkouts}
-                  key={workout.id}
-                  planId={plan.id}
-                  sectionRef={workout.id === scrollToWorkoutId ? scrollRef : undefined}
-                  workout={workout}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mb-3 text-sm text-foreground-400">
-              No workouts yet. Add your first workout to start building the plan.
-            </p>
-          )}
-
-          {/* Add workout — inline form (1 field = INLINE) */}
-          <div className="mt-3">
-            {isAddingWorkout ? (
-              <div className="flex items-end gap-2 rounded-xl border border-dashed border-divider p-3">
-                <div className="flex-1">
-                  <label
-                    className="mb-1 block text-xs text-foreground-400"
-                    htmlFor="new-workout-name"
-                  >
-                    Workout name
-                  </label>
-                  <Input
-                    id="new-workout-name"
-                    onChange={(e) => setNewWorkoutName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddWorkout();
-                      }
-                    }}
-                    placeholder="e.g. Push Day"
-                    value={newWorkoutName}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    isPending={isCreatingWorkout}
-                    onPress={handleAddWorkout}
-                    size="sm"
-                  >
-                    {isCreatingWorkout ? 'Adding...' : 'Add'}
-                  </Button>
-                  <Button
-                    onPress={() => {
-                      setIsAddingWorkout(false);
-                      setNewWorkoutName('');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                onPress={() => setIsAddingWorkout(true)}
-                size="sm"
-                variant="secondary"
-              >
-                <Plus size={14} />
-                Add Workout
-              </Button>
-            )}
-          </div>
+          <WeeklyOverview
+            onScrollComplete={handleScrollComplete}
+            onWorkoutCreated={setScrollToWorkoutId}
+            plan={plan}
+            scrollToWorkoutId={scrollToWorkoutId}
+          />
         </section>
 
         {/* Meta */}

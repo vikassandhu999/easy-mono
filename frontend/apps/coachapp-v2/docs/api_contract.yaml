@@ -214,10 +214,11 @@ paths:
       summary: List my training plans
       description: >-
         Returns training plans assigned to the authenticated client. Only non-template
-        plans scoped to this client are returned. Frontend pattern - fetch on app launch
-        to show the client's current program; supports status filter and pagination.
-        Cache with tag 'TrainingPlan'; no client-side mutations so cache only invalidates
-        on coach actions (which the client app doesn't see — refetch on app resume).
+        plans scoped to this client are returned. Response includes rest_days array
+        for the four-state today card: workout day, rest day, empty day (no workout,
+        not rest), or no plan. Frontend pattern - fetch on app launch, match today's
+        weekday against planned_workouts.day_number and rest_days to determine the
+        today card state. Cache with tag 'TrainingPlan'; refetch on app resume.
       operationId: listClientTrainingPlans
       security:
         - bearerAuth: []
@@ -254,10 +255,11 @@ paths:
       summary: Get training plan detail
       description: >-
         Returns a single training plan with full preloaded tree: planned workouts,
-        workout elements (with exercise details and images), and planned sets.
-        This is the data source for rendering the client's workout program.
-        Frontend pattern - fetch when client opens plan detail or starts a workout
-        to display planned exercises and set schemes.
+        workout elements (with exercise details and images), planned sets, and
+        rest_days. This is the data source for rendering the client's workout
+        program and weekly preview strip. Frontend pattern - fetch when client
+        opens plan detail or starts a workout; use rest_days to show "Rest Day"
+        on the today card and weekly strip for coach-designated rest days.
       operationId: getClientTrainingPlan
       security:
         - bearerAuth: []
@@ -2710,7 +2712,12 @@ paths:
   /v1/coach/training_plans:
     post:
       summary: Create training plan
-      description: Creates a template or assigned training plan; frontend uses this as the entry point for plan-building UX. Frontend pattern - optimistic create in list view and navigate to detail editor using returned id.
+      description: >-
+        Creates a template or assigned training plan. The plan starts with an
+        empty weekly schedule (Mon-Sun). Frontend pattern - optimistic create
+        in list view and navigate to the weekly overview builder using the
+        returned id. Set rest_days to mark specific weekdays as rest (e.g. [7]
+        for Sunday).
       operationId: createTrainingPlan
       security:
         - bearerAuth: []
@@ -2743,6 +2750,7 @@ paths:
                       status: active
                       start_date: null
                       end_date: null
+                      rest_days: []
                       client_id: null
                       author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
                       business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
@@ -2782,7 +2790,13 @@ paths:
   /v1/coach/training_plans/{id}:
     get:
       summary: Get training plan
-      description: Returns any plan (template or personal) with nested workouts/elements and preloaded client. For personal plans, client object contains id/first_name/last_name for the client banner. Frontend pattern - treat this as source of truth for the plan builder screen state.
+      description: >-
+        Returns any plan (template or personal) with nested workouts, elements,
+        and preloaded client. Response includes rest_days array for building the
+        7-day weekly overview (Mon-Sun). Workouts are grouped by day_number
+        (1=Mon..7=Sun); days without workouts that appear in rest_days show as
+        "Rest"; remaining empty days show as unassigned. Frontend pattern - treat
+        this as source of truth for the plan builder weekly overview.
       operationId: getTrainingPlan
       security:
         - bearerAuth: []
@@ -2801,7 +2815,12 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update training plan
-      description: Saves high-level plan metadata changes from plan settings panels. Frontend pattern - patch local plan state immediately and reconcile from response body.
+      description: >-
+        Saves plan metadata changes including rest_days. Send the full rest_days
+        array on every update (toggle rest on = add to array, toggle off = remove).
+        The frontend should hide the rest day toggle for days that have workouts.
+        Frontend pattern - patch local plan state immediately and reconcile from
+        response body.
       operationId: updateTrainingPlan
       security:
         - bearerAuth: []
@@ -2915,7 +2934,13 @@ paths:
   /v1/coach/training_plans/{plan_id}/planned_workouts:
     post:
       summary: Create planned workout
-      description: Adds a day/workout block inside a plan; frontend uses this when users add training days in schedule builders. Frontend pattern - optimistic insert in day list, then reorder locally by day_number.
+      description: >-
+        Adds a workout to a specific weekday in the plan. day_number is 1=Monday
+        through 7=Sunday and comes from the day row the coach tapped in the weekly
+        overview (not auto-assigned). Multiple workouts per day are allowed (e.g.
+        morning cardio + evening strength). Frontend pattern - show inline name
+        input in the empty day row, POST on submit, append returned workout to
+        that day's section.
       operationId: createPlannedWorkout
       security:
         - bearerAuth: []
@@ -2989,7 +3014,10 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update planned workout
-      description: Updates workout-level metadata like name, notes, and day number from frontend editors. Frontend pattern - optimistic edit and refetch plan detail when day changes affect ordering.
+      description: >-
+        Updates workout metadata. Changing day_number moves the workout to a
+        different weekday in the weekly overview. Frontend pattern - optimistic
+        edit and refetch plan detail when day changes affect ordering.
       operationId: updatePlannedWorkout
       security:
         - bearerAuth: []
@@ -3035,6 +3063,50 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/coach/planned_workouts/{id}/duplicate:
+    post:
+      summary: Duplicate planned workout
+      description: |
+        Deep-copies a workout (with all elements and planned sets) to a target weekday.
+        Used by the weekly overview when the coach taps "Copy" on a workout and selects
+        a destination day. The new workout belongs to the same training plan.
+        Frontend pattern: show a day picker with available days, POST on selection,
+        append the returned workout to the plan's workout list.
+      operationId: duplicatePlannedWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [day_number]
+              properties:
+                day_number:
+                  type: integer
+                  minimum: 1
+                  maximum: 7
+                  description: Target weekday for the copy (1=Monday..7=Sunday).
+            examples:
+              default:
+                value:
+                  day_number: 4
+      responses:
+        "201":
+          description: Workout duplicated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannedWorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/workout_elements:
     post:
       summary: Create workout element
@@ -5416,6 +5488,13 @@ components:
         end_date:
           type: string
           format: date
+        rest_days:
+          type: array
+          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Each value must be 1-7, no duplicates.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
         original_template_id:
           type: string
     TrainingPlanUpdateRequest:
@@ -5436,6 +5515,13 @@ components:
         end_date:
           type: string
           format: date
+        rest_days:
+          type: array
+          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Send the full array on every update (replaces previous value).
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
         original_template_id:
           type: string
     TrainingPlanAssignRequest:
@@ -5465,6 +5551,7 @@ components:
           status: active
           start_date: null
           end_date: null
+          rest_days: []
           client_id: null
           author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
           business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
@@ -5516,6 +5603,13 @@ components:
           type: string
           format: date
           nullable: true
+        rest_days:
+          type: array
+          description: Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days by the coach.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
         client_id:
           type: string
           nullable: true
@@ -5557,8 +5651,8 @@ components:
       type: object
       required: [name, day_number]
       example:
-        name: Day 1 - Lower
-        notes: Main squat session.
+        name: Push Day
+        notes: Main bench session.
         day_number: 1
       properties:
         name:
@@ -5569,6 +5663,7 @@ components:
           type: integer
           minimum: 1
           maximum: 7
+          description: Weekday number (1=Monday..7=Sunday). Determined by which day row the coach tapped in the weekly overview.
     PlannedWorkoutUpdateRequest:
       type: object
       properties:
@@ -5578,6 +5673,8 @@ components:
           type: string
         day_number:
           type: integer
+          minimum: 1
+          maximum: 7
     PlannedWorkoutResponse:
       type: object
       required: [data]
@@ -6879,6 +6976,13 @@ components:
           type: string
           format: date
           nullable: true
+        rest_days:
+          type: array
+          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Used by client app to distinguish rest days from empty days.
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
         planned_workouts:
           type: array
           items:

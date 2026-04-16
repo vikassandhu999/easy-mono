@@ -1,397 +1,339 @@
-# Frontend Implementation Guide: Client Management MVP
+# Frontend Implementation Guide — Coach Client Management (v2)
 
-**Date:** 2026-04-11
-**Backend status:** Complete and tested (317 tests pass)
-**Implements:** UX Spec "Client Management (MVP)" dated 2026-04-06
+Covers the coach-side client management surface: inviting, listing, viewing, editing, revoking, and resending invitations. Updated for the revised onboarding spec.
+
+For the client-side acceptance flow (what happens when a client taps an invitation link), see `docs/client-auth-flow.md`.
+
+All endpoints are defined in `docs/api_contract.yaml`. This doc is a frontend-focused summary of the relevant ones.
 
 ---
 
-## Client Type
+## Client type
 
-```typescript
-export type ClientStatus = 'active' | 'pending' | 'inactive' | 'archived';
+```ts
+type ClientStatus = "active" | "pending" | "inactive" | "archived";
 
-export type Client = {
+type Client = {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
   email: string | null;
+  first_name: string | null;  // User-authoritative when linked; see below
+  last_name: string | null;   // User-authoritative when linked; see below
   phone: string | null;
   notes: string | null;
   status: ClientStatus;
-  invite_url: string | null;  // present only for pending clients with invitation token
+
+  // Invitation-widget fields (pending clients only; null otherwise)
+  invite_url: string | null;
+  invitation_sent_at: string | null;    // ISO datetime
+  invitation_expires_at: string | null; // invitation_sent_at + 30 days
+
   inserted_at: string;
   updated_at: string;
 };
 ```
 
-### Fields NOT in the response
+### Name authority
 
-These fields were removed from the backend. Do not reference them in frontend code:
+Once a Client is linked to a User (i.e. any status except `pending`), the `first_name` / `last_name` fields in this response are the **User's** name, not the coach-set override. Fallbacks:
 
-`instagram_handle`, `program_name`, `program_start`, `program_end`,
-`payment_status`, `payment_amount`, `payment_currency`, `payment_notes`,
-`intake_answers`, `offer`, `source`, `status_override`
+1. If `user.first_name` is non-blank → that wins
+2. Else if the coach set a Client-level name → that
+3. Else `null`
 
-### Status is manual
+For pending clients, no User is linked, so you always see the coach-set values.
 
-There is no auto-computation. The `status` field is exactly what is stored in the database. The coach sets it via the edit page. No `expiring` or `expired` statuses exist.
+Practical implication: if a coach invites "Vikas K. (Pune gym)" as first_name, then the client accepts with a User whose first_name is already "Vikas Kumar" from a previous coach relationship, the GET response will show `first_name: "Vikas Kumar"`. This is correct — the User's global identity wins.
+
+### Removed fields
+
+Do not reference these — they were removed from the backend some time ago:
+
+`instagram_handle`, `program_name`, `program_start`, `program_end`, `payment_status`, `payment_amount`, `payment_currency`, `payment_notes`, `intake_answers`, `offer`, `source`, `status_override`.
 
 ---
 
-## API Endpoints
+## Status lifecycle
+
+Status transitions are now strictly validated server-side per the revised spec's invariants table:
+
+```
+pending ─(accept-invite)→ active        ← only path out of pending
+                                           (client-driven, not coach-driven)
+
+active  ──→ inactive   ──→ active
+        └─→ archived   ──→ active
+inactive ──→ active
+         └─→ archived
+archived ──→ active
+         └─→ inactive
+
+*nothing* → pending    ← once a Client has been linked to a User,
+                         it can never return to pending
+```
+
+### What this means for the UI
+
+**Pending client detail page:**
+- Do NOT render a status dropdown. Status is locked at "Pending" until acceptance.
+- Render the "Share invitation" widget (see below) as the primary action.
+- All other fields (name, email, phone, notes, plan assignment) ARE editable — coaches prep plans/notes ahead of time.
+
+**Active / inactive / archived detail page:**
+- Status dropdown has exactly three options: Active, Inactive, Archived.
+- Never include "Pending" in the dropdown.
+- Do not render the invitation widget.
+
+**Attempting a forbidden transition** via PATCH returns HTTP 422 with `error_detail.fields.status` set to a human-readable reason (see error table below). The frontend should treat these as form validation errors on the status field.
+
+---
+
+## Invitation widget (pending clients only)
+
+Per spec, the invitation widget is the first section of a pending client's detail page, above contact info.
+
+Render it using the Client JSON fields:
+
+```tsx
+<InvitationWidget
+  inviteUrl={client.invite_url}
+  sentAt={client.invitation_sent_at}
+  expiresAt={client.invitation_expires_at}
+  phone={client.phone}
+  name={client.first_name}
+  onResend={() => resendInvite(client.id)}
+  onRevoke={() => revokeInvite(client.id)}
+/>
+```
+
+**Widget elements (per spec):**
+
+- **Copy-able URL**: `client.invite_url` truncated visually, `navigator.clipboard.writeText(client.invite_url)` on Copy
+- **Share on WhatsApp** (primary action): open `https://wa.me/{phone_digits}?text={encoded_message}` if `client.phone` is present, else fall back to WhatsApp's generic share sheet. Pre-filled message:
+  > "Hi {first_name}, I've set up your coaching profile. Tap this link to get started: {invite_url}"
+- **Resend email** (secondary, disabled if `client.email` is null): calls `POST /v1/coach/clients/{id}/resend-invite`. Server bumps `invitation_sent_at` to now, so `invitation_expires_at` resets. Show the updated "Invited X ago" from the refreshed response.
+- **Timestamp + expiry copy**: `"Invited {relative(invitation_sent_at)}. Invitation expires in {days_until(invitation_expires_at)} days."`
+- **Revoke** (destructive, tucked away): calls `DELETE /v1/coach/clients/{id}`. Confirmation dialog: "Revoke this invitation? {first_name}'s link will no longer work. You can re-invite them later."
+
+Once the client accepts (status flips to active), the next fetch of the client detail returns non-null User data and the widget fields become null. Hide the widget.
+
+---
+
+## Endpoints
 
 ### POST /v1/coach/clients/invite
 
-Creates a client with status `pending`.
+Create a new pending client.
 
-**Auth:** Bearer token (coach)
+**Auth:** coach bearer token.
 
-**Request:**
 ```json
+// Request
 {
-  "email": "vikas@email.com",       // optional (nullable)
-  "first_name": "Vikas",            // optional
-  "last_name": "Sandhu",            // optional
-  "phone": "+91 98765 43210",       // optional
+  "email": "vikas@email.com",      // optional
+  "first_name": "Vikas",           // optional
+  "last_name": "Sandhu",           // optional
+  "phone": "+91 98765 43210",      // optional
   "notes": "Interested in coaching" // optional
 }
 ```
 
-At least one of `email` or `phone` is required. Returns 422 if both are missing.
+At least one of `email` or `phone` is required.
 
-If `email` is provided, an invitation email is sent automatically.
-If only `phone`, no email is sent -- the coach shares the `invite_url` manually.
+**Success (201):** `{ "data": Client }` with `status: "pending"` and all three invitation fields populated (`invite_url`, `invitation_sent_at`, `invitation_expires_at`).
 
-**Response 201:**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "email": "vikas@email.com",
-    "first_name": "Vikas",
-    "last_name": "Sandhu",
-    "phone": "+91 98765 43210",
-    "notes": "Interested in coaching",
-    "status": "pending",
-    "invite_url": "https://app.example.com/invite/abc123...",
-    "inserted_at": "2026-04-11T10:00:00Z",
-    "updated_at": "2026-04-11T10:00:00Z"
-  }
-}
-```
+**Error cases (422):**
 
-**Frontend pattern:** On success, show the `invite_url` for the coach to copy/share. Add the new client to the local list.
+| `error_detail.fields` | Meaning | Suggested copy |
+|-----------------------|---------|----------------|
+| `{ email: ["you can't invite yourself as a client"] }` | Coach used their own email | "You can't invite yourself." |
+| `{ email: ["is already an active client of another business"] }` | The invited email belongs to a User who is active elsewhere | "This email is already an active client of another business. That client must be archived before you can invite them here." |
+| `{ base: ["at least one of email or phone is required"] }` | Missing both contact channels | "Provide at least an email or a phone number." |
+| Other Ecto-style errors | Various | Display per-field as standard form validation |
+
+Frontend pattern: on 201, optimistically add the returned Client to the local list and open its detail page with the invitation widget shown.
 
 ---
 
 ### GET /v1/coach/clients
 
-Paginated client list with status filter and summary counts.
+Paginated list with status filter and summary counts.
 
-**Auth:** Bearer token (coach)
+| Query param | Default | Notes |
+|-------------|---------|-------|
+| `offset`    | 0       | pagination |
+| `limit`     | 10      | page size |
+| `search`    | `""`    | substring match on first_name, last_name, email, phone |
+| `status`    | (none)  | filter: `active` \| `pending` \| `inactive` \| `archived` |
 
-**Query parameters:**
-
-| Param    | Type    | Default | Notes |
-|----------|---------|---------|-------|
-| `offset` | integer | 0       | Pagination offset |
-| `limit`  | integer | 10      | Page size |
-| `search` | string  | ""      | Searches first_name, last_name, email, phone |
-| `status` | string  | --      | One of: `active`, `pending`, `inactive`, `archived`. Omit for all. |
-
-**Response 200:**
+**Response (200):**
 ```json
 {
   "data": [Client, ...],
   "count": 42,
-  "summary": {
-    "active": 30,
-    "pending": 5,
-    "inactive": 4,
-    "archived": 3
-  }
+  "summary": { "active": 30, "pending": 5, "inactive": 4, "archived": 3 }
 }
 ```
 
-`count` is the total matching the current filters (for pagination).
-`summary` is always computed from ALL business clients regardless of filters (for tab badge numbers).
-
-**Frontend pattern:** Each tab (All/Active/Pending/Inactive/Archived) sends its `status` filter. Use `summary` for badge counts on all tabs. The `count` drives pagination for the current tab.
+- `count` = number of rows matching current filters (drives pagination)
+- `summary` = counts across ALL business clients, unfiltered (drives tab badges)
 
 ---
 
 ### GET /v1/coach/clients/:id
 
-Single client with full details.
+Single client with preloaded user/business/creator. Returns `{ "data": Client }` or 404.
 
-**Auth:** Bearer token (coach)
-
-**Response 200:**
-```json
-{
-  "data": Client
-}
-```
-
-Returns 404 if the client doesn't exist or belongs to a different business.
-
-**Frontend pattern:** Cache by id. Refetch after mutations (update, status change).
+The `first_name`/`last_name` fields follow the User-authoritative rule (see above). For pending clients, `invite_url` / `invitation_sent_at` / `invitation_expires_at` are populated; for any other status they are null.
 
 ---
 
 ### PATCH /v1/coach/clients/:id
 
-Updates client fields. All fields are optional -- only send what changed.
+Update contact fields and/or transition status.
 
-**Auth:** Bearer token (coach)
-
-**Request:**
 ```json
+// Body: all fields optional
 {
   "first_name": "Vikas",
   "last_name": "Sandhu",
   "phone": "+91 98765 43210",
   "email": "vikas@email.com",
-  "notes": "Started strength program",
-  "status": "active"
+  "notes": "Started coaching",
+  "status": "archived"
 }
 ```
 
-**Status validation:** Must be one of `active`, `pending`, `inactive`, `archived`. Any other value (including `expired`, `expiring`) returns 422.
+**Status constraints** (per the invariants table):
 
-**Response 200:** `{ "data": Client }` with the updated fields.
+| If current status is | Allowed new `status` values |
+|----------------------|-----------------------------|
+| `active`             | `inactive`, `archived` |
+| `inactive`           | `active`, `archived` |
+| `archived`           | `active`, `inactive` |
+| `pending`            | (none — no manual status change; use accept-invite flow or revoke) |
 
-**Response 422 examples:**
-```json
-// Invalid status
-{ "errors": { "fields": { "status": ["is invalid"] } } }
-```
+Sending `status: "pending"` from any state returns 422.
 
-**Frontend pattern:** The edit page sends all form fields. For inline notes editing (CM-6), send only `{ "notes": "..." }`. For status changes from a dropdown (CM-9), send only `{ "status": "archived" }`.
+**Success (200):** `{ "data": Client }` with the updated fields.
+
+**Error cases (422):**
+
+| `error_detail.fields.status[0]` | Meaning |
+|---------------------------------|---------|
+| `"cannot return to pending"` | Tried to set status to `pending` |
+| `"pending clients can only become active by accepting the invitation"` | Tried to change a pending client's status |
+| `"invalid status transition"` | Transition not in the allowed matrix (e.g. if a new rule gets added) |
+| `"is invalid"` | Unknown value (e.g. `"expired"`, `"foo"`) |
+
+Contact-field errors use standard Ecto changeset shape.
+
+Frontend pattern: optimistic patch on local form state; reconcile with the response's `data` on 200. On 422, surface the field-level message in the form.
+
+---
+
+### DELETE /v1/coach/clients/:id   (revoke invitation)
+
+Hard-deletes a pending client. Only valid when `status == "pending"`.
+
+**Auth:** coach bearer token.
+
+**No body.**
+
+**Success (204):** empty response. The client row is gone, along with any personal training/nutrition plans the coach had assigned. Templates (`client_id IS NULL` plans) are preserved.
+
+**Error cases:**
+
+| HTTP | `error_code` / detail | Meaning |
+|------|-----------------------|---------|
+| 404  | `not_found` | Client doesn't exist or belongs to another business |
+| 422  | `error_detail.status[0] = "only pending invitations can be revoked; archive the client instead"` | Client is not pending — use PATCH with `status: "archived"` instead |
+
+Frontend pattern: confirmation dialog → call endpoint → on 204, remove from local list and navigate back to the client list. The client's invitation URL becomes invalid immediately — anyone tapping it will see the `invalid` state from `GET /v1/auth/invitations/:token`.
 
 ---
 
 ### POST /v1/coach/clients/:id/resend-invite
 
-Resends the invitation email for a pending client.
+Re-send the invitation email for a pending client with an email address.
 
-**Auth:** Bearer token (coach)
+**Auth:** coach bearer token. **No body.**
 
-**Request body:** None required.
+**Success (200):** `{ "data": Client }` with `invitation_sent_at` bumped to now and `invitation_expires_at` reset.
 
-**Constraints:**
-- Client must have `status: "pending"` -- returns 422 otherwise
-- Client must have an email address -- returns 422 if email is null/empty
+**Error cases (422):**
 
-**Response 200:** `{ "data": Client }`
+| `error_detail` | Meaning |
+|----------------|---------|
+| `{ status: ["client is not in pending status"] }` | Can't resend for non-pending clients |
+| `{ email: ["client has no email address"] }` | Client was invited phone-only; coach must use the WhatsApp-share flow instead |
 
-**Frontend pattern:** Show loading state on the button. Display success toast on 200. Show error message from 422 response.
-
----
-
-## Plan Endpoints (for CM-7)
-
-Plans are fetched and assigned via separate endpoints. The client detail page needs these for the plans section.
-
-### Fetching plans assigned to a client
-
-**Nutrition plans:**
-```
-GET /v1/coach/clients/{clientId}/nutrition_plans
-```
-
-**Training plans:**
-```
-GET /v1/coach/clients/{clientId}/training_plans
-```
-
-Client-scoped plan lists use dedicated endpoints with the client ID in the URL path. The library endpoints (`GET /v1/coach/nutrition_plans`, `GET /v1/coach/training_plans`) return only templates.
-
-**Nutrition plan list item shape:**
-```json
-{
-  "id": "uuid",
-  "name": "Non Veg Cutting",
-  "description": "...",
-  "tags": ["cutting"],
-  "macros_goal": { "protein": 180, "carbs": 200, "fats": 60, "calories": 2060 },
-  "status": "active",
-  "start_date": "2026-04-01",
-  "end_date": "2026-06-01",
-  "client_id": "uuid",
-  "client": { "id": "uuid", "first_name": "Jane", "last_name": "Doe" },
-  "source_template_id": "uuid",
-  "inserted_at": "...",
-  "updated_at": "..."
-}
-```
-
-A plan is a template when `client_id` is `null`; otherwise it is a personal plan assigned to that client.
-
-**Training plan list item shape:**
-```json
-{
-  "id": "uuid",
-  "name": "Push Pull Legs",
-  "description": "...",
-  "status": "active",
-  "start_date": "2026-04-01",
-  "end_date": "2026-06-01",
-  "client_id": "uuid",
-  "client": { "id": "uuid", "first_name": "Jane", "last_name": "Doe" },
-  "original_template_id": "uuid",
-  "planned_workouts": [{ ... }],
-  "inserted_at": "...",
-  "updated_at": "..."
-}
-```
-
-For the plan card in CM-7, you need:
-- Nutrition: `name`, `status`, count of meals (not in list response -- show tag count or omit)
-- Training: `name`, `status`, `planned_workouts.length` for workout count
-
-### Fetching available plans for the picker
-
-To populate the NutritionPlanPicker and TrainingPlanPicker dropdowns, fetch template plans. Both library endpoints now return only templates by default:
-
-**Nutrition templates:**
-```
-GET /v1/coach/nutrition_plans?status=active
-```
-
-**Training templates:**
-```
-GET /v1/coach/training_plans?status=active
-```
-
-Both return paginated results. The training plan index also supports a `search` parameter for filtering by name.
-
-### Assigning a plan to a client
-
-**Assign nutrition plan:**
-```
-POST /v1/coach/nutrition_plans/:planId/assign
-Content-Type: application/json
-
-{ "client_id": "uuid" }
-```
-
-**Assign training plan:**
-```
-POST /v1/coach/training_plans/:planId/assign
-Content-Type: application/json
-
-{
-  "client_id": "uuid",
-  "start_date": "2026-04-01",  // optional
-  "end_date": "2026-06-01"     // optional
-}
-```
-
-Both return **201** with the newly created plan (a clone of the template, assigned to the client). The original template is not modified.
-
-Returns 404 if the plan or client doesn't exist / doesn't belong to the business.
-
-**Frontend pattern for CM-7:**
-1. On client detail load, fetch plans via `GET /v1/coach/clients/{id}/nutrition_plans` and `GET /v1/coach/clients/{id}/training_plans`
-2. When coach clicks "+ Nutrition plan", show picker with templates from `GET /v1/coach/nutrition_plans?status=active`
-3. On select, POST to `/assign` with the client_id
-4. Refetch the client's plans to update the list
+Frontend pattern: show a loading spinner on the Resend button; on success, show toast "Invitation email sent to {client.email}" and update the widget's sent-at / expires-at from the response.
 
 ---
 
-## Status Lifecycle
+## Status badges (summary + per-client chip)
 
-```
-[Coach invites client] --> pending
-[Coach changes status via edit page] --> active / inactive / archived
-[Client accepts invite] --> active (automatic)
-```
+Map the four statuses to UI chips:
 
-No automatic transitions. The coach controls status via the edit page dropdown (CM-9).
+| Status | Typical color |
+|--------|---------------|
+| `active`   | green |
+| `pending`  | amber / neutral |
+| `inactive` | grey |
+| `archived` | muted grey |
 
----
-
-## Implementation Mapping (Spec Items to API)
-
-| Spec Item | API Dependency | Notes |
-|-----------|---------------|-------|
-| CM-1: Client card subtitle | None | Use `status` + `inserted_at` from existing list response |
-| CM-2: Status colors fix | None | Map the 4 statuses to chip colors |
-| CM-3: Fix filter tabs | `GET /v1/coach/clients?status=X` | Use `summary` for badge counts |
-| CM-4: Hero card | None | Use `phone` for WhatsApp/Call buttons |
-| CM-5: Simplified top nav | None | Pure UI change |
-| CM-6: Inline notes | `PATCH /v1/coach/clients/:id` | Send `{ "notes": "..." }` |
-| CM-7: Plans section | See Plan Endpoints above | Fetch + assign via plan endpoints |
-| CM-8: Section reorder | None | Pure UI change |
-| CM-9: Edit page status dropdown | `PATCH /v1/coach/clients/:id` | Send `{ "status": "active" }` |
-
-### Items with zero backend dependency
-
-CM-1, CM-2, CM-3, CM-4, CM-5, CM-6, CM-8 can all ship using the existing API responses. They are pure frontend changes.
-
-### Items with existing backend support
-
-CM-6 and CM-9 use `PATCH /v1/coach/clients/:id` which already supports `notes` and `status` fields.
-
-CM-7 uses the existing plan list/assign endpoints documented above.
+The `summary` counts from `GET /v1/coach/clients` drive dashboard badge numbers and the client-list tab badges. No "expiring" / "expired" states exist.
 
 ---
 
-## Dashboard Impact
+## Error response shape (universal)
 
-The dashboard stat strip and "needs attention" section use the client list endpoint.
+Every error response across all endpoints:
 
-**Stat strip:** Use `summary` from `GET /v1/coach/clients`:
-```
-Active: summary.active
-Pending: summary.pending
-Inactive: summary.inactive
-Archived: summary.archived
-```
-
-No "expiring" or "expired" cards. All cards have equal visual weight (no amber accent).
-
-**Needs attention section:** Fetch pending clients:
-```
-GET /v1/coach/clients?status=pending&limit=5
+```ts
+type ErrorResponse = {
+  error_code: string;
+  error_message: string;
+  error_detail?:
+    | { fields: Record<string, string[]> }  // Ecto changeset errors
+    | Record<string, string[]>              // hand-built validation errors
+};
 ```
 
-Subtitle for each card: `Invited * {relative_time(inserted_at)}`
+**Switch on `error_code`, not on `error_message`.** The message is subject to copy changes; the code is part of the contract.
 
-If 0 results, show empty state: "No pending clients. All clients are active or archived."
+**Two 422 detail shapes exist side-by-side:**
+
+- Ecto changeset errors (e.g. most PATCH failures): `error_detail.fields.{field}: [msgs]`
+- Hand-built validation errors (self-invite, already-active, revoke-non-pending): `error_detail.{field}: [msgs]`
+
+Your error parser should handle both:
+
+```ts
+function getFieldErrors(err: ErrorResponse): Record<string, string[]> {
+  if (!err.error_detail) return {};
+  if ("fields" in err.error_detail) return err.error_detail.fields;
+  return err.error_detail as Record<string, string[]>;
+}
+```
 
 ---
 
-## Error Response Format
+## Changes from the previous version of this doc
 
-All 422 errors follow this shape:
+Reference — if you're updating existing frontend code:
 
-```json
-{
-  "errors": {
-    "fields": {
-      "field_name": ["error message"]
-    }
-  }
-}
-```
+1. **`pending` is no longer a valid value** in the PATCH status enum. Remove it from the dropdown options.
+2. **New `invitation_sent_at` and `invitation_expires_at` fields** on Client. Use them for the widget's "Invited X ago / expires in Y days" copy.
+3. **New DELETE endpoint** for revoking pending invitations. Wire up the widget's Revoke button.
+4. **New 422 error codes on invite**: `you can't invite yourself` and `is already an active client of another business`. Surface these as inline form errors.
+5. **Name fields reflect User authority** once a client is linked. If your UI had a "coach can rename a client" feature, understand that the coach-set override is now a fallback, not authoritative.
+6. **Error response shape** is `{error_code, error_message, error_detail}`, not `{errors: {fields: ...}}` (the previous version of this doc was incorrect about this).
 
-Or for non-field errors:
-```json
-{
-  "errors": {
-    "status": ["client is not in pending status"]
-  }
-}
-```
+---
 
-404 errors:
-```json
-{
-  "errors": {
-    "detail": "Client not found"
-  }
-}
-```
+## What's NOT in this doc
+
+- Client-side acceptance flow — see `docs/client-auth-flow.md`
+- Consolidated v2 handoff with migration checklist — see `docs/frontend-spec-v2-handoff.md`
+- Plan assignment endpoints — unchanged, see the plan docs and `api_contract.yaml`

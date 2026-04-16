@@ -21,6 +21,7 @@ import {
 } from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
+import InvitationWidget from '@/clients/components/invitation-widget';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
 
@@ -439,6 +440,26 @@ export default function ClientDetail() {
             </div>
           ) : null}
         </div>
+
+        {/*
+          ── Invitation widget (pending only) ────────────
+          Per spec, this is the FIRST section after the hero for pending
+          clients — getting them to accept is the coach's most urgent task
+          here. It disappears automatically once the status flips to active.
+
+          On revoke the client row is hard-deleted, so we navigate back to
+          the list (the widget's onRevoked callback keeps navigation here
+          rather than inside the component — see invitation-widget.tsx).
+        */}
+        {client.status === 'pending' ? (
+          <section className="py-4">
+            <Separator className="mb-4" />
+            <InvitationWidget
+              client={client}
+              onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+            />
+          </section>
+        ) : null}
 
         {/* ── Plans (nutrition + training) ────────────── */}
         <ClientPlans clientId={client.id} />

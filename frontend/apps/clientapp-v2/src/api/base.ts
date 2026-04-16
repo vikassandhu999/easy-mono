@@ -5,8 +5,15 @@ import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setToke
 /**
  * Auth-only paths that should never be preserved as a post-login redirect.
  * Prevents login → verify-login loop after expired session.
+ * Invite paths use dynamic segments, so they're matched by prefix below.
  */
-const AUTH_PATHS = new Set(['/login', '/verify-email', '/verify-login']);
+const AUTH_PATHS = new Set(['/login', '/verify-login']);
+const AUTH_PATH_PREFIXES = ['/invite/'];
+
+function isAuthPath(pathname: string): boolean {
+  if (AUTH_PATHS.has(pathname)) return true;
+  return AUTH_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 /**
  * Redirect to /login with the session-expired flag and the current path
@@ -18,7 +25,7 @@ function redirectToLoginExpired() {
 
   const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const params = new URLSearchParams({session_expired: 'true'});
-  if (!AUTH_PATHS.has(window.location.pathname)) {
+  if (!isAuthPath(window.location.pathname)) {
     params.set('redirect_to', currentPath);
   }
   window.location.assign(`/login?${params.toString()}`);

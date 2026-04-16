@@ -7,17 +7,16 @@ import {z} from 'zod';
 
 import PageLayout from '@/@components/page-layout';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {type ClientStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
+import {allowedStatusesFor, type AllowedUpdateStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 
 // ── Schema ───────────────────────────────────────────────────
 
-const STATUS_OPTIONS: {label: string; value: ClientStatus}[] = [
-  {label: 'Active', value: 'active'},
-  {label: 'Pending', value: 'pending'},
-  {label: 'Inactive', value: 'inactive'},
-  {label: 'Archived', value: 'archived'},
-];
+const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
+  active: 'Active',
+  inactive: 'Inactive',
+  archived: 'Archived',
+};
 
 const schema = z.object({
   email: z.string().email('Invalid email').or(z.literal('')).optional(),
@@ -25,10 +24,13 @@ const schema = z.object({
   last_name: z.string().optional(),
   notes: z.string().optional(),
   phone: z.string().optional(),
-  status: z.enum(['active', 'pending', 'inactive', 'archived']).optional(),
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
 });
 
 type EditClientFormValues = z.infer<typeof schema>;
+
+/** Schema fields — see applyFormErrors docstring for why this matters. */
+const KNOWN_FIELDS = ['email', 'first_name', 'last_name', 'notes', 'phone', 'status'] as const;
 
 // ── Component ────────────────────────────────────────────────
 
@@ -56,7 +58,9 @@ export default function EditClient() {
           last_name: client.last_name ?? '',
           notes: client.notes ?? '',
           phone: client.phone ?? '',
-          status: client.status,
+          // Pending is not a valid PATCH value — leave the status field
+          // undefined for pending clients. The UI hides the dropdown anyway.
+          status: client.status === 'pending' ? undefined : client.status,
         }
       : undefined,
   });
@@ -86,7 +90,7 @@ export default function EditClient() {
       }).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update client.', setError);
+      applyFormErrors(err, 'Failed to update client.', setError, KNOWN_FIELDS);
     }
   };
 
@@ -153,37 +157,48 @@ export default function EditClient() {
           </div>
         </div>
 
-        {/* ── Status ──────────────────────────────────────── */}
-        <Controller
-          control={control}
-          name="status"
-          render={({field}) => (
-            <Select
-              onSelectionChange={(key) => field.onChange(key)}
-              selectedKey={field.value || null}
-            >
-              <Label>Status</Label>
-              <Select.Trigger>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <ListBox.Item
-                      id={opt.value}
-                      key={opt.value}
-                      textValue={opt.label}
-                    >
-                      {opt.label}
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  ))}
-                </ListBox>
-              </Select.Popover>
-            </Select>
-          )}
-        />
+        {/*
+          ── Status ──────────────────────────────────────────
+          Per v2 spec: no dropdown for pending clients — the status is
+          locked at Pending until the client accepts the invitation (or the
+          coach revokes via the invitation widget). For all other statuses,
+          show only the three valid transitions from allowedStatusesFor().
+        */}
+        {client.status === 'pending' ? null : (
+          <Controller
+            control={control}
+            name="status"
+            render={({field}) => {
+              const statusOptions = allowedStatusesFor(client.status);
+              return (
+                <Select
+                  onSelectionChange={(key) => field.onChange(key)}
+                  selectedKey={field.value || null}
+                >
+                  <Label>Status</Label>
+                  <Select.Trigger>
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      {statusOptions.map((value) => (
+                        <ListBox.Item
+                          id={value}
+                          key={value}
+                          textValue={STATUS_LABELS[value]}
+                        >
+                          {STATUS_LABELS[value]}
+                          <ListBox.ItemIndicator />
+                        </ListBox.Item>
+                      ))}
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              );
+            }}
+          />
+        )}
 
         {/* ── Notes ───────────────────────────────────────── */}
         <div className="flex flex-col gap-1.5">

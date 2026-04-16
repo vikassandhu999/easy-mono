@@ -26,6 +26,16 @@ const schema = z
 type InviteClientFormValues = z.infer<typeof schema>;
 
 /**
+ * Schema fields react-hook-form can actually highlight. Backend field keys
+ * NOT in this list (e.g. `first_name`, `last_name`, `base`) get hoisted into
+ * the form-root message by applyFormErrors — without this, the parser would
+ * silently `setError('first_name', ...)` on a form that has no `first_name`
+ * registered and the user would see "Please review highlighted fields" with
+ * nothing highlighted.
+ */
+const KNOWN_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
+
+/**
  * Split a single name string into first_name and last_name.
  * First word becomes first_name, the rest becomes last_name.
  */
@@ -179,7 +189,7 @@ export default function InviteClient() {
       }).unwrap();
       setInviteResult(result.data);
     } catch (err) {
-      applyFormErrors(err, 'Failed to invite client. Please try again.', setError);
+      applyFormErrors(err, 'Failed to invite client. Please try again.', setError, KNOWN_FIELDS);
     }
   };
 

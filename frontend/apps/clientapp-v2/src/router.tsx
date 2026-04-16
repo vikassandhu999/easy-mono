@@ -6,7 +6,7 @@ import {withAuth} from '@/@hoc/with-auth';
 import {withNotAuth} from '@/@hoc/with-not-auth';
 import AcceptInvite from '@/auth/accept-invite';
 import Login from '@/auth/login';
-import VerifyEmail from '@/auth/verify-email';
+import VerifyInviteOtp from '@/auth/verify-invite-otp';
 import VerifyLoginOtp from '@/auth/verify-login-otp';
 import SessionDetail from '@/history/session-detail';
 import WorkoutHistory from '@/history/workout-history';
@@ -28,7 +28,7 @@ const AppShellScreen = withAuth(AppShell);
 export const router = createBrowserRouter([
   // Public — invitation + auth
   {path: ROUTES.ACCEPT_INVITE, Component: AcceptInvite},
-  {path: ROUTES.VERIFY_EMAIL, Component: VerifyEmail},
+  {path: ROUTES.VERIFY_INVITE_OTP, Component: VerifyInviteOtp},
   {path: ROUTES.LOGIN, Component: LoginScreen},
   {path: ROUTES.VERIFY_LOGIN_OTP, Component: VerifyLoginOtp},
 

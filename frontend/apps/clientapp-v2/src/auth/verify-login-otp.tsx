@@ -1,4 +1,4 @@
-import {Button, InputOTP, Label, Link, REGEXP_ONLY_DIGITS, Spinner} from '@heroui/react';
+import {Button, InputOTP, Label, Link, REGEXP_ONLY_DIGITS, Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
@@ -10,10 +10,14 @@ import {setTokens} from '@/api/authStorage';
 import {applyFormErrors, getApiErrorCode} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
+const KNOWN_FIELDS = ['otp'] as const;
+
 const EMAIL_MASK_REGEX = /(.{2})(.*)(@.*)/;
 
+// Keys match backend `error_code` values verbatim — do NOT swap for
+// `otp_invalid` etc. (the contract's canonical code is `invalid_otp`).
 const LOGIN_ERROR_MESSAGES: Record<string, string> = {
-  otp_invalid: 'Invalid code, please try again.',
+  invalid_otp: 'Invalid code, please try again.',
   otp_expired: 'Code expired. Tap Resend to get a new one.',
   unauthorized: 'No active client account found.',
 };
@@ -78,15 +82,8 @@ export default function VerifyLoginOtp() {
       navigate(target, {replace: true});
     } catch (err) {
       const code = getApiErrorCode(err);
-
-      // Email not verified — redirect to verify-email flow
-      if (code === 'email_not_confirmed') {
-        navigate(ROUTES.VERIFY_EMAIL, {replace: true, state: {email: state.email}});
-        return;
-      }
-
       const fallback = LOGIN_ERROR_MESSAGES[code ?? ''] ?? 'Verification failed. Please try again.';
-      applyFormErrors(err, fallback, setError);
+      applyFormErrors(err, fallback, setError, KNOWN_FIELDS);
       reset({otp: ''});
     }
   };
@@ -94,8 +91,12 @@ export default function VerifyLoginOtp() {
   const handleResend = async () => {
     try {
       await sendOtp({email: state.email, type: 'authentication'}).unwrap();
-    } catch (err) {
-      applyFormErrors(err, 'Failed to resend code. Please try again.', setError);
+      toast.success('A new code is on its way.');
+    } catch {
+      // Resend failures go to toast, not the form root — otherwise they
+      // leak into the verify form's error state and confuse the user about
+      // whether their (still valid) OTP entry is the problem.
+      toast.danger('Failed to resend code. Please try again.');
     }
   };
 

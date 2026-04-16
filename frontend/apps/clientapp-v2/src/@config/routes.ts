@@ -2,7 +2,7 @@ export const ROUTES = {
   LOGIN: '/login',
   VERIFY_LOGIN_OTP: '/verify-login',
   ACCEPT_INVITE: '/invite/:token',
-  VERIFY_EMAIL: '/verify-email',
+  VERIFY_INVITE_OTP: '/invite/:token/verify',
   TRAINING: '/',
   NUTRITION: '/nutrition',
   NUTRITION_ADD_FOOD: '/nutrition/add-food',

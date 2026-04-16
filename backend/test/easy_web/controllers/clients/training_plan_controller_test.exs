@@ -118,6 +118,7 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["name"] == plan.name
+      assert data["rest_days"] == []
 
       [workout_data] = data["planned_workouts"]
       assert workout_data["name"] == workout.name

@@ -19,6 +19,7 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
+      rest_days: plan.rest_days,
       planned_workouts: workouts_data(plan.planned_workouts),
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at

@@ -20,6 +20,7 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,
+      rest_days: plan.rest_days,
       client_id: plan.client_id,
       client: client_data(plan.client),
       author_id: plan.author_id,

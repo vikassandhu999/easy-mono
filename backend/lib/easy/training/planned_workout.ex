@@ -110,4 +110,58 @@ defmodule Easy.Training.PlannedWorkout do
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(workout), do: Repo.delete(workout)
+
+  @spec duplicate(t(), integer() | nil) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def duplicate(workout, day_number) do
+    workout = Repo.preload(workout, :workout_elements)
+
+    Repo.transaction(fn ->
+      attrs = %{name: workout.name, notes: workout.notes, day_number: day_number}
+
+      new_workout =
+        case insert_changeset(workout.training_plan_id, workout.business_id, attrs)
+             |> Repo.insert() do
+          {:ok, w} -> w
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      Enum.each(workout.workout_elements, fn element ->
+        element_attrs = %{
+          position: element.position,
+          superset_group_id: element.superset_group_id,
+          notes: element.notes,
+          exercise_id: element.exercise_id,
+          planned_sets: copy_sets(element.planned_sets)
+        }
+
+        case WorkoutElement.insert_changeset(new_workout.id, workout.business_id, element_attrs)
+             |> Repo.insert() do
+          {:ok, _} -> :ok
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+      Repo.preload(new_workout, workout_elements: WorkoutElement.with_exercise())
+    end)
+  end
+
+  defp copy_sets(sets) when is_list(sets) do
+    Enum.map(sets, fn set ->
+      %{
+        target_reps: set.target_reps,
+        load_value: set.load_value,
+        load_unit: set.load_unit,
+        intensity_target: set.intensity_target,
+        tempo: set.tempo,
+        rest_seconds: set.rest_seconds,
+        duration_seconds: set.duration_seconds,
+        distance_value: set.distance_value,
+        distance_unit: set.distance_unit,
+        set_type: set.set_type,
+        notes: set.notes
+      }
+    end)
+  end
+
+  defp copy_sets(_), do: []
 end

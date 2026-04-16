@@ -125,6 +125,7 @@ defmodule EasyWeb.Router do
     get "/planned_workouts/:id", PlannedWorkoutController, :show
     patch "/planned_workouts/:id", PlannedWorkoutController, :update
     delete "/planned_workouts/:id", PlannedWorkoutController, :delete
+    post "/planned_workouts/:id/duplicate", PlannedWorkoutController, :duplicate
 
     post "/workout_elements", WorkoutElementController, :create
     get "/workout_elements/:id", WorkoutElementController, :show

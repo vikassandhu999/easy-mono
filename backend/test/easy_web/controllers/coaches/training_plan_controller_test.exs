@@ -52,6 +52,15 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == plan.id
       assert data["client"] == nil
+      assert data["rest_days"] == []
+    end
+
+    test "returns rest_days", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business, rest_days: [6, 7])
+
+      conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["rest_days"] == [6, 7]
     end
 
     test "shows personal plan with client preloaded", %{
@@ -87,6 +96,28 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["name"] == "Updated TP"
     end
+
+    test "sets rest_days", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [6, 7]})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["rest_days"] == [6, 7]
+    end
+
+    test "rejects invalid rest_days values", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [0, 8]})
+      assert json_response(conn, 422)
+    end
+
+    test "rejects duplicate rest_days", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [1, 1]})
+      assert json_response(conn, 422)
+    end
   end
 
   describe "POST /v1/coach/training_plans/:id/assign" do
@@ -105,6 +136,21 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["client_id"] == client.id
       assert data["original_template_id"] == plan.id
     end
+
+    test "copies rest_days on assign", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business, rest_days: [6, 7])
+      client = insert(:client, creator: coach, business: business)
+
+      conn =
+        post(conn, "/v1/coach/training_plans/#{plan.id}/assign", %{
+          "client_id" => client.id,
+          "start_date" => "2026-01-01",
+          "end_date" => "2026-01-31"
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["rest_days"] == [6, 7]
+    end
   end
 
   describe "POST /v1/coach/training_plans/:id/duplicate" do
@@ -114,6 +160,20 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
       assert %{"data" => data} = json_response(conn, 201)
       assert data["name"] == "Upper A (Copy)"
+    end
+
+    test "copies rest_days on duplicate", %{conn: conn, coach: coach, business: business} do
+      plan =
+        insert(:training_plan,
+          author: coach,
+          business: business,
+          name: "PPL",
+          rest_days: [7]
+        )
+
+      conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["rest_days"] == [7]
     end
   end
 end

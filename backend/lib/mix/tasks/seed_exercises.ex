@@ -9,6 +9,6 @@ defmodule Mix.Tasks.SeedExercises do
 
     seeds_path = Path.join(:code.priv_dir(:easy), "repo/seeds/training_seeds.exs")
     Code.eval_file(seeds_path)
-    Easy.Repo.Seeds.Training.run_exercises()
+    apply(Easy.Repo.Seeds.Training, :run_exercises, [])
   end
 end

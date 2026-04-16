@@ -62,6 +62,23 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
     end
   end
 
+  @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def duplicate(conn, %{"id" => id} = params) do
+    %{business_id: business_id} = conn.assigns.claims
+    day_number = parse_integer(params, "day_number", nil)
+
+    with workout when not is_nil(workout) <-
+           PlannedWorkout |> PlannedWorkout.for_business(business_id) |> Repo.get(id),
+         {:ok, duplicated} <- PlannedWorkout.duplicate(workout, day_number) do
+      conn
+      |> put_status(:created)
+      |> render(:show, workout: duplicated)
+    else
+      nil -> {:error, :not_found}
+      error -> error
+    end
+  end
+
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims

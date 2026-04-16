@@ -25,6 +25,7 @@ defmodule Easy.Training.TrainingPlan do
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :start_date, :date
     field :end_date, :date
+    field :rest_days, {:array, :integer}, default: []
 
     belongs_to :business, Orgs.Business
     belongs_to :author, Orgs.Coach
@@ -43,6 +44,7 @@ defmodule Easy.Training.TrainingPlan do
     :client_id,
     :start_date,
     :end_date,
+    :rest_days,
     :original_template_id
   ]
 
@@ -56,6 +58,7 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_date_range()
+    |> validate_rest_days()
     |> check_constraint(:start_date,
       name: :valid_date_range,
       message: "end date must be after start date"
@@ -77,6 +80,7 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_date_range()
+    |> validate_rest_days()
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:original_template_id)
   end
@@ -101,6 +105,21 @@ defmodule Easy.Training.TrainingPlan do
       true ->
         changeset
     end
+  end
+
+  defp validate_rest_days(changeset) do
+    validate_change(changeset, :rest_days, fn :rest_days, days ->
+      cond do
+        not Enum.all?(days, &(is_integer(&1) and &1 >= 1 and &1 <= 7)) ->
+          [rest_days: "must contain values between 1 and 7"]
+
+        length(days) != length(Enum.uniq(days)) ->
+          [rest_days: "must not contain duplicates"]
+
+        true ->
+          []
+      end
+    end)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -172,6 +191,7 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: copy_name,
         description: plan.description,
+        rest_days: plan.rest_days,
         original_template_id: plan.id
       }
 
@@ -195,6 +215,7 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: plan.name,
         description: plan.description,
+        rest_days: plan.rest_days,
         client_id: client_id,
         start_date: start_date,
         end_date: end_date,

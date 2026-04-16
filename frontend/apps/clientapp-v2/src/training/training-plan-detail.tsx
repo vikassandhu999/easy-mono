@@ -141,7 +141,7 @@ function WorkoutDaySection({workout}: {workout: ClientPlannedWorkout}) {
 
 export default function TrainingPlanDetail() {
   const {planId} = useParams<{planId: string}>();
-  const goBack = useGoBack(ROUTES.DASHBOARD);
+  const goBack = useGoBack(ROUTES.TRAINING);
   const {data, isError, isLoading} = useGetClientTrainingPlanQuery(planId!);
 
   if (isLoading) {

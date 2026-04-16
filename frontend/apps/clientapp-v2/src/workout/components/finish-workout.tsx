@@ -83,7 +83,7 @@ export default function FinishWorkout({
         id: sessionId,
       }).unwrap();
       clearWorkoutLocalState(sessionId);
-      navigate(ROUTES.DASHBOARD);
+      navigate(ROUTES.TRAINING);
     } catch {
       // Error handled by RTK Query
     }
@@ -93,7 +93,7 @@ export default function FinishWorkout({
     try {
       await discardSession(sessionId).unwrap();
       clearWorkoutLocalState(sessionId);
-      navigate(ROUTES.DASHBOARD);
+      navigate(ROUTES.TRAINING);
     } catch {
       // Error handled by RTK Query
     }

@@ -1,7 +1,7 @@
-import {Button, Input, Label, Spinner} from '@heroui/react';
+import {Alert, Button, Input, Label, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {z} from 'zod';
 
 import {ROUTES} from '@/@config/routes';
@@ -17,6 +17,13 @@ type LoginFormValues = z.infer<typeof schema>;
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const sessionExpired = searchParams.get('session_expired') === 'true';
+  // Prefer in-app navigation state (set by withAuth on protected route hit),
+  // fall back to query param (set by base.ts on session expiry — survives hard reload).
+  const stateRedirect = (location.state as null | {redirectTo?: string})?.redirectTo;
+  const redirectTo = stateRedirect ?? searchParams.get('redirect_to') ?? undefined;
   const [sendOtp, {isLoading}] = useSendOtpMutation();
 
   const {
@@ -32,7 +39,7 @@ export default function Login() {
     try {
       await sendOtp({email: data.email, type: 'authentication'}).unwrap();
       navigate(ROUTES.VERIFY_LOGIN_OTP, {
-        state: {email: data.email},
+        state: {email: data.email, redirectTo},
       });
     } catch (err) {
       applyFormErrors(err, 'Failed to send verification code. Please try again.', setError);
@@ -44,6 +51,18 @@ export default function Login() {
       description="Enter your email and we'll send you a verification code."
       title="Welcome back"
     >
+      {sessionExpired ? (
+        <div className="mb-4">
+          <Alert status="default">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Your session has expired</Alert.Title>
+              <Alert.Description>Please log in again to continue.</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        </div>
+      ) : null}
+
       <form
         className="flex flex-col gap-4"
         onSubmit={handleSubmit(onSubmit)}

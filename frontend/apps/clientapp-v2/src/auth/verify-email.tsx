@@ -80,7 +80,7 @@ export default function VerifyEmail() {
 
       // Store client-scoped tokens and navigate to dashboard
       setTokens(clientResult);
-      navigate(ROUTES.DASHBOARD, {replace: true});
+      navigate(ROUTES.TRAINING, {replace: true});
     } catch (err) {
       const code = getApiErrorCode(err);
       const fallback = VERIFY_ERROR_MESSAGES[code ?? ''] ?? 'Verification failed. Please try again.';

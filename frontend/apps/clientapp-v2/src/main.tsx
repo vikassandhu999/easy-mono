@@ -3,6 +3,8 @@ import {createRoot} from 'react-dom/client';
 import {Provider} from 'react-redux';
 import {RouterProvider} from 'react-router-dom';
 
+import SplashScreen from '@/@components/splash-screen';
+
 import './index.css';
 import {registerPWA} from './pwa';
 import {router} from './router';
@@ -16,7 +18,10 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <RouterProvider
+        fallbackElement={<SplashScreen />}
+        router={router}
+      />
     </Provider>
   </StrictMode>,
 );

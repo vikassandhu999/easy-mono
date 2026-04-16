@@ -1,6 +1,6 @@
 import {computeMacrosFromSnapshot, formatDateISO, MEAL_SLOTS, normalizeMacros, sumMacrosFromEntries} from '@easy/utils';
-import {Alert, Button, Spinner, toast} from '@heroui/react';
-import {Plus} from 'lucide-react';
+import {Button, toast} from '@heroui/react';
+import {Plus, UtensilsCrossed} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -87,6 +87,67 @@ function buildMealSlots(mealLogs: MealLog[], todayPlanMeals: null | TodayPlanMea
   );
 }
 
+// ── Skeleton (loading state) ─────────────────────────────────
+
+function NutritionDailySkeleton() {
+  return (
+    <PageLayout title="Nutrition">
+      <div className="max-w-lg">
+        {/* Date navigator skeleton */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="size-8 animate-pulse rounded-lg bg-content2" />
+          <div className="h-5 w-32 animate-pulse rounded bg-content2" />
+          <div className="size-8 animate-pulse rounded-lg bg-content2" />
+        </div>
+
+        {/* Weekly strip skeleton — 7 day cells */}
+        <div className="mb-4 flex gap-1">
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div
+              className="h-12 flex-1 animate-pulse rounded-lg bg-content2"
+              key={i}
+            />
+          ))}
+        </div>
+
+        {/* Macro progress skeleton — 4 bars (calories, protein, carbs, fat) */}
+        <div className="mb-4 rounded-xl border border-divider bg-content1 p-4">
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <div className="h-3 w-16 animate-pulse rounded bg-content2" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-content2" />
+                </div>
+                <div className="h-2 w-full animate-pulse rounded-full bg-content2" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Meal slot skeletons — 3 typical meals */}
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              className="rounded-xl border border-divider bg-content1 p-4"
+              key={i}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className="h-4 w-24 animate-pulse rounded bg-content2" />
+                <div className="h-3 w-16 animate-pulse rounded bg-content2" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="h-4 w-full animate-pulse rounded bg-content2" />
+                <div className="h-4 w-5/6 animate-pulse rounded bg-content2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────
 
 export default function NutritionDaily() {
@@ -96,7 +157,7 @@ export default function NutritionDaily() {
 
   // Fetch meal logs + today's plan + plan list (for macros_goal) in parallel
   const {data: mealLogsData, isLoading: isLogsLoading} = useListMyMealLogsQuery({date: dateISO});
-  const {data: todayPlanData, isError: isPlanError, isLoading: isPlanLoading} = useGetTodayPlanQuery({date: dateISO});
+  const {data: todayPlanData, isLoading: isPlanLoading} = useGetTodayPlanQuery({date: dateISO});
   const {data: plansData} = useListMyNutritionPlansQuery({status: 'active'});
 
   const [logDay, {isLoading: isLoggingDay}] = useLogDayMutation();
@@ -200,13 +261,7 @@ export default function NutritionDaily() {
   };
 
   if (isLoading) {
-    return (
-      <PageLayout title="Nutrition">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
-    );
+    return <NutritionDailySkeleton />;
   }
 
   const hasPlan = todayPlan && todayPlan.meals.length > 0;
@@ -242,18 +297,27 @@ export default function NutritionDaily() {
           </div>
         ) : null}
 
-        {/* No plan state */}
-        {!hasPlan && isPlanError ? (
-          <div className="mb-4">
-            <Alert status="default">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>No nutrition plan</Alert.Title>
-                <Alert.Description>
-                  Your coach hasn&apos;t assigned a nutrition plan yet, or there&apos;s no plan for this day.
-                </Alert.Description>
-              </Alert.Content>
-            </Alert>
+        {/* First-run empty state — no plan, no logs */}
+        {!hasPlan && allEntries.length === 0 && !isFuture ? (
+          <div className="mb-4 rounded-xl border border-divider bg-content1 p-6 text-center">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent/10">
+              <UtensilsCrossed
+                className="text-accent"
+                size={24}
+              />
+            </div>
+            <h3 className="text-base font-medium">No meal plan yet</h3>
+            <p className="mt-2 text-sm text-foreground-500">
+              Your coach will assign a meal plan soon. You can still log what you eat.
+            </p>
+            <Button
+              className="mt-4"
+              onPress={() => navigate(ROUTES.NUTRITION_ADD_FOOD, {state: {date: dateISO}})}
+              variant="primary"
+            >
+              <Plus size={16} />
+              Log a meal
+            </Button>
           </div>
         ) : null}
 
@@ -335,8 +399,8 @@ export default function NutritionDaily() {
           </div>
         ) : null}
 
-        {/* Bottom actions (hidden for future dates) */}
-        {!isFuture ? (
+        {/* Bottom actions (hidden for future dates and first-run empty state — both already have their own CTA) */}
+        {!isFuture && !(allEntries.length === 0 && !hasPlan) ? (
           <div className="mt-4 flex flex-col gap-2">
             <Button
               className="w-full"

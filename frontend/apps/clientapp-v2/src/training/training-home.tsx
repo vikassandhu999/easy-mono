@@ -1,5 +1,5 @@
 import {DAY_NAMES, formatDateISO, sumMacrosFromEntries} from '@easy/utils';
-import {Alert, Button, Chip, Spinner} from '@heroui/react';
+import {Button, Chip} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell, Play, Plus, UtensilsCrossed} from 'lucide-react';
 import {useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -218,9 +218,95 @@ function OtherWorkoutCard({
   );
 }
 
+// ── Skeleton (loading state) ─────────────────────────────────
+
+function TrainingHomeSkeleton() {
+  return (
+    <PageLayout title="Training">
+      <div className="max-w-lg">
+        {/* Nutrition summary row skeleton */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-divider bg-content1 p-4">
+          <div className="size-10 shrink-0 animate-pulse rounded-lg bg-content2" />
+          <div className="min-w-0 flex-1">
+            <div className="h-4 w-20 animate-pulse rounded bg-content2" />
+            <div className="mt-2 h-3 w-40 animate-pulse rounded bg-content2" />
+          </div>
+        </div>
+
+        {/* Today section heading */}
+        <div className="mb-3 h-4 w-32 animate-pulse rounded bg-content2" />
+
+        {/* Today's workout card skeleton */}
+        <div className="mb-6 rounded-xl border border-divider bg-content1 p-4">
+          <div className="flex items-start gap-3">
+            <div className="size-10 shrink-0 animate-pulse rounded-lg bg-content2" />
+            <div className="min-w-0 flex-1">
+              <div className="h-5 w-40 animate-pulse rounded bg-content2" />
+              <div className="mt-2 h-3 w-28 animate-pulse rounded bg-content2" />
+            </div>
+          </div>
+          <div className="mt-3 flex flex-col gap-1.5">
+            <div className="h-4 w-full animate-pulse rounded bg-content2" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-content2" />
+            <div className="h-4 w-4/6 animate-pulse rounded bg-content2" />
+          </div>
+          <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-content2" />
+        </div>
+
+        {/* Other workouts heading */}
+        <div className="mb-3 h-4 w-40 animate-pulse rounded bg-content2" />
+
+        {/* Other workouts — 3 rows */}
+        <div className="flex flex-col gap-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              className="flex items-center gap-3 rounded-xl border border-divider bg-content1 p-3"
+              key={i}
+            >
+              <div className="size-8 shrink-0 animate-pulse rounded-lg bg-content2" />
+              <div className="min-w-0 flex-1">
+                <div className="h-4 w-32 animate-pulse rounded bg-content2" />
+                <div className="mt-1.5 h-3 w-24 animate-pulse rounded bg-content2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
+
+// ── Empty plan state (first-run) ─────────────────────────────
+
+function EmptyPlanState({isStarting, onStartFreestyle}: {isStarting: boolean; onStartFreestyle: () => void}) {
+  return (
+    <div className="rounded-xl border border-divider bg-content1 p-6 text-center">
+      <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
+        <Dumbbell
+          className="text-primary"
+          size={24}
+        />
+      </div>
+      <h3 className="text-base font-medium">Your plan is on the way</h3>
+      <p className="mt-2 text-sm text-foreground-500">
+        Your coach is setting up your training plan. You&apos;ll see it here as soon as they assign it.
+      </p>
+      <Button
+        className="mt-4"
+        isPending={isStarting}
+        onPress={onStartFreestyle}
+        variant="primary"
+      >
+        <Play size={16} />
+        Start a freestyle workout
+      </Button>
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────
 
-export default function Dashboard() {
+export default function TrainingHome() {
   const navigate = useNavigate();
   const {data: plansData, isLoading: isLoadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: activeSessionData, isLoading: isLoadingSession} = useGetActiveWorkoutSessionQuery();
@@ -264,17 +350,11 @@ export default function Dashboard() {
   const isLoading = isLoadingPlans || isLoadingSession;
 
   if (isLoading) {
-    return (
-      <PageLayout title="Dashboard">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
-    );
+    return <TrainingHomeSkeleton />;
   }
 
   return (
-    <PageLayout title="Dashboard">
+    <PageLayout title="Training">
       <div className="max-w-lg">
         {/* Active session banner */}
         {activeSession ? <ActiveSessionBanner session={activeSession} /> : null}
@@ -282,73 +362,77 @@ export default function Dashboard() {
         {/* Today's nutrition summary */}
         <TodayNutritionSummary />
 
-        {/* Today's workout */}
-        <div className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-foreground-500">Today &middot; {DAY_NAMES[todayDayNumber]}</h2>
+        {/* No plan assigned — show warm first-run empty state, skip the rest of the layout */}
+        {!activePlan && !activeSession ? (
+          <EmptyPlanState
+            isStarting={isStarting}
+            onStartFreestyle={handleStartFreestyle}
+          />
+        ) : (
+          <>
+            {/* Today's workout */}
+            <div className="mb-6">
+              <h2 className="mb-3 text-sm font-semibold text-foreground-500">
+                Today &middot; {DAY_NAMES[todayDayNumber]}
+              </h2>
 
-          {todayWorkouts.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {todayWorkouts.map((workout) => (
-                <TodayWorkoutCard
-                  hasActiveSession={hasActiveSession || isStarting}
-                  key={workout.id}
-                  onStart={handleStartWorkout}
-                  workout={workout}
-                />
-              ))}
+              {todayWorkouts.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {todayWorkouts.map((workout) => (
+                    <TodayWorkoutCard
+                      hasActiveSession={hasActiveSession || isStarting}
+                      key={workout.id}
+                      onStart={handleStartWorkout}
+                      workout={workout}
+                    />
+                  ))}
+                </div>
+              ) : activePlan ? (
+                <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+                  <p className="text-sm text-foreground-400">No workout scheduled for today. Rest day?</p>
+                </div>
+              ) : null}
             </div>
-          ) : activePlan ? (
-            <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
-              <p className="text-sm text-foreground-400">No workout scheduled for today. Rest day?</p>
-            </div>
-          ) : (
-            <Alert status="default">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>No training plan</Alert.Title>
-                <Alert.Description>Your coach hasn&apos;t assigned a training plan yet.</Alert.Description>
-              </Alert.Content>
-            </Alert>
-          )}
-        </div>
 
-        {/* Other days */}
-        {otherWorkouts.length > 0 ? (
-          <div className="mb-6">
-            <h2 className="mb-3 text-sm font-semibold text-foreground-500">Other workouts in your plan</h2>
-            <div className="flex flex-col gap-2">
-              {[...otherWorkouts]
-                .sort((a, b) => a.day_number - b.day_number)
-                .map((workout) => (
-                  <OtherWorkoutCard
-                    hasActiveSession={hasActiveSession || isStarting}
-                    key={workout.id}
-                    onStart={handleStartWorkout}
-                    workout={workout}
-                  />
-                ))}
-            </div>
-          </div>
-        ) : null}
+            {/* Other days */}
+            {otherWorkouts.length > 0 ? (
+              <div className="mb-6">
+                <h2 className="mb-3 text-sm font-semibold text-foreground-500">Other workouts in your plan</h2>
+                <div className="flex flex-col gap-2">
+                  {[...otherWorkouts]
+                    .sort((a, b) => a.day_number - b.day_number)
+                    .map((workout) => (
+                      <OtherWorkoutCard
+                        hasActiveSession={hasActiveSession || isStarting}
+                        key={workout.id}
+                        onStart={handleStartWorkout}
+                        workout={workout}
+                      />
+                    ))}
+                </div>
+              </div>
+            ) : null}
 
-        {/* Freestyle */}
-        <div>
-          <Button
-            className="w-full"
-            isDisabled={hasActiveSession || isStarting}
-            isPending={isStarting}
-            onPress={handleStartFreestyle}
-            variant="secondary"
-          >
-            <Plus size={16} />
-            Freestyle workout
-          </Button>
-          {hasActiveSession ? (
-            <p className="mt-2 text-center text-xs text-foreground-400">
-              Finish or discard your current workout to start a new one.
-            </p>
-          ) : null}
-        </div>
+            {/* Freestyle — only show when a plan exists or a session is active */}
+            <div>
+              <Button
+                className="w-full"
+                isDisabled={hasActiveSession || isStarting}
+                isPending={isStarting}
+                onPress={handleStartFreestyle}
+                variant="secondary"
+              >
+                <Plus size={16} />
+                Freestyle workout
+              </Button>
+              {hasActiveSession ? (
+                <p className="mt-2 text-center text-xs text-foreground-400">
+                  Finish or discard your current workout to start a new one.
+                </p>
+              ) : null}
+            </div>
+          </>
+        )}
 
         {/* Active plan link */}
         {activePlan ? (

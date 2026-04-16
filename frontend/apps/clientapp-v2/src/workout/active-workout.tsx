@@ -40,7 +40,7 @@ function useElapsedTimer(startedAt: null | string): string {
 // ── Main component ───────────────────────────────────────────
 
 export default function ActiveWorkout() {
-  const goBack = useGoBack(ROUTES.DASHBOARD);
+  const goBack = useGoBack(ROUTES.TRAINING);
   const {data, isError, isLoading} = useGetActiveWorkoutSessionQuery(undefined, {
     pollingInterval: 0,
     refetchOnMountOrArgChange: true,

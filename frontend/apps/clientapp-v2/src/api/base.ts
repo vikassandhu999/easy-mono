@@ -1,7 +1,28 @@
-import {toast} from '@heroui/react';
 import {BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError} from '@reduxjs/toolkit/query/react';
 
 import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
+
+/**
+ * Auth-only paths that should never be preserved as a post-login redirect.
+ * Prevents login → verify-login loop after expired session.
+ */
+const AUTH_PATHS = new Set(['/login', '/verify-email', '/verify-login']);
+
+/**
+ * Redirect to /login with the session-expired flag and the current path
+ * preserved as `redirect_to` (query param survives the hard reload, unlike
+ * react-router state). The login flow restores it after re-auth.
+ */
+function redirectToLoginExpired() {
+  if (typeof window === 'undefined') return;
+
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const params = new URLSearchParams({session_expired: 'true'});
+  if (!AUTH_PATHS.has(window.location.pathname)) {
+    params.set('redirect_to', currentPath);
+  }
+  window.location.assign(`/login?${params.toString()}`);
+}
 
 let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
@@ -57,10 +78,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
 
       if (isServerError) {
         clearTokens();
-        toast.danger('Session expired. Please sign in again.');
-        if (typeof window !== 'undefined') {
-          window.location.assign('/login');
-        }
+        redirectToLoginExpired();
       }
       return refreshResult as {error: FetchBaseQueryError};
     }
@@ -72,10 +90,7 @@ const baseQueryWithReauth: BaseQueryFn<FetchArgs | string, unknown, FetchBaseQue
     // BUG: this is also wrong as we can have insufficient permissions error as well.
     if (status === 401 || status === 403) {
       clearTokens();
-      toast.danger('Session expired. Please sign in again.');
-      if (typeof window !== 'undefined') {
-        window.location.assign('/login');
-      }
+      redirectToLoginExpired();
     }
   }
   return result;

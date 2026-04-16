@@ -20,6 +20,8 @@ const LOGIN_ERROR_MESSAGES: Record<string, string> = {
 
 interface VerifyLoginOtpLocationState {
   email: string;
+  /** Path to navigate to after successful login (preserved from withAuth or session-expiry redirect) */
+  redirectTo?: string;
 }
 
 const schema = z.object({
@@ -70,7 +72,10 @@ export default function VerifyLoginOtp() {
         role: 'client',
       }).unwrap();
       setTokens(result);
-      navigate(ROUTES.DASHBOARD, {replace: true});
+      // Restore the path the user was trying to reach before login.
+      // Falls back to Training (home) if not set or empty.
+      const target = state.redirectTo && state.redirectTo.length > 0 ? state.redirectTo : ROUTES.TRAINING;
+      navigate(target, {replace: true});
     } catch (err) {
       const code = getApiErrorCode(err);
 

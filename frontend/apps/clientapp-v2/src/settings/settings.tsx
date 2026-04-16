@@ -2,14 +2,18 @@ import {Avatar, Button, Separator, Spinner} from '@heroui/react';
 import {useCallback} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import PageLayout from '@/@components/page-layout';
+import SectionHeading from '@/@components/section-heading';
 import {clearTokens} from '@/api/authStorage';
 import {api} from '@/api/base';
-import {type ClientCoach, type ClientProfile, useGetClientProfileQuery, useUpdateClientProfileMutation} from '@/api/profile';
-import PageLayout from '@/@components/page-layout';
-import {store} from '@/store';
-
+import {
+  type ClientCoach,
+  type ClientProfile,
+  useGetClientProfileQuery,
+  useUpdateClientProfileMutation,
+} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
-import SectionHeading from '@/settings/components/section-heading';
+import {store} from '@/store';
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -40,9 +44,9 @@ function ProfileSection({
   onUpdate,
   profile,
 }: {
-  onUpdate: (body: Parameters<ReturnType<typeof useUpdateClientProfileMutation>[0]>[0]) => ReturnType<
-    ReturnType<typeof useUpdateClientProfileMutation>[0]
-  >;
+  onUpdate: (
+    body: Parameters<ReturnType<typeof useUpdateClientProfileMutation>[0]>[0],
+  ) => ReturnType<ReturnType<typeof useUpdateClientProfileMutation>[0]>;
   profile: ClientProfile;
 }) {
   const fullName = getFullName(profile.first_name, profile.last_name);
@@ -69,7 +73,10 @@ function ProfileSection({
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
         {/* Header with avatar */}
         <div className="flex items-center gap-3 border-b border-divider p-4">
-          <Avatar className="size-12" color="accent">
+          <Avatar
+            className="size-12"
+            color="accent"
+          >
             <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0">
@@ -79,8 +86,17 @@ function ProfileSection({
         </div>
 
         {/* Editable rows */}
-        <EditableRow label="Name" onSave={handleNameSave} value={fullName} />
-        <EditableRow inputType="tel" label="Phone" onSave={handlePhoneSave} value={profile.phone} />
+        <EditableRow
+          label="Name"
+          onSave={handleNameSave}
+          value={fullName}
+        />
+        <EditableRow
+          inputType="tel"
+          label="Phone"
+          onSave={handlePhoneSave}
+          value={profile.phone}
+        />
       </div>
     </section>
   );
@@ -95,7 +111,10 @@ function CoachSection({coach}: {coach: ClientCoach}) {
       <SectionHeading title="My coach" />
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
         <div className="flex items-center gap-3 p-4">
-          <Avatar className="size-10" color="accent">
+          <Avatar
+            className="size-10"
+            color="accent"
+          >
             <Avatar.Fallback>{coachInitials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0 flex-1">
@@ -116,7 +135,13 @@ function CoachSection({coach}: {coach: ClientCoach}) {
             >
               WhatsApp
             </Button>
-            <Button as="a" className="flex-1" href={`tel:${coach.phone}`} size="sm" variant="secondary">
+            <Button
+              as="a"
+              className="flex-1"
+              href={`tel:${coach.phone}`}
+              size="sm"
+              variant="secondary"
+            >
               Call
             </Button>
           </div>
@@ -174,14 +199,22 @@ export default function Settings() {
   return (
     <PageLayout title="Settings">
       <div className="max-w-lg">
-        <ProfileSection onUpdate={updateProfile} profile={profile} />
+        <ProfileSection
+          onUpdate={updateProfile}
+          profile={profile}
+        />
         <CoachSection coach={profile.coach} />
         <AccountSection email={profile.email} />
 
         {/* Logout */}
         <div className="py-4">
           <Separator className="mb-4" />
-          <Button className="w-full" color="danger" onPress={handleLogout} variant="ghost">
+          <Button
+            className="w-full"
+            color="danger"
+            onPress={handleLogout}
+            variant="ghost"
+          >
             Log out
           </Button>
           <p className="mt-4 text-center text-xs text-foreground-400">CoachEasy v{__APP_VERSION__}</p>

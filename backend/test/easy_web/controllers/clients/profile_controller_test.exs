@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
   use Easy.ConnCase
 
   describe "GET /v1/client/me" do
-    test "returns client profile with coach info" do
+    test "returns client profile with coach info and workout_streak" do
       coach = insert(:coach, first_name: "Rajat", last_name: "Jain", phone: "+91 99999 12345")
       user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
 
@@ -36,8 +36,38 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
                "first_name" => "Rajat",
                "last_name" => "Jain",
                "phone" => "+91 99999 12345",
+               "photo_url" => nil,
                "business_name" => _
              } = data["coach"]
+
+      assert %{"current" => 0, "includes_today" => false} = data["workout_streak"]
+    end
+
+    test "returns coach photo_url when set" do
+      coach =
+        insert(:coach,
+          first_name: "Rajat",
+          photo_url: "https://example.com/rajat.jpg"
+        )
+
+      user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
+
+      client =
+        insert(:client,
+          business: coach.business,
+          creator: coach,
+          user: user,
+          status: :active
+        )
+
+      conn =
+        build_conn()
+        |> authenticate_client(client)
+        |> get("/v1/client/me")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["coach"]["photo_url"] == "https://example.com/rajat.jpg"
+      assert data["coach"]["first_name"] == "Rajat"
     end
 
     test "returns 403 without auth token" do

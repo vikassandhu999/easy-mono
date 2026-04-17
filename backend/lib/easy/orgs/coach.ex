@@ -16,6 +16,7 @@ defmodule Easy.Orgs.Coach do
     field :first_name, :string
     field :last_name, :string
     field :phone, :string
+    field :photo_url, :string
 
     belongs_to :user, Easy.Identity.User
     belongs_to :business, Business
@@ -34,7 +35,8 @@ defmodule Easy.Orgs.Coach do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(coach, attrs) do
     coach
-    |> cast(attrs, [:first_name, :last_name, :phone])
+    |> cast(attrs, [:first_name, :last_name, :phone, :photo_url])
+    |> validate_length(:photo_url, max: 2048)
   end
 
   # Queries
@@ -70,7 +72,7 @@ defmodule Easy.Orgs.Coach do
 
   @spec update_profile(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update_profile(%__MODULE__{} = coach, params) do
-    coach_attrs = Map.take(params, ["first_name", "last_name", "phone"])
+    coach_attrs = Map.take(params, ["first_name", "last_name", "phone", "photo_url"])
     business_name = params["business_name"]
 
     Repo.transaction(fn ->

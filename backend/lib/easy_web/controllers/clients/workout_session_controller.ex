@@ -3,6 +3,8 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
   alias Easy.Clients.Client
   alias Easy.Repo
+  alias Easy.Training.LastPerformed
+  alias Easy.Training.SessionSummary
   alias Easy.Training.WorkoutSession
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -16,7 +18,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
          {:ok, session} <- WorkoutSession.create(business_id, client.id, params) do
       conn
       |> put_status(:created)
-      |> render(:show, session: session)
+      |> render_show(session)
     else
       false -> {:error, :not_found}
       error -> error
@@ -62,7 +64,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
            |> WorkoutSession.with_sets()
            |> Repo.get(id) do
         nil -> {:error, :not_found}
-        session -> render(conn, :show, session: session)
+        session -> render_show(conn, session)
       end
     end
   end
@@ -79,7 +81,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
            |> WorkoutSession.with_sets()
            |> Repo.one() do
         nil -> {:error, :not_found}
-        session -> render(conn, :show, session: session)
+        session -> render_show(conn, session)
       end
     end
   end
@@ -91,7 +93,13 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, session} <- get_client_session(business_id, client.id, id),
          {:ok, completed} <- WorkoutSession.complete(session, conn.body_params) do
-      render(conn, :show, session: completed)
+      summary = SessionSummary.build(completed)
+
+      render(conn, :show,
+        session: completed,
+        last_performed_by_element: LastPerformed.for_session(completed),
+        summary: summary
+      )
     end
   end
 
@@ -102,7 +110,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, session} <- get_client_session(business_id, client.id, id),
          {:ok, discarded} <- WorkoutSession.discard(session) do
-      render(conn, :show, session: discarded)
+      render_show(conn, discarded)
     end
   end
 
@@ -113,8 +121,15 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, session} <- get_client_session(business_id, client.id, id),
          {:ok, updated} <- WorkoutSession.update(session, conn.body_params) do
-      render(conn, :show, session: updated)
+      render_show(conn, updated)
     end
+  end
+
+  defp render_show(conn, session) do
+    render(conn, :show,
+      session: session,
+      last_performed_by_element: LastPerformed.for_session(session)
+    )
   end
 
   defp get_client_session(business_id, client_id, session_id) do

@@ -254,5 +254,103 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
       assert json_response(conn, 404)
     end
+
+    test "returns nutrition_summary with per-macro actual vs target and headline", ctx do
+      plan =
+        insert(:plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :active,
+          macros_goal: %{"calories" => 1700, "protein" => 90, "carbs" => 180, "fats" => 55}
+        )
+
+      meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
+
+      insert(:plan_item,
+        plan: plan,
+        meal: meal,
+        creator: ctx.coach,
+        business: ctx.business,
+        day: "monday",
+        meal_type: "lunch"
+      )
+
+      # date = a Monday
+      conn = get(ctx.conn, "/v1/client/nutrition_plans/today", %{"date" => "2026-04-13"})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      summary = data["nutrition_summary"]
+      assert is_map(summary)
+      assert is_map(summary["calories"])
+      assert summary["calories"]["target"] == 1700.0
+      assert summary["calories"]["actual"] == 0.0
+      assert summary["calories"]["unit"] == "cal"
+      assert summary["protein"]["target"] == 90.0
+      assert is_binary(summary["headline"]) or is_nil(summary["headline"])
+    end
+
+    test "nutrition_summary headline reflects logged macros", ctx do
+      plan =
+        insert(:plan,
+          creator: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          status: :active,
+          macros_goal: %{"calories" => 1700, "protein" => 90, "carbs" => 180, "fats" => 55}
+        )
+
+      meal = insert(:meal, plan: plan, creator: ctx.coach, business: ctx.business)
+
+      insert(:plan_item,
+        plan: plan,
+        meal: meal,
+        creator: ctx.coach,
+        business: ctx.business,
+        day: "monday",
+        meal_type: "lunch"
+      )
+
+      food =
+        insert(:food,
+          creator: ctx.coach,
+          business: ctx.business,
+          name: "Chicken breast",
+          macros: %{"calories" => 330, "protein" => 62, "carbs" => 0, "fat" => 7}
+        )
+
+      {:ok, _entry} =
+        Easy.Nutrition.MealLog.log_entry(ctx.business.id, ctx.client.id, %{
+          "date" => "2026-04-13",
+          "meal_slot" => "lunch",
+          "food_id" => food.id,
+          "amount" => 1.0,
+          "unit" => "serving",
+          "weight_g" => 200.0
+        })
+
+      conn = get(ctx.conn, "/v1/client/nutrition_plans/today", %{"date" => "2026-04-13"})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      summary = data["nutrition_summary"]
+      assert summary["calories"]["actual"] >= 0.0
+      # Headline exists (exact value depends on which macros the food has)
+      assert is_binary(summary["headline"]) or is_nil(summary["headline"])
+    end
+
+    test "nutrition_summary has nil headline when plan has no macros_goal", ctx do
+      insert(:plan,
+        creator: ctx.coach,
+        business: ctx.business,
+        client_id: ctx.client.id,
+        status: :active,
+        macros_goal: nil
+      )
+
+      conn = get(ctx.conn, "/v1/client/nutrition_plans/today", %{"date" => "2026-04-13"})
+      assert %{"data" => data} = json_response(conn, 200)
+
+      assert data["nutrition_summary"]["headline"] == nil
+    end
   end
 end

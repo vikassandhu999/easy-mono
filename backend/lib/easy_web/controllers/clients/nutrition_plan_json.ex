@@ -17,7 +17,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
   end
 
   @spec today(map()) :: map()
-  def today(%{plan: plan, plan_items: plan_items, date: date, day: day}) do
+  def today(%{plan: plan, plan_items: plan_items, date: date, day: day} = assigns) do
     meals =
       Enum.map(plan_items, fn pi ->
         %{
@@ -33,7 +33,8 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
         date: date,
         day: day,
         plan_id: plan.id,
-        meals: meals
+        meals: meals,
+        nutrition_summary: Map.get(assigns, :nutrition_summary)
       }
     }
   end

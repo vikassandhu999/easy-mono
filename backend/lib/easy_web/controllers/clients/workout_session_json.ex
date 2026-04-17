@@ -2,26 +2,33 @@ defmodule EasyWeb.Clients.WorkoutSessionJSON do
   alias Easy.Training.{Exercise, PerformedSet, WorkoutSession}
 
   @spec show(map()) :: map()
-  def show(%{session: session}) do
-    %{data: data(session)}
+  def show(%{session: session} = assigns) do
+    last_performed = Map.get(assigns, :last_performed_by_element, %{})
+    summary = Map.get(assigns, :summary)
+
+    result = data(session, last_performed)
+    result = if summary, do: Map.put(result, :summary, summary), else: result
+    %{data: result}
   end
 
   @spec index(map()) :: map()
   def index(%{sessions: sessions, count: count}) do
-    %{data: Enum.map(sessions, &data/1), count: count}
+    %{data: Enum.map(sessions, &data(&1, %{})), count: count}
   end
 
-  defp data(%WorkoutSession{} = session) do
+  defp data(%WorkoutSession{} = session, last_performed_by_element) do
     %{
       id: session.id,
       started_at: session.started_at,
       ended_at: session.ended_at,
       state: session.state,
       soreness_rating: session.soreness_rating,
+      mood: session.mood,
       notes: session.notes,
       planned_workout_id: session.planned_workout_id,
       planned_snapshot: session.planned_snapshot,
       performed_sets: performed_sets_data(session.performed_sets),
+      last_performed_by_element: last_performed_by_element,
       inserted_at: session.inserted_at,
       updated_at: session.updated_at
     }

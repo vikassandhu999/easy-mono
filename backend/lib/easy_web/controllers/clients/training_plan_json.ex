@@ -11,11 +11,47 @@ defmodule EasyWeb.Clients.TrainingPlanJSON do
     %{data: Enum.map(plans, &data/1), count: count}
   end
 
+  @spec today(map()) :: map()
+  def today(%{today: today}) do
+    %{
+      data: %{
+        greeting: today.greeting,
+        coaching_context: today.coaching_context,
+        coach: today.coach,
+        today: today_today(today.today),
+        this_week: today.this_week,
+        plan: today.plan,
+        workout_streak: today.workout_streak
+      }
+    }
+  end
+
+  defp today_today(today) do
+    today
+    |> Map.update(:planned_workout, nil, &render_maybe_workout/1)
+    |> Map.put_new(:last_performed_by_element, Map.get(today, :last_performed_by_element, %{}))
+  end
+
+  defp render_maybe_workout(nil), do: nil
+  defp render_maybe_workout(workout), do: rendered_workout(workout)
+
+  defp rendered_workout(%{workout_elements: elements} = workout) do
+    %{
+      id: workout.id,
+      name: workout.name,
+      day_number: workout.day_number,
+      notes: workout.notes,
+      exercise_count: workout.exercise_count,
+      workout_elements: elements_data(elements)
+    }
+  end
+
   defp data(%TrainingPlan{} = plan) do
     %{
       id: plan.id,
       name: plan.name,
       description: plan.description,
+      coach_note: plan.coach_note,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,

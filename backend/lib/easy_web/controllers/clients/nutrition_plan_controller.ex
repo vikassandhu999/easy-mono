@@ -2,7 +2,6 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   use EasyWeb, :controller
 
   alias Easy.Clients.Client
-  alias Easy.Nutrition.DailySummary
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.PlanItem
   alias Easy.Repo
@@ -79,15 +78,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
             |> PlanItem.with_meal_and_items()
             |> Repo.all()
 
-          nutrition_summary = DailySummary.build(business_id, client.id, date, plan)
-
-          render(conn, :today,
-            plan: plan,
-            plan_items: plan_items,
-            date: date,
-            day: day,
-            nutrition_summary: nutrition_summary
-          )
+          render(conn, :today, plan: plan, plan_items: plan_items, date: date, day: day)
       end
     end
   end

@@ -153,48 +153,6 @@ defmodule Easy.Training.PerformedSet do
     from(s in query, where: s.workout_session_id == ^session_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(s in query,
-      join: ws in assoc(s, :workout_session),
-      as: :session,
-      where: ws.client_id == ^client_id
-    )
-  end
-
-  @spec for_element(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_element(query \\ __MODULE__, element_id) do
-    from(s in query, where: s.workout_element_id == ^element_id)
-  end
-
-  @spec for_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_exercise(query \\ __MODULE__, exercise_id) do
-    from(s in query, where: s.exercise_id == ^exercise_id)
-  end
-
-  @spec in_completed_sessions(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def in_completed_sessions(query \\ __MODULE__) do
-    if has_named_binding?(query, :session) do
-      from([session: ws] in query, where: ws.state == ^:completed)
-    else
-      from(s in query,
-        join: ws in assoc(s, :workout_session),
-        as: :session,
-        where: ws.state == ^:completed
-      )
-    end
-  end
-
-  @spec with_kg_load(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_kg_load(query \\ __MODULE__) do
-    from(s in query, where: not is_nil(s.load_value) and s.load_unit == ^:kg)
-  end
-
-  @spec heaviest_first(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def heaviest_first(query \\ __MODULE__) do
-    from(s in query, order_by: [desc: s.load_value])
-  end
-
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
     from(s in query, order_by: [asc: s.position])

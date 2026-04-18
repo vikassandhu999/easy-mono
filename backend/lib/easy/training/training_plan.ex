@@ -22,7 +22,6 @@ defmodule Easy.Training.TrainingPlan do
   schema "training_plans" do
     field :name, :string
     field :description, :string
-    field :coach_note, :string
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :start_date, :date
     field :end_date, :date
@@ -41,7 +40,6 @@ defmodule Easy.Training.TrainingPlan do
   @cast_fields [
     :name,
     :description,
-    :coach_note,
     :status,
     :client_id,
     :start_date,
@@ -59,7 +57,6 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_required([:name, :business_id, :author_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_length(:coach_note, max: 2000)
     |> validate_date_range()
     |> validate_rest_days()
     |> check_constraint(:start_date,
@@ -82,7 +79,6 @@ defmodule Easy.Training.TrainingPlan do
     |> cast(attrs, @cast_fields)
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_length(:coach_note, max: 2000)
     |> validate_date_range()
     |> validate_rest_days()
     |> foreign_key_constraint(:client_id)
@@ -152,14 +148,6 @@ defmodule Easy.Training.TrainingPlan do
   def search(query, ""), do: query
   def search(query, term), do: from(t in query, where: ilike(t.name, ^"%#{term}%"))
 
-  @spec covering(Ecto.Queryable.t(), Date.t()) :: Ecto.Query.t()
-  def covering(query \\ __MODULE__, date) do
-    from(t in query,
-      where: is_nil(t.start_date) or t.start_date <= ^date,
-      where: is_nil(t.end_date) or t.end_date >= ^date
-    )
-  end
-
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
     from(t in query, order_by: [desc: t.inserted_at])
@@ -203,7 +191,6 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: copy_name,
         description: plan.description,
-        coach_note: plan.coach_note,
         rest_days: plan.rest_days,
         original_template_id: plan.id
       }
@@ -228,7 +215,6 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: plan.name,
         description: plan.description,
-        coach_note: plan.coach_note,
         rest_days: plan.rest_days,
         client_id: client_id,
         start_date: start_date,

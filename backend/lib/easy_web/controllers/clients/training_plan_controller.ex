@@ -3,7 +3,6 @@ defmodule EasyWeb.Clients.TrainingPlanController do
 
   alias Easy.Clients.Client
   alias Easy.Repo
-  alias Easy.Training.TodayView
   alias Easy.Training.TrainingPlan
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -47,16 +46,6 @@ defmodule EasyWeb.Clients.TrainingPlanController do
         nil -> {:error, :not_found}
         plan -> render(conn, :show, plan: plan)
       end
-    end
-  end
-
-  @spec today(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def today(conn, params) do
-    %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
-
-    with {:ok, client} <- Client.get_for_user(business_id, user_id) do
-      render(conn, :today, today: TodayView.build(client, date))
     end
   end
 end

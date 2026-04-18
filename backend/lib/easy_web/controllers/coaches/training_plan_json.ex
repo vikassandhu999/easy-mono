@@ -17,7 +17,6 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       id: plan.id,
       name: plan.name,
       description: plan.description,
-      coach_note: plan.coach_note,
       status: plan.status,
       start_date: plan.start_date,
       end_date: plan.end_date,

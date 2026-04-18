@@ -418,100 +418,6 @@ paths:
         "403":
           description: Forbidden - requires client role
 
-  /v1/client/training_plans/today:
-    get:
-      summary: Get today's training view
-      description: >-
-        Single aggregate endpoint that powers the Today screen (client UX spec, Surface 1).
-        Returns everything the Today card needs in one call: personal greeting, coaching
-        context (week number with coach, coach first name), today's state
-        (workout / rest / empty / no_plan), the planned workout for today with full
-        exercise tree, the coach's motivational note for the active plan, a recap of the
-        client's previous session of the same workout ("Last time: Bench Press 80kg \u00d7 9"),
-        the this-week strip with per-day state (done/upcoming/rest/empty + is_today flag),
-        and a compact plan summary. Frontend pattern - fetch on app launch and whenever
-        the Today screen is focused; this is the primary retention surface. Never 404s -
-        a client with no active plan receives `today.kind = "no_plan"` and an empty
-        this_week. Accepts optional `?date=YYYY-MM-DD` for testing and for clients in
-        non-UTC timezones; defaults to today UTC.
-      operationId: getClientTodayTrainingPlan
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: date
-          in: query
-          required: false
-          description: ISO 8601 date to resolve the Today view against. Defaults to today (UTC).
-          schema:
-            type: string
-            format: date
-      responses:
-        "200":
-          description: Aggregated Today view
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ClientTodayResponse"
-              examples:
-                workout_day:
-                  value:
-                    data:
-                      greeting:
-                        first_name: Vikas
-                        day_name: Monday
-                        date: "2026-04-13"
-                      coaching_context:
-                        coach_first_name: Rajat
-                        week_number: 6
-                      today:
-                        kind: workout
-                        coach_note: Push hard on bench this week.
-                        planned_workout:
-                          id: 3a2f8c27-5ab0-4ea4-b7e1-7b8a34f1c012
-                          name: Push Day
-                          day_number: 1
-                          notes: null
-                          exercise_count: 5
-                          workout_elements: []
-                        last_session_recap:
-                          session_id: 9a1b2c3d-1111-2222-3333-4444aaaabbbb
-                          ended_at: "2026-04-06T09:00:00Z"
-                          headline: "Bench Press 80.0kg \u00d7 9"
-                      this_week:
-                        - day_number: 1
-                          day_name: Monday
-                          date: "2026-04-13"
-                          is_today: true
-                          kind: upcoming
-                          planned_workout_name: Push Day
-                          session_id: null
-                      plan:
-                        id: 8c1f6e22-ffff-4444-aaaa-bbbbccccdddd
-                        name: 12-Week Strength Base
-                        start_date: "2026-03-09"
-                        end_date: "2026-06-01"
-                no_plan:
-                  value:
-                    data:
-                      greeting:
-                        first_name: Vikas
-                        day_name: Monday
-                        date: "2026-04-13"
-                      coaching_context:
-                        coach_first_name: Rajat
-                        week_number: null
-                      today:
-                        kind: no_plan
-                        coach_note: null
-                        planned_workout: null
-                        last_session_recap: null
-                      this_week: []
-                      plan: null
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          description: Forbidden - requires client role
-
   /v1/client/training_plans/{id}:
     get:
       summary: Get training plan detail
@@ -653,13 +559,9 @@ paths:
         Creates a new active workout session. If planned_workout_id is provided,
         a planned_snapshot is captured at creation time for change-resilient
         comparison. Only one active session per client is allowed — returns 422
-        if an active session already exists. The response includes
-        `last_performed_by_element`, a map keyed by planned element id containing
-        the client's previous performance for each exercise slot (UX spec Surface
-        2.1 "Last time" comparison). Frontend pattern - call when client taps
-        "Start workout"; on success navigate to the active workout screen and
-        use `last_performed_by_element` to render "Last time: 9 reps @ 80kg"
-        under each set. Invalidate WorkoutSession list cache.
+        if an active session already exists. Frontend pattern - call when client
+        taps "Start workout"; on success navigate to the active workout screen.
+        Invalidate WorkoutSession list cache.
       operationId: createClientWorkoutSession
       security:
         - bearerAuth: []
@@ -692,9 +594,7 @@ paths:
       summary: Get active session
       description: >-
         Returns the client's current active workout session (if any), or 404 if
-        none. Used on app launch to detect and resume an interrupted workout. The
-        response includes `last_performed_by_element` so the resume screen can
-        immediately show "Last time" under every exercise without a second call.
+        none. Used on app launch to detect and resume an interrupted workout.
         Frontend pattern - call on app foreground; if 200, navigate directly to
         the active workout screen with the returned session data.
       operationId: getClientActiveSession
@@ -717,10 +617,7 @@ paths:
       summary: Get workout session detail
       description: >-
         Returns a single workout session with all performed sets and exercise
-        preloads, plus `last_performed_by_element` (map of planned element id to
-        prior performance) so the active workout view can display "Last time"
-        comparisons. Used to display a workout in the history view or as the
-        source of truth for the active workout screen.
+        preloads. Used to display a completed workout in the history view.
       operationId: getClientWorkoutSession
       security:
         - bearerAuth: []
@@ -778,14 +675,9 @@ paths:
       summary: Complete workout
       description: >-
         Transitions session to completed state. Server auto-sets ended_at.
-        Accepts optional soreness_rating (1-5), mood emoji (tough/solid/strong),
-        and notes (the "Note for Coach" field from UX spec Surface 3). The
-        response includes a `summary` block with duration_minutes, sets_count,
-        total_volume_kg, volume_delta_kg vs the previous session of the same
-        planned workout, and prs (empty array for launch; PR detection is
-        nice-to-have). Frontend pattern - call when client taps "Send to Coach
-        Rajat"; render the celebration screen directly from the response summary
-        without a second round-trip. Invalidate WorkoutSession list cache.
+        Accepts optional soreness_rating (1-5) and notes. Frontend pattern -
+        call when client taps "Complete workout" on the finish summary screen.
+        Invalidate WorkoutSession list + this session's cache.
       operationId: completeClientWorkoutSession
       security:
         - bearerAuth: []
@@ -800,24 +692,16 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ClientCompleteSessionRequest"
-            examples:
-              with_mood:
-                value:
-                  mood: solid
-                  notes: "Bench felt amazing today, tried 85kg"
-              legacy:
-                value:
-                  soreness_rating: 4
-                  notes: "Great session, PR on bench!"
+            example:
+              soreness_rating: 4
+              notes: "Great session, PR on bench!"
       responses:
         "200":
-          description: >-
-            Session completed. The response includes the full session data plus a
-            `summary` object with the workout completion celebration data.
+          description: Session completed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClientWorkoutSessionCompleteResponse"
+                $ref: "#/components/schemas/ClientWorkoutSessionResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -984,17 +868,13 @@ paths:
 
   /v1/client/nutrition_plans/today:
     get:
-      summary: Get today's planned meals with nutrition summary
+      summary: Get today's planned meals
       description: >-
         Resolves the client's active nutrition plan for a given date (defaults to today),
         determines the weekday, and returns all planned meals for that day with full food/recipe
-        detail. The response now includes a `nutrition_summary` block with per-macro
-        actual vs target comparison and a motivational headline (UX spec Surface 4.1:
-        "Crushing protein" / "X cal under target" / "On point today"). Actual macros are
-        derived from logged food_log_entries for the date. Returns 404 if no active plan
-        exists or the plan's date range does not cover the requested date. Frontend
-        pattern — primary data source for the daily nutrition view. Call on nutrition tab
-        open and when swiping between days.
+        detail. Returns 404 if no active plan exists or the plan's date range does not cover the
+        requested date. Frontend pattern — primary data source for the daily nutrition view. Call
+        on nutrition tab open and when swiping between days.
       operationId: getClientTodayPlan
       security:
         - bearerAuth: []
@@ -3091,8 +2971,7 @@ paths:
         empty weekly schedule (Mon-Sun). Frontend pattern - optimistic create
         in list view and navigate to the weekly overview builder using the
         returned id. Set rest_days to mark specific weekdays as rest (e.g. [7]
-        for Sunday). Set coach_note to attach a short motivational message that
-        the client's Today screen surfaces for the lifetime of this plan.
+        for Sunday).
       operationId: createTrainingPlan
       security:
         - bearerAuth: []
@@ -3107,7 +2986,6 @@ paths:
                 value:
                   name: 12-Week Strength Base
                   description: Structured novice strength cycle.
-                  coach_note: "Push hard on bench this week \u2014 focus on slow negatives."
                   status: active
       responses:
         "201":
@@ -3123,7 +3001,6 @@ paths:
                       id: 28355076-c303-47d6-b595-a4a69f9ef50d
                       name: 12-Week Strength Base
                       description: Structured novice strength cycle.
-                      coach_note: "Push hard on bench this week \u2014 focus on slow negatives."
                       status: active
                       start_date: null
                       end_date: null
@@ -3193,14 +3070,11 @@ paths:
     patch:
       summary: Update training plan
       description: >-
-        Saves plan metadata changes including rest_days and coach_note. Send the
-        full rest_days array on every update (toggle rest on = add to array, toggle
-        off = remove). The frontend should hide the rest day toggle for days that
-        have workouts. Updating coach_note immediately changes what the assigned
-        client sees on their Today screen; the client app should refetch the active
-        plan (or re-poll the today endpoint) after a coach-side edit. Send `null`
-        to clear the coach note. Frontend pattern - patch local plan state
-        immediately and reconcile from response body.
+        Saves plan metadata changes including rest_days. Send the full rest_days
+        array on every update (toggle rest on = add to array, toggle off = remove).
+        The frontend should hide the rest day toggle for days that have workouts.
+        Frontend pattern - patch local plan state immediately and reconcile from
+        response body.
       operationId: updateTrainingPlan
       security:
         - bearerAuth: []
@@ -3217,7 +3091,6 @@ paths:
                 value:
                   name: 12-Week Strength Base (Revised)
                   description: Progressive overload with lighter deload weeks.
-                  coach_note: "Deload week \u2014 keep the weights light and focus on form."
                   status: active
       responses:
         "200":
@@ -4825,7 +4698,7 @@ components:
           description: invitation_sent_at + 30 days. Present only when state is `pending`.
     ClientProfile:
       type: object
-      required: [id, status, workout_streak]
+      required: [id, status]
       properties:
         id:
           type: string
@@ -4846,30 +4719,9 @@ components:
           enum: [active, pending, inactive, archived]
         coach:
           $ref: "#/components/schemas/ClientCoach"
-        workout_streak:
-          $ref: "#/components/schemas/WorkoutStreak"
-    WorkoutStreak:
-      type: object
-      required: [current, includes_today]
-      description: >-
-        Workout streak (UX spec Surface 7). Counts consecutive days with at least
-        one completed workout session, skipping rest days (which don't break the
-        chain). Freestyle workouts count. Walk-back from yesterday; today is added
-        only if a session is already completed.
-      properties:
-        current:
-          type: integer
-          minimum: 0
-          description: Number of consecutive workout/rest days before today, plus 1 if today has a session.
-        includes_today:
-          type: boolean
-          description: True if a completed session exists for today (the "+1" in the streak count).
     ClientCoach:
       type: object
-      description: >-
-        Coach card data (UX spec Surface 6). Rendered as a thin card above the
-        bottom tab bar on every client screen. Tap phone to open WhatsApp/dialer.
-        Photo makes the coach feel like a person, not a name in a database.
+      description: The client's coach contact info, resolved from the client's business.
       properties:
         first_name:
           type: string
@@ -4880,15 +4732,6 @@ components:
         phone:
           type: string
           nullable: true
-          description: Coach's phone for the "Message" tap target on the coach card.
-        photo_url:
-          type: string
-          nullable: true
-          maxLength: 2048
-          description: >-
-            URL of the coach's profile photo. Coaches upload this during their
-            onboarding. Null until set. Frontend should show a placeholder avatar
-            when null.
         business_name:
           type: string
     ClientProfileResponse:
@@ -4984,14 +4827,6 @@ components:
         phone:
           type: string
           nullable: true
-        photo_url:
-          type: string
-          nullable: true
-          maxLength: 2048
-          description: >-
-            Coach profile photo URL. Shown on the client's coach card (UX spec
-            Surface 6.2) and in the coach's own profile settings. Frontend uploads
-            to its own storage and PATCHes the URL here.
         business:
           $ref: "#/components/schemas/CoachProfileBusiness"
     CoachProfileBusiness:
@@ -5975,20 +5810,12 @@ components:
       example:
         name: 12-Week Strength Base
         description: Structured novice strength cycle.
-        coach_note: "Push hard on bench this week \u2014 focus on slow negatives."
         status: active
       properties:
         name:
           type: string
         description:
           type: string
-        coach_note:
-          type: string
-          maxLength: 2000
-          description: >-
-            Short motivational note from the coach that the client app surfaces on the Today screen
-            for the duration of this plan (per UX spec: "Coach's note for the week"). Separate from
-            `description` which is the long plan description. Keep it conversational.
         status:
           type: string
           enum: [active, archived]
@@ -6016,14 +5843,6 @@ components:
           type: string
         description:
           type: string
-        coach_note:
-          type: string
-          maxLength: 2000
-          nullable: true
-          description: >-
-            Update or clear the coach's motivational note shown on the client's Today screen.
-            Send `null` to clear. Client app should refetch the active plan after the coach updates
-            this field so the Today screen reflects it.
         status:
           type: string
           enum: [active, archived]
@@ -6068,7 +5887,6 @@ components:
           id: 28355076-c303-47d6-b595-a4a69f9ef50d
           name: 12-Week Strength Base
           description: Structured novice strength cycle.
-          coach_note: "Push hard on bench this week \u2014 focus on slow negatives."
           status: active
           start_date: null
           end_date: null
@@ -6114,14 +5932,6 @@ components:
         description:
           type: string
           nullable: true
-        coach_note:
-          type: string
-          nullable: true
-          maxLength: 2000
-          description: >-
-            Short motivational note from the coach, shown on the client's Today screen for the
-            lifetime of this plan. Carried over to the client's personal plan on assign and to
-            duplicates. `null` means the coach has not set a note for this plan.
         status:
           type: string
         start_date:
@@ -7494,13 +7304,6 @@ components:
         description:
           type: string
           nullable: true
-        coach_note:
-          type: string
-          nullable: true
-          maxLength: 2000
-          description: >-
-            Coach's motivational note for this plan. Surfaced on the client Today screen as
-            "Coach's note for this week" per UX spec. `null` if the coach has not written one.
         status:
           type: string
           enum: [active, archived]
@@ -7620,202 +7423,6 @@ components:
         count:
           type: integer
 
-    # ── Client Today (Training home) schemas ──────────────────
-
-    ClientTodayResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          $ref: "#/components/schemas/ClientToday"
-    ClientToday:
-      type: object
-      required: [greeting, coaching_context, coach, today, this_week, plan, workout_streak]
-      properties:
-        greeting:
-          $ref: "#/components/schemas/ClientTodayGreeting"
-        coaching_context:
-          $ref: "#/components/schemas/ClientTodayCoachingContext"
-        coach:
-          nullable: true
-          description: >-
-            Full coach card data (UX spec Surface 6.1). Frontend renders this as a
-            persistent thin card above the bottom tab bar. Null only if the business
-            has no coach record (shouldn't happen in normal operation).
-          allOf:
-            - $ref: "#/components/schemas/ClientCoach"
-        today:
-          $ref: "#/components/schemas/ClientTodayCard"
-        this_week:
-          type: array
-          description: Always seven entries (Mon..Sun) when a plan is active; empty when no plan.
-          items:
-            $ref: "#/components/schemas/ClientTodayWeekDay"
-        plan:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ClientTodayPlanSummary"
-        workout_streak:
-          $ref: "#/components/schemas/WorkoutStreak"
-    ClientTodayGreeting:
-      type: object
-      required: [first_name, day_name, date]
-      properties:
-        first_name:
-          type: string
-          nullable: true
-          description: Client's first name. May be null for clients that signed up without one.
-        day_name:
-          type: string
-          description: Capitalised English weekday name ("Monday"..."Sunday").
-        date:
-          type: string
-          format: date
-    ClientTodayCoachingContext:
-      type: object
-      required: [coach_first_name, week_number]
-      properties:
-        coach_first_name:
-          type: string
-          nullable: true
-          description: First name of the coach for this business. Shown in the Today greeting ("Week 6 with Coach Rajat").
-        week_number:
-          type: integer
-          nullable: true
-          minimum: 1
-          description: >-
-            Weeks elapsed since `plan.start_date` + 1. Null when no active plan or when
-            the plan has no start_date.
-    ClientTodayCard:
-      type: object
-      required:
-        [
-          kind,
-          coach_note,
-          planned_workout,
-          last_session_recap,
-          last_performed_by_element
-        ]
-      properties:
-        kind:
-          type: string
-          enum: [workout, rest, empty, no_plan]
-          description: >-
-            `workout` - today has a planned workout; render the workout card.
-            `rest` - today is a coach-designated rest day (and no workout is scheduled).
-            `empty` - plan is active but today has no workout and is not a rest day.
-            `no_plan` - client has no active plan covering today.
-        coach_note:
-          type: string
-          nullable: true
-          description: Coach's motivational note on the active plan; null if no plan or no note.
-        planned_workout:
-          nullable: true
-          description: Present only when `kind` is `workout`.
-          allOf:
-            - $ref: "#/components/schemas/ClientTodayPlannedWorkout"
-        last_session_recap:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/ClientTodayLastSessionRecap"
-        last_performed_by_element:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ClientLastPerformedEntry"
-          description: >-
-            Same shape as on the workout session endpoint: map of
-            `workout_element_id` \u2192 prior performance summary, so the Today card can
-            preview "Last time: 9 reps @ 80kg" under each exercise before the client
-            starts the session. Empty when today is rest/empty/no_plan.
-    ClientTodayPlannedWorkout:
-      type: object
-      required: [id, name, day_number, exercise_count, workout_elements]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        day_number:
-          type: integer
-          minimum: 1
-          maximum: 7
-        notes:
-          type: string
-          nullable: true
-        exercise_count:
-          type: integer
-          minimum: 0
-        workout_elements:
-          type: array
-          items:
-            $ref: "#/components/schemas/ClientWorkoutElement"
-    ClientTodayLastSessionRecap:
-      type: object
-      required: [session_id, ended_at, headline]
-      description: >-
-        Summary of the most recent completed session of the same planned workout.
-        Drives the "Last time: ..." string on the Today card and inside the active
-        workout view. Null when the client has never completed this planned workout.
-      properties:
-        session_id:
-          type: string
-        ended_at:
-          type: string
-          format: date-time
-          nullable: true
-        headline:
-          type: string
-          nullable: true
-          description: >-
-            Human string describing the heaviest set of the last session, e.g.
-            "Bench Press 80kg \u00d7 9". May be null when no sets have load/reps data.
-    ClientTodayWeekDay:
-      type: object
-      required: [day_number, day_name, date, is_today, kind, planned_workout_name, session_id]
-      properties:
-        day_number:
-          type: integer
-          minimum: 1
-          maximum: 7
-        day_name:
-          type: string
-        date:
-          type: string
-          format: date
-        is_today:
-          type: boolean
-        kind:
-          type: string
-          enum: [done, upcoming, rest, empty]
-          description: >-
-            `done` - a completed session exists for this day. `upcoming` - a workout is
-            scheduled but not yet completed. `rest` - explicit rest day per the plan's
-            rest_days (and no workout scheduled). `empty` - no workout, no rest marker.
-        planned_workout_name:
-          type: string
-          nullable: true
-          description: Name of the workout scheduled for this day, null if no workout scheduled.
-        session_id:
-          type: string
-          nullable: true
-          description: Id of the completed session on this day (latest if more than one), null otherwise.
-    ClientTodayPlanSummary:
-      type: object
-      required: [id, name, start_date, end_date]
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        start_date:
-          type: string
-          format: date
-          nullable: true
-        end_date:
-          type: string
-          format: date
-          nullable: true
-
     # ── Client Exercise schemas ───────────────────────────────
 
     ClientExercise:
@@ -7879,16 +7486,7 @@ components:
 
     ClientWorkoutSession:
       type: object
-      required:
-        [
-          id,
-          state,
-          started_at,
-          performed_sets,
-          last_performed_by_element,
-          inserted_at,
-          updated_at
-        ]
+      required: [id, state, started_at, performed_sets, inserted_at, updated_at]
       properties:
         id:
           type: string
@@ -7907,13 +7505,6 @@ components:
           nullable: true
           minimum: 1
           maximum: 5
-        mood:
-          type: string
-          nullable: true
-          enum: [tough, solid, strong]
-          description: >-
-            Emoji-mapped mood set on completion (UX spec Surface 3).
-            Null if not set or if session was completed before mood support.
         notes:
           type: string
           nullable: true
@@ -7932,85 +7523,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ClientPerformedSet"
-        last_performed_by_element:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/ClientLastPerformedEntry"
-          description: >-
-            Map of planned `workout_element_id` \u2192 the client's previous performance for that
-            element (UX spec Surface 2.1 - "Last time" comparison on every set). Returned on
-            show/active/complete/discard/update (empty object on index). Excludes the session
-            itself so the client sees prior history, not the in-progress set log. Per element:
-            prefers the latest completed session of the same `workout_element_id`; falls back
-            to the latest completed session of the same `exercise_id` anywhere (handles coach
-            plan edits that change element ids). Empty map when the client has no prior history
-            or when the session has no planned_snapshot.
         inserted_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-    ClientLastPerformedEntry:
-      type: object
-      required: [source, session_id, exercise_id, started_at, sets]
-      properties:
-        source:
-          type: string
-          enum: [element, exercise]
-          description: >-
-            `element` - matched by `workout_element_id` (ideal; same plan slot).
-            `exercise` - fell back to same `exercise_id` (e.g. plan was re-assigned or edited).
-        session_id:
-          type: string
-        started_at:
-          type: string
-          format: date-time
-        ended_at:
-          type: string
-          format: date-time
-          nullable: true
-        exercise_id:
-          type: string
-          nullable: true
-        sets:
-          type: array
-          description: Ordered by position. One entry per set the client performed for that element/exercise in the referenced session.
-          items:
-            $ref: "#/components/schemas/ClientLastPerformedSet"
-    ClientLastPerformedSet:
-      type: object
-      properties:
-        position:
-          type: integer
-          minimum: 0
-        actual_reps:
-          type: string
-          nullable: true
-        load_value:
-          type: string
-          nullable: true
-          description: Decimal as string.
-        load_unit:
-          type: string
-          nullable: true
-          enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
-        rpe:
-          type: string
-          nullable: true
-        rir:
-          type: integer
-          nullable: true
-        duration_seconds:
-          type: integer
-          nullable: true
-        distance_value:
-          type: string
-          nullable: true
-        distance_unit:
-          type: string
-          nullable: true
-          enum: [meters, km, miles, yards, none]
     ClientPerformedSet:
       type: object
       required: [id, position, exercise_id, workout_session_id, completed, inserted_at, updated_at]
@@ -8083,62 +7601,6 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/ClientWorkoutSession"
-    ClientWorkoutSessionCompleteResponse:
-      type: object
-      required: [data]
-      description: >-
-        Same shape as ClientWorkoutSessionResponse but the data object includes
-        an additional `summary` key with the workout completion celebration data
-        (UX spec Surface 3). Only returned from the complete endpoint.
-      properties:
-        data:
-          allOf:
-            - $ref: "#/components/schemas/ClientWorkoutSession"
-            - type: object
-              required: [summary]
-              properties:
-                summary:
-                  $ref: "#/components/schemas/ClientWorkoutSessionSummary"
-    ClientWorkoutSessionSummary:
-      type: object
-      required: [duration_minutes, sets_count, total_volume_kg, volume_delta_kg, prs, workout_streak]
-      description: >-
-        Computed celebration data for the workout completion screen (UX spec Surface 3).
-        Returned as part of the complete endpoint response.
-      properties:
-        duration_minutes:
-          type: integer
-          nullable: true
-          minimum: 0
-          description: Duration of the workout in whole minutes (ended_at - started_at). Null if timestamps are missing.
-        sets_count:
-          type: integer
-          minimum: 0
-          description: Total number of performed sets logged in this session.
-        total_volume_kg:
-          type: number
-          format: float
-          description: >-
-            Sum of (load_value * actual_reps) for all sets with kg or lbs load.
-            Shows the raw total on the celebration screen ("16 sets - 8,420 kg total volume").
-        volume_delta_kg:
-          type: number
-          format: float
-          nullable: true
-          description: >-
-            Difference between this session's total_volume_kg and the previous completed
-            session of the same planned_workout. Positive means progress. Null for freestyle
-            sessions or when there is no previous session.
-        prs:
-          type: array
-          description: >-
-            Personal records detected in this session. Empty array for launch (PR detection
-            is nice-to-have for week 1-2). When implemented, each entry will contain
-            exercise name, metric type, and previous/new values.
-          items:
-            type: object
-        workout_streak:
-          $ref: "#/components/schemas/WorkoutStreak"
     ClientWorkoutSessionListResponse:
       type: object
       required: [data, count]
@@ -8182,26 +7644,14 @@ components:
     ClientCompleteSessionRequest:
       type: object
       properties:
-        mood:
-          type: string
-          nullable: true
-          enum: [tough, solid, strong]
-          description: >-
-            Emoji-mapped mood (UX spec Surface 3: "How did it feel?").
-            Maps to the three emoji buttons on the completion screen.
-            Preferred over soreness_rating for new clients.
         soreness_rating:
           type: integer
           nullable: true
           minimum: 1
           maximum: 5
-          description: Legacy 1-5 scale. Frontend should prefer mood over this field.
         notes:
           type: string
           nullable: true
-          description: >-
-            Free-text "Note for Coach Rajat (optional)". The coach sees this
-            note in their client review dashboard.
     ClientLogSetRequest:
       type: object
       required: [workout_session_id, exercise_id, position]
@@ -8504,7 +7954,7 @@ components:
 
     TodayPlan:
       type: object
-      required: [date, day, plan_id, meals, nutrition_summary]
+      required: [date, day, plan_id, meals]
       properties:
         date:
           type: string
@@ -8518,49 +7968,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TodayPlanMeal"
-        nutrition_summary:
-          $ref: "#/components/schemas/NutritionDailySummary"
-
-    NutritionDailySummary:
-      type: object
-      required: [headline, calories, protein, carbs, fats]
-      description: >-
-        Per-macro actual vs target comparison with a motivational headline (UX spec
-        Surface 4.1). Actual values are summed from food_log_entries for the date.
-        Target values come from the plan's macros_goal. Headline is computed server-side
-        to keep tone consistent ("Crushing protein" / "X cal under target" / "On point
-        today"). Null headline when the plan has no macros_goal.
-      properties:
-        headline:
-          type: string
-          nullable: true
-          description: >-
-            Motivational headline for the nutrition daily view. See spec Surface 4.1
-            for the full rule set. Null when plan has no macro targets.
-        calories:
-          $ref: "#/components/schemas/MacroComparison"
-        protein:
-          $ref: "#/components/schemas/MacroComparison"
-        carbs:
-          $ref: "#/components/schemas/MacroComparison"
-        fats:
-          $ref: "#/components/schemas/MacroComparison"
-    MacroComparison:
-      type: object
-      required: [actual, target, unit]
-      properties:
-        actual:
-          type: number
-          format: float
-          description: Sum of logged entries for this date. 0.0 if nothing logged yet.
-        target:
-          type: number
-          format: float
-          nullable: true
-          description: From the plan's macros_goal. Null if the plan doesn't set a target for this macro.
-        unit:
-          type: string
-          description: '"cal" for calories, "g" for macronutrients.'
 
     FoodLogEntry:
       type: object

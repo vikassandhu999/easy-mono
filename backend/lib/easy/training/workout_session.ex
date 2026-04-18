@@ -15,20 +15,15 @@ defmodule Easy.Training.WorkoutSession do
   @foreign_key_type :binary_id
 
   @states [:active, :completed, :discarded]
-  @moods [:tough, :solid, :strong]
 
   @spec states() :: [atom()]
   def states, do: @states
-
-  @spec moods() :: [atom()]
-  def moods, do: @moods
 
   schema "workout_sessions" do
     field :started_at, :utc_datetime_usec
     field :ended_at, :utc_datetime_usec
     field :state, Ecto.Enum, values: @states, default: :active
     field :soreness_rating, :integer
-    field :mood, Ecto.Enum, values: @moods
     field :notes, :string
     field :planned_snapshot, :map
 
@@ -41,15 +36,7 @@ defmodule Easy.Training.WorkoutSession do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @cast_fields [
-    :started_at,
-    :ended_at,
-    :state,
-    :soreness_rating,
-    :mood,
-    :notes,
-    :planned_workout_id
-  ]
+  @cast_fields [:started_at, :ended_at, :state, :soreness_rating, :notes, :planned_workout_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
@@ -101,21 +88,6 @@ defmodule Easy.Training.WorkoutSession do
   def with_state(query \\ __MODULE__, state)
   def with_state(query, nil), do: query
   def with_state(query, state), do: from(s in query, where: s.state == ^state)
-
-  @spec for_planned_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_planned_workout(query \\ __MODULE__, planned_workout_id) do
-    from(s in query, where: s.planned_workout_id == ^planned_workout_id)
-  end
-
-  @spec exclude(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def exclude(query \\ __MODULE__, session_id) do
-    from(s in query, where: s.id != ^session_id)
-  end
-
-  @spec started_between(Ecto.Queryable.t(), DateTime.t(), DateTime.t()) :: Ecto.Query.t()
-  def started_between(query \\ __MODULE__, from_dt, to_dt) do
-    from(s in query, where: s.started_at >= ^from_dt and s.started_at < ^to_dt)
-  end
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do

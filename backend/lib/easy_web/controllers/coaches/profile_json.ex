@@ -14,7 +14,6 @@ defmodule EasyWeb.Coaches.ProfileJSON do
       last_name: coach.last_name,
       email: coach.user.email,
       phone: coach.phone,
-      photo_url: coach.photo_url,
       business: business(coach.business)
     }
   end

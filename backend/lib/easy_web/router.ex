@@ -176,7 +176,6 @@ defmodule EasyWeb.Router do
     patch "/me", ProfileController, :update
 
     # Training plans (read-only)
-    get "/training_plans/today", TrainingPlanController, :today
     get "/training_plans", TrainingPlanController, :index
     get "/training_plans/:id", TrainingPlanController, :show
 

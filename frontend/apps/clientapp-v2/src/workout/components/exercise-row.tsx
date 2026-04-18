@@ -1,4 +1,4 @@
-import {Chip} from '@heroui/react';
+import {Button, Chip} from '@heroui/react';
 import {Check, ChevronDown, ChevronUp, Plus, RefreshCw, SkipForward} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -77,10 +77,10 @@ export default function ExerciseRow({
   return (
     <div className="border-b border-divider last:border-b-0">
       {/* Header — always visible, tappable */}
-      <button
-        className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-content2 active:bg-content2"
-        onClick={onToggle}
-        type="button"
+      <Button
+        className="flex h-auto min-h-11 w-full items-center gap-3 rounded-none px-4 py-3 text-left"
+        onPress={onToggle}
+        variant="ghost"
       >
         {/* Status indicator */}
         <div className="flex size-6 shrink-0 items-center justify-center">
@@ -145,7 +145,7 @@ export default function ExerciseRow({
             />
           )}
         </div>
-      </button>
+      </Button>
 
       {/* Expanded content */}
       {isExpanded ? (
@@ -154,30 +154,24 @@ export default function ExerciseRow({
           {canReplace || canSkip ? (
             <div className="mb-3 flex items-center gap-2">
               {canReplace && onReplace ? (
-                <button
-                  className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground-500 transition-colors hover:bg-content2 active:bg-content2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowReplacePicker((prev) => !prev);
-                  }}
-                  type="button"
+                <Button
+                  onPress={() => setShowReplacePicker((prev) => !prev)}
+                  size="sm"
+                  variant="ghost"
                 >
                   <RefreshCw size={14} />
                   Replace
-                </button>
+                </Button>
               ) : null}
               {canSkip ? (
-                <button
-                  className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground-500 transition-colors hover:bg-content2 active:bg-content2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSkip();
-                  }}
-                  type="button"
+                <Button
+                  onPress={onSkip}
+                  size="sm"
+                  variant="ghost"
                 >
                   <SkipForward size={14} />
                   Skip
-                </button>
+                </Button>
               ) : null}
             </div>
           ) : null}

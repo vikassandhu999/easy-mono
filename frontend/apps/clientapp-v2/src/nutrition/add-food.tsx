@@ -214,25 +214,25 @@ export default function AddFood() {
                 {selectedItem.serving_sizes.length > 0 ? (
                   <div className="mb-3 flex flex-wrap gap-1.5">
                     {selectedItem.serving_sizes.map((s, i) => (
-                      <button
-                        className="min-h-11 rounded-full border border-divider bg-content2 px-3 py-1.5 text-xs transition-colors hover:bg-default active:bg-default"
+                      <Button
                         key={i}
-                        onClick={() => handleSelectServing(s)}
-                        type="button"
+                        onPress={() => handleSelectServing(s)}
+                        size="sm"
+                        variant="secondary"
                       >
                         {s.amount ?? 1} {s.unit}
-                      </button>
+                      </Button>
                     ))}
-                    <button
-                      className="min-h-11 rounded-full border border-divider bg-content2 px-3 py-1.5 text-xs transition-colors hover:bg-default active:bg-default"
-                      onClick={() => {
+                    <Button
+                      onPress={() => {
                         setValue('amount', '100');
                         setValue('unit', 'g');
                       }}
-                      type="button"
+                      size="sm"
+                      variant="secondary"
                     >
                       100 g
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
 

@@ -382,11 +382,11 @@ export default function NutritionDaily() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Logged today</p>
             <div className="flex flex-col gap-1 rounded-xl bg-default p-3">
               {allEntries.map((entry) => (
-                <button
-                  className="flex min-h-11 w-full items-center gap-3 py-1 text-left"
+                <Button
+                  className="flex h-auto min-h-11 w-full items-center gap-3 py-1 text-left"
                   key={entry.id}
-                  onClick={() => handleEditEntry(entry)}
-                  type="button"
+                  onPress={() => handleEditEntry(entry)}
+                  variant="ghost"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{entry.food_name}</p>
@@ -395,7 +395,7 @@ export default function NutritionDaily() {
                       {entry.unit ?? ''}
                     </p>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

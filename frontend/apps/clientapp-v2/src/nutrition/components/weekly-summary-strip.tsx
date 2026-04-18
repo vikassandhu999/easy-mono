@@ -1,4 +1,5 @@
 import {formatDateISO} from '@easy/utils';
+import {Button} from '@heroui/react';
 import {useMemo} from 'react';
 
 import type {MealLog} from '@/api/mealLogs';
@@ -91,12 +92,12 @@ export default function WeeklySummaryStrip({
       <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-400">This week</p>
       <div className="flex justify-between gap-1">
         {days.map((day) => (
-          <button
-            className="flex flex-1 flex-col items-center gap-0.5"
-            disabled={day.level === 'future'}
+          <Button
+            className="flex h-auto flex-1 flex-col items-center gap-0.5 p-0"
+            isDisabled={day.level === 'future'}
             key={day.dateStr}
-            onClick={() => handleTap(day.dateStr, day.level)}
-            type="button"
+            onPress={() => handleTap(day.dateStr, day.level)}
+            variant="ghost"
           >
             <p className="text-[10px] text-foreground-400">{day.label}</p>
             <div
@@ -106,7 +107,7 @@ export default function WeeklySummaryStrip({
             >
               {day.style.icon}
             </div>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

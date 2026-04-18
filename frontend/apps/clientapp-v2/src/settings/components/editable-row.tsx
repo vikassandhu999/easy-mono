@@ -111,13 +111,14 @@ export default function EditableRow({
     <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
       <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{value || '\u2014'}</span>
-      <button
-        className="shrink-0 text-sm text-accent"
-        onClick={startEdit}
-        type="button"
+      <Button
+        className="shrink-0"
+        onPress={startEdit}
+        size="sm"
+        variant="ghost"
       >
         Edit
-      </button>
+      </Button>
     </div>
   );
 }

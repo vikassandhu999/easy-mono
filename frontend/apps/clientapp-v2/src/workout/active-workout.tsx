@@ -215,13 +215,14 @@ export default function ActiveWorkout() {
               onSelect={handleAddExercise}
               placeholder="Search exercises to add..."
             />
-            <button
-              className="mt-2 text-xs text-foreground-400 hover:text-foreground-500"
-              onClick={() => setShowAddPicker(false)}
-              type="button"
+            <Button
+              className="mt-2"
+              onPress={() => setShowAddPicker(false)}
+              size="sm"
+              variant="ghost"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         ) : (
           <Button

@@ -68,14 +68,15 @@ function formatDoneTarget(set: ClientPerformedSet): string {
 
 function UnitToggle({onChange, value}: {onChange: (unit: LoadUnitOption) => void; value: LoadUnitOption}) {
   return (
-    <button
-      className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-divider px-1.5 text-xs font-medium text-foreground-500 transition-colors hover:bg-content2 active:bg-content3"
-      onClick={() => onChange(nextLoadUnit(value))}
+    <Button
+      isIconOnly
+      onPress={() => onChange(nextLoadUnit(value))}
+      size="sm"
       title="Change unit"
-      type="button"
+      variant="ghost"
     >
       {LOAD_UNIT_LABELS[value]}
-    </button>
+    </Button>
   );
 }
 
@@ -159,25 +160,25 @@ function LoggedSetCard({
             <Check size={14} />
             Save
           </Button>
-          <button
-            className="flex min-h-11 items-center justify-center gap-1 rounded-md px-2 text-sm text-danger transition-colors hover:bg-danger/10 active:bg-danger/20 disabled:opacity-50"
-            disabled={isBusy}
-            onClick={handleDelete}
-            type="button"
+          <Button
+            isDisabled={isBusy}
+            onPress={handleDelete}
+            size="sm"
+            variant="danger"
           >
             <Trash2 size={14} />
             Delete
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <button
-      className="w-full rounded-lg border border-divider bg-content2/20 p-3 text-left transition-colors hover:bg-content2/40 active:bg-content2/50"
-      onClick={() => setIsEditing(true)}
-      type="button"
+    <Button
+      className="h-auto w-full rounded-lg border border-divider bg-content2/20 p-3 text-left"
+      onPress={() => setIsEditing(true)}
+      variant="ghost"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -199,7 +200,7 @@ function LoggedSetCard({
           )}
         </div>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -264,15 +265,15 @@ function PendingSetCard({
             <Check size={14} />
             Log
           </Button>
-          <button
-            className="flex min-h-11 items-center justify-center gap-1 rounded-md px-2 text-sm text-foreground-500 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
-            disabled={isLogging}
-            onClick={onSkip}
-            type="button"
+          <Button
+            isDisabled={isLogging}
+            onPress={onSkip}
+            size="sm"
+            variant="ghost"
           >
             <SkipForward size={14} />
             Skip
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -288,12 +289,13 @@ function PendingSetCard({
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-divider transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
-            disabled={isLogging}
-            onClick={handleQuickLog}
+          <Button
+            isDisabled={isLogging}
+            isIconOnly
+            onPress={handleQuickLog}
+            size="sm"
             title="Log with planned values"
-            type="button"
+            variant="ghost"
           >
             {isLogging ? (
               <div className="size-3 animate-spin rounded-full border-2 border-foreground-300 border-t-transparent" />
@@ -303,26 +305,28 @@ function PendingSetCard({
                 size={16}
               />
             )}
-          </button>
+          </Button>
 
-          <button
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3"
-            onClick={() => setIsExpanded(true)}
+          <Button
+            isIconOnly
+            onPress={() => setIsExpanded(true)}
+            size="sm"
             title="Edit before logging"
-            type="button"
+            variant="ghost"
           >
             <Pencil size={14} />
-          </button>
+          </Button>
 
-          <button
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
-            disabled={isLogging}
-            onClick={onSkip}
+          <Button
+            isDisabled={isLogging}
+            isIconOnly
+            onPress={onSkip}
+            size="sm"
             title="Skip this set"
-            type="button"
+            variant="ghost"
           >
             <SkipForward size={14} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

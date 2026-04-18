@@ -89,14 +89,15 @@ export default function FinishWorkout({
   return (
     <div className="rounded-xl border border-divider bg-content1 p-4">
       <div className="mb-1 flex justify-end">
-        <button
+        <Button
           aria-label="Close"
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-content2 active:bg-content2"
-          onClick={onCancel}
-          type="button"
+          isIconOnly
+          onPress={onCancel}
+          size="sm"
+          variant="ghost"
         >
           <X size={16} />
-        </button>
+        </Button>
       </div>
 
       <div className="text-center">
@@ -121,19 +122,19 @@ export default function FinishWorkout({
         <p className="mb-2 text-sm font-medium">How did it feel?</p>
         <div className="flex gap-2">
           {MOOD_OPTIONS.map((option) => (
-            <button
-              className={`flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border px-2 text-sm transition-colors ${
+            <Button
+              className={`flex min-h-11 flex-1 items-center justify-center gap-1 border px-2 text-sm ${
                 sorenessRating === option.value
                   ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-divider text-foreground-500 hover:bg-content2 active:bg-content3'
+                  : 'border-divider text-foreground-500'
               }`}
               key={option.value}
-              onClick={() => setSorenessRating((prev) => (prev === option.value ? null : option.value))}
-              type="button"
+              onPress={() => setSorenessRating((prev) => (prev === option.value ? null : option.value))}
+              variant="ghost"
             >
               <span>{option.emoji}</span>
               <span>{option.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>

@@ -49,10 +49,10 @@ function PlannedItemRow({
   };
 
   return (
-    <button
-      className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-default active:bg-default"
-      onClick={handlePress}
-      type="button"
+    <Button
+      className="flex h-auto min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left"
+      onPress={handlePress}
+      variant="ghost"
     >
       <div className="min-w-0 flex-1">
         {isReplacement && entry ? (
@@ -75,7 +75,7 @@ function PlannedItemRow({
           size={12}
         />
       ) : null}
-    </button>
+    </Button>
   );
 }
 
@@ -85,10 +85,10 @@ function UnplannedEntryRow({entry, onEditEntry}: {entry: FoodLogEntry; onEditEnt
   const displayAmount = entry.amount != null ? `${entry.amount}${entry.unit ?? 'g'}` : '';
 
   return (
-    <button
-      className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-default active:bg-default"
-      onClick={() => onEditEntry(entry)}
-      type="button"
+    <Button
+      className="flex h-auto min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left"
+      onPress={() => onEditEntry(entry)}
+      variant="ghost"
     >
       <div className="flex size-5 shrink-0 items-center justify-center">
         <Plus
@@ -107,7 +107,7 @@ function UnplannedEntryRow({entry, onEditEntry}: {entry: FoodLogEntry; onEditEnt
         className="shrink-0 text-foreground-300"
         size={12}
       />
-    </button>
+    </Button>
   );
 }
 

@@ -57,10 +57,10 @@ function TodayNutritionSummary() {
   const logCount = allEntries.length;
 
   return (
-    <button
-      className="mb-6 flex w-full items-start gap-3 rounded-xl border border-divider bg-content1 p-4 text-left transition-colors hover:bg-content2 active:bg-content2"
-      onClick={() => navigate(ROUTES.NUTRITION)}
-      type="button"
+    <Button
+      className="mb-6 flex h-auto w-full items-start gap-3 rounded-xl border border-divider bg-content1 p-4 text-left"
+      onPress={() => navigate(ROUTES.NUTRITION)}
+      variant="ghost"
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
         <UtensilsCrossed
@@ -83,7 +83,7 @@ function TodayNutritionSummary() {
         className="mt-1 shrink-0 text-foreground-300"
         size={16}
       />
-    </button>
+    </Button>
   );
 }
 
@@ -445,10 +445,10 @@ export default function TrainingHome() {
 
         {/* Active plan link */}
         {activePlan ? (
-          <button
-            className="mt-6 flex min-h-11 w-full items-center gap-2 rounded-lg px-1 text-left transition-colors hover:bg-content2 active:bg-content2"
-            onClick={() => navigate(`/plan/${activePlan.id}`)}
-            type="button"
+          <Button
+            className="mt-6 flex h-auto min-h-11 w-full items-center gap-2 rounded-lg px-1 text-left"
+            onPress={() => navigate(`/plan/${activePlan.id}`)}
+            variant="ghost"
           >
             <Chip
               color="success"
@@ -462,7 +462,7 @@ export default function TrainingHome() {
               className="ml-auto shrink-0 text-foreground-300"
               size={14}
             />
-          </button>
+          </Button>
         ) : null}
       </div>
     </PageLayout>

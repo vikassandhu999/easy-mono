@@ -1,5 +1,5 @@
 import {Button, Popover} from '@heroui/react';
-import {Copy} from 'lucide-react';
+import {Copy, CopyPlus, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 
 type CopyMenuProps = {
@@ -51,6 +51,10 @@ export default function CopyMenu({clientId, onCopyToClient, onDuplicate}: CopyMe
             }}
             type="button"
           >
+            <UserPlus
+              className="shrink-0 text-foreground-500"
+              size={14}
+            />
             {isPersonal ? 'Copy to another client' : 'Copy to client'}
           </button>
           <button
@@ -61,6 +65,10 @@ export default function CopyMenu({clientId, onCopyToClient, onDuplicate}: CopyMe
             }}
             type="button"
           >
+            <CopyPlus
+              className="shrink-0 text-foreground-500"
+              size={14}
+            />
             {isPersonal ? 'Save as template' : 'Duplicate as template'}
           </button>
         </Popover.Dialog>

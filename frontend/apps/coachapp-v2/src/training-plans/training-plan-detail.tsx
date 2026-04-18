@@ -1,4 +1,5 @@
-import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Spinner, toast} from '@heroui/react';
+import {type CalendarDate, parseDate} from '@internationalized/date';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -38,6 +39,15 @@ function formatDate(dateString: string): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function toCalendarDate(dateStr: string): CalendarDate | null {
+  if (!dateStr) return null;
+  try {
+    return parseDate(dateStr);
+  } catch {
+    return null;
+  }
 }
 
 export default function TrainingPlanDetail() {
@@ -249,38 +259,84 @@ export default function TrainingPlanDetail() {
           <p className="mb-3 text-sm text-foreground-500">
             Search for a client to copy this plan to. A new plan will be created for the selected client.
           </p>
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <label
-                className="text-xs text-foreground-400"
-                htmlFor="assign-start-date"
-              >
-                Start date
-              </label>
-              <Input
-                id="assign-start-date"
-                onChange={(e) => setAssignStartDate(e.target.value)}
-                type="date"
-                value={assignStartDate}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label
-                className="text-xs text-foreground-400"
-                htmlFor="assign-end-date"
-              >
-                End date
-              </label>
-              <Input
-                id="assign-end-date"
-                onChange={(e) => setAssignEndDate(e.target.value)}
-                type="date"
-                value={assignEndDate}
-              />
-            </div>
+          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <DatePicker
+              onChange={(val: CalendarDate | null) => setAssignStartDate(val ? val.toString() : '')}
+              value={toCalendarDate(assignStartDate) as never}
+            >
+              <Label>Start date</Label>
+              <DateField.Group fullWidth>
+                <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+                <DateField.Suffix>
+                  <DatePicker.Trigger>
+                    <DatePicker.TriggerIndicator />
+                  </DatePicker.Trigger>
+                </DateField.Suffix>
+              </DateField.Group>
+              <DatePicker.Popover>
+                <Calendar aria-label="Assign start date">
+                  <Calendar.Header>
+                    <Calendar.YearPickerTrigger>
+                      <Calendar.YearPickerTriggerHeading />
+                      <Calendar.YearPickerTriggerIndicator />
+                    </Calendar.YearPickerTrigger>
+                    <Calendar.NavButton slot="previous" />
+                    <Calendar.NavButton slot="next" />
+                  </Calendar.Header>
+                  <Calendar.Grid>
+                    <Calendar.GridHeader>
+                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                    </Calendar.GridHeader>
+                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+                  </Calendar.Grid>
+                  <Calendar.YearPickerGrid>
+                    <Calendar.YearPickerGridBody>
+                      {({year}) => <Calendar.YearPickerCell year={year} />}
+                    </Calendar.YearPickerGridBody>
+                  </Calendar.YearPickerGrid>
+                </Calendar>
+              </DatePicker.Popover>
+            </DatePicker>
+
+            <DatePicker
+              onChange={(val: CalendarDate | null) => setAssignEndDate(val ? val.toString() : '')}
+              value={toCalendarDate(assignEndDate) as never}
+            >
+              <Label>End date</Label>
+              <DateField.Group fullWidth>
+                <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+                <DateField.Suffix>
+                  <DatePicker.Trigger>
+                    <DatePicker.TriggerIndicator />
+                  </DatePicker.Trigger>
+                </DateField.Suffix>
+              </DateField.Group>
+              <DatePicker.Popover>
+                <Calendar aria-label="Assign end date">
+                  <Calendar.Header>
+                    <Calendar.YearPickerTrigger>
+                      <Calendar.YearPickerTriggerHeading />
+                      <Calendar.YearPickerTriggerIndicator />
+                    </Calendar.YearPickerTrigger>
+                    <Calendar.NavButton slot="previous" />
+                    <Calendar.NavButton slot="next" />
+                  </Calendar.Header>
+                  <Calendar.Grid>
+                    <Calendar.GridHeader>
+                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                    </Calendar.GridHeader>
+                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+                  </Calendar.Grid>
+                  <Calendar.YearPickerGrid>
+                    <Calendar.YearPickerGridBody>
+                      {({year}) => <Calendar.YearPickerCell year={year} />}
+                    </Calendar.YearPickerGridBody>
+                  </Calendar.YearPickerGrid>
+                </Calendar>
+              </DatePicker.Popover>
+            </DatePicker>
           </div>
           <ClientPicker
-            autoFocus
             excludeIds={plan.client_id ? [plan.client_id] : undefined}
             isDisabled={isAssigning}
             onSelect={handleCopyToClient}

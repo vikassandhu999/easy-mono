@@ -3,7 +3,7 @@ import {Button, Input, Label, Separator, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Check} from 'lucide-react';
 import {useMemo, useState} from 'react';
-import {useForm} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -57,17 +57,17 @@ export default function AddFood() {
   // Step 3: amount form
   const {
     formState: {errors},
+    control,
     register,
     setError,
     setValue,
-    watch,
   } = useForm<AmountFormValues>({
     defaultValues: {amount: '', unit: 'g'},
     resolver: zodResolver(amountSchema),
   });
 
-  const amount = watch('amount');
-  const unit = watch('unit');
+  const amount = useWatch({control, name: 'amount'}) ?? '';
+  const unit = useWatch({control, name: 'unit'}) ?? 'g';
 
   const numericAmount = parseFloat(amount) || 0;
   const isGramLike = unit === 'g' || unit === 'ml';

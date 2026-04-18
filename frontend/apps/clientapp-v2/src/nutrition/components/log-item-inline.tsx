@@ -2,7 +2,7 @@ import {formatMacroValue} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Check, RefreshCw, X} from 'lucide-react';
-import {useForm} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import type {PlannedSnapshotItem} from '@/api/mealLogs';
@@ -40,9 +40,9 @@ export default function LogItemInline({
 
   const {
     formState: {errors},
+    control,
     register,
     setError,
-    watch,
   } = useForm<FormValues>({
     defaultValues: {
       amount: String(item.amount ?? ''),
@@ -51,8 +51,8 @@ export default function LogItemInline({
     resolver: zodResolver(schema),
   });
 
-  const amount = watch('amount');
-  const unit = watch('unit');
+  const amount = useWatch({control, name: 'amount'}) ?? '';
+  const unit = useWatch({control, name: 'unit'}) ?? 'g';
 
   // Derive weight_g: if unit is 'g'/'ml', weight equals amount.
   // Otherwise, scale proportionally from the plan's weight_g.

@@ -1,5 +1,5 @@
 import {Button, Input} from '@heroui/react';
-import {Check, Minus, Plus, SkipForward, Trash2} from 'lucide-react';
+import {Check, Circle, Pencil, Plus, SkipForward, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 
 import type {ClientPerformedSet, PlannedSnapshotSet} from '@/api/workoutSessions';
@@ -11,8 +11,6 @@ import {
   useUpdatePerformedSetMutation,
 } from '@/api/workoutSessions';
 import RestTimer from '@/workout/components/rest-timer';
-
-// ── Helpers ──────────────────────────────────────────────────
 
 const LOAD_UNITS = ['kg', 'lbs', 'bodyweight'] as const;
 type LoadUnitOption = (typeof LOAD_UNITS)[number];
@@ -34,20 +32,39 @@ function toLoadUnitOption(unit: null | string): LoadUnitOption {
   return 'kg';
 }
 
-function formatPlannedLoad(set: PlannedSnapshotSet): string {
-  if (!set.load_value) return '';
-  if (set.load_unit === 'bodyweight') return 'BW';
-  if (set.load_unit === 'none') return '';
-  return `${set.load_value} ${set.load_unit ?? ''}`.trim();
-}
-
 function parseLoadValue(value: string): null | number {
   if (!value.trim()) return null;
   const num = parseFloat(value);
   return isNaN(num) ? null : num;
 }
 
-// ── Unit toggle button ───────────────────────────────────────
+function formatLoad(value: null | string, unit: null | string): string {
+  if (!value) return '';
+  if (unit === 'bodyweight') return 'BW';
+  if (!unit || unit === 'none') return String(value);
+  return `${value} ${unit}`;
+}
+
+function formatPlannedTarget(planned: PlannedSnapshotSet | undefined): string {
+  if (!planned) return 'Plan: —';
+  const reps = planned.target_reps ? `${planned.target_reps}` : '—';
+  const load = formatLoad(planned.load_value, planned.load_unit);
+  return `Plan: ${reps}${load ? ` @ ${load}` : ''}`;
+}
+
+function formatNextSetSummary(planned: PlannedSnapshotSet | undefined, setIndex: number): null | string {
+  if (!planned) return null;
+  const reps = planned.target_reps ? `${planned.target_reps}` : '—';
+  const load = formatLoad(planned.load_value, planned.load_unit);
+  return `Set ${setIndex + 1} · ${reps}${load ? ` @ ${load}` : ''}`;
+}
+
+function formatDoneTarget(set: ClientPerformedSet): string {
+  if (!set.completed) return 'Done: skipped';
+  const reps = set.actual_reps ?? '—';
+  const load = formatLoad(set.load_value, set.load_unit);
+  return `Done: ${reps}${load ? ` @ ${load}` : ''}`;
+}
 
 function UnitToggle({onChange, value}: {onChange: (unit: LoadUnitOption) => void; value: LoadUnitOption}) {
   return (
@@ -62,9 +79,7 @@ function UnitToggle({onChange, value}: {onChange: (unit: LoadUnitOption) => void
   );
 }
 
-// ── Logged set row (already logged — read-only with edit option) ─
-
-function LoggedSetRow({
+function LoggedSetCard({
   index,
   planned,
   sessionId,
@@ -111,92 +126,84 @@ function LoggedSetRow({
 
   if (isEditing) {
     return (
-      <tr className="border-b border-divider last:border-b-0">
-        <td className="px-2 py-1.5 text-center text-xs text-foreground-400">{index + 1}</td>
-        {planned ? <td className="px-2 py-1.5 text-xs text-foreground-400">{planned.target_reps ?? '—'}</td> : null}
-        <td className="px-2 py-1.5">
+      <div className="rounded-lg border border-divider bg-content2/40 p-3">
+        <p className="text-xs font-medium text-foreground-500">Set {index + 1}</p>
+        <p className="mt-1 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+
+        <div className="mt-3 flex flex-wrap items-end gap-2">
           <Input
-            className="w-16"
+            className="w-20"
             inputMode="numeric"
             onChange={(e) => setEditReps(e.target.value)}
             placeholder="Reps"
             value={editReps}
           />
-        </td>
-        <td className="px-2 py-1.5">
-          <div className="flex items-center gap-1">
-            <Input
-              className="w-16"
-              inputMode="decimal"
-              onChange={(e) => setEditLoad(e.target.value)}
-              placeholder="Load"
-              value={editLoad}
-            />
-            <UnitToggle
-              onChange={setEditUnit}
-              value={editUnit}
-            />
-          </div>
-        </td>
-        <td className="px-2 py-1.5">
-          <div className="flex items-center">
-            <Button
-              isDisabled={isDeleting}
-              isPending={isUpdating}
-              onPress={handleSave}
-              size="sm"
-              variant="ghost"
-            >
-              <Check size={14} />
-            </Button>
-            <button
-              className="flex min-h-11 min-w-9 items-center justify-center rounded-md text-danger transition-colors hover:bg-danger/10 active:bg-danger/20 disabled:opacity-50"
-              disabled={isBusy}
-              onClick={handleDelete}
-              title="Delete this set"
-              type="button"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </td>
-      </tr>
+          <Input
+            className="w-24"
+            inputMode="decimal"
+            onChange={(e) => setEditLoad(e.target.value)}
+            placeholder="Load"
+            value={editLoad}
+          />
+          <UnitToggle
+            onChange={setEditUnit}
+            value={editUnit}
+          />
+          <Button
+            isDisabled={isDeleting}
+            isPending={isUpdating}
+            onPress={handleSave}
+            size="sm"
+            variant="ghost"
+          >
+            <Check size={14} />
+            Save
+          </Button>
+          <button
+            className="flex min-h-11 items-center justify-center gap-1 rounded-md px-2 text-sm text-danger transition-colors hover:bg-danger/10 active:bg-danger/20 disabled:opacity-50"
+            disabled={isBusy}
+            onClick={handleDelete}
+            type="button"
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <tr
-      className="cursor-pointer border-b border-divider last:border-b-0 active:bg-content2/50"
+    <button
+      className="w-full rounded-lg border border-divider bg-content2/20 p-3 text-left transition-colors hover:bg-content2/40 active:bg-content2/50"
       onClick={() => setIsEditing(true)}
+      type="button"
     >
-      <td className="px-2 py-1.5 text-center text-xs text-foreground-400">{index + 1}</td>
-      {planned ? <td className="px-2 py-1.5 text-xs text-foreground-400">{planned.target_reps ?? '—'}</td> : null}
-      <td className="px-2 py-1.5 text-sm font-medium">
-        {set.completed ? (set.actual_reps ?? '—') : <span className="text-foreground-400">skipped</span>}
-      </td>
-      <td className="px-2 py-1.5 text-sm">
-        {set.completed && set.load_value ? `${set.load_value} ${set.load_unit ?? ''}`.trim() : '—'}
-      </td>
-      <td className="px-2 py-1.5">
-        {set.completed ? (
-          <Check
-            className="text-success"
-            size={16}
-          />
-        ) : (
-          <SkipForward
-            className="text-foreground-300"
-            size={16}
-          />
-        )}
-      </td>
-    </tr>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium">Set {index + 1}</p>
+          <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+          <p className="mt-1 text-sm text-foreground-600">{formatDoneTarget(set)}</p>
+        </div>
+        <div className="mt-1">
+          {set.completed ? (
+            <Check
+              className="text-success"
+              size={16}
+            />
+          ) : (
+            <SkipForward
+              className="text-foreground-300"
+              size={16}
+            />
+          )}
+        </div>
+      </div>
+    </button>
   );
 }
 
-// ── Pending set row (not yet logged — one-tap or expand to edit) ─
-
-function PendingSetRow({
+function PendingSetCard({
   index,
   isLogging,
   onLog,
@@ -214,83 +221,75 @@ function PendingSetRow({
   const [load, setLoad] = useState(planned?.load_value != null ? String(planned.load_value) : '');
   const [unit, setUnit] = useState<LoadUnitOption>(toLoadUnitOption(planned?.load_unit ?? null));
 
-  const plannedLoadDisplay = planned ? formatPlannedLoad(planned) : '';
-
-  // One-tap: log with pre-filled values
   const handleQuickLog = () => {
     onLog(planned?.target_reps ?? null, parseLoadValue(String(planned?.load_value ?? '')), planned?.load_unit ?? null);
   };
 
-  // Custom log: log with edited values
   const handleCustomLog = () => {
     onLog(reps || null, parseLoadValue(load), unit);
+    setIsExpanded(false);
   };
 
   if (isExpanded) {
     return (
-      <tr className="border-b border-divider last:border-b-0 bg-content2/50">
-        <td className="px-2 py-2 text-center text-xs text-foreground-400">{index + 1}</td>
-        {planned ? <td className="px-2 py-2 text-xs text-foreground-400">{planned.target_reps ?? '—'}</td> : null}
-        <td className="px-2 py-2">
+      <div className="rounded-lg border border-divider bg-content2/40 p-3">
+        <p className="text-sm font-medium">Set {index + 1}</p>
+        <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+
+        <div className="mt-3 flex flex-wrap items-end gap-2">
           <Input
-            className="w-16"
+            className="w-20"
             inputMode="numeric"
             onChange={(e) => setReps(e.target.value)}
             placeholder="Reps"
             value={reps}
           />
-        </td>
-        <td className="px-2 py-2">
-          <div className="flex items-center gap-1">
-            <Input
-              className="w-16"
-              inputMode="decimal"
-              onChange={(e) => setLoad(e.target.value)}
-              placeholder="Load"
-              value={load}
-            />
-            <UnitToggle
-              onChange={setUnit}
-              value={unit}
-            />
-          </div>
-        </td>
-        <td className="px-2 py-2">
-          <div className="flex items-center gap-1">
-            <Button
-              isPending={isLogging}
-              onPress={handleCustomLog}
-              size="sm"
-              variant="ghost"
-            >
-              <Check size={14} />
-            </Button>
-            <button
-              className="flex min-h-11 min-w-9 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
-              disabled={isLogging}
-              onClick={onSkip}
-              title="Skip this set"
-              type="button"
-            >
-              <SkipForward size={14} />
-            </button>
-          </div>
-        </td>
-      </tr>
+          <Input
+            className="w-24"
+            inputMode="decimal"
+            onChange={(e) => setLoad(e.target.value)}
+            placeholder="Load"
+            value={load}
+          />
+          <UnitToggle
+            onChange={setUnit}
+            value={unit}
+          />
+          <Button
+            isPending={isLogging}
+            onPress={handleCustomLog}
+            size="sm"
+            variant="ghost"
+          >
+            <Check size={14} />
+            Log
+          </Button>
+          <button
+            className="flex min-h-11 items-center justify-center gap-1 rounded-md px-2 text-sm text-foreground-500 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
+            disabled={isLogging}
+            onClick={onSkip}
+            type="button"
+          >
+            <SkipForward size={14} />
+            Skip
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <tr className="border-b border-divider last:border-b-0">
-      <td className="px-2 py-1.5 text-center text-xs text-foreground-400">{index + 1}</td>
-      {planned ? <td className="px-2 py-1.5 text-xs text-foreground-400">{planned.target_reps ?? '—'}</td> : null}
-      <td className="px-2 py-1.5 text-xs text-foreground-400">—</td>
-      <td className="px-2 py-1.5 text-xs text-foreground-400">{planned ? plannedLoadDisplay || '—' : '—'}</td>
-      <td className="px-2 py-1.5">
-        <div className="flex items-center">
-          {/* One-tap checkbox */}
+    <div className="rounded-lg border border-divider bg-content2/20 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Set {index + 1}</p>
+          <p className="mt-0.5 text-xs text-foreground-400">{formatPlannedTarget(planned)}</p>
+          <p className="mt-1 text-sm text-foreground-500">Done: —</p>
+        </div>
+
+        <div className="flex items-center gap-1">
           <button
-            className="flex min-h-11 min-w-9 items-center justify-center rounded-md border border-divider transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-divider transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
             disabled={isLogging}
             onClick={handleQuickLog}
             title="Log with planned values"
@@ -299,21 +298,24 @@ function PendingSetRow({
             {isLogging ? (
               <div className="size-3 animate-spin rounded-full border-2 border-foreground-300 border-t-transparent" />
             ) : (
-              <div className="size-3 rounded-full border-2 border-foreground-300" />
+              <Circle
+                className="text-foreground-400"
+                size={16}
+              />
             )}
           </button>
-          {/* Expand to edit */}
+
           <button
-            className="flex min-h-11 min-w-9 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3"
             onClick={() => setIsExpanded(true)}
             title="Edit before logging"
             type="button"
           >
-            <Minus size={14} />
+            <Pencil size={14} />
           </button>
-          {/* Skip this set */}
+
           <button
-            className="flex min-h-11 min-w-9 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 active:bg-content3 disabled:opacity-50"
             disabled={isLogging}
             onClick={onSkip}
             title="Skip this set"
@@ -322,14 +324,12 @@ function PendingSetRow({
             <SkipForward size={14} />
           </button>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
 
-// ── Freestyle add set row ────────────────────────────────────
-
-function AddSetRow({
+function AddSetCard({
   defaultUnit,
   isLogging,
   onLog,
@@ -349,47 +349,41 @@ function AddSetRow({
   };
 
   return (
-    <tr className="border-b border-divider last:border-b-0 bg-content2/30">
-      <td
-        className="px-2 py-2"
-        colSpan={4}
-      >
-        <div className="flex items-center gap-2">
-          <Input
-            className="w-16"
-            inputMode="numeric"
-            onChange={(e) => setReps(e.target.value)}
-            placeholder="Reps"
-            value={reps}
-          />
-          <Input
-            className="w-16"
-            inputMode="decimal"
-            onChange={(e) => setLoad(e.target.value)}
-            placeholder="Load"
-            value={load}
-          />
-          <UnitToggle
-            onChange={setUnit}
-            value={unit}
-          />
-          <Button
-            isDisabled={!reps}
-            isPending={isLogging}
-            onPress={handleLog}
-            size="sm"
-            variant="ghost"
-          >
-            <Plus size={14} />
-            Log
-          </Button>
-        </div>
-      </td>
-    </tr>
+    <div className="rounded-lg border border-dashed border-divider bg-content2/20 p-3">
+      <p className="mb-2 text-xs font-medium text-foreground-500">Add extra set</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Input
+          className="w-20"
+          inputMode="numeric"
+          onChange={(e) => setReps(e.target.value)}
+          placeholder="Reps"
+          value={reps}
+        />
+        <Input
+          className="w-24"
+          inputMode="decimal"
+          onChange={(e) => setLoad(e.target.value)}
+          placeholder="Load"
+          value={load}
+        />
+        <UnitToggle
+          onChange={setUnit}
+          value={unit}
+        />
+        <Button
+          isDisabled={!reps}
+          isPending={isLogging}
+          onPress={handleLog}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={14} />
+          Log set
+        </Button>
+      </div>
+    </div>
   );
 }
-
-// ── Main set logger component ────────────────────────────────
 
 export default function SetLogger({
   exercise,
@@ -401,23 +395,23 @@ export default function SetLogger({
   totalSetsInSession: number;
 }) {
   const [logSet, {isLoading: isLogging}] = useLogPerformedSetMutation();
-  const [restTimerSeconds, setRestTimerSeconds] = useState<null | number>(null);
+  const [restTimerState, setRestTimerState] = useState<null | {nextSetSummary: null | string; restSeconds: number}>(
+    null,
+  );
 
   const hasPlan = exercise.plannedSets.length > 0;
   const loggedCount = exercise.sets.length;
   const totalPlanned = exercise.plannedSets.length;
-  // Derive default unit from planned sets or last logged set
+
   const defaultUnit: LoadUnitOption = hasPlan
     ? toLoadUnitOption(exercise.plannedSets[0]?.load_unit ?? null)
     : toLoadUnitOption(exercise.sets[exercise.sets.length - 1]?.load_unit ?? null);
 
-  // Determine how many rows to show: max of planned sets and logged sets
   const rowCount = hasPlan ? Math.max(totalPlanned, loggedCount) : loggedCount;
 
-  const dismissRestTimer = useCallback(() => setRestTimerSeconds(null), []);
+  const dismissRestTimer = useCallback(() => setRestTimerState(null), []);
 
   const handleLogSet = async (reps: null | string, loadValue: null | number, loadUnit: null | string) => {
-    // Position = total performed sets across entire session (global counter)
     const position = totalSetsInSession;
     try {
       await logSet({
@@ -430,11 +424,15 @@ export default function SetLogger({
         workout_element_id: exercise.workoutElementId,
         workout_session_id: sessionId,
       }).unwrap();
-      // Start rest timer from the planned set that was just logged
+
       const justLoggedPlannedSet = hasPlan ? exercise.plannedSets[loggedCount] : undefined;
       const rest = justLoggedPlannedSet?.rest_seconds;
       if (rest && rest > 0) {
-        setRestTimerSeconds(rest);
+        const nextPlannedSet = hasPlan ? exercise.plannedSets[loggedCount + 1] : undefined;
+        setRestTimerState({
+          nextSetSummary: formatNextSetSummary(nextPlannedSet, loggedCount + 1),
+          restSeconds: rest,
+        });
       }
     } catch {
       // Error handled by RTK Query
@@ -459,75 +457,57 @@ export default function SetLogger({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Rest timer */}
-      {restTimerSeconds != null ? (
+      {restTimerState ? (
         <RestTimer
+          nextSetSummary={restTimerState.nextSetSummary}
           onDone={dismissRestTimer}
-          restSeconds={restTimerSeconds}
+          restSeconds={restTimerState.restSeconds}
         />
       ) : null}
 
-      <div className="overflow-hidden rounded-lg border border-divider">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-divider bg-content2">
-              <th className="w-8 px-2 py-1.5 text-center text-xs font-medium text-foreground-400">#</th>
-              {hasPlan ? <th className="px-2 py-1.5 text-left text-xs font-medium text-foreground-400">Plan</th> : null}
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-foreground-400">Done</th>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-foreground-400">Load</th>
-              <th className="w-16 px-2 py-1.5" />
-            </tr>
-          </thead>
-          <tbody>
-            {/* Render planned/logged set rows */}
-            {Array.from({length: rowCount}, (_, idx) => {
-              const loggedSet = exercise.sets[idx];
-              const plannedSet = hasPlan ? exercise.plannedSets[idx] : undefined;
+      {Array.from({length: rowCount}, (_, idx) => {
+        const loggedSet = exercise.sets[idx];
+        const plannedSet = hasPlan ? exercise.plannedSets[idx] : undefined;
 
-              if (loggedSet) {
-                return (
-                  <LoggedSetRow
-                    index={idx}
-                    key={loggedSet.id}
-                    planned={plannedSet}
-                    sessionId={sessionId}
-                    set={loggedSet}
-                  />
-                );
-              }
+        if (loggedSet) {
+          return (
+            <LoggedSetCard
+              index={idx}
+              key={loggedSet.id}
+              planned={plannedSet}
+              sessionId={sessionId}
+              set={loggedSet}
+            />
+          );
+        }
 
-              return (
-                <PendingSetRow
-                  index={idx}
-                  isLogging={isLogging}
-                  key={`pending_${idx}`}
-                  onLog={handleLogSet}
-                  onSkip={handleSkipSet}
-                  planned={plannedSet}
-                />
-              );
-            })}
+        return (
+          <PendingSetCard
+            index={idx}
+            isLogging={isLogging}
+            key={`pending_${idx}`}
+            onLog={handleLogSet}
+            onSkip={handleSkipSet}
+            planned={plannedSet}
+          />
+        );
+      })}
 
-            {/* For freestyle/added exercises: always show add row */}
-            {!hasPlan ? (
-              <AddSetRow
-                defaultUnit={defaultUnit}
-                isLogging={isLogging}
-                onLog={handleLogSet}
-              />
-            ) : null}
+      {!hasPlan ? (
+        <AddSetCard
+          defaultUnit={defaultUnit}
+          isLogging={isLogging}
+          onLog={handleLogSet}
+        />
+      ) : null}
 
-            {/* For planned exercises with all sets done: show add row for extra sets */}
-            {hasPlan && loggedCount >= totalPlanned ? (
-              <AddSetRow
-                defaultUnit={defaultUnit}
-                isLogging={isLogging}
-                onLog={handleLogSet}
-              />
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      {hasPlan && loggedCount >= totalPlanned ? (
+        <AddSetCard
+          defaultUnit={defaultUnit}
+          isLogging={isLogging}
+          onLog={handleLogSet}
+        />
+      ) : null}
     </div>
   );
 }

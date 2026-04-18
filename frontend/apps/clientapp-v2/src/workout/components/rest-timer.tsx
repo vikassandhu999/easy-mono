@@ -4,7 +4,15 @@ import {useEffect, useState} from 'react';
 
 // ── Component ────────────────────────────────────────────────
 
-export default function RestTimer({onDone, restSeconds}: {onDone: () => void; restSeconds: number}) {
+export default function RestTimer({
+  nextSetSummary,
+  onDone,
+  restSeconds,
+}: {
+  nextSetSummary?: null | string;
+  onDone: () => void;
+  restSeconds: number;
+}) {
   const [remaining, setRemaining] = useState(restSeconds);
 
   useEffect(() => {
@@ -27,36 +35,45 @@ export default function RestTimer({onDone, restSeconds}: {onDone: () => void; re
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
+  const totalMins = Math.floor(restSeconds / 60);
+  const totalSecs = restSeconds % 60;
   const pad = (n: number) => n.toString().padStart(2, '0');
   const progress = 1 - remaining / restSeconds;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-content2 px-4 py-3">
-      <Timer
-        className="shrink-0 text-foreground-400"
-        size={18}
-      />
-      <div className="flex-1">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-lg font-semibold tabular-nums">
-            {mins}:{pad(secs)}
-          </span>
-          <span className="text-xs text-foreground-400">rest</span>
-        </div>
-        {/* Progress bar */}
-        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-foreground-200">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-1000 ease-linear"
-            style={{width: `${progress * 100}%`}}
-          />
-        </div>
+    <div className="rounded-xl border border-divider bg-content2 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Timer
+          className="text-foreground-400"
+          size={16}
+        />
+        <p className="text-sm font-semibold">Rest</p>
       </div>
+
+      <p className="text-center text-xl font-semibold tabular-nums">
+        {mins}:{pad(secs)}
+        <span className="text-sm font-normal text-foreground-400">
+          {' '}
+          / {totalMins}:{pad(totalSecs)}
+        </span>
+      </p>
+
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-foreground-200">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-1000 ease-linear"
+          style={{width: `${progress * 100}%`}}
+        />
+      </div>
+
+      {nextSetSummary ? <p className="mt-3 text-sm text-foreground-500">Next: {nextSetSummary}</p> : null}
+
       <Button
+        className="mt-3"
         onPress={onDone}
         size="sm"
         variant="ghost"
       >
-        Skip
+        Skip rest
       </Button>
     </div>
   );

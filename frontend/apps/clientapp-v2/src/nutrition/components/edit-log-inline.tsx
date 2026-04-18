@@ -2,7 +2,7 @@ import {formatMacroValue} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Check, Trash2, X} from 'lucide-react';
-import {useForm} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import type {FoodLogEntry} from '@/api/mealLogs';
@@ -27,9 +27,9 @@ export default function EditLogInline({entry, onClose}: {entry: FoodLogEntry; on
 
   const {
     formState: {errors},
+    control,
     register,
     setError,
-    watch,
   } = useForm<FormValues>({
     defaultValues: {
       amount: String(entry.amount ?? ''),
@@ -38,8 +38,8 @@ export default function EditLogInline({entry, onClose}: {entry: FoodLogEntry; on
     resolver: zodResolver(schema),
   });
 
-  const amount = watch('amount');
-  const unit = watch('unit');
+  const amount = useWatch({control, name: 'amount'}) ?? '';
+  const unit = useWatch({control, name: 'unit'}) ?? 'g';
 
   const numericAmount = parseFloat(amount) || 0;
   const isGramLike = unit === 'g' || unit === 'ml';

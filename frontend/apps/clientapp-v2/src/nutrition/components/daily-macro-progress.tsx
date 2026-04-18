@@ -2,31 +2,31 @@ import type {MacroTotals} from '@easy/utils';
 
 import {formatMacroValue} from '@easy/utils';
 
-type MacroBarProps = {
+type MacroRowProps = {
   consumed: number;
   fillClass: string;
   label: string;
   planned: number;
-  unit: string;
+  unit: 'cal' | 'g';
 };
 
-function MacroBar({consumed, fillClass, label, planned, unit}: MacroBarProps) {
+function MacroRow({consumed, fillClass, label, planned, unit}: MacroRowProps) {
   const percent = planned > 0 ? Math.min((consumed / planned) * 100, 100) : 0;
-  const isOver = consumed > planned && planned > 0;
+
+  const consumedDisplay = formatMacroValue(consumed, unit === 'cal' ? '' : unit);
+  const plannedDisplay = formatMacroValue(planned, unit === 'cal' ? '' : unit);
+  const suffix = unit === 'cal' ? '' : unit;
 
   return (
-    <div className="flex-1">
-      <p className="text-xs text-foreground-400">{label}</p>
-      <p className={`text-sm font-semibold ${isOver ? 'text-danger' : ''}`}>
-        {formatMacroValue(consumed, unit === 'cal' ? '' : unit)}
-        {planned > 0 ? (
-          <span className="font-normal text-foreground-400">
-            /{formatMacroValue(planned, unit === 'cal' ? '' : unit)}
-          </span>
-        ) : null}
-        {unit === 'cal' ? ' cal' : ''}
-      </p>
-      <div className="progress-track mt-1">
+    <div>
+      <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+        <p className="font-medium">{label}</p>
+        <p className="text-foreground-500">
+          {consumedDisplay} / {plannedDisplay}
+          {suffix}
+        </p>
+      </div>
+      <div className="progress-track">
         <div
           className={fillClass}
           style={{width: `${percent}%`}}
@@ -38,31 +38,30 @@ function MacroBar({consumed, fillClass, label, planned, unit}: MacroBarProps) {
 
 export default function DailyMacroProgress({consumed, planned}: {consumed: MacroTotals; planned: MacroTotals}) {
   return (
-    <div className="rounded-xl bg-default p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Daily macros</p>
-      <div className="flex gap-3">
-        <MacroBar
+    <div className="rounded-xl border border-divider bg-content1 p-4">
+      <div className="space-y-3">
+        <MacroRow
+          consumed={consumed.protein}
+          fillClass="progress-fill-green"
+          label="Protein"
+          planned={planned.protein}
+          unit="g"
+        />
+        <MacroRow
           consumed={consumed.calories}
           fillClass="progress-fill-teal"
           label="Calories"
           planned={planned.calories}
           unit="cal"
         />
-        <MacroBar
-          consumed={consumed.protein}
-          fillClass="progress-fill-blue"
-          label="Protein"
-          planned={planned.protein}
-          unit="g"
-        />
-        <MacroBar
+        <MacroRow
           consumed={consumed.carbs}
           fillClass="progress-fill-amber"
           label="Carbs"
           planned={planned.carbs}
           unit="g"
         />
-        <MacroBar
+        <MacroRow
           consumed={consumed.fat}
           fillClass="progress-fill-red"
           label="Fats"

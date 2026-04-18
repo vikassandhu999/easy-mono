@@ -73,7 +73,7 @@ function SessionCard({session}: {session: ClientWorkoutSession}) {
             </Chip>
           ) : null}
           {session.soreness_rating ? (
-            <span className="text-xs text-foreground-400">Effort: {session.soreness_rating}/5</span>
+            <span className="text-xs text-foreground-400">Feeling: {session.soreness_rating}/5</span>
           ) : null}
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function WorkoutHistory() {
           ) : null}
         </div>
       ) : (
-        <p className="text-sm text-foreground-400">No workouts yet. Start one from the dashboard!</p>
+        <p className="text-sm text-foreground-400">No workouts yet. Start one from Training.</p>
       )}
     </PageLayout>
   );

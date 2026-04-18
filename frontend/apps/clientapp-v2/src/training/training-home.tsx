@@ -10,6 +10,7 @@ import type {ClientWorkoutSession} from '@/api/workoutSessions';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useListMyMealLogsQuery} from '@/api/mealLogs';
+import {useGetClientProfileQuery} from '@/api/profile';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import {useGetActiveWorkoutSessionQuery, useStartWorkoutSessionMutation} from '@/api/workoutSessions';
 
@@ -25,12 +26,23 @@ function getExerciseCount(workout: ClientPlannedWorkout): number {
   return workout.workout_elements.length;
 }
 
-function getTotalSets(workout: ClientPlannedWorkout): number {
-  let count = 0;
+function estimateWorkoutDurationMinutes(workout: ClientPlannedWorkout): null | number {
+  let totalSeconds = 0;
+
   for (const el of workout.workout_elements) {
-    count += el.planned_sets.length;
+    for (const set of el.planned_sets) {
+      totalSeconds += (set.duration_seconds ?? 45) + (set.rest_seconds ?? 75);
+    }
   }
-  return count;
+
+  if (totalSeconds <= 0) return null;
+
+  const roundedTo5 = Math.round(totalSeconds / 300) * 5;
+  return Math.max(15, roundedTo5);
+}
+
+function getPrimaryWorkoutForDay(plan: ClientTrainingPlan, dayNumber: number): ClientPlannedWorkout | undefined {
+  return plan.planned_workouts.find((workout) => workout.day_number === dayNumber);
 }
 
 // ── Today's nutrition summary ─────────────────────────────────
@@ -64,7 +76,7 @@ function TodayNutritionSummary() {
             {logCount !== 1 ? 's' : ''} logged
           </p>
         ) : (
-          <p className="mt-0.5 text-sm text-foreground-400">No food logged yet today</p>
+          <p className="mt-0.5 text-sm text-foreground-400">Nothing logged yet today</p>
         )}
       </div>
       <ChevronRight
@@ -92,7 +104,7 @@ function ActiveSessionBanner({session}: {session: ClientWorkoutSession}) {
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">Workout in progress</p>
+          <p className="text-sm font-semibold">You&apos;re in the middle of a workout</p>
           <p className="mt-0.5 text-sm text-foreground-500">
             {workoutName}
             {setCount > 0 ? ` \u00B7 ${setCount} set${setCount !== 1 ? 's' : ''} logged` : ''}
@@ -124,10 +136,11 @@ function TodayWorkoutCard({
   workout: ClientPlannedWorkout;
 }) {
   const exerciseCount = getExerciseCount(workout);
-  const totalSets = getTotalSets(workout);
+  const durationMins = estimateWorkoutDurationMinutes(workout);
 
   return (
     <div className="rounded-xl border border-divider bg-content1 p-4">
+      <p className="mb-3 text-sm font-medium text-foreground-500">Today</p>
       <div className="flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
           <Dumbbell
@@ -139,28 +152,10 @@ function TodayWorkoutCard({
           <p className="text-base font-semibold">{workout.name}</p>
           <p className="mt-0.5 text-sm text-foreground-500">
             {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''}
-            {totalSets > 0 ? ` \u00B7 ${totalSets} sets` : ''}
+            {durationMins ? ` \u00B7 about ${durationMins} minutes` : ''}
           </p>
         </div>
       </div>
-
-      {/* Exercise preview */}
-      {workout.workout_elements.length > 0 ? (
-        <div className="mt-3 flex flex-col gap-1.5">
-          {workout.workout_elements.map((el) => (
-            <div
-              className="flex items-center gap-2 text-sm text-foreground-500"
-              key={el.id}
-            >
-              <span className="size-1 shrink-0 rounded-full bg-foreground-300" />
-              <span className="truncate">{el.exercise.name}</span>
-              <span className="shrink-0 text-xs text-foreground-400">
-                {el.planned_sets.length} set{el.planned_sets.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : null}
 
       <Button
         className="mt-4 w-full"
@@ -176,45 +171,70 @@ function TodayWorkoutCard({
   );
 }
 
-// ── Other workout card (collapsed) ───────────────────────────
+function WeeklyPlanStrip({plan}: {plan: ClientTrainingPlan}) {
+  const days = [1, 2, 3, 4, 5, 6, 7].map((dayNumber) => {
+    const workout = getPrimaryWorkoutForDay(plan, dayNumber);
+    const dayShort = (DAY_NAMES[dayNumber] ?? '').slice(0, 3);
 
-function OtherWorkoutCard({
-  hasActiveSession,
-  onStart,
-  workout,
-}: {
-  hasActiveSession: boolean;
-  onStart: (workoutId: string) => void;
-  workout: ClientPlannedWorkout;
-}) {
-  const dayName = DAY_NAMES[workout.day_number] ?? '';
-  const exerciseCount = getExerciseCount(workout);
+    let summary = '—';
+    if (workout) {
+      summary = workout.name;
+    } else if (plan.rest_days.includes(dayNumber)) {
+      summary = 'Rest';
+    }
+
+    return {dayNumber, dayShort, summary};
+  });
 
   return (
-    <button
-      className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-divider bg-content1 p-3 text-left transition-colors hover:bg-content2 active:bg-content2 disabled:opacity-50"
-      disabled={hasActiveSession}
-      onClick={() => onStart(workout.id)}
-      type="button"
-    >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
-        <Dumbbell
-          className="text-foreground-400"
-          size={16}
-        />
+    <div className="mb-6 rounded-xl border border-divider bg-content1 p-3">
+      <p className="mb-2 text-sm font-medium">This week</p>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {days.map((day) => (
+          <div key={day.dayNumber}>
+            <p className="text-[10px] text-foreground-400">{day.dayShort}</p>
+            <p className="mt-1 truncate text-[11px] font-medium text-foreground-500">{day.summary}</p>
+          </div>
+        ))}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{workout.name}</p>
-        <p className="text-xs text-foreground-500">
-          {dayName}
-          {exerciseCount > 0 ? ` \u00B7 ${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}` : ''}
-        </p>
+    </div>
+  );
+}
+
+function getDaysUntil(dayNumber: number, todayDayNumber: number): number {
+  return (dayNumber - todayDayNumber + 7) % 7;
+}
+
+function ComingUpList({todayDayNumber, workouts}: {todayDayNumber: number; workouts: ClientPlannedWorkout[]}) {
+  const upcoming = workouts
+    .filter((workout) => workout.day_number !== todayDayNumber)
+    .sort((a, b) => getDaysUntil(a.day_number, todayDayNumber) - getDaysUntil(b.day_number, todayDayNumber))
+    .slice(0, 3);
+
+  if (upcoming.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <h2 className="mb-2 text-sm font-medium">Coming up</h2>
+      <div className="flex flex-col gap-2">
+        {upcoming.map((workout) => {
+          const dayName = DAY_NAMES[workout.day_number] ?? '';
+          const exerciseCount = getExerciseCount(workout);
+
+          return (
+            <div
+              className="rounded-lg border border-divider bg-content1 px-3 py-2"
+              key={workout.id}
+            >
+              <p className="text-sm text-foreground-500">
+                <span className="font-medium text-foreground">{dayName}</span> — {workout.name}
+                {exerciseCount > 0 ? ` · ${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}` : ''}
+              </p>
+            </div>
+          );
+        })}
       </div>
-      <ChevronRight
-        className="shrink-0 text-foreground-300"
-        size={16}
-      />
-    </button>
+    </div>
   );
 }
 
@@ -233,11 +253,15 @@ function TrainingHomeSkeleton() {
           </div>
         </div>
 
-        {/* Today section heading */}
-        <div className="mb-3 h-4 w-32 animate-pulse rounded bg-content2" />
+        {/* Greeting skeleton */}
+        <div className="mb-4">
+          <div className="h-5 w-36 animate-pulse rounded bg-content2" />
+          <div className="mt-2 h-4 w-20 animate-pulse rounded bg-content2" />
+        </div>
 
         {/* Today's workout card skeleton */}
         <div className="mb-6 rounded-xl border border-divider bg-content1 p-4">
+          <div className="mb-3 h-4 w-12 animate-pulse rounded bg-content2" />
           <div className="flex items-start gap-3">
             <div className="size-10 shrink-0 animate-pulse rounded-lg bg-content2" />
             <div className="min-w-0 flex-1">
@@ -245,31 +269,20 @@ function TrainingHomeSkeleton() {
               <div className="mt-2 h-3 w-28 animate-pulse rounded bg-content2" />
             </div>
           </div>
-          <div className="mt-3 flex flex-col gap-1.5">
-            <div className="h-4 w-full animate-pulse rounded bg-content2" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-content2" />
-            <div className="h-4 w-4/6 animate-pulse rounded bg-content2" />
-          </div>
           <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-content2" />
         </div>
 
-        {/* Other workouts heading */}
-        <div className="mb-3 h-4 w-40 animate-pulse rounded bg-content2" />
-
-        {/* Other workouts — 3 rows */}
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((i) => (
-            <div
-              className="flex items-center gap-3 rounded-xl border border-divider bg-content1 p-3"
-              key={i}
-            >
-              <div className="size-8 shrink-0 animate-pulse rounded-lg bg-content2" />
-              <div className="min-w-0 flex-1">
-                <div className="h-4 w-32 animate-pulse rounded bg-content2" />
-                <div className="mt-1.5 h-3 w-24 animate-pulse rounded bg-content2" />
-              </div>
-            </div>
-          ))}
+        {/* Weekly strip skeleton */}
+        <div className="mb-6 rounded-xl border border-divider bg-content1 p-3">
+          <div className="mb-2 h-4 w-20 animate-pulse rounded bg-content2" />
+          <div className="grid grid-cols-7 gap-1">
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div
+                className="h-8 animate-pulse rounded bg-content2"
+                key={i}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </PageLayout>
@@ -289,7 +302,7 @@ function EmptyPlanState({isStarting, onStartFreestyle}: {isStarting: boolean; on
       </div>
       <h3 className="text-base font-medium">Your plan is on the way</h3>
       <p className="mt-2 text-sm text-foreground-500">
-        Your coach is setting up your training plan. You&apos;ll see it here as soon as they assign it.
+        Your coach is setting up your training plan. You&apos;ll see it here as soon as it&apos;s ready.
       </p>
       <Button
         className="mt-4"
@@ -310,11 +323,15 @@ export default function TrainingHome() {
   const navigate = useNavigate();
   const {data: plansData, isLoading: isLoadingPlans} = useListClientTrainingPlansQuery({status: 'active'});
   const {data: activeSessionData, isLoading: isLoadingSession} = useGetActiveWorkoutSessionQuery();
+  const {data: profileData} = useGetClientProfileQuery();
   const [startSession, {isLoading: isStarting}] = useStartWorkoutSessionMutation();
 
   const activePlan: ClientTrainingPlan | undefined = plansData?.data[0];
   const activeSession: ClientWorkoutSession | undefined = activeSessionData?.data;
   const hasActiveSession = activeSession != null;
+
+  const firstName = profileData?.data.first_name?.trim();
+  const greeting = firstName ? `Hey ${firstName} 👋` : 'Hey 👋';
 
   const todayDayNumber = getTodayDayNumber();
   const todayWorkouts: ClientPlannedWorkout[] = [];
@@ -370,12 +387,14 @@ export default function TrainingHome() {
           />
         ) : (
           <>
+            {/* Greeting */}
+            <div className="mb-4">
+              <p className="text-lg font-semibold">{greeting}</p>
+              <p className="text-sm text-foreground-500">{DAY_NAMES[todayDayNumber]}</p>
+            </div>
+
             {/* Today's workout */}
             <div className="mb-6">
-              <h2 className="mb-3 text-sm font-semibold text-foreground-500">
-                Today &middot; {DAY_NAMES[todayDayNumber]}
-              </h2>
-
               {todayWorkouts.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {todayWorkouts.map((workout) => (
@@ -389,29 +408,19 @@ export default function TrainingHome() {
                 </div>
               ) : activePlan ? (
                 <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
-                  <p className="text-sm text-foreground-400">No workout scheduled for today. Rest day?</p>
+                  <p className="text-sm text-foreground-400">No workout today — enjoy your rest day.</p>
                 </div>
               ) : null}
             </div>
 
-            {/* Other days */}
-            {otherWorkouts.length > 0 ? (
-              <div className="mb-6">
-                <h2 className="mb-3 text-sm font-semibold text-foreground-500">Other workouts in your plan</h2>
-                <div className="flex flex-col gap-2">
-                  {[...otherWorkouts]
-                    .sort((a, b) => a.day_number - b.day_number)
-                    .map((workout) => (
-                      <OtherWorkoutCard
-                        hasActiveSession={hasActiveSession || isStarting}
-                        key={workout.id}
-                        onStart={handleStartWorkout}
-                        workout={workout}
-                      />
-                    ))}
-                </div>
-              </div>
-            ) : null}
+            {/* Weekly strip */}
+            {activePlan ? <WeeklyPlanStrip plan={activePlan} /> : null}
+
+            {/* Coming up */}
+            <ComingUpList
+              todayDayNumber={todayDayNumber}
+              workouts={otherWorkouts}
+            />
 
             {/* Freestyle — only show when a plan exists or a session is active */}
             <div>

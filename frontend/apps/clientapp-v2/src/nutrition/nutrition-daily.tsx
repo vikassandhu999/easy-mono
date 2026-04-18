@@ -91,7 +91,7 @@ function buildMealSlots(mealLogs: MealLog[], todayPlanMeals: null | TodayPlanMea
 
 function NutritionDailySkeleton() {
   return (
-    <PageLayout title="Nutrition">
+    <PageLayout title="Today's nutrition">
       <div className="max-w-lg">
         {/* Date navigator skeleton */}
         <div className="mb-4 flex items-center justify-between">
@@ -269,7 +269,7 @@ export default function NutritionDaily() {
   const isFuture = dateISO > formatDateISO(new Date());
 
   return (
-    <PageLayout title="Nutrition">
+    <PageLayout title="Today's nutrition">
       <div className="max-w-lg">
         {/* Date navigator */}
         <div className="mb-4">
@@ -308,7 +308,9 @@ export default function NutritionDaily() {
             </div>
             <h3 className="text-base font-medium">No meal plan yet</h3>
             <p className="mt-2 text-sm text-foreground-500">
-              Your coach will assign a meal plan soon. You can still log what you eat.
+              Your coach will assign one soon.
+              <br />
+              You can still log what you eat.
             </p>
             <Button
               className="mt-4"
@@ -419,7 +421,7 @@ export default function NutritionDaily() {
                 onPress={handleLogAllDay}
                 variant="ghost"
               >
-                Log all meals
+                Log everything today
               </Button>
             ) : null}
           </div>

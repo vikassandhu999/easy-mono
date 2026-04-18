@@ -1,6 +1,6 @@
 import {getWorkoutTitle} from '@easy/utils';
 import {Alert, Button, Spinner} from '@heroui/react';
-import {ArrowLeft, Clock, Dumbbell, Plus} from 'lucide-react';
+import {ArrowLeft, Clock, Plus} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import type {WorkoutExercise} from '@/workout/components/workout-types';
@@ -149,7 +149,7 @@ export default function ActiveWorkout() {
           <Alert.Indicator />
           <Alert.Content>
             <Alert.Title>No active workout</Alert.Title>
-            <Alert.Description>Start a workout from the dashboard to begin logging.</Alert.Description>
+            <Alert.Description>Start a workout from Training to begin logging.</Alert.Description>
           </Alert.Content>
         </Alert>
       </PageLayout>
@@ -174,10 +174,6 @@ export default function ActiveWorkout() {
           {elapsed}
         </div>
         <div className="flex-1" />
-        <div className="flex items-center gap-1.5 text-xs text-foreground-400">
-          <Dumbbell size={12} />
-          {session.performed_sets.length} set{session.performed_sets.length !== 1 ? 's' : ''}
-        </div>
       </div>
 
       {/* Exercise list */}
@@ -204,7 +200,7 @@ export default function ActiveWorkout() {
         ) : (
           <div className="px-4 py-8 text-center">
             <p className="text-sm text-foreground-400">
-              {snapshot ? 'All exercises completed!' : 'No exercises yet. Add one to start logging.'}
+              {snapshot ? 'Great work — all exercises are logged.' : 'No exercises yet. Add one to get started.'}
             </p>
           </div>
         )}
@@ -247,6 +243,7 @@ export default function ActiveWorkout() {
             onCancel={() => setShowFinish(false)}
             sessionId={session.id}
             startedAt={session.started_at}
+            workoutTitle={workoutTitle}
           />
         ) : (
           <Button

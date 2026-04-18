@@ -1,6 +1,6 @@
 import {formatDurationFromNow} from '@easy/utils';
 import {AlertDialog, Button, Separator, TextArea} from '@heroui/react';
-import {Check, Clock, Dumbbell, Trash2} from 'lucide-react';
+import {Trash2, X} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
@@ -10,59 +10,46 @@ import {ROUTES} from '@/@config/routes';
 import {useCompleteWorkoutSessionMutation, useDiscardWorkoutSessionMutation} from '@/api/workoutSessions';
 import {clearWorkoutLocalState} from '@/workout/components/use-workout-local-state';
 
-// ── Helpers ──────────────────────────────────────────────────
-
 function computeSummary(exercises: WorkoutExercise[]): {
-  added: number;
   completed: number;
-  replaced: number;
-  skipped: number;
   totalPlanned: number;
   totalSets: number;
 } {
   let completed = 0;
-  let replaced = 0;
-  let skipped = 0;
-  let added = 0;
-  let totalSets = 0;
   let totalPlanned = 0;
+  let totalSets = 0;
 
   for (const ex of exercises) {
-    if (ex.isAdded) {
-      added++;
-    } else {
+    if (!ex.isAdded) {
       totalPlanned++;
-      if (ex.status === 'skipped') {
-        skipped++;
-      } else if (ex.isReplaced) {
-        replaced++;
+      if (ex.isReplaced || ex.status === 'done' || ex.status === 'in_progress') {
         completed++;
-      } else if (ex.sets.length > 0) {
-        completed++;
-      } else {
-        skipped++;
       }
     }
     totalSets += ex.sets.length;
   }
 
-  return {added, completed, replaced, skipped, totalPlanned, totalSets};
+  return {completed, totalPlanned, totalSets};
 }
 
-const SORENESS_OPTIONS = [1, 2, 3, 4, 5] as const;
-
-// ── Component ────────────────────────────────────────────────
+const MOOD_OPTIONS = [
+  {emoji: '😰', label: 'tough', value: 1},
+  {emoji: '😊', label: 'solid', value: 3},
+  {emoji: '🔥', label: 'strong', value: 5},
+] as const;
 
 export default function FinishWorkout({
   exercises,
   onCancel,
   sessionId,
   startedAt,
+  workoutTitle,
 }: {
   exercises: WorkoutExercise[];
   onCancel: () => void;
   sessionId: string;
   startedAt: string;
+  workoutTitle: string;
 }) {
   const navigate = useNavigate();
   const [sorenessRating, setSorenessRating] = useState<null | number>(null);
@@ -101,90 +88,78 @@ export default function FinishWorkout({
 
   return (
     <div className="rounded-xl border border-divider bg-content1 p-4">
-      <h3 className="text-base font-semibold">Finish workout?</h3>
-
-      {/* Duration + counts */}
-      <div className="mt-3 flex flex-wrap gap-3 text-sm text-foreground-500">
-        <span className="flex items-center gap-1.5">
-          <Clock size={14} />
-          {duration}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Dumbbell size={14} />
-          {summary.completed}/{summary.totalPlanned} exercises
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Check size={14} />
-          {summary.totalSets} sets
-        </span>
+      <div className="mb-1 flex justify-end">
+        <button
+          aria-label="Close"
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-content2 active:bg-content2"
+          onClick={onCancel}
+          type="button"
+        >
+          <X size={16} />
+        </button>
       </div>
 
-      {/* Detail chips */}
-      {summary.replaced > 0 || summary.skipped > 0 || summary.added > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-foreground-400">
-          {summary.replaced > 0 ? <span>{summary.replaced} replaced</span> : null}
-          {summary.replaced > 0 && (summary.skipped > 0 || summary.added > 0) ? <span>&middot;</span> : null}
-          {summary.skipped > 0 ? <span>{summary.skipped} skipped</span> : null}
-          {summary.skipped > 0 && summary.added > 0 ? <span>&middot;</span> : null}
-          {summary.added > 0 ? <span>{summary.added} added</span> : null}
-        </div>
-      ) : null}
+      <div className="text-center">
+        <h3 className="text-xl font-semibold">💪 Workout complete</h3>
+        <p className="mt-1 text-sm text-foreground-500">
+          {workoutTitle} · {duration}
+        </p>
+      </div>
 
       <Separator className="my-4" />
 
-      {/* Soreness rating */}
+      <div className="space-y-1">
+        <p className="text-sm">{summary.totalSets} sets logged</p>
+        <p className="text-sm text-foreground-500">
+          {summary.completed} of {summary.totalPlanned} exercises completed
+        </p>
+      </div>
+
+      <Separator className="my-4" />
+
       <div className="mb-4">
-        <p className="mb-2 text-sm font-medium text-foreground-500">How are you feeling?</p>
+        <p className="mb-2 text-sm font-medium">How did it feel?</p>
         <div className="flex gap-2">
-          {SORENESS_OPTIONS.map((rating) => (
+          {MOOD_OPTIONS.map((option) => (
             <button
-              className={`flex size-11 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
-                sorenessRating === rating
+              className={`flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border px-2 text-sm transition-colors ${
+                sorenessRating === option.value
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-divider text-foreground-500 hover:bg-content2 active:bg-content3'
               }`}
-              key={rating}
-              onClick={() => setSorenessRating((prev) => (prev === rating ? null : rating))}
+              key={option.value}
+              onClick={() => setSorenessRating((prev) => (prev === option.value ? null : option.value))}
               type="button"
             >
-              {rating}
+              <span>{option.emoji}</span>
+              <span>{option.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Notes */}
       <div className="mb-4">
+        <p className="mb-2 text-sm font-medium">Note for your coach (optional)</p>
         <TextArea
           className="w-full"
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
-          placeholder="How was the session? (optional)"
+          placeholder="Bench felt great today"
           rows={2}
           value={notes}
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-col gap-2">
-        <Button
-          isPending={isCompleting}
-          onPress={handleComplete}
-          variant="primary"
-        >
-          <Check size={16} />
-          Complete workout
-        </Button>
-        <Button
-          onPress={onCancel}
-          variant="ghost"
-        >
-          Continue training
-        </Button>
-      </div>
+      <Button
+        className="w-full"
+        isPending={isCompleting}
+        onPress={handleComplete}
+        variant="primary"
+      >
+        Done
+      </Button>
 
       <Separator className="my-3" />
 
-      {/* Discard — with confirmation dialog */}
       <AlertDialog>
         <Button
           className="w-full text-danger"

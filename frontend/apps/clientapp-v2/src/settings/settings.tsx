@@ -27,10 +27,10 @@ function getFullName(firstName: null | string, lastName: null | string): string 
   return [firstName, lastName].filter(Boolean).join(' ');
 }
 
-function splitName(fullName: string): {first_name: string; last_name: string} {
+function splitName(fullName: string): {firstName: string; lastName: string} {
   const spaceIndex = fullName.indexOf(' ');
-  if (spaceIndex === -1) return {first_name: fullName, last_name: ''};
-  return {first_name: fullName.slice(0, spaceIndex), last_name: fullName.slice(spaceIndex + 1)};
+  if (spaceIndex === -1) return {firstName: fullName, lastName: ''};
+  return {firstName: fullName.slice(0, spaceIndex), lastName: fullName.slice(spaceIndex + 1)};
 }
 
 /** Strip non-digit characters except leading + for WhatsApp deep link. */
@@ -54,8 +54,8 @@ function ProfileSection({
 
   const handleNameSave = useCallback(
     async (value: string) => {
-      const {first_name, last_name} = splitName(value.trim());
-      await onUpdate({first_name, last_name}).unwrap();
+      const {firstName, lastName} = splitName(value.trim());
+      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
     },
     [onUpdate],
   );
@@ -162,7 +162,7 @@ function AccountSection({email}: {email: null | string}) {
         </div>
         <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
           <span className="w-20 shrink-0 text-sm text-foreground-400">Auth</span>
-          <span className="flex-1 text-sm text-foreground-500">Email OTP</span>
+          <span className="flex-1 text-sm text-foreground-500">Email login code</span>
         </div>
       </div>
     </section>

@@ -1,6 +1,6 @@
 import {formatMacroValue, MEAL_SLOT_LABELS} from '@easy/utils';
 import {Button, Spinner, toast} from '@heroui/react';
-import {Check, Circle, Pencil, Plus} from 'lucide-react';
+import {Check, Pencil, Plus} from 'lucide-react';
 import {useMemo} from 'react';
 
 import type {FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
@@ -54,19 +54,6 @@ function PlannedItemRow({
       onClick={handlePress}
       type="button"
     >
-      {isLogged ? (
-        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-success/20">
-          <Check
-            className="text-success"
-            size={12}
-          />
-        </div>
-      ) : (
-        <Circle
-          className="shrink-0 text-foreground-300"
-          size={18}
-        />
-      )}
       <div className="min-w-0 flex-1">
         {isReplacement && entry ? (
           <>
@@ -167,11 +154,6 @@ export default function MealSlotSection({
     [plannedItems, entries],
   );
 
-  const someLogged = useMemo(
-    () => plannedItems.some((_, index) => isItemLogged(index, entries)),
-    [plannedItems, entries],
-  );
-
   const handleLogAll = async () => {
     if (!mealId) return;
     try {
@@ -193,11 +175,11 @@ export default function MealSlotSection({
       {/* Header */}
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide">{slotLabel}</h3>
+          <h3 className="text-sm font-semibold">{slotLabel}</h3>
           {totalCal > 0 ? <p className="text-xs text-foreground-400">{formatMacroValue(totalCal, '')} cal</p> : null}
         </div>
         {allLogged && plannedItems.length > 0 ? (
-          <span className="text-xs text-success">All logged</span>
+          <span className="text-xs text-success">Logged</span>
         ) : !allLogged && !isFuture && mealId && plannedItems.length > 0 ? (
           <Button
             isDisabled={isLogging}
@@ -207,7 +189,7 @@ export default function MealSlotSection({
             variant="ghost"
           >
             {isLogging ? <Spinner size="sm" /> : <Check size={14} />}
-            {someLogged ? 'Log remaining' : 'Log all'}
+            Just ate this
           </Button>
         ) : null}
       </div>

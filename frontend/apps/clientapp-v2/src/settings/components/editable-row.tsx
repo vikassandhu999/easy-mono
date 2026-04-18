@@ -1,6 +1,6 @@
 import {Button, Input, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
@@ -24,6 +24,7 @@ export default function EditableRow({
   value: null | string;
 }) {
   const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const {
     formState: {errors, isSubmitting},
@@ -54,6 +55,12 @@ export default function EditableRow({
     }
   };
 
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+    }
+  }, [editing]);
+
   const errorMessage = errors.value?.message || errors.root?.message;
 
   if (editing) {
@@ -65,9 +72,9 @@ export default function EditableRow({
         <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
         <div className="min-w-0 flex-1">
           <Input
-            autoFocus
             className="w-full"
             isInvalid={!!errorMessage}
+            ref={inputRef}
             size="sm"
             type={inputType}
             {...register('value')}

@@ -2,7 +2,6 @@ import {Button, toast} from '@heroui/react';
 import {Camera, Plus, TrendingUp} from 'lucide-react';
 
 import PageLayout from '@/@components/page-layout';
-import SectionHeading from '@/@components/section-heading';
 
 // ── Weight section ────────────────────────────────────────────────
 
@@ -14,7 +13,7 @@ function WeightSection() {
 
   return (
     <section className="mb-6">
-      <SectionHeading title="Weight" />
+      <h2 className="mb-3 text-sm font-medium">Weight</h2>
       <div className="rounded-xl border border-divider bg-content1 p-6 text-center">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10">
           <TrendingUp
@@ -23,7 +22,7 @@ function WeightSection() {
           />
         </div>
         <h3 className="text-base font-medium">Start tracking your weight</h3>
-        <p className="mt-2 text-sm text-foreground-500">Log your weight regularly to see your progress.</p>
+        <p className="mt-2 text-sm text-foreground-500">Log regularly to see how you&apos;re progressing.</p>
         <Button
           className="mt-4"
           onPress={handleLogWeight}
@@ -47,7 +46,7 @@ function PhotosSection() {
 
   return (
     <section>
-      <SectionHeading title="Photos" />
+      <h2 className="mb-3 text-sm font-medium">Progress photos</h2>
       <div className="rounded-xl border border-divider bg-content1 p-6 text-center">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-accent/10">
           <Camera
@@ -56,16 +55,14 @@ function PhotosSection() {
           />
         </div>
         <h3 className="text-base font-medium">Take your first progress photo</h3>
-        <p className="mt-2 text-sm text-foreground-500">
-          Front, side, and back shots help your coach see your progress.
-        </p>
+        <p className="mt-2 text-sm text-foreground-500">You&apos;ll thank yourself later.</p>
         <Button
           className="mt-4"
           onPress={handleAddPhoto}
           variant="primary"
         >
           <Plus size={16} />
-          Add photo
+          Take photo
         </Button>
       </div>
     </section>

@@ -49,6 +49,7 @@ function deriveSchemeFromLastElement(elements: WorkoutElement[]): SetSchemeValue
     loadValue: '',
     loadUnit: firstSet.load_unit ?? 'kg',
     rest: firstSet.rest_seconds != null ? String(firstSet.rest_seconds) : '',
+    warmupSets: '',
   };
 }
 
@@ -197,6 +198,11 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
   const removalTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
 
   const handleRemoveExercise = (element: WorkoutElement) => {
+    if (removalTimerRef.current) {
+      clearTimeout(removalTimerRef.current);
+      removalTimerRef.current = null;
+    }
+
     // If another removal is pending, commit it immediately
     if (pendingRemoval) {
       commitRemoval(pendingRemoval);
@@ -251,8 +257,18 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
     if (!current || !target) return;
     try {
       await Promise.all([
-        updateElement({id: current.id, planId, plannedWorkoutId: workout.id, body: {position: target.position}}),
-        updateElement({id: target.id, planId, plannedWorkoutId: workout.id, body: {position: current.position}}),
+        updateElement({
+          id: current.id,
+          planId,
+          plannedWorkoutId: workout.id,
+          body: {position: target.position},
+        }).unwrap(),
+        updateElement({
+          id: target.id,
+          planId,
+          plannedWorkoutId: workout.id,
+          body: {position: current.position},
+        }).unwrap(),
       ]);
     } catch {
       toast.danger('Failed to reorder exercise');

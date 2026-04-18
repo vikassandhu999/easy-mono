@@ -29,7 +29,11 @@ const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'wa
 const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  const parsed = new Date(isDateOnly ? `${dateString}T12:00:00` : dateString);
+  if (Number.isNaN(parsed.getTime())) return '\u2014';
+
+  return parsed.toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

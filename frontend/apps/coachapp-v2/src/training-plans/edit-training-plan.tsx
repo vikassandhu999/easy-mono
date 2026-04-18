@@ -81,7 +81,7 @@ export default function EditTrainingPlan() {
   const backPath = `/library/training-plans/${id}`;
   const goBackOuter = useGoBack(backPath);
 
-  if (isFetching || !data) {
+  if (isFetching) {
     return (
       <PageLayout title="Edit Training Plan">
         <div className="flex items-center justify-center py-20">
@@ -91,7 +91,7 @@ export default function EditTrainingPlan() {
     );
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
       <PageLayout title="Edit Training Plan">
         <div className="mb-4">

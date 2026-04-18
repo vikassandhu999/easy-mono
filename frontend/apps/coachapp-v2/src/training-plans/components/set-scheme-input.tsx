@@ -29,10 +29,26 @@ export type SetSchemeValues = {
   warmupSets: string;
 };
 
+function toOptionalNonNegativeInt(value: string): null | number {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(0, Math.trunc(parsed));
+}
+
+function toOptionalNonNegativeNumber(value: string): null | number {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(0, parsed);
+}
+
 /** Build warmup + working sets from the compact scheme values */
 export function buildPlannedSetsFromScheme(values: SetSchemeValues): PlannedSet[] {
-  const warmupCount = Math.max(0, Number(values.warmupSets) || 0);
-  const workingCount = Math.max(1, Number(values.sets) || 1);
+  const warmupCount = toOptionalNonNegativeInt(values.warmupSets) ?? 0;
+  const workingCount = Math.max(1, toOptionalNonNegativeInt(values.sets) ?? 1);
+  const loadValue = toOptionalNonNegativeNumber(values.loadValue);
+  const restSeconds = toOptionalNonNegativeInt(values.rest);
   const loadUnit = (values.loadUnit || 'kg') as PlannedSet['load_unit'];
 
   const warmups: PlannedSet[] = Array.from({length: warmupCount}, () => ({
@@ -45,9 +61,9 @@ export function buildPlannedSetsFromScheme(values: SetSchemeValues): PlannedSet[
   const working: PlannedSet[] = Array.from({length: workingCount}, () => ({
     set_type: 'working' as const,
     ...(values.reps && {target_reps: values.reps}),
-    ...(values.loadValue && {load_value: Number(values.loadValue)}),
+    ...(loadValue != null && {load_value: loadValue}),
     load_unit: loadUnit,
-    ...(values.rest && {rest_seconds: Number(values.rest)}),
+    ...(restSeconds != null && {rest_seconds: restSeconds}),
   }));
 
   return [...warmups, ...working];

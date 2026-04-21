@@ -1,6 +1,6 @@
 defmodule EasyWeb.Coaches.TrainingPlanJSON do
   alias Easy.Clients.Client
-  alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, TrainingPlan, WorkoutElement}
+  alias Easy.Training.{Exercise, PlannedSet, PlanItem, Workout, TrainingPlan, WorkoutElement}
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -26,7 +26,8 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       author_id: plan.author_id,
       business_id: plan.business_id,
       original_template_id: plan.original_template_id,
-      planned_workouts: workouts_data(plan.planned_workouts),
+      workouts: workouts_data(plan.workouts),
+      plan_items: plan_items_data(plan.plan_items),
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
@@ -35,17 +36,33 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
   defp workouts_data(workouts) when is_list(workouts), do: Enum.map(workouts, &workout_data/1)
   defp workouts_data(_), do: []
 
-  defp workout_data(%PlannedWorkout{} = workout) do
+  defp workout_data(%Workout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
       notes: workout.notes,
-      day_number: workout.day_number,
       training_plan_id: workout.training_plan_id,
       business_id: workout.business_id,
       workout_elements: elements_data(workout.workout_elements),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
+    }
+  end
+
+  defp plan_items_data(items) when is_list(items), do: Enum.map(items, &plan_item_data/1)
+  defp plan_items_data(_), do: []
+
+  defp plan_item_data(%PlanItem{} = item) do
+    %{
+      id: item.id,
+      day: item.day,
+      workout_type: item.workout_type,
+      workout_id: item.workout_id,
+      training_plan_id: item.training_plan_id,
+      creator_id: item.creator_id,
+      business_id: item.business_id,
+      inserted_at: item.inserted_at,
+      updated_at: item.updated_at
     }
   end
 
@@ -59,7 +76,7 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      planned_workout_id: element.planned_workout_id,
+      workout_id: element.workout_id,
       business_id: element.business_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),

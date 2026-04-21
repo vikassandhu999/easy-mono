@@ -1,4 +1,4 @@
-defmodule Easy.Training.PlannedWorkout do
+defmodule Easy.Training.Workout do
   use Ecto.Schema
 
   alias Easy.Orgs
@@ -13,10 +13,9 @@ defmodule Easy.Training.PlannedWorkout do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "planned_workouts" do
+  schema "workouts" do
     field :name, :string
     field :notes, :string
-    field :day_number, :integer
 
     belongs_to :business, Orgs.Business
     belongs_to :training_plan, TrainingPlan
@@ -25,20 +24,12 @@ defmodule Easy.Training.PlannedWorkout do
       preload_order: [asc: :position],
       on_delete: :delete_all
 
+    has_many :plan_items, Easy.Training.PlanItem
+
     timestamps(type: :utc_datetime_usec)
   end
 
-  @cast_fields [:name, :notes, :day_number]
-
-  @spec day_name(integer()) :: String.t() | nil
-  def day_name(1), do: "Monday"
-  def day_name(2), do: "Tuesday"
-  def day_name(3), do: "Wednesday"
-  def day_name(4), do: "Thursday"
-  def day_name(5), do: "Friday"
-  def day_name(6), do: "Saturday"
-  def day_name(7), do: "Sunday"
-  def day_name(_), do: nil
+  @cast_fields [:name, :notes]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(training_plan_id, business_id, attrs) do
@@ -46,13 +37,8 @@ defmodule Easy.Training.PlannedWorkout do
     |> cast(attrs, @cast_fields)
     |> put_change(:training_plan_id, training_plan_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:name, :day_number, :training_plan_id, :business_id])
+    |> validate_required([:name, :training_plan_id, :business_id])
     |> validate_length(:notes, max: 5000)
-    |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
-    |> check_constraint(:day_number,
-      name: :day_number_valid_weekday,
-      message: "must be between 1 (Monday) and 7 (Sunday)"
-    )
     |> foreign_key_constraint(:training_plan_id)
     |> foreign_key_constraint(:business_id)
   end
@@ -62,7 +48,6 @@ defmodule Easy.Training.PlannedWorkout do
     workout
     |> cast(attrs, @cast_fields)
     |> validate_length(:notes, max: 5000)
-    |> validate_number(:day_number, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
     |> foreign_key_constraint(:training_plan_id)
     |> foreign_key_constraint(:business_id)
   end
@@ -79,7 +64,7 @@ defmodule Easy.Training.PlannedWorkout do
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
-    from(w in query, order_by: [asc: w.day_number])
+    from(w in query, order_by: [asc: w.name])
   end
 
   @spec with_elements(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -91,6 +76,17 @@ defmodule Easy.Training.PlannedWorkout do
   @spec accessible?(String.t(), String.t()) :: boolean()
   def accessible?(business_id, workout_id) do
     __MODULE__
+    |> for_business(business_id)
+    |> Repo.get(workout_id)
+    |> is_struct(__MODULE__)
+  end
+
+  @spec accessible_for_plan?(String.t(), String.t(), String.t() | nil) :: boolean()
+  def accessible_for_plan?(_plan_id, _business_id, nil), do: true
+
+  def accessible_for_plan?(plan_id, business_id, workout_id) do
+    __MODULE__
+    |> for_plan(plan_id)
     |> for_business(business_id)
     |> Repo.get(workout_id)
     |> is_struct(__MODULE__)
@@ -111,12 +107,12 @@ defmodule Easy.Training.PlannedWorkout do
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(workout), do: Repo.delete(workout)
 
-  @spec duplicate(t(), integer() | nil) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def duplicate(workout, day_number) do
+  @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def duplicate(workout) do
     workout = Repo.preload(workout, :workout_elements)
 
     Repo.transaction(fn ->
-      attrs = %{name: workout.name, notes: workout.notes, day_number: day_number}
+      attrs = %{name: workout.name, notes: workout.notes}
 
       new_workout =
         case insert_changeset(workout.training_plan_id, workout.business_id, attrs)

@@ -11,7 +11,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
 
   describe "GET /v1/client/training_plans" do
     test "lists only plans assigned to the client", ctx do
-      # Assigned to this client
       insert(:training_plan,
         author: ctx.coach,
         business: ctx.business,
@@ -20,10 +19,8 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
         end_date: ~D[2026-03-31]
       )
 
-      # Template — should not appear
       insert(:training_plan, author: ctx.coach, business: ctx.business)
 
-      # Assigned to another client — should not appear
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
 
       insert(:training_plan,
@@ -95,12 +92,12 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           end_date: ~D[2026-03-31]
         )
 
-      workout = insert(:planned_workout, training_plan: plan, business: ctx.business)
+      workout = insert(:workout, training_plan: plan, business: ctx.business)
       exercise = insert(:exercise, business: ctx.business)
 
       _element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: exercise,
           business: ctx.business,
           planned_sets: [
@@ -119,10 +116,10 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
       assert data["id"] == plan.id
       assert data["name"] == plan.name
       assert data["rest_days"] == []
+      assert is_list(data["plan_items"])
 
-      [workout_data] = data["planned_workouts"]
+      [workout_data] = data["workouts"]
       assert workout_data["name"] == workout.name
-      assert workout_data["day_number"] == workout.day_number
 
       [element_data] = workout_data["workout_elements"]
       assert element_data["exercise"]["name"] == exercise.name

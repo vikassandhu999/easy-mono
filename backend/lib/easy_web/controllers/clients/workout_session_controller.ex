@@ -8,11 +8,11 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    planned_workout_id = Map.get(params, "planned_workout_id")
+    workout_id = Map.get(params, "workout_id")
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          :ok <- WorkoutSession.ensure_no_active(business_id, client.id),
-         true <- WorkoutSession.accessible_workout?(business_id, planned_workout_id),
+         true <- WorkoutSession.accessible_workout?(business_id, workout_id),
          {:ok, session} <- WorkoutSession.create(business_id, client.id, params) do
       conn
       |> put_status(:created)

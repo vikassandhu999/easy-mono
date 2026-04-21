@@ -53,14 +53,21 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["id"] == plan.id
       assert data["client"] == nil
       assert data["rest_days"] == []
+      assert is_list(data["workouts"])
+      assert is_list(data["plan_items"])
     end
 
-    test "returns rest_days", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business, rest_days: [6, 7])
+    test "returns rest_days as strings", %{conn: conn, coach: coach, business: business} do
+      plan =
+        insert(:training_plan,
+          author: coach,
+          business: business,
+          rest_days: ["saturday", "sunday"]
+        )
 
       conn = get(conn, "/v1/coach/training_plans/#{plan.id}")
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["rest_days"] == [6, 7]
+      assert data["rest_days"] == ["saturday", "sunday"]
     end
 
     test "shows personal plan with client preloaded", %{
@@ -100,22 +107,32 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     test "sets rest_days", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
 
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [6, 7]})
+      conn =
+        patch(conn, "/v1/coach/training_plans/#{plan.id}", %{
+          "rest_days" => ["saturday", "sunday"]
+        })
+
       assert %{"data" => data} = json_response(conn, 200)
-      assert data["rest_days"] == [6, 7]
+      assert data["rest_days"] == ["saturday", "sunday"]
     end
 
     test "rejects invalid rest_days values", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
 
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [0, 8]})
+      conn =
+        patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => ["invalid", "bad"]})
+
       assert json_response(conn, 422)
     end
 
     test "rejects duplicate rest_days", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
 
-      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => [1, 1]})
+      conn =
+        patch(conn, "/v1/coach/training_plans/#{plan.id}", %{
+          "rest_days" => ["monday", "monday"]
+        })
+
       assert json_response(conn, 422)
     end
   end
@@ -138,7 +155,13 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
     end
 
     test "copies rest_days on assign", %{conn: conn, coach: coach, business: business} do
-      plan = insert(:training_plan, author: coach, business: business, rest_days: [6, 7])
+      plan =
+        insert(:training_plan,
+          author: coach,
+          business: business,
+          rest_days: ["saturday", "sunday"]
+        )
+
       client = insert(:client, creator: coach, business: business)
 
       conn =
@@ -149,7 +172,7 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
         })
 
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["rest_days"] == [6, 7]
+      assert data["rest_days"] == ["saturday", "sunday"]
     end
   end
 
@@ -168,12 +191,12 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
           author: coach,
           business: business,
           name: "PPL",
-          rest_days: [7]
+          rest_days: ["sunday"]
         )
 
       conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
       assert %{"data" => data} = json_response(conn, 201)
-      assert data["rest_days"] == [7]
+      assert data["rest_days"] == ["sunday"]
     end
   end
 end

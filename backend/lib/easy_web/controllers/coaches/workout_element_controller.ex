@@ -2,15 +2,15 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   use EasyWeb, :controller
 
   alias Easy.Repo
-  alias Easy.Training.{Exercise, PlannedWorkout, WorkoutElement}
+  alias Easy.Training.{Exercise, Workout, WorkoutElement}
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, %{"planned_workout_id" => planned_workout_id} = params) do
+  def create(conn, %{"workout_id" => workout_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with true <- PlannedWorkout.accessible?(business_id, planned_workout_id),
+    with true <- Workout.accessible?(business_id, workout_id),
          true <- Exercise.accessible?(business_id, Map.get(params, "exercise_id")),
-         {:ok, element} <- WorkoutElement.create(planned_workout_id, business_id, params) do
+         {:ok, element} <- WorkoutElement.create(workout_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, element: element)

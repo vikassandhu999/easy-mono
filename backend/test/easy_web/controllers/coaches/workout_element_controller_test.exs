@@ -11,18 +11,18 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
   describe "POST /v1/coach/workout_elements" do
     test "creates workout element", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:planned_workout, training_plan: plan, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
       exercise = insert(:exercise, business: business)
 
       attrs =
         build(:workout_element_attrs)
-        |> Map.put("planned_workout_id", workout.id)
+        |> Map.put("workout_id", workout.id)
         |> Map.put("exercise_id", exercise.id)
 
       conn = post(conn, "/v1/coach/workout_elements", attrs)
       assert %{"data" => data} = json_response(conn, 201)
 
-      assert data["planned_workout_id"] == workout.id
+      assert data["workout_id"] == workout.id
       assert data["exercise_id"] == exercise.id
     end
 
@@ -32,14 +32,14 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       business: business
     } do
       plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:planned_workout, training_plan: plan, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
 
       other = insert(:coach)
       other_exercise = insert(:exercise, business: other.business)
 
       attrs =
         build(:workout_element_attrs)
-        |> Map.put("planned_workout_id", workout.id)
+        |> Map.put("workout_id", workout.id)
         |> Map.put("exercise_id", other_exercise.id)
 
       conn = post(conn, "/v1/coach/workout_elements", attrs)
@@ -50,12 +50,12 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
   describe "PATCH /v1/coach/workout_elements/:id" do
     test "updates workout element", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:planned_workout, training_plan: plan, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
       exercise = insert(:exercise, business: business)
 
       element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: exercise,
           business: business,
           position: 0
@@ -72,12 +72,12 @@ defmodule EasyWeb.Coaches.WorkoutElementControllerTest do
       business: business
     } do
       plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:planned_workout, training_plan: plan, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
       exercise = insert(:exercise, business: business)
 
       element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: exercise,
           business: business,
           position: 0

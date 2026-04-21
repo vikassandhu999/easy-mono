@@ -25,6 +25,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     case TrainingPlan
          |> TrainingPlan.for_business(business_id)
          |> TrainingPlan.with_workouts()
+         |> TrainingPlan.with_plan_items()
          |> Repo.get(id) do
       nil -> {:error, :not_found}
       plan -> render(conn, :show, plan: Repo.preload(plan, :client))
@@ -84,6 +85,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       |> TrainingPlan.newest()
       |> Easy.Utils.paginate(offset, limit)
       |> TrainingPlan.with_workouts()
+      |> TrainingPlan.with_plan_items()
       |> Repo.all()
 
     render(conn, :index, plans: plans, count: count)
@@ -96,6 +98,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     case TrainingPlan
          |> TrainingPlan.for_business(business_id)
          |> TrainingPlan.with_workouts()
+         |> TrainingPlan.with_plan_items()
          |> Repo.get(id) do
       nil ->
         {:error, :not_found}
@@ -117,6 +120,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
            TrainingPlan
            |> TrainingPlan.for_business(business_id)
            |> TrainingPlan.with_workouts()
+           |> TrainingPlan.with_plan_items()
            |> Repo.get(id),
          true <- Client.accessible?(business_id, client_id),
          {:ok, assigned} <-
@@ -132,6 +136,32 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     else
       nil -> {:error, :not_found}
       false -> {:error, :not_found}
+      error -> error
+    end
+  end
+
+  @spec copy_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def copy_day(conn, %{"id" => id} = params) do
+    claims = conn.assigns.claims
+
+    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
+         plan when not is_nil(plan) <-
+           TrainingPlan
+           |> TrainingPlan.for_business(claims.business_id)
+           |> Repo.get(id),
+         {:ok, items} <-
+           TrainingPlan.copy_day(
+             plan,
+             Map.get(params, "source_day"),
+             Map.get(params, "target_day"),
+             coach.id
+           ) do
+      conn
+      |> put_status(:created)
+      |> put_view(EasyWeb.Coaches.TrainingPlanItemJSON)
+      |> render(:index, plan_items: items)
+    else
+      nil -> {:error, :not_found}
       error -> error
     end
   end

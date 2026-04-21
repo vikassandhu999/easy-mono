@@ -27,6 +27,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
         |> TrainingPlan.newest()
         |> Easy.Utils.paginate(offset, limit)
         |> TrainingPlan.with_workouts()
+        |> TrainingPlan.with_plan_items()
         |> Repo.all()
 
       render(conn, :index, plans: plans, count: count)
@@ -42,6 +43,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
            |> TrainingPlan.for_business(business_id)
            |> TrainingPlan.for_client(client.id)
            |> TrainingPlan.with_workouts()
+           |> TrainingPlan.with_plan_items()
            |> Repo.get(id) do
         nil -> {:error, :not_found}
         plan -> render(conn, :show, plan: plan)

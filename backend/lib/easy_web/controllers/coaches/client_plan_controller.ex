@@ -28,6 +28,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
         |> TrainingPlan.newest()
         |> Easy.Utils.paginate(offset, limit)
         |> TrainingPlan.with_workouts()
+        |> TrainingPlan.with_plan_items()
         |> Repo.all()
         |> Repo.preload(:client)
 

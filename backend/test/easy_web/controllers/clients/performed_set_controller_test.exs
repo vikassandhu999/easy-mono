@@ -54,11 +54,11 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           end_date: ~D[2026-03-31]
         )
 
-      workout = insert(:planned_workout, training_plan: plan, business: ctx.business)
+      workout = insert(:workout, training_plan: plan, business: ctx.business)
 
       element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: ctx.exercise,
           business: ctx.business,
           planned_sets: []

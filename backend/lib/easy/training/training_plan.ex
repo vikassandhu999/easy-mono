@@ -4,7 +4,7 @@ defmodule Easy.Training.TrainingPlan do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, WorkoutElement}
+  alias Easy.Training.{PlanItem, Workout, WorkoutElement}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -16,6 +16,8 @@ defmodule Easy.Training.TrainingPlan do
 
   @statuses [:active, :archived]
 
+  @valid_days ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
   @spec statuses() :: [atom()]
   def statuses, do: @statuses
 
@@ -25,14 +27,15 @@ defmodule Easy.Training.TrainingPlan do
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :start_date, :date
     field :end_date, :date
-    field :rest_days, {:array, :integer}, default: []
+    field :rest_days, {:array, :string}, default: []
 
     belongs_to :business, Orgs.Business
     belongs_to :author, Orgs.Coach
     belongs_to :client, Clients.Client
     belongs_to :original_template, __MODULE__
 
-    has_many :planned_workouts, PlannedWorkout, preload_order: [asc: :day_number]
+    has_many :workouts, Workout, preload_order: [asc: :name]
+    has_many :plan_items, PlanItem
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -110,8 +113,8 @@ defmodule Easy.Training.TrainingPlan do
   defp validate_rest_days(changeset) do
     validate_change(changeset, :rest_days, fn :rest_days, days ->
       cond do
-        not Enum.all?(days, &(is_integer(&1) and &1 >= 1 and &1 <= 7)) ->
-          [rest_days: "must contain values between 1 and 7"]
+        not Enum.all?(days, &(&1 in @valid_days)) ->
+          [rest_days: "must contain valid day names"]
 
         length(days) != length(Enum.uniq(days)) ->
           [rest_days: "must not contain duplicates"]
@@ -155,8 +158,13 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec with_workouts(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_workouts(query \\ __MODULE__) do
-    workout_query = PlannedWorkout |> PlannedWorkout.ordered() |> PlannedWorkout.with_elements()
-    from(t in query, preload: [planned_workouts: ^workout_query])
+    workout_query = Workout |> Workout.ordered() |> Workout.with_elements()
+    from(t in query, preload: [workouts: ^workout_query])
+  end
+
+  @spec with_plan_items(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def with_plan_items(query \\ __MODULE__) do
+    from(t in query, preload: [:plan_items])
   end
 
   @spec accessible?(String.t(), String.t()) :: boolean()
@@ -185,7 +193,7 @@ defmodule Easy.Training.TrainingPlan do
   @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def duplicate(plan) do
     copy_name = generate_copy_name(plan.name, plan.business_id)
-    plan = Repo.preload(plan, planned_workouts: [:workout_elements])
+    plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
 
     Repo.transaction(fn ->
       attrs = %{
@@ -197,8 +205,14 @@ defmodule Easy.Training.TrainingPlan do
 
       case insert_changeset(plan.business_id, plan.author_id, attrs) |> Repo.insert() do
         {:ok, new_plan} ->
-          copy_workouts(plan.planned_workouts, new_plan)
-          Repo.preload(new_plan, planned_workouts: PlannedWorkout.with_elements())
+          workout_id_map = copy_workouts(plan.workouts, new_plan)
+          copy_plan_items(plan.plan_items, new_plan, workout_id_map)
+
+          new_plan
+          |> Repo.preload(
+            workouts: Workout.with_elements(),
+            plan_items: []
+          )
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -209,7 +223,7 @@ defmodule Easy.Training.TrainingPlan do
   @spec assign_to_client(t(), String.t(), String.t() | nil, String.t() | nil) ::
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def assign_to_client(plan, client_id, start_date, end_date) do
-    plan = Repo.preload(plan, planned_workouts: [:workout_elements])
+    plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
 
     Repo.transaction(fn ->
       attrs = %{
@@ -224,8 +238,14 @@ defmodule Easy.Training.TrainingPlan do
 
       case insert_changeset(plan.business_id, plan.author_id, attrs) |> Repo.insert() do
         {:ok, new_plan} ->
-          copy_workouts(plan.planned_workouts, new_plan)
-          Repo.preload(new_plan, planned_workouts: PlannedWorkout.with_elements())
+          workout_id_map = copy_workouts(plan.workouts, new_plan)
+          copy_plan_items(plan.plan_items, new_plan, workout_id_map)
+
+          new_plan
+          |> Repo.preload(
+            workouts: Workout.with_elements(),
+            plan_items: []
+          )
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -233,14 +253,49 @@ defmodule Easy.Training.TrainingPlan do
     end)
   end
 
+  @spec copy_day(t(), String.t(), String.t(), String.t()) ::
+          {:ok, [PlanItem.t()]} | {:error, term()}
+  def copy_day(plan, source_day, target_day, creator_id) do
+    with :ok <- validate_day(source_day),
+         :ok <- validate_day(target_day) do
+      source_items =
+        PlanItem
+        |> PlanItem.for_plan(plan.id)
+        |> PlanItem.for_day(source_day)
+        |> Repo.all()
+
+      Repo.transaction(fn ->
+        Enum.map(source_items, fn item ->
+          attrs = %{
+            "day" => target_day,
+            "workout_type" => item.workout_type,
+            "workout_id" => item.workout_id
+          }
+
+          case PlanItem.create(plan.id, plan.business_id, creator_id, attrs) do
+            {:ok, new_item} -> new_item
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+    end
+  end
+
+  defp validate_day(day) when day in @valid_days, do: :ok
+
+  defp validate_day(_) do
+    {:error,
+     Easy.Error.unprocessable(%{day: ["must be a valid day name (monday through sunday)"]})}
+  end
+
   defp copy_workouts(workouts, new_plan) do
-    Enum.each(workouts, fn workout ->
-      workout_attrs = %{name: workout.name, notes: workout.notes, day_number: workout.day_number}
+    Enum.reduce(workouts, %{}, fn workout, id_map ->
+      workout_attrs = %{name: workout.name, notes: workout.notes}
 
       new_workout =
-        case PlannedWorkout.insert_changeset(new_plan.id, new_plan.business_id, workout_attrs)
+        case Workout.insert_changeset(new_plan.id, new_plan.business_id, workout_attrs)
              |> Repo.insert() do
-          {:ok, workout} -> workout
+          {:ok, w} -> w
           {:error, reason} -> Repo.rollback(reason)
         end
 
@@ -259,6 +314,26 @@ defmodule Easy.Training.TrainingPlan do
           {:error, reason} -> Repo.rollback(reason)
         end
       end)
+
+      Map.put(id_map, workout.id, new_workout.id)
+    end)
+  end
+
+  defp copy_plan_items(plan_items, new_plan, workout_id_map) do
+    Enum.each(plan_items, fn item ->
+      new_workout_id = Map.get(workout_id_map, item.workout_id, item.workout_id)
+
+      attrs = %{
+        "day" => item.day,
+        "workout_type" => item.workout_type,
+        "workout_id" => new_workout_id
+      }
+
+      case PlanItem.insert_changeset(new_plan.id, new_plan.business_id, item.creator_id, attrs)
+           |> Repo.insert() do
+        {:ok, _} -> :ok
+        {:error, reason} -> Repo.rollback(reason)
+      end
     end)
   end
 

@@ -20,10 +20,10 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert data["client_id"] == client.id
       assert data["state"] == "active"
       assert is_nil(data["planned_snapshot"])
-      assert is_nil(data["planned_workout_id"])
+      assert is_nil(data["workout_id"])
     end
 
-    test "creates session with planned workout and builds snapshot", %{
+    test "creates session with workout and builds snapshot", %{
       conn: conn,
       coach: coach,
       business: business
@@ -32,13 +32,13 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       plan = insert(:training_plan, author: coach, business: business)
 
       workout =
-        insert(:planned_workout, training_plan: plan, business: business, name: "Push Day")
+        insert(:workout, training_plan: plan, business: business, name: "Push Day")
 
       exercise = insert(:exercise, business: business, name: "Bench Press")
 
       element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: exercise,
           business: business,
           position: 0,
@@ -56,14 +56,14 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       conn =
         post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
-          "planned_workout_id" => workout.id
+          "workout_id" => workout.id
         })
 
       assert %{"data" => data} = json_response(conn, 201)
 
-      assert data["planned_workout_id"] == workout.id
+      assert data["workout_id"] == workout.id
 
-      assert %{"workout_name" => "Push Day", "day_number" => 1, "elements" => elements} =
+      assert %{"workout_name" => "Push Day", "elements" => elements} =
                data["planned_snapshot"]
 
       assert length(elements) == 1
@@ -82,7 +82,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert snap_set["rest_seconds"] == 120
     end
 
-    test "returns 404 when planned workout belongs to another business", %{
+    test "returns 404 when workout belongs to another business", %{
       conn: conn,
       coach: coach,
       business: business
@@ -92,13 +92,12 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       other = insert(:coach)
       other_plan = insert(:training_plan, author: other, business: other.business)
 
-      other_workout =
-        insert(:planned_workout, training_plan: other_plan, business: other.business)
+      other_workout = insert(:workout, training_plan: other_plan, business: other.business)
 
       conn =
         post(conn, "/v1/coach/workout_sessions", %{
           "client_id" => client.id,
-          "planned_workout_id" => other_workout.id,
+          "workout_id" => other_workout.id,
           "notes" => "Start"
         })
 

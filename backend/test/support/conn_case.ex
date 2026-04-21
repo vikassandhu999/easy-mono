@@ -57,7 +57,7 @@ defmodule Easy.ConnCase do
   def training_tables_ready? do
     required_tables = [
       "training_plans",
-      "planned_workouts",
+      "workouts",
       "workout_elements",
       "exercises",
       "workout_sessions"

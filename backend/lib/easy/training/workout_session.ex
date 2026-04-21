@@ -4,7 +4,7 @@ defmodule Easy.Training.WorkoutSession do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, WorkoutElement, PerformedSet}
+  alias Easy.Training.{Workout, WorkoutElement, PerformedSet}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -29,14 +29,14 @@ defmodule Easy.Training.WorkoutSession do
 
     belongs_to :client, Clients.Client
     belongs_to :business, Orgs.Business
-    belongs_to :planned_workout, PlannedWorkout
+    belongs_to :workout, Workout
 
     has_many :performed_sets, PerformedSet, on_delete: :delete_all
 
     timestamps(type: :utc_datetime_usec)
   end
 
-  @cast_fields [:started_at, :ended_at, :state, :soreness_rating, :notes, :planned_workout_id]
+  @cast_fields [:started_at, :ended_at, :state, :soreness_rating, :notes, :workout_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
@@ -50,7 +50,7 @@ defmodule Easy.Training.WorkoutSession do
     |> validate_end_after_start()
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:planned_workout_id)
+    |> foreign_key_constraint(:workout_id)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -60,7 +60,7 @@ defmodule Easy.Training.WorkoutSession do
     |> validate_length(:notes, max: 5000)
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_end_after_start()
-    |> foreign_key_constraint(:planned_workout_id)
+    |> foreign_key_constraint(:workout_id)
   end
 
   defp validate_end_after_start(changeset) do
@@ -131,11 +131,11 @@ defmodule Easy.Training.WorkoutSession do
   def accessible_workout?(_business_id, nil), do: true
   def accessible_workout?(_business_id, ""), do: true
 
-  def accessible_workout?(business_id, planned_workout_id) do
-    PlannedWorkout
-    |> PlannedWorkout.for_business(business_id)
-    |> Repo.get(planned_workout_id)
-    |> is_struct(PlannedWorkout)
+  def accessible_workout?(business_id, workout_id) do
+    Workout
+    |> Workout.for_business(business_id)
+    |> Repo.get(workout_id)
+    |> is_struct(Workout)
   end
 
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
@@ -154,7 +154,7 @@ defmodule Easy.Training.WorkoutSession do
   end
 
   defp maybe_put_snapshot(changeset) do
-    case get_field(changeset, :planned_workout_id) do
+    case get_field(changeset, :workout_id) do
       nil -> changeset
       workout_id -> put_change(changeset, :planned_snapshot, build_snapshot(workout_id))
     end
@@ -165,7 +165,7 @@ defmodule Easy.Training.WorkoutSession do
     element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
 
     workout =
-      PlannedWorkout
+      Workout
       |> Repo.get(workout_id)
       |> Repo.preload(workout_elements: element_query)
 
@@ -176,7 +176,6 @@ defmodule Easy.Training.WorkoutSession do
       workout ->
         %{
           "workout_name" => workout.name,
-          "day_number" => workout.day_number,
           "elements" =>
             Enum.map(workout.workout_elements, fn element ->
               %{

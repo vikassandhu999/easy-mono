@@ -3,7 +3,7 @@ defmodule Easy.Training.WorkoutElement do
 
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, PlannedSet, Exercise}
+  alias Easy.Training.{Workout, PlannedSet, Exercise}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -19,7 +19,7 @@ defmodule Easy.Training.WorkoutElement do
     field :notes, :string
 
     belongs_to :business, Orgs.Business
-    belongs_to :planned_workout, PlannedWorkout
+    belongs_to :workout, Workout
     belongs_to :exercise, Exercise
 
     embeds_many :planned_sets, PlannedSet, on_replace: :delete
@@ -30,19 +30,19 @@ defmodule Easy.Training.WorkoutElement do
   @cast_fields [:position, :superset_group_id, :notes, :exercise_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(planned_workout_id, business_id, attrs) do
+  def insert_changeset(workout_id, business_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> put_change(:planned_workout_id, planned_workout_id)
+    |> put_change(:workout_id, workout_id)
     |> put_change(:business_id, business_id)
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
-    |> validate_required([:position, :exercise_id, :planned_workout_id, :business_id])
+    |> validate_required([:position, :exercise_id, :workout_id, :business_id])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
-    |> unique_constraint([:position, :planned_workout_id],
-      name: :workout_elements_position_planned_workout_id_index
+    |> unique_constraint([:position, :workout_id],
+      name: :workout_elements_position_workout_id_index
     )
-    |> foreign_key_constraint(:planned_workout_id)
+    |> foreign_key_constraint(:workout_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
   end
@@ -54,10 +54,10 @@ defmodule Easy.Training.WorkoutElement do
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
-    |> unique_constraint([:position, :planned_workout_id],
-      name: :workout_elements_position_planned_workout_id_index
+    |> unique_constraint([:position, :workout_id],
+      name: :workout_elements_position_workout_id_index
     )
-    |> foreign_key_constraint(:planned_workout_id)
+    |> foreign_key_constraint(:workout_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
   end
@@ -69,7 +69,7 @@ defmodule Easy.Training.WorkoutElement do
 
   @spec for_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_workout(query \\ __MODULE__, workout_id) do
-    from(e in query, where: e.planned_workout_id == ^workout_id)
+    from(e in query, where: e.workout_id == ^workout_id)
   end
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
@@ -93,8 +93,8 @@ defmodule Easy.Training.WorkoutElement do
   end
 
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(planned_workout_id, business_id, attrs) do
-    insert_changeset(planned_workout_id, business_id, attrs)
+  def create(workout_id, business_id, attrs) do
+    insert_changeset(workout_id, business_id, attrs)
     |> Repo.insert()
     |> preload_result()
   end

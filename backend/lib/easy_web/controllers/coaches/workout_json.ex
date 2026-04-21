@@ -1,5 +1,5 @@
-defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
-  alias Easy.Training.{Exercise, PlannedSet, PlannedWorkout, WorkoutElement}
+defmodule EasyWeb.Coaches.WorkoutJSON do
+  alias Easy.Training.{Exercise, PlannedSet, Workout, WorkoutElement}
 
   @spec show(map()) :: map()
   def show(%{workout: workout}) do
@@ -11,12 +11,11 @@ defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
     %{data: Enum.map(workouts, &data/1), count: count}
   end
 
-  defp data(%PlannedWorkout{} = workout) do
+  defp data(%Workout{} = workout) do
     %{
       id: workout.id,
       name: workout.name,
       notes: workout.notes,
-      day_number: workout.day_number,
       training_plan_id: workout.training_plan_id,
       business_id: workout.business_id,
       workout_elements: elements_data(workout.workout_elements),
@@ -35,7 +34,7 @@ defmodule EasyWeb.Coaches.PlannedWorkoutJSON do
       superset_group_id: element.superset_group_id,
       notes: element.notes,
       exercise_id: element.exercise_id,
-      planned_workout_id: element.planned_workout_id,
+      workout_id: element.workout_id,
       business_id: element.business_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),

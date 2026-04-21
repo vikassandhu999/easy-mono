@@ -1,15 +1,15 @@
-defmodule EasyWeb.Coaches.PlannedWorkoutController do
+defmodule EasyWeb.Coaches.WorkoutController do
   use EasyWeb, :controller
 
   alias Easy.Repo
-  alias Easy.Training.{PlannedWorkout, TrainingPlan}
+  alias Easy.Training.{Workout, TrainingPlan}
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
     if TrainingPlan.accessible?(business_id, plan_id) do
-      with {:ok, workout} <- PlannedWorkout.create(plan_id, business_id, params) do
+      with {:ok, workout} <- Workout.create(plan_id, business_id, params) do
         conn
         |> put_status(:created)
         |> render(:show, workout: workout)
@@ -23,9 +23,9 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case PlannedWorkout
-         |> PlannedWorkout.for_business(business_id)
-         |> PlannedWorkout.with_elements()
+    case Workout
+         |> Workout.for_business(business_id)
+         |> Workout.with_elements()
          |> Repo.get(id) do
       nil -> {:error, :not_found}
       workout -> render(conn, :show, workout: workout)
@@ -36,12 +36,12 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case PlannedWorkout |> PlannedWorkout.for_business(business_id) |> Repo.get(id) do
+    case Workout |> Workout.for_business(business_id) |> Repo.get(id) do
       nil ->
         {:error, :not_found}
 
       workout ->
-        with {:ok, updated} <- PlannedWorkout.update(workout, conn.body_params) do
+        with {:ok, updated} <- Workout.update(workout, conn.body_params) do
           render(conn, :show, workout: updated)
         end
     end
@@ -51,25 +51,24 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case PlannedWorkout |> PlannedWorkout.for_business(business_id) |> Repo.get(id) do
+    case Workout |> Workout.for_business(business_id) |> Repo.get(id) do
       nil ->
         {:error, :not_found}
 
       workout ->
-        with {:ok, _workout} <- PlannedWorkout.delete(workout) do
+        with {:ok, _workout} <- Workout.delete(workout) do
           send_resp(conn, :no_content, "")
         end
     end
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def duplicate(conn, %{"id" => id} = params) do
+  def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
-    day_number = parse_integer(params, "day_number", nil)
 
     with workout when not is_nil(workout) <-
-           PlannedWorkout |> PlannedWorkout.for_business(business_id) |> Repo.get(id),
-         {:ok, duplicated} <- PlannedWorkout.duplicate(workout, day_number) do
+           Workout |> Workout.for_business(business_id) |> Repo.get(id),
+         {:ok, duplicated} <- Workout.duplicate(workout) do
       conn
       |> put_status(:created)
       |> render(:show, workout: duplicated)
@@ -88,17 +87,17 @@ defmodule EasyWeb.Coaches.PlannedWorkoutController do
       limit = parse_integer(params, "limit", 50)
 
       base =
-        PlannedWorkout
-        |> PlannedWorkout.for_business(business_id)
-        |> PlannedWorkout.for_plan(plan_id)
+        Workout
+        |> Workout.for_business(business_id)
+        |> Workout.for_plan(plan_id)
 
       count = Repo.aggregate(base, :count, :id)
 
       workouts =
         base
-        |> PlannedWorkout.ordered()
+        |> Workout.ordered()
         |> Easy.Utils.paginate(offset, limit)
-        |> PlannedWorkout.with_elements()
+        |> Workout.with_elements()
         |> Repo.all()
 
       render(conn, :index, workouts: workouts, count: count)

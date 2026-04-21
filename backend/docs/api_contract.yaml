@@ -385,8 +385,8 @@ paths:
         plans scoped to this client are returned. Response includes rest_days array
         for the four-state today card: workout day, rest day, empty day (no workout,
         not rest), or no plan. Frontend pattern - fetch on app launch, match today's
-        weekday against planned_workouts.day_number and rest_days to determine the
-        today card state. Cache with tag 'TrainingPlan'; refetch on app resume.
+        weekday against plan_items and rest_days to determine the today card state.
+        Cache with tag 'TrainingPlan'; refetch on app resume.
       operationId: listClientTrainingPlans
       security:
         - bearerAuth: []
@@ -422,12 +422,14 @@ paths:
     get:
       summary: Get training plan detail
       description: >-
-        Returns a single training plan with full preloaded tree: planned workouts,
-        workout elements (with exercise details and images), planned sets, and
-        rest_days. This is the data source for rendering the client's workout
-        program and weekly preview strip. Frontend pattern - fetch when client
-        opens plan detail or starts a workout; use rest_days to show "Rest Day"
-        on the today card and weekly strip for coach-designated rest days.
+        Returns a single training plan with full preloaded tree: workouts,
+        workout elements (with exercise details and images), planned sets,
+        plan_items (day schedule), and rest_days. This is the data source for
+        rendering the client's workout program and weekly preview strip.
+        Frontend pattern - fetch when client opens plan detail or starts a
+        workout; use plan_items to map workouts to days, and rest_days to show
+        "Rest Day" on the today card and weekly strip for coach-designated
+        rest days.
       operationId: getClientTrainingPlan
       security:
         - bearerAuth: []
@@ -556,7 +558,7 @@ paths:
     post:
       summary: Start a workout session
       description: >-
-        Creates a new active workout session. If planned_workout_id is provided,
+        Creates a new active workout session. If workout_id is provided,
         a planned_snapshot is captured at creation time for change-resilient
         comparison. Only one active session per client is allowed — returns 422
         if an active session already exists. Frontend pattern - call when client
@@ -574,7 +576,7 @@ paths:
             examples:
               planned:
                 value:
-                  planned_workout_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  workout_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
               freestyle:
                 value: {}
       responses:
@@ -2970,8 +2972,8 @@ paths:
         Creates a template or assigned training plan. The plan starts with an
         empty weekly schedule (Mon-Sun). Frontend pattern - optimistic create
         in list view and navigate to the weekly overview builder using the
-        returned id. Set rest_days to mark specific weekdays as rest (e.g. [7]
-        for Sunday).
+        returned id. Set rest_days to mark specific weekdays as rest (e.g.
+        ["sunday"]).
       operationId: createTrainingPlan
       security:
         - bearerAuth: []
@@ -3009,7 +3011,8 @@ paths:
                       author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
                       business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
                       original_template_id: null
-                      planned_workouts: []
+                      workouts: []
+                      plan_items: []
                       inserted_at: "2026-02-14T10:00:00Z"
                       updated_at: "2026-02-14T10:00:00Z"
         "401":
@@ -3045,12 +3048,13 @@ paths:
     get:
       summary: Get training plan
       description: >-
-        Returns any plan (template or personal) with nested workouts, elements,
-        and preloaded client. Response includes rest_days array for building the
-        7-day weekly overview (Mon-Sun). Workouts are grouped by day_number
-        (1=Mon..7=Sun); days without workouts that appear in rest_days show as
-        "Rest"; remaining empty days show as unassigned. Frontend pattern - treat
-        this as source of truth for the plan builder weekly overview.
+        Returns any plan (template or personal) with nested workouts, workout
+        elements, plan_items (day schedule), and preloaded client. Response
+        includes rest_days array for building the 7-day weekly overview (Mon-Sun).
+        Use plan_items to map workouts to weekdays; days without plan_items that
+        appear in rest_days show as "Rest"; remaining empty days show as
+        unassigned. Frontend pattern - treat this as source of truth for the
+        plan builder weekly overview.
       operationId: getTrainingPlan
       security:
         - bearerAuth: []
@@ -3071,8 +3075,8 @@ paths:
       summary: Update training plan
       description: >-
         Saves plan metadata changes including rest_days. Send the full rest_days
-        array on every update (toggle rest on = add to array, toggle off = remove).
-        The frontend should hide the rest day toggle for days that have workouts.
+        array on every update (toggle rest on = add day string, toggle off = remove).
+        The frontend should hide the rest day toggle for days that have plan_items.
         Frontend pattern - patch local plan state immediately and reconcile from
         response body.
       operationId: updateTrainingPlan
@@ -3185,17 +3189,17 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/coach/training_plans/{plan_id}/planned_workouts:
+  /v1/coach/training_plans/{plan_id}/workouts:
     post:
-      summary: Create planned workout
+      summary: Create workout
       description: >-
-        Adds a workout to a specific weekday in the plan. day_number is 1=Monday
-        through 7=Sunday and comes from the day row the coach tapped in the weekly
-        overview (not auto-assigned). Multiple workouts per day are allowed (e.g.
-        morning cardio + evening strength). Frontend pattern - show inline name
-        input in the empty day row, POST on submit, append returned workout to
-        that day's section.
-      operationId: createPlannedWorkout
+        Creates a standalone workout within a training plan. Workouts are not
+        assigned to days directly — use TrainingPlanItems to schedule workouts
+        on specific weekdays. Multiple workouts can be created per plan and
+        reused across days via plan items. Frontend pattern - show inline name
+        input in the workout library section, POST on submit, append returned
+        workout to the plan's workout list.
+      operationId: createWorkout
       security:
         - bearerAuth: []
       parameters:
@@ -3205,20 +3209,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlannedWorkoutCreateRequest"
+              $ref: "#/components/schemas/WorkoutCreateRequest"
             examples:
               default:
                 value:
                   name: Day 1 - Lower
                   notes: Main squat session.
-                  day_number: 1
       responses:
         "201":
-          description: Planned workout created
+          description: Workout created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlannedWorkoutResponse"
+                $ref: "#/components/schemas/WorkoutResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                      name: Day 1 - Lower
+                      notes: Main squat session.
+                      training_plan_id: 28355076-c303-47d6-b595-a4a69f9ef50d
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      workout_elements: []
+                      inserted_at: "2026-02-14T10:00:00Z"
+                      updated_at: "2026-02-14T10:00:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -3226,9 +3241,9 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     get:
-      summary: List planned workouts
-      description: Fetches day blocks for a single plan to populate workout lists and reordering interfaces. Frontend pattern - refetch after create/update/delete of workouts in this plan.
-      operationId: listPlannedWorkouts
+      summary: List workouts
+      description: Fetches workouts for a single plan to populate workout lists and reordering interfaces. Frontend pattern - refetch after create/update/delete of workouts in this plan.
+      operationId: listWorkouts
       security:
         - bearerAuth: []
       parameters:
@@ -3237,42 +3252,91 @@ paths:
         - $ref: "#/components/parameters/LimitQuery"
       responses:
         "200":
-          description: Planned workouts
+          description: Workouts
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlannedWorkoutListResponse"
+                $ref: "#/components/schemas/WorkoutListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/coach/planned_workouts/{id}:
-    get:
-      summary: Get planned workout
-      description: Loads one planned workout with nested elements for workout detail/edit screens. Frontend pattern - use for drawer/detail hydration when opening a specific workout.
-      operationId: getPlannedWorkout
+  /v1/coach/training_plans/{plan_id}/training_plan_items:
+    post:
+      summary: Create training plan item
+      description: >-
+        Creates a day-to-workout mapping entry used by the weekly plan schedule.
+        Each item links a workout to a specific weekday with an optional
+        workout_type label. Multiple items per day are allowed (e.g. morning
+        cardio + evening strength). Frontend pattern - optimistically add item
+        to the selected day column and reconcile from 201 payload.
+      operationId: createTrainingPlanItem
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/IdPath"
+        - $ref: "#/components/parameters/PlanIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingPlanItemCreateRequest"
+            examples:
+              default:
+                value:
+                  day: monday
+                  workout_type: strength
+                  workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
       responses:
-        "200":
-          description: Planned workout
+        "201":
+          description: Training plan item created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlannedWorkoutResponse"
+                $ref: "#/components/schemas/TrainingPlanItemResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      id: f1a2b3c4-d5e6-7890-abcd-ef1234567890
+                      day: monday
+                      workout_type: strength
+                      workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                      training_plan_id: 28355076-c303-47d6-b595-a4a69f9ef50d
+                      creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                      business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                      inserted_at: "2026-02-14T10:30:00Z"
+                      updated_at: "2026-02-14T10:30:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    get:
+      summary: List training plan items
+      description: Returns all day assignments for a training plan so frontend can render the weekly schedule grid. Frontend pattern - refetch after plan-item create, update, delete, or copy-day actions.
+      operationId: listTrainingPlanItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PlanIdPath"
+      responses:
+        "200":
+          description: Training plan items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanItemListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/training_plan_items/{id}:
     patch:
-      summary: Update planned workout
-      description: >-
-        Updates workout metadata. Changing day_number moves the workout to a
-        different weekday in the weekly overview. Frontend pattern - optimistic
-        edit and refetch plan detail when day changes affect ordering.
-      operationId: updatePlannedWorkout
+      summary: Update training plan item
+      description: Updates day assignment, workout type label, or linked workout for a scheduled training plan item. Frontend pattern - update dragged/edited item optimistically and rollback on validation errors.
+      operationId: updateTrainingPlanItem
       security:
         - bearerAuth: []
       parameters:
@@ -3282,20 +3346,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlannedWorkoutUpdateRequest"
+              $ref: "#/components/schemas/TrainingPlanItemUpdateRequest"
             examples:
               default:
                 value:
-                  name: Day 1 - Lower (Updated)
-                  notes: Added paused squats in accessories.
-                  day_number: 1
+                  day: tuesday
+                  workout_type: cardio
       responses:
         "200":
-          description: Planned workout updated
+          description: Training plan item updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlannedWorkoutResponse"
+                $ref: "#/components/schemas/TrainingPlanItemResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -3303,30 +3366,107 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
     delete:
-      summary: Delete planned workout
-      description: Removes a workout day from the plan, used by planner delete actions. Frontend pattern - remove item from UI immediately after confirm, then invalidate parent plan query.
-      operationId: deletePlannedWorkout
+      summary: Delete training plan item
+      description: Removes a scheduled day mapping entry from the training plan calendar. Frontend pattern - remove from local day bucket immediately and invalidate plan item queries.
+      operationId: deleteTrainingPlanItem
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPath"
       responses:
         "204":
-          description: Planned workout deleted
+          description: Training plan item deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-  /v1/coach/planned_workouts/{id}/duplicate:
+  /v1/coach/training_plans/{id}/copy-day:
     post:
-      summary: Duplicate planned workout
-      description: |
-        Deep-copies a workout (with all elements and planned sets) to a target weekday.
-        Used by the weekly overview when the coach taps "Copy" on a workout and selects
-        a destination day. The new workout belongs to the same training plan.
-        Frontend pattern: show a day picker with available days, POST on selection,
-        append the returned workout to the plan's workout list.
-      operationId: duplicatePlannedWorkout
+      summary: Copy day
+      description: >-
+        Copies all training plan items from one day to another within the same plan.
+        Creates new PlanItem records pointing to the same Workouts (no deep copy).
+        Frontend should call this when the coach wants to replicate a day's schedule.
+        After success, refetch the plan to get updated plan_items.
+      operationId: copyTrainingDay
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_day, target_day]
+              properties:
+                source_day:
+                  type: string
+                  enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+                target_day:
+                  type: string
+                  enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+            examples:
+              default:
+                value:
+                  source_day: monday
+                  target_day: thursday
+      responses:
+        "201":
+          description: Day copied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlanItemListResponse"
+              examples:
+                created:
+                  value:
+                    data:
+                      - id: a1b2c3d4-e5f6-7890-abcd-000000000001
+                        day: thursday
+                        workout_type: strength
+                        workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                        training_plan_id: 28355076-c303-47d6-b595-a4a69f9ef50d
+                        creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
+                        business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
+                        inserted_at: "2026-02-14T10:30:00Z"
+                        updated_at: "2026-02-14T10:30:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/workouts/{id}:
+    get:
+      summary: Get workout
+      description: Loads one workout with nested elements for workout detail/edit screens. Frontend pattern - use for drawer/detail hydration when opening a specific workout.
+      operationId: getWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Workout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update workout
+      description: >-
+        Updates workout metadata (name, notes). Frontend pattern - optimistic
+        edit and reconcile from response.
+      operationId: updateWorkout
       security:
         - bearerAuth: []
       parameters:
@@ -3336,25 +3476,60 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [day_number]
-              properties:
-                day_number:
-                  type: integer
-                  minimum: 1
-                  maximum: 7
-                  description: Target weekday for the copy (1=Monday..7=Sunday).
+              $ref: "#/components/schemas/WorkoutUpdateRequest"
             examples:
               default:
                 value:
-                  day_number: 4
+                  name: Day 1 - Lower (Updated)
+                  notes: Added paused squats in accessories.
+      responses:
+        "200":
+          description: Workout updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete workout
+      description: Removes a workout from the plan, used by planner delete actions. Frontend pattern - remove item from UI immediately after confirm, then invalidate parent plan query.
+      operationId: deleteWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Workout deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/workouts/{id}/duplicate:
+    post:
+      summary: Duplicate workout
+      description: >-
+        Deep-copies a workout (with all elements and planned sets) within the
+        same training plan. Used when the coach taps "Copy" on a workout.
+        Frontend pattern: POST on selection, append the returned workout to
+        the plan's workout list.
+      operationId: duplicateWorkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
       responses:
         "201":
           description: Workout duplicated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlannedWorkoutResponse"
+                $ref: "#/components/schemas/WorkoutResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -3364,7 +3539,7 @@ paths:
   /v1/coach/workout_elements:
     post:
       summary: Create workout element
-      description: Adds an exercise block to a planned workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
+      description: Adds an exercise block to a workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
       operationId: createWorkoutElement
       security:
         - bearerAuth: []
@@ -3377,7 +3552,7 @@ paths:
             examples:
               default:
                 value:
-                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                   position: 0
                   exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
                   planned_sets:
@@ -3487,7 +3662,7 @@ paths:
               default:
                 value:
                   client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
-                  planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                  workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                   notes: Feeling strong today.
       responses:
         "201":
@@ -3508,7 +3683,7 @@ paths:
                       notes: Feeling strong today.
                       client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
                       business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
-                      planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+                      workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                       performed_sets: []
                       inserted_at: "2026-02-14T10:15:00Z"
                       updated_at: "2026-02-14T10:15:00Z"
@@ -5829,11 +6004,10 @@ components:
           format: date
         rest_days:
           type: array
-          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Each value must be 1-7, no duplicates.
+          description: Weekday names marked as rest days. No duplicates.
           items:
-            type: integer
-            minimum: 1
-            maximum: 7
+            type: string
+            enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         original_template_id:
           type: string
     TrainingPlanUpdateRequest:
@@ -5856,11 +6030,10 @@ components:
           format: date
         rest_days:
           type: array
-          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Send the full array on every update (replaces previous value).
+          description: Weekday names marked as rest days. Send the full array on every update (replaces previous value).
           items:
-            type: integer
-            minimum: 1
-            maximum: 7
+            type: string
+            enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         original_template_id:
           type: string
     TrainingPlanAssignRequest:
@@ -5895,7 +6068,8 @@ components:
           author_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
           business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
           original_template_id: null
-          planned_workouts: []
+          workouts: []
+          plan_items: []
           inserted_at: "2026-02-14T10:00:00Z"
           updated_at: "2026-02-14T10:00:00Z"
       properties:
@@ -5918,7 +6092,8 @@ components:
           id,
           name,
           status,
-          planned_workouts,
+          workouts,
+          plan_items,
           author_id,
           business_id,
           inserted_at,
@@ -5944,11 +6119,10 @@ components:
           nullable: true
         rest_days:
           type: array
-          description: Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days by the coach.
+          description: Weekday names explicitly marked as rest days by the coach.
           items:
-            type: integer
-            minimum: 1
-            maximum: 7
+            type: string
+            enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         client_id:
           type: string
           nullable: true
@@ -5963,10 +6137,14 @@ components:
         original_template_id:
           type: string
           nullable: true
-        planned_workouts:
+        workouts:
           type: array
           items:
-            $ref: "#/components/schemas/PlannedWorkout"
+            $ref: "#/components/schemas/Workout"
+        plan_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingPlanItem"
         inserted_at:
           type: string
           format: date-time
@@ -5986,57 +6164,46 @@ components:
         last_name:
           type: string
           nullable: true
-    PlannedWorkoutCreateRequest:
+    WorkoutCreateRequest:
       type: object
-      required: [name, day_number]
+      required: [name]
       example:
         name: Push Day
         notes: Main bench session.
-        day_number: 1
       properties:
         name:
           type: string
         notes:
           type: string
-        day_number:
-          type: integer
-          minimum: 1
-          maximum: 7
-          description: Weekday number (1=Monday..7=Sunday). Determined by which day row the coach tapped in the weekly overview.
-    PlannedWorkoutUpdateRequest:
+    WorkoutUpdateRequest:
       type: object
       properties:
         name:
           type: string
         notes:
           type: string
-        day_number:
-          type: integer
-          minimum: 1
-          maximum: 7
-    PlannedWorkoutResponse:
+    WorkoutResponse:
       type: object
       required: [data]
       properties:
         data:
-          $ref: "#/components/schemas/PlannedWorkout"
-    PlannedWorkoutListResponse:
+          $ref: "#/components/schemas/Workout"
+    WorkoutListResponse:
       type: object
       required: [data, count]
       properties:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/PlannedWorkout"
+            $ref: "#/components/schemas/Workout"
         count:
           type: integer
-    PlannedWorkout:
+    Workout:
       type: object
       required:
         [
           id,
           name,
-          day_number,
           training_plan_id,
           business_id,
           workout_elements,
@@ -6051,8 +6218,6 @@ components:
         notes:
           type: string
           nullable: true
-        day_number:
-          type: integer
         training_plan_id:
           type: string
         business_id:
@@ -6067,11 +6232,71 @@ components:
         updated_at:
           type: string
           format: date-time
+    TrainingPlanItemCreateRequest:
+      type: object
+      required: [day, workout_type, workout_id]
+      properties:
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        workout_type:
+          type: string
+        workout_id:
+          type: string
+    TrainingPlanItemUpdateRequest:
+      type: object
+      properties:
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        workout_type:
+          type: string
+        workout_id:
+          type: string
+    TrainingPlanItemResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/TrainingPlanItem"
+    TrainingPlanItemListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingPlanItem"
+    TrainingPlanItem:
+      type: object
+      required: [id, day, workout_type, workout_id, training_plan_id, creator_id, business_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        workout_type:
+          type: string
+        workout_id:
+          type: string
+        training_plan_id:
+          type: string
+        creator_id:
+          type: string
+        business_id:
+          type: string
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     WorkoutElementCreateRequest:
       type: object
-      required: [planned_workout_id, position, exercise_id]
+      required: [workout_id, position, exercise_id]
       example:
-        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
         position: 0
         exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
         planned_sets:
@@ -6079,7 +6304,7 @@ components:
             load_unit: kg
             set_type: working
       properties:
-        planned_workout_id:
+        workout_id:
           type: string
         position:
           type: integer
@@ -6122,7 +6347,7 @@ components:
           id,
           position,
           exercise_id,
-          planned_workout_id,
+          workout_id,
           business_id,
           planned_sets,
           inserted_at,
@@ -6141,7 +6366,7 @@ components:
           nullable: true
         exercise_id:
           type: string
-        planned_workout_id:
+        workout_id:
           type: string
         business_id:
           type: string
@@ -6199,7 +6424,7 @@ components:
       required: [client_id]
       example:
         client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
-        planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+        workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
         notes: Feeling strong today.
       properties:
         client_id:
@@ -6213,7 +6438,7 @@ components:
           maximum: 5
         notes:
           type: string
-        planned_workout_id:
+        workout_id:
           type: string
     WorkoutSessionCompleteRequest:
       type: object
@@ -6240,10 +6465,9 @@ components:
           notes: Feeling strong today.
           client_id: 9e55e6ef-bb98-45ec-bff7-56339e4ac4f7
           business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
-          planned_workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
+          workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
           planned_snapshot:
             workout_name: Push Day
-            day_number: 1
             elements:
               - element_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
                 position: 0
@@ -6317,7 +6541,7 @@ components:
           type: string
         business_id:
           type: string
-        planned_workout_id:
+        workout_id:
           type: string
           nullable: true
         planned_snapshot:
@@ -6325,16 +6549,12 @@ components:
           nullable: true
           description: >-
             Point-in-time snapshot of the planned workout captured when the session starts.
-            Null for freestyle sessions (no plan). Contains workout_name, day_number,
-            and elements array with exercise details and planned sets. Used for
-            plan-vs-actual comparison that survives plan edits.
+            Null for freestyle sessions (no plan). Contains workout_name and elements
+            array with exercise details and planned sets. Used for plan-vs-actual
+            comparison that survives plan edits.
           properties:
             workout_name:
               type: string
-            day_number:
-              type: integer
-              minimum: 1
-              maximum: 7
             elements:
               type: array
               items:
@@ -7295,7 +7515,7 @@ components:
 
     ClientTrainingPlan:
       type: object
-      required: [id, name, status, planned_workouts, inserted_at, updated_at]
+      required: [id, name, status, workouts, plan_items, inserted_at, updated_at]
       properties:
         id:
           type: string
@@ -7317,24 +7537,27 @@ components:
           nullable: true
         rest_days:
           type: array
-          description: Weekday numbers (1=Mon..7=Sun) marked as rest days. Used by client app to distinguish rest days from empty days.
+          description: Weekday names marked as rest days. Used by client app to distinguish rest days from empty days.
           items:
-            type: integer
-            minimum: 1
-            maximum: 7
-        planned_workouts:
+            type: string
+            enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        workouts:
           type: array
           items:
-            $ref: "#/components/schemas/ClientPlannedWorkout"
+            $ref: "#/components/schemas/ClientWorkout"
+        plan_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientTrainingPlanItem"
         inserted_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-    ClientPlannedWorkout:
+    ClientWorkout:
       type: object
-      required: [id, name, day_number, workout_elements, inserted_at, updated_at]
+      required: [id, name, workout_elements, inserted_at, updated_at]
       properties:
         id:
           type: string
@@ -7343,14 +7566,31 @@ components:
         notes:
           type: string
           nullable: true
-        day_number:
-          type: integer
-          minimum: 1
-          maximum: 7
         workout_elements:
           type: array
           items:
             $ref: "#/components/schemas/ClientWorkoutElement"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientTrainingPlanItem:
+      type: object
+      required: [id, day, workout_type, workout_id, training_plan_id, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+        day:
+          type: string
+          enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+        workout_type:
+          type: string
+        workout_id:
+          type: string
+        training_plan_id:
+          type: string
         inserted_at:
           type: string
           format: date-time
@@ -7508,7 +7748,7 @@ components:
         notes:
           type: string
           nullable: true
-        planned_workout_id:
+        workout_id:
           type: string
           nullable: true
         planned_snapshot:
@@ -7516,9 +7756,9 @@ components:
           nullable: true
           description: >-
             Point-in-time snapshot of the planned workout captured at session
-            creation. Contains workout_name, day_number, and elements array
-            with exercise details and planned sets. Used for plan-vs-actual
-            comparison that survives subsequent plan edits.
+            creation. Contains workout_name and elements array with exercise
+            details and planned sets. Used for plan-vs-actual comparison that
+            survives subsequent plan edits.
         performed_sets:
           type: array
           items:
@@ -7623,10 +7863,10 @@ components:
     ClientStartSessionRequest:
       type: object
       properties:
-        planned_workout_id:
+        workout_id:
           type: string
           nullable: true
-          description: UUID of the planned workout. Null for freestyle workouts.
+          description: UUID of the workout. Null for freestyle workouts.
         notes:
           type: string
           nullable: true

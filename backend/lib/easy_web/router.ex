@@ -122,13 +122,19 @@ defmodule EasyWeb.Router do
     delete "/training_plans/:id", TrainingPlanController, :delete
     post "/training_plans/:id/assign", TrainingPlanController, :assign
     post "/training_plans/:id/duplicate", TrainingPlanController, :duplicate
+    post "/training_plans/:id/copy-day", TrainingPlanController, :copy_day
 
-    get "/training_plans/:plan_id/planned_workouts", PlannedWorkoutController, :index
-    post "/training_plans/:plan_id/planned_workouts", PlannedWorkoutController, :create
-    get "/planned_workouts/:id", PlannedWorkoutController, :show
-    patch "/planned_workouts/:id", PlannedWorkoutController, :update
-    delete "/planned_workouts/:id", PlannedWorkoutController, :delete
-    post "/planned_workouts/:id/duplicate", PlannedWorkoutController, :duplicate
+    get "/training_plans/:plan_id/workouts", WorkoutController, :index
+    post "/training_plans/:plan_id/workouts", WorkoutController, :create
+    get "/workouts/:id", WorkoutController, :show
+    patch "/workouts/:id", WorkoutController, :update
+    delete "/workouts/:id", WorkoutController, :delete
+    post "/workouts/:id/duplicate", WorkoutController, :duplicate
+
+    post "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :create
+    get "/training_plans/:plan_id/training_plan_items", TrainingPlanItemController, :index
+    patch "/training_plan_items/:id", TrainingPlanItemController, :update
+    delete "/training_plan_items/:id", TrainingPlanItemController, :delete
 
     post "/workout_elements", WorkoutElementController, :create
     get "/workout_elements/:id", WorkoutElementController, :show

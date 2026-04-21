@@ -50,11 +50,11 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
       exercise: exercise
     } do
       plan = insert(:training_plan, author: coach, business: business)
-      workout = insert(:planned_workout, training_plan: plan, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
 
       element =
         insert(:workout_element,
-          planned_workout: workout,
+          workout: workout,
           exercise: exercise,
           business: business,
           position: 0

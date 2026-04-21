@@ -21,7 +21,8 @@ defmodule Easy.Factory do
   alias Easy.Training.Exercise
   alias Easy.Training.Equipment
   alias Easy.Training.Muscle
-  alias Easy.Training.PlannedWorkout
+  alias Easy.Training.PlanItem, as: TrainingPlanItem
+  alias Easy.Training.Workout
   alias Easy.Training.TrainingPlan
   alias Easy.Training.WorkoutElement
   alias Easy.Training.WorkoutSession
@@ -313,36 +314,56 @@ defmodule Easy.Factory do
     }
   end
 
-  def planned_workout_factory do
+  def workout_factory do
     training_plan = build(:training_plan)
 
-    %PlannedWorkout{
-      name: sequence(:planned_workout_name, &"Planned Workout #{&1}"),
+    %Workout{
+      name: sequence(:workout_name, &"Workout #{&1}"),
       notes: "Push day",
-      day_number: 1,
       training_plan: training_plan,
       business: training_plan.business
     }
   end
 
-  def planned_workout_attrs_factory do
+  def workout_attrs_factory do
     %{
-      "name" => sequence(:planned_workout_attr_name, &"Planned Workout Attr #{&1}"),
-      "notes" => "Workout from test",
-      "day_number" => 1
+      "name" => sequence(:workout_attr_name, &"Workout Attr #{&1}"),
+      "notes" => "Workout from test"
+    }
+  end
+
+  def training_plan_item_factory do
+    training_plan = build(:training_plan)
+    workout = build(:workout, training_plan: training_plan, business: training_plan.business)
+    author = training_plan.author
+
+    %TrainingPlanItem{
+      day: "monday",
+      workout_type: "primary",
+      training_plan: training_plan,
+      workout: workout,
+      business: training_plan.business,
+      creator: author
+    }
+  end
+
+  def training_plan_item_attrs_factory do
+    %{
+      "day" => "monday",
+      "workout_type" => "primary"
     }
   end
 
   def workout_element_factory do
-    planned_workout = build(:planned_workout)
-    exercise = build(:exercise, business: planned_workout.business)
+    workout = build(:workout)
+    exercise = build(:exercise, business: workout.business)
 
     %WorkoutElement{
       position: 0,
       notes: "Top set",
-      planned_workout: planned_workout,
+      workout: workout,
       exercise: exercise,
-      business: planned_workout.business,
+      business: workout.business,
       planned_sets: []
     }
   end

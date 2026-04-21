@@ -43,7 +43,7 @@ defmodule Easy.Training.PlanItem do
     |> put_change(:training_plan_id, training_plan_id)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
-    |> validate_required([:day, :workout_type, :workout_id, :training_plan_id, :business_id])
+    |> validate_required([:day, :workout_type, :workout_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
     |> unique_constraint([:training_plan_id, :day, :workout_type],

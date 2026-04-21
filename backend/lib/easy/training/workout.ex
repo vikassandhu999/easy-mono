@@ -37,7 +37,7 @@ defmodule Easy.Training.Workout do
     |> cast(attrs, @cast_fields)
     |> put_change(:training_plan_id, training_plan_id)
     |> put_change(:business_id, business_id)
-    |> validate_required([:name, :training_plan_id, :business_id])
+    |> validate_required([:name])
     |> validate_length(:notes, max: 5000)
     |> foreign_key_constraint(:training_plan_id)
     |> foreign_key_constraint(:business_id)
@@ -81,9 +81,7 @@ defmodule Easy.Training.Workout do
     |> is_struct(__MODULE__)
   end
 
-  @spec accessible_for_plan?(String.t(), String.t(), String.t() | nil) :: boolean()
-  def accessible_for_plan?(_plan_id, _business_id, nil), do: true
-
+  @spec accessible_for_plan?(String.t(), String.t(), String.t()) :: boolean()
   def accessible_for_plan?(plan_id, business_id, workout_id) do
     __MODULE__
     |> for_plan(plan_id)

@@ -57,7 +57,7 @@ defmodule Easy.Training.TrainingPlan do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:author_id, author_id)
-    |> validate_required([:name, :business_id, :author_id])
+    |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_date_range()

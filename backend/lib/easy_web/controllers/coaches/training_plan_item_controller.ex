@@ -13,16 +13,25 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
          plan when not is_nil(plan) <-
            TrainingPlan |> TrainingPlan.for_business(claims.business_id) |> Repo.get(plan_id),
-         true <- Workout.accessible_for_plan?(plan.id, claims.business_id, workout_id),
+         :ok <- check_workout_in_plan(plan.id, claims.business_id, workout_id),
          {:ok, plan_item} <- PlanItem.create(plan.id, claims.business_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, plan_item: plan_item)
     else
       nil -> {:error, :not_found}
-      false -> {:error, :not_found}
       error -> error
     end
+  end
+
+  # nil workout_id is handled by PlanItem.insert_changeset's validate_required.
+  # Non-nil must belong to the plan within the caller's business.
+  defp check_workout_in_plan(_plan_id, _business_id, nil), do: :ok
+
+  defp check_workout_in_plan(plan_id, business_id, workout_id) do
+    if Workout.accessible_for_plan?(plan_id, business_id, workout_id),
+      do: :ok,
+      else: {:error, :not_found}
   end
 
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()

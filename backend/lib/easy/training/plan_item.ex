@@ -46,6 +46,10 @@ defmodule Easy.Training.PlanItem do
     |> validate_required([:day, :workout_type, :workout_id, :training_plan_id, :business_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
+    |> unique_constraint([:training_plan_id, :day, :workout_type],
+      name: :training_plan_items_plan_id_day_workout_type_index,
+      message: "already has a workout of this type on this day"
+    )
     |> foreign_key_constraint(:training_plan_id)
     |> foreign_key_constraint(:workout_id)
     |> foreign_key_constraint(:business_id)
@@ -60,6 +64,10 @@ defmodule Easy.Training.PlanItem do
     |> cast(attrs, @update_fields)
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
+    |> unique_constraint([:training_plan_id, :day, :workout_type],
+      name: :training_plan_items_plan_id_day_workout_type_index,
+      message: "already has a workout of this type on this day"
+    )
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

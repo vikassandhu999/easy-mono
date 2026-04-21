@@ -72,6 +72,63 @@ defmodule EasyWeb.Coaches.TrainingPlanItemControllerTest do
 
       assert json_response(conn, 404)
     end
+
+    test "rejects second primary on the same day", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout_a = insert(:workout, training_plan: plan, business: business)
+      workout_b = insert(:workout, training_plan: plan, business: business)
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: workout_a,
+        business: business,
+        creator: coach,
+        day: "monday",
+        workout_type: "primary"
+      )
+
+      conn =
+        post(
+          conn,
+          "/v1/coach/training_plans/#{plan.id}/training_plan_items",
+          %{"day" => "monday", "workout_type" => "primary", "workout_id" => workout_b.id}
+        )
+
+      assert json_response(conn, 422)
+    end
+
+    test "allows primary + alternative on the same day", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout_a = insert(:workout, training_plan: plan, business: business)
+      workout_b = insert(:workout, training_plan: plan, business: business)
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: workout_a,
+        business: business,
+        creator: coach,
+        day: "monday",
+        workout_type: "primary"
+      )
+
+      conn =
+        post(
+          conn,
+          "/v1/coach/training_plans/#{plan.id}/training_plan_items",
+          %{"day" => "monday", "workout_type" => "alternative", "workout_id" => workout_b.id}
+        )
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["workout_type"] == "alternative"
+    end
   end
 
   describe "GET /v1/coach/training_plans/:plan_id/training_plan_items" do

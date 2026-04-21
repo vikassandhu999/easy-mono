@@ -198,5 +198,49 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       assert data["rest_days"] == ["sunday"]
     end
+
+    test "preserves shared-workout invariant: one Workout referenced by N PlanItems stays one Workout in the copy",
+         %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business, name: "PPL")
+
+      # One workout, referenced by two plan items (Mon + Thu) — the whole
+      # point of the redesign. When duplicating, the copy must also have
+      # one workout referenced by both days, not two separate workouts.
+      shared_workout = insert(:workout, training_plan: plan, business: business, name: "Push")
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: shared_workout,
+        business: business,
+        creator: coach,
+        day: "monday",
+        workout_type: "primary"
+      )
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: shared_workout,
+        business: business,
+        creator: coach,
+        day: "thursday",
+        workout_type: "primary"
+      )
+
+      conn = post(conn, "/v1/coach/training_plans/#{plan.id}/duplicate")
+      assert %{"data" => data} = json_response(conn, 201)
+
+      # The copy should have exactly one Workout (named "Push"), not two.
+      assert [copied_workout] = data["workouts"]
+      assert copied_workout["name"] == "Push"
+      assert copied_workout["id"] != shared_workout.id
+
+      # Both plan items should point at that single copied Workout.
+      assert length(data["plan_items"]) == 2
+      plan_item_workout_ids = data["plan_items"] |> Enum.map(& &1["workout_id"]) |> Enum.uniq()
+      assert plan_item_workout_ids == [copied_workout["id"]]
+
+      days = data["plan_items"] |> Enum.map(& &1["day"]) |> Enum.sort()
+      assert days == ["monday", "thursday"]
+    end
   end
 end

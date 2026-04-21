@@ -3266,10 +3266,13 @@ paths:
       summary: Create training plan item
       description: >-
         Creates a day-to-workout mapping entry used by the weekly plan schedule.
-        Each item links a workout to a specific weekday with an optional
-        workout_type label. Multiple items per day are allowed (e.g. morning
-        cardio + evening strength). Frontend pattern - optimistically add item
-        to the selected day column and reconcile from 201 payload.
+        Each item links a workout to a specific weekday at a specific
+        workout_type slot. Uniqueness is enforced on (plan, day, workout_type)
+        — only one PlanItem per slot, duplicates return 422. MVP uses
+        `primary` only; `alternative` is reserved for a future iteration.
+        Frontend pattern - optimistically add item to the selected day column
+        and reconcile from 201 payload; on 422 surface the field error
+        "already has a workout of this type on this day".
       operationId: createTrainingPlanItem
       security:
         - bearerAuth: []
@@ -3285,7 +3288,7 @@ paths:
               default:
                 value:
                   day: monday
-                  workout_type: strength
+                  workout_type: primary
                   workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
       responses:
         "201":
@@ -3300,7 +3303,7 @@ paths:
                     data:
                       id: f1a2b3c4-d5e6-7890-abcd-ef1234567890
                       day: monday
-                      workout_type: strength
+                      workout_type: primary
                       workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                       training_plan_id: 28355076-c303-47d6-b595-a4a69f9ef50d
                       creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
@@ -3315,7 +3318,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
     get:
       summary: List training plan items
-      description: Returns all day assignments for a training plan so frontend can render the weekly schedule grid. Frontend pattern - refetch after plan-item create, update, delete, or copy-day actions.
+      description: Returns all day assignments for a training plan so frontend can render the weekly schedule grid. Frontend pattern - refetch after plan-item create, update, or delete.
       operationId: listTrainingPlanItems
       security:
         - bearerAuth: []
@@ -3335,7 +3338,13 @@ paths:
   /v1/coach/training_plan_items/{id}:
     patch:
       summary: Update training plan item
-      description: Updates day assignment, workout type label, or linked workout for a scheduled training plan item. Frontend pattern - update dragged/edited item optimistically and rollback on validation errors.
+      description: >-
+        Updates day assignment, workout_type slot, or linked workout for a
+        scheduled training plan item. Subject to the same (plan, day,
+        workout_type) uniqueness constraint as create — moving an item onto
+        a day/slot that is already occupied returns 422. Frontend pattern -
+        update dragged/edited item optimistically and rollback on validation
+        errors.
       operationId: updateTrainingPlanItem
       security:
         - bearerAuth: []
@@ -3351,7 +3360,7 @@ paths:
               default:
                 value:
                   day: tuesday
-                  workout_type: cardio
+                  workout_type: primary
       responses:
         "200":
           description: Training plan item updated
@@ -3376,67 +3385,6 @@ paths:
       responses:
         "204":
           description: Training plan item deleted
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-  /v1/coach/training_plans/{id}/copy-day:
-    post:
-      summary: Copy day
-      description: >-
-        Copies all training plan items from one day to another within the same plan.
-        Creates new PlanItem records pointing to the same Workouts (no deep copy).
-        Frontend should call this when the coach wants to replicate a day's schedule.
-        After success, refetch the plan to get updated plan_items.
-      operationId: copyTrainingDay
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [source_day, target_day]
-              properties:
-                source_day:
-                  type: string
-                  enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
-                target_day:
-                  type: string
-                  enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
-            examples:
-              default:
-                value:
-                  source_day: monday
-                  target_day: thursday
-      responses:
-        "201":
-          description: Day copied
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TrainingPlanItemListResponse"
-              examples:
-                created:
-                  value:
-                    data:
-                      - id: a1b2c3d4-e5f6-7890-abcd-000000000001
-                        day: thursday
-                        workout_type: strength
-                        workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
-                        training_plan_id: 28355076-c303-47d6-b595-a4a69f9ef50d
-                        creator_id: b4fd9bb4-31ba-43a4-a71a-933b57b9f8f2
-                        business_id: 4f4f7db6-44f5-4f31-a5aa-18d0f48e48ab
-                        inserted_at: "2026-02-14T10:30:00Z"
-                        updated_at: "2026-02-14T10:30:00Z"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6241,6 +6189,11 @@ components:
           enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         workout_type:
           type: string
+          enum: [primary, alternative]
+          description: >-
+            Slot on the day. Only one PlanItem per (plan, day, workout_type) is
+            allowed — duplicates return 422. MVP uses `primary` only;
+            `alternative` is reserved for a future iteration.
         workout_id:
           type: string
     TrainingPlanItemUpdateRequest:
@@ -6251,6 +6204,7 @@ components:
           enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         workout_type:
           type: string
+          enum: [primary, alternative]
         workout_id:
           type: string
     TrainingPlanItemResponse:
@@ -6278,6 +6232,7 @@ components:
           enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         workout_type:
           type: string
+          enum: [primary, alternative]
         workout_id:
           type: string
         training_plan_id:
@@ -7587,6 +7542,7 @@ components:
           enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         workout_type:
           type: string
+          enum: [primary, alternative]
         workout_id:
           type: string
         training_plan_id:

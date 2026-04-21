@@ -139,30 +139,4 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       error -> error
     end
   end
-
-  @spec copy_day(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def copy_day(conn, %{"id" => id} = params) do
-    claims = conn.assigns.claims
-
-    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         plan when not is_nil(plan) <-
-           TrainingPlan
-           |> TrainingPlan.for_business(claims.business_id)
-           |> Repo.get(id),
-         {:ok, items} <-
-           TrainingPlan.copy_day(
-             plan,
-             Map.get(params, "source_day"),
-             Map.get(params, "target_day"),
-             coach.id
-           ) do
-      conn
-      |> put_status(:created)
-      |> put_view(EasyWeb.Coaches.TrainingPlanItemJSON)
-      |> render(:index, plan_items: items)
-    else
-      nil -> {:error, :not_found}
-      error -> error
-    end
-  end
 end

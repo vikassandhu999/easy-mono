@@ -122,7 +122,6 @@ defmodule EasyWeb.Router do
     delete "/training_plans/:id", TrainingPlanController, :delete
     post "/training_plans/:id/assign", TrainingPlanController, :assign
     post "/training_plans/:id/duplicate", TrainingPlanController, :duplicate
-    post "/training_plans/:id/copy-day", TrainingPlanController, :copy_day
 
     get "/training_plans/:plan_id/workouts", WorkoutController, :index
     post "/training_plans/:plan_id/workouts", WorkoutController, :create

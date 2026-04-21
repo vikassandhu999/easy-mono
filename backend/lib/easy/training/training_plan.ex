@@ -253,41 +253,6 @@ defmodule Easy.Training.TrainingPlan do
     end)
   end
 
-  @spec copy_day(t(), String.t(), String.t(), String.t()) ::
-          {:ok, [PlanItem.t()]} | {:error, term()}
-  def copy_day(plan, source_day, target_day, creator_id) do
-    with :ok <- validate_day(source_day),
-         :ok <- validate_day(target_day) do
-      source_items =
-        PlanItem
-        |> PlanItem.for_plan(plan.id)
-        |> PlanItem.for_day(source_day)
-        |> Repo.all()
-
-      Repo.transaction(fn ->
-        Enum.map(source_items, fn item ->
-          attrs = %{
-            "day" => target_day,
-            "workout_type" => item.workout_type,
-            "workout_id" => item.workout_id
-          }
-
-          case PlanItem.create(plan.id, plan.business_id, creator_id, attrs) do
-            {:ok, new_item} -> new_item
-            {:error, reason} -> Repo.rollback(reason)
-          end
-        end)
-      end)
-    end
-  end
-
-  defp validate_day(day) when day in @valid_days, do: :ok
-
-  defp validate_day(_) do
-    {:error,
-     Easy.Error.unprocessable(%{day: ["must be a valid day name (monday through sunday)"]})}
-  end
-
   defp copy_workouts(workouts, new_plan) do
     Enum.reduce(workouts, %{}, fn workout, id_map ->
       workout_attrs = %{name: workout.name, notes: workout.notes}

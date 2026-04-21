@@ -98,37 +98,31 @@ defmodule Easy.Nutrition.FoodLogEntry do
     from(e in query, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
   end
 
-  @spec get_for_client(String.t(), String.t(), String.t()) :: t() | nil
-  def get_for_client(business_id, client_id, entry_id) do
-    from(e in __MODULE__,
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(e in query,
       join: ml in MealLog,
       on: e.meal_log_id == ml.id,
       where: ml.business_id == ^business_id,
-      where: ml.client_id == ^client_id,
-      where: e.id == ^entry_id
+      where: ml.client_id == ^client_id
     )
-    |> Repo.one()
   end
 
-  @spec get_for_business(String.t(), String.t()) :: t() | nil
-  def get_for_business(business_id, entry_id) do
-    from(e in __MODULE__,
+  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_business(query \\ __MODULE__, business_id) do
+    from(e in query,
       join: ml in MealLog,
       on: e.meal_log_id == ml.id,
-      where: ml.business_id == ^business_id,
-      where: e.id == ^entry_id
+      where: ml.business_id == ^business_id
     )
-    |> Repo.one()
   end
 
-  @spec logged_indices(String.t()) :: MapSet.t(integer())
-  def logged_indices(meal_log_id) do
-    __MODULE__
-    |> for_meal_log(meal_log_id)
-    |> where([e], not is_nil(e.planned_item_index))
-    |> select([e], e.planned_item_index)
-    |> Repo.all()
-    |> MapSet.new()
+  @spec planned_indices(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def planned_indices(query \\ __MODULE__) do
+    from(e in query,
+      where: not is_nil(e.planned_item_index),
+      select: e.planned_item_index
+    )
   end
 
   # Actions

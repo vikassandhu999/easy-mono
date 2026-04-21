@@ -3,6 +3,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.Plan
+  alias Easy.Nutrition.Plans
   alias Easy.Orgs.Coaches
   alias Easy.Repo
 
@@ -94,7 +95,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
            Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
          client when not is_nil(client) <-
            Client |> Client.for_business(claims.business_id) |> Repo.get(client_id),
-         {:ok, new_plan} <- Plan.assign_to_client(plan, client_id, coach.id, params) do
+         {:ok, new_plan} <- Plans.assign_to_client(plan, client_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -111,7 +112,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
          plan when not is_nil(plan) <-
            Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
-         {:ok, new_plan} <- Plan.duplicate(plan, coach.id) do
+         {:ok, new_plan} <- Plans.duplicate(plan, coach.id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -129,7 +130,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
            Plan
            |> Plan.for_business(business_id)
            |> Repo.get(plan_id),
-         {:ok, items} <- Plan.shopping_list(plan) do
+         {:ok, items} <- Plans.shopping_list(plan) do
       render(conn, :shopping_list, items: items)
     else
       nil -> {:error, :not_found}
@@ -145,7 +146,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
            Plan
            |> Plan.for_business(business_id)
            |> Repo.get(plan_id),
-         {:ok, macros} <- Plan.macros(plan) do
+         {:ok, macros} <- Plans.macros(plan) do
       render(conn, :macros, macros: macros)
     else
       nil -> {:error, :not_found}
@@ -162,7 +163,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
          plan when not is_nil(plan) <-
            Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
          {:ok, items} <-
-           Plan.copy_day(
+           Plans.copy_day(
              plan,
              Map.get(params, "source_day"),
              Map.get(params, "target_day"),

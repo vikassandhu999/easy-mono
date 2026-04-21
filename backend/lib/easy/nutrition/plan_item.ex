@@ -54,17 +54,30 @@ defmodule Easy.Nutrition.PlanItem do
     |> validate_required([:day, :meal_type, :meal_id, :plan_id, :business_id, :creator_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:meal_type, @meal_types)
+    |> unique_constraint([:plan_id, :day, :meal_type],
+      name: :plan_items_plan_id_day_meal_type_index
+    )
   end
+
+  @update_fields [:day, :meal_type]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan_item, attrs) do
     plan_item
-    |> cast(attrs, @cast_fields)
+    |> cast(attrs, @update_fields)
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:meal_type, @meal_types)
+    |> unique_constraint([:plan_id, :day, :meal_type],
+      name: :plan_items_plan_id_day_meal_type_index
+    )
   end
 
   # Queries
+
+  @spec for_meal_type(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def for_meal_type(query \\ __MODULE__, meal_type) do
+    from(p in query, where: p.meal_type == ^meal_type)
+  end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_plan(query \\ __MODULE__, plan_id) do

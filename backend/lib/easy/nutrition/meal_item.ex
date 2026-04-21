@@ -43,11 +43,12 @@ defmodule Easy.Nutrition.MealItem do
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
   end
 
+  @update_fields [:weight_g, :amount, :unit, :position]
+
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(meal_item, attrs) do
     meal_item
-    |> cast(attrs, @cast_fields)
-    |> validate_food_or_recipe()
+    |> cast(attrs, @update_fields)
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
   end
 
@@ -83,8 +84,7 @@ defmodule Easy.Nutrition.MealItem do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  @spec next_position(String.t()) :: integer()
-  def next_position(meal_id) do
+  defp next_position(meal_id) do
     query = from(m in __MODULE__, where: m.meal_id == ^meal_id, select: max(m.position))
 
     case Repo.one(query) do

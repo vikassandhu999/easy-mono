@@ -3,14 +3,15 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.Nutrition.MealLog
+  alias Easy.Nutrition.MealLogging
+  alias Easy.Repo
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, entry} <- MealLog.log_entry(business_id, client.id, params) do
+         {:ok, entry} <- MealLogging.log_entry(business_id, client.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, food_log_entry: entry)
@@ -23,7 +24,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, entry} <- get_client_entry(business_id, client.id, id),
-         {:ok, updated} <- MealLog.update_entry(entry, conn.body_params) do
+         {:ok, updated} <- MealLogging.update_entry(entry, conn.body_params) do
       render(conn, :show, food_log_entry: updated)
     end
   end
@@ -34,7 +35,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, entry} <- get_client_entry(business_id, client.id, id),
-         {:ok, _} <- MealLog.delete_entry(entry) do
+         {:ok, _} <- MealLogging.delete_entry(entry) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -45,7 +46,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str),
-         {:ok, entries} <- MealLog.log_meal(business_id, client.id, date, meal_slot, meal_id) do
+         {:ok, entries} <- MealLogging.log_meal(business_id, client.id, date, meal_slot, meal_id) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
@@ -58,7 +59,7 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str),
-         {:ok, entries} <- MealLog.log_day(business_id, client.id, date, plan_id) do
+         {:ok, entries} <- MealLogging.log_day(business_id, client.id, date, plan_id) do
       conn
       |> put_status(:created)
       |> render(:bulk, food_log_entries: entries)
@@ -77,7 +78,9 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   end
 
   defp get_client_entry(business_id, client_id, entry_id) do
-    case FoodLogEntry.get_for_client(business_id, client_id, entry_id) do
+    case FoodLogEntry
+         |> FoodLogEntry.for_client(business_id, client_id)
+         |> Repo.get(entry_id) do
       nil -> {:error, :not_found}
       entry -> {:ok, entry}
     end

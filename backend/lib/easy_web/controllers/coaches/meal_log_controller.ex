@@ -3,6 +3,7 @@ defmodule EasyWeb.Coaches.MealLogController do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.MealLog
+  alias Easy.Nutrition.MealLogging
   alias Easy.Repo
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -49,7 +50,7 @@ defmodule EasyWeb.Coaches.MealLogController do
         |> MealLog.with_entries()
         |> Repo.all()
 
-      render(conn, :summary, summaries: MealLog.daily_summaries(meal_logs))
+      render(conn, :summary, summaries: MealLogging.daily_summaries(meal_logs))
     else
       false -> {:error, :not_found}
       nil -> {:error, :not_found}

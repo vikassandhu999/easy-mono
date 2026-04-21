@@ -50,6 +50,7 @@ defmodule Easy.Nutrition.Food do
   def update_changeset(food, attrs) do
     food
     |> cast(attrs, @cast_fields)
+    |> validate_required([:name])
     |> cast_embed(:serving_sizes, with: &Nutrition.ServingSize.changeset/2)
   end
 
@@ -105,7 +106,7 @@ defmodule Easy.Nutrition.Food do
   end
 
   defp sanitize_tsquery_token(token) do
-    String.replace(token, ~r/[^a-zA-Z0-9]/, "")
+    String.replace(token, ~r/[^\w]/u, "")
   end
 
   # Actions

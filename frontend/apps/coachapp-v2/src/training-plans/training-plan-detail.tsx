@@ -1,6 +1,6 @@
-import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Input, Label, Spinner, toast} from '@heroui/react';
 import {type CalendarDate, parseDate} from '@internationalized/date';
-import {Archive, ArchiveRestore, ArrowLeft, Pencil, Trash2} from 'lucide-react';
+import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {
   useAssignTrainingPlanMutation,
+  useCreateWorkoutMutation,
   useDeleteTrainingPlanMutation,
   useDuplicateTrainingPlanMutation,
   useGetTrainingPlanQuery,
@@ -21,6 +22,7 @@ import {
 } from '@/api/trainingPlans';
 import ClientPicker from '@/clients/components/client-picker';
 import WeeklyOverview from '@/training-plans/components/weekly-overview';
+import WorkoutSection from '@/training-plans/components/workout-section';
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
@@ -48,6 +50,95 @@ function toCalendarDate(dateStr: string): CalendarDate | null {
   } catch {
     return null;
   }
+}
+
+function AddWorkoutLibraryCard({
+  onWorkoutCreated,
+  planId,
+}: {
+  onWorkoutCreated: (workoutId: string) => void;
+  planId: string;
+}) {
+  const [createWorkout, {isLoading}] = useCreateWorkoutMutation();
+  const [isAdding, setIsAdding] = useState(false);
+  const [name, setName] = useState('');
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+
+    try {
+      const result = await createWorkout({planId, body: {name: name.trim()}}).unwrap();
+      setName('');
+      setIsAdding(false);
+      onWorkoutCreated(result.data.id);
+    } catch {
+      toast.danger('Failed to create workout.');
+    }
+  };
+
+  if (isAdding) {
+    return (
+      <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+        <label
+          className="mb-1 block text-xs text-foreground-400"
+          htmlFor="new-library-workout"
+        >
+          Workout name
+        </label>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <Input
+            id="new-library-workout"
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setIsAdding(false);
+                setName('');
+              }
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleCreate().catch(() => {
+                  /* handled in handleCreate */
+                });
+              }
+            }}
+            placeholder="e.g. Push Day"
+            value={name}
+          />
+          <div className="flex gap-2">
+            <Button
+              isPending={isLoading}
+              onPress={handleCreate}
+              size="sm"
+            >
+              <Plus size={14} />
+              Add workout
+            </Button>
+            <Button
+              onPress={() => {
+                setIsAdding(false);
+                setName('');
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      onPress={() => setIsAdding(true)}
+      size="sm"
+      variant="secondary"
+    >
+      <Plus size={14} />
+      New workout
+    </Button>
+  );
 }
 
 export default function TrainingPlanDetail() {
@@ -94,6 +185,15 @@ export default function TrainingPlanDetail() {
   // Scroll-to-new-workout state (managed here, used by WeeklyOverview)
   const [scrollToWorkoutId, setScrollToWorkoutId] = useState<null | string>(null);
   const handleScrollComplete = useCallback(() => setScrollToWorkoutId(null), []);
+  const scrollRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node && scrollToWorkoutId) {
+        node.scrollIntoView({behavior: 'smooth', block: 'center'});
+        handleScrollComplete();
+      }
+    },
+    [handleScrollComplete, scrollToWorkoutId],
+  );
 
   const handleDuplicate = async () => {
     try {
@@ -163,6 +263,7 @@ export default function TrainingPlanDetail() {
   const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
   // Defensive: matches both `null` and `undefined` in case the backend omits the key.
   const isTemplate = !plan.client_id;
+  const sortedWorkouts = [...plan.workouts].sort((a, b) => a.inserted_at.localeCompare(b.inserted_at));
 
   return (
     <PageLayout title="Training Plan">
@@ -351,7 +452,7 @@ export default function TrainingPlanDetail() {
         </div>
       )}
 
-      <div className="min-w-0 max-w-2xl overflow-hidden">
+      <div className="min-w-0 max-w-4xl overflow-hidden">
         {/* Personal-plan client banner — only shown when assigned to a client */}
         {plan.client ? (
           <ClientPlanBanner
@@ -392,17 +493,51 @@ export default function TrainingPlanDetail() {
           ) : null}
         </div>
 
-        {/* Weekly overview — 7-day layout with expand/collapse */}
+        {/* Weekly schedule */}
         <section className="border-t border-divider py-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Overview</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h3>
           </div>
           <WeeklyOverview
-            onScrollComplete={handleScrollComplete}
             onWorkoutCreated={setScrollToWorkoutId}
             plan={plan}
-            scrollToWorkoutId={scrollToWorkoutId}
           />
+        </section>
+
+        <section className="border-t border-divider py-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Workouts</h3>
+              <p className="mt-1 text-sm text-foreground-500">Build workouts once, then assign them across the week.</p>
+            </div>
+          </div>
+
+          {sortedWorkouts.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {sortedWorkouts.map((workout) => (
+                <WorkoutSection
+                  allWorkouts={sortedWorkouts}
+                  key={workout.id}
+                  onWorkoutCreated={setScrollToWorkoutId}
+                  planId={plan.id}
+                  planItems={plan.plan_items}
+                  sectionRef={workout.id === scrollToWorkoutId ? scrollRef : undefined}
+                  workout={workout}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mb-3 text-sm text-foreground-400">
+              No workouts yet. Create your first workout to start building this plan.
+            </p>
+          )}
+
+          <div className="mt-3">
+            <AddWorkoutLibraryCard
+              onWorkoutCreated={setScrollToWorkoutId}
+              planId={plan.id}
+            />
+          </div>
         </section>
 
         {/* Meta */}

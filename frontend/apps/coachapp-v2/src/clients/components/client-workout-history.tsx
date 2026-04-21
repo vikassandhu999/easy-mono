@@ -1,9 +1,9 @@
-import {DAY_NAMES, formatDuration, formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
+import {formatDuration, formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
 import {Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
-import type {PlannedSnapshot, WorkoutSession} from '@/api/workoutSessions';
+import type {WorkoutSession} from '@/api/workoutSessions';
 
 import {useListWorkoutSessionsQuery} from '@/api/workoutSessions';
 
@@ -16,11 +16,6 @@ function getWorkoutTitle(session: WorkoutSession): string {
     return session.planned_snapshot.workout_name;
   }
   return 'Freestyle workout';
-}
-
-function getDayLabel(snapshot: null | PlannedSnapshot): null | string {
-  if (!snapshot) return null;
-  return DAY_NAMES[snapshot.day_number] ?? null;
 }
 
 function getExerciseCount(session: WorkoutSession): number {
@@ -81,7 +76,6 @@ function buildSubtitle(session: WorkoutSession): string {
 
 export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
   const title = getWorkoutTitle(session);
-  const dayLabel = getDayLabel(session.planned_snapshot);
   const dateStr = formatSessionDate(session.started_at);
   const subtitle = buildSubtitle(session);
   const stateChip = SESSION_STATE_CHIP[session.state];
@@ -105,10 +99,7 @@ export function SessionCard({clientId, session}: {clientId: string; session: Wor
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <p className="truncate text-sm font-semibold">{title}</p>
-          {dayLabel ? <span className="shrink-0 text-xs text-foreground-400">{dayLabel}</span> : null}
-        </div>
+        <p className="truncate text-sm font-semibold">{title}</p>
         {subtitle ? <p className="mt-0.5 truncate text-xs text-foreground-500">{subtitle}</p> : null}
         <div className="mt-1 flex items-center gap-2">
           {stateChip ? (

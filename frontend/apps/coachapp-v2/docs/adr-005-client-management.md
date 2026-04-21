@@ -198,7 +198,7 @@ No program names, no time remaining, no payment status, no offer names.
 
 `ClientNutritionPlans` and `ClientTrainingPlans` were merged into a single `ClientPlans` component. Plan cards show type as subtitle text ("Nutrition · 3 meals"). Assign buttons (`+ Nutrition plan`, `+ Training plan`) are ghost buttons within the section. Pickers appear inline when toggled.
 
-Data comes from the client-scoped endpoints (`useListClientNutritionPlansQuery` / `useListClientTrainingPlansQuery`), which return that client's plans only. The library endpoints are reserved for templates — see ADR-001 decision #8 and ADR-002 decision #13 for the full template/personal separation. Meal and workout counts are rendered defensively (`plan.meals?.length ?? 0`, `plan.planned_workouts?.length ?? 0`) because the nutrition list endpoint does not preload `meals` (only the show endpoint does).
+Data comes from the client-scoped endpoints (`useListClientNutritionPlansQuery` / `useListClientTrainingPlansQuery`), which return that client's plans only. The library endpoints are reserved for templates — see ADR-001 decision #8 and ADR-002 decision #13 for the full template/personal separation. Meal counts are rendered defensively (`plan.meals?.length ?? 0`) because the nutrition list endpoint does not preload `meals` (only the show endpoint does). Workout counts read `plan.workouts.length` directly — the training plan endpoints preload `workouts` on both the list and show paths, so the field is non-optional (see ADR-002 after the 2026-04-21 content-vs-schedule split).
 
 ### 4. Inline notes with draft pattern
 

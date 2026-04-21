@@ -1,4 +1,4 @@
-import {DAY_NAMES, formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
+import {formatDuration, formatSessionDateLong, SESSION_STATE_CHIP} from '@easy/utils';
 import {Alert, Button, Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
 import {useParams} from 'react-router-dom';
@@ -285,7 +285,6 @@ export default function SessionDetail() {
   const session = data.data;
   const snapshot = session.planned_snapshot;
   const title = snapshot ? snapshot.workout_name : 'Freestyle workout';
-  const dayName = snapshot ? (DAY_NAMES[snapshot.day_number] ?? null) : null;
   const dateStr = formatSessionDateLong(session.started_at);
   const duration = formatDuration(session.started_at, session.ended_at);
   const groups = buildExerciseGroups(session);
@@ -322,10 +321,7 @@ export default function SessionDetail() {
               </Chip>
             ) : null}
           </div>
-          <p className="mt-1 text-sm text-foreground-500">
-            {dayName ? `${dayName} \u00B7 ` : ''}
-            {dateStr}
-          </p>
+          <p className="mt-1 text-sm text-foreground-500">{dateStr}</p>
         </div>
 
         {/* ── Stats row ─────────────────────────────────── */}

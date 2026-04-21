@@ -9,6 +9,8 @@ export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 're
 export type ExerciseMechanics = 'compound' | 'isolation' | 'isometric';
 export type ExerciseForce = 'pull' | 'push' | 'static';
 export type TrainingPlanStatus = 'active' | 'archived';
+export type TrainingWeekday = 'friday' | 'monday' | 'saturday' | 'sunday' | 'thursday' | 'tuesday' | 'wednesday';
+export type TrainingWorkoutType = 'alternative' | 'primary';
 
 // ── PlannedSet (shared schema — same as coach) ───────────────
 
@@ -50,16 +52,27 @@ export type ClientWorkoutElement = {
   updated_at: string;
 };
 
-// ── ClientPlannedWorkout ─────────────────────────────────────
+// ── ClientWorkout ────────────────────────────────────────────
 
-export type ClientPlannedWorkout = {
-  day_number: number;
+export type ClientWorkout = {
   id: string;
   inserted_at: string;
   name: string;
   notes: null | string;
   updated_at: string;
   workout_elements: ClientWorkoutElement[];
+};
+
+// ── ClientTrainingPlanItem ───────────────────────────────────
+
+export type ClientTrainingPlanItem = {
+  day: TrainingWeekday;
+  id: string;
+  inserted_at: string;
+  training_plan_id: string;
+  updated_at: string;
+  workout_id: string;
+  workout_type: TrainingWorkoutType;
 };
 
 // ── ClientTrainingPlan ───────────────────────────────────────
@@ -70,12 +83,12 @@ export type ClientTrainingPlan = {
   id: string;
   inserted_at: string;
   name: string;
-  planned_workouts: ClientPlannedWorkout[];
-  /** Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days. Used to distinguish rest days from empty days. */
-  rest_days: number[];
+  plan_items: ClientTrainingPlanItem[];
+  rest_days: TrainingWeekday[];
   start_date: null | string;
   status: TrainingPlanStatus;
   updated_at: string;
+  workouts: ClientWorkout[];
 };
 
 // ── List params ──────────────────────────────────────────────

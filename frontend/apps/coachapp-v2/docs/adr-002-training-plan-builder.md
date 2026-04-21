@@ -1,31 +1,38 @@
 # ADR-002: Training Plan Builder + Workout Logging
 
 **Date:** 2026-03-29
-**Last updated:** 2026-04-11 (strict template/personal separation — removed `is_template`, removed `draft` status, split endpoints, added client banner + archive button)
+**Last updated:** 2026-04-21 (content-vs-schedule split: `PlannedWorkout` → `Workout` + `TrainingPlanItem`; weekdays as strings; shared-workout banner + unshare-for-one-day action; PlanItem uniqueness on `(plan, day, workout_type)`; copy-day endpoint removed — reusing a workout across days is a single plan item insert)
 **Context:** Training plan creation (coachapp-v2), workout session viewing (coachapp-v2), and workout logging (clientapp-v2)
 
 ---
 
 ## Context
 
-A training plan is a multi-layered, server-persisted builder — structurally parallel to the nutrition plan builder (ADR-001), but with a fundamentally different nested entity: instead of meals containing foods/recipes, training plans contain workouts containing exercises with set schemes.
+A training plan is a multi-layered, server-persisted builder — structurally parallel to the nutrition plan builder (ADR-001). Since 2026-04-21 the shape also mirrors nutrition's content-vs-schedule split: `Workout` is reusable content (exercises + sets), `TrainingPlanItem` is the schedule (which workout on which weekday, in which slot).
 
 ```
 TrainingPlan
 ├── name, description, status, start_date, end_date
-├── client: null | PlanClient             ← null for templates, set for personal plans
-├── client_id: null | string               ← template-vs-personal is derived from this
-└── planned_workouts[]                    ← created via separate API mutation
-    ├── name, day_number, notes
-    └── workout_elements[]                ← created via separate API mutation
-        ├── exercise_id, position, notes, superset_group_id
-        └── planned_sets[]                ← inline array on the workout element
-            ├── set_type: working | warmup | dropset | amrap | emom | rest_pause | backoff | cluster
-            ├── target_reps, load_value, load_unit
-            └── rest_seconds, tempo, distance_*, duration_seconds, intensity_target, notes
+├── client: null | PlanClient              ← null for templates, set for personal plans
+├── client_id: null | string                ← template-vs-personal is derived from this
+├── rest_days: TrainingWeekday[]           ← lowercase weekday strings: "monday" … "sunday"
+├── workouts[]                             ← reusable content, created via separate mutation
+│   ├── name, notes (no day — schedule lives on PlanItem)
+│   └── workout_elements[]                 ← created via separate mutation
+│       ├── exercise_id, position, notes, superset_group_id
+│       └── planned_sets[]                 ← inline array on the workout element
+│           ├── set_type: working | warmup | dropset | amrap | emom | rest_pause | backoff | cluster
+│           ├── target_reps, load_value, load_unit
+│           └── rest_seconds, tempo, distance_*, duration_seconds, intensity_target, notes
+└── plan_items[]                           ← schedule, created via separate mutation
+    ├── day: TrainingWeekday               ← "monday" … "sunday"
+    ├── workout_type: "primary" | "alternative"
+    └── workout_id                         ← points at one of plan.workouts
 ```
 
-`TrainingPlanStatus = 'active' | 'archived'`. There is no `draft` status and no `is_template` field — a plan is a template when `client_id` is null and a personal plan when it points at a client. Unlike nutrition plans, both the library and client-scoped list endpoints preload `planned_workouts` on the backend, so the field is non-optional on the TypeScript type (though the frontend still guards with `plan.planned_workouts ?? []` for resilience).
+Multiple plan items can reference the same workout — this is the whole point of the 2026-04-21 redesign. Assigning "Push Day" to Monday and Thursday creates two `plan_items` both pointing at one `Workout`. Editing the workout updates both days. Mirrors `Nutrition.PlanItem` (ADR-001) exactly.
+
+`TrainingPlanStatus = 'active' | 'archived'`. There is no `draft` status and no `is_template` field — a plan is a template when `client_id` is null and a personal plan when it points at a client. Both the library and client-scoped list endpoints preload `workouts` and `plan_items`, so both fields are non-optional on the TypeScript type.
 
 Key difference from nutrition plans: `planned_sets` is an inline array on the `WorkoutElement`, not a separate API entity. This means sets are created/updated atomically when the workout element is saved, rather than requiring individual CRUD calls per set.
 
@@ -35,9 +42,9 @@ The workout logging layer adds two more entities:
 WorkoutSession
 ├── state: active | completed | discarded
 ├── started_at, ended_at, soreness_rating, notes
-├── planned_workout_id (nullable — null for freestyle)
-├── planned_snapshot (jsonb — frozen copy of the plan at session start)
-│   ├── workout_name, day_number
+├── workout_id (nullable — null for freestyle; was planned_workout_id before 2026-04-21)
+├── planned_snapshot (jsonb — frozen copy of the workout at session start)
+│   ├── workout_name
 │   └── elements[] { element_id, exercise_id, exercise_name, position, planned_sets[] }
 └── performed_sets[]
     ├── exercise_id, workout_element_id (nullable — null for unplanned exercises)
@@ -69,8 +76,9 @@ Same pattern as nutrition plans (ADR-001):
 1. **Client banner** (personal plans only) — `ClientPlanBanner` at the top of the page, tappable link back to the client, avatar + full name + start/end dates + Personal chip. Hidden for templates.
 2. **Header** — plan name, description, status chip, Template chip (when `!plan.client_id`), start/end dates (hidden when the banner shows them), edit / copy-to-client / duplicate / archive / unarchive / delete actions. Archive and Unarchive are mutually exclusive and toggle the plan status via `updateTrainingPlan`.
 3. **Copy to Client** — inline panel with `ClientPicker`, optional start/end date inputs
-4. **Workouts Builder** — add/remove workouts, each workout is a `WorkoutSection` with exercises
-5. **Meta** — created/updated timestamps
+4. **Weekly schedule** — `WeeklyOverview` renders a 7-row list keyed by `TRAINING_WEEKDAYS`. Each row is one of three states: scheduled (shows `plan_items` for that day with workout name + slot + remove), rest (shows "Clear" to remove from `rest_days`), or empty (shows "Assign workout" / "New workout" / "Mark rest day"). The section also hosts the `CopyDayControls` panel for duplicating a day's schedule references to another day.
+5. **Workout library** — list of `WorkoutSection`s, one per `plan.workouts[]` entry. Each section shows a `SharedWorkoutBanner` when the workout is referenced by 2+ plan items, with an inline "Make a copy for one day only" escape hatch.
+6. **Meta** — created/updated timestamps
 
 ---
 
@@ -80,7 +88,13 @@ Same pattern as nutrition plans (ADR-001):
 | --- | --- | --- | --- |
 | Create plan form | Yes, 2+ fields | **NEW PAGE** | Multiple inputs including date pickers |
 | Edit plan metadata | Yes, 2+ fields | **NEW PAGE** | Same form as create |
-| Add workout (name input) | Yes, 1 field | **INLINE** | Single text field, Enter to submit |
+| Add workout to library (name input) | Yes, 1 field | **INLINE** | Single text field, Enter to submit |
+| Assign existing workout to a day | No, selection | **INLINE** | Chip picker inside the day row of the weekly overview |
+| Create + assign workout in one step | Yes, 1 field | **INLINE** | Name input inside a day row; on submit it creates the workout and the plan item sequentially |
+| Copy a day's schedule to another day | No, two taps | **INLINE** | `CopyDayControls` panel inside the weekly schedule section |
+| Mark a day as rest / clear rest | No, single tap | **INLINE** | Button on the empty day row / rest day row |
+| Remove a workout from a day | No, single tap | **INLINE** | X button on the scheduled workout row |
+| Unshare (make a copy just for one day) | No, two taps | **INLINE** | `SharedWorkoutBanner` surfaces a day picker inside the workout card |
 | Add exercise to workout | Yes, search input | **INLINE** | ExercisePicker autocomplete popover |
 | Set scheme (sets/reps/load/rest) | Yes, 4-5 fields | **INLINE** | Compact grid below the picker, fits mobile with flex-wrap |
 | Per-set detail editing | Yes, many fields | **INLINE** | Table on desktop, card stack on mobile |
@@ -90,7 +104,7 @@ Same pattern as nutrition plans (ADR-001):
 | Copy plan to client | Yes, search + dates | **INLINE** | ClientPicker + date inputs in toggle panel |
 | Rename workout | Yes, 1 field | **INLINE** | Tap name to toggle inline Input, save on blur/Enter |
 | Duplicate plan | No, single tap | **INLINE** | Button press, navigates to new plan on success |
-| Copy workout | No, single tap | **INLINE** | Creates copy with "(copy)" suffix |
+| Duplicate workout (library) | No, single tap | **INLINE** | Creates a standalone workout copy; does not schedule a day |
 | Copy exercise to another workout | No, selection | **INLINE** | Popover with workout list to choose target |
 | Archive / Unarchive plan | No, single tap | **INLINE** | Toggle button in detail page action bar |
 
@@ -113,7 +127,8 @@ Same pattern as nutrition plans (ADR-001):
 | --- | --- | --- |
 | `training-plan-form.tsx` | Shared form (schema + hook + component) for create/edit. Four fields only (name, description, start_date, end_date) — no status or template toggle. | create, edit screens |
 | `training-plan-card.tsx` | List item card (name, workout/exercise counts, status chip) | list screen |
-| `workout-section.tsx` | Single workout: inline name editing, exercise list, add/remove/copy exercises, copy workout, delete workout AlertDialog | detail screen |
+| `weekly-overview.tsx` | 7-day schedule grid. Renders one row per `TrainingWeekday` with three states (scheduled / rest / empty). Hosts `ScheduledDayRow` + `ScheduledWorkoutRow`, `RestDayRow`, `EmptyDayRow`, and `DayAssignmentPanel` (assign existing workout or create-and-assign inline). All mutations are plan-item CRUD. | detail screen |
+| `workout-section.tsx` | Single workout: inline name/notes editing, exercise list, add/remove/copy exercises, duplicate workout, delete workout AlertDialog, `SharedWorkoutBanner` with "Make a copy for one day only" action. | detail screen |
 | `exercise-element.tsx` | Single exercise within a workout. Collapsed (1-line summary) or expanded (set editor). Auto-detects uniform vs mixed sets. | workout-section |
 | `set-scheme-input.tsx` | Compact uniform set editor: Sets × Reps @ Load Unit, Rest. Preset chips (3×10, 4×8-12, 5×5, 3×15). Exports `buildPlannedSetsFromScheme` and `deriveSchemeFromSets`. | exercise-element, workout-section (add flow) |
 | `set-detail-editor.tsx` | Per-set table editor for mixed set types. Desktop: HTML table. Mobile: card stack. Supports all 8 set types + add/remove rows. | exercise-element |
@@ -137,29 +152,39 @@ Same pattern as nutrition plans (ADR-001):
 ```
 training-plan-detail.tsx
   │
-  ├── useGetTrainingPlanQuery(id)          → plan with planned_workouts[] (each with workout_elements[])
+  ├── useGetTrainingPlanQuery(id)          → plan with workouts[] + plan_items[] + rest_days[]
   │
-  ├── WorkoutSection (per workout)
-  │   ├── useUpdatePlannedWorkoutMutation  → rename workout (inline editing)
-  │   ├── useDeletePlannedWorkoutMutation  → delete entire workout
+  ├── WeeklyOverview (weekly schedule section)
+  │   ├── useCreateTrainingPlanItemMutation → assign workout to a day (primary only in MVP)
+  │   ├── useDeleteTrainingPlanItemMutation → remove a workout from a day
+  │   ├── useCreateWorkoutMutation          → inline "create + assign" path
+  │   └── useUpdateTrainingPlanMutation     → toggle a day in/out of rest_days
+  │
+  ├── WorkoutSection (per entry in plan.workouts[])
+  │   ├── useUpdateWorkoutMutation         → rename workout, update notes (inline editing)
+  │   ├── useDeleteWorkoutMutation         → delete workout (cascades plan_items pointing at it)
+  │   ├── useDuplicateWorkoutMutation      → duplicate workout content only (no schedule)
   │   ├── useCreateWorkoutElementMutation  → add exercise with planned_sets
   │   ├── useDeleteWorkoutElementMutation  → remove exercise (with undo toast)
-  │   ├── useCreatePlannedWorkoutMutation  → copy workout (creates new workout + copies elements)
+  │   ├── SharedWorkoutBanner ("Make a copy for one day only")
+  │   │   └── duplicate → delete old plan_item → create new plan_item for the chosen day
+  │   │       (backend doesn't yet support PATCH plan_item.workout_id; delete+create is
+  │   │        the workaround — see "What's Not Built Yet")
   │   │
   │   └── ExerciseElement (per element, inside WorkoutSection)
   │       └── useUpdateWorkoutElementMutation → save set scheme changes (planned_sets array)
   │
-  ├── Inline "Add Workout"
-  │   └── useCreatePlannedWorkoutMutation  → create workout (name + day_number)
+  ├── Inline "New workout" (library)
+  │   └── useCreateWorkoutMutation          → create workout without scheduling a day
   │
   ├── Copy to Client (inline panel)
-  │   └── useAssignTrainingPlanMutation    → copy plan to selected client
+  │   └── useAssignTrainingPlanMutation     → copy plan to selected client
   │
   ├── Duplicate Plan
-  │   └── useDuplicateTrainingPlanMutation → server-side duplication
+  │   └── useDuplicateTrainingPlanMutation  → server-side duplication
   │
   └── Delete Plan (AlertDialog)
-      └── useDeleteTrainingPlanMutation    → delete plan + navigate to list
+      └── useDeleteTrainingPlanMutation     → delete plan + navigate to list
 
 client-detail.tsx (ClientPlans section — unified nutrition + training)
   │
@@ -171,7 +196,8 @@ client-detail.tsx (ClientPlans section — unified nutrition + training)
 
 Cache invalidation:
 
-- Mutations against a specific plan (`updateTrainingPlan`, `deletePlannedWorkout`, `updateWorkoutElement`, etc.) invalidate `{type: 'TrainingPlan', id}` so `useGetTrainingPlanQuery` refetches with updated `planned_workouts[]`.
+- `Workout` and `TrainingPlanItem` each have their own tag type, scoped per-plan via `getPlanScopedWorkoutsId(planId)` and `getPlanScopedPlanItemsId(planId)`. Getting a plan provides both tags for its id.
+- Mutations against a specific plan (`updateTrainingPlan`, `deleteWorkout`, `createTrainingPlanItem`, `updateWorkoutElement`, etc.) invalidate `{type: 'TrainingPlan', id}` so `useGetTrainingPlanQuery` refetches with updated `workouts[]` and `plan_items[]`.
 - `updateTrainingPlan`, `deleteTrainingPlan`, and `assignTrainingPlan` invalidate both `{type: 'TrainingPlan', id: 'LIST'}` (library) and `{type: 'TrainingPlan', id: 'CLIENT_LIST'}` (all client detail pages), since a status change or assignment can move a plan between the two scopes.
 - `assignTrainingPlan` additionally invalidates `{type: 'Client', id: 'LIST'}` and `{type: 'Client', id: body.client_id}` to refresh the destination client's detail page.
 
@@ -219,9 +245,28 @@ Removing an exercise from a workout uses a 3-second undo pattern instead of a co
 
 When adding a new exercise, the set scheme inputs are pre-filled from the last exercise in the workout (set count, load unit, rest seconds). This saves re-entering common values when programming similar exercises in sequence.
 
-### 8. Workout copy creates a full deep copy
+### 8. Duplicating workouts vs scheduling existing ones
 
-"Copy workout" creates a new workout with "(copy)" suffix and sequentially copies all exercise elements with their planned_sets. The copy is placed at the next available `day_number`. This is a client-side operation (multiple API calls), not a single server endpoint.
+The 2026-04-21 redesign removes the need for a "copy day" primitive. Reusing a workout across days is a single `POST /training_plan_items` call — one plan item per day, all pointing at the same `workout_id`. Deep-copying a workout's content is a different operation with a different endpoint:
+
+- **Schedule a workout on another day** → `POST /v1/coach/training_plans/:id/training_plan_items` with `{day, workout_type: 'primary', workout_id}`. Creates a new plan item referencing an existing workout. This is the mechanism for "make Thursday the same as Monday" — one call per Monday plan item, substituting `day: "thursday"`.
+- **Deep-copy a workout's content** → `POST /v1/coach/workouts/:id/duplicate`. Produces a standalone workout with duplicated exercises + sets; does **not** schedule a day. Use when the coach wants a copy whose future edits diverge from the original.
+
+Historical note: an earlier iteration of this redesign included a `POST /training_plans/:id/copy-day` endpoint mirroring the nutrition plan equivalent. It was removed in the same handover — the training model doesn't need it because `Workout` is already shared across days via plan items.
+
+The "Make a copy for one day only" action on `SharedWorkoutBanner` combines both concepts: duplicate the workout, then rewire the chosen day's plan item to point at the duplicate. This relies on delete+create because `PATCH /training_plan_items/:id` does not currently apply `workout_id` — see "What's Not Built Yet".
+
+### 8a. PlanItem uniqueness on (plan, day, workout_type)
+
+The backend enforces a composite uniqueness rule: one `TrainingPlanItem` per `(training_plan_id, day, workout_type)` triple. A second create/update on the same slot returns 422 with:
+
+```
+error_detail.fields.training_plan_id = ["already has a workout of this type on this day"]
+```
+
+The key is `training_plan_id` because it's the first column in the DB composite index — **not** because the plan id is wrong. The frontend parser (`parsePlanItemValidationError` in `api/trainingPlans.ts`) hides this quirk and returns a structured `{kind: 'conflict', day, workoutType, message}` so call sites render a friendly "Monday already has a primary workout." message inline.
+
+The current MVP UI only sends `workout_type: 'primary'` on create, so the most common conflict source is the coach trying to add a second primary to a day. To pre-empt that, `DayAssignmentPanel` surfaces an upfront warning banner when a primary already exists on the day, while leaving the buttons clickable as a safety net against stale cache. Backend enforcement is the source of truth; the client-side check is a UX hint.
 
 ### 9. Copy exercise to another workout
 
@@ -283,9 +328,16 @@ The banner component is defined once in `@components/client-plan-banner.tsx` and
 | `GET /v1/coach/clients/:id/training_plans` | `useListClientTrainingPlansQuery` | List plans assigned to a client |
 | `POST /v1/coach/training_plans/:id/assign` | `useAssignTrainingPlanMutation` | Copy plan to a client |
 | `POST /v1/coach/training_plans/:id/duplicate` | `useDuplicateTrainingPlanMutation` | Server-side plan duplication |
-| `POST /v1/coach/training_plans/:id/planned_workouts` | `useCreatePlannedWorkoutMutation` | Add workout to plan |
-| `PATCH /v1/coach/planned_workouts/:id` | `useUpdatePlannedWorkoutMutation` | Rename workout |
-| `DELETE /v1/coach/planned_workouts/:id` | `useDeletePlannedWorkoutMutation` | Remove workout |
+| `POST /v1/coach/training_plans/:id/workouts` | `useCreateWorkoutMutation` | Add workout to plan (library) |
+| `GET /v1/coach/training_plans/:id/workouts` | `useListWorkoutsQuery` | List workouts for a plan |
+| `GET /v1/coach/workouts/:id` | `useGetWorkoutQuery` | Get workout with elements |
+| `PATCH /v1/coach/workouts/:id` | `useUpdateWorkoutMutation` | Rename/update workout notes |
+| `DELETE /v1/coach/workouts/:id` | `useDeleteWorkoutMutation` | Remove workout (cascades plan items) |
+| `POST /v1/coach/workouts/:id/duplicate` | `useDuplicateWorkoutMutation` | Deep-copy workout content (no schedule) |
+| `POST /v1/coach/training_plans/:id/training_plan_items` | `useCreateTrainingPlanItemMutation` | Schedule a workout on a day |
+| `GET /v1/coach/training_plans/:id/training_plan_items` | `useListTrainingPlanItemsQuery` | List schedule rows (wired, not yet used in UI) |
+| `PATCH /v1/coach/training_plan_items/:id` | `useUpdateTrainingPlanItemMutation` | Change `day` or `workout_type` (wired, not yet used in UI) |
+| `DELETE /v1/coach/training_plan_items/:id` | `useDeleteTrainingPlanItemMutation` | Remove a workout from a day |
 | `POST /v1/coach/workout_elements` | `useCreateWorkoutElementMutation` | Add exercise with sets |
 | `PATCH /v1/coach/workout_elements/:id` | `useUpdateWorkoutElementMutation` | Save set scheme changes |
 | `DELETE /v1/coach/workout_elements/:id` | `useDeleteWorkoutElementMutation` | Remove exercise |
@@ -355,7 +407,7 @@ The plan is guidance, not a mandate. The client's job is to log what they actual
 
 | File | Route | Purpose |
 | --- | --- | --- |
-| `dashboard/dashboard.tsx` | `/dashboard` | Home screen: today's workout card (matched by weekday to `day_number`), other days, freestyle option, active session resume banner |
+| `training/training-home.tsx` | `/training` | Home screen: today's workout card(s) (resolved by matching the weekday string to `plan_items[].day`, then joining on `workouts[]`), "This week" strip showing the primary workout per day, Coming up list, freestyle option, active session resume banner |
 | `workout/active-workout.tsx` | `/workout` | Active workout: exercise list from `planned_snapshot`, expand/collapse accordion, set logging, replace/skip/add exercise, finish workout |
 | `history/workout-history.tsx` | `/history` | Paginated list of past sessions with infinite scroll |
 | `history/session-detail.tsx` | `/history/:sessionId` | Read-only plan-vs-done comparison (same logic as coach view) |
@@ -475,9 +527,12 @@ The primary interaction: tap a checkbox to log a set with values pre-filled from
 
 - **Superset grouping** — `superset_group_id` field exists on `WorkoutElement`, UI deferred. Would allow grouping exercises into supersets/circuits.
 - **Workout element reordering** — `position` field exists, drag-and-drop UI deferred.
-- **Workout reordering** — `day_number` serves as order, no drag-and-drop.
+- **Workout library reordering** — workouts are listed by insertion time, no drag-and-drop.
 - **Exercise notes** — `notes` field exists on `WorkoutElement`, not exposed in UI.
-- **Workout notes** — `notes` field exists on `PlannedWorkout`, not exposed in UI.
+- **Alternative workout UX** — `workout_type: 'alternative'` is accepted by create/read paths and the client today card labels it, but no coach UI lets a coach set the alternative slot. Confirmed with product as out of scope for MVP — all create calls hard-code `'primary'`.
+- **"Make Thursday the same as Monday" one-tap UI** — the backend `copy-day` endpoint was removed on 2026-04-21; the supported workflow is to assign each source-day workout onto the target day via separate `POST /training_plan_items` calls. For MVP (primary-only) that's typically a single call, so no bulk UI is built yet.
+- **Moving a workout between days in one call** — `useUpdateTrainingPlanItemMutation` is wired for `day` and `workout_type`, but no UI uses it yet. Current "move" UX is delete the existing plan item and assign the workout to the new day.
+- **Relinking a plan item to a different workout** — backend's `PATCH /v1/coach/training_plan_items/:id` currently only applies `day` and `workout_type`; passing `workout_id` silently no-ops. The "Make a copy for one day only" action works around this by deleting the old plan item and creating a new one pointing at the duplicated workout.
 - **Set-level notes/tempo/distance/duration/intensity** — fields exist on `PlannedSet` type, not exposed in set editors.
 - **Workout-level macros/volume tracking** — no API endpoint exists for computed totals (unlike nutrition plan macros).
 
@@ -492,4 +547,4 @@ The primary interaction: tap a checkbox to log a set with values pre-filled from
 - **Duration/distance set logging** — `duration_seconds` and `distance_value`/`distance_unit` fields exist on `ClientLogSetRequest`, not exposed. Needed for timed sets (planks, cardio) and distance sets (running, rowing).
 - **Delete performed set from UI** — `useDeletePerformedSetMutation` is wired but no delete/undo UI exists in the set logger.
 - **Session notes editing during workout** — `useUpdateClientWorkoutSessionMutation` is wired but not used during the active workout (notes are only entered at finish time).
-- **Workout day override** — the dashboard matches today's weekday to `day_number`, but there's no way for the client to start a different day's workout from a quick-access menu (they can tap the "Other workouts" card).
+- **Workout day override** — the training home screen matches today's weekday string to `plan_items[].day`, but there's no quick-access menu for the client to start a different day's workout on demand (they can navigate into the plan detail).

@@ -1,16 +1,22 @@
-import {DAY_NAMES} from '@easy/utils';
+import {buildWorkoutMap, sortPlanItems, TRAINING_DAY_LABELS, TRAINING_WEEKDAYS} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {ArrowLeft, Calendar, Dumbbell} from 'lucide-react';
+import {useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
-import type {ClientPlannedWorkout, ClientWorkoutElement, PlannedSet, TrainingPlanStatus} from '@/api/trainingPlans';
+import type {
+  ClientTrainingPlanItem,
+  ClientWorkout,
+  ClientWorkoutElement,
+  PlannedSet,
+  TrainingPlanStatus,
+  TrainingWeekday,
+} from '@/api/trainingPlans';
 
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientTrainingPlanQuery} from '@/api/trainingPlans';
-
-// ── Helpers ──────────────────────────────────────────────────
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
   active: {color: 'success', label: 'Active'},
@@ -34,19 +40,18 @@ function formatSetSummary(sets: PlannedSet[]): string {
   const reps = first.target_reps ?? '\u2014';
   const load = formatLoad(first);
   const loadPart = load ? ` @ ${load}` : '';
-  const rest = first.rest_seconds ? ` \u00B7 ${first.rest_seconds}s rest` : '';
+  const rest = first.rest_seconds ? ` · ${first.rest_seconds}s rest` : '';
 
-  // Check if all sets are uniform
   const uniform = sets.every(
-    (s) =>
-      s.set_type === first.set_type &&
-      s.target_reps === first.target_reps &&
-      s.load_value === first.load_value &&
-      s.load_unit === first.load_unit,
+    (set) =>
+      set.set_type === first.set_type &&
+      set.target_reps === first.target_reps &&
+      set.load_value === first.load_value &&
+      set.load_unit === first.load_unit,
   );
 
   if (uniform) {
-    return `${sets.length} \u00D7 ${reps}${loadPart}${rest}`;
+    return `${sets.length} × ${reps}${loadPart}${rest}`;
   }
   return `${sets.length} sets (mixed)${rest}`;
 }
@@ -58,8 +63,6 @@ function formatDate(dateString: string): string {
     year: 'numeric',
   });
 }
-
-// ── Exercise card ────────────────────────────────────────────
 
 function ExerciseCard({element, index}: {element: ClientWorkoutElement; index: number}) {
   const summary = formatSetSummary(element.planned_sets);
@@ -88,17 +91,12 @@ function ExerciseCard({element, index}: {element: ClientWorkoutElement; index: n
   );
 }
 
-// ── Workout day section ──────────────────────────────────────
-
-function WorkoutDaySection({workout}: {workout: ClientPlannedWorkout}) {
-  const dayName = DAY_NAMES[workout.day_number] ?? `Day ${workout.day_number}`;
-  const elements = [...workout.workout_elements].sort((a, b) => a.position - b.position);
-  const exerciseCount = elements.length;
-  const totalSets = elements.reduce((sum, el) => sum + el.planned_sets.length, 0);
+function ScheduledWorkoutCard({item, workout}: {item: ClientTrainingPlanItem; workout: ClientWorkout | undefined}) {
+  const elements = workout ? [...workout.workout_elements].sort((a, b) => a.position - b.position) : [];
+  const totalSets = elements.reduce((sum, element) => sum + element.planned_sets.length, 0);
 
   return (
     <div className="overflow-hidden rounded-xl border border-divider bg-content1">
-      {/* Workout header */}
       <div className="flex items-center gap-3 border-b border-divider px-4 py-3">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
           <Dumbbell
@@ -107,28 +105,30 @@ function WorkoutDaySection({workout}: {workout: ClientPlannedWorkout}) {
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{workout.name}</p>
+          <p className="text-sm font-semibold">{workout?.name ?? 'Missing workout'}</p>
           <p className="text-xs text-foreground-500">
-            {dayName} &middot; {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''} &middot; {totalSets} sets
+            {TRAINING_DAY_LABELS[item.day]}
+            {item.workout_type === 'alternative' ? ' · Alternative' : ''}
+            {workout ? ` · ${elements.length} exercise${elements.length !== 1 ? 's' : ''} · ${totalSets} sets` : ''}
           </p>
         </div>
       </div>
 
-      {/* Exercise list */}
       {elements.length > 0 ? (
-        elements.map((el, idx) => (
+        elements.map((element, index) => (
           <ExerciseCard
-            element={el}
-            index={idx}
-            key={el.id}
+            element={element}
+            index={index}
+            key={element.id}
           />
         ))
       ) : (
-        <div className="px-4 py-6 text-center text-sm text-foreground-400">No exercises in this workout</div>
+        <div className="px-4 py-6 text-center text-sm text-foreground-400">
+          {workout ? 'No exercises in this workout' : 'This workout is no longer available.'}
+        </div>
       )}
 
-      {/* Workout notes */}
-      {workout.notes ? (
+      {workout?.notes ? (
         <div className="border-t border-divider px-4 py-2">
           <p className="text-xs text-foreground-400">{workout.notes}</p>
         </div>
@@ -137,12 +137,75 @@ function WorkoutDaySection({workout}: {workout: ClientPlannedWorkout}) {
   );
 }
 
-// ── Main component ───────────────────────────────────────────
+function DayScheduleSection({
+  day,
+  items,
+  workoutMap,
+}: {
+  day: TrainingWeekday;
+  items: ClientTrainingPlanItem[];
+  workoutMap: Map<string, ClientWorkout>;
+}) {
+  return (
+    <div className="rounded-xl border border-divider bg-content1 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">{TRAINING_DAY_LABELS[day]}</h3>
+        <span className="text-xs text-foreground-400">{items.length} scheduled</span>
+      </div>
+      <div className="flex flex-col gap-3">
+        {items.map((item) => (
+          <ScheduledWorkoutCard
+            item={item}
+            key={item.id}
+            workout={workoutMap.get(item.workout_id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RestDayCard({day}: {day: TrainingWeekday}) {
+  return (
+    <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+      <p className="text-sm font-medium">{TRAINING_DAY_LABELS[day]}</p>
+      <p className="mt-1 text-sm text-foreground-400">Rest day</p>
+    </div>
+  );
+}
+
+function EmptyDayCard({day}: {day: TrainingWeekday}) {
+  return (
+    <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
+      <p className="text-sm font-medium">{TRAINING_DAY_LABELS[day]}</p>
+      <p className="mt-1 text-sm text-foreground-400">No workout scheduled.</p>
+    </div>
+  );
+}
 
 export default function TrainingPlanDetail() {
   const {planId} = useParams<{planId: string}>();
   const goBack = useGoBack(ROUTES.TRAINING);
   const {data, isError, isLoading} = useGetClientTrainingPlanQuery(planId!);
+
+  // All hooks must run unconditionally. `data?.data.plan_items` is a stable
+  // reference while loaded (RTK Query cache), so memo deps stay consistent.
+  const planItems = data?.data.plan_items;
+  const itemsByDay = useMemo(() => {
+    const map = new Map<TrainingWeekday, ClientTrainingPlanItem[]>();
+    for (const day of TRAINING_WEEKDAYS) {
+      map.set(day, []);
+    }
+    if (planItems) {
+      for (const item of planItems) {
+        map.get(item.day)?.push(item);
+      }
+      for (const day of TRAINING_WEEKDAYS) {
+        map.set(day, sortPlanItems(map.get(day) ?? []));
+      }
+    }
+    return map;
+  }, [planItems]);
 
   if (isLoading) {
     return (
@@ -180,13 +243,11 @@ export default function TrainingPlanDetail() {
 
   const plan = data.data;
   const statusChip = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
-  const plannedWorkouts = plan.planned_workouts ?? [];
-  const workouts = [...plannedWorkouts].sort((a, b) => a.day_number - b.day_number);
-  const totalExercises = workouts.reduce((sum, w) => sum + w.workout_elements.length, 0);
+  const workoutMap = buildWorkoutMap<ClientWorkout>(plan.workouts);
+  const totalExercises = plan.workouts.reduce((sum, workout) => sum + workout.workout_elements.length, 0);
 
   return (
     <PageLayout title={plan.name}>
-      {/* Header */}
       <div className="mb-6">
         <Button
           className="mb-3"
@@ -201,7 +262,6 @@ export default function TrainingPlanDetail() {
         <h1 className="text-lg font-semibold md:text-xl">{plan.name}</h1>
         {plan.description ? <p className="mt-1 text-sm text-foreground-500">{plan.description}</p> : null}
 
-        {/* Meta chips */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chip
             color={statusChip.color}
@@ -211,37 +271,56 @@ export default function TrainingPlanDetail() {
             {statusChip.label}
           </Chip>
           <span className="text-xs text-foreground-400">
-            {workouts.length} workout{workouts.length !== 1 ? 's' : ''} &middot; {totalExercises} exercise
+            {plan.workouts.length} workout{plan.workouts.length !== 1 ? 's' : ''} · {totalExercises} exercise
             {totalExercises !== 1 ? 's' : ''}
           </span>
         </div>
 
-        {/* Dates */}
         {plan.start_date || plan.end_date ? (
           <div className="mt-2 flex items-center gap-1.5 text-xs text-foreground-400">
             <Calendar size={12} />
             {plan.start_date ? formatDate(plan.start_date) : '—'}
-            {' \u2014 '}
+            {' — '}
             {plan.end_date ? formatDate(plan.end_date) : 'ongoing'}
           </div>
         ) : null}
       </div>
 
-      {/* Workout sections */}
-      <div className="flex flex-col gap-4">
-        {workouts.length > 0 ? (
-          workouts.map((workout) => (
-            <WorkoutDaySection
-              key={workout.id}
-              workout={workout}
-            />
-          ))
-        ) : (
-          <div className="rounded-xl border border-dashed border-divider bg-content1 p-6 text-center">
-            <p className="text-sm text-foreground-400">No workouts in this plan yet.</p>
-          </div>
-        )}
-      </div>
+      <section className="border-t border-divider py-4">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h2>
+        <div className="flex flex-col gap-4">
+          {TRAINING_WEEKDAYS.map((day) => {
+            const dayItems = itemsByDay.get(day) ?? [];
+
+            if (dayItems.length > 0) {
+              return (
+                <DayScheduleSection
+                  day={day}
+                  items={dayItems}
+                  key={day}
+                  workoutMap={workoutMap}
+                />
+              );
+            }
+
+            if (plan.rest_days.includes(day)) {
+              return (
+                <RestDayCard
+                  day={day}
+                  key={day}
+                />
+              );
+            }
+
+            return (
+              <EmptyDayCard
+                day={day}
+                key={day}
+              />
+            );
+          })}
+        </div>
+      </section>
     </PageLayout>
   );
 }

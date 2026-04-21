@@ -1,5 +1,10 @@
+import {TRAINING_DAY_LABELS} from '@easy/utils';
+
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, getValidationErrors} from '@/api/shared';
+
+export type TrainingWeekday = 'friday' | 'monday' | 'saturday' | 'sunday' | 'thursday' | 'tuesday' | 'wednesday';
+export type TrainingWorkoutType = 'alternative' | 'primary';
 
 export type PlannedSet = {
   distance_unit?: 'km' | 'meters' | 'miles' | 'none' | 'yards';
@@ -28,15 +33,14 @@ export type WorkoutElement = {
   inserted_at: string;
   notes: null | string;
   planned_sets: PlannedSet[];
-  planned_workout_id: string;
   position: number;
   superset_group_id: null | string;
   updated_at: string;
+  workout_id: string;
 };
 
-export type PlannedWorkout = {
+export type Workout = {
   business_id: string;
-  day_number: number;
   id: string;
   inserted_at: string;
   name: string;
@@ -44,6 +48,18 @@ export type PlannedWorkout = {
   training_plan_id: string;
   updated_at: string;
   workout_elements: WorkoutElement[];
+};
+
+export type TrainingPlanItem = {
+  business_id: string;
+  creator_id: string;
+  day: TrainingWeekday;
+  id: string;
+  inserted_at: string;
+  training_plan_id: string;
+  updated_at: string;
+  workout_id: string;
+  workout_type: TrainingWorkoutType;
 };
 
 /** Minimal client info embedded in plan responses for banner display. */
@@ -56,9 +72,8 @@ export type PlanClient = {
 export type TrainingPlanStatus = 'active' | 'archived';
 
 /**
- * Training plan shape. Unlike nutrition plans, all coach-facing list endpoints
- * (`/v1/coach/training_plans` and `/v1/coach/clients/:id/training_plans`) preload
- * `planned_workouts`, so the field is non-optional here.
+ * Training plan shape. Coach-facing list and show endpoints preload both
+ * `workouts` and `plan_items`, so both fields are non-optional here.
  */
 export type TrainingPlan = {
   author_id: string;
@@ -71,12 +86,12 @@ export type TrainingPlan = {
   inserted_at: string;
   name: string;
   original_template_id: null | string;
-  planned_workouts: PlannedWorkout[];
-  /** Weekday numbers (1=Mon..7=Sun) explicitly marked as rest days by the coach. */
-  rest_days: number[];
+  plan_items: TrainingPlanItem[];
+  rest_days: TrainingWeekday[];
   start_date: null | string;
   status: TrainingPlanStatus;
   updated_at: string;
+  workouts: Workout[];
 };
 
 export type TrainingPlanCreateRequest = {
@@ -84,7 +99,7 @@ export type TrainingPlanCreateRequest = {
   end_date?: string;
   name: string;
   original_template_id?: string;
-  rest_days?: number[];
+  rest_days?: TrainingWeekday[];
   start_date?: string;
   status?: TrainingPlanStatus;
 };
@@ -94,7 +109,7 @@ export type TrainingPlanUpdateRequest = {
   end_date?: string;
   name?: string;
   original_template_id?: string;
-  rest_days?: number[];
+  rest_days?: TrainingWeekday[];
   start_date?: string;
   status?: TrainingPlanStatus;
 };
@@ -105,25 +120,40 @@ export type TrainingPlanAssignRequest = {
   start_date?: string;
 };
 
-export type PlannedWorkoutCreateRequest = {
-  day_number: number;
+export type WorkoutCreateRequest = {
   name: string;
   notes?: string;
 };
 
-export type PlannedWorkoutUpdateRequest = {
-  day_number?: number;
+export type WorkoutUpdateRequest = {
   name?: string;
   notes?: null | string;
+};
+
+export type TrainingPlanItemCreateRequest = {
+  day: TrainingWeekday;
+  workout_id: string;
+  workout_type: TrainingWorkoutType;
+};
+
+/**
+ * Backend currently only applies `day` and `workout_type` on PATCH. Relinking
+ * a plan item to a different workout (`workout_id`) is NOT supported by the
+ * backend changeset — do not add it until the backend catches up. To move a
+ * workout reference, delete and recreate the plan item instead.
+ */
+export type TrainingPlanItemUpdateRequest = {
+  day?: TrainingWeekday;
+  workout_type?: TrainingWorkoutType;
 };
 
 export type WorkoutElementCreateRequest = {
   exercise_id: string;
   notes?: string;
   planned_sets?: PlannedSet[];
-  planned_workout_id: string;
   position: number;
   superset_group_id?: string;
+  workout_id: string;
 };
 
 export type WorkoutElementUpdateRequest = {
@@ -156,7 +186,7 @@ export type ListClientTrainingPlansParams = {
   status?: TrainingPlanStatus;
 };
 
-export type ListPlannedWorkoutsParams = {
+export type ListWorkoutsParams = {
   limit?: number;
   offset?: number;
   planId: string;
@@ -164,7 +194,8 @@ export type ListPlannedWorkoutsParams = {
 
 const PAGE_SIZE = 20;
 
-const getPlanScopedId = (planId: string) => `TRAINING_PLAN_${planId}`;
+const getPlanScopedPlanItemsId = (planId: string) => `TRAINING_PLAN_ITEMS_${planId}`;
+const getPlanScopedWorkoutsId = (planId: string) => `TRAINING_WORKOUTS_${planId}`;
 
 export const trainingPlansApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -206,8 +237,8 @@ export const trainingPlansApi = api.injectEndpoints({
         params: {
           ...(queryArg?.search && {search: queryArg.search}),
           ...(queryArg?.status && {status: queryArg.status}),
-          offset: pageParam,
           limit: PAGE_SIZE,
+          offset: pageParam,
         },
       }),
       infiniteQueryOptions: {
@@ -254,7 +285,8 @@ export const trainingPlansApi = api.injectEndpoints({
       query: (id) => `/v1/coach/training_plans/${id}`,
       providesTags: (_, __, id) => [
         {type: 'TrainingPlan', id},
-        {type: 'PlannedWorkout', id: getPlanScopedId(id)},
+        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(id)},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(id)},
       ],
     }),
     updateTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, {body: TrainingPlanUpdateRequest; id: string}>({
@@ -278,7 +310,8 @@ export const trainingPlansApi = api.injectEndpoints({
         {type: 'TrainingPlan', id},
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'TrainingPlan', id: 'CLIENT_LIST'},
-        {type: 'PlannedWorkout', id: getPlanScopedId(id)},
+        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(id)},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(id)},
       ],
     }),
     assignTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, {body: TrainingPlanAssignRequest; id: string}>({
@@ -305,83 +338,125 @@ export const trainingPlansApi = api.injectEndpoints({
         {type: 'TrainingPlan', id: 'LIST'},
       ],
     }),
-    createPlannedWorkout: build.mutation<
-      ApiResponse<PlannedWorkout>,
-      {body: PlannedWorkoutCreateRequest; planId: string}
-    >({
+    createWorkout: build.mutation<ApiResponse<Workout>, {body: WorkoutCreateRequest; planId: string}>({
       query: ({body, planId}) => ({
         body,
         method: 'POST',
-        url: `/v1/coach/training_plans/${planId}/planned_workouts`,
+        url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
       invalidatesTags: (_, __, {planId}) => [
         {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlan', id: 'LIST'},
-        {type: 'PlannedWorkout', id: getPlanScopedId(planId)},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
       ],
     }),
-    listPlannedWorkouts: build.query<ApiListResponse<PlannedWorkout>, ListPlannedWorkoutsParams>({
+    listWorkouts: build.query<ApiListResponse<Workout>, ListWorkoutsParams>({
       query: ({planId, ...params}) => ({
         params,
-        url: `/v1/coach/training_plans/${planId}/planned_workouts`,
+        url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
       providesTags: (result, __, {planId}) =>
         result
           ? [
-              ...result.data.map((plannedWorkout) => ({
-                type: 'PlannedWorkout' as const,
-                id: plannedWorkout.id,
+              ...result.data.map((workout) => ({
+                type: 'Workout' as const,
+                id: workout.id,
               })),
-              {type: 'PlannedWorkout' as const, id: getPlanScopedId(planId)},
+              {type: 'Workout' as const, id: getPlanScopedWorkoutsId(planId)},
             ]
-          : [{type: 'PlannedWorkout' as const, id: getPlanScopedId(planId)}],
+          : [{type: 'Workout' as const, id: getPlanScopedWorkoutsId(planId)}],
     }),
-    getPlannedWorkout: build.query<ApiResponse<PlannedWorkout>, string>({
-      query: (id) => `/v1/coach/planned_workouts/${id}`,
-      providesTags: (_, __, id) => [{type: 'PlannedWorkout', id}],
+    getWorkout: build.query<ApiResponse<Workout>, string>({
+      query: (id) => `/v1/coach/workouts/${id}`,
+      providesTags: (_, __, id) => [{type: 'Workout', id}],
     }),
-    updatePlannedWorkout: build.mutation<
-      ApiResponse<PlannedWorkout>,
-      {body: PlannedWorkoutUpdateRequest; id: string; planId: string}
+    updateWorkout: build.mutation<ApiResponse<Workout>, {body: WorkoutUpdateRequest; id: string; planId: string}>({
+      query: ({body, id}) => ({
+        body,
+        method: 'PATCH',
+        url: `/v1/coach/workouts/${id}`,
+      }),
+      invalidatesTags: (_, __, {id, planId}) => [
+        {type: 'TrainingPlan', id: planId},
+        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'Workout', id},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
+      ],
+    }),
+    deleteWorkout: build.mutation<void, {id: string; planId: string}>({
+      query: ({id}) => ({
+        method: 'DELETE',
+        url: `/v1/coach/workouts/${id}`,
+      }),
+      invalidatesTags: (_, __, {id, planId}) => [
+        {type: 'TrainingPlan', id: planId},
+        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'Workout', id},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
+      ],
+    }),
+    duplicateWorkout: build.mutation<ApiResponse<Workout>, {id: string; planId: string}>({
+      query: ({id}) => ({
+        method: 'POST',
+        url: `/v1/coach/workouts/${id}/duplicate`,
+      }),
+      invalidatesTags: (_, __, {planId}) => [
+        {type: 'TrainingPlan', id: planId},
+        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
+      ],
+    }),
+    createTrainingPlanItem: build.mutation<
+      ApiResponse<TrainingPlanItem>,
+      {body: TrainingPlanItemCreateRequest; planId: string}
+    >({
+      query: ({body, planId}) => ({
+        body,
+        method: 'POST',
+        url: `/v1/coach/training_plans/${planId}/training_plan_items`,
+      }),
+      invalidatesTags: (_, __, {planId}) => [
+        {type: 'TrainingPlan', id: planId},
+        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
+      ],
+    }),
+    listTrainingPlanItems: build.query<ApiResponse<TrainingPlanItem[]>, string>({
+      query: (planId) => `/v1/coach/training_plans/${planId}/training_plan_items`,
+      providesTags: (result, __, planId) =>
+        result
+          ? [
+              ...result.data.map((item) => ({
+                type: 'TrainingPlanItem' as const,
+                id: item.id,
+              })),
+              {type: 'TrainingPlanItem' as const, id: getPlanScopedPlanItemsId(planId)},
+            ]
+          : [{type: 'TrainingPlanItem' as const, id: getPlanScopedPlanItemsId(planId)}],
+    }),
+    updateTrainingPlanItem: build.mutation<
+      ApiResponse<TrainingPlanItem>,
+      {body: TrainingPlanItemUpdateRequest; id: string; planId: string}
     >({
       query: ({body, id}) => ({
         body,
         method: 'PATCH',
-        url: `/v1/coach/planned_workouts/${id}`,
+        url: `/v1/coach/training_plan_items/${id}`,
       }),
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'PlannedWorkout', id},
-        {type: 'PlannedWorkout', id: getPlanScopedId(planId)},
         {type: 'TrainingPlan', id: planId},
-        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlanItem', id},
+        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
       ],
     }),
-    deletePlannedWorkout: build.mutation<void, {id: string; planId: string}>({
+    deleteTrainingPlanItem: build.mutation<void, {id: string; planId: string}>({
       query: ({id}) => ({
         method: 'DELETE',
-        url: `/v1/coach/planned_workouts/${id}`,
+        url: `/v1/coach/training_plan_items/${id}`,
       }),
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'PlannedWorkout', id},
-        {type: 'PlannedWorkout', id: getPlanScopedId(planId)},
         {type: 'TrainingPlan', id: planId},
-        {type: 'TrainingPlan', id: 'LIST'},
-      ],
-    }),
-    /** Deep-copy a planned workout (with all elements + sets) to a target weekday. */
-    duplicatePlannedWorkout: build.mutation<
-      ApiResponse<PlannedWorkout>,
-      {day_number: number; id: string; planId: string}
-    >({
-      query: ({day_number, id}) => ({
-        body: {day_number},
-        method: 'POST',
-        url: `/v1/coach/planned_workouts/${id}/duplicate`,
-      }),
-      invalidatesTags: (_, __, {planId}) => [
-        {type: 'PlannedWorkout', id: getPlanScopedId(planId)},
-        {type: 'TrainingPlan', id: planId},
-        {type: 'TrainingPlan', id: 'LIST'},
+        {type: 'TrainingPlanItem', id},
+        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
       ],
     }),
     createWorkoutElement: build.mutation<
@@ -389,7 +464,7 @@ export const trainingPlansApi = api.injectEndpoints({
       {
         body: WorkoutElementCreateRequest;
         planId?: string;
-        plannedWorkoutId?: string;
+        workoutId?: string;
       }
     >({
       query: ({body}) => ({
@@ -397,11 +472,11 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/workout_elements',
       }),
-      invalidatesTags: (_, __, {body, planId, plannedWorkoutId}) => [
+      invalidatesTags: (_, __, {body, planId, workoutId}) => [
         {type: 'WorkoutElement', id: 'LIST'},
         {
-          type: 'PlannedWorkout',
-          id: plannedWorkoutId ?? body.planned_workout_id,
+          type: 'Workout',
+          id: workoutId ?? body.workout_id,
         },
         ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
@@ -416,7 +491,7 @@ export const trainingPlansApi = api.injectEndpoints({
         body: WorkoutElementUpdateRequest;
         id: string;
         planId?: string;
-        plannedWorkoutId?: string;
+        workoutId?: string;
       }
     >({
       query: ({body, id}) => ({
@@ -424,22 +499,22 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workout_elements/${id}`,
       }),
-      invalidatesTags: (_, __, {id, planId, plannedWorkoutId}) => [
+      invalidatesTags: (_, __, {id, planId, workoutId}) => [
         {type: 'WorkoutElement', id},
         {type: 'WorkoutElement', id: 'LIST'},
-        ...(plannedWorkoutId ? [{type: 'PlannedWorkout' as const, id: plannedWorkoutId}] : []),
+        ...(workoutId ? [{type: 'Workout' as const, id: workoutId}] : []),
         ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
     }),
-    deleteWorkoutElement: build.mutation<void, {id: string; planId?: string; plannedWorkoutId?: string}>({
+    deleteWorkoutElement: build.mutation<void, {id: string; planId?: string; workoutId?: string}>({
       query: ({id}) => ({
         method: 'DELETE',
         url: `/v1/coach/workout_elements/${id}`,
       }),
-      invalidatesTags: (_, __, {id, planId, plannedWorkoutId}) => [
+      invalidatesTags: (_, __, {id, planId, workoutId}) => [
         {type: 'WorkoutElement', id},
         {type: 'WorkoutElement', id: 'LIST'},
-        ...(plannedWorkoutId ? [{type: 'PlannedWorkout' as const, id: plannedWorkoutId}] : []),
+        ...(workoutId ? [{type: 'Workout' as const, id: workoutId}] : []),
         ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
     }),
@@ -448,22 +523,85 @@ export const trainingPlansApi = api.injectEndpoints({
 
 export const {
   useAssignTrainingPlanMutation,
-  useCreatePlannedWorkoutMutation,
+  useCreateTrainingPlanItemMutation,
   useCreateTrainingPlanMutation,
   useCreateWorkoutElementMutation,
-  useDeletePlannedWorkoutMutation,
+  useCreateWorkoutMutation,
+  useDeleteTrainingPlanItemMutation,
   useDeleteTrainingPlanMutation,
   useDeleteWorkoutElementMutation,
-  useDuplicatePlannedWorkoutMutation,
+  useDeleteWorkoutMutation,
   useDuplicateTrainingPlanMutation,
-  useGetPlannedWorkoutQuery,
+  useDuplicateWorkoutMutation,
   useGetTrainingPlanQuery,
   useGetWorkoutElementQuery,
+  useGetWorkoutQuery,
   useListClientTrainingPlansQuery,
-  useListPlannedWorkoutsQuery,
+  useListTrainingPlanItemsQuery,
   useListTrainingPlansQuery,
+  useListWorkoutsQuery,
   useTrainingPlansInfiniteQuery,
-  useUpdatePlannedWorkoutMutation,
+  useUpdateTrainingPlanItemMutation,
   useUpdateTrainingPlanMutation,
   useUpdateWorkoutElementMutation,
+  useUpdateWorkoutMutation,
 } = trainingPlansApi;
+
+// ── Training plan item error helpers ────────────────────────────
+//
+// The backend returns field-keyed 422s under `error_detail.fields.*`. Two
+// error shapes are relevant for training plan items:
+//
+//   1. Uniqueness conflict on (training_plan_id, day, workout_type).
+//      Keyed under `training_plan_id` because it's the first column in the
+//      composite DB index — NOT because the plan id is bad. Backend message:
+//      "already has a workout of this type on this day".
+//
+//   2. Invalid `workout_type` (anything other than "primary"/"alternative").
+//      Keyed under `workout_type` with message "is invalid".
+//
+// These helpers hide the key quirk from call sites so the UI can read the
+// error semantically.
+
+type PlanItemValidationError =
+  | {kind: 'conflict'; day: TrainingWeekday; message: string; workoutType: TrainingWorkoutType}
+  | {kind: 'invalid_workout_type'; message: string}
+  | {kind: 'other'; fields: Record<string, string[]>};
+
+/**
+ * Interpret a 422 from POST /training_plan_items or PATCH /training_plan_items/:id.
+ *
+ * Pass the request body alongside so we can label the friendly message without
+ * having to reach into the form state. Returns `null` if the error isn't a
+ * validation error — caller should fall back to a generic toast.
+ */
+export function parsePlanItemValidationError(
+  error: unknown,
+  body: {day?: TrainingWeekday; workout_type?: TrainingWorkoutType},
+): null | PlanItemValidationError {
+  const fields = getValidationErrors(error);
+  if (!fields) return null;
+
+  // Uniqueness conflict — keyed under training_plan_id per the composite index.
+  const planIdMsgs = fields.training_plan_id;
+  if (planIdMsgs && planIdMsgs.length > 0 && body.day && body.workout_type) {
+    const dayLabel = TRAINING_DAY_LABELS[body.day];
+    const slot = body.workout_type === 'primary' ? 'primary' : 'alternative';
+    return {
+      kind: 'conflict',
+      day: body.day,
+      message: `${dayLabel} already has a ${slot} workout.`,
+      workoutType: body.workout_type,
+    };
+  }
+
+  const typeMsgs = fields.workout_type;
+  if (typeMsgs && typeMsgs.length > 0) {
+    return {
+      kind: 'invalid_workout_type',
+      message: `Workout type must be "primary" or "alternative".`,
+    };
+  }
+
+  return {kind: 'other', fields};
+}

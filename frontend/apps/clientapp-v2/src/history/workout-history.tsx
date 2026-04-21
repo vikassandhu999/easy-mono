@@ -1,19 +1,12 @@
-import {DAY_NAMES, formatDuration, formatSessionDate, getWorkoutTitle, SESSION_STATE_CHIP} from '@easy/utils';
+import {formatDuration, formatSessionDate, getWorkoutTitle, SESSION_STATE_CHIP} from '@easy/utils';
 import {Button, Chip, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
-import type {ClientWorkoutSession, PlannedSnapshot} from '@/api/workoutSessions';
+import type {ClientWorkoutSession} from '@/api/workoutSessions';
 
 import PageLayout from '@/@components/page-layout';
 import {useClientWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
-
-// ── Helpers ──────────────────────────────────────────────────
-
-function getDayLabel(snapshot: null | PlannedSnapshot): null | string {
-  if (!snapshot) return null;
-  return DAY_NAMES[snapshot.day_number] ?? null;
-}
 
 function getExerciseCount(session: ClientWorkoutSession): number {
   const ids = new Set<string>();
@@ -27,7 +20,6 @@ function getExerciseCount(session: ClientWorkoutSession): number {
 
 function SessionCard({session}: {session: ClientWorkoutSession}) {
   const title = getWorkoutTitle(session.planned_snapshot);
-  const dayLabel = getDayLabel(session.planned_snapshot);
   const dateStr = formatSessionDate(session.started_at);
   const duration = formatDuration(session.started_at, session.ended_at);
   const exerciseCount = getExerciseCount(session);
@@ -57,10 +49,7 @@ function SessionCard({session}: {session: ClientWorkoutSession}) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <p className="truncate text-sm font-semibold">{title}</p>
-          {dayLabel ? <span className="shrink-0 text-xs text-foreground-400">{dayLabel}</span> : null}
-        </div>
+        <p className="truncate text-sm font-semibold">{title}</p>
         <p className="mt-0.5 truncate text-xs text-foreground-500">{subtitle}</p>
         <div className="mt-1 flex items-center gap-2">
           {stateChip ? (

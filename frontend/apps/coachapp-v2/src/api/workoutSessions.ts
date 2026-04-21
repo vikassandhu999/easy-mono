@@ -35,7 +35,6 @@ export type PlannedSnapshotElement = {
 };
 
 export type PlannedSnapshot = {
-  day_number: number;
   elements: PlannedSnapshotElement[];
   workout_name: string;
 };
@@ -85,7 +84,7 @@ export type WorkoutSession = {
   notes: null | string;
   performed_sets: PerformedSet[];
   planned_snapshot: null | PlannedSnapshot;
-  planned_workout_id: null | string;
+  workout_id: null | string;
   soreness_rating: null | number;
   started_at: string;
   state: WorkoutSessionState;
@@ -97,7 +96,7 @@ export type WorkoutSession = {
 export type WorkoutSessionCreateRequest = {
   client_id: string;
   notes?: null | string;
-  planned_workout_id?: null | string;
+  workout_id?: null | string;
 };
 
 export type WorkoutSessionUpdateRequest = {

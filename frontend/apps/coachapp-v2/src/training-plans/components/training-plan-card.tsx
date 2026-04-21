@@ -13,7 +13,7 @@ const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 export default function TrainingPlanCard({plan}: {plan: TrainingPlan}) {
   const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
-  const workouts = plan.planned_workouts ?? [];
+  const workouts = plan.workouts;
   const workoutCount = workouts.length;
   const exerciseCount = workouts.reduce((sum, w) => sum + w.workout_elements.length, 0);
 

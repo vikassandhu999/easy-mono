@@ -134,7 +134,8 @@ tagTypes: [
   "Muscle",
   "Equipment",
   "TrainingPlan",
-  "PlannedWorkout",
+  "TrainingPlanItem",
+  "Workout",
   "WorkoutElement",
   "Client",
 ];

@@ -18,7 +18,7 @@ export type WorkoutExercise = {
   /** Performed sets already logged for this slot */
   sets: ClientPerformedSet[];
   status: ExerciseStatus;
-  /** The planned workout element ID (null for freestyle/added exercises) */
+  /** The planned element ID from the session snapshot (null for freestyle/added exercises) */
   workoutElementId: null | string;
 };
 

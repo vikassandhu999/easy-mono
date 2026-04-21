@@ -1,20 +1,22 @@
 import type {Ref} from 'react';
 
-import {DAY_NAMES} from '@easy/utils';
+import {formatUsedOnDays, getWorkoutUsedOnDays, TRAINING_DAY_LABELS} from '@easy/utils';
 import {AlertDialog, Button, Input, Spinner, toast} from '@heroui/react';
 import {Copy, Dumbbell, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {Exercise} from '@/api/exercises';
-import type {PlannedWorkout, WorkoutElement} from '@/api/trainingPlans';
+import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
 
 import {
+  useCreateTrainingPlanItemMutation,
   useCreateWorkoutElementMutation,
-  useDeletePlannedWorkoutMutation,
+  useDeleteTrainingPlanItemMutation,
   useDeleteWorkoutElementMutation,
-  useDuplicatePlannedWorkoutMutation,
-  useUpdatePlannedWorkoutMutation,
+  useDeleteWorkoutMutation,
+  useDuplicateWorkoutMutation,
   useUpdateWorkoutElementMutation,
+  useUpdateWorkoutMutation,
 } from '@/api/trainingPlans';
 import ExerciseElement from '@/training-plans/components/exercise-element';
 import ExercisePicker from '@/training-plans/components/exercise-picker';
@@ -22,16 +24,6 @@ import SetSchemeInput, {
   buildPlannedSetsFromScheme,
   type SetSchemeValues,
 } from '@/training-plans/components/set-scheme-input';
-
-const WEEKDAYS = [
-  {label: 'Mon', number: 1},
-  {label: 'Tue', number: 2},
-  {label: 'Wed', number: 3},
-  {label: 'Thu', number: 4},
-  {label: 'Fri', number: 5},
-  {label: 'Sat', number: 6},
-  {label: 'Sun', number: 7},
-] as const;
 
 // ── Default set scheme (pre-filled from previous exercise or empty) ──
 
@@ -57,22 +49,31 @@ function deriveSchemeFromLastElement(elements: WorkoutElement[]): SetSchemeValue
 
 type WorkoutSectionProps = {
   /** All workouts in the plan — needed for copy exercise target selection */
-  allWorkouts: PlannedWorkout[];
+  allWorkouts: Workout[];
+  onWorkoutCreated?: (workoutId: string) => void;
   planId: string;
-  /** Rest day numbers — used by copy workout day picker to exclude rest days */
-  restDays?: Set<number>;
+  planItems: TrainingPlanItem[];
   /** Optional ref for scrolling to this section */
   sectionRef?: Ref<HTMLDivElement>;
-  workout: PlannedWorkout;
+  workout: Workout;
 };
 
-export default function WorkoutSection({allWorkouts, planId, restDays, sectionRef, workout}: WorkoutSectionProps) {
-  const [deleteWorkout, {isLoading: isDeletingWorkout}] = useDeletePlannedWorkoutMutation();
+export default function WorkoutSection({
+  allWorkouts,
+  onWorkoutCreated,
+  planId,
+  planItems,
+  sectionRef,
+  workout,
+}: WorkoutSectionProps) {
+  const [deleteWorkout, {isLoading: isDeletingWorkout}] = useDeleteWorkoutMutation();
   const [createElement] = useCreateWorkoutElementMutation();
   const [deleteElement] = useDeleteWorkoutElementMutation();
-  const [updateWorkout, {isLoading: isSavingName}] = useUpdatePlannedWorkoutMutation();
-  const [duplicateWorkout] = useDuplicatePlannedWorkoutMutation();
+  const [updateWorkout, {isLoading: isSavingName}] = useUpdateWorkoutMutation();
+  const [duplicateWorkout, {isLoading: isDuplicatingWorkout}] = useDuplicateWorkoutMutation();
   const [updateElement] = useUpdateWorkoutElementMutation();
+  const [createPlanItem, {isLoading: isCreatingPlanItem}] = useCreateTrainingPlanItemMutation();
+  const [deletePlanItem, {isLoading: isDeletingPlanItem}] = useDeleteTrainingPlanItemMutation();
 
   // Track which exercise element is expanded (only one at a time)
   const [expandedElementId, setExpandedElementId] = useState<null | string>(null);
@@ -81,6 +82,12 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(workout.name);
+  const usedOnDays = useMemo(() => getWorkoutUsedOnDays(planItems, workout.id), [planItems, workout.id]);
+  const usedOnLabel = useMemo(
+    () => (usedOnDays.length === 0 ? 'Not scheduled yet' : `Used on: ${formatUsedOnDays(usedOnDays)}`),
+    [usedOnDays],
+  );
+  const isShared = usedOnDays.length > 1;
 
   const handleSaveName = async () => {
     const trimmed = editName.trim();
@@ -169,10 +176,10 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
     try {
       await createElement({
         planId,
-        plannedWorkoutId: workout.id,
+        workoutId: workout.id,
         body: {
           exercise_id: pendingExercise.id,
-          planned_workout_id: workout.id,
+          workout_id: workout.id,
           position: nextPosition,
           planned_sets: sets,
         },
@@ -229,7 +236,7 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
   };
 
   const commitRemoval = (element: WorkoutElement) => {
-    deleteElement({id: element.id, planId, plannedWorkoutId: workout.id})
+    deleteElement({id: element.id, planId, workoutId: workout.id})
       .unwrap()
       .catch(() => {
         toast.danger('Failed to remove exercise');
@@ -260,13 +267,13 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
         updateElement({
           id: current.id,
           planId,
-          plannedWorkoutId: workout.id,
+          workoutId: workout.id,
           body: {position: target.position},
         }).unwrap(),
         updateElement({
           id: target.id,
           planId,
-          plannedWorkoutId: workout.id,
+          workoutId: workout.id,
           body: {position: current.position},
         }).unwrap(),
       ]);
@@ -282,10 +289,10 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
       workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
     createElement({
       planId,
-      plannedWorkoutId: workout.id,
+      workoutId: workout.id,
       body: {
         exercise_id: element.exercise_id,
-        planned_workout_id: workout.id,
+        workout_id: workout.id,
         position: nextPosition,
         planned_sets: element.planned_sets,
         ...(element.notes && {notes: element.notes}),
@@ -306,29 +313,75 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
     [workout.workout_elements],
   );
 
-  // ── Copy workout (server-side duplicate with day picker) ────────
-
-  const [showCopyDayPicker, setShowCopyDayPicker] = useState(false);
-  const [copyTargetDay, setCopyTargetDay] = useState<null | number>(null);
-  const [isCopyingWorkout, setIsCopyingWorkout] = useState(false);
-
-  // Available days: exclude the source day and rest days
-  const availableCopyDays = WEEKDAYS.filter(
-    (d) => d.number !== workout.day_number && !(restDays?.has(d.number) ?? false),
-  );
-
-  const handleCopyWorkout = async () => {
-    if (!copyTargetDay) return;
-    setIsCopyingWorkout(true);
+  const handleDuplicateWorkout = async () => {
     try {
-      await duplicateWorkout({id: workout.id, planId, day_number: copyTargetDay}).unwrap();
-      toast.success(`${workout.name} copied to ${DAY_NAMES[copyTargetDay]}`);
-      setShowCopyDayPicker(false);
-      setCopyTargetDay(null);
+      const result = await duplicateWorkout({id: workout.id, planId}).unwrap();
+      toast.success(`Duplicated ${workout.name}`);
+      onWorkoutCreated?.(result.data.id);
     } catch {
-      toast.danger('Failed to copy workout');
+      toast.danger('Failed to duplicate workout');
+    }
+  };
+
+  // ── Unshare: "Make a copy for this day only" ───────────────────
+  //
+  // Backend limitation (see docs/2026-04-21-training-plan-redesign-handover.md
+  // "Open questions"): `PATCH /training_plan_items/{id}` does not apply
+  // `workout_id`. To relink a plan item to a different workout we delete + recreate.
+  //
+  // Flow:
+  //   1. Duplicate the current workout (deep-copies exercises + sets)
+  //   2. Delete the plan item for the chosen day
+  //   3. Create a new plan item for that day pointing at the duplicate
+  //
+  // If step 2 succeeds but step 3 fails, the day ends up unassigned — surface an
+  // error toast so the coach can retry from the day row.
+
+  const [unsharePickerOpen, setUnsharePickerOpen] = useState(false);
+  const [unshareDay, setUnshareDay] = useState<(typeof usedOnDays)[number] | null>(null);
+  const isUnshareInFlight = isDuplicatingWorkout || isCreatingPlanItem || isDeletingPlanItem;
+
+  const handleUnshareForDay = async (day: (typeof usedOnDays)[number]) => {
+    setUnshareDay(day);
+    const planItem = planItems.find((item) => item.workout_id === workout.id && item.day === day);
+    if (!planItem) {
+      toast.danger('Could not find the day assignment to unshare.');
+      setUnshareDay(null);
+      return;
+    }
+
+    try {
+      const dup = await duplicateWorkout({id: workout.id, planId}).unwrap();
+      try {
+        await deletePlanItem({id: planItem.id, planId}).unwrap();
+      } catch {
+        toast.danger('Created a copy but failed to replace the day assignment. Please update manually.');
+        setUnshareDay(null);
+        setUnsharePickerOpen(false);
+        return;
+      }
+
+      try {
+        await createPlanItem({
+          planId,
+          body: {
+            day,
+            workout_id: dup.data.id,
+            workout_type: planItem.workout_type,
+          },
+        }).unwrap();
+        toast.success(`${TRAINING_DAY_LABELS[day]} now uses its own copy of this workout.`);
+        onWorkoutCreated?.(dup.data.id);
+      } catch {
+        toast.danger(
+          `Created a copy but ${TRAINING_DAY_LABELS[day]} is now unassigned. Assign the new workout manually.`,
+        );
+      }
+    } catch {
+      toast.danger('Failed to create a copy for this day.');
     } finally {
-      setIsCopyingWorkout(false);
+      setUnshareDay(null);
+      setUnsharePickerOpen(false);
     }
   };
 
@@ -346,10 +399,10 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
       : 0;
     createElement({
       planId,
-      plannedWorkoutId: targetWorkoutId,
+      workoutId: targetWorkoutId,
       body: {
         exercise_id: element.exercise_id,
-        planned_workout_id: targetWorkoutId,
+        workout_id: targetWorkoutId,
         position: nextPosition,
         planned_sets: element.planned_sets,
       },
@@ -391,12 +444,9 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
         <div className="min-w-0 flex-1">
           {isEditingName ? (
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 text-sm font-semibold text-foreground-400">
-                {DAY_NAMES[workout.day_number] ?? `Day ${workout.day_number}`} —
-              </span>
               <Input
                 aria-label="Workout name"
-                className="max-w-[200px]"
+                className="max-w-[240px]"
                 onBlur={handleSaveName}
                 onChange={(e) => setEditName(e.target.value)}
                 onKeyDown={(e) => {
@@ -423,15 +473,25 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
               }}
               type="button"
             >
-              <h3 className="truncate text-sm font-semibold">
-                {DAY_NAMES[workout.day_number] ?? `Day ${workout.day_number}`} — {workout.name}
-              </h3>
+              <h3 className="truncate text-sm font-semibold">{workout.name}</h3>
               <Pencil
                 className="shrink-0 text-foreground-400"
                 size={12}
               />
             </button>
           )}
+          <p className="mt-1 px-1 text-xs text-foreground-400">{usedOnLabel}</p>
+          {isShared ? (
+            <SharedWorkoutBanner
+              busyDay={unshareDay}
+              isBusy={isUnshareInFlight}
+              isPickerOpen={unsharePickerOpen}
+              onClosePicker={() => setUnsharePickerOpen(false)}
+              onOpenPicker={() => setUnsharePickerOpen(true)}
+              onUnshareDay={handleUnshareForDay}
+              usedOnDays={usedOnDays}
+            />
+          ) : null}
           {!isEditingName &&
             (isEditingNotes ? (
               <div className="mt-1 flex items-center gap-2 px-1">
@@ -472,10 +532,10 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
         {/* Header actions: copy workout + delete workout */}
         <div className="flex shrink-0 gap-1">
           <Button
-            aria-label="Copy workout"
+            aria-label="Duplicate workout"
             isIconOnly
-            isPending={isCopyingWorkout}
-            onPress={() => setShowCopyDayPicker((v) => !v)}
+            isPending={isDuplicatingWorkout}
+            onPress={handleDuplicateWorkout}
             size="sm"
             variant="ghost"
           >
@@ -527,45 +587,6 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
         </div>
       </div>
 
-      {/* Copy workout day picker */}
-      {showCopyDayPicker && (
-        <div className="mb-3 rounded-lg border border-dashed border-divider p-3">
-          <p className="mb-2 text-xs text-foreground-400">Copy &ldquo;{workout.name}&rdquo; to:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {availableCopyDays.map((d) => (
-              <Button
-                key={d.number}
-                onPress={() => setCopyTargetDay(d.number)}
-                size="sm"
-                variant={copyTargetDay === d.number ? 'secondary' : 'ghost'}
-              >
-                {d.label}
-              </Button>
-            ))}
-          </div>
-          <div className="mt-2 flex gap-2">
-            <Button
-              isDisabled={!copyTargetDay}
-              isPending={isCopyingWorkout}
-              onPress={handleCopyWorkout}
-              size="sm"
-            >
-              Copy
-            </Button>
-            <Button
-              onPress={() => {
-                setShowCopyDayPicker(false);
-                setCopyTargetDay(null);
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Exercise elements */}
       {visibleElements.length > 0 ? (
         <div className="mb-3 flex flex-col gap-1">
@@ -586,16 +607,21 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
               {copyingElementId === element.id && otherWorkouts.length > 1 && (
                 <div className="mt-1 flex flex-wrap gap-1 rounded-lg border border-dashed border-divider p-2">
                   <span className="w-full text-xs text-foreground-400">Copy to:</span>
-                  {otherWorkouts.map((w) => (
-                    <Button
-                      key={w.id}
-                      onPress={() => handleCopyExercise(element, w.id)}
-                      size="sm"
-                      variant="secondary"
-                    >
-                      {DAY_NAMES[w.day_number] ?? `Day ${w.day_number}`} — {w.name}
-                    </Button>
-                  ))}
+                  {otherWorkouts.map((w) => {
+                    const wDays = getWorkoutUsedOnDays(planItems, w.id);
+                    const wUsage = formatUsedOnDays(wDays);
+                    return (
+                      <Button
+                        key={w.id}
+                        onPress={() => handleCopyExercise(element, w.id)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        {w.name}
+                        {wDays.length > 0 ? ` · ${wUsage}` : ''}
+                      </Button>
+                    );
+                  })}
                   <Button
                     onPress={() => setCopyingElementId(null)}
                     size="sm"
@@ -653,6 +679,84 @@ export default function WorkoutSection({allWorkouts, planId, restDays, sectionRe
           excludeIds={existingExerciseIds}
           onSelect={handlePickExercise}
         />
+      )}
+    </div>
+  );
+}
+
+// ── Shared workout banner ──────────────────────────────────────
+//
+// Surfaced on every shared Workout card. Purpose:
+//   1. Make it obvious that edits propagate (the "Used on: Mon, Thu" copy isn't
+//      enough — coaches miss it).
+//   2. Offer the spec's "Make a copy for this day only" escape hatch inline,
+//      so a coach who wants divergence doesn't have to leave the card.
+
+type TrainingWeekdayLite = keyof typeof TRAINING_DAY_LABELS;
+
+function SharedWorkoutBanner({
+  busyDay,
+  isBusy,
+  isPickerOpen,
+  onClosePicker,
+  onOpenPicker,
+  onUnshareDay,
+  usedOnDays,
+}: {
+  /** Day currently being unshared (used to target the spinner on one button). */
+  busyDay: null | TrainingWeekdayLite;
+  /** Any of the three unshare mutations in flight. */
+  isBusy: boolean;
+  isPickerOpen: boolean;
+  onClosePicker: () => void;
+  onOpenPicker: () => void;
+  onUnshareDay: (day: TrainingWeekdayLite) => Promise<void>;
+  usedOnDays: TrainingWeekdayLite[];
+}) {
+  const daysLabel = usedOnDays.map((day) => TRAINING_DAY_LABELS[day]).join(', ');
+
+  return (
+    <div className="mt-1 rounded-md border border-warning/30 bg-warning/5 px-2 py-2 text-xs">
+      <p className="text-foreground-600">
+        <span className="font-medium">Shared workout.</span> Edits apply to {daysLabel}.
+      </p>
+      {isPickerOpen ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-foreground-500">Make a copy just for:</span>
+          {usedOnDays.map((day) => (
+            <Button
+              isDisabled={isBusy}
+              isPending={busyDay === day}
+              key={day}
+              onPress={() => {
+                onUnshareDay(day).catch(() => {
+                  /* handled inside onUnshareDay */
+                });
+              }}
+              size="sm"
+              variant="secondary"
+            >
+              {TRAINING_DAY_LABELS[day]}
+            </Button>
+          ))}
+          <Button
+            isDisabled={isBusy}
+            onPress={onClosePicker}
+            size="sm"
+            variant="ghost"
+          >
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <Button
+          className="mt-2"
+          onPress={onOpenPicker}
+          size="sm"
+          variant="ghost"
+        >
+          Make a copy for one day only
+        </Button>
       )}
     </div>
   );

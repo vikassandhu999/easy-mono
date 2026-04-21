@@ -152,8 +152,7 @@ function ClientPlans({clientId}: {clientId: string}) {
               })}
               {trainingPlans.map((plan: TrainingPlan) => {
                 const planStatus = PLAN_STATUS_MAP[plan.status] ?? UNKNOWN_PLAN_STATUS;
-                // Guard against list endpoint not preloading workouts (same pattern as nutrition).
-                const workoutCount = plan.planned_workouts?.length ?? 0;
+                const workoutCount = plan.workouts.length;
                 return (
                   <Link
                     className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"

@@ -177,7 +177,7 @@ export default function ExerciseElement({
       await updateElement({
         id: element.id,
         planId,
-        plannedWorkoutId: element.planned_workout_id,
+        workoutId: element.workout_id,
         body: {planned_sets: sets, notes: trimmedNotes || null},
       }).unwrap();
       setHasUnsavedChanges(false);
@@ -208,7 +208,7 @@ export default function ExerciseElement({
       await updateElement({
         id: element.id,
         planId,
-        plannedWorkoutId: element.planned_workout_id,
+        workoutId: element.workout_id,
         body: {planned_sets: sets},
       }).unwrap();
       setShowBulkEdit(false);

@@ -108,7 +108,7 @@ export default function TrainingPlanPicker({
             )}
           >
             {(plan: TrainingPlan) => {
-              const workoutCount = plan.planned_workouts?.length ?? 0;
+              const workoutCount = plan.workouts.length;
               return (
                 <ListBox.Item
                   id={plan.id}

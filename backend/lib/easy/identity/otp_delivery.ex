@@ -13,17 +13,28 @@ defmodule Easy.Identity.OtpDelivery do
     otp = OtpGenerator.generate()
     otp_type = normalise_type(type)
 
-    Repo.transaction(fn ->
-      with {:ok, user} <- Users.get_by_email(email),
-           {:ok, _} <- validate_can_send_otp(user, otp_type),
-           _ <- OneTimeTokens.delete_all_for_user_and_type(user, otp_type),
-           {:ok, _} <- OneTimeTokens.create_token(user, otp_type, otp) do
+    result =
+      Repo.transaction(fn ->
+        with {:ok, user} <- Users.get_by_email(email),
+             {:ok, _} <- validate_can_send_otp(user, otp_type),
+             _ <- OneTimeTokens.delete_all_for_user_and_type(user, otp_type),
+             {:ok, _} <- OneTimeTokens.create_token(user, otp_type, otp) do
+          user
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    # Email dispatch is outside the transaction so a failed commit never
+    # leaks an OTP for a state that never existed.
+    case result do
+      {:ok, user} ->
         Mailer.send_otp(user.email, otp)
         {:ok, :sent}
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+
+      {:error, _} = err ->
+        err
+    end
   end
 
   defp normalise_type("email_confirmation"), do: :email_confirmation

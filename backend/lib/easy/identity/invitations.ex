@@ -20,19 +20,28 @@ defmodule Easy.Identity.Invitations do
     # email belongs to an active client somewhere in the system. The invariant
     # is enforced atomically at verify time, once the caller has proven email
     # ownership via OTP.
-    Repo.transaction(fn ->
-      with {:ok, _client} <- Client.resolve_invitation_token(token),
-           :ok <- rotate_invitation_otp(email),
-           {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
+    result =
+      Repo.transaction(fn ->
+        with {:ok, _client} <- Client.resolve_invitation_token(token),
+             :ok <- rotate_invitation_otp(email),
+             {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
+          :ok
+        else
+          {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
+          {:error, :used} -> Repo.rollback(Errors.invitation_used())
+          {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, :ok} ->
         Mailer.send_invitation_otp(email, otp)
-        :otp_sent
-      else
-        {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
-        {:error, :used} -> Repo.rollback(Errors.invitation_used())
-        {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+        {:ok, :otp_sent}
+
+      {:error, _} = err ->
+        err
+    end
   end
 
   @spec verify_accept_invite(map(), %{

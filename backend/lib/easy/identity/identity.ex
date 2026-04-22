@@ -1,6 +1,5 @@
 defmodule Easy.Identity do
   alias Easy.Clients.Client
-  alias Easy.Identity.UserSessions
   alias Easy.Identity.User
   alias Easy.Identity.Users
   alias Easy.Identity.OneTimeTokens
@@ -10,10 +9,12 @@ defmodule Easy.Identity do
   alias Easy.Identity.SessionFactory
   alias Easy.Identity.Signup
   alias Easy.Identity.AuthTokens
+  alias Easy.Identity.EmailConfirmation
   alias Easy.Repo
 
   defdelegate signup(attrs), to: Signup
   defdelegate token(grant_type, opts), to: AuthTokens
+  defdelegate verify(token_hash, opts), to: EmailConfirmation
 
   @spec accept_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
   def accept_invite(%{"invitation_token" => token, "email" => email})
@@ -126,27 +127,6 @@ defmodule Easy.Identity do
     end
   end
 
-  @spec verify(String.t(), map()) :: {:ok, AuthTokens.auth_token()} | {:error, any()}
-  def verify(token_hash, opts) do
-    Repo.transaction(fn ->
-      with {:ok, token} <- verify_confirmation_hash(token_hash),
-           {:ok, user} <- Users.confirm_user_email(token.user),
-           {:ok, _} <- OneTimeTokens.delete(token) do
-        session_attrs = %{
-          ip: opts.ip || "",
-          user_agent: opts.user_agent || "",
-          role: :guest
-        }
-
-        session = UserSessions.create_session!(user, session_attrs)
-
-        AuthTokens.build(user, session)
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
   # TODO: Add rate limiting to send_otp
 
   @spec send_otp(String.t(), String.t()) :: {:ok, :sent} | {:error, any()}
@@ -196,16 +176,6 @@ defmodule Easy.Identity do
          "email_not_confirmed",
          "The email address is not confirmed, please confirm your email first"
        )}
-    end
-  end
-
-  defp verify_confirmation_hash(token_hash) do
-    with {:ok, token} <- OneTimeTokens.get_by_hash(token_hash, :email_confirmation),
-         false <- User.is_confirmation_expired?(token.user) do
-      {:ok, token}
-    else
-      {:error, :token_not_found} -> {:error, :token_invalid}
-      true -> {:error, :token_expired}
     end
   end
 end

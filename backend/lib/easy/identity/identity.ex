@@ -7,6 +7,7 @@ defmodule Easy.Identity do
   alias Easy.Identity.Users
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.Token
+  alias Easy.Identity.Errors
   alias Easy.Repo
 
   # TODO: Add rate limiting to signup and otp sending
@@ -51,9 +52,9 @@ defmodule Easy.Identity do
         send_invitation_otp_email(email, otp)
         :otp_sent
       else
-        {:error, :invalid} -> Repo.rollback(invitation_invalid_error())
-        {:error, :used} -> Repo.rollback(invitation_used_error())
-        {:error, :expired} -> Repo.rollback(invitation_expired_error())
+        {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
+        {:error, :used} -> Repo.rollback(Errors.invitation_used())
+        {:error, :expired} -> Repo.rollback(Errors.invitation_expired())
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
@@ -87,25 +88,25 @@ defmodule Easy.Identity do
         generate_auth_token(user, session)
       else
         {:error, :token_not_found} ->
-          Repo.rollback(invalid_otp_error())
+          Repo.rollback(Errors.invalid_otp())
 
         {:error, :otp_expired} ->
-          Repo.rollback(otp_expired_error())
+          Repo.rollback(Errors.otp_expired())
 
         {:error, :invalid} ->
-          Repo.rollback(invitation_invalid_error())
+          Repo.rollback(Errors.invitation_invalid())
 
         {:error, :used} ->
-          Repo.rollback(invitation_used_error())
+          Repo.rollback(Errors.invitation_used())
 
         {:error, :expired} ->
-          Repo.rollback(invitation_expired_error())
+          Repo.rollback(Errors.invitation_expired())
 
         {:error, :race_lost} ->
-          Repo.rollback(invitation_used_error())
+          Repo.rollback(Errors.invitation_used())
 
         {:error, :already_active_elsewhere} ->
-          Repo.rollback(already_active_client_error())
+          Repo.rollback(Errors.already_active_client())
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -144,60 +145,6 @@ defmodule Easy.Identity do
         end
     end
   end
-
-  defp invitation_invalid_error,
-    do:
-      Easy.Error.new(
-        :invitation_invalid,
-        "This invitation is no longer valid.",
-        %{},
-        :not_found
-      )
-
-  defp invitation_used_error,
-    do:
-      Easy.Error.new(
-        :invitation_used,
-        "This invitation has already been accepted.",
-        %{},
-        :gone
-      )
-
-  defp invitation_expired_error,
-    do:
-      Easy.Error.new(
-        :invitation_expired,
-        "This invitation has expired. Ask your coach to send a new one.",
-        %{},
-        :gone
-      )
-
-  defp already_active_client_error,
-    do:
-      Easy.Error.new(
-        :already_active_client,
-        "This email is already an active client of another business.",
-        %{},
-        :conflict
-      )
-
-  defp invalid_otp_error,
-    do:
-      Easy.Error.new(
-        :invalid_otp,
-        "Invalid code. Please check and try again.",
-        %{},
-        :unauthorized
-      )
-
-  defp otp_expired_error,
-    do:
-      Easy.Error.new(
-        :otp_expired,
-        "This code has expired. Request a new one.",
-        %{},
-        :gone
-      )
 
   @spec verify(String.t(), map()) :: {:ok, auth_token()} | {:error, any()}
   def verify(token_hash, opts) do

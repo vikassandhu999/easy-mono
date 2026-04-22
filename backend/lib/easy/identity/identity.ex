@@ -10,11 +10,13 @@ defmodule Easy.Identity do
   alias Easy.Identity.Signup
   alias Easy.Identity.AuthTokens
   alias Easy.Identity.EmailConfirmation
+  alias Easy.Identity.OtpDelivery
   alias Easy.Repo
 
   defdelegate signup(attrs), to: Signup
   defdelegate token(grant_type, opts), to: AuthTokens
   defdelegate verify(token_hash, opts), to: EmailConfirmation
+  defdelegate send_otp(email, type), to: OtpDelivery
 
   @spec accept_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
   def accept_invite(%{"invitation_token" => token, "email" => email})
@@ -124,58 +126,6 @@ defmodule Easy.Identity do
              {:ok, confirmed} <- Users.confirm_user_email(user) do
           {:ok, confirmed}
         end
-    end
-  end
-
-  # TODO: Add rate limiting to send_otp
-
-  @spec send_otp(String.t(), String.t()) :: {:ok, :sent} | {:error, any()}
-  def send_otp(email, type) do
-    otp = OtpGenerator.generate()
-
-    otp_type =
-      case type do
-        "email_confirmation" -> :email_confirmation
-        "authentication" -> :authentication
-        _ -> :authentication
-      end
-
-    Repo.transaction(fn ->
-      with {:ok, user} <- Users.get_by_email(email),
-           {:ok, _} <- validate_can_send_otp?(user, otp_type),
-           _ <- OneTimeTokens.delete_all_for_user_and_type(user, otp_type),
-           {:ok, _} <- OneTimeTokens.create_token(user, otp_type, otp) do
-        Mailer.send_otp(user.email, otp)
-        {:ok, :sent}
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  @spec validate_can_send_otp?(User.t(), atom()) :: {:ok, true} | {:error, any()}
-
-  defp validate_can_send_otp?(user, :email_confirmation) do
-    if User.is_email_confirmed?(user) do
-      {:error,
-       Easy.Error.new(
-         "email_already_confirmed",
-         "The email address is already confirmed"
-       )}
-    else
-      {:ok, true}
-    end
-  end
-
-  defp validate_can_send_otp?(user, :authentication) do
-    if User.is_email_confirmed?(user) do
-      {:ok, true}
-    else
-      {:error,
-       Easy.Error.new(
-         "email_not_confirmed",
-         "The email address is not confirmed, please confirm your email first"
-       )}
     end
   end
 end

@@ -65,6 +65,7 @@ defmodule EasyWeb.Router do
     # Client-scoped plan lists
     get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
     get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
+    get "/clients/:client_id/weight_entries", ClientWeightEntryController, :index
 
     post "/foods", FoodController, :create
     get "/foods/:id", FoodController, :show
@@ -225,6 +226,11 @@ defmodule EasyWeb.Router do
     post "/food_log_entries/log_day", FoodLogEntryController, :log_day
     patch "/food_log_entries/:id", FoodLogEntryController, :update
     delete "/food_log_entries/:id", FoodLogEntryController, :delete
+
+    # Weight entries
+    get "/weight_entries", WeightEntryController, :index
+    post "/weight_entries", WeightEntryController, :create
+    delete "/weight_entries/:id", WeightEntryController, :delete
   end
 
   scope "/v1/public", EasyWeb.Public do

@@ -185,6 +185,8 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert data["last_name"] == "Sandhu"
       assert data["phone"] == "+91 98765 43210"
       assert data["notes"] == "Test notes"
+      assert data["goal_weight_value"] == nil
+      assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
       assert data["inserted_at"]
       assert data["updated_at"]
@@ -443,6 +445,78 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
 
       assert data["id"] == client.id
       assert data["notes"] == "after"
+    end
+
+    test "updates goal weight fields", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+
+      conn =
+        patch(conn, "/v1/coach/clients/#{client.id}", %{
+          "goal_weight_value" => 88,
+          "goal_weight_unit" => "kg"
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["goal_weight_value"] == "88"
+      assert data["goal_weight_unit"] == "kg"
+
+      reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
+      assert Decimal.eq?(reloaded.goal_weight_value, Decimal.new("88"))
+      assert reloaded.goal_weight_unit == :kg
+    end
+
+    test "requires a goal unit when goal value is set", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"goal_weight_value" => 88})
+
+      assert %{"error_detail" => %{"fields" => %{"goal_weight_unit" => [_]}}} =
+               json_response(conn, 422)
+    end
+
+    test "rejects goal weight outside the allowed range", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+
+      conn =
+        patch(conn, "/v1/coach/clients/#{client.id}", %{
+          "goal_weight_value" => 1000,
+          "goal_weight_unit" => "kg"
+        })
+
+      assert %{"error_detail" => %{"fields" => %{"goal_weight_value" => [_]}}} =
+               json_response(conn, 422)
+    end
+
+    test "clears both goal fields when value is sent blank", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client =
+        insert(:client,
+          creator: coach,
+          business: business,
+          goal_weight_value: Decimal.new("88.00"),
+          goal_weight_unit: :kg
+        )
+
+      conn = patch(conn, "/v1/coach/clients/#{client.id}", %{"goal_weight_value" => nil})
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["goal_weight_value"] == nil
+      assert data["goal_weight_unit"] == nil
+
+      reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
+      assert reloaded.goal_weight_value == nil
+      assert reloaded.goal_weight_unit == nil
     end
 
     test "updates status to archived", %{conn: conn, coach: coach, business: business} do

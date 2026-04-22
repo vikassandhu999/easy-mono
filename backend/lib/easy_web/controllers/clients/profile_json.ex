@@ -14,6 +14,8 @@ defmodule EasyWeb.Clients.ProfileJSON do
       last_name: client.last_name,
       email: client.email,
       phone: client.phone,
+      goal_weight_value: client.goal_weight_value,
+      goal_weight_unit: client.goal_weight_unit,
       status: client.status,
       coach: coach_data(coach)
     }

@@ -23,6 +23,8 @@ defmodule Easy.Clients.Client do
     field :last_name, :string
     field :phone, :string
     field :notes, :string
+    field :goal_weight_value, :decimal
+    field :goal_weight_unit, Ecto.Enum, values: [:kg, :lbs]
 
     field :status, Ecto.Enum, values: @statuses
 
@@ -38,7 +40,15 @@ defmodule Easy.Clients.Client do
   end
 
   @invite_cast_fields [:email, :first_name, :last_name, :phone, :notes]
-  @update_cast_fields [:first_name, :last_name, :phone, :email, :notes]
+  @update_cast_fields [
+    :first_name,
+    :last_name,
+    :phone,
+    :email,
+    :notes,
+    :goal_weight_value,
+    :goal_weight_unit
+  ]
   @self_update_cast_fields [:first_name, :last_name, :phone]
   @inquiry_cast_fields [:email, :first_name, :last_name, :phone]
 
@@ -71,8 +81,53 @@ defmodule Easy.Clients.Client do
   def update_changeset(client, attrs) do
     client
     |> cast(attrs, @update_cast_fields)
+    |> normalize_goal_weight(attrs)
+    |> validate_goal_weight_paired()
+    |> validate_number(:goal_weight_value, greater_than: 0, less_than: 1000)
     |> validate_status_transition(client.status, attrs)
     |> unique_constraint(:email, name: :clients_business_id_email_index)
+  end
+
+  # If either goal field was explicitly sent as blank, clear both —
+  # "leave empty to remove the goal" from the coach-side edit dialog.
+  defp normalize_goal_weight(changeset, attrs) do
+    value_sent? =
+      Map.has_key?(attrs, "goal_weight_value") or Map.has_key?(attrs, :goal_weight_value)
+
+    unit_sent? = Map.has_key?(attrs, "goal_weight_unit") or Map.has_key?(attrs, :goal_weight_unit)
+
+    value = get_field(changeset, :goal_weight_value)
+    unit = get_field(changeset, :goal_weight_unit)
+
+    cond do
+      value_sent? and is_nil(value) ->
+        changeset |> put_change(:goal_weight_value, nil) |> put_change(:goal_weight_unit, nil)
+
+      unit_sent? and is_nil(unit) ->
+        changeset |> put_change(:goal_weight_value, nil) |> put_change(:goal_weight_unit, nil)
+
+      true ->
+        changeset
+    end
+  end
+
+  defp validate_goal_weight_paired(changeset) do
+    value = get_field(changeset, :goal_weight_value)
+    unit = get_field(changeset, :goal_weight_unit)
+
+    cond do
+      is_nil(value) and is_nil(unit) ->
+        changeset
+
+      is_nil(value) ->
+        add_error(changeset, :goal_weight_value, "is required when goal_weight_unit is set")
+
+      is_nil(unit) ->
+        add_error(changeset, :goal_weight_unit, "is required when goal_weight_value is set")
+
+      true ->
+        changeset
+    end
   end
 
   defp validate_status_transition(changeset, _current, attrs)

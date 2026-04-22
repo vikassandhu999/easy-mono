@@ -2,6 +2,7 @@ defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
   alias Easy.Clients.Client
+  alias Easy.Fitness.WeightEntry
   alias Easy.Identity.User
   alias Easy.Identity.UserSession
   alias Easy.Orgs.Business
@@ -85,6 +86,19 @@ defmodule Easy.Factory do
       "last_name" => "Client",
       "phone" => "123-555-7890",
       "notes" => "Invited via test"
+    }
+  end
+
+  def weight_entry_factory do
+    client = build(:client)
+
+    %WeightEntry{
+      date: ~D[2026-04-22],
+      value: Decimal.new("91.40"),
+      unit: :kg,
+      note: nil,
+      client: client,
+      business: client.business
     }
   end
 

@@ -29,6 +29,8 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["first_name"] == "Vikas"
       assert data["last_name"] == "Kumar"
       assert data["phone"] == "+91 98765 43210"
+      assert data["goal_weight_value"] == nil
+      assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
       refute Map.has_key?(data, "business_id")
 
@@ -115,7 +117,7 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
       assert data["phone"] == "+91 99999 00000"
     end
 
-    test "ignores email, status, and notes fields" do
+    test "ignores email, status, notes, and goal weight fields" do
       coach = insert(:coach)
       user = insert(:user, email_confirmed_at: DateTime.utc_now(:second))
 
@@ -136,17 +138,23 @@ defmodule EasyWeb.Clients.ProfileControllerTest do
           "email" => "hacked@evil.com",
           "status" => "archived",
           "notes" => "hacked notes",
+          "goal_weight_value" => 80,
+          "goal_weight_unit" => "kg",
           "first_name" => "Updated"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["first_name"] == "Updated"
       assert data["email"] == "original@test.com"
+      assert data["goal_weight_value"] == nil
+      assert data["goal_weight_unit"] == nil
       assert data["status"] == "active"
 
       # Verify in DB
       reloaded = Easy.Repo.get!(Easy.Clients.Client, client.id)
       assert reloaded.notes == "original notes"
+      assert reloaded.goal_weight_value == nil
+      assert reloaded.goal_weight_unit == nil
     end
 
     test "returns 403 without auth token" do

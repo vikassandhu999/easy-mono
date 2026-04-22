@@ -1,6 +1,5 @@
 defmodule Easy.Identity do
   alias Easy.Clients.Client
-  alias Easy.Orgs
   alias Easy.Identity.UserSessions
   alias Easy.Identity.UserSession
   alias Easy.Identity.User
@@ -10,6 +9,7 @@ defmodule Easy.Identity do
   alias Easy.Identity.Errors
   alias Easy.Identity.OtpGenerator
   alias Easy.Identity.Mailer
+  alias Easy.Identity.SessionFactory
   alias Easy.Repo
 
   # TODO: Add rate limiting to signup and otp sending
@@ -86,7 +86,7 @@ defmodule Easy.Identity do
            {:ok, _client} <- Client.accept_invite(client, user.id, email),
            {:ok, _} <- OneTimeTokens.delete(ott),
            {:ok, session} <-
-             create_session(user, Map.merge(session_opts, %{role: :client})) do
+             SessionFactory.create_session(user, Map.merge(session_opts, %{role: :client})) do
         generate_auth_token(user, session)
       else
         {:error, :token_not_found} ->
@@ -226,9 +226,9 @@ defmodule Easy.Identity do
 
     Repo.transaction(fn ->
       with {:ok, session} <- UserSessions.get_by_refresh_token(refresh_token),
-           {:ok, _} <- validate_session(session),
+           {:ok, _} <- SessionFactory.validate_session(session),
            {:ok, user} <- Users.get_by_id(session.user_id),
-           {:ok, refreshed_session} <- refresh_session(user, session, opts) do
+           {:ok, refreshed_session} <- SessionFactory.refresh_session(user, session, opts) do
         generate_auth_token(user, refreshed_session)
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -241,92 +241,12 @@ defmodule Easy.Identity do
       with {:ok, token} <- OneTimeTokens.get_by_hash(token_hash, :authentication),
            {:ok, _} <- validate_email_confirmed(token.user),
            {:ok, _} <- OneTimeTokens.delete(token),
-           {:ok, session} <- create_session(token.user, opts) do
+           {:ok, session} <- SessionFactory.create_session(token.user, opts) do
         generate_auth_token(token.user, session)
       else
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
-  end
-
-  @spec validate_session(UserSession.t()) :: {:ok, UserSession.t()} | {:error, any()}
-  defp validate_session(session) do
-    cond do
-      UserSession.is_expired?(session) ->
-        {:error, Easy.Error.new("session_expired", "The session has expired")}
-
-      UserSession.is_revoked?(session) ->
-        {:error, Easy.Error.new("session_revoked", "The session has been revoked")}
-
-      true ->
-        {:ok, session}
-    end
-  end
-
-  defp validate_role(role, user) do
-    case role do
-      :coach ->
-        case Orgs.get_business_for_coach(user) do
-          %Orgs.Business{id: business_id} ->
-            {:ok, %{role: :coach, business_id: business_id}}
-
-          nil ->
-            {:error, Easy.Error.unauthorized("User is not associated with any business")}
-        end
-
-      :client ->
-        case Client
-             |> Client.for_user(user.id)
-             |> Client.accepted()
-             |> Repo.one() do
-          %Client{business_id: business_id} ->
-            {:ok, %{role: :client, business_id: business_id}}
-
-          nil ->
-            {:error, Easy.Error.unauthorized("No active client account found")}
-        end
-
-      _ ->
-        {:ok, %{role: :guest, business_id: nil}}
-    end
-  end
-
-  @spec create_session(User.t(), otp_token_opts()) :: {:ok, UserSession.t()} | {:error, any()}
-  defp create_session(user, opts) do
-    with {:ok, attrs_with_role} <- validate_role(opts.role || :guest, user) do
-      attrs =
-        Map.merge(
-          %{
-            ip: opts.ip || "",
-            user_agent: opts.user_agent || ""
-          },
-          attrs_with_role
-        )
-
-      {:ok, UserSessions.create_session!(user, attrs)}
-    end
-  end
-
-  @spec refresh_session(User.t(), UserSession.t(), refresh_token_opts()) ::
-          {:ok, UserSession.t()} | {:error, any()}
-  defp refresh_session(user, session, opts) do
-    role =
-      case opts.role do
-        nil -> session.role
-        r -> r
-      end
-
-    with {:ok, attrs_with_role} <- validate_role(role || :guest, user),
-         attrs =
-           Map.merge(
-             %{
-               ip: opts.ip || "",
-               user_agent: opts.user_agent || ""
-             },
-             attrs_with_role
-           ) do
-      {:ok, UserSessions.refresh_session!(session, attrs)}
-    end
   end
 
   @spec validate_can_send_otp?(User.t(), atom()) :: {:ok, true} | {:error, any()}

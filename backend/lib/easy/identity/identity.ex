@@ -1,19 +1,19 @@
 defmodule Easy.Identity do
   alias Easy.Clients.Client
   alias Easy.Identity.UserSessions
-  alias Easy.Identity.UserSession
   alias Easy.Identity.User
   alias Easy.Identity.Users
   alias Easy.Identity.OneTimeTokens
-  alias Easy.Identity.Token
   alias Easy.Identity.Errors
   alias Easy.Identity.OtpGenerator
   alias Easy.Identity.Mailer
   alias Easy.Identity.SessionFactory
   alias Easy.Identity.Signup
+  alias Easy.Identity.AuthTokens
   alias Easy.Repo
 
   defdelegate signup(attrs), to: Signup
+  defdelegate token(grant_type, opts), to: AuthTokens
 
   @spec accept_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
   def accept_invite(%{"invitation_token" => token, "email" => email})
@@ -48,7 +48,7 @@ defmodule Easy.Identity do
   @spec verify_accept_invite(map(), %{
           ip: String.t(),
           user_agent: String.t()
-        }) :: {:ok, auth_token()} | {:error, any()}
+        }) :: {:ok, AuthTokens.auth_token()} | {:error, any()}
   def verify_accept_invite(
         %{"invitation_token" => token, "email" => email, "otp" => otp},
         session_opts
@@ -65,7 +65,7 @@ defmodule Easy.Identity do
            {:ok, _} <- OneTimeTokens.delete(ott),
            {:ok, session} <-
              SessionFactory.create_session(user, Map.merge(session_opts, %{role: :client})) do
-        generate_auth_token(user, session)
+        AuthTokens.build(user, session)
       else
         {:error, :token_not_found} ->
           Repo.rollback(Errors.invalid_otp())
@@ -126,7 +126,7 @@ defmodule Easy.Identity do
     end
   end
 
-  @spec verify(String.t(), map()) :: {:ok, auth_token()} | {:error, any()}
+  @spec verify(String.t(), map()) :: {:ok, AuthTokens.auth_token()} | {:error, any()}
   def verify(token_hash, opts) do
     Repo.transaction(fn ->
       with {:ok, token} <- verify_confirmation_hash(token_hash),
@@ -140,7 +140,7 @@ defmodule Easy.Identity do
 
         session = UserSessions.create_session!(user, session_attrs)
 
-        generate_auth_token(user, session)
+        AuthTokens.build(user, session)
       else
         {:error, reason} -> Repo.rollback(reason)
       end
@@ -173,60 +173,6 @@ defmodule Easy.Identity do
     end)
   end
 
-  @type auth_token :: %{
-          access_token: String.t(),
-          token_type: String.t(),
-          expires_in: pos_integer(),
-          refresh_token: String.t(),
-          scope: String.t()
-        }
-
-  @type refresh_token_opts :: %{
-          refresh_token: String.t(),
-          ip: String.t(),
-          user_agent: String.t(),
-          role: atom() | nil
-        }
-
-  @type otp_token_opts :: %{
-          token_hash: String.t(),
-          ip: String.t(),
-          user_agent: String.t(),
-          role: atom() | nil
-        }
-
-  @spec token(:refresh_token, refresh_token_opts()) :: {:ok, auth_token()} | {:error, any()}
-  @spec token(:otp, otp_token_opts()) :: {:ok, auth_token()} | {:error, any()}
-  def token(:refresh_token, %{refresh_token: refresh_token} = opts) do
-    require Logger
-
-    Logger.info("Generating token using refresh_token grant type #{inspect(opts)}")
-
-    Repo.transaction(fn ->
-      with {:ok, session} <- UserSessions.get_by_refresh_token(refresh_token),
-           {:ok, _} <- SessionFactory.validate_session(session),
-           {:ok, user} <- Users.get_by_id(session.user_id),
-           {:ok, refreshed_session} <- SessionFactory.refresh_session(user, session, opts) do
-        generate_auth_token(user, refreshed_session)
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  def token(:otp, %{token_hash: token_hash} = opts) do
-    Repo.transaction(fn ->
-      with {:ok, token} <- OneTimeTokens.get_by_hash(token_hash, :authentication),
-           {:ok, _} <- validate_email_confirmed(token.user),
-           {:ok, _} <- OneTimeTokens.delete(token),
-           {:ok, session} <- SessionFactory.create_session(token.user, opts) do
-        generate_auth_token(token.user, session)
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
   @spec validate_can_send_otp?(User.t(), atom()) :: {:ok, true} | {:error, any()}
 
   defp validate_can_send_otp?(user, :email_confirmation) do
@@ -251,30 +197,6 @@ defmodule Easy.Identity do
          "The email address is not confirmed, please confirm your email first"
        )}
     end
-  end
-
-  @spec validate_email_confirmed(User.t()) :: {:ok, User.t()} | {:error, any()}
-  defp validate_email_confirmed(user) do
-    if !User.is_email_confirmed?(user) do
-      {:error,
-       Easy.Error.new(
-         "email_not_confirmed",
-         "The email address is not confirmed, please confirm your email first"
-       )}
-    else
-      {:ok, user}
-    end
-  end
-
-  @spec generate_auth_token(User.t(), UserSession.t()) :: auth_token()
-  defp generate_auth_token(user, session) do
-    %{
-      access_token: Token.generate_access_token(user, session),
-      token_type: "Bearer",
-      expires_in: 300,
-      refresh_token: session.refresh_token,
-      scope: session.role |> Atom.to_string()
-    }
   end
 
   defp verify_confirmation_hash(token_hash) do

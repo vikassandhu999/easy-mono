@@ -8,12 +8,13 @@ defmodule Easy.Identity do
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.Token
   alias Easy.Identity.Errors
+  alias Easy.Identity.OtpGenerator
   alias Easy.Repo
 
   # TODO: Add rate limiting to signup and otp sending
   @spec signup(map()) :: {:ok, User.t()} | {:error, any()}
   def signup(attrs) do
-    otp = generate_otp()
+    otp = OtpGenerator.generate()
 
     user_attrs =
       Map.merge(attrs, %{
@@ -38,7 +39,7 @@ defmodule Easy.Identity do
   @spec accept_invite(map()) :: {:ok, :otp_sent} | {:error, any()}
   def accept_invite(%{"invitation_token" => token, "email" => email})
       when is_binary(email) and email != "" do
-    otp = generate_otp()
+    otp = OtpGenerator.generate()
 
     # The "one active Client per User" invariant is NOT checked here on purpose:
     # this endpoint is public, and a pre-flight check would leak whether an
@@ -171,7 +172,7 @@ defmodule Easy.Identity do
 
   @spec send_otp(String.t(), String.t()) :: {:ok, :sent} | {:error, any()}
   def send_otp(email, type) do
-    otp = generate_otp()
+    otp = OtpGenerator.generate()
 
     otp_type =
       case type do
@@ -403,15 +404,6 @@ defmodule Easy.Identity do
     Easy.MailerDelivery.deliver_async(email_struct,
       metadata: %{email: email, purpose: :invitation_acceptance}
     )
-  end
-
-  @spec generate_otp() :: String.t()
-  defp generate_otp() do
-    :crypto.strong_rand_bytes(4)
-    |> :binary.decode_unsigned()
-    |> rem(900_000)
-    |> Kernel.+(100_000)
-    |> Integer.to_string()
   end
 
   defp handle_duplicate_email(changeset, otp) do

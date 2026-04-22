@@ -9,6 +9,7 @@ defmodule Easy.Identity do
   alias Easy.Identity.Token
   alias Easy.Identity.Errors
   alias Easy.Identity.OtpGenerator
+  alias Easy.Identity.Mailer
   alias Easy.Repo
 
   # TODO: Add rate limiting to signup and otp sending
@@ -24,7 +25,7 @@ defmodule Easy.Identity do
     Repo.transaction(fn ->
       with {:ok, user} <- Users.create(user_attrs),
            {:ok, _token} <- OneTimeTokens.create_token(user, :email_confirmation, otp) do
-        send_otp_email(user.email, otp)
+        Mailer.send_otp(user.email, otp)
         user
       else
         {:error, %Ecto.Changeset{} = changeset} ->
@@ -50,7 +51,7 @@ defmodule Easy.Identity do
       with {:ok, _client} <- Client.resolve_invitation_token(token),
            :ok <- rotate_invitation_otp(email),
            {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
-        send_invitation_otp_email(email, otp)
+        Mailer.send_invitation_otp(email, otp)
         :otp_sent
       else
         {:error, :invalid} -> Repo.rollback(Errors.invitation_invalid())
@@ -186,7 +187,7 @@ defmodule Easy.Identity do
            {:ok, _} <- validate_can_send_otp?(user, otp_type),
            _ <- OneTimeTokens.delete_all_for_user_and_type(user, otp_type),
            {:ok, _} <- OneTimeTokens.create_token(user, otp_type, otp) do
-        send_otp_email(user.email, otp)
+        Mailer.send_otp(user.email, otp)
         {:ok, :sent}
       else
         {:error, reason} -> Repo.rollback(reason)
@@ -388,24 +389,6 @@ defmodule Easy.Identity do
     end
   end
 
-  defp send_otp_email(email, code) do
-    email_struct =
-      Easy.Emails.otp_verification_email(email, code)
-
-    Easy.MailerDelivery.deliver_async(email_struct,
-      metadata: %{email: email}
-    )
-  end
-
-  defp send_invitation_otp_email(email, code) do
-    email_struct =
-      Easy.Emails.login_otp_email(email, code)
-
-    Easy.MailerDelivery.deliver_async(email_struct,
-      metadata: %{email: email, purpose: :invitation_acceptance}
-    )
-  end
-
   defp handle_duplicate_email(changeset, otp) do
     email = Ecto.Changeset.get_field(changeset, :email)
 
@@ -414,7 +397,7 @@ defmodule Easy.Identity do
       Users.touch_confirmation_sent_at(user)
       OneTimeTokens.delete_all_for_user_and_type(user, :email_confirmation)
       OneTimeTokens.create_token(user, :email_confirmation, otp)
-      send_otp_email(email, otp)
+      Mailer.send_otp(email, otp)
 
       Repo.rollback(
         Easy.Error.new("confirmation_resent", "Confirmation OTP has been sent to your email")

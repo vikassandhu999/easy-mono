@@ -195,6 +195,10 @@ export default function TrainingPlanDetail() {
     [handleScrollComplete, scrollToWorkoutId],
   );
 
+  // (v3: deep-link-by-hash scroll-into-view was removed along with the full-page
+  // Add Exercise flow. The inline add form doesn't navigate away, so there's
+  // nothing to scroll to on return.)
+
   const handleDuplicate = async () => {
     try {
       const result = await duplicatePlan(id!).unwrap();

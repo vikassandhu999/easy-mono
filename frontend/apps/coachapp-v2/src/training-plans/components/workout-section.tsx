@@ -2,11 +2,12 @@ import type {Ref} from 'react';
 
 import {formatUsedOnDays, getWorkoutUsedOnDays, TRAINING_DAY_LABELS} from '@easy/utils';
 import {AlertDialog, Button, Input, Spinner, toast} from '@heroui/react';
-import {Copy, Dumbbell, Pencil, Plus, Trash2} from 'lucide-react';
+import {Copy, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {Exercise} from '@/api/exercises';
 import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
+import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 import {
   useCreateTrainingPlanItemMutation,
@@ -15,35 +16,15 @@ import {
   useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
   useDuplicateWorkoutMutation,
-  useUpdateWorkoutElementMutation,
   useUpdateWorkoutMutation,
 } from '@/api/trainingPlans';
 import ExerciseElement from '@/training-plans/components/exercise-element';
 import ExercisePicker from '@/training-plans/components/exercise-picker';
-import SetSchemeInput, {
-  buildPlannedSetsFromScheme,
-  type SetSchemeValues,
-} from '@/training-plans/components/set-scheme-input';
-
-// ── Default set scheme (pre-filled from previous exercise or empty) ──
-
-const EMPTY_SCHEME: SetSchemeValues = {sets: '3', reps: '', loadValue: '', loadUnit: 'kg', rest: '', warmupSets: ''};
-
-function deriveSchemeFromLastElement(elements: WorkoutElement[]): SetSchemeValues {
-  if (elements.length === 0) return EMPTY_SCHEME;
-  const last = elements[elements.length - 1];
-  if (!last || last.planned_sets.length === 0) return EMPTY_SCHEME;
-  const firstSet = last.planned_sets[0];
-  if (!firstSet) return EMPTY_SCHEME;
-  return {
-    sets: String(last.planned_sets.length),
-    reps: '',
-    loadValue: '',
-    loadUnit: firstSet.load_unit ?? 'kg',
-    rest: firstSet.rest_seconds != null ? String(firstSet.rest_seconds) : '',
-    warmupSets: '',
-  };
-}
+import InlineExerciseForm, {
+  buildPlannedSetsFromForm,
+  EMPTY_DEFAULTS,
+  type InlineExerciseFormValues,
+} from '@/training-plans/components/inline-exercise-form';
 
 // ── Component ────────────────────────────────────────────────────────
 
@@ -67,16 +48,24 @@ export default function WorkoutSection({
   workout,
 }: WorkoutSectionProps) {
   const [deleteWorkout, {isLoading: isDeletingWorkout}] = useDeleteWorkoutMutation();
-  const [createElement] = useCreateWorkoutElementMutation();
+  const [createElement, {isLoading: isCreatingElement}] = useCreateWorkoutElementMutation();
   const [deleteElement] = useDeleteWorkoutElementMutation();
   const [updateWorkout, {isLoading: isSavingName}] = useUpdateWorkoutMutation();
   const [duplicateWorkout, {isLoading: isDuplicatingWorkout}] = useDuplicateWorkoutMutation();
-  const [updateElement] = useUpdateWorkoutElementMutation();
   const [createPlanItem, {isLoading: isCreatingPlanItem}] = useCreateTrainingPlanItemMutation();
   const [deletePlanItem, {isLoading: isDeletingPlanItem}] = useDeleteTrainingPlanItemMutation();
 
-  // Track which exercise element is expanded (only one at a time)
-  const [expandedElementId, setExpandedElementId] = useState<null | string>(null);
+  // Track which exercise row is in edit mode (only one at a time).
+  const [editingElementId, setEditingElementId] = useState<null | string>(null);
+
+  // Add-flow state: the exercise picked from ExercisePicker, before the coach
+  // confirms the set scheme. null = no add flow in progress.
+  const [pendingExercise, setPendingExercise] = useState<Exercise | null>(null);
+
+  // Session-level load unit memory (Task 7). Seeded from business settings
+  // (not yet exposed in API); falls back to 'kg'. Sticks after the coach
+  // manually picks a different unit in any exercise form.
+  const [sessionLoadUnit, setSessionLoadUnit] = useState<LoadUnitValue>('kg');
 
   // ── Inline workout name editing ────────────────────────────────
 
@@ -150,52 +139,50 @@ export default function WorkoutSection({
     }
   };
 
-  // ── Add exercise flow ──────────────────────────────────────────
-  // Step 1: Coach picks exercise via ExercisePicker
-  // Step 2: Set scheme input appears inline with pre-filled values
-  // Step 3: Coach fills fields, taps "Add exercise"
-  // Step 4: createElement with N identical working sets
-
-  const [pendingExercise, setPendingExercise] = useState<Exercise | null>(null);
-  const [addScheme, setAddScheme] = useState<SetSchemeValues>(EMPTY_SCHEME);
-  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  // ── Add exercise (inline, v3) ──────────────────────────────────
+  //
+  // Two-step inline flow (never leaves the workout page):
+  //   1. Coach taps `+ Add exercise` → picker renders in place.
+  //   2. Coach picks an exercise → InlineExerciseForm renders in place with
+  //      chips-then-fields layout, Cancel / Add actions.
+  // On Add, the form posts and the UI returns to the `+ Add exercise` button.
 
   const sortedElements = [...workout.workout_elements].sort((a, b) => a.position - b.position);
+  const [isAddPickerOpen, setIsAddPickerOpen] = useState(false);
+
+  const handleStartAdd = () => {
+    setIsAddPickerOpen(true);
+  };
 
   const handlePickExercise = (exercise: Exercise) => {
     setPendingExercise(exercise);
-    setAddScheme(deriveSchemeFromLastElement(sortedElements));
-  };
-
-  const handleConfirmAddExercise = async () => {
-    if (!pendingExercise) return;
-    const nextPosition =
-      workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
-    const sets = buildPlannedSetsFromScheme(addScheme);
-    setIsAddingExercise(true);
-    try {
-      await createElement({
-        planId,
-        workoutId: workout.id,
-        body: {
-          exercise_id: pendingExercise.id,
-          workout_id: workout.id,
-          position: nextPosition,
-          planned_sets: sets,
-        },
-      }).unwrap();
-      setPendingExercise(null);
-      setAddScheme(EMPTY_SCHEME);
-    } catch {
-      toast.danger('Failed to add exercise');
-    } finally {
-      setIsAddingExercise(false);
-    }
+    setIsAddPickerOpen(false);
   };
 
   const handleCancelAdd = () => {
     setPendingExercise(null);
-    setAddScheme(EMPTY_SCHEME);
+    setIsAddPickerOpen(false);
+  };
+
+  const handleSubmitAdd = async (values: InlineExerciseFormValues) => {
+    if (!pendingExercise) return;
+    const nextPosition =
+      workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
+    const plannedSets = buildPlannedSetsFromForm(values);
+    const trimmedNotes = values.exerciseNotes.trim();
+    await createElement({
+      planId,
+      workoutId: workout.id,
+      body: {
+        exercise_id: pendingExercise.id,
+        workout_id: workout.id,
+        position: nextPosition,
+        planned_sets: plannedSets,
+        ...(trimmedNotes && {notes: trimmedNotes}),
+      },
+    }).unwrap();
+    setPendingExercise(null);
+    setIsAddPickerOpen(false);
   };
 
   // ── Undo toast for exercise removal ────────────────────────────
@@ -255,33 +242,6 @@ export default function WorkoutSection({
   // Filter out pending removal from displayed elements
   const visibleElements = pendingRemoval ? sortedElements.filter((e) => e.id !== pendingRemoval.id) : sortedElements;
 
-  // ── Reorder exercises (move up/down) ───────────────────────────
-
-  const handleMoveExercise = async (index: number, direction: 'down' | 'up') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const current = visibleElements[index];
-    const target = visibleElements[targetIndex];
-    if (!current || !target) return;
-    try {
-      await Promise.all([
-        updateElement({
-          id: current.id,
-          planId,
-          workoutId: workout.id,
-          body: {position: target.position},
-        }).unwrap(),
-        updateElement({
-          id: target.id,
-          planId,
-          workoutId: workout.id,
-          body: {position: current.position},
-        }).unwrap(),
-      ]);
-    } catch {
-      toast.danger('Failed to reorder exercise');
-    }
-  };
-
   // ── Duplicate exercise (same exercise + sets in same workout) ───
 
   const handleDuplicateExercise = (element: WorkoutElement) => {
@@ -307,11 +267,6 @@ export default function WorkoutSection({
         toast.danger('Failed to duplicate exercise');
       });
   };
-
-  const existingExerciseIds = useMemo(
-    () => workout.workout_elements.map((e) => e.exercise_id),
-    [workout.workout_elements],
-  );
 
   const handleDuplicateWorkout = async () => {
     try {
@@ -436,7 +391,8 @@ export default function WorkoutSection({
 
   return (
     <div
-      className="min-w-0 overflow-hidden rounded-xl border border-divider bg-content1 p-4"
+      className="min-w-0 scroll-mt-20 overflow-hidden rounded-xl border border-divider bg-content1 p-4"
+      id={`workout-${workout.id}`}
       ref={sectionRef}
     >
       {/* Workout header */}
@@ -590,17 +546,24 @@ export default function WorkoutSection({
       {/* Exercise elements */}
       {visibleElements.length > 0 ? (
         <div className="mb-3 flex flex-col gap-1">
-          {visibleElements.map((element, index) => (
+          {visibleElements.map((element) => (
             <div key={element.id}>
               <ExerciseElement
                 element={element}
-                isExpanded={expandedElementId === element.id}
+                fallbackLoadUnit={sessionLoadUnit}
+                isEditing={editingElementId === element.id}
+                onCancel={() => setEditingElementId(null)}
                 onCopy={() => handleCopyExerciseStart(element)}
                 onDuplicate={() => handleDuplicateExercise(element)}
-                onMoveDown={index < visibleElements.length - 1 ? () => handleMoveExercise(index, 'down') : undefined}
-                onMoveUp={index > 0 ? () => handleMoveExercise(index, 'up') : undefined}
+                onLoadUnitChange={setSessionLoadUnit}
                 onRemove={() => handleRemoveExercise(element)}
-                onToggleExpand={() => setExpandedElementId(expandedElementId === element.id ? null : element.id)}
+                onStartEditing={() => {
+                  // Only one row edits at a time. Starting edit also cancels
+                  // any in-flight add flow.
+                  setEditingElementId(element.id);
+                  setIsAddPickerOpen(false);
+                  setPendingExercise(null);
+                }}
                 planId={planId}
               />
               {/* Copy exercise target selector */}
@@ -634,51 +597,49 @@ export default function WorkoutSection({
             </div>
           ))}
         </div>
-      ) : (
+      ) : !isAddPickerOpen && !pendingExercise ? (
         <p className="mb-3 text-xs text-foreground-400">No exercises yet. Add an exercise below.</p>
-      )}
+      ) : null}
 
-      {/* Add exercise flow: picker → set scheme → confirm */}
+      {/* Add exercise — inline flow. States:
+          1. Editing an existing row → button hidden (only one form at a time)
+          2. Picking  → ExercisePicker (autocomplete) with Cancel
+          3. Filling  → InlineExerciseForm with chips + fields
+          4. Idle     → `+ Add exercise` button */}
       {pendingExercise ? (
-        <div className="rounded-lg border border-dashed border-divider p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <Dumbbell
-              className="shrink-0 text-foreground-400"
-              size={14}
-            />
-            <p className="text-sm font-medium">{pendingExercise.name}</p>
-            {pendingExercise.mechanics && (
-              <span className="text-xs text-foreground-400">{pendingExercise.mechanics}</span>
-            )}
-          </div>
-          <SetSchemeInput
-            onChange={setAddScheme}
-            showPresets
-            values={addScheme}
-          />
-          <div className="mt-2 flex gap-2">
-            <Button
-              isPending={isAddingExercise}
-              onPress={handleConfirmAddExercise}
-              size="sm"
-            >
-              <Plus size={14} />
-              {isAddingExercise ? 'Adding...' : 'Add exercise'}
-            </Button>
-            <Button
-              onPress={handleCancelAdd}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <ExercisePicker
-          excludeIds={existingExerciseIds}
-          onSelect={handlePickExercise}
+        <InlineExerciseForm
+          actionLabel="Add"
+          defaultValues={{...EMPTY_DEFAULTS, loadUnit: sessionLoadUnit}}
+          exerciseName={pendingExercise.name}
+          isSubmitting={isCreatingElement}
+          onCancel={handleCancelAdd}
+          onLoadUnitChange={setSessionLoadUnit}
+          onSubmit={handleSubmitAdd}
         />
+      ) : isAddPickerOpen ? (
+        <div className="flex flex-col gap-2">
+          <ExercisePicker
+            excludeIds={workout.workout_elements.map((e) => e.exercise_id)}
+            onSelect={handlePickExercise}
+          />
+          <Button
+            className="self-start"
+            onPress={handleCancelAdd}
+            size="sm"
+            variant="ghost"
+          >
+            Cancel
+          </Button>
+        </div>
+      ) : editingElementId ? null : (
+        <Button
+          className="w-full sm:w-auto"
+          onPress={handleStartAdd}
+          variant="secondary"
+        >
+          <Plus size={16} />
+          Add exercise
+        </Button>
       )}
     </div>
   );

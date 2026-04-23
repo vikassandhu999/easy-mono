@@ -1,7 +1,7 @@
 # ADR-002: Training Plan Builder + Workout Logging
 
 **Date:** 2026-03-29
-**Last updated:** 2026-04-21 (content-vs-schedule split: `PlannedWorkout` → `Workout` + `TrainingPlanItem`; weekdays as strings; shared-workout banner + unshare-for-one-day action; PlanItem uniqueness on `(plan, day, workout_type)`; copy-day endpoint removed — reusing a workout across days is a single plan item insert)
+**Last updated:** 2026-04-23 (`ux-spec-exercise-set-planning-2026-04-23.md` v3 — major simplification: one target per exercise, inline form, minimal copy. Removed the per-set mode, warmup-set UI, bulk edit, Advanced accordion, `set_type` enum, and the dedicated Add Exercise page. The coach edits one `{Sets, Reps, Load, Rest}` target per exercise; the backend still receives N identical `PlannedSet` entries for client-side session logging. Add Exercise returned to an inline flow at the bottom of the workout section: `+ Add exercise` button → `ExercisePicker` → `InlineExerciseForm` (chips → Sets/Reps → Load/Rest → Notes → Cancel/Add). Tapping an existing exercise row replaces it with the same form in Edit mode. Smart rest defaults (≤6 → 120s, 7-12 → 90s, 13+ → 60s) fire on chip tap and Reps blur when rest is empty. Session-level load-unit memory seeds the next exercise form with whichever unit the coach last picked. Pill options narrowed to `kg / lbs / bw`; rest pill toggles `sec / min` (minutes × 60 on submit). `@dnd-kit/*` dependencies removed. Deleted: `add-exercise-to-workout.tsx`, `quick-set-form.tsx`, `set-detail-editor.tsx`, `set-row.tsx`, `set-scheme-input.tsx`, `bulk-edit-sheet.tsx`, `row-menu-sheet.tsx`, `set-warnings.tsx`, `lib/set-types.ts`, `lib/set-ids.ts`, `lib/scheme-defaults.ts`, `@hooks/use-scroll-into-view-on-focus.ts`. `BottomSheet` moved from `@components/` to `training-plans/components/` (single-feature use). Target: 5-tap flow for the 95% add-exercise case.)
 **Context:** Training plan creation (coachapp-v2), workout session viewing (coachapp-v2), and workout logging (clientapp-v2)
 
 ---
@@ -95,9 +95,10 @@ Same pattern as nutrition plans (ADR-001):
 | Mark a day as rest / clear rest | No, single tap | **INLINE** | Button on the empty day row / rest day row |
 | Remove a workout from a day | No, single tap | **INLINE** | X button on the scheduled workout row |
 | Unshare (make a copy just for one day) | No, two taps | **INLINE** | `SharedWorkoutBanner` surfaces a day picker inside the workout card |
-| Add exercise to workout | Yes, search input | **INLINE** | ExercisePicker autocomplete popover |
-| Set scheme (sets/reps/load/rest) | Yes, 4-5 fields | **INLINE** | Compact grid below the picker, fits mobile with flex-wrap |
-| Per-set detail editing | Yes, many fields | **INLINE** | Table on desktop, card stack on mobile |
+| Add exercise to workout (search + sets) | Yes, search + 4-5 fields | **INLINE** (v3, 2026-04-23) | `+ Add exercise` button replaces in place with `ExercisePicker`, then with `InlineExerciseForm` (chips + Sets/Reps/Load/Rest/Notes). Never leaves the workout page. Supersedes the 2026-04-22 full-page flow — coach needed the ambient context of the other exercises while programming. |
+| Edit exercise (sets/reps/load/rest) | Yes, 4-5 fields | **INLINE** | Tapping an exercise row replaces it with the same `InlineExerciseForm` in Edit mode (`Editing` chip, `Save` button). Same layout, same controls. |
+| Load unit picker | No, tap-only selection | **DRAWER** | `UnitPickerSheet` bottom sheet. Three options: kg, lbs, bodyweight. |
+| Per-set detail editing / Bulk edit / Per-set row menu / Rest drawer | — | — | **Removed in v3.** One target per exercise — no per-set variation. Exotic cases (pyramids, dropsets) go into the free-text notes field. |
 | Delete workout | No, confirmation | **DIALOG** | AlertDialog with danger variant |
 | Delete plan | No, confirmation | **DIALOG** | AlertDialog with danger variant |
 | Remove exercise | No, single tap | **INLINE** | X button with 3s undo toast (no confirmation) |
@@ -128,11 +129,15 @@ Same pattern as nutrition plans (ADR-001):
 | `training-plan-form.tsx` | Shared form (schema + hook + component) for create/edit. Four fields only (name, description, start_date, end_date) — no status or template toggle. | create, edit screens |
 | `training-plan-card.tsx` | List item card (name, workout/exercise counts, status chip) | list screen |
 | `weekly-overview.tsx` | 7-day schedule grid. Renders one row per `TrainingWeekday` with three states (scheduled / rest / empty). Hosts `ScheduledDayRow` + `ScheduledWorkoutRow`, `RestDayRow`, `EmptyDayRow`, and `DayAssignmentPanel` (assign existing workout or create-and-assign inline). All mutations are plan-item CRUD. | detail screen |
-| `workout-section.tsx` | Single workout: inline name/notes editing, exercise list, add/remove/copy exercises, duplicate workout, delete workout AlertDialog, `SharedWorkoutBanner` with "Make a copy for one day only" action. | detail screen |
-| `exercise-element.tsx` | Single exercise within a workout. Collapsed (1-line summary) or expanded (set editor). Auto-detects uniform vs mixed sets. | workout-section |
-| `set-scheme-input.tsx` | Compact uniform set editor: Sets × Reps @ Load Unit, Rest. Preset chips (3×10, 4×8-12, 5×5, 3×15). Exports `buildPlannedSetsFromScheme` and `deriveSchemeFromSets`. | exercise-element, workout-section (add flow) |
-| `set-detail-editor.tsx` | Per-set table editor for mixed set types. Desktop: HTML table. Mobile: card stack. Supports all 8 set types + add/remove rows. | exercise-element |
+| `workout-section.tsx` | Single workout: inline name/notes editing, exercise list, remove/copy/duplicate exercises, duplicate workout, delete workout AlertDialog, `SharedWorkoutBanner` with "Make a copy for one day only" action, and a `+ Add exercise` inline flow (picker → `InlineExerciseForm`). Owns the session load-unit memory threaded into every form. | detail screen |
+| `exercise-element.tsx` | Single exercise within a workout. Collapsed one-line summary (`N × reps @ load · rest Xs`); tapping the row replaces it with `InlineExerciseForm` in Edit mode (same chips/fields as Add, with an `Editing` chip and a `Save` action). Desktop hover reveals duplicate + copy buttons; delete is always visible. | workout-section |
+| `inline-exercise-form.tsx` | Single source of truth for Add *and* Edit. RHF + zod. Quick scheme chips (`3×10` `4×8-12` `5×5` `3×15`) → Sets/Reps row → Load/Rest row → Notes → Cancel / Add|Save. Tapping a chip fills Sets+Reps, seeds the rest default from reps, and moves focus to Load. Reps blur also seeds rest when empty. Load pill opens `UnitPickerSheet`; rest pill toggles `sec ↔ min`. Exports `buildPlannedSetsFromForm`, `deriveFormFromSets`, `deriveRestFromReps`. | workout-section, exercise-element |
 | `exercise-picker.tsx` | Autocomplete for searching/selecting exercises from the library. Cross-feature picker (imports from exercises API). | workout-section |
+| `bottom-sheet.tsx` | Shared `HeroUI Drawer` wrapper (rounded-t, opaque backdrop). Lives in `training-plans/components/` because all current consumers are inside this feature. | unit-picker-sheet, rest-picker-sheet |
+| `unit-picker-sheet.tsx` | Load-unit bottom sheet. Three options only: `Kilograms (kg)`, `Pounds (lbs)`, `Bodyweight`. Legacy units (`percent_1rm`, `rpe`, `none`) still render in labels for historical records but aren't surfaced in the picker. | inline-exercise-form |
+| `rest-picker-sheet.tsx` | Rest quick-pick bottom sheet with preset chips (30s / 60s / 90s / 2min / 3min / 5min). Kept for possible future use; not wired into the v3 form (the rest input uses an inline numeric field with a `sec`/`min` pill toggle instead). | — |
+| `lib/parse.ts` | Shared numeric parsers (`parseNonNegativeInt`, `parseNonNegativeNumber`, `parseOptionalNumber`) used by the builders to clamp negatives and normalise empty strings. | inline-exercise-form, workout-section |
+| `@hooks/use-haptics.ts` | Thin wrapper around `navigator.vibrate()`. Used only by the bottom-sheet pickers for tap feedback. | unit-picker-sheet, rest-picker-sheet |
 | `training-plan-picker.tsx` | Autocomplete for searching/selecting plan templates for assignment. Cross-feature picker (imported by client detail page). | client detail page |
 
 ### Reused from other features
@@ -164,14 +169,21 @@ training-plan-detail.tsx
   │   ├── useUpdateWorkoutMutation         → rename workout, update notes (inline editing)
   │   ├── useDeleteWorkoutMutation         → delete workout (cascades plan_items pointing at it)
   │   ├── useDuplicateWorkoutMutation      → duplicate workout content only (no schedule)
-  │   ├── useCreateWorkoutElementMutation  → add exercise with planned_sets
+  │   ├── useCreateWorkoutElementMutation  → add exercise (inline) + duplicate / copy flows
   │   ├── useDeleteWorkoutElementMutation  → remove exercise (with undo toast)
   │   ├── SharedWorkoutBanner ("Make a copy for one day only")
   │   │   └── duplicate → delete old plan_item → create new plan_item for the chosen day
   │   │       (backend doesn't yet support PATCH plan_item.workout_id; delete+create is
   │   │        the workaround — see "What's Not Built Yet")
   │   │
+  │   ├── ExercisePicker (debounced autocomplete, inline) → useListExercisesQuery
+  │   ├── InlineExerciseForm (chips + Sets/Reps/Load/Rest/Notes, same form for Add + Edit)
+  │   │   └── buildPlannedSetsFromForm → planned_sets[]
+  │   │   └── deriveRestFromReps for smart rest defaults
+  │   │   └── session load-unit memory flows up via onLoadUnitChange
+  │   │
   │   └── ExerciseElement (per element, inside WorkoutSection)
+  │       └── tap row → InlineExerciseForm (Edit mode)
   │       └── useUpdateWorkoutElementMutation → save set scheme changes (planned_sets array)
   │
   ├── Inline "New workout" (library)
@@ -205,13 +217,33 @@ Cache invalidation:
 
 ## Key Design Decisions
 
-### 1. Efficiency-first set scheme with two editor modes
+> **v3 reset (2026-04-23).** Decisions 1, 3, 4, 7a, 7b, 7c, 16 below describe the
+> pre-v3 architecture and are kept for historical context only. The current
+> design is summarised in the `Last updated` header and the component table
+> above: one target per exercise, inline form, chips for common schemes, smart
+> rest defaults, session load-unit memory. `ux-spec-exercise-set-planning-2026-04-23.md`
+> is the canonical spec.
 
-The most important UX decision. Most exercises use uniform sets (e.g. 3×10 @ 80kg). The default editor (`SetSchemeInput`) is a compact 5-field row: Sets, Reps, Load, Unit, Rest. This covers 90%+ of real-world programming.
+### 1. Efficiency-first set scheme — one target per exercise (v3)
 
-For advanced use (warmup ramps, drop sets, pyramids), the coach toggles to the per-set `SetDetailEditor` — a table on desktop, card stack on mobile, with per-row set type, reps, load, unit, rest, and add/remove.
+v3 collapses the two-mode editor into a single inline form. Every set in an
+exercise shares one `{Sets, Reps, Load, Rest}` target. If a coach wants a
+pyramid or a warmup ramp, they describe it in the exercise's `notes` field.
 
-`ExerciseElement` auto-detects which mode to show: if all sets are identical → uniform, if mixed → detail. The coach can switch between modes at any time; switching from uniform→detail populates rows from the scheme, switching from detail→uniform is only allowed if all sets are identical.
+The `InlineExerciseForm` is used identically for Add and Edit — the only
+differences are the action label (`Add` vs `Save`), the `Editing` chip, and
+whether `defaults` come from the picked exercise vs the existing element.
+
+The storage model is unchanged: an N-set target still serialises as an array
+of N identical `PlannedSet` entries, so the client app's session-logging UI
+(which needs per-set rows for logging) keeps working without changes.
+
+> **Historical (v2):** The pre-2026-04-23 design shipped two editor modes —
+> a "Quick" 2×2 form (`QuickSetForm`) and a per-set table/card editor
+> (`SetDetailEditor`) — with drag-reorder, warmup-set type enum, bulk edit
+> drawer, and an Advanced accordion for tempo / intensity / duration / distance.
+> All of that was removed in v3 after QA testing showed it confused coaches
+> and competitor research showed the simpler model covered 95%+ of programming.
 
 ### 2. Sets are an inline array, not separate entities
 
@@ -235,7 +267,7 @@ Only one element can be expanded at a time within a `WorkoutSection`. This keeps
 
 ### 5. Preset chips for common schemes
 
-`SetSchemeInput` optionally shows quick-fill preset chips: 3×10, 4×8-12, 5×5, 3×15. Tapping a preset fills the Sets and Reps fields. Shown when adding a new exercise (via `showPresets` prop), hidden when editing an existing exercise.
+`SetSchemeInput` optionally shows quick-fill preset chips: 3×10, 4×8-12, 5×5, 3×15. Tapping a preset fills the Sets and Reps fields. As of 2026-04-22 the add flow uses `QuickSetForm` (without preset chips) and these chips remain only on the inline bulk-edit path inside `ExerciseElement`. Phase 5 will replace ad-hoc presets with smart defaults derived from `Exercise.mechanics`.
 
 ### 6. Exercise removal with undo toast
 
@@ -243,7 +275,50 @@ Removing an exercise from a workout uses a 3-second undo pattern instead of a co
 
 ### 7. Derive scheme from previous exercise
 
-When adding a new exercise, the set scheme inputs are pre-filled from the last exercise in the workout (set count, load unit, rest seconds). This saves re-entering common values when programming similar exercises in sequence.
+When adding a new exercise, the set scheme inputs are pre-filled from the last exercise in the workout (set count, load unit, rest seconds). This saves re-entering common values when programming similar exercises in sequence. The helper (`deriveSchemeFromLastElement` + `EMPTY_SCHEME`) lives in `training-plans/lib/scheme-defaults.ts` so both the new add screen and any future bulk-edit flow can call it without going through a component.
+
+### 7a. Mechanics-based smart defaults for Add Exercise
+
+`getDefaultSchemeForExercise(exercise, {previousElement})` is now the main Add Exercise defaulting helper. If the immediately previous exercise in the workout has the same `exercise.mechanics`, it reuses that element's working-set count / unit / rest. Otherwise it falls back to mechanics-based defaults:
+- `compound` → `4` sets, `6-10` reps, `120s`
+- `isolation` → `3` sets, `10-15` reps, `60s`
+- `isometric` → `3` sets, `30s`, `60s`
+
+Load value is never pre-filled.
+
+### 7b. Soft validation is guidance, not a blocker
+
+The builder now shows dismissible warning hints when a coach types obviously unusual values:
+- reps > 50
+- load > 300kg / 660lbs
+- rest > 600s
+
+These hints are present in both `QuickSetForm` and `SetRow`. They do not prevent saving or mutate server validation.
+
+### 7c. Advanced fields exist in both modes, but the UI entry points differ
+
+The Add Exercise screen now exposes an `Advanced` accordion in `QuickSetForm` with four controls:
+- `tempo`
+- `intensityTarget`
+- `durationSeconds`
+- `distanceValue` + `distanceUnit`
+
+In quick mode, these values are applied to all generated `planned_sets` (warmups and working sets). In per-set mode, the values are preserved in `detailSets[]` and are editable row-by-row inside the expanded details area of each `SetRow`.
+
+### 15. Mobile polish hooks
+
+Two cross-cutting hooks now support the set-planning flows:
+- `useHaptics()` — lightweight vibration feedback for selection / impact / success moments
+- `useScrollIntoViewOnFocus()` — scrolls focused inputs into view so the Add Exercise and mobile per-set editors behave better with the on-screen keyboard
+
+### 16. Mobile set-row reordering uses dnd-kit
+
+`SetDetailEditor` wraps the mobile-only `SetRow` list in `DndContext` + `SortableContext` from `dnd-kit`. The ids are positional (`set-0`, `set-1`, ...), which is sufficient because the list is local unsaved draft state. Reordering uses `arrayMove(sets, fromIndex, toIndex)` and writes back through the same local `onChange` path as every other set edit.
+
+The drag handle is the left index / warmup badge in `SetRow`, not the whole row, so inputs remain editable without accidental drag starts. Sensors:
+- mouse: distance threshold
+- touch: long-press delay + tolerance
+- keyboard: sortable keyboard coordinates
 
 ### 8. Duplicating workouts vs scheduling existing ones
 
@@ -297,11 +372,17 @@ The template-vs-personal distinction is derived from `!plan.client_id` (covers b
 
 ### 14. Mobile-responsive set detail editor
 
-`SetDetailEditor` uses two completely different layouts:
-- **Desktop (sm+)**: HTML `<table>` with inputs in every cell — compact, scannable
-- **Mobile (<sm)**: Stacked cards per set with `flex-wrap` field pairs, load unit shown as text label instead of Select to save space
+`SetDetailEditor` uses two different layouts:
+- **Desktop (sm+)**: HTML `<table>` with inline inputs — compact, scannable
+- **Mobile (<sm)**: compact `SetRow` stack with uppercase column headers, a 5-column grid (index / reps / load / rest / menu), warmup tinting, bottom-sheet unit/rest pickers, optional inline note textarea, and `RowMenuSheet` actions
 
-This is the `hidden sm:block` / `sm:hidden` pattern described in the mobile-first design skill.
+This keeps mobile editing dense enough for gym use while still reserving the larger table for desktop.
+
+### 14a. Bulk edit stays local until Save
+
+`BulkEditSheet` is intentionally a local-draft tool, not an immediate mutation. In expanded per-set mode, `ExerciseElement` owns `localSets`; opening the sheet clones that array, quick-adjusts load or rest values inside the sheet, and only writes back into `localSets` when the coach taps Apply. The actual API write still happens only when the coach taps Save on the exercise.
+
+This preserves the existing mental model of the builder: edit locally, then commit once.
 
 ### 15. Two-status model with archive button
 
@@ -525,6 +606,8 @@ The primary interaction: tap a checkbox to log a set with values pre-filled from
 
 ### Plan builder (coach)
 
+- **Set planning UX still pending** — `docs/specs/tasks-exercise-set-planning-2026-04-22.md` still lists pending work: swipe-to-delete for per-set rows, dark-mode audit, and a true business-level preferred load unit. The current `Business` API shape has no unit-preference field, so mechanics-based defaults fall back to `kg`. The rest of the coach-side UX is now largely in code: dedicated Add Exercise page + `QuickSetForm`, shared `BottomSheet`, load-unit/rest quick-pick sheets, quick/per-set toggle on Add Exercise, compact mobile `SetRow`, live `RowMenuSheet` actions, local-draft `BulkEditSheet`, mechanics-based smart defaults, soft warning hints, advanced-field editing, haptics, focus-scroll behavior, and mobile drag reorder.
+- **"Last time: X kg" hint on Add Exercise** — blocked on a coach-side last-performed-set query (`GET /v1/coach/clients/:clientId/exercises/:exerciseId/last_performed_set` or similar). Until that lands, no history hint is shown — see Phase 5 in the spec.
 - **Superset grouping** — `superset_group_id` field exists on `WorkoutElement`, UI deferred. Would allow grouping exercises into supersets/circuits.
 - **Workout element reordering** — `position` field exists, drag-and-drop UI deferred.
 - **Workout library reordering** — workouts are listed by insertion time, no drag-and-drop.

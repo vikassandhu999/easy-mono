@@ -6,6 +6,12 @@ import {ApiListResponse, ApiResponse, getValidationErrors} from '@/api/shared';
 export type TrainingWeekday = 'friday' | 'monday' | 'saturday' | 'sunday' | 'thursday' | 'tuesday' | 'wednesday';
 export type TrainingWorkoutType = 'alternative' | 'primary';
 
+/**
+ * One target per exercise. Every set in an exercise shares the same target;
+ * the coach-facing UI no longer exposes `set_type` (warmup/working/etc) —
+ * v3 spec collapses this to a single target. Session logging snapshots in
+ * `workoutSessions.ts` still read `set_type` from historical records.
+ */
 export type PlannedSet = {
   distance_unit?: 'km' | 'meters' | 'miles' | 'none' | 'yards';
   distance_value?: null | number;
@@ -15,7 +21,6 @@ export type PlannedSet = {
   load_value?: null | number;
   notes?: null | string;
   rest_seconds?: null | number;
-  set_type?: 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
   target_reps?: null | string;
   tempo?: null | string;
 };

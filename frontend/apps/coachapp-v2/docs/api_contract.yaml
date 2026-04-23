@@ -331,6 +331,8 @@ paths:
                   last_name: Kumar
                   email: vikas@email.com
                   phone: "+91 98765 43210"
+                  goal_weight_value: "88.00"
+                  goal_weight_unit: kg
                   status: active
                   coach:
                     first_name: Rajat
@@ -1241,6 +1243,133 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /v1/client/weight_entries:
+    get:
+      summary: List client weight entries
+      description: >-
+        Returns the authenticated client's full weight history (optionally filtered
+        by a `since` date) along with the coach-set goal and a server-computed
+        summary of first entry, latest entry, and total change in the latest
+        entry's unit. Used by the Progress -> Weight screen. Frontend pattern —
+        fetch once on screen load, keep the list in memory for local 30d/90d/All
+        range toggles, and refetch after any create/update/delete.
+      operationId: listClientWeightEntries
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: since
+          in: query
+          required: false
+          description: Optional lower bound for date-filtered history.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Weight history with goal and summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightEntryListResponse"
+              example:
+                entries:
+                  - id: 8c1e14b7-4a7f-4ec6-a15d-c8cba3f750e2
+                    date: "2026-03-01"
+                    value: "95.20"
+                    unit: kg
+                    note: null
+                    inserted_at: "2026-03-01T09:14:12Z"
+                  - id: 946a0b30-8a54-43d2-8d1a-7a55ec2fdf0b
+                    date: "2026-04-20"
+                    value: "91.40"
+                    unit: kg
+                    note: morning weigh-in
+                    inserted_at: "2026-04-20T07:10:00Z"
+                goal:
+                  value: "88.00"
+                  unit: kg
+                summary:
+                  first_entry:
+                    date: "2026-03-01"
+                    value: "95.20"
+                    unit: kg
+                  latest_entry:
+                    date: "2026-04-20"
+                    value: "91.40"
+                    unit: kg
+                  total_change: -3.8
+                  change_unit: kg
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    post:
+      summary: Log or update a weight entry
+      description: >-
+        Upserts a single weight entry for the authenticated client keyed by
+        `(client_id, date)`. If the client already logged that date, the server
+        updates the existing row instead of creating a second entry. Used by the
+        log-weight bottom sheet for both "Log" and "Update" flows. Frontend
+        pattern — submit the local form state, close the sheet on success, and
+        refetch the weight history so the summary and chart stay canonical.
+      operationId: upsertClientWeightEntry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWeightEntryRequest"
+            examples:
+              default:
+                value:
+                  date: "2026-04-22"
+                  value: 91.4
+                  unit: kg
+                  note: morning weigh-in
+      responses:
+        "201":
+          description: The created or updated weight entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightEntryResponse"
+              example:
+                data:
+                  id: 946a0b30-8a54-43d2-8d1a-7a55ec2fdf0b
+                  date: "2026-04-22"
+                  value: "91.40"
+                  unit: kg
+                  note: morning weigh-in
+                  inserted_at: "2026-04-22T06:45:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/client/weight_entries/{id}:
+    delete:
+      summary: Delete a client weight entry
+      description: >-
+        Removes one weight entry owned by the authenticated client. Used from
+        the client chart point detail sheet when they confirm deletion of a past
+        day. Frontend pattern — close the confirmation dialog, optimistically
+        remove the point locally if desired, and refetch history to redraw the
+        trend line and summary from canonical server data.
+      operationId: deleteClientWeightEntry
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Weight entry deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /v1/businesses:
     post:
       summary: Create business
@@ -1511,9 +1640,9 @@ paths:
         `pending` (once a Client has been linked to a User the link is
         permanent), and pending clients cannot be manually moved to any other
         status — they only reach `active` via the accept-invite flow. Contact
-        fields (first_name, last_name, phone, email, notes) can still be
-        updated on a pending client so the coach can prepare plans/notes before
-        the client accepts. Frontend pattern - patch local form state
+        fields (first_name, last_name, phone, email, notes) and the optional
+        goal weight fields can still be updated on a pending client so the coach
+        can prepare plans/notes before the client accepts. Frontend pattern - patch local form state
         optimistically and reconcile canonical payload from the 200 response.
       operationId: updateClient
       security:
@@ -1535,6 +1664,10 @@ paths:
               change_status:
                 value:
                   status: archived
+              set_goal:
+                value:
+                  goal_weight_value: 88
+                  goal_weight_unit: kg
       responses:
         "200":
           description: Client updated
@@ -1677,6 +1810,75 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/coach/clients/{client_id}/weight_entries:
+    get:
+      summary: List a client's weight entries for the coach view
+      description: >-
+        Returns a single client's weight history, the current goal, the
+        server-computed summary, and a 30-day adherence count for the coach's
+        read-only weight section. Used on the coach client detail page. Frontend
+        pattern — fetch when the weight panel opens, cache by client ID, and
+        refetch after the client logs/deletes a weight or the coach updates the
+        client's goal.
+      operationId: listCoachClientWeightEntries
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: since
+          in: query
+          required: false
+          description: Optional lower bound for date-filtered history.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Client weight history with goal, summary, and adherence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachWeightEntryListResponse"
+              example:
+                entries:
+                  - id: 8c1e14b7-4a7f-4ec6-a15d-c8cba3f750e2
+                    date: "2026-03-01"
+                    value: "95.20"
+                    unit: kg
+                    note: null
+                    inserted_at: "2026-03-01T09:14:12Z"
+                  - id: 946a0b30-8a54-43d2-8d1a-7a55ec2fdf0b
+                    date: "2026-04-20"
+                    value: "91.40"
+                    unit: kg
+                    note: morning weigh-in
+                    inserted_at: "2026-04-20T07:10:00Z"
+                goal:
+                  value: "88.00"
+                  unit: kg
+                summary:
+                  first_entry:
+                    date: "2026-03-01"
+                    value: "95.20"
+                    unit: kg
+                  latest_entry:
+                    date: "2026-04-20"
+                    value: "91.40"
+                    unit: kg
+                  total_change: -3.8
+                  change_unit: kg
+                adherence:
+                  logged_days: 22
+                  window_days: 30
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /v1/coach/foods:
     post:
       summary: Create food
@@ -3487,7 +3689,7 @@ paths:
   /v1/coach/workout_elements:
     post:
       summary: Create workout element
-      description: Adds an exercise block to a workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
+      description: Adds an exercise block to a workout with an inline add-exercise form; frontend sends one entry in planned_sets per set (N identical entries for N sets). Frontend pattern - optimistic append/insert and sync order with the returned payload; show the 422 validation response inline on the form (e.g. empty planned_sets or non-positive load_value).
       operationId: createWorkoutElement
       security:
         - bearerAuth: []
@@ -3503,10 +3705,24 @@ paths:
                   workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                   position: 0
                   exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                  notes: Focus on slow negatives
                   planned_sets:
-                    - target_reps: 5
+                    - target_reps: "8-12"
+                      load_value: 80
                       load_unit: kg
-                      set_type: working
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
       responses:
         "201":
           description: Workout element created
@@ -3542,7 +3758,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update workout element
-      description: Saves changes to exercise selection, ordering, and planned sets from builder interactions. Frontend pattern - optimistic set-row editing with rollback on validation errors.
+      description: Saves changes to exercise selection, ordering, notes, and planned sets from inline edits. The planned_sets array is replaced entirely on each update; changing the Sets count means sending N entries (all identical). Frontend pattern - optimistic edit with rollback on 422.
       operationId: updateWorkoutElement
       security:
         - bearerAuth: []
@@ -3557,14 +3773,20 @@ paths:
             examples:
               default:
                 value:
-                  notes: Top set at RPE 8, then back-off sets.
+                  notes: Pyramid down each set
                   planned_sets:
-                    - target_reps: 5
+                    - target_reps: "8-12"
+                      load_value: 85
                       load_unit: kg
-                      set_type: working
-                    - target_reps: 8
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 85
                       load_unit: kg
-                      set_type: backoff
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 85
+                      load_unit: kg
+                      rest_seconds: 90
       responses:
         "200":
           description: Workout element updated
@@ -4837,6 +5059,13 @@ components:
         phone:
           type: string
           nullable: true
+        goal_weight_value:
+          type: string
+          nullable: true
+        goal_weight_unit:
+          type: string
+          enum: [kg, lbs]
+          nullable: true
         status:
           type: string
           enum: [active, pending, inactive, archived]
@@ -5003,6 +5232,15 @@ components:
           format: email
         notes:
           type: string
+        goal_weight_value:
+          type: number
+          minimum: 0.01
+          maximum: 999.99
+          nullable: true
+        goal_weight_unit:
+          type: string
+          enum: [kg, lbs]
+          nullable: true
         status:
           type: string
           enum: [active, inactive, archived]
@@ -5072,6 +5310,13 @@ components:
           nullable: true
         notes:
           type: string
+          nullable: true
+        goal_weight_value:
+          type: string
+          nullable: true
+        goal_weight_unit:
+          type: string
+          enum: [kg, lbs]
           nullable: true
         status:
           type: string
@@ -6249,15 +6494,29 @@ components:
           format: date-time
     WorkoutElementCreateRequest:
       type: object
-      required: [workout_id, position, exercise_id]
+      required: [workout_id, position, exercise_id, planned_sets]
       example:
         workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
         position: 0
         exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+        notes: Focus on slow negatives
         planned_sets:
-          - target_reps: 5
+          - target_reps: "8-12"
+            load_value: 80
             load_unit: kg
-            set_type: working
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
       properties:
         workout_id:
           type: string
@@ -6272,6 +6531,7 @@ components:
           type: string
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
     WorkoutElementUpdateRequest:
@@ -6287,6 +6547,7 @@ components:
           type: string
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
     WorkoutElementResponse:
@@ -6330,6 +6591,7 @@ components:
           nullable: true
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
         inserted_at:
@@ -6340,6 +6602,7 @@ components:
           format: date-time
     PlannedSet:
       type: object
+      description: One entry per set. All entries for a given exercise are identical - the coach UI exposes a single target per exercise and expands to N identical entries where N is the Sets count.
       properties:
         target_reps:
           type: string
@@ -6347,6 +6610,7 @@ components:
         load_value:
           type: number
           nullable: true
+          exclusiveMinimum: 0
         load_unit:
           type: string
           enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
@@ -6359,18 +6623,17 @@ components:
         rest_seconds:
           type: integer
           nullable: true
+          minimum: 0
         duration_seconds:
           type: integer
           nullable: true
+          minimum: 0
         distance_value:
           type: number
           nullable: true
         distance_unit:
           type: string
           enum: [meters, km, miles, yards, none]
-        set_type:
-          type: string
-          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
         notes:
           type: string
           nullable: true
@@ -6431,8 +6694,7 @@ components:
                 exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
                 exercise_name: Barbell Bench Press
                 planned_sets:
-                  - set_type: working
-                    target_reps: "8-10"
+                  - target_reps: "8-10"
                     load_value: "80"
                     load_unit: kg
                     rest_seconds: 120
@@ -6534,10 +6796,6 @@ components:
                     items:
                       type: object
                       properties:
-                        set_type:
-                          type: string
-                          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
-                          nullable: true
                         target_reps:
                           type: string
                           nullable: true
@@ -8400,6 +8658,119 @@ components:
         data:
           $ref: "#/components/schemas/FoodLogEntry"
 
+    WeightGoal:
+      type: object
+      required: [value, unit]
+      properties:
+        value:
+          type: string
+        unit:
+          type: string
+          enum: [kg, lbs]
+
+    WeightSummaryEntry:
+      type: object
+      required: [date, value, unit]
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          type: string
+        unit:
+          type: string
+          enum: [kg, lbs]
+
+    WeightSummary:
+      type: object
+      required: [first_entry, latest_entry, total_change, change_unit]
+      properties:
+        first_entry:
+          allOf:
+            - $ref: "#/components/schemas/WeightSummaryEntry"
+          nullable: true
+        latest_entry:
+          allOf:
+            - $ref: "#/components/schemas/WeightSummaryEntry"
+          nullable: true
+        total_change:
+          type: number
+          nullable: true
+        change_unit:
+          type: string
+          enum: [kg, lbs]
+          nullable: true
+
+    WeightAdherence:
+      type: object
+      required: [logged_days, window_days]
+      properties:
+        logged_days:
+          type: integer
+        window_days:
+          type: integer
+
+    WeightEntry:
+      type: object
+      required: [id, date, value, unit, inserted_at]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          type: string
+        unit:
+          type: string
+          enum: [kg, lbs]
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+        inserted_at:
+          type: string
+          format: date-time
+
+    WeightEntryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/WeightEntry"
+
+    WeightEntryListResponse:
+      type: object
+      required: [entries, goal, summary]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeightEntry"
+        goal:
+          allOf:
+            - $ref: "#/components/schemas/WeightGoal"
+          nullable: true
+        summary:
+          $ref: "#/components/schemas/WeightSummary"
+
+    CoachWeightEntryListResponse:
+      type: object
+      required: [entries, goal, summary, adherence]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeightEntry"
+        goal:
+          allOf:
+            - $ref: "#/components/schemas/WeightGoal"
+          nullable: true
+        summary:
+          $ref: "#/components/schemas/WeightSummary"
+        adherence:
+          $ref: "#/components/schemas/WeightAdherence"
+
     FoodLogEntryBulkResponse:
       type: object
       required: [data]
@@ -8467,6 +8838,28 @@ components:
         notes:
           type: string
           nullable: true
+
+    CreateWeightEntryRequest:
+      type: object
+      required: [date, value, unit]
+      properties:
+        date:
+          type: string
+          format: date
+          description: >-
+            Client-local calendar date. Future dates beyond one day ahead of server UTC
+            are rejected to allow a timezone buffer for clients ahead of the server.
+        value:
+          type: number
+          minimum: 0.01
+          maximum: 999.99
+        unit:
+          type: string
+          enum: [kg, lbs]
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
 
     UpdateFoodLogEntryRequest:
       type: object

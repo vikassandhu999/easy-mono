@@ -497,12 +497,10 @@ export default function TrainingPlanDetail() {
           ) : null}
         </div>
 
-        {/* Weekly schedule */}
+        {/* Weekly schedule — section header + summary are rendered inside WeeklyOverview */}
         <section className="border-t border-divider py-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h3>
-          </div>
           <WeeklyOverview
+            onScrollToWorkout={setScrollToWorkoutId}
             onWorkoutCreated={setScrollToWorkoutId}
             plan={plan}
           />

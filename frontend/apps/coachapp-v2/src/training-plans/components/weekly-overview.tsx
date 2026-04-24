@@ -7,8 +7,8 @@ import {
   TRAINING_DAY_SHORT_LABELS,
   TRAINING_WEEKDAYS,
 } from '@easy/utils';
-import {Button, Input, toast} from '@heroui/react';
-import {Plus, X} from 'lucide-react';
+import {AlertDialog, Button, Input, Popover, toast} from '@heroui/react';
+import {Check, MoreHorizontal, Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
 import type {TrainingPlan, TrainingPlanItem, TrainingWeekday, Workout} from '@/api/trainingPlans';
@@ -18,15 +18,33 @@ import {
   useCreateTrainingPlanItemMutation,
   useCreateWorkoutMutation,
   useDeleteTrainingPlanItemMutation,
+  useDeleteWorkoutMutation,
+  useDuplicateWorkoutMutation,
   useUpdateTrainingPlanMutation,
 } from '@/api/trainingPlans';
 
+// ── Types ────────────────────────────────────────────────────────────
+
+type DayState = {items: [TrainingPlanItem, ...TrainingPlanItem[]]; kind: 'assigned'} | {kind: 'empty'} | {kind: 'rest'};
+
 type WeeklyOverviewProps = {
+  /**
+   * Called when a workout is created or duplicated from this overview — lets
+   * the parent scroll the Workouts section into view and (on mobile) focus
+   * the freshly created card.
+   */
   onWorkoutCreated: (workoutId: string) => void;
+  /**
+   * Called when the coach taps an assigned-day row. Parent scrolls the
+   * matching `WorkoutSection` into view. There's no separate workout detail
+   * route in this app — the inline section IS the detail view.
+   */
+  onScrollToWorkout: (workoutId: string) => void;
   plan: TrainingPlan;
 };
 
-export default function WeeklyOverview({onWorkoutCreated, plan}: WeeklyOverviewProps) {
+export default function WeeklyOverview({onScrollToWorkout, onWorkoutCreated, plan}: WeeklyOverviewProps) {
+  // Lookup tables computed once per plan change.
   const workoutsById = useMemo(() => {
     const map = new Map<string, Workout>();
     for (const workout of plan.workouts) {
@@ -51,42 +69,80 @@ export default function WeeklyOverview({onWorkoutCreated, plan}: WeeklyOverviewP
 
   const restDays = useMemo(() => new Set(plan.rest_days), [plan.rest_days]);
 
+  // Per-day state derivation. Assigned takes precedence over rest — if a day
+  // has plan items AND is in rest_days we render it as assigned (backend
+  // shouldn't allow that combination, but defensive).
+  const dayStates = useMemo<Map<TrainingWeekday, DayState>>(() => {
+    const map = new Map<TrainingWeekday, DayState>();
+    for (const day of TRAINING_WEEKDAYS) {
+      const items = planItemsByDay.get(day) ?? [];
+      const [first, ...rest] = items;
+      if (first) {
+        // Destructuring lets TS narrow to a non-empty tuple without an
+        // `unknown` cast. `rest` collects any alternatives after the first.
+        map.set(day, {items: [first, ...rest], kind: 'assigned'});
+      } else if (restDays.has(day)) {
+        map.set(day, {kind: 'rest'});
+      } else {
+        map.set(day, {kind: 'empty'});
+      }
+    }
+    return map;
+  }, [planItemsByDay, restDays]);
+
+  // Summary for the section header.
+  const summary = useMemo(() => {
+    let workouts = 0;
+    let rest = 0;
+    let empty = 0;
+    for (const state of dayStates.values()) {
+      if (state.kind === 'assigned') workouts += 1;
+      else if (state.kind === 'rest') rest += 1;
+      else empty += 1;
+    }
+    return {empty, rest, workouts};
+  }, [dayStates]);
+
+  // One row can be expanded at a time (shows the Assign / Create / Copy
+  // sub-UI). Collapsing on day change keeps the list compact.
+  const [expandedDay, setExpandedDay] = useState<null | {day: TrainingWeekday; mode: ExpandedMode}>(null);
+
+  const toggleExpand = (day: TrainingWeekday, mode: ExpandedMode) => {
+    setExpandedDay((prev) => (prev?.day === day && prev.mode === mode ? null : {day, mode}));
+  };
+
+  const closeExpand = () => setExpandedDay(null);
+
   return (
     <div className="min-w-0">
+      {/* Section header: title + summary. Stacked on mobile, inline on desktop. */}
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly schedule</h3>
+        <p className="text-xs text-foreground-400">
+          {summary.workouts} workout{summary.workouts !== 1 ? 's' : ''} · {summary.rest} rest
+          {summary.rest !== 1 ? ' days' : ' day'} · {summary.empty} empty
+        </p>
+      </div>
+
+      {/* Single outer container, 7 rows stacked inside. */}
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
-        {TRAINING_WEEKDAYS.map((day) => {
-          const dayItems = planItemsByDay.get(day) ?? [];
-
-          if (dayItems.length > 0) {
-            return (
-              <ScheduledDayRow
-                day={day}
-                items={dayItems}
-                key={day}
-                onWorkoutCreated={onWorkoutCreated}
-                plan={plan}
-                workoutsById={workoutsById}
-              />
-            );
-          }
-
-          if (restDays.has(day)) {
-            return (
-              <RestDayRow
-                day={day}
-                key={day}
-                plan={plan}
-                restDays={restDays}
-              />
-            );
-          }
-
+        {TRAINING_WEEKDAYS.map((day, index) => {
+          const state = dayStates.get(day)!;
+          const isLast = index === TRAINING_WEEKDAYS.length - 1;
+          const expanded = expandedDay?.day === day ? expandedDay.mode : null;
           return (
-            <EmptyDayRow
+            <DayRow
               day={day}
+              expanded={expanded}
+              isLast={isLast}
               key={day}
+              onCloseExpand={closeExpand}
+              onScrollToWorkout={onScrollToWorkout}
+              onToggleExpand={(mode) => toggleExpand(day, mode)}
               onWorkoutCreated={onWorkoutCreated}
               plan={plan}
+              state={state}
+              workoutsById={workoutsById}
             />
           );
         })}
@@ -95,295 +151,732 @@ export default function WeeklyOverview({onWorkoutCreated, plan}: WeeklyOverviewP
   );
 }
 
-type ScheduledDayRowProps = {
+// ── Row ──────────────────────────────────────────────────────────────
+
+type ExpandedMode = 'assign' | 'copy-from' | 'copy-to' | 'create';
+
+type DayRowProps = {
   day: TrainingWeekday;
-  items: TrainingPlanItem[];
+  expanded: ExpandedMode | null;
+  isLast: boolean;
+  onCloseExpand: () => void;
+  onScrollToWorkout: (workoutId: string) => void;
+  onToggleExpand: (mode: ExpandedMode) => void;
   onWorkoutCreated: (workoutId: string) => void;
   plan: TrainingPlan;
+  state: DayState;
   workoutsById: Map<string, Workout>;
 };
 
-function ScheduledDayRow({day, items, onWorkoutCreated, plan, workoutsById}: ScheduledDayRowProps) {
+function DayRow({
+  day,
+  expanded,
+  isLast,
+  onCloseExpand,
+  onScrollToWorkout,
+  onToggleExpand,
+  onWorkoutCreated,
+  plan,
+  state,
+  workoutsById,
+}: DayRowProps) {
+  const isRest = state.kind === 'rest';
+  const containerClasses = [
+    isLast ? '' : 'border-b border-divider',
+    // Rest days get a subtle tint so they read as "no action needed" at a glance.
+    isRest ? 'bg-content2/50' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className="border-b border-divider px-4 py-3 last:border-b-0">
-      <div className="flex items-start gap-3">
-        <span className="w-10 shrink-0 pt-1 text-xs font-medium text-foreground-400">
-          {TRAINING_DAY_SHORT_LABELS[day]}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-2">
-            {items.map((item) => {
-              const workout = workoutsById.get(item.workout_id);
-              return (
-                <ScheduledWorkoutRow
-                  item={item}
-                  key={item.id}
-                  workout={workout}
-                />
-              );
-            })}
-          </div>
-          <div className="mt-3">
-            <DayAssignmentPanel
-              day={day}
-              onWorkoutCreated={onWorkoutCreated}
-              plan={plan}
-            />
-          </div>
+    <div className={containerClasses}>
+      <RowGrid
+        day={day}
+        onScrollToWorkout={onScrollToWorkout}
+        onToggleExpand={onToggleExpand}
+        onWorkoutCreated={onWorkoutCreated}
+        plan={plan}
+        state={state}
+        workoutsById={workoutsById}
+      />
+      {expanded ? (
+        <div className="border-t border-divider/60 bg-content2/40 px-3 py-3 sm:px-4">
+          <ExpandedPanel
+            day={day}
+            mode={expanded}
+            onClose={onCloseExpand}
+            onWorkoutCreated={onWorkoutCreated}
+            plan={plan}
+            state={state}
+          />
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
 
-function ScheduledWorkoutRow({item, workout}: {item: TrainingPlanItem; workout: undefined | Workout}) {
-  const [deletePlanItem, {isLoading}] = useDeleteTrainingPlanItemMutation();
-  const isMissing = !workout;
-  // Only show the slot label when it's an alternative; primary is the default
-  // and spelling it out is noise.
-  const showAlternative = item.workout_type === 'alternative';
-  const exerciseCount = workout ? workout.workout_elements.length : 0;
+// ── Row grid (3 columns: day / content / actions) ────────────────────
 
-  return (
-    <div
-      className={[
-        'flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2',
-        isMissing ? 'border-danger/30 bg-danger/5' : 'border-divider bg-content2',
-      ].join(' ')}
-    >
-      <div className="min-w-0 flex-1">
-        <p className={['truncate text-sm font-medium', isMissing ? 'text-danger' : ''].join(' ')}>
-          {workout?.name ?? 'Missing workout'}
-        </p>
-        <p className="text-xs text-foreground-500">
-          {isMissing
-            ? 'Workout was removed — remove this assignment.'
-            : [showAlternative ? 'Alternative' : null, `${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}`]
-                .filter(Boolean)
-                .join(' · ')}
-        </p>
-      </div>
-      <Button
-        aria-label="Remove workout from day"
-        isDisabled={isLoading}
-        isIconOnly
-        isPending={isLoading}
-        onPress={async () => {
-          try {
-            await deletePlanItem({id: item.id, planId: item.training_plan_id}).unwrap();
-          } catch {
-            toast.danger('Failed to remove workout from day.');
-          }
-        }}
-        size="sm"
-        variant="ghost"
-      >
-        <X size={14} />
-      </Button>
-    </div>
-  );
-}
-
-type RestDayRowProps = {
+type RowGridProps = {
   day: TrainingWeekday;
-  plan: TrainingPlan;
-  restDays: Set<TrainingWeekday>;
-};
-
-function RestDayRow({day, plan, restDays}: RestDayRowProps) {
-  const [updatePlan, {isLoading}] = useUpdateTrainingPlanMutation();
-
-  return (
-    <div className="border-b border-divider px-4 py-3 last:border-b-0">
-      <div className="flex min-h-11 items-center gap-3">
-        <span className="w-10 shrink-0 text-xs font-medium text-foreground-400">{TRAINING_DAY_SHORT_LABELS[day]}</span>
-        <span className="flex-1 text-sm text-foreground-400">Rest</span>
-        <Button
-          isDisabled={isLoading}
-          onPress={async () => {
-            // Dedupe defensively — backend rejects duplicate entries in rest_days.
-            const next = [...new Set([...restDays].filter((value) => value !== day))].sort(compareTrainingWeekdays);
-            try {
-              await updatePlan({
-                id: plan.id,
-                body: {rest_days: next},
-              }).unwrap();
-            } catch {
-              toast.danger('Failed to update rest days.');
-            }
-          }}
-          size="sm"
-          variant="ghost"
-        >
-          Clear
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-type EmptyDayRowProps = {
-  day: TrainingWeekday;
+  onScrollToWorkout: (workoutId: string) => void;
+  onToggleExpand: (mode: ExpandedMode) => void;
   onWorkoutCreated: (workoutId: string) => void;
   plan: TrainingPlan;
+  state: DayState;
+  workoutsById: Map<string, Workout>;
 };
 
-function EmptyDayRow({day, onWorkoutCreated, plan}: EmptyDayRowProps) {
-  const [updatePlan, {isLoading: isUpdatingRest}] = useUpdateTrainingPlanMutation();
+function RowGrid({day, onScrollToWorkout, onToggleExpand, onWorkoutCreated, plan, state, workoutsById}: RowGridProps) {
+  // Row tap behavior varies by state. The row itself acts as the primary
+  // tap target on assigned and empty days.
+  const handleRowTap = () => {
+    if (state.kind === 'empty') {
+      onToggleExpand('assign');
+      return;
+    }
+    if (state.kind === 'assigned') {
+      // Scroll to the first workout on this day (multiple workouts per day is
+      // supported by the data model — primary + alternatives — but the UI
+      // rarely has more than one). Tapping the row always jumps to the
+      // primary workout section if present.
+      const primary = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
+      if (primary) onScrollToWorkout(primary.workout_id);
+    }
+    // Rest day taps are no-ops — action only via overflow menu.
+  };
 
+  const isInteractive = state.kind !== 'rest';
+  const dayLabel = TRAINING_DAY_SHORT_LABELS[day];
+
+  // Structure note: nesting <button> inside <button> is invalid HTML. We use
+  // a grid container where the tappable area is a separate <button> spanning
+  // the day + content columns, and the actions sit in their own column as a
+  // sibling. This also cleanly satisfies the click-to-open-workout intent
+  // without needing event.stopPropagation() hacks.
   return (
-    <div className="border-b border-divider px-4 py-3 last:border-b-0">
-      <div className="flex items-start gap-3">
-        <span className="w-10 shrink-0 pt-1 text-xs font-medium text-foreground-400">
-          {TRAINING_DAY_SHORT_LABELS[day]}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm text-foreground-400">No workout assigned</p>
-          <div className="mt-3">
-            <DayAssignmentPanel
-              day={day}
-              onWorkoutCreated={onWorkoutCreated}
-              plan={plan}
+    <div className="grid min-h-[56px] grid-cols-[40px_1fr_auto] items-center gap-2.5 px-3 sm:grid-cols-[60px_1fr_auto] sm:gap-4 sm:px-4">
+      {/* Day label + content are the tap target on empty/assigned days. Rest
+          days render the same markup as a non-interactive span for layout
+          consistency. */}
+      {isInteractive ? (
+        <button
+          aria-label={
+            state.kind === 'empty'
+              ? `${TRAINING_DAY_LABELS[day]} — add workout`
+              : `${TRAINING_DAY_LABELS[day]} — open workout`
+          }
+          className="col-span-2 grid grid-cols-subgrid items-center gap-2.5 py-2 text-left transition-colors hover:bg-content2/60 focus-visible:bg-content2/60 focus-visible:outline-none sm:gap-4"
+          onClick={handleRowTap}
+          type="button"
+        >
+          <span className="text-center text-[13px] font-medium text-foreground">{dayLabel}</span>
+          <div className="min-w-0">
+            <RowContent
+              state={state}
+              workoutsById={workoutsById}
             />
           </div>
+        </button>
+      ) : (
+        <>
+          <span className="text-center text-[13px] font-medium text-foreground-400">{dayLabel}</span>
+          <div className="min-w-0">
+            <RowContent
+              state={state}
+              workoutsById={workoutsById}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Actions column — sibling of the tap target, so button clicks here
+          don't bubble into the row-open handler. */}
+      <div className="flex shrink-0 items-center justify-end gap-1">
+        <RowActions
+          day={day}
+          onToggleExpand={onToggleExpand}
+          onWorkoutCreated={onWorkoutCreated}
+          plan={plan}
+          state={state}
+          workoutsById={workoutsById}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RowContent({state, workoutsById}: {state: DayState; workoutsById: Map<string, Workout>}) {
+  if (state.kind === 'empty') {
+    return <span className="text-sm text-foreground-300">—</span>;
+  }
+
+  if (state.kind === 'rest') {
+    return <span className="text-sm italic text-foreground-400">Rest day</span>;
+  }
+
+  // Assigned — if there are multiple workouts on the day (primary +
+  // alternatives), show primary as the headline and count alternatives in
+  // the subtitle.
+  const primary = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
+  const alternatives = state.items.filter((it) => it.id !== primary.id);
+  const workout = workoutsById.get(primary.workout_id);
+  const isMissing = !workout;
+  const exerciseCount = workout ? workout.workout_elements.length : 0;
+  const isIncomplete = !isMissing && exerciseCount === 0;
+
+  return (
+    <div className="min-w-0">
+      <p className={['truncate text-sm font-medium', isMissing ? 'text-danger' : ''].join(' ')}>
+        {workout?.name ?? 'Missing workout'}
+      </p>
+      <p
+        className={[
+          'truncate text-xs',
+          isMissing ? 'text-danger' : isIncomplete ? 'text-warning' : 'text-foreground-400',
+        ].join(' ')}
+      >
+        {isMissing
+          ? 'Workout was removed'
+          : isIncomplete
+            ? 'No exercises yet'
+            : `${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}${
+                alternatives.length > 0 ? ` · +${alternatives.length} alt` : ''
+              }`}
+      </p>
+    </div>
+  );
+}
+
+function RowActions({
+  day,
+  onToggleExpand,
+  onWorkoutCreated,
+  plan,
+  state,
+  workoutsById,
+}: {
+  day: TrainingWeekday;
+  onToggleExpand: (mode: ExpandedMode) => void;
+  onWorkoutCreated: (workoutId: string) => void;
+  plan: TrainingPlan;
+  state: DayState;
+  workoutsById: Map<string, Workout>;
+}) {
+  if (state.kind === 'empty') {
+    // Mobile: icon-only `+` button. Desktop: text button.
+    return (
+      <Button
+        aria-label={`Add workout to ${TRAINING_DAY_LABELS[day]}`}
+        className="min-h-11"
+        onPress={() => onToggleExpand('assign')}
+        size="sm"
+        variant="secondary"
+      >
+        <Plus size={16} />
+        <span className="hidden sm:inline">Add workout</span>
+      </Button>
+    );
+  }
+
+  // Assigned or rest: only `⋯` overflow menu.
+  return (
+    <DayOverflowMenu
+      day={day}
+      onToggleExpand={onToggleExpand}
+      onWorkoutCreated={onWorkoutCreated}
+      plan={plan}
+      state={state}
+      workoutsById={workoutsById}
+    />
+  );
+}
+
+// ── Overflow menu (⋯) ────────────────────────────────────────────────
+
+type OverflowMenuProps = {
+  day: TrainingWeekday;
+  onToggleExpand: (mode: ExpandedMode) => void;
+  onWorkoutCreated: (workoutId: string) => void;
+  plan: TrainingPlan;
+  state: DayState;
+  workoutsById: Map<string, Workout>;
+};
+
+function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, workoutsById}: OverflowMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<'delete' | 'mark-rest' | null>(null);
+
+  const [deletePlanItem, {isLoading: isUnassigning}] = useDeleteTrainingPlanItemMutation();
+  const [deleteWorkout, {isLoading: isDeleting}] = useDeleteWorkoutMutation();
+  const [duplicateWorkout, {isLoading: isDuplicating}] = useDuplicateWorkoutMutation();
+  const [updatePlan, {isLoading: isUpdatingRest}] = useUpdateTrainingPlanMutation();
+
+  // State values used in menus / dialogs. Computed once per render.
+  const primaryItem = state.kind === 'assigned' ? state.items[0] : null;
+  const primaryWorkout = primaryItem ? (workoutsById.get(primaryItem.workout_id) ?? null) : null;
+
+  const close = () => setIsOpen(false);
+
+  // Open the inline expanded section with the workout focus. We reuse the
+  // 'copy-to' mode for "Copy to another day" and 'create' mode for the
+  // name-your-new-workout form.
+  const handleCopyToAnotherDay = () => {
+    close();
+    onToggleExpand('copy-to');
+  };
+
+  const handleDuplicate = async () => {
+    if (!primaryItem) return;
+    close();
+    try {
+      const result = await duplicateWorkout({id: primaryItem.workout_id, planId: plan.id}).unwrap();
+      toast.success(`Duplicated ${primaryWorkout?.name ?? 'workout'}`);
+      onWorkoutCreated(result.data.id);
+    } catch {
+      toast.danger('Failed to duplicate workout.');
+    }
+  };
+
+  const handleUnassign = async () => {
+    if (!primaryItem) return;
+    close();
+    try {
+      await deletePlanItem({id: primaryItem.id, planId: primaryItem.training_plan_id}).unwrap();
+    } catch {
+      toast.danger('Failed to unassign workout.');
+    }
+  };
+
+  const handleClearRest = async () => {
+    close();
+    const next = [...new Set(plan.rest_days.filter((value) => value !== day))].sort(compareTrainingWeekdays);
+    try {
+      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+    } catch {
+      toast.danger('Failed to clear rest day.');
+    }
+  };
+
+  const handleConfirmMarkRest = async () => {
+    // Unassign all items on the day, then add to rest_days.
+    if (state.kind !== 'assigned') return;
+    try {
+      for (const item of state.items) {
+        await deletePlanItem({id: item.id, planId: item.training_plan_id}).unwrap();
+      }
+      const next = [...new Set([day, ...plan.rest_days])].sort(compareTrainingWeekdays);
+      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+      setConfirmKind(null);
+    } catch {
+      toast.danger('Failed to mark rest day.');
+      setConfirmKind(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!primaryItem) return;
+    try {
+      await deleteWorkout({id: primaryItem.workout_id, planId: plan.id}).unwrap();
+      setConfirmKind(null);
+    } catch {
+      toast.danger('Failed to delete workout.');
+      setConfirmKind(null);
+    }
+  };
+
+  return (
+    <>
+      <Popover
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+      >
+        <Popover.Trigger>
           <Button
-            className="mt-2"
-            isDisabled={isUpdatingRest}
-            onPress={async () => {
-              // Dedupe defensively — branch guard above already excludes days
-              // that have plan items, but a Set keeps this safe against cache
-              // staleness and the backend's duplicate-rejection rule.
-              const next = [...new Set([day, ...plan.rest_days])].sort(compareTrainingWeekdays);
-              try {
-                await updatePlan({
-                  id: plan.id,
-                  body: {rest_days: next},
-                }).unwrap();
-              } catch {
-                toast.danger('Failed to mark rest day.');
-              }
-            }}
+            aria-label={`More actions for ${TRAINING_DAY_LABELS[day]}`}
+            className="min-h-11"
+            isIconOnly
+            isPending={isUnassigning || isDeleting || isDuplicating || isUpdatingRest}
             size="sm"
             variant="ghost"
           >
-            Mark rest day
+            <MoreHorizontal size={18} />
           </Button>
-        </div>
-      </div>
-    </div>
+        </Popover.Trigger>
+        <Popover.Content
+          className="min-w-[240px] p-1"
+          placement="bottom end"
+        >
+          <Popover.Dialog className="outline-none">
+            {/* Context header — so the coach knows which day/workout they're acting on */}
+            <div className="px-3 py-2 text-xs text-foreground-400">
+              {TRAINING_DAY_LABELS[day]}
+              {primaryWorkout ? ` · ${primaryWorkout.name}` : ''}
+            </div>
+            <div className="h-px bg-divider" />
+
+            {state.kind === 'assigned' ? (
+              <>
+                <MenuItem
+                  label="Edit workout"
+                  onSelect={() => {
+                    close();
+                    // Scroll handled by parent's primary row-tap; here we
+                    // just close the menu. The inline section below the
+                    // schedule is always visible so there's no separate
+                    // route to navigate to.
+                  }}
+                />
+                <MenuItem
+                  isPending={isDuplicating}
+                  label="Duplicate workout"
+                  onSelect={() => {
+                    handleDuplicate().catch(() => {
+                      /* handled inside handleDuplicate */
+                    });
+                  }}
+                />
+                <MenuItem
+                  label="Copy to another day…"
+                  onSelect={handleCopyToAnotherDay}
+                />
+                <MenuItem
+                  isPending={isUnassigning}
+                  label="Unassign from this day"
+                  onSelect={() => {
+                    handleUnassign().catch(() => {
+                      /* handled inside handleUnassign */
+                    });
+                  }}
+                />
+                <MenuItem
+                  label="Mark as rest day"
+                  onSelect={() => {
+                    close();
+                    setConfirmKind('mark-rest');
+                  }}
+                />
+                <div className="my-1 h-px bg-divider" />
+                <MenuItem
+                  isDestructive
+                  label="Delete workout"
+                  onSelect={() => {
+                    close();
+                    setConfirmKind('delete');
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <MenuItem
+                  isPending={isUpdatingRest}
+                  label="Clear rest day"
+                  onSelect={() => {
+                    handleClearRest().catch(() => {
+                      /* handled inside handleClearRest */
+                    });
+                  }}
+                />
+              </>
+            )}
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+
+      {/* Mark-rest confirmation */}
+      {confirmKind === 'mark-rest' && state.kind === 'assigned' ? (
+        <ConfirmDialog
+          confirmLabel="Mark as rest"
+          description={`Unassign ${primaryWorkout?.name ?? 'workout'} and mark ${TRAINING_DAY_LABELS[day]} as rest?`}
+          isDestructive={false}
+          isPending={isUnassigning || isUpdatingRest}
+          onCancel={() => setConfirmKind(null)}
+          onConfirm={handleConfirmMarkRest}
+          title="Mark rest day?"
+        />
+      ) : null}
+
+      {/* Delete workout confirmation */}
+      {confirmKind === 'delete' && primaryWorkout ? (
+        <ConfirmDialog
+          confirmLabel={isDeleting ? 'Deleting…' : 'Delete'}
+          description={
+            <>
+              Delete <strong>{primaryWorkout.name}</strong>? This will remove it from every day it&apos;s assigned to,
+              along with all {primaryWorkout.workout_elements.length} exercise
+              {primaryWorkout.workout_elements.length !== 1 ? 's' : ''}. This action cannot be undone.
+            </>
+          }
+          isDestructive
+          isPending={isDeleting}
+          onCancel={() => setConfirmKind(null)}
+          onConfirm={handleConfirmDelete}
+          title="Delete workout?"
+        />
+      ) : null}
+    </>
   );
 }
 
-type DayAssignmentPanelProps = {
+// ── Menu item ────────────────────────────────────────────────────────
+
+function MenuItem({
+  isDestructive,
+  isPending,
+  label,
+  onSelect,
+}: {
+  isDestructive?: boolean;
+  isPending?: boolean;
+  label: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className={[
+        'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-sm transition-colors',
+        'hover:bg-content2 active:bg-content2',
+        isDestructive ? 'text-danger' : '',
+        isPending ? 'opacity-60' : '',
+      ].join(' ')}
+      disabled={isPending}
+      onClick={onSelect}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
+// ── Confirm dialog (imperatively opened) ─────────────────────────────
+//
+// AlertDialog in HeroUI works with a `<Button>` trigger, but our menu needs
+// to close the popover before showing the dialog. We open it imperatively
+// via a mount-controlled wrapper: rendering this component opens the
+// dialog, unmounting it closes it. The `defaultOpen` pattern below uses an
+// internal effect to open-on-mount.
+
+function ConfirmDialog({
+  confirmLabel,
+  description,
+  isDestructive,
+  isPending,
+  onCancel,
+  onConfirm,
+  title,
+}: {
+  confirmLabel: string;
+  description: React.ReactNode;
+  isDestructive?: boolean;
+  isPending?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  title: string;
+}) {
+  // The caller conditionally mounts this component, so `defaultOpen` + the
+  // unmount-on-close pattern is enough — no manual keying needed.
+  return (
+    <AlertDialog
+      defaultOpen
+      onOpenChange={(open) => {
+        if (!open && !isPending) onCancel();
+      }}
+    >
+      {/* AlertDialog expects a trigger child but we drive it with
+          `defaultOpen`. A visually hidden span keeps the component tree
+          valid without a tabbable trigger. */}
+      <span className="hidden" />
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-[420px]">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              {isDestructive ? <AlertDialog.Icon status="danger" /> : null}
+              <AlertDialog.Heading>{title}</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>{description}</p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                onPress={onCancel}
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isPending}
+                onPress={onConfirm}
+                variant={isDestructive ? 'danger' : 'primary'}
+              >
+                {confirmLabel}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
+  );
+}
+
+// ── Expanded panel (assign / create / copy-to / copy-from) ───────────
+
+function ExpandedPanel({
+  day,
+  mode,
+  onClose,
+  onWorkoutCreated,
+  plan,
+  state,
+}: {
   day: TrainingWeekday;
+  mode: ExpandedMode;
+  onClose: () => void;
   onWorkoutCreated: (workoutId: string) => void;
   plan: TrainingPlan;
-};
+  state: DayState;
+}) {
+  if (mode === 'assign' && state.kind === 'empty') {
+    return (
+      <AssignPanel
+        day={day}
+        onClose={onClose}
+        onWorkoutCreated={onWorkoutCreated}
+        plan={plan}
+      />
+    );
+  }
 
-function DayAssignmentPanel({day, onWorkoutCreated, plan}: DayAssignmentPanelProps) {
+  if (mode === 'create' && state.kind === 'empty') {
+    return (
+      <CreateWorkoutPanel
+        day={day}
+        onClose={onClose}
+        onWorkoutCreated={onWorkoutCreated}
+        plan={plan}
+      />
+    );
+  }
+
+  if (mode === 'copy-to' && state.kind === 'assigned') {
+    return (
+      <CopyToPanel
+        day={day}
+        onClose={onClose}
+        plan={plan}
+        state={state}
+      />
+    );
+  }
+
+  return null;
+}
+
+// ── Assign existing / Create new / Mark rest / Copy from another day ─
+//
+// The empty-day expanded UI hosts all four options in a single panel:
+//   1. List of existing workouts (tap to assign)
+//   2. "Create new workout" — switches to CreateWorkoutPanel inline
+//   3. "Mark as rest day" — button
+//   4. "Copy from another day…" — button that expands the list of assigned days
+
+function AssignPanel({
+  day,
+  onClose,
+  onWorkoutCreated,
+  plan,
+}: {
+  day: TrainingWeekday;
+  onClose: () => void;
+  onWorkoutCreated: (workoutId: string) => void;
+  plan: TrainingPlan;
+}) {
   const [createPlanItem, {isLoading: isAssigning}] = useCreateTrainingPlanItemMutation();
-  const [createWorkout, {isLoading: isCreatingWorkout}] = useCreateWorkoutMutation();
-  const [mode, setMode] = useState<'assign' | 'create' | null>(null);
-  const [name, setName] = useState('');
-  // Inline error banner surfaced when the backend rejects the create for
-  // uniqueness — keyed on `training_plan_id` under the hood, see
-  // `parsePlanItemValidationError`.
+  const [updatePlan, {isLoading: isMarkingRest}] = useUpdateTrainingPlanMutation();
+  const [showCreate, setShowCreate] = useState(false);
+  const [showCopyFrom, setShowCopyFrom] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<null | string>(null);
 
   const workouts = useMemo(() => [...plan.workouts].sort((a, b) => a.name.localeCompare(b.name)), [plan.workouts]);
 
-  // This panel only sends `workout_type: 'primary'`. If the day already has a
-  // primary plan item we pre-emptively disable create paths — the client view
-  // matches the backend's uniqueness rule instead of optimistically racing it.
-  const hasPrimaryOnThisDay = useMemo(
-    () => plan.plan_items.some((item) => item.day === day && item.workout_type === 'primary'),
-    [plan.plan_items, day],
-  );
-
-  // `createWorkout` → `createPlanItem` is two sequential mutations. A second click
-  // between them would create an orphan workout (no plan item pointing at it),
-  // so this flag gates both the button and the Enter-key path.
-  const isBusy = isCreatingWorkout || isAssigning;
-
-  const handleCreateAndAssign = async () => {
-    if (!name.trim() || isBusy) return;
-    setConflictMessage(null);
-
-    try {
-      const workoutResult = await createWorkout({
-        planId: plan.id,
-        body: {name: name.trim()},
-      }).unwrap();
-
-      try {
-        await createPlanItem({
-          planId: plan.id,
-          body: {day, workout_id: workoutResult.data.id, workout_type: 'primary'},
-        }).unwrap();
-
-        setName('');
-        setMode(null);
-        onWorkoutCreated(workoutResult.data.id);
-      } catch (planItemErr) {
-        const parsed = parsePlanItemValidationError(planItemErr, {day, workout_type: 'primary'});
-        if (parsed?.kind === 'conflict') {
-          // Workout was created; only the scheduling failed. Still call
-          // onWorkoutCreated so the new workout is visible in the library.
-          setConflictMessage(parsed.message);
-          onWorkoutCreated(workoutResult.data.id);
-        } else {
-          toast.danger('Failed to assign workout to this day.');
-        }
+  // Days that already have an assigned workout — targets for "copy from".
+  const assignedDays = useMemo(() => {
+    const map = new Map<TrainingWeekday, TrainingPlanItem>();
+    for (const item of plan.plan_items) {
+      if (item.workout_type === 'primary' && !map.has(item.day)) {
+        map.set(item.day, item);
       }
-    } catch {
-      toast.danger('Failed to create workout.');
+    }
+    return [...map.entries()].filter(([d]) => d !== day).sort(([a], [b]) => compareTrainingWeekdays(a, b));
+  }, [plan.plan_items, day]);
+
+  const handleAssign = async (workoutId: string) => {
+    setConflictMessage(null);
+    try {
+      await createPlanItem({
+        planId: plan.id,
+        body: {day, workout_id: workoutId, workout_type: 'primary'},
+      }).unwrap();
+      onClose();
+    } catch (err) {
+      const parsed = parsePlanItemValidationError(err, {day, workout_type: 'primary'});
+      if (parsed?.kind === 'conflict') {
+        setConflictMessage(parsed.message);
+      } else {
+        toast.danger('Failed to assign workout.');
+      }
     }
   };
 
-  if (mode === 'assign') {
+  const handleMarkRest = async () => {
+    const next = [...new Set([day, ...plan.rest_days])].sort(compareTrainingWeekdays);
+    try {
+      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+      onClose();
+    } catch {
+      toast.danger('Failed to mark rest day.');
+    }
+  };
+
+  if (showCreate) {
     return (
-      <div className="rounded-lg border border-dashed border-divider p-3">
-        <p className="mb-2 text-xs text-foreground-400">Assign an existing workout to {TRAINING_DAY_LABELS[day]}.</p>
-        {/*
-          When a primary already exists on this day, surface a warning up front
-          instead of letting every button fail with the same 422. The buttons
-          stay clickable as a safety net against stale cache.
-        */}
-        {hasPrimaryOnThisDay ? (
-          <p className="mb-2 rounded-md border border-warning/30 bg-warning/5 px-2 py-1 text-xs text-foreground-600">
-            {TRAINING_DAY_LABELS[day]} already has a primary workout. Remove it first to assign a different one.
-          </p>
-        ) : null}
-        {conflictMessage ? (
-          <p className="mb-2 rounded-md border border-danger/30 bg-danger/5 px-2 py-1 text-xs text-danger">
-            {conflictMessage}
-          </p>
-        ) : null}
-        {workouts.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+      <CreateWorkoutPanel
+        day={day}
+        onClose={onClose}
+        onWorkoutCreated={onWorkoutCreated}
+        plan={plan}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-foreground-400">Add to {TRAINING_DAY_LABELS[day]}</p>
+
+      {conflictMessage ? (
+        <p className="rounded-md border border-danger/30 bg-danger/5 px-2 py-1.5 text-xs text-danger">
+          {conflictMessage}
+        </p>
+      ) : null}
+
+      {/* Existing workouts — tap to assign */}
+      {workouts.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-foreground-400">Assign existing</p>
+          <div className="flex flex-wrap gap-1.5">
             {workouts.map((workout) => {
               const usedOnDays = getWorkoutUsedOnDays(plan.plan_items, workout.id);
               const usage = formatUsedOnDays(usedOnDays);
               return (
                 <Button
+                  className="min-h-11"
                   isDisabled={isAssigning}
                   key={workout.id}
-                  onPress={async () => {
-                    setConflictMessage(null);
-                    try {
-                      await createPlanItem({
-                        planId: plan.id,
-                        body: {day, workout_id: workout.id, workout_type: 'primary'},
-                      }).unwrap();
-                      setMode(null);
-                    } catch (err) {
-                      const parsed = parsePlanItemValidationError(err, {day, workout_type: 'primary'});
-                      if (parsed?.kind === 'conflict') {
-                        setConflictMessage(parsed.message);
-                      } else {
-                        toast.danger('Failed to assign workout.');
-                      }
-                    }
+                  onPress={() => {
+                    handleAssign(workout.id).catch(() => {
+                      /* handled inside handleAssign */
+                    });
                   }}
                   size="sm"
                   variant="secondary"
@@ -394,27 +887,182 @@ function DayAssignmentPanel({day, onWorkoutCreated, plan}: DayAssignmentPanelPro
               );
             })}
           </div>
-        ) : (
-          <p className="text-xs text-foreground-400">No workouts yet. Create one first.</p>
-        )}
-        <div className="mt-3 flex gap-2">
+        </div>
+      ) : null}
+
+      {/* Secondary actions */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          className="min-h-11"
+          isDisabled={isAssigning}
+          onPress={() => setShowCreate(true)}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={14} />
+          Create new workout
+        </Button>
+        <Button
+          className="min-h-11"
+          isDisabled={isAssigning || isMarkingRest}
+          isPending={isMarkingRest}
+          onPress={() => {
+            handleMarkRest().catch(() => {
+              /* handled inside handleMarkRest */
+            });
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          Mark as rest day
+        </Button>
+        {assignedDays.length > 0 ? (
           <Button
+            className="min-h-11"
             isDisabled={isAssigning}
-            onPress={() => {
-              setConflictMessage(null);
-              setMode('create');
-            }}
+            onPress={() => setShowCopyFrom((v) => !v)}
             size="sm"
             variant="ghost"
           >
-            Create new workout
+            {showCopyFrom ? 'Hide copy from…' : 'Copy from another day…'}
+          </Button>
+        ) : null}
+        <Button
+          className="min-h-11"
+          isDisabled={isAssigning}
+          onPress={onClose}
+          size="sm"
+          variant="ghost"
+        >
+          Cancel
+        </Button>
+      </div>
+
+      {/* Copy-from source list */}
+      {showCopyFrom ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-foreground-400">Copy from</p>
+          <div className="flex flex-wrap gap-1.5">
+            {assignedDays.map(([srcDay, item]) => {
+              const workout = plan.workouts.find((w) => w.id === item.workout_id);
+              if (!workout) return null;
+              return (
+                <Button
+                  className="min-h-11"
+                  isDisabled={isAssigning}
+                  key={srcDay}
+                  onPress={() => {
+                    handleAssign(workout.id).catch(() => {
+                      /* handled inside handleAssign */
+                    });
+                  }}
+                  size="sm"
+                  variant="secondary"
+                >
+                  {TRAINING_DAY_SHORT_LABELS[srcDay]} · {workout.name}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Create new workout inline ────────────────────────────────────────
+
+function CreateWorkoutPanel({
+  day,
+  onClose,
+  onWorkoutCreated,
+  plan,
+}: {
+  day: TrainingWeekday;
+  onClose: () => void;
+  onWorkoutCreated: (workoutId: string) => void;
+  plan: TrainingPlan;
+}) {
+  const [createWorkout, {isLoading: isCreating}] = useCreateWorkoutMutation();
+  const [createPlanItem, {isLoading: isAssigning}] = useCreateTrainingPlanItemMutation();
+  const [name, setName] = useState('');
+  const [conflictMessage, setConflictMessage] = useState<null | string>(null);
+  const isBusy = isCreating || isAssigning;
+
+  const handleCreate = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || isBusy) return;
+    setConflictMessage(null);
+
+    try {
+      const workoutResult = await createWorkout({planId: plan.id, body: {name: trimmed}}).unwrap();
+      try {
+        await createPlanItem({
+          planId: plan.id,
+          body: {day, workout_id: workoutResult.data.id, workout_type: 'primary'},
+        }).unwrap();
+        onWorkoutCreated(workoutResult.data.id);
+        onClose();
+      } catch (err) {
+        const parsed = parsePlanItemValidationError(err, {day, workout_type: 'primary'});
+        if (parsed?.kind === 'conflict') {
+          setConflictMessage(parsed.message);
+          onWorkoutCreated(workoutResult.data.id);
+        } else {
+          toast.danger('Failed to assign workout.');
+        }
+      }
+    } catch {
+      toast.danger('Failed to create workout.');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        className="text-xs text-foreground-400"
+        htmlFor={`new-workout-${day}`}
+      >
+        Name for new workout on {TRAINING_DAY_LABELS[day]}
+      </label>
+      {conflictMessage ? (
+        <p className="rounded-md border border-danger/30 bg-danger/5 px-2 py-1.5 text-xs text-danger">
+          {conflictMessage}
+        </p>
+      ) : null}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          id={`new-workout-${day}`}
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && !isBusy) {
+              onClose();
+            }
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              handleCreate().catch(() => {
+                /* handled inside handleCreate */
+              });
+            }
+          }}
+          placeholder="e.g. Push Day"
+          value={name}
+        />
+        <div className="flex gap-2">
+          <Button
+            className="min-h-11"
+            isDisabled={!name.trim() || isBusy}
+            isPending={isBusy}
+            onPress={handleCreate}
+            size="sm"
+          >
+            <Plus size={14} />
+            Create and assign
           </Button>
           <Button
-            isDisabled={isAssigning}
-            onPress={() => {
-              setConflictMessage(null);
-              setMode(null);
-            }}
+            className="min-h-11"
+            isDisabled={isBusy}
+            onPress={onClose}
             size="sm"
             variant="ghost"
           >
@@ -422,88 +1070,143 @@ function DayAssignmentPanel({day, onWorkoutCreated, plan}: DayAssignmentPanelPro
           </Button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  if (mode === 'create') {
-    return (
-      <div className="rounded-lg border border-dashed border-divider p-3">
-        {conflictMessage ? (
-          <p className="mb-2 rounded-md border border-danger/30 bg-danger/5 px-2 py-1 text-xs text-danger">
-            {conflictMessage}
-          </p>
-        ) : null}
-        <label
-          className="mb-1 block text-xs text-foreground-400"
-          htmlFor={`new-workout-${day}`}
-        >
-          Workout name
-        </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <Input
-            id={`new-workout-${day}`}
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                if (isBusy) return;
-                setMode(null);
-                setName('');
-              }
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleCreateAndAssign().catch(() => {
-                  /* handled in handleCreateAndAssign */
-                });
-              }
-            }}
-            placeholder="e.g. Push Day"
-            value={name}
-          />
-          <div className="flex gap-2">
-            <Button
-              isDisabled={!name.trim() || isBusy}
-              isPending={isBusy}
-              onPress={handleCreateAndAssign}
-              size="sm"
-            >
-              <Plus size={14} />
-              Create and assign
-            </Button>
-            <Button
-              isDisabled={isBusy}
-              onPress={() => {
-                setMode(null);
-                setName('');
-                setConflictMessage(null);
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+// ── Copy to another day (assigned-day overflow action) ───────────────
+
+function CopyToPanel({
+  day,
+  onClose,
+  plan,
+  state,
+}: {
+  day: TrainingWeekday;
+  onClose: () => void;
+  plan: TrainingPlan;
+  state: Extract<DayState, {kind: 'assigned'}>;
+}) {
+  const [createPlanItem, {isLoading}] = useCreateTrainingPlanItemMutation();
+  const [selected, setSelected] = useState<Set<TrainingWeekday>>(new Set());
+  const [conflictDays, setConflictDays] = useState<Set<TrainingWeekday>>(new Set());
+
+  const primaryItem = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
+  const workout = plan.workouts.find((w) => w.id === primaryItem.workout_id);
+
+  // Days where a primary workout already exists — disable in the checklist.
+  const takenDays = useMemo(() => {
+    const map = new Set<TrainingWeekday>();
+    for (const item of plan.plan_items) {
+      if (item.workout_type === 'primary') map.add(item.day);
+    }
+    return map;
+  }, [plan.plan_items]);
+
+  const toggle = (target: TrainingWeekday) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(target)) next.delete(target);
+      else next.add(target);
+      return next;
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (!workout || selected.size === 0) return;
+    const targets = [...selected];
+    const failures = new Set<TrainingWeekday>();
+
+    for (const target of targets) {
+      try {
+        await createPlanItem({
+          planId: plan.id,
+          body: {day: target, workout_id: workout.id, workout_type: 'primary'},
+        }).unwrap();
+      } catch (err) {
+        const parsed = parsePlanItemValidationError(err, {day: target, workout_type: 'primary'});
+        if (parsed?.kind === 'conflict') {
+          failures.add(target);
+        } else {
+          toast.danger(`Failed to copy to ${TRAINING_DAY_LABELS[target]}.`);
+          failures.add(target);
+        }
+      }
+    }
+
+    if (failures.size > 0) {
+      setConflictDays(failures);
+      // Keep panel open, show which days failed so the coach can re-try.
+      const succeeded = targets.length - failures.size;
+      if (succeeded > 0) {
+        toast.success(`Copied to ${succeeded} day${succeeded !== 1 ? 's' : ''}.`);
+      }
+    } else {
+      toast.success(`Copied to ${targets.length} day${targets.length !== 1 ? 's' : ''}.`);
+      onClose();
+    }
+  };
+
+  if (!workout) {
+    return null;
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        onPress={() => setMode('assign')}
-        size="sm"
-        variant="ghost"
-      >
-        Assign workout
-      </Button>
-      <Button
-        onPress={() => setMode('create')}
-        size="sm"
-        variant="ghost"
-      >
-        <Plus size={14} />
-        New workout
-      </Button>
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-foreground-400">
+        Copy <strong>{workout.name}</strong> to…
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {TRAINING_WEEKDAYS.filter((d) => d !== day).map((target) => {
+          const isTaken = takenDays.has(target);
+          const isSelected = selected.has(target);
+          const isConflict = conflictDays.has(target);
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={[
+                'flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
+                isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-divider bg-content1 text-foreground',
+                isTaken && !isSelected ? 'opacity-50' : '',
+                isConflict ? 'border-danger/50 text-danger' : '',
+              ].join(' ')}
+              disabled={isLoading || (isTaken && !isSelected)}
+              key={target}
+              onClick={() => toggle(target)}
+              type="button"
+            >
+              {isSelected ? <Check size={14} /> : null}
+              {TRAINING_DAY_SHORT_LABELS[target]}
+              {isTaken && !isSelected ? ' · taken' : ''}
+            </button>
+          );
+        })}
+      </div>
+      {conflictDays.size > 0 ? (
+        <p className="text-xs text-danger">
+          {[...conflictDays].map((d) => TRAINING_DAY_SHORT_LABELS[d]).join(', ')} already have a primary workout.
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <Button
+          className="min-h-11"
+          isDisabled={selected.size === 0 || isLoading}
+          isPending={isLoading}
+          onPress={handleConfirm}
+          size="sm"
+        >
+          Copy to {selected.size} day{selected.size !== 1 ? 's' : ''}
+        </Button>
+        <Button
+          className="min-h-11"
+          isDisabled={isLoading}
+          onPress={onClose}
+          size="sm"
+          variant="ghost"
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

@@ -21,10 +21,6 @@ defmodule Easy.Training.PlannedSet do
     field :distance_value, :decimal
     field :distance_unit, Ecto.Enum, values: [:meters, :km, :miles, :yards, :none], default: :none
 
-    field :set_type, Ecto.Enum,
-      values: [:warmup, :working, :dropset, :backoff, :amrap, :emom, :cluster, :rest_pause],
-      default: :working
-
     field :notes, :string
   end
 
@@ -38,7 +34,6 @@ defmodule Easy.Training.PlannedSet do
     :duration_seconds,
     :distance_value,
     :distance_unit,
-    :set_type,
     :notes
   ]
 
@@ -49,6 +44,7 @@ defmodule Easy.Training.PlannedSet do
     |> validate_length(:notes, max: 5000)
     |> validate_number(:rest_seconds, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
+    |> validate_number(:load_value, greater_than: 0)
     |> validate_has_target()
     |> validate_target_reps_format()
     |> validate_load_unit()

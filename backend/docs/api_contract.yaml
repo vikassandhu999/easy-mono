@@ -3689,7 +3689,7 @@ paths:
   /v1/coach/workout_elements:
     post:
       summary: Create workout element
-      description: Adds an exercise block to a workout; frontend calls this when coaches append or insert movements. Frontend pattern - optimistic append/insert and sync order with returned payload.
+      description: Adds an exercise block to a workout with an inline add-exercise form; frontend sends one entry in planned_sets per set (N identical entries for N sets). Frontend pattern - optimistic append/insert and sync order with the returned payload; show the 422 validation response inline on the form (e.g. empty planned_sets or non-positive load_value).
       operationId: createWorkoutElement
       security:
         - bearerAuth: []
@@ -3705,10 +3705,24 @@ paths:
                   workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
                   position: 0
                   exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+                  notes: Focus on slow negatives
                   planned_sets:
-                    - target_reps: 5
+                    - target_reps: "8-12"
+                      load_value: 80
                       load_unit: kg
-                      set_type: working
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 80
+                      load_unit: kg
+                      rest_seconds: 90
       responses:
         "201":
           description: Workout element created
@@ -3744,7 +3758,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update workout element
-      description: Saves changes to exercise selection, ordering, and planned sets from builder interactions. Frontend pattern - optimistic set-row editing with rollback on validation errors.
+      description: Saves changes to exercise selection, ordering, notes, and planned sets from inline edits. The planned_sets array is replaced entirely on each update; changing the Sets count means sending N entries (all identical). Frontend pattern - optimistic edit with rollback on 422.
       operationId: updateWorkoutElement
       security:
         - bearerAuth: []
@@ -3759,14 +3773,20 @@ paths:
             examples:
               default:
                 value:
-                  notes: Top set at RPE 8, then back-off sets.
+                  notes: Pyramid down each set
                   planned_sets:
-                    - target_reps: 5
+                    - target_reps: "8-12"
+                      load_value: 85
                       load_unit: kg
-                      set_type: working
-                    - target_reps: 8
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 85
                       load_unit: kg
-                      set_type: backoff
+                      rest_seconds: 90
+                    - target_reps: "8-12"
+                      load_value: 85
+                      load_unit: kg
+                      rest_seconds: 90
       responses:
         "200":
           description: Workout element updated
@@ -6474,15 +6494,29 @@ components:
           format: date-time
     WorkoutElementCreateRequest:
       type: object
-      required: [workout_id, position, exercise_id]
+      required: [workout_id, position, exercise_id, planned_sets]
       example:
         workout_id: 87e0fd7f-26ea-4e23-83ca-eb5ce532de5a
         position: 0
         exercise_id: d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c
+        notes: Focus on slow negatives
         planned_sets:
-          - target_reps: 5
+          - target_reps: "8-12"
+            load_value: 80
             load_unit: kg
-            set_type: working
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
+          - target_reps: "8-12"
+            load_value: 80
+            load_unit: kg
+            rest_seconds: 90
       properties:
         workout_id:
           type: string
@@ -6497,6 +6531,7 @@ components:
           type: string
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
     WorkoutElementUpdateRequest:
@@ -6512,6 +6547,7 @@ components:
           type: string
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
     WorkoutElementResponse:
@@ -6555,6 +6591,7 @@ components:
           nullable: true
         planned_sets:
           type: array
+          minItems: 1
           items:
             $ref: "#/components/schemas/PlannedSet"
         inserted_at:
@@ -6565,6 +6602,7 @@ components:
           format: date-time
     PlannedSet:
       type: object
+      description: One entry per set. All entries for a given exercise are identical - the coach UI exposes a single target per exercise and expands to N identical entries where N is the Sets count.
       properties:
         target_reps:
           type: string
@@ -6572,6 +6610,7 @@ components:
         load_value:
           type: number
           nullable: true
+          exclusiveMinimum: 0
         load_unit:
           type: string
           enum: [kg, lbs, bodyweight, percent_1rm, rpe, none]
@@ -6584,18 +6623,17 @@ components:
         rest_seconds:
           type: integer
           nullable: true
+          minimum: 0
         duration_seconds:
           type: integer
           nullable: true
+          minimum: 0
         distance_value:
           type: number
           nullable: true
         distance_unit:
           type: string
           enum: [meters, km, miles, yards, none]
-        set_type:
-          type: string
-          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
         notes:
           type: string
           nullable: true
@@ -6656,8 +6694,7 @@ components:
                 exercise_id: f0e1d2c3-b4a5-6789-0abc-def012345678
                 exercise_name: Barbell Bench Press
                 planned_sets:
-                  - set_type: working
-                    target_reps: "8-10"
+                  - target_reps: "8-10"
                     load_value: "80"
                     load_unit: kg
                     rest_seconds: 120
@@ -6759,10 +6796,6 @@ components:
                     items:
                       type: object
                       properties:
-                        set_type:
-                          type: string
-                          enum: [warmup, working, dropset, backoff, amrap, emom, cluster, rest_pause]
-                          nullable: true
                         target_reps:
                           type: string
                           nullable: true

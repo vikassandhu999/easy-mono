@@ -37,6 +37,7 @@ defmodule Easy.Training.WorkoutElement do
     |> put_change(:business_id, business_id)
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> validate_required([:position, :exercise_id])
+    |> validate_length(:planned_sets, min: 1)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint([:position, :workout_id],
@@ -52,6 +53,7 @@ defmodule Easy.Training.WorkoutElement do
     element
     |> cast(attrs, @cast_fields)
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
+    |> validate_length(:planned_sets, min: 1)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> unique_constraint([:position, :workout_id],

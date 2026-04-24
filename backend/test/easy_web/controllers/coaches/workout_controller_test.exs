@@ -67,7 +67,6 @@ defmodule EasyWeb.Coaches.WorkoutControllerTest do
           position: 0,
           planned_sets: [
             %{
-              set_type: :working,
               target_reps: "8-10",
               load_value: 80,
               load_unit: :kg,

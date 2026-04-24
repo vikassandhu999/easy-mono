@@ -385,7 +385,15 @@ defmodule Easy.Factory do
   def workout_element_attrs_factory do
     %{
       "position" => 0,
-      "notes" => "Created via test"
+      "notes" => "Created via test",
+      "planned_sets" => [
+        %{
+          "target_reps" => "8-12",
+          "load_value" => 80,
+          "load_unit" => "kg",
+          "rest_seconds" => 90
+        }
+      ]
     }
   end
 

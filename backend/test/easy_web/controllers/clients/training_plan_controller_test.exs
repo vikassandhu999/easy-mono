@@ -102,7 +102,6 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
           business: ctx.business,
           planned_sets: [
             %{
-              set_type: :working,
               target_reps: "8-10",
               load_value: 80,
               load_unit: :kg,

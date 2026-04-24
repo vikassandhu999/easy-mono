@@ -188,7 +188,6 @@ defmodule Easy.Training.WorkoutSession do
                 "planned_sets" =>
                   Enum.map(element.planned_sets, fn set ->
                     %{
-                      "set_type" => set.set_type && Atom.to_string(set.set_type),
                       "target_reps" => set.target_reps,
                       "load_value" => set.load_value && Decimal.to_string(set.load_value),
                       "load_unit" => set.load_unit && Atom.to_string(set.load_unit),

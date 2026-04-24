@@ -44,7 +44,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
           position: 0,
           planned_sets: [
             %{
-              set_type: :working,
               target_reps: "8-10",
               load_value: 80,
               load_unit: :kg,
@@ -75,7 +74,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
       assert length(snap_element["planned_sets"]) == 1
 
       [snap_set] = snap_element["planned_sets"]
-      assert snap_set["set_type"] == "working"
       assert snap_set["target_reps"] == "8-10"
       assert snap_set["load_value"] == "80"
       assert snap_set["load_unit"] == "kg"

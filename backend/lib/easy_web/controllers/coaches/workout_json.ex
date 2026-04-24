@@ -63,7 +63,6 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
       duration_seconds: set.duration_seconds,
       distance_value: set.distance_value,
       distance_unit: set.distance_unit,
-      set_type: set.set_type,
       notes: set.notes
     }
   end

@@ -7,7 +7,7 @@ import {
   TRAINING_DAY_SHORT_LABELS,
   TRAINING_WEEKDAYS,
 } from '@easy/utils';
-import {AlertDialog, Button, Input, Popover, toast} from '@heroui/react';
+import {AlertDialog, Button, Popover, toast} from '@heroui/react';
 import {Check, MoreHorizontal, Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -22,6 +22,7 @@ import {
   useDuplicateWorkoutMutation,
   useUpdateTrainingPlanMutation,
 } from '@/api/trainingPlans';
+import WorkoutNameForm, {type WorkoutNameFormValues} from '@/training-plans/components/workout-name-form';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -985,91 +986,48 @@ function CreateWorkoutPanel({
 }) {
   const [createWorkout, {isLoading: isCreating}] = useCreateWorkoutMutation();
   const [createPlanItem, {isLoading: isAssigning}] = useCreateTrainingPlanItemMutation();
-  const [name, setName] = useState('');
   const [conflictMessage, setConflictMessage] = useState<null | string>(null);
   const isBusy = isCreating || isAssigning;
 
-  const handleCreate = async () => {
-    const trimmed = name.trim();
-    if (!trimmed || isBusy) return;
+  const handleCreate = async ({name}: WorkoutNameFormValues) => {
+    if (isBusy) return;
     setConflictMessage(null);
 
+    const workoutResult = await createWorkout({planId: plan.id, body: {name}}).unwrap();
     try {
-      const workoutResult = await createWorkout({planId: plan.id, body: {name: trimmed}}).unwrap();
-      try {
-        await createPlanItem({
-          planId: plan.id,
-          body: {day, workout_id: workoutResult.data.id, workout_type: 'primary'},
-        }).unwrap();
+      await createPlanItem({
+        planId: plan.id,
+        body: {day, workout_id: workoutResult.data.id, workout_type: 'primary'},
+      }).unwrap();
+      onWorkoutCreated(workoutResult.data.id);
+      onClose();
+    } catch (err) {
+      const parsed = parsePlanItemValidationError(err, {day, workout_type: 'primary'});
+      if (parsed?.kind === 'conflict') {
+        setConflictMessage(parsed.message);
         onWorkoutCreated(workoutResult.data.id);
-        onClose();
-      } catch (err) {
-        const parsed = parsePlanItemValidationError(err, {day, workout_type: 'primary'});
-        if (parsed?.kind === 'conflict') {
-          setConflictMessage(parsed.message);
-          onWorkoutCreated(workoutResult.data.id);
-        } else {
-          toast.danger('Failed to assign workout.');
-        }
+      } else {
+        toast.danger('Failed to assign workout.');
       }
-    } catch {
-      toast.danger('Failed to create workout.');
     }
   };
 
   return (
     <div className="flex flex-col gap-2">
-      <label
-        className="text-xs text-foreground-400"
-        htmlFor={`new-workout-${day}`}
-      >
-        Name for new workout on {TRAINING_DAY_LABELS[day]}
-      </label>
       {conflictMessage ? (
         <p className="rounded-md border border-danger/30 bg-danger/5 px-2 py-1.5 text-xs text-danger">
           {conflictMessage}
         </p>
       ) : null}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input
-          id={`new-workout-${day}`}
-          onChange={(event) => setName(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && !isBusy) {
-              onClose();
-            }
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              handleCreate().catch(() => {
-                /* handled inside handleCreate */
-              });
-            }
-          }}
-          placeholder="e.g. Push Day"
-          value={name}
-        />
-        <div className="flex gap-2">
-          <Button
-            className="min-h-11"
-            isDisabled={!name.trim() || isBusy}
-            isPending={isBusy}
-            onPress={handleCreate}
-            size="sm"
-          >
-            <Plus size={14} />
-            Create and assign
-          </Button>
-          <Button
-            className="min-h-11"
-            isDisabled={isBusy}
-            onPress={onClose}
-            size="sm"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
+      <WorkoutNameForm
+        fallbackError="Failed to create workout."
+        id={`new-workout-${day}`}
+        isSubmitting={isBusy}
+        label={`Name for new workout on ${TRAINING_DAY_LABELS[day]}`}
+        onCancel={onClose}
+        onSubmit={handleCreate}
+        submitLabel="Create and assign"
+      />
     </div>
   );
 }
@@ -1102,8 +1060,10 @@ function CopyToPanel({
     }
     return map;
   }, [plan.plan_items]);
+  const restDays = useMemo(() => new Set(plan.rest_days), [plan.rest_days]);
 
   const toggle = (target: TrainingWeekday) => {
+    if (takenDays.has(target) || restDays.has(target)) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(target)) next.delete(target);
@@ -1114,7 +1074,11 @@ function CopyToPanel({
 
   const handleConfirm = async () => {
     if (!workout || selected.size === 0) return;
-    const targets = [...selected];
+    const targets = [...selected].filter((target) => !takenDays.has(target) && !restDays.has(target));
+    if (targets.length === 0) {
+      setSelected(new Set());
+      return;
+    }
     const failures = new Set<TrainingWeekday>();
 
     for (const target of targets) {
@@ -1159,6 +1123,8 @@ function CopyToPanel({
       <div className="flex flex-wrap gap-1.5">
         {TRAINING_WEEKDAYS.filter((d) => d !== day).map((target) => {
           const isTaken = takenDays.has(target);
+          const isRestDay = restDays.has(target);
+          const unavailableLabel = isTaken ? 'taken' : isRestDay ? 'rest' : '';
           const isSelected = selected.has(target);
           const isConflict = conflictDays.has(target);
           return (
@@ -1167,17 +1133,17 @@ function CopyToPanel({
               className={[
                 'flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition-colors',
                 isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-divider bg-content1 text-foreground',
-                isTaken && !isSelected ? 'opacity-50' : '',
+                unavailableLabel && !isSelected ? 'opacity-50' : '',
                 isConflict ? 'border-danger/50 text-danger' : '',
               ].join(' ')}
-              disabled={isLoading || (isTaken && !isSelected)}
+              disabled={isLoading || Boolean(unavailableLabel)}
               key={target}
               onClick={() => toggle(target)}
               type="button"
             >
               {isSelected ? <Check size={14} /> : null}
               {TRAINING_DAY_SHORT_LABELS[target]}
-              {isTaken && !isSelected ? ' · taken' : ''}
+              {unavailableLabel && !isSelected ? ` · ${unavailableLabel}` : ''}
             </button>
           );
         })}

@@ -357,6 +357,7 @@ export default function WorkoutSection({
       workoutId: targetWorkoutId,
       body: {
         exercise_id: element.exercise_id,
+        ...(element.notes != null && {notes: element.notes}),
         workout_id: targetWorkoutId,
         position: nextPosition,
         planned_sets: element.planned_sets,

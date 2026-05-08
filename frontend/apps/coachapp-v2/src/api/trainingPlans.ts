@@ -110,12 +110,12 @@ export type TrainingPlanCreateRequest = {
 };
 
 export type TrainingPlanUpdateRequest = {
-  description?: string;
-  end_date?: string;
+  description?: null | string;
+  end_date?: null | string;
   name?: string;
-  original_template_id?: string;
+  original_template_id?: null | string;
   rest_days?: TrainingWeekday[];
-  start_date?: string;
+  start_date?: null | string;
   status?: TrainingPlanStatus;
 };
 

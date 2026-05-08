@@ -7,6 +7,7 @@ import type {Client} from '@/api/clients';
 import type {NutritionPlanStatus} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 
+import ClientPicker from '@/@components/client-picker';
 import ClientPlanBanner from '@/@components/client-plan-banner';
 import CopyMenu from '@/@components/copy-menu';
 import PageLayout from '@/@components/page-layout';
@@ -21,7 +22,6 @@ import {
   useGetNutritionPlanQuery,
   useUpdateNutritionPlanMutation,
 } from '@/api/nutritionPlans';
-import ClientPicker from '@/clients/components/client-picker';
 import DayPlanner from '@/nutrition-plans/components/day-planner';
 import MealSection from '@/nutrition-plans/components/meal-section';
 
@@ -342,7 +342,6 @@ export default function NutritionPlanDetail() {
             Search for a client to copy this plan to. A new plan will be created for the selected client.
           </p>
           <ClientPicker
-            autoFocus
             excludeIds={plan.client_id ? [plan.client_id] : undefined}
             isDisabled={isAssigning}
             onSelect={handleCopyToClient}

@@ -34,9 +34,9 @@ function getFullName(firstName: null | string, lastName: null | string): string 
  *
  * Container decision: INLINE — single text input that opens a popover with results.
  *
- * Reusable: lives in clients/components/ and takes a generic onSelect callback.
- * Uses Autocomplete in single-select mode. After selecting a client, the selection
- * is cleared and the full Client object is passed to onSelect.
+ * Shared component because nutrition plans and training plans both assign/copy
+ * plans to clients. Uses Autocomplete in single-select mode. After selecting a
+ * client, the selection is cleared and the full Client object is passed to onSelect.
  */
 export default function ClientPicker({
   onSelect,

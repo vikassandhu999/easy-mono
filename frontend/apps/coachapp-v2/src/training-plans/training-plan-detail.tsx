@@ -1,4 +1,4 @@
-import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Input, Label, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Spinner, toast} from '@heroui/react';
 import {type CalendarDate, parseDate} from '@internationalized/date';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
@@ -7,6 +7,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import type {Client} from '@/api/clients';
 import type {TrainingPlanStatus} from '@/api/trainingPlans';
 
+import ClientPicker from '@/@components/client-picker';
 import ClientPlanBanner from '@/@components/client-plan-banner';
 import CopyMenu from '@/@components/copy-menu';
 import PageLayout from '@/@components/page-layout';
@@ -20,8 +21,8 @@ import {
   useGetTrainingPlanQuery,
   useUpdateTrainingPlanMutation,
 } from '@/api/trainingPlans';
-import ClientPicker from '@/clients/components/client-picker';
 import WeeklyOverview from '@/training-plans/components/weekly-overview';
+import WorkoutNameForm, {type WorkoutNameFormValues} from '@/training-plans/components/workout-name-form';
 import WorkoutSection from '@/training-plans/components/workout-section';
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
@@ -61,70 +62,25 @@ function AddWorkoutLibraryCard({
 }) {
   const [createWorkout, {isLoading}] = useCreateWorkoutMutation();
   const [isAdding, setIsAdding] = useState(false);
-  const [name, setName] = useState('');
 
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-
-    try {
-      const result = await createWorkout({planId, body: {name: name.trim()}}).unwrap();
-      setName('');
-      setIsAdding(false);
-      onWorkoutCreated(result.data.id);
-    } catch {
-      toast.danger('Failed to create workout.');
-    }
+  const handleCreate = async ({name}: WorkoutNameFormValues) => {
+    const result = await createWorkout({planId, body: {name}}).unwrap();
+    setIsAdding(false);
+    onWorkoutCreated(result.data.id);
   };
 
   if (isAdding) {
     return (
       <div className="rounded-xl border border-dashed border-divider bg-content1 p-4">
-        <label
-          className="mb-1 block text-xs text-foreground-400"
-          htmlFor="new-library-workout"
-        >
-          Workout name
-        </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <Input
-            id="new-library-workout"
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') {
-                setIsAdding(false);
-                setName('');
-              }
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleCreate().catch(() => {
-                  /* handled in handleCreate */
-                });
-              }
-            }}
-            placeholder="e.g. Push Day"
-            value={name}
-          />
-          <div className="flex gap-2">
-            <Button
-              isPending={isLoading}
-              onPress={handleCreate}
-              size="sm"
-            >
-              <Plus size={14} />
-              Add workout
-            </Button>
-            <Button
-              onPress={() => {
-                setIsAdding(false);
-                setName('');
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <WorkoutNameForm
+          fallbackError="Failed to create workout."
+          id="new-library-workout"
+          isSubmitting={isLoading}
+          label="Workout name"
+          onCancel={() => setIsAdding(false)}
+          onSubmit={handleCreate}
+          submitLabel="Add workout"
+        />
       </div>
     );
   }

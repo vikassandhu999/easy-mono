@@ -1,5 +1,6 @@
-import {Button, toast} from '@heroui/react';
-import {Copy, CopyPlus, X} from 'lucide-react';
+import {Button, Popover, toast} from '@heroui/react';
+import {Copy, CopyPlus, MoreHorizontal, X} from 'lucide-react';
+import {useState} from 'react';
 
 import type {PlannedSet, WorkoutElement} from '@/api/trainingPlans';
 import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
@@ -68,8 +69,10 @@ export default function ExerciseElement({
   planId,
 }: ExerciseElementProps) {
   const [updateElement, {isLoading: isSaving}] = useUpdateWorkoutElementMutation();
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
 
   const exerciseName = element.exercise?.name ?? 'Unknown exercise';
+  const hasSecondaryActions = Boolean(onCopy || onDuplicate);
 
   const handleSave = async (values: InlineExerciseFormValues) => {
     const plannedSets = buildPlannedSetsFromForm(values);
@@ -103,10 +106,10 @@ export default function ExerciseElement({
     );
   }
 
-  // Collapsed row: tap to edit. Desktop shows hover actions on the right
-  // (duplicate, copy, delete). Mobile shows a minimal always-visible delete.
+  // Collapsed row: tap to edit. Secondary actions live behind an always-visible
+  // trigger so they remain available on touch devices.
   return (
-    <div className="group flex min-h-12 items-center gap-1 rounded-lg px-2 py-1.5 transition-colors hover:bg-content2">
+    <div className="flex min-h-12 items-center gap-1 rounded-lg px-2 py-1.5 transition-colors hover:bg-content2">
       <button
         aria-label={`Edit ${exerciseName}`}
         className="flex min-w-0 flex-1 touch-manipulation flex-col items-start rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -120,34 +123,65 @@ export default function ExerciseElement({
         </span>
       </button>
 
-      {/* Desktop: hover-revealed actions. Mobile: delete always visible. */}
       <div className="flex shrink-0 items-center gap-0.5">
-        {onDuplicate ? (
-          <Button
-            aria-label="Duplicate exercise"
-            className="hidden lg:inline-flex lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
-            isIconOnly
-            onPress={onDuplicate}
-            size="sm"
-            variant="ghost"
+        {hasSecondaryActions ? (
+          <Popover
+            isOpen={isActionsOpen}
+            onOpenChange={setIsActionsOpen}
           >
-            <CopyPlus size={14} />
-          </Button>
-        ) : null}
-        {onCopy ? (
-          <Button
-            aria-label="Copy to another workout"
-            className="hidden lg:inline-flex lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
-            isIconOnly
-            onPress={onCopy}
-            size="sm"
-            variant="ghost"
-          >
-            <Copy size={14} />
-          </Button>
+            <Popover.Trigger>
+              <Button
+                aria-label={`More actions for ${exerciseName}`}
+                className="min-h-11 min-w-11"
+                isIconOnly
+                size="sm"
+                variant="ghost"
+              >
+                <MoreHorizontal size={16} />
+              </Button>
+            </Popover.Trigger>
+            <Popover.Content
+              className="min-w-[200px] p-1"
+              placement="bottom end"
+            >
+              <Popover.Dialog className="outline-none">
+                <div className="flex flex-col gap-1">
+                  {onDuplicate ? (
+                    <Button
+                      className="min-h-11 justify-start"
+                      onPress={() => {
+                        setIsActionsOpen(false);
+                        onDuplicate();
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <CopyPlus size={14} />
+                      Duplicate
+                    </Button>
+                  ) : null}
+                  {onCopy ? (
+                    <Button
+                      className="min-h-11 justify-start"
+                      onPress={() => {
+                        setIsActionsOpen(false);
+                        onCopy();
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Copy size={14} />
+                      Copy to workout
+                    </Button>
+                  ) : null}
+                </div>
+              </Popover.Dialog>
+            </Popover.Content>
+          </Popover>
         ) : null}
         <Button
           aria-label={`Remove ${exerciseName}`}
+          className="min-h-11 min-w-11"
           isIconOnly
           onPress={onRemove}
           size="sm"

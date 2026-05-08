@@ -35,10 +35,10 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
       const body = {
-        description: formData.description || undefined,
-        end_date: formData.end_date || undefined,
+        description: formData.description?.trim() || null,
+        end_date: formData.end_date || null,
         name: formData.name,
-        start_date: formData.start_date || undefined,
+        start_date: formData.start_date || null,
       };
       await updatePlan({body, id: planId}).unwrap();
       goBack();

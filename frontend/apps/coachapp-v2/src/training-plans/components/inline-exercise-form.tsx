@@ -93,8 +93,8 @@ function parseReps(value: string): null | number {
 export function buildPlannedSetsFromForm(values: InlineExerciseFormValues): PlannedSet[] {
   const setsCount = Math.max(1, parseNonNegativeInt(values.sets) ?? 1);
   const loadValue = parseNonNegativeNumber(values.loadValue);
-  const restRaw = parseNonNegativeInt(values.rest);
-  const restSeconds = restRaw != null && values.restUnit === 'min' ? restRaw * 60 : restRaw;
+  const restRaw = parseNonNegativeNumber(values.rest);
+  const restSeconds = restRaw != null ? Math.round(values.restUnit === 'min' ? restRaw * 60 : restRaw) : null;
 
   const one: PlannedSet = {
     load_unit: values.loadUnit,
@@ -393,7 +393,7 @@ export default function InlineExerciseForm({
               <Input
                 className="h-12 min-w-0 flex-1"
                 id={`${uid}-rest`}
-                inputMode="numeric"
+                inputMode="decimal"
                 placeholder={restUnitValue === 'min' ? '1.5' : '90'}
                 {...register('rest')}
               />

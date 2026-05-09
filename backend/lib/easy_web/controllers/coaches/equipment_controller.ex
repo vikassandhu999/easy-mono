@@ -1,18 +1,14 @@
 defmodule EasyWeb.Coaches.EquipmentController do
   use EasyWeb, :controller
 
-  alias Easy.Repo
-  alias Easy.Training.Equipment
+  alias Easy.Training.Reads
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     search = Map.get(params, "search", "")
 
-    equipment =
-      Equipment
-      |> Equipment.search(search)
-      |> Equipment.alphabetical()
-      |> Repo.all()
-
-    render(conn, :index, equipment: equipment)
+    with {:ok, equipment} <- Reads.list_equipment(search) do
+      render(conn, :index, equipment: equipment)
+    end
   end
 end

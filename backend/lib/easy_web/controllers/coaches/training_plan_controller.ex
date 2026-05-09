@@ -1,9 +1,8 @@
 defmodule EasyWeb.Coaches.TrainingPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
   alias Easy.Orgs.Coaches
-  alias Easy.Repo
+  alias Easy.Training.Reads
   alias Easy.Training.TrainingPlan
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -22,13 +21,8 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case TrainingPlan
-         |> TrainingPlan.for_business(business_id)
-         |> TrainingPlan.with_workouts()
-         |> TrainingPlan.with_plan_items()
-         |> Repo.get(id) do
-      nil -> {:error, :not_found}
-      plan -> render(conn, :show, plan: Repo.preload(plan, :client))
+    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id) do
+      render(conn, :show, plan: plan)
     end
   end
 
@@ -36,14 +30,9 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case TrainingPlan |> TrainingPlan.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      plan ->
-        with {:ok, updated} <- TrainingPlan.update(plan, conn.body_params) do
-          render(conn, :show, plan: updated)
-        end
+    with {:ok, plan} <- Reads.fetch_plan(business_id, id),
+         {:ok, updated} <- TrainingPlan.update(plan, conn.body_params) do
+      render(conn, :show, plan: updated)
     end
   end
 
@@ -51,14 +40,9 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case TrainingPlan |> TrainingPlan.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      plan ->
-        with {:ok, _plan} <- TrainingPlan.delete(plan) do
-          send_resp(conn, :no_content, "")
-        end
+    with {:ok, plan} <- Reads.fetch_plan(business_id, id),
+         {:ok, _plan} <- TrainingPlan.delete(plan) do
+      send_resp(conn, :no_content, "")
     end
   end
 
@@ -71,44 +55,21 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     search = Map.get(params, "search", "")
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
-    base =
-      TrainingPlan
-      |> TrainingPlan.for_business(business_id)
-      |> TrainingPlan.search(search)
-      |> TrainingPlan.with_status(status)
-      |> TrainingPlan.templates()
-
-    count = Repo.aggregate(base, :count, :id)
-
-    plans =
-      base
-      |> TrainingPlan.newest()
-      |> Easy.Utils.paginate(offset, limit)
-      |> TrainingPlan.with_workouts()
-      |> TrainingPlan.with_plan_items()
-      |> Repo.all()
-
-    render(conn, :index, plans: plans, count: count)
+    with {:ok, %{plans: plans, count: count}} <-
+           Reads.list_template_plans(business_id, search, status, offset, limit) do
+      render(conn, :index, plans: plans, count: count)
+    end
   end
 
   @spec duplicate(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case TrainingPlan
-         |> TrainingPlan.for_business(business_id)
-         |> TrainingPlan.with_workouts()
-         |> TrainingPlan.with_plan_items()
-         |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      plan ->
-        with {:ok, duplicated} <- TrainingPlan.duplicate(plan) do
-          conn
-          |> put_status(:created)
-          |> render(:show, plan: duplicated)
-        end
+    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id),
+         {:ok, duplicated} <- TrainingPlan.duplicate(plan) do
+      conn
+      |> put_status(:created)
+      |> render(:show, plan: duplicated)
     end
   end
 
@@ -116,13 +77,8 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def assign(conn, %{"id" => id, "client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with plan when not is_nil(plan) <-
-           TrainingPlan
-           |> TrainingPlan.for_business(business_id)
-           |> TrainingPlan.with_workouts()
-           |> TrainingPlan.with_plan_items()
-           |> Repo.get(id),
-         true <- Client.accessible?(business_id, client_id),
+    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id),
+         {:ok, _client} <- Reads.fetch_client(business_id, client_id),
          {:ok, assigned} <-
            TrainingPlan.assign_to_client(
              plan,
@@ -133,10 +89,6 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
       conn
       |> put_status(:created)
       |> render(:show, plan: assigned)
-    else
-      nil -> {:error, :not_found}
-      false -> {:error, :not_found}
-      error -> error
     end
   end
 end

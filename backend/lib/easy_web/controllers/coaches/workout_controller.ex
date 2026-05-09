@@ -1,21 +1,18 @@
 defmodule EasyWeb.Coaches.WorkoutController do
   use EasyWeb, :controller
 
-  alias Easy.Repo
-  alias Easy.Training.{Workout, TrainingPlan}
+  alias Easy.Training.Reads
+  alias Easy.Training.Workout
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    if TrainingPlan.accessible?(business_id, plan_id) do
-      with {:ok, workout} <- Workout.create(plan_id, business_id, params) do
-        conn
-        |> put_status(:created)
-        |> render(:show, workout: workout)
-      end
-    else
-      {:error, :not_found}
+    with {:ok, _plan} <- Reads.fetch_plan(business_id, plan_id),
+         {:ok, workout} <- Workout.create(plan_id, business_id, params) do
+      conn
+      |> put_status(:created)
+      |> render(:show, workout: workout)
     end
   end
 
@@ -23,12 +20,8 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Workout
-         |> Workout.for_business(business_id)
-         |> Workout.with_elements()
-         |> Repo.get(id) do
-      nil -> {:error, :not_found}
-      workout -> render(conn, :show, workout: workout)
+    with {:ok, workout} <- Reads.fetch_workout_with_elements(business_id, id) do
+      render(conn, :show, workout: workout)
     end
   end
 
@@ -36,14 +29,9 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Workout |> Workout.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      workout ->
-        with {:ok, updated} <- Workout.update(workout, conn.body_params) do
-          render(conn, :show, workout: updated)
-        end
+    with {:ok, workout} <- Reads.fetch_workout(business_id, id),
+         {:ok, updated} <- Workout.update(workout, conn.body_params) do
+      render(conn, :show, workout: updated)
     end
   end
 
@@ -51,14 +39,9 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Workout |> Workout.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      workout ->
-        with {:ok, _workout} <- Workout.delete(workout) do
-          send_resp(conn, :no_content, "")
-        end
+    with {:ok, workout} <- Reads.fetch_workout(business_id, id),
+         {:ok, _workout} <- Workout.delete(workout) do
+      send_resp(conn, :no_content, "")
     end
   end
 
@@ -66,15 +49,11 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with workout when not is_nil(workout) <-
-           Workout |> Workout.for_business(business_id) |> Repo.get(id),
+    with {:ok, workout} <- Reads.fetch_workout(business_id, id),
          {:ok, duplicated} <- Workout.duplicate(workout) do
       conn
       |> put_status(:created)
       |> render(:show, workout: duplicated)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -82,27 +61,12 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def index(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    if TrainingPlan.accessible?(business_id, plan_id) do
-      offset = parse_integer(params, "offset", 0)
-      limit = parse_integer(params, "limit", 50)
+    offset = parse_integer(params, "offset", 0)
+    limit = parse_integer(params, "limit", 50)
 
-      base =
-        Workout
-        |> Workout.for_business(business_id)
-        |> Workout.for_plan(plan_id)
-
-      count = Repo.aggregate(base, :count, :id)
-
-      workouts =
-        base
-        |> Workout.ordered()
-        |> Easy.Utils.paginate(offset, limit)
-        |> Workout.with_elements()
-        |> Repo.all()
-
+    with {:ok, %{workouts: workouts, count: count}} <-
+           Reads.list_workouts(business_id, plan_id, offset, limit) do
       render(conn, :index, workouts: workouts, count: count)
-    else
-      {:error, :not_found}
     end
   end
 end

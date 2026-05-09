@@ -1,22 +1,19 @@
 defmodule EasyWeb.Coaches.WorkoutElementController do
   use EasyWeb, :controller
 
-  alias Easy.Repo
-  alias Easy.Training.{Exercise, Workout, WorkoutElement}
+  alias Easy.Training.Reads
+  alias Easy.Training.WorkoutElement
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_id" => workout_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with true <- Workout.accessible?(business_id, workout_id),
-         true <- Exercise.accessible?(business_id, Map.get(params, "exercise_id")),
+    with {:ok, _workout} <- Reads.fetch_workout(business_id, workout_id),
+         {:ok, :valid} <- Reads.ensure_exercise(business_id, Map.get(params, "exercise_id")),
          {:ok, element} <- WorkoutElement.create(workout_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, element: element)
-    else
-      false -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -24,12 +21,8 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case WorkoutElement
-         |> WorkoutElement.for_business(business_id)
-         |> WorkoutElement.with_exercise()
-         |> Repo.get(id) do
-      nil -> {:error, :not_found}
-      element -> render(conn, :show, element: element)
+    with {:ok, element} <- Reads.fetch_workout_element_with_exercise(business_id, id) do
+      render(conn, :show, element: element)
     end
   end
 
@@ -37,18 +30,11 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with element when not is_nil(element) <-
-           WorkoutElement
-           |> WorkoutElement.for_business(business_id)
-           |> WorkoutElement.with_exercise()
-           |> Repo.get(id),
-         true <- Exercise.accessible?(business_id, Map.get(conn.body_params, "exercise_id")),
+    with {:ok, element} <- Reads.fetch_workout_element_with_exercise(business_id, id),
+         {:ok, :valid} <-
+           Reads.ensure_exercise(business_id, Map.get(conn.body_params, "exercise_id")),
          {:ok, updated} <- WorkoutElement.update(element, conn.body_params) do
       render(conn, :show, element: updated)
-    else
-      nil -> {:error, :not_found}
-      false -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -56,14 +42,9 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case WorkoutElement |> WorkoutElement.for_business(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      element ->
-        with {:ok, _element} <- WorkoutElement.delete(element) do
-          send_resp(conn, :no_content, "")
-        end
+    with {:ok, element} <- Reads.fetch_workout_element(business_id, id),
+         {:ok, _element} <- WorkoutElement.delete(element) do
+      send_resp(conn, :no_content, "")
     end
   end
 end

@@ -136,6 +136,35 @@ defmodule Easy.Nutrition.Reads do
      }}
   end
 
+  @spec list_client_plans_full(
+          String.t(),
+          String.t(),
+          atom() | nil,
+          non_neg_integer(),
+          pos_integer()
+        ) ::
+          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
+  def list_client_plans_full(business_id, client_id, status, offset, limit) do
+    base =
+      Plan
+      |> Plan.for_business(business_id)
+      |> Plan.for_client(client_id)
+      |> Plan.with_status(status)
+
+    {:ok,
+     %{
+       count: Repo.aggregate(base, :count, :id),
+       plans:
+         base
+         |> Plan.newest()
+         |> Easy.Utils.paginate(offset, limit)
+         |> Plan.with_meals()
+         |> Plan.with_plan_items()
+         |> preload(:client)
+         |> Repo.all()
+     }}
+  end
+
   @spec fetch_client_plan_full(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
   def fetch_client_plan_full(business_id, client_id, plan_id) do

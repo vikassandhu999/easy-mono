@@ -1,8 +1,8 @@
 defmodule EasyWeb.Coaches.ExerciseController do
   use EasyWeb, :controller
 
-  alias Easy.Repo
   alias Easy.Training.Exercise
+  alias Easy.Training.Reads
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -19,12 +19,8 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Exercise
-         |> Exercise.for_business(business_id)
-         |> Exercise.with_preloads()
-         |> Repo.get(id) do
-      nil -> {:error, :not_found}
-      exercise -> render(conn, :show, exercise: exercise)
+    with {:ok, exercise} <- Reads.fetch_exercise(business_id, id) do
+      render(conn, :show, exercise: exercise)
     end
   end
 
@@ -32,14 +28,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Exercise |> Exercise.for_business_only(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      exercise ->
-        with {:ok, updated} <- Exercise.update(exercise, conn.body_params) do
-          render(conn, :show, exercise: updated)
-        end
+    with {:ok, exercise} <- Reads.fetch_business_exercise(business_id, id),
+         {:ok, updated} <- Exercise.update(exercise, conn.body_params) do
+      render(conn, :show, exercise: updated)
     end
   end
 
@@ -47,14 +38,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Exercise |> Exercise.for_business_only(business_id) |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      exercise ->
-        with {:ok, _deleted} <- Exercise.delete(exercise) do
-          send_resp(conn, :no_content, "")
-        end
+    with {:ok, exercise} <- Reads.fetch_business_exercise(business_id, id),
+         {:ok, _deleted} <- Exercise.delete(exercise) do
+      send_resp(conn, :no_content, "")
     end
   end
 
@@ -62,19 +48,11 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Exercise
-         |> Exercise.for_business(business_id)
-         |> Exercise.with_preloads()
-         |> Repo.get(id) do
-      nil ->
-        {:error, :not_found}
-
-      exercise ->
-        with {:ok, duplicated} <- Exercise.duplicate(exercise, business_id) do
-          conn
-          |> put_status(:created)
-          |> render(:show, exercise: duplicated)
-        end
+    with {:ok, exercise} <- Reads.fetch_exercise(business_id, id),
+         {:ok, duplicated} <- Exercise.duplicate(exercise, business_id) do
+      conn
+      |> put_status(:created)
+      |> render(:show, exercise: duplicated)
     end
   end
 
@@ -87,21 +65,9 @@ defmodule EasyWeb.Coaches.ExerciseController do
     search = Map.get(params, "search", "")
     muscle_ids = parse_list(params, "muscle_ids")
 
-    base =
-      Exercise
-      |> Exercise.for_business(business_id)
-      |> Exercise.search(search)
-      |> Exercise.with_muscle_ids(muscle_ids)
-
-    count = Repo.aggregate(base, :count, :id)
-
-    exercises =
-      base
-      |> Exercise.newest()
-      |> Easy.Utils.paginate(offset, limit)
-      |> Exercise.with_preloads()
-      |> Repo.all()
-
-    render(conn, :index, exercises: exercises, count: count)
+    with {:ok, %{exercises: exercises, count: count}} <-
+           Reads.list_exercises(business_id, search, muscle_ids, offset, limit) do
+      render(conn, :index, exercises: exercises, count: count)
+    end
   end
 end

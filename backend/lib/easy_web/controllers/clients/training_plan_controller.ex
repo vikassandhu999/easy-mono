@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :controller
 
   alias Easy.Clients.Client
-  alias Easy.Repo
+  alias Easy.Training.Reads
   alias Easy.Training.TrainingPlan
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -14,23 +14,10 @@ defmodule EasyWeb.Clients.TrainingPlanController do
       limit = parse_integer(params, "limit", 50)
       status = parse_enum(params, "status", TrainingPlan.statuses())
 
-      base =
-        TrainingPlan
-        |> TrainingPlan.for_business(business_id)
-        |> TrainingPlan.for_client(client.id)
-        |> TrainingPlan.with_status(status)
-
-      count = Repo.aggregate(base, :count, :id)
-
-      plans =
-        base
-        |> TrainingPlan.newest()
-        |> Easy.Utils.paginate(offset, limit)
-        |> TrainingPlan.with_workouts()
-        |> TrainingPlan.with_plan_items()
-        |> Repo.all()
-
-      render(conn, :index, plans: plans, count: count)
+      with {:ok, %{plans: plans, count: count}} <-
+             Reads.list_client_plans(business_id, client.id, status, offset, limit) do
+        render(conn, :index, plans: plans, count: count)
+      end
     end
   end
 
@@ -38,16 +25,9 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def show(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, client} <- Client.get_for_user(business_id, user_id) do
-      case TrainingPlan
-           |> TrainingPlan.for_business(business_id)
-           |> TrainingPlan.for_client(client.id)
-           |> TrainingPlan.with_workouts()
-           |> TrainingPlan.with_plan_items()
-           |> Repo.get(id) do
-        nil -> {:error, :not_found}
-        plan -> render(conn, :show, plan: plan)
-      end
+    with {:ok, client} <- Client.get_for_user(business_id, user_id),
+         {:ok, plan} <- Reads.fetch_client_plan_full(business_id, client.id, id) do
+      render(conn, :show, plan: plan)
     end
   end
 end

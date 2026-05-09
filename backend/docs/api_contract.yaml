@@ -1750,7 +1750,7 @@ paths:
     get:
       summary: List client training plans
       description: Returns only training plans assigned to this client (scoped by client_id). Used on the client detail page plans tab. Frontend pattern - call with client ID from route params, cache with CLIENT_LIST tag and invalidate after assign.
-      operationId: listClientTrainingPlans
+      operationId: listCoachClientTrainingPlans
       security:
         - bearerAuth: []
       parameters:
@@ -1782,7 +1782,7 @@ paths:
     get:
       summary: List client nutrition plans
       description: Returns only nutrition plans assigned to this client (type=personal, scoped by client_id). Used on the client detail page plans tab. Frontend pattern - call with client ID from route params, cache with CLIENT_LIST tag and invalidate after assign.
-      operationId: listClientNutritionPlans
+      operationId: listCoachClientNutritionPlans
       security:
         - bearerAuth: []
       parameters:
@@ -6187,8 +6187,6 @@ components:
         status:
           type: string
           enum: [active, archived]
-        client_id:
-          type: string
         start_date:
           type: string
           format: date
@@ -6197,12 +6195,10 @@ components:
           format: date
         rest_days:
           type: array
-          description: Weekday names marked as rest days. No duplicates.
+          description: Weekday names marked as rest days. No duplicates; cannot overlap scheduled plan_items.
           items:
             type: string
             enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
-        original_template_id:
-          type: string
     TrainingPlanUpdateRequest:
       type: object
       properties:
@@ -6213,8 +6209,6 @@ components:
         status:
           type: string
           enum: [active, archived]
-        client_id:
-          type: string
         start_date:
           type: string
           format: date
@@ -6223,12 +6217,10 @@ components:
           format: date
         rest_days:
           type: array
-          description: Weekday names marked as rest days. Send the full array on every update (replaces previous value).
+          description: Weekday names marked as rest days. Send the full array on every update (replaces previous value). No duplicates; cannot overlap scheduled plan_items.
           items:
             type: string
             enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
-        original_template_id:
-          type: string
     TrainingPlanAssignRequest:
       type: object
       required: [client_id]

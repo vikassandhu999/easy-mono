@@ -50,8 +50,8 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          start_date: ~D[2026-01-01],
-          end_date: ~D[2026-03-31]
+          start_date: Date.add(Date.utc_today(), -1),
+          end_date: Date.add(Date.utc_today(), 30)
         )
 
       workout = insert(:workout, training_plan: plan, business: ctx.business)
@@ -64,9 +64,11 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           planned_sets: []
         )
 
+      {:ok, planned_session} = WorkoutSession.update(ctx.session, %{"workout_id" => workout.id})
+
       conn =
         post(ctx.conn, "/v1/client/performed_sets", %{
-          "workout_session_id" => ctx.session.id,
+          "workout_session_id" => planned_session.id,
           "exercise_id" => ctx.exercise.id,
           "workout_element_id" => element.id,
           "position" => 0,

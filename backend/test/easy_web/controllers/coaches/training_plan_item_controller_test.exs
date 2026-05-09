@@ -58,6 +58,20 @@ defmodule EasyWeb.Coaches.TrainingPlanItemControllerTest do
       assert json_response(conn, 422)
     end
 
+    test "returns 422 when day is a rest day", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business, rest_days: ["monday"])
+      workout = insert(:workout, training_plan: plan, business: business)
+
+      conn =
+        post(
+          conn,
+          "/v1/coach/training_plans/#{plan.id}/training_plan_items",
+          %{"day" => "monday", "workout_type" => "primary", "workout_id" => workout.id}
+        )
+
+      assert json_response(conn, 422)
+    end
+
     test "returns 404 when workout not in plan", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
       other_plan = insert(:training_plan, author: coach, business: business)
@@ -168,6 +182,73 @@ defmodule EasyWeb.Coaches.TrainingPlanItemControllerTest do
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["day"] == "tuesday"
+    end
+
+    test "updates linked workout", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout_a = insert(:workout, training_plan: plan, business: business)
+      workout_b = insert(:workout, training_plan: plan, business: business)
+
+      item =
+        insert(:training_plan_item,
+          training_plan: plan,
+          workout: workout_a,
+          business: business,
+          creator: coach,
+          day: "monday"
+        )
+
+      conn =
+        patch(conn, "/v1/coach/training_plan_items/#{item.id}", %{"workout_id" => workout_b.id})
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["workout_id"] == workout_b.id
+    end
+
+    test "rejects linked workout from another plan", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      other_plan = insert(:training_plan, author: coach, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
+      other_workout = insert(:workout, training_plan: other_plan, business: business)
+
+      item =
+        insert(:training_plan_item,
+          training_plan: plan,
+          workout: workout,
+          business: business,
+          creator: coach,
+          day: "monday"
+        )
+
+      conn =
+        patch(conn, "/v1/coach/training_plan_items/#{item.id}", %{
+          "workout_id" => other_workout.id
+        })
+
+      assert json_response(conn, 422)
+    end
+
+    test "rejects moving item onto a rest day", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business, rest_days: ["tuesday"])
+      workout = insert(:workout, training_plan: plan, business: business)
+
+      item =
+        insert(:training_plan_item,
+          training_plan: plan,
+          workout: workout,
+          business: business,
+          creator: coach,
+          day: "monday"
+        )
+
+      conn =
+        patch(conn, "/v1/coach/training_plan_items/#{item.id}", %{"day" => "tuesday"})
+
+      assert json_response(conn, 422)
     end
   end
 

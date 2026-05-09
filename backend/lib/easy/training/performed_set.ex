@@ -143,6 +143,64 @@ defmodule Easy.Training.PerformedSet do
     end
   end
 
+  defp check_workout_element_matches_session(changeset) do
+    element_id = get_field(changeset, :workout_element_id)
+    exercise_id = get_field(changeset, :exercise_id)
+    session_id = get_field(changeset, :workout_session_id)
+    business_id = get_field(changeset, :business_id)
+
+    cond do
+      is_nil(element_id) ->
+        changeset
+
+      is_nil(exercise_id) || is_nil(session_id) || is_nil(business_id) ->
+        changeset
+
+      workout_element_matches_session?(business_id, session_id, element_id, exercise_id) ->
+        changeset
+
+      true ->
+        add_error(changeset, :workout_element_id, "must belong to the session workout")
+    end
+  end
+
+  defp workout_element_matches_session?(business_id, session_id, element_id, exercise_id) do
+    case WorkoutSession |> WorkoutSession.for_business(business_id) |> Repo.get(session_id) do
+      nil ->
+        false
+
+      session ->
+        if usable_snapshot?(session.planned_snapshot) do
+          element_in_snapshot?(session.planned_snapshot, element_id, exercise_id)
+        else
+          element_in_session_workout?(business_id, session.workout_id, element_id, exercise_id)
+        end
+    end
+  end
+
+  defp usable_snapshot?(%{"elements" => elements}) when is_list(elements), do: true
+  defp usable_snapshot?(_), do: false
+
+  defp element_in_session_workout?(_business_id, nil, _element_id, _exercise_id), do: false
+
+  defp element_in_session_workout?(business_id, workout_id, element_id, exercise_id) do
+    WorkoutElement
+    |> WorkoutElement.for_business(business_id)
+    |> WorkoutElement.for_workout(workout_id)
+    |> where([e], e.exercise_id == ^exercise_id)
+    |> Repo.get(element_id)
+    |> is_struct(WorkoutElement)
+  end
+
+  defp element_in_snapshot?(%{"elements" => elements}, element_id, exercise_id)
+       when is_list(elements) do
+    Enum.any?(elements, fn element ->
+      element["element_id"] == element_id && element["exercise_id"] == exercise_id
+    end)
+  end
+
+  defp element_in_snapshot?(_, _element_id, _exercise_id), do: false
+
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(s in query, where: s.business_id == ^business_id)
@@ -166,6 +224,7 @@ defmodule Easy.Training.PerformedSet do
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(workout_session_id, business_id, attrs) do
     insert_changeset(workout_session_id, business_id, attrs)
+    |> check_context()
     |> Repo.insert()
     |> preload_result()
   end
@@ -173,12 +232,16 @@ defmodule Easy.Training.PerformedSet do
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(set, attrs) do
     update_changeset(set, attrs)
+    |> check_context()
     |> Repo.update()
     |> preload_result()
   end
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(set), do: Repo.delete(set)
+
+  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+  defp check_context(changeset), do: check_workout_element_matches_session(changeset)
 
   defp preload_result({:ok, record}), do: {:ok, Repo.preload(record, [:exercise])}
   defp preload_result(error), do: error

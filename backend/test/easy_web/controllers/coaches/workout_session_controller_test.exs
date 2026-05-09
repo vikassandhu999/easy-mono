@@ -101,6 +101,23 @@ defmodule EasyWeb.Coaches.WorkoutSessionControllerTest do
 
       assert json_response(conn, 404)
     end
+
+    test "rejects creating session when client already has an active session", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      client = insert(:client, creator: coach, business: business)
+      insert(:workout_session, client: client, business: business, state: :active)
+
+      conn =
+        post(conn, "/v1/coach/workout_sessions", %{
+          "client_id" => client.id,
+          "notes" => "Start"
+        })
+
+      assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
+    end
   end
 
   describe "GET /v1/coach/workout_sessions" do

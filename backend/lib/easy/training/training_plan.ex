@@ -44,19 +44,25 @@ defmodule Easy.Training.TrainingPlan do
     :name,
     :description,
     :status,
-    :client_id,
     :start_date,
     :end_date,
-    :rest_days,
-    :original_template_id
+    :rest_days
   ]
+
+  @relationship_fields [:client_id, :original_template_id]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, author_id, attrs) do
+    base_insert_changeset(business_id, author_id, attrs)
+    |> reject_relationship_fields(attrs)
+  end
+
+  defp base_insert_changeset(business_id, author_id, attrs, relationship_changes \\ []) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:author_id, author_id)
+    |> put_relationship_changes(relationship_changes)
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
@@ -80,12 +86,29 @@ defmodule Easy.Training.TrainingPlan do
   def update_changeset(plan, attrs) do
     plan
     |> cast(attrs, @cast_fields)
+    |> reject_relationship_fields(attrs)
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_date_range()
     |> validate_rest_days()
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:original_template_id)
+  end
+
+  defp put_relationship_changes(changeset, relationship_changes) do
+    Enum.reduce(relationship_changes, changeset, fn {field, value}, changeset ->
+      put_change(changeset, field, value)
+    end)
+  end
+
+  defp reject_relationship_fields(changeset, attrs) do
+    Enum.reduce(@relationship_fields, changeset, fn field, changeset ->
+      if Map.has_key?(attrs, field) || Map.has_key?(attrs, Atom.to_string(field)) do
+        add_error(changeset, field, "cannot be set directly")
+      else
+        changeset
+      end
+    end)
   end
 
   defp validate_date_range(changeset) do
@@ -123,6 +146,28 @@ defmodule Easy.Training.TrainingPlan do
           []
       end
     end)
+  end
+
+  defp check_rest_days_do_not_overlap_plan_items(changeset) do
+    rest_days = get_change(changeset, :rest_days)
+    plan_id = get_field(changeset, :id)
+    business_id = get_field(changeset, :business_id)
+
+    if rest_days && plan_id && business_id && plan_items_on_days?(business_id, plan_id, rest_days) do
+      add_error(changeset, :rest_days, "cannot include days with scheduled workouts")
+    else
+      changeset
+    end
+  end
+
+  defp plan_items_on_days?(_business_id, _plan_id, []), do: false
+
+  defp plan_items_on_days?(business_id, plan_id, days) do
+    PlanItem
+    |> PlanItem.for_business(business_id)
+    |> PlanItem.for_plan(plan_id)
+    |> where([p], p.day in ^days)
+    |> Repo.exists?()
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -179,12 +224,15 @@ defmodule Easy.Training.TrainingPlan do
   def create(business_id, author_id, attrs) do
     insert_changeset(business_id, author_id, attrs)
     |> Repo.insert()
+    |> preload_result()
   end
 
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(plan, attrs) do
     update_changeset(plan, attrs)
+    |> check_context()
     |> Repo.update()
+    |> preload_result()
   end
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
@@ -199,20 +247,18 @@ defmodule Easy.Training.TrainingPlan do
       attrs = %{
         name: copy_name,
         description: plan.description,
-        rest_days: plan.rest_days,
-        original_template_id: plan.id
+        rest_days: plan.rest_days
       }
 
-      case insert_changeset(plan.business_id, plan.author_id, attrs) |> Repo.insert() do
+      relationship_changes = [original_template_id: plan.id]
+
+      case base_insert_changeset(plan.business_id, plan.author_id, attrs, relationship_changes)
+           |> Repo.insert() do
         {:ok, new_plan} ->
           workout_id_map = copy_workouts(plan.workouts, new_plan)
           copy_plan_items(plan.plan_items, new_plan, workout_id_map)
 
-          new_plan
-          |> Repo.preload(
-            workouts: Workout.with_elements(),
-            plan_items: []
-          )
+          preload_full(new_plan)
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -220,9 +266,20 @@ defmodule Easy.Training.TrainingPlan do
     end)
   end
 
-  @spec assign_to_client(t(), String.t(), String.t() | nil, String.t() | nil) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
+  @spec assign_to_client(t(), String.t() | nil, String.t() | nil, String.t() | nil) ::
+          {:ok, t()} | {:error, Ecto.Changeset.t() | :not_found}
+  def assign_to_client(_plan, nil, _start_date, _end_date), do: {:error, :not_found}
+  def assign_to_client(_plan, "", _start_date, _end_date), do: {:error, :not_found}
+
   def assign_to_client(plan, client_id, start_date, end_date) do
+    with true <- Clients.Client.accessible?(plan.business_id, client_id) do
+      do_assign_to_client(plan, client_id, start_date, end_date)
+    else
+      false -> {:error, :not_found}
+    end
+  end
+
+  defp do_assign_to_client(plan, client_id, start_date, end_date) do
     plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
 
     Repo.transaction(fn ->
@@ -230,22 +287,19 @@ defmodule Easy.Training.TrainingPlan do
         name: plan.name,
         description: plan.description,
         rest_days: plan.rest_days,
-        client_id: client_id,
         start_date: start_date,
-        end_date: end_date,
-        original_template_id: plan.id
+        end_date: end_date
       }
 
-      case insert_changeset(plan.business_id, plan.author_id, attrs) |> Repo.insert() do
+      relationship_changes = [client_id: client_id, original_template_id: plan.id]
+
+      case base_insert_changeset(plan.business_id, plan.author_id, attrs, relationship_changes)
+           |> Repo.insert() do
         {:ok, new_plan} ->
           workout_id_map = copy_workouts(plan.workouts, new_plan)
           copy_plan_items(plan.plan_items, new_plan, workout_id_map)
 
-          new_plan
-          |> Repo.preload(
-            workouts: Workout.with_elements(),
-            plan_items: []
-          )
+          preload_full(new_plan)
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -347,5 +401,19 @@ defmodule Easy.Training.TrainingPlan do
 
   defp find_available_name(base_name, _existing_names, _attempt) do
     "#{base_name} (Copy #{System.system_time(:second)})"
+  end
+
+  defp preload_result({:ok, plan}), do: {:ok, preload_full(plan)}
+  defp preload_result(error), do: error
+
+  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+  defp check_context(changeset), do: check_rest_days_do_not_overlap_plan_items(changeset)
+
+  defp preload_full(plan) do
+    Repo.preload(plan,
+      workouts: Workout.with_elements(),
+      plan_items: [],
+      client: []
+    )
   end
 end

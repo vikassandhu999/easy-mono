@@ -56,18 +56,52 @@ defmodule Easy.Training.PlanItem do
     |> foreign_key_constraint(:creator_id)
   end
 
-  @update_fields [:day, :workout_type]
+  @update_fields [:day, :workout_type, :workout_id]
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan_item, attrs) do
     plan_item
     |> cast(attrs, @update_fields)
+    |> validate_required([:day, :workout_type, :workout_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
     |> unique_constraint([:training_plan_id, :day, :workout_type],
       name: :training_plan_items_plan_id_day_workout_type_index,
       message: "already has a workout of this type on this day"
     )
+    |> foreign_key_constraint(:workout_id)
+  end
+
+  defp check_workout_belongs_to_plan(changeset) do
+    workout_id = get_field(changeset, :workout_id)
+    plan_id = get_field(changeset, :training_plan_id)
+    business_id = get_field(changeset, :business_id)
+
+    if workout_id && plan_id && business_id &&
+         not Workout.accessible_for_plan?(plan_id, business_id, workout_id) do
+      add_error(changeset, :workout_id, "must belong to the training plan")
+    else
+      changeset
+    end
+  end
+
+  defp check_day_is_not_rest_day(changeset) do
+    day = get_field(changeset, :day)
+    plan_id = get_field(changeset, :training_plan_id)
+    business_id = get_field(changeset, :business_id)
+
+    if day && plan_id && business_id && rest_day?(business_id, plan_id, day) do
+      add_error(changeset, :day, "cannot schedule workout on a rest day")
+    else
+      changeset
+    end
+  end
+
+  defp rest_day?(business_id, plan_id, day) do
+    TrainingPlan
+    |> TrainingPlan.for_business(business_id)
+    |> where([t], t.id == ^plan_id and fragment("? = ANY(?)", ^day, t.rest_days))
+    |> Repo.exists?()
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -99,17 +133,27 @@ defmodule Easy.Training.PlanItem do
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(training_plan_id, business_id, creator_id, attrs) do
     insert_changeset(training_plan_id, business_id, creator_id, attrs)
+    |> check_context()
     |> Repo.insert()
   end
 
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(plan_item, attrs) do
     update_changeset(plan_item, attrs)
+    |> check_context()
     |> Repo.update()
   end
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(plan_item) do
     Repo.delete(plan_item)
+  end
+
+  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp check_context(changeset) do
+    changeset
+    |> check_workout_belongs_to_plan()
+    |> check_day_is_not_rest_day()
   end
 end

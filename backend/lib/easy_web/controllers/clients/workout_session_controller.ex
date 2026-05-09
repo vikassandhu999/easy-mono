@@ -12,7 +12,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          :ok <- WorkoutSession.ensure_no_active(business_id, client.id),
-         true <- WorkoutSession.accessible_workout?(business_id, workout_id),
+         true <- WorkoutSession.client_accessible_workout?(business_id, client.id, workout_id),
          {:ok, session} <- WorkoutSession.create(business_id, client.id, params) do
       conn
       |> put_status(:created)
@@ -112,7 +112,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          {:ok, session} <- get_client_session(business_id, client.id, id),
-         {:ok, updated} <- WorkoutSession.update(session, conn.body_params) do
+         {:ok, updated} <- WorkoutSession.client_update(session, conn.body_params) do
       render(conn, :show, session: updated)
     end
   end

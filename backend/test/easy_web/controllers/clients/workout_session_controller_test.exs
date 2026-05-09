@@ -27,8 +27,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
           author: ctx.coach,
           business: ctx.business,
           client_id: ctx.client.id,
-          start_date: ~D[2026-01-01],
-          end_date: ~D[2026-03-31]
+          start_date: Date.add(Date.utc_today(), -1),
+          end_date: Date.add(Date.utc_today(), 30)
         )
 
       workout = insert(:workout, training_plan: plan, business: ctx.business)
@@ -65,6 +65,40 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert element_snap["exercise_name"] == exercise.name
       assert [set_snap] = element_snap["planned_sets"]
       assert set_snap["target_reps"] == "8-10"
+    end
+
+    test "rejects another client's assigned workout", ctx do
+      other_client = insert(:client, creator: ctx.coach, business: ctx.business)
+
+      other_plan =
+        insert(:training_plan,
+          author: ctx.coach,
+          business: ctx.business,
+          client_id: other_client.id,
+          start_date: Date.add(Date.utc_today(), -1),
+          end_date: Date.add(Date.utc_today(), 30)
+        )
+
+      workout = insert(:workout, training_plan: other_plan, business: ctx.business)
+
+      conn =
+        post(ctx.conn, "/v1/client/workout_sessions", %{
+          "workout_id" => workout.id
+        })
+
+      assert json_response(conn, 404)
+    end
+
+    test "rejects template workout", ctx do
+      plan = insert(:training_plan, author: ctx.coach, business: ctx.business)
+      workout = insert(:workout, training_plan: plan, business: ctx.business)
+
+      conn =
+        post(ctx.conn, "/v1/client/workout_sessions", %{
+          "workout_id" => workout.id
+        })
+
+      assert json_response(conn, 404)
     end
 
     test "rejects creating session when active session exists", ctx do
@@ -217,6 +251,33 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["notes"] == "Felt tired"
       assert data["soreness_rating"] == 3
+    end
+
+    test "does not allow state or workout retargeting", ctx do
+      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+
+      plan =
+        insert(:training_plan,
+          author: ctx.coach,
+          business: ctx.business,
+          client_id: ctx.client.id,
+          start_date: Date.add(Date.utc_today(), -1),
+          end_date: Date.add(Date.utc_today(), 30)
+        )
+
+      workout = insert(:workout, training_plan: plan, business: ctx.business)
+
+      conn =
+        patch(ctx.conn, "/v1/client/workout_sessions/#{session.id}", %{
+          "state" => "completed",
+          "workout_id" => workout.id,
+          "notes" => "Still active"
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["state"] == "active"
+      assert data["workout_id"] == nil
+      assert data["notes"] == "Still active"
     end
 
     test "returns 404 for another client's session", ctx do

@@ -11,6 +11,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     workout_id = Map.get(params, "workout_id")
 
     with true <- Client.accessible?(business_id, client_id),
+         :ok <- WorkoutSession.ensure_no_active(business_id, client_id),
          true <- WorkoutSession.accessible_workout?(business_id, workout_id),
          {:ok, session} <- WorkoutSession.create(business_id, client_id, params) do
       conn

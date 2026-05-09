@@ -60,9 +60,12 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
           position: 0
         )
 
+      {:ok, planned_session} =
+        Easy.Training.WorkoutSession.update(session, %{"workout_id" => workout.id})
+
       conn =
         post(conn, "/v1/coach/performed_sets", %{
-          "workout_session_id" => session.id,
+          "workout_session_id" => planned_session.id,
           "exercise_id" => exercise.id,
           "workout_element_id" => element.id,
           "position" => 0,
@@ -74,6 +77,76 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["workout_element_id"] == element.id
+    end
+
+    test "returns 422 when workout element belongs to another workout", %{
+      conn: conn,
+      business: business,
+      coach: coach,
+      session: session,
+      exercise: exercise
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
+      other_workout = insert(:workout, training_plan: plan, business: business)
+
+      element =
+        insert(:workout_element,
+          workout: other_workout,
+          exercise: exercise,
+          business: business,
+          position: 0
+        )
+
+      {:ok, planned_session} =
+        Easy.Training.WorkoutSession.update(session, %{"workout_id" => workout.id})
+
+      conn =
+        post(conn, "/v1/coach/performed_sets", %{
+          "workout_session_id" => planned_session.id,
+          "exercise_id" => exercise.id,
+          "workout_element_id" => element.id,
+          "position" => 0,
+          "actual_reps" => "8",
+          "completed" => true
+        })
+
+      assert json_response(conn, 422)
+    end
+
+    test "returns 422 when workout element exercise does not match", %{
+      conn: conn,
+      business: business,
+      coach: coach,
+      session: session,
+      exercise: exercise
+    } do
+      other_exercise = insert(:exercise, business: business)
+      plan = insert(:training_plan, author: coach, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
+
+      element =
+        insert(:workout_element,
+          workout: workout,
+          exercise: other_exercise,
+          business: business,
+          position: 0
+        )
+
+      {:ok, planned_session} =
+        Easy.Training.WorkoutSession.update(session, %{"workout_id" => workout.id})
+
+      conn =
+        post(conn, "/v1/coach/performed_sets", %{
+          "workout_session_id" => planned_session.id,
+          "exercise_id" => exercise.id,
+          "workout_element_id" => element.id,
+          "position" => 0,
+          "actual_reps" => "8",
+          "completed" => true
+        })
+
+      assert json_response(conn, 422)
     end
 
     test "returns 404 for session in another business", %{conn: conn, exercise: exercise} do

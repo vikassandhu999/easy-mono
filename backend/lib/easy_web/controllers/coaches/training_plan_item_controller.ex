@@ -70,6 +70,7 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
            TrainingPlan |> TrainingPlan.for_business(business_id) |> Repo.get(plan_id) do
       plan_items =
         PlanItem
+        |> PlanItem.for_business(business_id)
         |> PlanItem.for_plan(plan.id)
         |> PlanItem.with_workout()
         |> Repo.all()

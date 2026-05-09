@@ -33,7 +33,7 @@ defmodule Easy.Repo.Migrations.RedesignTrainingPlanArchitecture do
     INSERT INTO training_plan_items (id, day, workout_type, workout_id, training_plan_id, business_id, creator_id, inserted_at, updated_at)
     SELECT
       gen_random_uuid(),
-      CASE pw.day_number
+      CASE ranked.day_number
         WHEN 1 THEN 'monday'
         WHEN 2 THEN 'tuesday'
         WHEN 3 THEN 'wednesday'
@@ -42,15 +42,27 @@ defmodule Easy.Repo.Migrations.RedesignTrainingPlanArchitecture do
         WHEN 6 THEN 'saturday'
         WHEN 7 THEN 'sunday'
       END,
-      'primary',
-      pw.id,
-      pw.training_plan_id,
-      pw.business_id,
+      CASE ranked.day_rank
+        WHEN 1 THEN 'primary'
+        ELSE 'alternative'
+      END,
+      ranked.id,
+      ranked.training_plan_id,
+      ranked.business_id,
       tp.author_id,
       NOW(),
       NOW()
-    FROM planned_workouts pw
-    JOIN training_plans tp ON tp.id = pw.training_plan_id
+    FROM (
+      SELECT
+        pw.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY pw.business_id, pw.training_plan_id, pw.day_number
+          ORDER BY pw.inserted_at, pw.id
+        ) AS day_rank
+      FROM planned_workouts pw
+    ) ranked
+    JOIN training_plans tp ON tp.id = ranked.training_plan_id AND tp.business_id = ranked.business_id
+    WHERE ranked.day_rank <= 2
     """)
 
     # 3. Drop the day_number constraint and column from planned_workouts

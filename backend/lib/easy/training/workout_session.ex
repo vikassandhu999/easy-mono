@@ -4,7 +4,7 @@ defmodule Easy.Training.WorkoutSession do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{Workout, WorkoutElement, PerformedSet}
+  alias Easy.Training.{Workout, WorkoutElement, PerformedSet, TrainingPlan}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -37,6 +37,7 @@ defmodule Easy.Training.WorkoutSession do
   end
 
   @cast_fields [:started_at, :ended_at, :state, :soreness_rating, :notes, :workout_id]
+  @client_update_fields [:soreness_rating, :notes]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, client_id, attrs) do
@@ -51,6 +52,10 @@ defmodule Easy.Training.WorkoutSession do
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:workout_id)
+    |> unique_constraint([:business_id, :client_id],
+      name: :workout_sessions_one_active_per_client_index,
+      message: "you already have an active workout session — finish or discard it first"
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
@@ -61,6 +66,18 @@ defmodule Easy.Training.WorkoutSession do
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_end_after_start()
     |> foreign_key_constraint(:workout_id)
+    |> unique_constraint([:business_id, :client_id],
+      name: :workout_sessions_one_active_per_client_index,
+      message: "you already have an active workout session — finish or discard it first"
+    )
+  end
+
+  @spec client_update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def client_update_changeset(session, attrs) do
+    session
+    |> cast(attrs, @client_update_fields)
+    |> validate_length(:notes, max: 5000)
+    |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
   end
 
   defp validate_end_after_start(changeset) do
@@ -138,6 +155,28 @@ defmodule Easy.Training.WorkoutSession do
     |> is_struct(Workout)
   end
 
+  @spec client_accessible_workout?(String.t(), String.t(), String.t() | nil) :: boolean()
+  def client_accessible_workout?(_business_id, _client_id, nil), do: true
+  def client_accessible_workout?(_business_id, _client_id, ""), do: true
+
+  def client_accessible_workout?(business_id, client_id, workout_id) do
+    today = Date.utc_today()
+
+    Workout
+    |> Workout.for_business(business_id)
+    |> join(:inner, [w], t in TrainingPlan,
+      on:
+        t.id == w.training_plan_id and t.business_id == ^business_id and
+          t.client_id == ^client_id
+    )
+    |> where(
+      [w, t],
+      w.id == ^workout_id and t.status == ^:active and t.start_date <= ^today and
+        t.end_date >= ^today
+    )
+    |> Repo.exists?()
+  end
+
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, client_id, attrs) do
     attrs =
@@ -148,24 +187,28 @@ defmodule Easy.Training.WorkoutSession do
     changeset = insert_changeset(business_id, client_id, attrs)
 
     changeset
-    |> maybe_put_snapshot()
+    |> maybe_put_snapshot(business_id)
     |> Repo.insert()
     |> preload_result()
   end
 
-  defp maybe_put_snapshot(changeset) do
+  defp maybe_put_snapshot(changeset, business_id) do
     case get_field(changeset, :workout_id) do
-      nil -> changeset
-      workout_id -> put_change(changeset, :planned_snapshot, build_snapshot(workout_id))
+      nil ->
+        changeset
+
+      workout_id ->
+        put_change(changeset, :planned_snapshot, build_snapshot(business_id, workout_id))
     end
   end
 
-  @spec build_snapshot(String.t()) :: map()
-  defp build_snapshot(workout_id) do
+  @spec build_snapshot(String.t(), String.t()) :: map() | nil
+  defp build_snapshot(business_id, workout_id) do
     element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
 
     workout =
       Workout
+      |> Workout.for_business(business_id)
       |> Repo.get(workout_id)
       |> Repo.preload(workout_elements: element_query)
 
@@ -210,6 +253,13 @@ defmodule Easy.Training.WorkoutSession do
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(session, attrs) do
     update_changeset(session, attrs)
+    |> Repo.update()
+    |> preload_result()
+  end
+
+  @spec client_update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def client_update(session, attrs) do
+    client_update_changeset(session, attrs)
     |> Repo.update()
     |> preload_result()
   end

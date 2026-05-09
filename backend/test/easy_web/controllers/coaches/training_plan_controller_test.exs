@@ -16,6 +16,14 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
       assert data["name"] == attrs["name"]
     end
+
+    test "rejects direct client assignment", %{conn: conn, coach: coach, business: business} do
+      client = insert(:client, creator: coach, business: business)
+      attrs = build(:training_plan_attrs) |> Map.put("client_id", client.id)
+
+      conn = post(conn, "/v1/coach/training_plans", attrs)
+      assert json_response(conn, 422)
+    end
   end
 
   describe "GET /v1/coach/training_plans" do
@@ -104,6 +112,37 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
       assert data["name"] == "Updated TP"
     end
 
+    test "returns full preloaded plan after metadata update", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: workout,
+        business: business,
+        creator: coach
+      )
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"name" => "Updated TP"})
+      assert %{"data" => data} = json_response(conn, 200)
+      assert [%{"id" => workout_id}] = data["workouts"]
+      assert workout_id == workout.id
+      assert [%{"workout_id" => item_workout_id}] = data["plan_items"]
+      assert item_workout_id == workout.id
+    end
+
+    test "rejects direct client reassignment", %{conn: conn, coach: coach, business: business} do
+      plan = insert(:training_plan, author: coach, business: business)
+      client = insert(:client, creator: coach, business: business)
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"client_id" => client.id})
+      assert json_response(conn, 422)
+    end
+
     test "sets rest_days", %{conn: conn, coach: coach, business: business} do
       plan = insert(:training_plan, author: coach, business: business)
 
@@ -133,6 +172,26 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
           "rest_days" => ["monday", "monday"]
         })
 
+      assert json_response(conn, 422)
+    end
+
+    test "rejects rest_days that overlap scheduled workouts", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      workout = insert(:workout, training_plan: plan, business: business)
+
+      insert(:training_plan_item,
+        training_plan: plan,
+        workout: workout,
+        business: business,
+        creator: coach,
+        day: "monday"
+      )
+
+      conn = patch(conn, "/v1/coach/training_plans/#{plan.id}", %{"rest_days" => ["monday"]})
       assert json_response(conn, 422)
     end
   end
@@ -173,6 +232,25 @@ defmodule EasyWeb.Coaches.TrainingPlanControllerTest do
 
       assert %{"data" => data} = json_response(conn, 201)
       assert data["rest_days"] == ["saturday", "sunday"]
+    end
+
+    test "rejects assigning to a client from another business", %{
+      conn: conn,
+      coach: coach,
+      business: business
+    } do
+      plan = insert(:training_plan, author: coach, business: business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, creator: other_coach, business: other_coach.business)
+
+      conn =
+        post(conn, "/v1/coach/training_plans/#{plan.id}/assign", %{
+          "client_id" => other_client.id,
+          "start_date" => "2026-01-01",
+          "end_date" => "2026-01-31"
+        })
+
+      assert json_response(conn, 404)
     end
   end
 

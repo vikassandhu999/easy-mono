@@ -2,8 +2,8 @@ defmodule EasyWeb.Coaches.FoodController do
   use EasyWeb, :controller
 
   alias Easy.Nutrition.Food
+  alias Easy.Nutrition.Reads
   alias Easy.Orgs.Coaches
-  alias Easy.Repo
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -21,14 +21,10 @@ defmodule EasyWeb.Coaches.FoodController do
   def show(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Food |> Food.for_business_or_system(claims.business_id) |> Repo.get(food_id) do
-      %Food{} = food ->
-        conn
-        |> put_status(:ok)
-        |> render(:show, food: food)
-
-      nil ->
-        {:error, :not_found}
+    with {:ok, food} <- Reads.fetch_visible_food(claims.business_id, food_id) do
+      conn
+      |> put_status(:ok)
+      |> render(:show, food: food)
     end
   end
 
@@ -36,16 +32,11 @@ defmodule EasyWeb.Coaches.FoodController do
   def update(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    case Food |> Food.for_business(claims.business_id) |> Repo.get(food_id) do
-      %Food{} = food ->
-        with {:ok, updated_food} <- Food.update(food, conn.body_params) do
-          conn
-          |> put_status(:ok)
-          |> render(:show, food: updated_food)
-        end
-
-      nil ->
-        {:error, :not_found}
+    with {:ok, food} <- Reads.fetch_business_food(claims.business_id, food_id),
+         {:ok, updated_food} <- Food.update(food, conn.body_params) do
+      conn
+      |> put_status(:ok)
+      |> render(:show, food: updated_food)
     end
   end
 
@@ -53,13 +44,9 @@ defmodule EasyWeb.Coaches.FoodController do
   def delete(conn, %{"id" => food_id}) do
     claims = conn.assigns.claims
 
-    with food when not is_nil(food) <-
-           Food |> Food.for_business(claims.business_id) |> Repo.get(food_id),
+    with {:ok, food} <- Reads.fetch_business_food(claims.business_id, food_id),
          {:ok, _deleted} <- Food.delete(food) do
       send_resp(conn, :no_content, "")
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -67,19 +54,15 @@ defmodule EasyWeb.Coaches.FoodController do
   def index(conn, params) do
     claims = conn.assigns.claims
 
-    search_term = params |> Map.get("search", "") |> String.trim()
+    search_term = Map.get(params, "search", "")
     offset = parse_integer(params, "offset", 0)
     limit = parse_integer(params, "limit", 10)
 
-    base = Food |> Food.for_business_or_system(claims.business_id) |> Food.search(search_term)
-
-    count = Repo.aggregate(base, :count, :id)
-
-    ordered = if search_term == "", do: Food.newest(base), else: base
-    foods = ordered |> Easy.Utils.paginate(offset, limit) |> Repo.all()
-
-    conn
-    |> put_status(:ok)
-    |> render(:index, count: count, foods: foods)
+    with {:ok, %{count: count, foods: foods}} <-
+           Reads.list_visible_foods(claims.business_id, search_term, offset, limit) do
+      conn
+      |> put_status(:ok)
+      |> render(:index, count: count, foods: foods)
+    end
   end
 end

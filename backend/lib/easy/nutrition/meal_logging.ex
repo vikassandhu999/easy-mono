@@ -30,8 +30,10 @@ defmodule Easy.Nutrition.MealLogging do
 
         case FoodLogEntry.create(meal_log.id, business_id, attrs) do
           {:ok, entry} ->
-            MealLog.recalculate_logged_calories!(meal_log)
-            entry
+            case MealLog.recalculate_logged_calories(meal_log) do
+              {:ok, _meal_log} -> entry
+              {:error, reason} -> Repo.rollback(reason)
+            end
 
           {:error, reason} ->
             Repo.rollback(reason)
@@ -40,15 +42,16 @@ defmodule Easy.Nutrition.MealLogging do
     end
   end
 
-  @spec update_entry(FoodLogEntry.t(), map()) ::
+  @spec update_entry(FoodLogEntry.t(), String.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
-  def update_entry(%FoodLogEntry{} = entry, attrs) do
+  def update_entry(%FoodLogEntry{} = entry, business_id, attrs) do
     Repo.transaction(fn ->
       case FoodLogEntry.update(entry, attrs) do
         {:ok, updated} ->
-          meal_log = Repo.get!(MealLog, entry.meal_log_id)
-          MealLog.recalculate_logged_calories!(meal_log)
-          updated
+          case recalculate_entry_meal_log(updated, business_id) do
+            {:ok, _meal_log} -> updated
+            {:error, reason} -> Repo.rollback(reason)
+          end
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -56,14 +59,15 @@ defmodule Easy.Nutrition.MealLogging do
     end)
   end
 
-  @spec delete_entry(FoodLogEntry.t()) :: {:ok, FoodLogEntry.t()} | {:error, any()}
-  def delete_entry(%FoodLogEntry{} = entry) do
+  @spec delete_entry(FoodLogEntry.t(), String.t()) :: {:ok, FoodLogEntry.t()} | {:error, any()}
+  def delete_entry(%FoodLogEntry{} = entry, business_id) do
     Repo.transaction(fn ->
       case FoodLogEntry.delete(entry) do
         {:ok, deleted} ->
-          meal_log = Repo.get!(MealLog, entry.meal_log_id)
-          MealLog.recalculate_logged_calories!(meal_log)
-          deleted
+          case recalculate_entry_meal_log(deleted, business_id) do
+            {:ok, _meal_log} -> deleted
+            {:error, reason} -> Repo.rollback(reason)
+          end
 
         {:error, reason} ->
           Repo.rollback(reason)
@@ -180,8 +184,17 @@ defmodule Easy.Nutrition.MealLogging do
       end)
       |> Enum.reverse()
 
-    MealLog.recalculate_logged_calories!(meal_log)
-    entries
+    case MealLog.recalculate_logged_calories(meal_log) do
+      {:ok, _meal_log} -> entries
+      {:error, reason} -> Repo.rollback(reason)
+    end
+  end
+
+  defp recalculate_entry_meal_log(entry, business_id) do
+    case MealLog |> MealLog.for_business(business_id) |> Repo.get(entry.meal_log_id) do
+      nil -> {:error, :not_found}
+      meal_log -> MealLog.recalculate_logged_calories(meal_log)
+    end
   end
 
   defp load_meal_with_items(business_id, client_id, meal_id) do

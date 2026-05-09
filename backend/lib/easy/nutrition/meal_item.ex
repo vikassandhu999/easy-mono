@@ -38,7 +38,6 @@ defmodule Easy.Nutrition.MealItem do
     |> put_change(:meal_id, meal_id)
     |> put_change(:business_id, business_id)
     |> validate_required([:meal_id, :business_id])
-    |> maybe_set_next_position(meal_id)
     |> validate_food_or_recipe()
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
   end
@@ -50,15 +49,6 @@ defmodule Easy.Nutrition.MealItem do
     meal_item
     |> cast(attrs, @update_fields)
     |> unique_constraint(:position, name: :meal_items_meal_id_position_index)
-  end
-
-  defp maybe_set_next_position(changeset, meal_id) do
-    if get_change(changeset, :position) do
-      changeset
-    else
-      next = next_position(meal_id)
-      put_change(changeset, :position, next)
-    end
   end
 
   defp validate_food_or_recipe(changeset) do
@@ -84,8 +74,12 @@ defmodule Easy.Nutrition.MealItem do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  defp next_position(meal_id) do
-    query = from(m in __MODULE__, where: m.meal_id == ^meal_id, select: max(m.position))
+  defp next_position(business_id, meal_id) do
+    query =
+      __MODULE__
+      |> for_business(business_id)
+      |> for_meal(meal_id)
+      |> select([m], max(m.position))
 
     case Repo.one(query) do
       nil -> 0
@@ -108,6 +102,7 @@ defmodule Easy.Nutrition.MealItem do
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(meal_id, business_id, attrs) do
     insert_changeset(meal_id, business_id, attrs)
+    |> maybe_put_next_position(business_id, meal_id, attrs)
     |> Repo.insert()
   end
 
@@ -120,5 +115,17 @@ defmodule Easy.Nutrition.MealItem do
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(meal_item) do
     Repo.delete(meal_item)
+  end
+
+  defp maybe_put_next_position(changeset, business_id, meal_id, attrs) do
+    if changeset.valid? and not position_present?(attrs) do
+      put_change(changeset, :position, next_position(business_id, meal_id))
+    else
+      changeset
+    end
+  end
+
+  defp position_present?(attrs) do
+    Map.has_key?(attrs, "position") or Map.has_key?(attrs, :position)
   end
 end

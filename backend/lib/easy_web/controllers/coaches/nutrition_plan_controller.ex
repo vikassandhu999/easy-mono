@@ -1,11 +1,10 @@
 defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Plans
+  alias Easy.Nutrition.Reads
   alias Easy.Orgs.Coaches
-  alias Easy.Repo
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -23,13 +22,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def show(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    case Plan
-         |> Plan.for_business(business_id)
-         |> Plan.with_meals()
-         |> Plan.with_plan_items()
-         |> Repo.get(plan_id) do
-      nil -> {:error, :not_found}
-      plan -> render(conn, :show, plan: Repo.preload(plan, :client))
+    with {:ok, plan} <- Reads.fetch_plan_full(business_id, plan_id) do
+      render(conn, :show, plan: plan)
     end
   end
 
@@ -37,12 +31,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def update(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with plan when not is_nil(plan) <- Plan |> Plan.for_business(business_id) |> Repo.get(plan_id),
+    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
          {:ok, updated_plan} <- Plan.update(plan, conn.body_params) do
       render(conn, :show, plan: updated_plan)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -50,12 +41,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def delete(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with plan when not is_nil(plan) <- Plan |> Plan.for_business(business_id) |> Repo.get(plan_id),
+    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
          {:ok, _deleted} <- Plan.delete(plan) do
       send_resp(conn, :no_content, "")
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -67,23 +55,12 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     limit = parse_integer(params, "limit", 10)
     status = parse_enum(params, "status", Plan.statuses())
 
-    base =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.with_status(status)
-      |> Plan.templates()
-
-    count = Repo.aggregate(base, :count, :id)
-
-    plans =
-      base
-      |> Plan.newest()
-      |> Easy.Utils.paginate(offset, limit)
-      |> Repo.all()
-
-    conn
-    |> put_status(:ok)
-    |> render(:index, count: count, plans: plans)
+    with {:ok, %{count: count, plans: plans}} <-
+           Reads.list_template_plans(business_id, status, offset, limit) do
+      conn
+      |> put_status(:ok)
+      |> render(:index, count: count, plans: plans)
+    end
   end
 
   @spec assign(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -91,17 +68,12 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     claims = conn.assigns.claims
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         plan when not is_nil(plan) <-
-           Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
-         client when not is_nil(client) <-
-           Client |> Client.for_business(claims.business_id) |> Repo.get(client_id),
+         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
+         {:ok, _client} <- Reads.fetch_client(claims.business_id, client_id),
          {:ok, new_plan} <- Plans.assign_to_client(plan, client_id, coach.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -110,15 +82,11 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     claims = conn.assigns.claims
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         plan when not is_nil(plan) <-
-           Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
+         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
          {:ok, new_plan} <- Plans.duplicate(plan, coach.id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -126,15 +94,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def shopping_list(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with plan when not is_nil(plan) <-
-           Plan
-           |> Plan.for_business(business_id)
-           |> Repo.get(plan_id),
+    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
          {:ok, items} <- Plans.shopping_list(plan) do
       render(conn, :shopping_list, items: items)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -142,15 +104,9 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def macros(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with plan when not is_nil(plan) <-
-           Plan
-           |> Plan.for_business(business_id)
-           |> Repo.get(plan_id),
+    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
          {:ok, macros} <- Plans.macros(plan) do
       render(conn, :macros, macros: macros)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 
@@ -160,8 +116,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     clear_existing = parse_boolean(params, "clear_existing") != false
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         plan when not is_nil(plan) <-
-           Plan |> Plan.for_business(claims.business_id) |> Repo.get(plan_id),
+         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
          {:ok, items} <-
            Plans.copy_day(
              plan,
@@ -171,9 +126,6 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
              clear_existing
            ) do
       render(conn, :plan_items, plan_items: items)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
   end
 end

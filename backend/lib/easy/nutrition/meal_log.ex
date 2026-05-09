@@ -120,31 +120,35 @@ defmodule Easy.Nutrition.MealLog do
     end
   end
 
-  @spec recalculate_logged_calories!(t()) :: t()
-  def recalculate_logged_calories!(%__MODULE__{} = meal_log) do
-    {1, [%{logged_calories: total}]} =
-      from(ml in __MODULE__,
-        where: ml.id == ^meal_log.id,
-        select: %{
+  @spec recalculate_logged_calories(t()) :: {:ok, t()} | {:error, :not_found}
+  def recalculate_logged_calories(%__MODULE__{} = meal_log) do
+    case do_recalculate_logged_calories(meal_log) do
+      {1, [%{logged_calories: total}]} -> {:ok, %{meal_log | logged_calories: total}}
+      {0, []} -> {:error, :not_found}
+    end
+  end
+
+  defp do_recalculate_logged_calories(meal_log) do
+    from(ml in __MODULE__,
+      where: ml.id == ^meal_log.id and ml.business_id == ^meal_log.business_id,
+      select: %{
+        logged_calories:
+          fragment(
+            "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
+            ml.id
+          )
+      },
+      update: [
+        set: [
           logged_calories:
             fragment(
               "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
               ml.id
             )
-        },
-        update: [
-          set: [
-            logged_calories:
-              fragment(
-                "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
-                ml.id
-              )
-          ]
         ]
-      )
-      |> Repo.update_all([], returning: [:logged_calories])
-
-    %{meal_log | logged_calories: total}
+      ]
+    )
+    |> Repo.update_all([], returning: [:logged_calories])
   end
 
   defp get_existing(business_id, client_id, date, meal_slot) do

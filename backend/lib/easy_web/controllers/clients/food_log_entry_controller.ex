@@ -2,9 +2,8 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
   use EasyWeb, :controller
 
   alias Easy.Clients.Client
-  alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.MealLogging
-  alias Easy.Repo
+  alias Easy.Nutrition.Reads
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
@@ -23,8 +22,8 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, entry} <- get_client_entry(business_id, client.id, id),
-         {:ok, updated} <- MealLogging.update_entry(entry, conn.body_params) do
+         {:ok, entry} <- Reads.fetch_client_food_log_entry(business_id, client.id, id),
+         {:ok, updated} <- MealLogging.update_entry(entry, business_id, conn.body_params) do
       render(conn, :show, food_log_entry: updated)
     end
   end
@@ -34,8 +33,8 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, entry} <- get_client_entry(business_id, client.id, id),
-         {:ok, _} <- MealLogging.delete_entry(entry) do
+         {:ok, entry} <- Reads.fetch_client_food_log_entry(business_id, client.id, id),
+         {:ok, _} <- MealLogging.delete_entry(entry, business_id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -75,14 +74,5 @@ defmodule EasyWeb.Clients.FoodLogEntryController do
 
   defp parse_required_date(_) do
     {:error, Easy.Error.unprocessable(%{fields: %{date: ["can't be blank"]}})}
-  end
-
-  defp get_client_entry(business_id, client_id, entry_id) do
-    case FoodLogEntry
-         |> FoodLogEntry.for_client(business_id, client_id)
-         |> Repo.get(entry_id) do
-      nil -> {:error, :not_found}
-      entry -> {:ok, entry}
-    end
   end
 end

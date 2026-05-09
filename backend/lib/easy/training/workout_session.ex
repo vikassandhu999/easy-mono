@@ -4,7 +4,7 @@ defmodule Easy.Training.WorkoutSession do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{Workout, WorkoutElement, PerformedSet, TrainingPlan}
+  alias Easy.Training.{Workout, WorkoutElement, PerformedSet}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -134,47 +134,6 @@ defmodule Easy.Training.WorkoutSession do
     else
       :ok
     end
-  end
-
-  @spec accessible?(String.t(), String.t()) :: boolean()
-  def accessible?(business_id, session_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.get(session_id)
-    |> is_struct(__MODULE__)
-  end
-
-  @spec accessible_workout?(String.t(), String.t() | nil) :: boolean()
-  def accessible_workout?(_business_id, nil), do: true
-  def accessible_workout?(_business_id, ""), do: true
-
-  def accessible_workout?(business_id, workout_id) do
-    Workout
-    |> Workout.for_business(business_id)
-    |> Repo.get(workout_id)
-    |> is_struct(Workout)
-  end
-
-  @spec client_accessible_workout?(String.t(), String.t(), String.t() | nil) :: boolean()
-  def client_accessible_workout?(_business_id, _client_id, nil), do: true
-  def client_accessible_workout?(_business_id, _client_id, ""), do: true
-
-  def client_accessible_workout?(business_id, client_id, workout_id) do
-    today = Date.utc_today()
-
-    Workout
-    |> Workout.for_business(business_id)
-    |> join(:inner, [w], t in TrainingPlan,
-      on:
-        t.id == w.training_plan_id and t.business_id == ^business_id and
-          t.client_id == ^client_id
-    )
-    |> where(
-      [w, t],
-      w.id == ^workout_id and t.status == ^:active and t.start_date <= ^today and
-        t.end_date >= ^today
-    )
-    |> Repo.exists?()
   end
 
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}

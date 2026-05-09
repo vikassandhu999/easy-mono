@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.TrainingPlanController do
   use EasyWeb, :controller
 
+  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Orgs.Coaches
   alias Easy.Training.Reads
   alias Easy.Training.TrainingPlan
@@ -78,7 +79,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     %{business_id: business_id} = conn.assigns.claims
 
     with {:ok, plan} <- Reads.fetch_plan_full(business_id, id),
-         {:ok, _client} <- Reads.fetch_client(business_id, client_id),
+         {:ok, _client} <- ClientReads.fetch_client(business_id, client_id),
          {:ok, assigned} <-
            TrainingPlan.assign_to_client(
              plan,

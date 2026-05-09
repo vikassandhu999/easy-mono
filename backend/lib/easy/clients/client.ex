@@ -300,14 +300,6 @@ defmodule Easy.Clients.Client do
     from(c in query, preload: [:user, :business, :creator])
   end
 
-  @spec accessible?(String.t(), String.t()) :: boolean()
-  def accessible?(business_id, client_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.get(client_id)
-    |> is_struct(__MODULE__)
-  end
-
   @spec active_for_email(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def active_for_email(query \\ __MODULE__, email) do
     from(c in query,

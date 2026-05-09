@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :controller
 
+  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Plans
   alias Easy.Nutrition.Reads
@@ -69,7 +70,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
          {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
-         {:ok, _client} <- Reads.fetch_client(claims.business_id, client_id),
+         {:ok, _client} <- ClientReads.fetch_client(claims.business_id, client_id),
          {:ok, new_plan} <- Plans.assign_to_client(plan, client_id, coach.id, params) do
       conn
       |> put_status(:created)

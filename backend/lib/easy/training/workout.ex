@@ -73,14 +73,6 @@ defmodule Easy.Training.Workout do
     from(w in query, preload: [workout_elements: ^element_query])
   end
 
-  @spec accessible?(String.t(), String.t()) :: boolean()
-  def accessible?(business_id, workout_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.get(workout_id)
-    |> is_struct(__MODULE__)
-  end
-
   @spec accessible_for_plan?(String.t(), String.t(), String.t()) :: boolean()
   def accessible_for_plan?(plan_id, business_id, workout_id) do
     __MODULE__

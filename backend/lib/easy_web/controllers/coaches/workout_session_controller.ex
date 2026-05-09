@@ -1,6 +1,7 @@
 defmodule EasyWeb.Coaches.WorkoutSessionController do
   use EasyWeb, :controller
 
+  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Training.Reads
   alias Easy.Training.WorkoutSession
 
@@ -9,7 +10,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
     %{business_id: business_id} = conn.assigns.claims
     workout_id = Map.get(params, "workout_id")
 
-    with {:ok, _client} <- Reads.fetch_client(business_id, client_id),
+    with {:ok, _client} <- ClientReads.fetch_client(business_id, client_id),
          :ok <- WorkoutSession.ensure_no_active(business_id, client_id),
          {:ok, :valid} <- Reads.ensure_workout(business_id, workout_id),
          {:ok, session} <- WorkoutSession.create(business_id, client_id, params) do

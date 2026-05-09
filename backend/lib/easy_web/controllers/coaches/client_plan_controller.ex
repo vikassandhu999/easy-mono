@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ClientPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
+  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Nutrition
   alias Easy.Nutrition.Plan
   alias Easy.Training
@@ -11,7 +11,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   def training_plans(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with true <- Client.accessible?(business_id, client_id) do
+    with {:ok, _client} <- ClientReads.fetch_client(business_id, client_id) do
       offset = parse_integer(params, "offset", 0)
       limit = parse_integer(params, "limit", 50)
       status = parse_enum(params, "status", TrainingPlan.statuses())
@@ -20,8 +20,6 @@ defmodule EasyWeb.Coaches.ClientPlanController do
              Training.Reads.list_client_plans(business_id, client_id, status, offset, limit) do
         render(conn, :training_plans, plans: plans, count: count)
       end
-    else
-      false -> {:error, :not_found}
     end
   end
 
@@ -29,7 +27,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   def nutrition_plans(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with true <- Client.accessible?(business_id, client_id) do
+    with {:ok, _client} <- ClientReads.fetch_client(business_id, client_id) do
       offset = parse_integer(params, "offset", 0)
       limit = parse_integer(params, "limit", 10)
       status = parse_enum(params, "status", Plan.statuses())
@@ -38,8 +36,6 @@ defmodule EasyWeb.Coaches.ClientPlanController do
              Nutrition.Reads.list_client_plans_full(business_id, client_id, status, offset, limit) do
         render(conn, :nutrition_plans, plans: plans, count: count)
       end
-    else
-      false -> {:error, :not_found}
     end
   end
 end

@@ -1,5 +1,4 @@
 defmodule Easy.Nutrition.Reads do
-  alias Easy.Clients.Client
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.Meal
@@ -11,14 +10,6 @@ defmodule Easy.Nutrition.Reads do
   alias Easy.Repo
 
   import Ecto.Query
-
-  @spec fetch_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def fetch_client(business_id, client_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
-    |> ok_or_not_found()
-  end
 
   @spec fetch_visible_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
   def fetch_visible_food(business_id, food_id) do

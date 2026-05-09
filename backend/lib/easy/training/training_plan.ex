@@ -212,14 +212,6 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, preload: [:plan_items])
   end
 
-  @spec accessible?(String.t(), String.t()) :: boolean()
-  def accessible?(business_id, plan_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.get(plan_id)
-    |> is_struct(__MODULE__)
-  end
-
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, author_id, attrs) do
     insert_changeset(business_id, author_id, attrs)
@@ -272,14 +264,6 @@ defmodule Easy.Training.TrainingPlan do
   def assign_to_client(_plan, "", _start_date, _end_date), do: {:error, :not_found}
 
   def assign_to_client(plan, client_id, start_date, end_date) do
-    with true <- Clients.Client.accessible?(plan.business_id, client_id) do
-      do_assign_to_client(plan, client_id, start_date, end_date)
-    else
-      false -> {:error, :not_found}
-    end
-  end
-
-  defp do_assign_to_client(plan, client_id, start_date, end_date) do
     plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
 
     Repo.transaction(fn ->

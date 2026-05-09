@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ClientWeightEntryController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
+  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Fitness.WeightEntry
   alias Easy.Repo
 
@@ -9,7 +9,7 @@ defmodule EasyWeb.Coaches.ClientWeightEntryController do
   def index(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, client} <- fetch_client(business_id, client_id),
+    with {:ok, client} <- ClientReads.fetch_client(business_id, client_id),
          {:ok, since_date} <- WeightEntry.parse_since(Map.get(params, "since")),
          {:ok, adherence} <- WeightEntry.adherence(business_id, client.id) do
       entries =
@@ -21,13 +21,6 @@ defmodule EasyWeb.Coaches.ClientWeightEntryController do
         |> Repo.all()
 
       render(conn, :index, entries: entries, client: client, adherence: adherence)
-    end
-  end
-
-  defp fetch_client(business_id, client_id) do
-    case Client |> Client.for_business(business_id) |> Repo.get(client_id) do
-      nil -> {:error, :not_found}
-      client -> {:ok, client}
     end
   end
 

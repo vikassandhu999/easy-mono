@@ -1,5 +1,4 @@
 defmodule Easy.Training.Reads do
-  alias Easy.Clients.Client
   alias Easy.Repo
   alias Easy.Training.Equipment
   alias Easy.Training.Exercise
@@ -12,14 +11,6 @@ defmodule Easy.Training.Reads do
   alias Easy.Training.WorkoutSession
 
   import Ecto.Query
-
-  @spec fetch_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def fetch_client(business_id, client_id) do
-    Client
-    |> Client.for_business(business_id)
-    |> Repo.get(client_id)
-    |> ok_or_not_found()
-  end
 
   @spec fetch_plan(String.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
   def fetch_plan(business_id, plan_id) do

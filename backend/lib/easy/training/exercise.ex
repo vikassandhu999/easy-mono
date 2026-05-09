@@ -174,16 +174,6 @@ defmodule Easy.Training.Exercise do
     |> preload_result()
   end
 
-  @spec accessible?(String.t(), String.t() | nil) :: boolean()
-  def accessible?(_business_id, nil), do: true
-
-  def accessible?(business_id, exercise_id) do
-    __MODULE__
-    |> for_business(business_id)
-    |> Repo.get(exercise_id)
-    |> is_struct(__MODULE__)
-  end
-
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(exercise), do: Repo.delete(exercise)
 

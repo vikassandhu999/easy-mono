@@ -1,8 +1,8 @@
 import type {Ref} from 'react';
 
-import {formatUsedOnDays, getWorkoutUsedOnDays, TRAINING_DAY_LABELS} from '@easy/utils';
-import {AlertDialog, Button, Input, Spinner, toast} from '@heroui/react';
-import {Copy, Pencil, Plus, Trash2} from 'lucide-react';
+import {formatUsedOnDays, getWorkoutUsedOnDays} from '@easy/utils';
+import {AlertDialog, Button, Input, Popover, Spinner, toast} from '@heroui/react';
+import {MoreHorizontal, Plus} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import type {Exercise} from '@/api/exercises';
@@ -10,9 +10,7 @@ import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlan
 import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 import {
-  useCreateTrainingPlanItemMutation,
   useCreateWorkoutElementMutation,
-  useDeleteTrainingPlanItemMutation,
   useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
   useDuplicateWorkoutMutation,
@@ -52,8 +50,6 @@ export default function WorkoutSection({
   const [deleteElement] = useDeleteWorkoutElementMutation();
   const [updateWorkout, {isLoading: isSavingName}] = useUpdateWorkoutMutation();
   const [duplicateWorkout, {isLoading: isDuplicatingWorkout}] = useDuplicateWorkoutMutation();
-  const [createPlanItem, {isLoading: isCreatingPlanItem}] = useCreateTrainingPlanItemMutation();
-  const [deletePlanItem, {isLoading: isDeletingPlanItem}] = useDeleteTrainingPlanItemMutation();
 
   // Track which exercise row is in edit mode (only one at a time).
   const [editingElementId, setEditingElementId] = useState<null | string>(null);
@@ -71,12 +67,13 @@ export default function WorkoutSection({
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(workout.name);
+  const [isWorkoutMenuOpen, setIsWorkoutMenuOpen] = useState(false);
+  const [showDeleteWorkoutDialog, setShowDeleteWorkoutDialog] = useState(false);
   const usedOnDays = useMemo(() => getWorkoutUsedOnDays(planItems, workout.id), [planItems, workout.id]);
   const usedOnLabel = useMemo(
     () => (usedOnDays.length === 0 ? 'Not scheduled yet' : `Used on: ${formatUsedOnDays(usedOnDays)}`),
     [usedOnDays],
   );
-  const isShared = usedOnDays.length > 1;
 
   const handleSaveName = async () => {
     const trimmed = editName.trim();
@@ -278,68 +275,6 @@ export default function WorkoutSection({
     }
   };
 
-  // ── Unshare: "Make a copy for this day only" ───────────────────
-  //
-  // Backend limitation (see docs/2026-04-21-training-plan-redesign-handover.md
-  // "Open questions"): `PATCH /training_plan_items/{id}` does not apply
-  // `workout_id`. To relink a plan item to a different workout we delete + recreate.
-  //
-  // Flow:
-  //   1. Duplicate the current workout (deep-copies exercises + sets)
-  //   2. Delete the plan item for the chosen day
-  //   3. Create a new plan item for that day pointing at the duplicate
-  //
-  // If step 2 succeeds but step 3 fails, the day ends up unassigned — surface an
-  // error toast so the coach can retry from the day row.
-
-  const [unsharePickerOpen, setUnsharePickerOpen] = useState(false);
-  const [unshareDay, setUnshareDay] = useState<(typeof usedOnDays)[number] | null>(null);
-  const isUnshareInFlight = isDuplicatingWorkout || isCreatingPlanItem || isDeletingPlanItem;
-
-  const handleUnshareForDay = async (day: (typeof usedOnDays)[number]) => {
-    setUnshareDay(day);
-    const planItem = planItems.find((item) => item.workout_id === workout.id && item.day === day);
-    if (!planItem) {
-      toast.danger('Could not find the day assignment to unshare.');
-      setUnshareDay(null);
-      return;
-    }
-
-    try {
-      const dup = await duplicateWorkout({id: workout.id, planId}).unwrap();
-      try {
-        await deletePlanItem({id: planItem.id, planId}).unwrap();
-      } catch {
-        toast.danger('Created a copy but failed to replace the day assignment. Please update manually.');
-        setUnshareDay(null);
-        setUnsharePickerOpen(false);
-        return;
-      }
-
-      try {
-        await createPlanItem({
-          planId,
-          body: {
-            day,
-            workout_id: dup.data.id,
-            workout_type: planItem.workout_type,
-          },
-        }).unwrap();
-        toast.success(`${TRAINING_DAY_LABELS[day]} now uses its own copy of this workout.`);
-        onWorkoutCreated?.(dup.data.id);
-      } catch {
-        toast.danger(
-          `Created a copy but ${TRAINING_DAY_LABELS[day]} is now unassigned. Assign the new workout manually.`,
-        );
-      }
-    } catch {
-      toast.danger('Failed to create a copy for this day.');
-    } finally {
-      setUnshareDay(null);
-      setUnsharePickerOpen(false);
-    }
-  };
-
   // ── Copy exercise to another workout ───────────────────────────
 
   const [copyingElementId, setCopyingElementId] = useState<null | string>(null);
@@ -423,126 +358,133 @@ export default function WorkoutSection({
             </div>
           ) : (
             <button
-              className="flex min-h-11 min-w-0 items-center gap-1.5 rounded-md px-1 text-left transition-colors hover:bg-content2"
+              className="flex min-h-11 min-w-0 items-center rounded-md px-1 text-left transition-colors hover:bg-content2"
               onClick={() => {
                 setEditName(workout.name);
+                setIsEditingNotes(false);
                 setIsEditingName(true);
               }}
               type="button"
             >
               <h3 className="truncate text-sm font-semibold">{workout.name}</h3>
-              <Pencil
-                className="shrink-0 text-foreground-400"
-                size={12}
-              />
             </button>
           )}
           <p className="mt-1 px-1 text-xs text-foreground-400">{usedOnLabel}</p>
-          {isShared ? (
-            <SharedWorkoutBanner
-              busyDay={unshareDay}
-              isBusy={isUnshareInFlight}
-              isPickerOpen={unsharePickerOpen}
-              onClosePicker={() => setUnsharePickerOpen(false)}
-              onOpenPicker={() => setUnsharePickerOpen(true)}
-              onUnshareDay={handleUnshareForDay}
-              usedOnDays={usedOnDays}
-            />
-          ) : null}
-          {!isEditingName &&
-            (isEditingNotes ? (
-              <div className="mt-1 flex items-center gap-2 px-1">
-                <Input
-                  aria-label="Workout notes"
-                  className="flex-1"
-                  onBlur={handleSaveNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      (e.target as HTMLInputElement).blur();
-                    }
-                    if (e.key === 'Escape') {
-                      setEditNotes(workout.notes ?? '');
-                      setIsEditingNotes(false);
-                    }
-                  }}
-                  placeholder="Add notes..."
-                  ref={notesInputRef}
-                  value={editNotes}
-                />
-              </div>
-            ) : (
-              <button
-                className="mt-0.5 flex min-h-11 items-center rounded-md px-1 text-left text-xs text-foreground-400 transition-colors hover:bg-content2"
-                onClick={() => {
-                  setEditNotes(workout.notes ?? '');
-                  setIsEditingNotes(true);
+          {!isEditingName && isEditingNotes ? (
+            <div className="mt-1 flex items-center gap-2 px-1">
+              <Input
+                aria-label="Workout notes"
+                className="flex-1"
+                onBlur={handleSaveNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    (e.target as HTMLInputElement).blur();
+                  }
+                  if (e.key === 'Escape') {
+                    setEditNotes(workout.notes ?? '');
+                    setIsEditingNotes(false);
+                  }
                 }}
-                type="button"
-              >
-                {workout.notes || 'Add notes...'}
-              </button>
-            ))}
+                placeholder="Add notes..."
+                ref={notesInputRef}
+                value={editNotes}
+              />
+            </div>
+          ) : !isEditingName && workout.notes ? (
+            <button
+              className="mt-0.5 flex min-h-11 items-center rounded-md px-1 text-left text-xs text-foreground-400 transition-colors hover:bg-content2"
+              onClick={() => {
+                setEditNotes(workout.notes ?? '');
+                setIsEditingName(false);
+                setIsEditingNotes(true);
+              }}
+              type="button"
+            >
+              {workout.notes}
+            </button>
+          ) : null}
         </div>
 
-        {/* Header actions: copy workout + delete workout */}
-        <div className="flex shrink-0 gap-1">
-          <Button
-            aria-label="Duplicate workout"
-            isIconOnly
-            isPending={isDuplicatingWorkout}
-            onPress={handleDuplicateWorkout}
-            size="sm"
-            variant="ghost"
-          >
-            <Copy size={14} />
-          </Button>
-          <AlertDialog>
+        {/* Header actions are tucked behind one menu to keep the builder calm. */}
+        <Popover
+          isOpen={isWorkoutMenuOpen}
+          onOpenChange={setIsWorkoutMenuOpen}
+        >
+          <Popover.Trigger>
             <Button
-              aria-label="Delete workout"
+              aria-label={`Actions for ${workout.name}`}
+              className="min-h-11 min-w-11 shrink-0"
               isIconOnly
+              isPending={isDuplicatingWorkout || isDeletingWorkout}
               size="sm"
               variant="ghost"
             >
-              <Trash2 size={14} />
+              <MoreHorizontal size={18} />
             </Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[400px]">
-                  <AlertDialog.CloseTrigger />
-                  <AlertDialog.Header>
-                    <AlertDialog.Icon status="danger" />
-                    <AlertDialog.Heading>Delete workout?</AlertDialog.Heading>
-                  </AlertDialog.Header>
-                  <AlertDialog.Body>
-                    <p>
-                      This will permanently delete <strong>{workout.name}</strong> and all{' '}
-                      {workout.workout_elements.length} exercise
-                      {workout.workout_elements.length !== 1 ? 's' : ''}. This action cannot be undone.
-                    </p>
-                  </AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button
-                      slot="close"
-                      variant="tertiary"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      isPending={isDeletingWorkout}
-                      onPress={handleDeleteWorkout}
-                      variant="danger"
-                    >
-                      {isDeletingWorkout ? 'Deleting...' : 'Delete'}
-                    </Button>
-                  </AlertDialog.Footer>
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        </div>
+          </Popover.Trigger>
+          <Popover.Content
+            className="min-w-[220px] p-1"
+            placement="bottom end"
+          >
+            <Popover.Dialog className="outline-none">
+              <WorkoutActionItem
+                onSelect={() => {
+                  setIsWorkoutMenuOpen(false);
+                  setEditName(workout.name);
+                  setIsEditingNotes(false);
+                  setIsEditingName(true);
+                }}
+              >
+                Rename
+              </WorkoutActionItem>
+              <WorkoutActionItem
+                onSelect={() => {
+                  setIsWorkoutMenuOpen(false);
+                  setEditNotes(workout.notes ?? '');
+                  setIsEditingName(false);
+                  setIsEditingNotes(true);
+                }}
+              >
+                {workout.notes ? 'Edit notes' : 'Add notes'}
+              </WorkoutActionItem>
+              <WorkoutActionItem
+                isPending={isDuplicatingWorkout}
+                onSelect={() => {
+                  setIsWorkoutMenuOpen(false);
+                  void handleDuplicateWorkout();
+                }}
+              >
+                Duplicate workout
+              </WorkoutActionItem>
+              <div className="my-1 h-px bg-divider" />
+              <WorkoutActionItem
+                isDanger
+                onSelect={() => {
+                  setIsWorkoutMenuOpen(false);
+                  setShowDeleteWorkoutDialog(true);
+                }}
+              >
+                Delete workout
+              </WorkoutActionItem>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
       </div>
+
+      {showDeleteWorkoutDialog ? (
+        <DeleteWorkoutDialog
+          exerciseCount={workout.workout_elements.length}
+          isDeleting={isDeletingWorkout}
+          onCancel={() => setShowDeleteWorkoutDialog(false)}
+          onConfirm={async () => {
+            await handleDeleteWorkout();
+            setShowDeleteWorkoutDialog(false);
+          }}
+          workoutName={workout.name}
+        />
+      ) : null}
 
       {/* Exercise elements */}
       {visibleElements.length > 0 ? (
@@ -646,80 +588,89 @@ export default function WorkoutSection({
   );
 }
 
-// ── Shared workout banner ──────────────────────────────────────
-//
-// Surfaced on every shared Workout card. Purpose:
-//   1. Make it obvious that edits propagate (the "Used on: Mon, Thu" copy isn't
-//      enough — coaches miss it).
-//   2. Offer the spec's "Make a copy for this day only" escape hatch inline,
-//      so a coach who wants divergence doesn't have to leave the card.
-
-type TrainingWeekdayLite = keyof typeof TRAINING_DAY_LABELS;
-
-function SharedWorkoutBanner({
-  busyDay,
-  isBusy,
-  isPickerOpen,
-  onClosePicker,
-  onOpenPicker,
-  onUnshareDay,
-  usedOnDays,
+function WorkoutActionItem({
+  children,
+  isDanger,
+  isPending,
+  onSelect,
 }: {
-  /** Day currently being unshared (used to target the spinner on one button). */
-  busyDay: null | TrainingWeekdayLite;
-  /** Any of the three unshare mutations in flight. */
-  isBusy: boolean;
-  isPickerOpen: boolean;
-  onClosePicker: () => void;
-  onOpenPicker: () => void;
-  onUnshareDay: (day: TrainingWeekdayLite) => Promise<void>;
-  usedOnDays: TrainingWeekdayLite[];
+  children: React.ReactNode;
+  isDanger?: boolean;
+  isPending?: boolean;
+  onSelect: () => void;
 }) {
-  const daysLabel = usedOnDays.map((day) => TRAINING_DAY_LABELS[day]).join(', ');
-
   return (
-    <div className="mt-1 rounded-md border border-warning/30 bg-warning/5 px-2 py-2 text-xs">
-      <p className="text-foreground-600">
-        <span className="font-medium">Shared workout.</span> Edits apply to {daysLabel}.
-      </p>
-      {isPickerOpen ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-foreground-500">Make a copy just for:</span>
-          {usedOnDays.map((day) => (
-            <Button
-              isDisabled={isBusy}
-              isPending={busyDay === day}
-              key={day}
-              onPress={() => {
-                onUnshareDay(day).catch(() => {
-                  /* handled inside onUnshareDay */
-                });
-              }}
-              size="sm"
-              variant="secondary"
-            >
-              {TRAINING_DAY_LABELS[day]}
-            </Button>
-          ))}
-          <Button
-            isDisabled={isBusy}
-            onPress={onClosePicker}
-            size="sm"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-        </div>
-      ) : (
-        <Button
-          className="mt-2"
-          onPress={onOpenPicker}
-          size="sm"
-          variant="ghost"
-        >
-          Make a copy for one day only
-        </Button>
-      )}
-    </div>
+    <button
+      className={[
+        'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors',
+        'hover:bg-content2 active:bg-content2',
+        isDanger ? 'text-danger' : '',
+        isPending ? 'opacity-60' : '',
+      ].join(' ')}
+      disabled={isPending}
+      onClick={onSelect}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function DeleteWorkoutDialog({
+  exerciseCount,
+  isDeleting,
+  onCancel,
+  onConfirm,
+  workoutName,
+}: {
+  exerciseCount: number;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void> | void;
+  workoutName: string;
+}) {
+  return (
+    <AlertDialog
+      defaultOpen
+      onOpenChange={(open) => {
+        if (!open && !isDeleting) onCancel();
+      }}
+    >
+      <span className="hidden" />
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-[400px]">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete workout?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>
+                This will permanently delete <strong>{workoutName}</strong> and all {exerciseCount} exercise
+                {exerciseCount !== 1 ? 's' : ''}. This action cannot be undone.
+              </p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                onPress={onCancel}
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isDeleting}
+                onPress={() => {
+                  void onConfirm();
+                }}
+                variant="danger"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
   );
 }

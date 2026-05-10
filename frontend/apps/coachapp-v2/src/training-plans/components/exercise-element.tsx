@@ -1,5 +1,5 @@
 import {Button, Popover, toast} from '@heroui/react';
-import {Copy, CopyPlus, MoreHorizontal, X} from 'lucide-react';
+import {MoreHorizontal} from 'lucide-react';
 import {useState} from 'react';
 
 import type {PlannedSet, WorkoutElement} from '@/api/trainingPlans';
@@ -124,72 +124,84 @@ export default function ExerciseElement({
       </button>
 
       <div className="flex shrink-0 items-center gap-0.5">
-        {hasSecondaryActions ? (
-          <Popover
-            isOpen={isActionsOpen}
-            onOpenChange={setIsActionsOpen}
-          >
-            <Popover.Trigger>
-              <Button
-                aria-label={`More actions for ${exerciseName}`}
-                className="min-h-11 min-w-11"
-                isIconOnly
-                size="sm"
-                variant="ghost"
-              >
-                <MoreHorizontal size={16} />
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content
-              className="min-w-[200px] p-1"
-              placement="bottom end"
-            >
-              <Popover.Dialog className="outline-none">
-                <div className="flex flex-col gap-1">
-                  {onDuplicate ? (
-                    <Button
-                      className="min-h-11 justify-start"
-                      onPress={() => {
-                        setIsActionsOpen(false);
-                        onDuplicate();
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <CopyPlus size={14} />
-                      Duplicate
-                    </Button>
-                  ) : null}
-                  {onCopy ? (
-                    <Button
-                      className="min-h-11 justify-start"
-                      onPress={() => {
-                        setIsActionsOpen(false);
-                        onCopy();
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Copy size={14} />
-                      Copy to workout
-                    </Button>
-                  ) : null}
-                </div>
-              </Popover.Dialog>
-            </Popover.Content>
-          </Popover>
-        ) : null}
-        <Button
-          aria-label={`Remove ${exerciseName}`}
-          className="min-h-11 min-w-11"
-          isIconOnly
-          onPress={onRemove}
-          size="sm"
-          variant="ghost"
+        <Popover
+          isOpen={isActionsOpen}
+          onOpenChange={setIsActionsOpen}
         >
-          <X size={14} />
-        </Button>
+          <Popover.Trigger>
+            <Button
+              aria-label={`Actions for ${exerciseName}`}
+              className="min-h-11 min-w-11"
+              isIconOnly
+              size="sm"
+              variant="ghost"
+            >
+              <MoreHorizontal size={16} />
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content
+            className="min-w-[200px] p-1"
+            placement="bottom end"
+          >
+            <Popover.Dialog className="outline-none">
+              {onDuplicate ? (
+                <ExerciseActionItem
+                  onSelect={() => {
+                    setIsActionsOpen(false);
+                    onDuplicate();
+                  }}
+                >
+                  Duplicate
+                </ExerciseActionItem>
+              ) : null}
+              {onCopy ? (
+                <ExerciseActionItem
+                  onSelect={() => {
+                    setIsActionsOpen(false);
+                    onCopy();
+                  }}
+                >
+                  Copy to workout
+                </ExerciseActionItem>
+              ) : null}
+              {hasSecondaryActions ? <div className="my-1 h-px bg-divider" /> : null}
+              <ExerciseActionItem
+                isDanger
+                onSelect={() => {
+                  setIsActionsOpen(false);
+                  onRemove();
+                }}
+              >
+                Remove
+              </ExerciseActionItem>
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
       </div>
     </div>
+  );
+}
+
+function ExerciseActionItem({
+  children,
+  isDanger,
+  onSelect,
+}: {
+  children: React.ReactNode;
+  isDanger?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className={[
+        'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors',
+        'hover:bg-content2 active:bg-content2',
+        isDanger ? 'text-danger' : '',
+      ].join(' ')}
+      onClick={onSelect}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }

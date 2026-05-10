@@ -310,7 +310,7 @@ function RowGrid({day, onScrollToWorkout, onToggleExpand, onWorkoutCreated, plan
 
 function RowContent({state, workoutsById}: {state: DayState; workoutsById: Map<string, Workout>}) {
   if (state.kind === 'empty') {
-    return <span className="text-sm text-foreground-300">—</span>;
+    return <span className="text-sm text-foreground-400">Tap to assign</span>;
   }
 
   if (state.kind === 'rest') {
@@ -366,19 +366,7 @@ function RowActions({
   workoutsById: Map<string, Workout>;
 }) {
   if (state.kind === 'empty') {
-    // Mobile: icon-only `+` button. Desktop: text button.
-    return (
-      <Button
-        aria-label={`Add workout to ${TRAINING_DAY_LABELS[day]}`}
-        className="min-h-11"
-        onPress={() => onToggleExpand('assign')}
-        size="sm"
-        variant="secondary"
-      >
-        <Plus size={16} />
-        <span className="hidden sm:inline">Add workout</span>
-      </Button>
-    );
+    return null;
   }
 
   // Assigned or rest: only `⋯` overflow menu.
@@ -519,16 +507,6 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
 
             {state.kind === 'assigned' ? (
               <>
-                <MenuItem
-                  label="Edit workout"
-                  onSelect={() => {
-                    close();
-                    // Scroll handled by parent's primary row-tap; here we
-                    // just close the menu. The inline section below the
-                    // schedule is always visible so there's no separate
-                    // route to navigate to.
-                  }}
-                />
                 <MenuItem
                   isPending={isDuplicating}
                   label="Duplicate workout"
@@ -863,28 +841,37 @@ function AssignPanel({
 
       {/* Existing workouts — tap to assign */}
       {workouts.length > 0 ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <p className="text-[11px] font-medium uppercase tracking-wider text-foreground-400">Assign existing</p>
-          <div className="flex flex-wrap gap-1.5">
-            {workouts.map((workout) => {
+          <div className="overflow-hidden rounded-lg border border-divider bg-content1">
+            {workouts.map((workout, index) => {
               const usedOnDays = getWorkoutUsedOnDays(plan.plan_items, workout.id);
               const usage = formatUsedOnDays(usedOnDays);
+              const isLast = index === workouts.length - 1;
               return (
-                <Button
-                  className="min-h-11"
-                  isDisabled={isAssigning}
+                <button
+                  className={[
+                    'flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors',
+                    'hover:bg-content2 active:bg-content2 disabled:opacity-60',
+                    isLast ? '' : 'border-b border-divider',
+                  ].join(' ')}
+                  disabled={isAssigning}
                   key={workout.id}
-                  onPress={() => {
+                  onClick={() => {
                     handleAssign(workout.id).catch(() => {
                       /* handled inside handleAssign */
                     });
                   }}
-                  size="sm"
-                  variant="secondary"
+                  type="button"
                 >
-                  {workout.name}
-                  {usedOnDays.length > 0 ? ` · ${usage}` : ''}
-                </Button>
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{workout.name}</span>
+                    {usedOnDays.length > 0 ? (
+                      <span className="block truncate text-xs text-foreground-400">{usage}</span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-foreground-400">Assign</span>
+                </button>
               );
             })}
           </div>

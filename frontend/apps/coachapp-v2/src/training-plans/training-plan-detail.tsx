@@ -1,6 +1,6 @@
-import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Popover, Spinner, toast} from '@heroui/react';
 import {type CalendarDate, parseDate} from '@internationalized/date';
-import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
+import {ArrowLeft, MoreHorizontal, Plus} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
@@ -94,6 +94,181 @@ function AddWorkoutLibraryCard({
       <Plus size={14} />
       New workout
     </Button>
+  );
+}
+
+function PlanActionItem({
+  children,
+  isDanger,
+  isPending,
+  onSelect,
+}: {
+  children: React.ReactNode;
+  isDanger?: boolean;
+  isPending?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className={[
+        'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors',
+        'hover:bg-content2 active:bg-content2',
+        isDanger ? 'text-danger' : '',
+        isPending ? 'opacity-60' : '',
+      ].join(' ')}
+      disabled={isPending}
+      onClick={onSelect}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function DeletePlanDialog({
+  isDeleting,
+  onCancel,
+  onConfirm,
+  planName,
+}: {
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void> | void;
+  planName: string;
+}) {
+  return (
+    <AlertDialog
+      defaultOpen
+      onOpenChange={(open) => {
+        if (!open && !isDeleting) onCancel();
+      }}
+    >
+      <span className="hidden" />
+      <AlertDialog.Backdrop>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog className="sm:max-w-[400px]">
+            <AlertDialog.CloseTrigger />
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Delete plan?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>
+                This will permanently delete <strong>{planName}</strong> and all its workouts. This action cannot be
+                undone.
+              </p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button
+                onPress={onCancel}
+                variant="tertiary"
+              >
+                Cancel
+              </Button>
+              <Button
+                isPending={isDeleting}
+                onPress={() => {
+                  void onConfirm();
+                }}
+                variant="danger"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </AlertDialog>
+  );
+}
+
+function PlanActionsMenu({
+  isDeleting,
+  isUpdatingStatus,
+  onDelete,
+  onEdit,
+  onToggleArchive,
+  planName,
+  status,
+}: {
+  isDeleting: boolean;
+  isUpdatingStatus: boolean;
+  onDelete: () => Promise<void>;
+  onEdit: () => void;
+  onToggleArchive: (nextStatus: TrainingPlanStatus) => Promise<void>;
+  planName: string;
+  status: TrainingPlanStatus;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const nextStatus: TrainingPlanStatus = status === 'active' ? 'archived' : 'active';
+
+  return (
+    <>
+      <Popover
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+      >
+        <Popover.Trigger>
+          <Button
+            aria-label="Plan actions"
+            className="min-h-11 min-w-11"
+            isIconOnly
+            isPending={isUpdatingStatus}
+            size="sm"
+            variant="ghost"
+          >
+            <MoreHorizontal size={18} />
+          </Button>
+        </Popover.Trigger>
+        <Popover.Content
+          className="min-w-[220px] p-1"
+          placement="bottom end"
+        >
+          <Popover.Dialog className="outline-none">
+            <PlanActionItem
+              onSelect={() => {
+                setIsOpen(false);
+                onEdit();
+              }}
+            >
+              Edit details
+            </PlanActionItem>
+            <PlanActionItem
+              isPending={isUpdatingStatus}
+              onSelect={() => {
+                setIsOpen(false);
+                void onToggleArchive(nextStatus);
+              }}
+            >
+              {status === 'active' ? 'Archive plan' : 'Restore plan'}
+            </PlanActionItem>
+            <div className="my-1 h-px bg-divider" />
+            <PlanActionItem
+              isDanger
+              onSelect={() => {
+                setIsOpen(false);
+                setShowDeleteDialog(true);
+              }}
+            >
+              Delete plan
+            </PlanActionItem>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+
+      {showDeleteDialog ? (
+        <DeletePlanDialog
+          isDeleting={isDeleting}
+          onCancel={() => setShowDeleteDialog(false)}
+          onConfirm={async () => {
+            await onDelete();
+            setShowDeleteDialog(false);
+          }}
+          planName={planName}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -227,9 +402,10 @@ export default function TrainingPlanDetail() {
 
   return (
     <PageLayout title="Training Plan">
-      {/* Navigation + action buttons */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      {/* Quiet navigation: keep the common copy action visible, move the rest behind one menu. */}
+      <div className="mb-4 flex items-center justify-between gap-2">
         <Button
+          className="min-h-11"
           onPress={goBack}
           size="sm"
           variant="ghost"
@@ -237,81 +413,22 @@ export default function TrainingPlanDetail() {
           <ArrowLeft size={16} />
           Back
         </Button>
-        <Button
-          onPress={() => navigate(`/library/training-plans/${plan.id}/edit`)}
-          size="sm"
-          variant="secondary"
-        >
-          <Pencil size={16} />
-          Edit
-        </Button>
-        <CopyMenu
-          clientId={plan.client_id}
-          onCopyToClient={() => setShowCopyToClient((v) => !v)}
-          onDuplicate={handleDuplicate}
-        />
-        {plan.status === 'active' ? (
-          <Button
-            isPending={isUpdatingStatus}
-            onPress={() => handleToggleArchive('archived')}
-            size="sm"
-            variant="secondary"
-          >
-            <Archive size={16} />
-            Archive
-          </Button>
-        ) : (
-          <Button
-            isPending={isUpdatingStatus}
-            onPress={() => handleToggleArchive('active')}
-            size="sm"
-            variant="secondary"
-          >
-            <ArchiveRestore size={16} />
-            Unarchive
-          </Button>
-        )}
-        <AlertDialog>
-          <Button
-            size="sm"
-            variant="danger"
-          >
-            <Trash2 size={16} />
-            Delete
-          </Button>
-          <AlertDialog.Backdrop>
-            <AlertDialog.Container>
-              <AlertDialog.Dialog className="sm:max-w-[400px]">
-                <AlertDialog.CloseTrigger />
-                <AlertDialog.Header>
-                  <AlertDialog.Icon status="danger" />
-                  <AlertDialog.Heading>Delete plan?</AlertDialog.Heading>
-                </AlertDialog.Header>
-                <AlertDialog.Body>
-                  <p>
-                    This will permanently delete <strong>{plan.name}</strong> and all its workouts. This action cannot
-                    be undone.
-                  </p>
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button
-                    slot="close"
-                    variant="tertiary"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    isPending={isDeleting}
-                    onPress={handleDelete}
-                    variant="danger"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </AlertDialog.Footer>
-              </AlertDialog.Dialog>
-            </AlertDialog.Container>
-          </AlertDialog.Backdrop>
-        </AlertDialog>
+        <div className="flex items-center gap-1.5">
+          <CopyMenu
+            clientId={plan.client_id}
+            onCopyToClient={() => setShowCopyToClient((v) => !v)}
+            onDuplicate={handleDuplicate}
+          />
+          <PlanActionsMenu
+            isDeleting={isDeleting}
+            isUpdatingStatus={isUpdatingStatus}
+            onDelete={handleDelete}
+            onEdit={() => navigate(`/library/training-plans/${plan.id}/edit`)}
+            onToggleArchive={handleToggleArchive}
+            planName={plan.name}
+            status={plan.status}
+          />
+        </div>
       </div>
 
       {/* Copy to client — revealed inline below nav bar */}

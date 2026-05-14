@@ -8,6 +8,7 @@
 - Component files contain only: imports, Props type, the component (plus the form's `zod` schema if it's a form). Pure (non-React) helpers and non-trivial constants live in `src/{feature}/lib/{topic}.ts`; data-shape helpers live in the matching `src/api/*.ts`. No helpers, derived-state functions, or constants beyond this inside the component file.
 - Don't re-declare existing shapes. Derive types from API/domain types with `Partial<T>`, `Pick<T, K>`, `Omit<T, K>` when the meaning is the same.
 - No section-divider comments (`// ── X ──`). No JSDoc on props or internal helpers — the name is the doc. No JSX section labels (`{/* Header */}`, `{/* Actions */}`). Comments only when the WHY is non-obvious.
+- Structure code to minimize cognitive load. Avoid clever tricks that sacrifice readability.
 - Every form MUST use react-hook-form + zod. No native FormData. No `useState` for form fields. Schema + type defined in the same file as the form component.
   ```tsx
   const schema = z.object({email: z.string().min(1, 'Required').email()});

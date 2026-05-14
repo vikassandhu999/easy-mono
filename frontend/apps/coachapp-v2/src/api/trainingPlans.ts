@@ -2,6 +2,15 @@ import {TRAINING_DAY_LABELS} from '@easy/utils';
 
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, getValidationErrors} from '@/api/shared';
+import {
+  removeTrainingPlanItemFromPlan,
+  removeWorkoutElementFromPlan,
+  removeWorkoutFromPlan,
+  replaceTrainingPlanInCache,
+  upsertTrainingPlanItemInPlan,
+  upsertWorkoutElementInPlan,
+  upsertWorkoutInPlan,
+} from '@/api/trainingPlanCache';
 
 export type TrainingWeekday = 'friday' | 'monday' | 'saturday' | 'sunday' | 'thursday' | 'tuesday' | 'wednesday';
 export type TrainingWorkoutType = 'alternative' | 'primary';
@@ -288,11 +297,7 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     getTrainingPlan: build.query<ApiResponse<TrainingPlan>, string>({
       query: (id) => `/v1/coach/training_plans/${id}`,
-      providesTags: (_, __, id) => [
-        {type: 'TrainingPlan', id},
-        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(id)},
-        {type: 'Workout', id: getPlanScopedWorkoutsId(id)},
-      ],
+      providesTags: (_, __, id) => [{type: 'TrainingPlan', id}],
     }),
     updateTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, {body: TrainingPlanUpdateRequest; id: string}>({
       query: ({body, id}) => ({
@@ -300,8 +305,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/training_plans/${id}`,
       }),
-      invalidatesTags: (_, __, {id}) => [
-        {type: 'TrainingPlan', id},
+      async onQueryStarted({id}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', id, (draft) => {
+              replaceTrainingPlanInCache(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
+      invalidatesTags: () => [
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'TrainingPlan', id: 'CLIENT_LIST'},
       ],
@@ -325,8 +341,7 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${id}/assign`,
       }),
-      invalidatesTags: (_, __, {body, id}) => [
-        {type: 'TrainingPlan', id},
+      invalidatesTags: (_, __, {body}) => [
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'TrainingPlan', id: 'CLIENT_LIST'},
         {type: 'Client', id: 'LIST'},
@@ -338,10 +353,7 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${id}/duplicate`,
       }),
-      invalidatesTags: (_, __, id) => [
-        {type: 'TrainingPlan', id},
-        {type: 'TrainingPlan', id: 'LIST'},
-      ],
+      invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}],
     }),
     createWorkout: build.mutation<ApiResponse<Workout>, {body: WorkoutCreateRequest; planId: string}>({
       query: ({body, planId}) => ({
@@ -349,8 +361,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertWorkoutInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
       ],
@@ -381,8 +404,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workouts/${id}`,
       }),
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertWorkoutInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'Workout', id},
         {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
@@ -393,8 +427,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'DELETE',
         url: `/v1/coach/workouts/${id}`,
       }),
+      async onQueryStarted({id, planId}, {dispatch, queryFulfilled}) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              removeWorkoutFromPlan(draft, id);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'Workout', id},
         {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
@@ -405,8 +450,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/workouts/${id}/duplicate`,
       }),
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertWorkoutInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'Workout', id: getPlanScopedWorkoutsId(planId)},
       ],
@@ -420,10 +476,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${planId}/training_plan_items`,
       }),
-      invalidatesTags: (_, __, {planId}) => [
-        {type: 'TrainingPlan', id: planId},
-        {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
-      ],
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertTrainingPlanItemInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
+      invalidatesTags: (_, __, {planId}) => [{type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)}],
     }),
     listTrainingPlanItems: build.query<ApiResponse<TrainingPlanItem[]>, string>({
       query: (planId) => `/v1/coach/training_plans/${planId}/training_plan_items`,
@@ -447,8 +512,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/training_plan_items/${id}`,
       }),
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertTrainingPlanItemInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlanItem', id},
         {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
       ],
@@ -458,8 +534,19 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'DELETE',
         url: `/v1/coach/training_plan_items/${id}`,
       }),
+      async onQueryStarted({id, planId}, {dispatch, queryFulfilled}) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              removeTrainingPlanItemFromPlan(draft, id);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
       invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'TrainingPlan', id: planId},
         {type: 'TrainingPlanItem', id},
         {type: 'TrainingPlanItem', id: getPlanScopedPlanItemsId(planId)},
       ],
@@ -477,13 +564,26 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/workout_elements',
       }),
-      invalidatesTags: (_, __, {body, planId, workoutId}) => [
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        if (!planId) return;
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertWorkoutElementInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
+      invalidatesTags: (_, __, {body, workoutId}) => [
         {type: 'WorkoutElement', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'LIST'},
         {
           type: 'Workout',
           id: workoutId ?? body.workout_id,
         },
-        ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
     }),
     getWorkoutElement: build.query<ApiResponse<WorkoutElement>, string>({
@@ -504,11 +604,24 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workout_elements/${id}`,
       }),
-      invalidatesTags: (_, __, {id, planId, workoutId}) => [
+      async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
+        if (!planId) return;
+        try {
+          const {data} = await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              upsertWorkoutElementInPlan(draft, data.data);
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
+      invalidatesTags: (_, __, {id, workoutId}) => [
         {type: 'WorkoutElement', id},
         {type: 'WorkoutElement', id: 'LIST'},
+        {type: 'TrainingPlan', id: 'LIST'},
         ...(workoutId ? [{type: 'Workout' as const, id: workoutId}] : []),
-        ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
     }),
     deleteWorkoutElement: build.mutation<void, {id: string; planId?: string; workoutId?: string}>({
@@ -516,11 +629,23 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'DELETE',
         url: `/v1/coach/workout_elements/${id}`,
       }),
-      invalidatesTags: (_, __, {id, planId, workoutId}) => [
+      async onQueryStarted({id, planId, workoutId}, {dispatch, queryFulfilled}) {
+        if (!planId) return;
+        try {
+          await queryFulfilled;
+          dispatch(
+            trainingPlansApi.util.updateQueryData('getTrainingPlan', planId, (draft) => {
+              removeWorkoutElementFromPlan(draft, {elementId: id, workoutId});
+            }),
+          );
+        } catch {
+          // Cache stays on the last confirmed server state.
+        }
+      },
+      invalidatesTags: (_, __, {id, workoutId}) => [
         {type: 'WorkoutElement', id},
         {type: 'WorkoutElement', id: 'LIST'},
         ...(workoutId ? [{type: 'Workout' as const, id: workoutId}] : []),
-        ...(planId ? [{type: 'TrainingPlan' as const, id: planId}] : []),
       ],
     }),
   }),

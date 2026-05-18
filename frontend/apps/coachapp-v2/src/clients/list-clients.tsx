@@ -1,15 +1,23 @@
 import type {Key} from '@heroui/react';
 
-import {Autocomplete, Button, EmptyState, ListBox, SearchField, useFilter} from '@heroui/react';
+import {
+  Autocomplete,
+  Button,
+  Collection,
+  EmptyState,
+  ListBox,
+  ListBoxLoadMoreItem,
+  SearchField,
+  Spinner,
+  useFilter,
+} from '@heroui/react';
 import {Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import InfiniteList from '@/@components/infinite-list';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
-import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {
   type Client,
   type ClientSummary,
@@ -18,8 +26,6 @@ import {
   useListClientsQuery,
 } from '@/api/clients';
 import ClientCard from '@/clients/components/client-card';
-
-// ── Filter options ───────────────────────────────────────────
 
 type FilterOption = {
   id: string;
@@ -42,8 +48,6 @@ function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined
   return count ? `${option.label} (${count})` : option.label;
 }
 
-// ── Main component ───────────────────────────────────────────
-
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -52,7 +56,6 @@ export default function ListClients() {
 
   const debouncedSearch = useDebouncedValue(search);
 
-  // Fetch summary counts (lightweight query with limit=0)
   const {data: summaryData} = useListClientsQuery({limit: 0});
   const summary = summaryData?.summary;
 
@@ -63,21 +66,11 @@ export default function ListClients() {
     return Object.keys(filters).length > 0 ? filters : undefined;
   }, [debouncedSearch, activeFilter]);
 
-  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useClientsInfiniteQuery(queryArg);
-
-  // Use queryArg as key to force InfiniteList remount when filters change
-  const queryArgStr = useMemo(() => JSON.stringify(queryArg), [queryArg]);
+  const list = useClientsInfiniteQuery(queryArg);
 
   const clients = useMemo<Client[]>(() => {
-    if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.data);
-  }, [data]);
-
-  const {sentinelRef} = useInfiniteScroll({
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  });
+    return list.data?.pages.flatMap((page) => page.data) ?? [];
+  }, [list.data]);
 
   const isFiltering = search.length > 0 || activeFilter !== 'all';
 
@@ -95,32 +88,28 @@ export default function ListClients() {
       title="Clients"
     >
       {/* Search + status filter */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <SearchField
-            aria-label="Search clients"
-            onChange={setSearch}
-            value={search}
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search by name, email, phone..." />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
-        </div>
-
+      <div className="mb-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end py-2">
+        <SearchField
+          aria-label="Search clients"
+          onChange={setSearch}
+          value={search}
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Search by name, email, phone..." />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
         {/* Status filter */}
         <Autocomplete
           aria-label="Filter by status"
-          className="w-full sm:w-44"
           onChange={(key) => setActiveFilter(key ?? 'all')}
           placeholder="All clients"
           selectionMode="single"
           value={activeFilter}
         >
-          <Autocomplete.Trigger>
-            <Autocomplete.Value />
+          <Autocomplete.Trigger className="w-44">
+            <Autocomplete.Value className="w-44" />
             <Autocomplete.ClearButton />
             <Autocomplete.Indicator />
           </Autocomplete.Trigger>
@@ -143,8 +132,11 @@ export default function ListClients() {
         </Autocomplete>
       </div>
 
-      <InfiniteList
-        emptyState={
+      <ListBox
+        aria-label="Clients"
+        className="-mx-2 min-h-0 flex-1 overflow-y-auto px-2"
+        onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
+        renderEmptyState={() => (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
             {isFiltering ? (
               <>
@@ -168,17 +160,20 @@ export default function ListClients() {
               </>
             )}
           </div>
-        }
-        hasNextPage={hasNextPage}
-        isError={isError}
-        isFetchingNextPage={isFetchingNextPage}
-        isLoading={isLoading}
-        items={clients}
-        key={queryArgStr}
-        keyExtractor={(client) => client.id}
-        renderItem={(client) => <ClientCard client={client} />}
-        sentinelRef={sentinelRef}
-      />
+        )}
+        selectionMode={'none'}
+      >
+        <Collection items={clients}>{(client) => <ClientCard client={client} />}</Collection>
+        <ListBoxLoadMoreItem
+          isLoading={list.isLoading}
+          onLoadMore={list.fetchNextPage}
+        >
+          <div className="flex items-center justify-center gap-2 py-2">
+            <Spinner size="sm" />
+            <span className="muted text-sm">Loading more...</span>
+          </div>
+        </ListBoxLoadMoreItem>
+      </ListBox>
     </PageLayout>
   );
 }

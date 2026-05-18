@@ -1,7 +1,7 @@
 import {api} from '@/api/base';
 import {ApiResponse} from '@/api/shared';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 // ── Enums ────────────────────────────────────────────────────
 

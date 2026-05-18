@@ -41,12 +41,13 @@ export default function CreateTrainingPlan() {
     >
       <div className="mb-4">
         <Button
+          className="min-h-11"
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Training Plans
+          Back
         </Button>
       </div>
 

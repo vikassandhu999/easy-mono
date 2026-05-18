@@ -57,7 +57,6 @@ export default function TrainingPlanForm({
   submittingLabel,
 }: TrainingPlanFormProps) {
   const {
-    control,
     formState: {errors},
     handleSubmit,
     register,
@@ -91,99 +90,6 @@ export default function TrainingPlanForm({
           {...register('description')}
         />
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
-      </div>
-
-      {/* Start date + End date */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Controller
-          control={control}
-          name="start_date"
-          render={({field}) => (
-            <DatePicker
-              onChange={(val: CalendarDate | null) => field.onChange(val ? val.toString() : '')}
-              value={toCalendarDate(field.value) as never}
-            >
-              <Label>Start date</Label>
-              <DateField.Group fullWidth>
-                <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
-                <DateField.Suffix>
-                  <DatePicker.Trigger>
-                    <DatePicker.TriggerIndicator />
-                  </DatePicker.Trigger>
-                </DateField.Suffix>
-              </DateField.Group>
-              <DatePicker.Popover>
-                <Calendar aria-label="Start date">
-                  <Calendar.Header>
-                    <Calendar.YearPickerTrigger>
-                      <Calendar.YearPickerTriggerHeading />
-                      <Calendar.YearPickerTriggerIndicator />
-                    </Calendar.YearPickerTrigger>
-                    <Calendar.NavButton slot="previous" />
-                    <Calendar.NavButton slot="next" />
-                  </Calendar.Header>
-                  <Calendar.Grid>
-                    <Calendar.GridHeader>
-                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                    </Calendar.GridHeader>
-                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-                  </Calendar.Grid>
-                  <Calendar.YearPickerGrid>
-                    <Calendar.YearPickerGridBody>
-                      {({year}) => <Calendar.YearPickerCell year={year} />}
-                    </Calendar.YearPickerGridBody>
-                  </Calendar.YearPickerGrid>
-                </Calendar>
-              </DatePicker.Popover>
-            </DatePicker>
-          )}
-        />
-        {errors.start_date && <p className="text-xs text-danger">{errors.start_date.message}</p>}
-
-        <Controller
-          control={control}
-          name="end_date"
-          render={({field}) => (
-            <DatePicker
-              onChange={(val: CalendarDate | null) => field.onChange(val ? val.toString() : '')}
-              value={toCalendarDate(field.value) as never}
-            >
-              <Label>End date</Label>
-              <DateField.Group fullWidth>
-                <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
-                <DateField.Suffix>
-                  <DatePicker.Trigger>
-                    <DatePicker.TriggerIndicator />
-                  </DatePicker.Trigger>
-                </DateField.Suffix>
-              </DateField.Group>
-              <DatePicker.Popover>
-                <Calendar aria-label="End date">
-                  <Calendar.Header>
-                    <Calendar.YearPickerTrigger>
-                      <Calendar.YearPickerTriggerHeading />
-                      <Calendar.YearPickerTriggerIndicator />
-                    </Calendar.YearPickerTrigger>
-                    <Calendar.NavButton slot="previous" />
-                    <Calendar.NavButton slot="next" />
-                  </Calendar.Header>
-                  <Calendar.Grid>
-                    <Calendar.GridHeader>
-                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                    </Calendar.GridHeader>
-                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-                  </Calendar.Grid>
-                  <Calendar.YearPickerGrid>
-                    <Calendar.YearPickerGridBody>
-                      {({year}) => <Calendar.YearPickerCell year={year} />}
-                    </Calendar.YearPickerGridBody>
-                  </Calendar.YearPickerGrid>
-                </Calendar>
-              </DatePicker.Popover>
-            </DatePicker>
-          )}
-        />
-        {errors.end_date && <p className="text-xs text-danger">{errors.end_date.message}</p>}
       </div>
 
       {/* Root error */}

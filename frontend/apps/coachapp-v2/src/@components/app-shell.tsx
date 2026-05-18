@@ -238,7 +238,7 @@ export default function AppShell() {
   const {canInstall, dismiss, promptInstall} = useInstallPrompt();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
@@ -299,7 +299,9 @@ export default function AppShell() {
       </aside>
 
       {/* Main content — only add bottom padding when bottom nav is visible */}
-      <main className={`min-w-0 flex-1 lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}>
+      <main
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:pb-0 lg:pl-64 ${showBottomNav ? 'pb-16' : ''}`}
+      >
         <Outlet />
       </main>
 

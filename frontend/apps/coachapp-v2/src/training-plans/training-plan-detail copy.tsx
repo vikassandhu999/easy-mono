@@ -1,4 +1,15 @@
-import {AlertDialog, Button, Calendar, Chip, DateField, DatePicker, Label, Popover, Spinner, toast} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  Calendar,
+  Chip,
+  DateField,
+  DatePicker,
+  Label,
+  Popover,
+  Spinner,
+  toast,
+} from '@heroui/react';
 import {type CalendarDate, parseDate} from '@internationalized/date';
 import {ArrowLeft, MoreHorizontal, Plus} from 'lucide-react';
 import {useCallback, useState} from 'react';
@@ -238,7 +249,7 @@ function PlanActionsMenu({
               isPending={isUpdatingStatus}
               onSelect={() => {
                 setIsOpen(false);
-                void onToggleArchive(nextStatus);
+                onToggleArchive(nextStatus);
               }}
             >
               {status === 'active' ? 'Archive plan' : 'Restore plan'}

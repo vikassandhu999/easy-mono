@@ -46,7 +46,7 @@ import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
-import TrainingPlanDetail from '@/training-plans/training-plan-detail';
+import TrainingPlanDetail from '@/training-plans/plan-builder/plan-builder';
 
 // ── Auth wrappers ────────────────────────────────────────────
 

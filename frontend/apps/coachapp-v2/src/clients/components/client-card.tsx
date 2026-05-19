@@ -63,6 +63,7 @@ export default function ClientCard({client}: {client: Client}) {
 
   return (
     <ListBox.Item
+      className={'px-4 sm:px-8 py-2 min-h-fit'}
       id={client.id}
       textValue={getDisplayName(client)}
     >

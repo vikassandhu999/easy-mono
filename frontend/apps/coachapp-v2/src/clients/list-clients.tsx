@@ -1,31 +1,16 @@
 import type {Key} from '@heroui/react';
 
-import {
-  Autocomplete,
-  Button,
-  Collection,
-  EmptyState,
-  ListBox,
-  ListBoxLoadMoreItem,
-  SearchField,
-  Spinner,
-  useFilter,
-} from '@heroui/react';
+import {Button, SearchField, Tabs} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
-import {
-  type Client,
-  type ClientSummary,
-  type ListClientsFilters,
-  useClientsInfiniteQuery,
-  useListClientsQuery,
-} from '@/api/clients';
-import ClientCard from '@/clients/components/client-card';
+import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
+
+import ClientsList from './components/clients-list';
 
 type FilterOption = {
   id: string;
@@ -51,127 +36,73 @@ function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined
 export default function ListClients() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<Key | null>('all');
-  const {contains} = useFilter({sensitivity: 'base'});
+  const [activeFilter, setActiveFilter] = useState<Key>('all');
 
   const debouncedSearch = useDebouncedValue(search);
 
   const {data: summaryData} = useListClientsQuery({limit: 0});
-  const summary = summaryData?.summary;
-
-  const queryArg: ListClientsFilters | undefined = useMemo(() => {
-    const option = FILTER_OPTIONS.find((o) => o.id === activeFilter);
-    const filters: ListClientsFilters = {...(option?.filter ?? {})};
-    if (debouncedSearch) filters.search = debouncedSearch;
-    return Object.keys(filters).length > 0 ? filters : undefined;
-  }, [debouncedSearch, activeFilter]);
-
-  const list = useClientsInfiniteQuery(queryArg);
-
-  const clients = useMemo<Client[]>(() => {
-    return list.data?.pages.flatMap((page) => page.data) ?? [];
-  }, [list.data]);
-
-  const isFiltering = search.length > 0 || activeFilter !== 'all';
 
   return (
-    <PageLayout
-      action={
-        <Button
-          onPress={() => navigate(ROUTES.INVITE_CLIENT)}
-          size="sm"
-        >
-          <Plus size={16} />
-          Invite
-        </Button>
-      }
-      title="Clients"
-    >
-      <div className="mb-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end py-2">
+    <Page>
+      <Page.Header className={'pt-4 pb-2'}>
+        <Page.TitleGroup>
+          <Page.Title>Clients</Page.Title>
+        </Page.TitleGroup>
+        <Page.Actions>
+          <Button
+            onPress={() => navigate(ROUTES.INVITE_CLIENT)}
+            size="sm"
+          >
+            <Plus size={16} />
+            Invite
+          </Button>
+        </Page.Actions>
+      </Page.Header>
+      <Page.Toolbar
+        className={
+          'sticky top-0 z-10 flex shrink-0 flex-col gap-3 bg-background pt-2 pb-3 backdrop-blur after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:shadow-sm after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100 supports-[backdrop-filter]:bg-background/80'
+        }
+      >
         <SearchField
           aria-label="Search clients"
+          className="w-full sm:max-w-xs"
           onChange={setSearch}
           value={search}
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search by name, email, phone..." />
+            <SearchField.Input placeholder="Search clients..." />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
-        <Autocomplete
-          aria-label="Filter by status"
-          onChange={(key) => setActiveFilter(key ?? 'all')}
-          placeholder="All clients"
-          selectionMode="single"
-          value={activeFilter}
+        <Tabs
+          aria-label="Filter clients by status"
+          className="min-w-0 flex-1"
+          onSelectionChange={setActiveFilter}
+          selectedKey={activeFilter}
         >
-          <Autocomplete.Trigger className="w-44">
-            <Autocomplete.Value className="w-44" />
-            <Autocomplete.ClearButton />
-            <Autocomplete.Indicator />
-          </Autocomplete.Trigger>
-          <Autocomplete.Popover>
-            <Autocomplete.Filter filter={contains}>
-              <ListBox renderEmptyState={() => <EmptyState>No filters found</EmptyState>}>
-                {FILTER_OPTIONS.map((option) => (
-                  <ListBox.Item
-                    id={option.id}
-                    key={option.id}
-                    textValue={option.label}
-                  >
-                    {getOptionLabel(option, summary)}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            </Autocomplete.Filter>
-          </Autocomplete.Popover>
-        </Autocomplete>
-      </div>
-
-      <ListBox
-        aria-label="Clients"
-        className="-mx-2 min-h-0 flex-1 overflow-y-auto px-2"
-        onAction={(key) => navigate(ROUTES.CLIENT_DETAIL.replace(':id', String(key)))}
-        renderEmptyState={() => (
-          <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-            {isFiltering ? (
-              <>
-                <p className="text-sm font-medium text-foreground-500">No clients found</p>
-                <p className="text-xs text-foreground-400">
-                  Try adjusting your search or filter to find what you&apos;re looking for.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-foreground-500">No clients yet</p>
-                <p className="text-xs text-foreground-400">Invite your first client to get started.</p>
-                <Button
-                  className="mt-3"
-                  onPress={() => navigate(ROUTES.INVITE_CLIENT)}
-                  size="sm"
+          <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
+            <Tabs.List className="!w-max min-w-max">
+              {FILTER_OPTIONS.map((option) => (
+                <Tabs.Tab
+                  className="!w-auto h-6 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
+                  id={option.id}
+                  key={option.id}
                 >
-                  <Plus size={16} />
-                  Invite Client
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-        selectionMode={'none'}
-      >
-        <Collection items={clients}>{(client) => <ClientCard client={client} />}</Collection>
-        <ListBoxLoadMoreItem
-          isLoading={list.isLoading}
-          onLoadMore={list.fetchNextPage}
-        >
-          <div className="flex items-center justify-center gap-2 py-2">
-            <Spinner size="sm" />
-            <span className="muted text-sm">Loading more...</span>
-          </div>
-        </ListBoxLoadMoreItem>
-      </ListBox>
-    </PageLayout>
+                  {getOptionLabel(option, summaryData?.summary)}
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+      </Page.Toolbar>
+      <Page.Content>
+        <ClientsList
+          hasFilter={!!debouncedSearch || activeFilter !== 'all'}
+          search={debouncedSearch}
+          status={FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status}
+        />
+      </Page.Content>
+    </Page>
   );
 }

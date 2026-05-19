@@ -1,7 +1,6 @@
-import {Chip} from '@heroui/react';
+import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {Apple} from 'lucide-react';
 import {useMemo} from 'react';
-import {Link} from 'react-router-dom';
 
 import type {Food} from '@/api/foods';
 
@@ -14,24 +13,23 @@ const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
   {key: 'fats_g', label: 'F', unit: 'g'},
 ];
 
+function getSubtitle(food: Food, isSystem: boolean): string {
+  if (food.category && isSystem) return `${food.category} · system`;
+  if (food.category) return food.category;
+  if (isSystem) return 'system';
+  return 'No category';
+}
+
 export default function FoodCard({food}: {food: Food}) {
   const normalized = useMemo(() => normalizeMacros(food.macros), [food.macros]);
   const hasMacros = Object.keys(food.macros).length > 0;
   const isSystem = food.source === 'system';
 
-  // Build subtitle: category + "system" badge
-  const subtitle = food.category
-    ? isSystem
-      ? `${food.category} · system`
-      : food.category
-    : isSystem
-      ? 'system'
-      : null;
-
   return (
-    <Link
-      className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
-      to={`/library/foods/${food.id}`}
+    <ListBox.Item
+      className="min-h-fit px-4 py-2 sm:px-8"
+      id={food.id}
+      textValue={food.name}
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         {food.image_url ? (
@@ -48,21 +46,13 @@ export default function FoodCard({food}: {food: Food}) {
         )}
       </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{food.name}</p>
-        {subtitle ? (
-          <p className="truncate text-xs text-foreground-500">
-            {food.category ?? ''}
-            {food.category && isSystem && <span className="text-foreground-400"> · system</span>}
-            {!food.category && isSystem && <span className="text-foreground-400">system</span>}
-          </p>
-        ) : (
-          <p className="text-xs text-foreground-400">No category</p>
-        )}
+      <div className="flex min-w-0 flex-col">
+        <Label className="truncate">{food.name}</Label>
+        <Description className="truncate">{getSubtitle(food, isSystem)}</Description>
       </div>
 
       {hasMacros && (
-        <div className="hidden gap-1.5 sm:flex">
+        <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {
             const value = normalized[macro.key];
             if (value === undefined) return null;
@@ -79,6 +69,6 @@ export default function FoodCard({food}: {food: Food}) {
           })}
         </div>
       )}
-    </Link>
+    </ListBox.Item>
   );
 }

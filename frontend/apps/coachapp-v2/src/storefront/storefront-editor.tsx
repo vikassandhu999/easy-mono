@@ -18,15 +18,11 @@ import EditorPanel from '@/storefront/components/editor-panel';
 import {type EditorFormValues, editorSchema} from '@/storefront/components/editor-schema';
 import PreviewPanel from '@/storefront/components/preview-panel';
 
-// ── Constants ────────────────────────────────────────────────
-
 const PREVIEW_BASE_URL = import.meta.env.VITE_WEBSITE_URL ?? 'https://coacheasy.app';
 
 export function getPreviewUrl(slug: string) {
   return `${PREVIEW_BASE_URL}/coach/${slug}?preview=true`;
 }
-
-// ── Helpers ──────────────────────────────────────────────────
 
 function profileToFormValues(profile: StoreProfile): EditorFormValues {
   return {
@@ -73,8 +69,6 @@ const DEFAULT_VALUES: EditorFormValues = {
   youtube: '',
 };
 
-// ── Main Editor Component ────────────────────────────────────
-
 export default function StorefrontEditor() {
   const {data, isError, isLoading} = useGetStoreProfileQuery();
   const {data: offersData} = useListOffersQuery();
@@ -114,8 +108,6 @@ export default function StorefrontEditor() {
     />
   );
 }
-
-// ── Inner component (has the form) ───────────────────────────
 
 function EditorInner({
   offers,
@@ -181,7 +173,6 @@ function EditorInner({
     }
   };
 
-  // ── Mobile full-screen preview ──
   if (showMobilePreview) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -220,7 +211,6 @@ function EditorInner({
         form.handleSubmit(onSubmit)(e);
       }}
     >
-      {/* ── Header bar ─────────────────────────────────────── */}
       <div className="flex items-center justify-between border-b border-divider px-4 py-3">
         <div className="flex items-center gap-3">
           <Link
@@ -264,7 +254,6 @@ function EditorInner({
         </div>
       </div>
 
-      {/* ── Body: editor + preview split ───────────────────── */}
       <div className="flex min-h-0 flex-1">
         <div className="w-full overflow-y-auto lg:w-2/5 lg:border-r lg:border-divider">
           <EditorPanel
@@ -282,7 +271,6 @@ function EditorInner({
         </div>
       </div>
 
-      {/* ── Root form error ────────────────────────────────── */}
       {form.formState.errors.root ? (
         <Alert status="danger">
           <Alert.Indicator />

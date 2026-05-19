@@ -11,8 +11,6 @@ import {applyFormErrors} from '@/api/shared';
 import UnitPicker, {type LoadUnitValue} from '@/training-plans/components/unit-picker';
 import {parseNonNegativeInt, parseNonNegativeNumber} from '@/training-plans/lib/parse';
 
-// ── Types ─────────────────────────────────────────────────────────
-
 export type InlineExerciseFormValues = {
   exerciseNotes: string;
   loadUnit: LoadUnitValue;
@@ -40,8 +38,6 @@ const schema = z.object({
       return Number.isFinite(parsed) && parsed >= 1;
     }, 'Must be at least 1'),
 });
-
-// ── Presets + smart defaults ─────────────────────────────────────
 
 export const PRESETS = [
   {label: '3×10', reps: '10', sets: '3'},
@@ -89,7 +85,6 @@ function parseReps(value: string): null | number {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/** Build N identical PlannedSets from the form values. */
 export function buildPlannedSetsFromForm(values: InlineExerciseFormValues): PlannedSet[] {
   const setsCount = Math.max(1, parseNonNegativeInt(values.sets) ?? 1);
   const loadValue = parseNonNegativeNumber(values.loadValue);
@@ -106,7 +101,6 @@ export function buildPlannedSetsFromForm(values: InlineExerciseFormValues): Plan
   return Array.from({length: setsCount}, () => ({...one}));
 }
 
-/** Derive form values from an existing exercise's planned_sets array. */
 export function deriveFormFromSets(
   sets: PlannedSet[],
   fallbackLoadUnit: LoadUnitValue = 'kg',
@@ -127,15 +121,10 @@ export function deriveFormFromSets(
   };
 }
 
-// ── Component ─────────────────────────────────────────────────────
-
 type InlineExerciseFormProps = {
-  /** `Add` (new) or `Save` (editing). Spec defines these two. */
   actionLabel: 'Add' | 'Save';
   defaultValues?: Partial<InlineExerciseFormValues>;
-  /** Shown at the top of the form (exercise name). */
   exerciseName: string;
-  /** When true, show 'Editing' label next to the exercise name. */
   isEditing?: boolean;
   isSubmitting: boolean;
   onCancel: () => void;
@@ -143,18 +132,6 @@ type InlineExerciseFormProps = {
   onSubmit: (values: InlineExerciseFormValues) => Promise<void>;
 };
 
-/**
- * Inline add/edit exercise form. One target per exercise — no per-set mode,
- * no warmup rows, no Advanced accordion.
- *
- * Layout:
- *   Exercise name [Editing label if editing]
- *   Chips row (3×10, 4×8-12, 5×5, 3×15)
- *   Sets | Reps  (2-col)
- *   Load | Rest  (2-col on mobile, part of single row on desktop)
- *   Notes (optional)
- *   Cancel / Add|Save
- */
 export default function InlineExerciseForm({
   actionLabel,
   defaultValues,
@@ -273,7 +250,6 @@ export default function InlineExerciseForm({
       className="flex flex-col gap-3.5 rounded-xl border border-divider bg-content1 p-3.5"
       onSubmit={handleFormSubmit}
     >
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Dumbbell
           aria-hidden="true"
@@ -308,7 +284,6 @@ export default function InlineExerciseForm({
           card enough room to fit 5 columns + pills without Notes overflowing.
           At <xl the card stacks: Sets+Reps | Load+Rest | Notes. */}
       <div className="flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(70px,1fr)_minmax(90px,1fr)_minmax(150px,1.5fr)_minmax(140px,1.5fr)_minmax(160px,2fr)] xl:items-end xl:gap-3">
-        {/* Sets + Reps row (mobile/mid) / cols 1-2 (xl) */}
         <div className="grid grid-cols-2 gap-3 xl:contents">
           <div className="flex flex-col gap-1">
             <label
@@ -436,7 +411,6 @@ export default function InlineExerciseForm({
         </p>
       ) : null}
 
-      {/* Actions */}
       <div className="flex items-center justify-end gap-2">
         <Button
           className="min-h-11"

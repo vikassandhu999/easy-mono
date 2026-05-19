@@ -1,7 +1,5 @@
 import {api} from '@/api/base';
 
-// ── Snapshot types ──────────────────────────────────────────
-
 export type PlannedSnapshotItem = {
   amount: number;
   calories: number;
@@ -21,8 +19,6 @@ export type PlannedSnapshot = {
   total_fat_g: number;
   total_protein_g: number;
 };
-
-// ── Entity types ────────────────────────────────────────────
 
 export type FoodLogEntry = {
   amount: null | number;
@@ -67,8 +63,6 @@ export type DailyNutritionSummary = {
   unplanned_count: number;
 };
 
-// ── Params ──────────────────────────────────────────────────
-
 export type ListCoachMealLogsParams = {
   client_id: string;
   date?: string;
@@ -82,12 +76,8 @@ export type MealLogSummaryParams = {
   to: string;
 };
 
-// ── Response types ──────────────────────────────────────────
-
 type CoachMealLogListResponse = {data: CoachMealLog[]};
 type CoachMealLogSummaryResponse = {data: DailyNutritionSummary[]};
-
-// ── Endpoints ───────────────────────────────────────────────
 
 export const coachMealLogsApi = api.injectEndpoints({
   endpoints: (build) => ({

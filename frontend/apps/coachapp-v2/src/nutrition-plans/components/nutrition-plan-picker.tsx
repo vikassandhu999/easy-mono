@@ -8,30 +8,15 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type NutritionPlan, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 
 type NutritionPlanPickerProps = {
-  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
   autoFocus?: boolean;
-  /** Optional description text */
   description?: string;
-  /** IDs of plans to exclude (shown as disabled) */
   excludeIds?: string[];
-  /** Optional label text */
   label?: string;
-  /** Called when the user selects a nutrition plan template from the list */
   onSelect: (plan: NutritionPlan) => void;
-  /** Optional placeholder text */
   placeholder?: string;
 };
 
-/**
- * Inline nutrition plan template search + select using HeroUI Autocomplete
- * with async server filtering.
- *
- * Container decision: INLINE — single text input that opens a popover with results.
- *
- * Backed by the library endpoint (`GET /v1/coach/nutrition_plans`), which
- * strictly returns templates only. Used by client detail page to pick a
- * template to assign to a client.
- */
+// Backed by GET /v1/coach/nutrition_plans, which strictly returns templates only.
 export default function NutritionPlanPicker({
   autoFocus = false,
   description,

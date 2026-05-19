@@ -23,7 +23,6 @@ export const NUTRITION_PLAN_FORM_DEFAULTS: NutritionPlanFormValues = {
   protein_g: '',
 };
 
-/** Hook wrapper so screens don't need to import zod/resolver separately */
 export function useNutritionPlanForm(options?: {values?: NutritionPlanFormValues}) {
   return useForm<NutritionPlanFormValues>({
     defaultValues: options?.values ? undefined : NUTRITION_PLAN_FORM_DEFAULTS,
@@ -60,7 +59,6 @@ export default function NutritionPlanForm({
       className="flex max-w-lg flex-col gap-4"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">
           Name <span className="text-danger">*</span>
@@ -73,7 +71,6 @@ export default function NutritionPlanForm({
         {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
       </div>
 
-      {/* Description */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="description">Description</Label>
         <TextArea
@@ -85,7 +82,6 @@ export default function NutritionPlanForm({
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
       </div>
 
-      {/* Macros goal */}
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-semibold">Macros Goal (daily target)</legend>
 
@@ -140,10 +136,8 @@ export default function NutritionPlanForm({
         </div>
       </fieldset>
 
-      {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-      {/* Actions */}
       <div className="flex flex-row gap-2 pt-2">
         <Button
           isPending={isSubmitting}

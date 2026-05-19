@@ -48,14 +48,10 @@ import EditTrainingPlan from '@/training-plans/edit-training-plan';
 import ListTrainingPlans from '@/training-plans/list-training-plans';
 import TrainingPlanDetail from '@/training-plans/plan-builder/plan-builder';
 
-// ── Auth wrappers ────────────────────────────────────────────
-
 const LoginScreen = withNotAuth(Login);
 const SignupScreen = withNotAuth(Signup);
 const RegisterBusinessScreen = withAuth(RegisterBusiness);
 const AppShellScreen = withAuth(AppShell);
-
-// ── Placeholder ──────────────────────────────────────────────
 
 function Placeholder({title}: {title: string}) {
   return (
@@ -64,8 +60,6 @@ function Placeholder({title}: {title: string}) {
     </PageLayout>
   );
 }
-
-// ── Router ───────────────────────────────────────────────────
 
 export const router = createBrowserRouter([
   // Public

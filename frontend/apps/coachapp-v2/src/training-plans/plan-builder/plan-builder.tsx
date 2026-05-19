@@ -79,7 +79,6 @@ export default function TrainingPlanDetail() {
       </div>
 
       <div className="min-w-0 max-w-4xl overflow-hidden">
-        {/* Personal-plan client banner — only shown when assigned to a client */}
         {plan.client ? (
           <ClientPlanBanner
             client={plan.client}
@@ -88,7 +87,6 @@ export default function TrainingPlanDetail() {
           />
         ) : null}
 
-        {/* Plan header */}
         <div className="pb-6">
           <h2 className="text-lg font-semibold">{plan.name}</h2>
           {plan.description && <p className="mt-1 text-sm text-foreground-500">{plan.description}</p>}
@@ -136,7 +134,6 @@ export default function TrainingPlanDetail() {
           <div className="mt-3"></div>
         </section>
 
-        {/* Meta */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">

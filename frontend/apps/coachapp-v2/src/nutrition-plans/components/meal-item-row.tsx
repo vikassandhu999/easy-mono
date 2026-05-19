@@ -14,10 +14,6 @@ type MealItemRowProps = {
   isRemoving: boolean;
 };
 
-/**
- * A single food/recipe row inside a meal section.
- * Shows icon, resolved name, amounts (tappable to edit inline), and a remove button.
- */
 export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}: MealItemRowProps) {
   const isRecipe = Boolean(item.recipe_id);
   const Icon = isRecipe ? ChefHat : Apple;
@@ -207,21 +203,21 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{name ?? (isRecipe ? 'Recipe' : 'Food')}</p>
         {hasAmounts ? (
-          <button
+          <Button
             className="min-h-11 text-left text-xs text-foreground-500 transition-colors hover:text-foreground"
-            onClick={startEditing}
-            type="button"
+            onPress={startEditing}
+            variant="ghost"
           >
             {details.join(' / ')}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             className="min-h-11 text-left text-xs text-foreground-400 transition-colors hover:text-foreground"
-            onClick={startEditing}
-            type="button"
+            onPress={startEditing}
+            variant="ghost"
           >
             Set amount
-          </button>
+          </Button>
         )}
       </div>
 

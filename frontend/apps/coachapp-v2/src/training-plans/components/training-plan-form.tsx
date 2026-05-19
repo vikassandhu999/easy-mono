@@ -1,7 +1,6 @@
-import {Button, Calendar, DateField, DatePicker, Input, Label, Spinner, TextArea} from '@heroui/react';
+import {Button, Input, Label, Spinner, TextArea} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {type CalendarDate, parseDate} from '@internationalized/date';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 export const trainingPlanFormSchema = z.object({
@@ -20,17 +19,6 @@ export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
   start_date: '',
 };
 
-/** Convert ISO date string (e.g. "2026-04-01") to CalendarDate, or null if empty/invalid */
-function toCalendarDate(dateStr: string | undefined): CalendarDate | null {
-  if (!dateStr) return null;
-  try {
-    return parseDate(dateStr);
-  } catch {
-    return null;
-  }
-}
-
-/** Hook wrapper so screens don't need to import zod/resolver separately */
 export function useTrainingPlanForm(options?: {values?: TrainingPlanFormValues}) {
   return useForm<TrainingPlanFormValues>({
     defaultValues: options?.values ? undefined : TRAINING_PLAN_FORM_DEFAULTS,
@@ -67,7 +55,6 @@ export default function TrainingPlanForm({
       className="flex max-w-lg flex-col gap-4"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">
           Name <span className="text-danger">*</span>
@@ -80,7 +67,6 @@ export default function TrainingPlanForm({
         {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
       </div>
 
-      {/* Description */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="description">Description</Label>
         <TextArea
@@ -92,10 +78,8 @@ export default function TrainingPlanForm({
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
       </div>
 
-      {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-      {/* Actions */}
       <div className="flex flex-row gap-2 pt-2">
         <Button
           isPending={isSubmitting}

@@ -35,7 +35,6 @@ export const FOOD_FORM_DEFAULTS: FoodFormValues = {
   sugar_g: '',
 };
 
-/** Hook wrapper so screens don't need to import zod/resolver separately */
 export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: FoodFormValues}) {
   return useForm<FoodFormValues>({
     defaultValues: options?.values ? undefined : (options?.defaultValues ?? FOOD_FORM_DEFAULTS),
@@ -45,21 +44,13 @@ export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: 
 }
 
 type FoodFormProps = {
-  /** The react-hook-form instance returned by useFoodForm */
   form: ReturnType<typeof useFoodForm>;
-  /** Called with validated form data */
   onSubmit: (data: FoodFormValues) => void;
-  /** Whether the mutation is in progress */
   isSubmitting: boolean;
-  /** Label for the submit button (e.g. "Create Food" or "Save Changes") */
   submitLabel: string;
-  /** Label shown while submitting (e.g. "Creating..." or "Saving...") */
   submittingLabel: string;
-  /** Called when Cancel is pressed */
   onCancel: () => void;
-  /** Current serving sizes list (managed by parent) */
   servingSizes: ServingSize[];
-  /** Called when serving sizes change */
   onServingSizesChange: (sizes: ServingSize[]) => void;
 };
 
@@ -119,7 +110,6 @@ export default function FoodForm({
       className="flex max-w-lg flex-col gap-4"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">
           Name <span className="text-danger">*</span>
@@ -132,7 +122,6 @@ export default function FoodForm({
         {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
       </div>
 
-      {/* Category + Source side by side on md */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="category">Category</Label>
@@ -154,7 +143,6 @@ export default function FoodForm({
         </div>
       </div>
 
-      {/* Macros per 100g */}
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-semibold">Nutrition per 100g</legend>
 
@@ -233,7 +221,6 @@ export default function FoodForm({
         </div>
       </fieldset>
 
-      {/* Notes */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="notes">Notes</Label>
         <TextArea
@@ -245,11 +232,9 @@ export default function FoodForm({
         {errors.notes && <p className="text-xs text-danger">{errors.notes.message}</p>}
       </div>
 
-      {/* Serving Sizes */}
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-semibold">Serving Sizes</legend>
 
-        {/* Existing serving sizes as compact rows */}
         {servingSizes.length > 0 && (
           <div className="flex flex-col gap-2">
             {servingSizes.map((serving, i) => (
@@ -278,7 +263,6 @@ export default function FoodForm({
           </div>
         )}
 
-        {/* Inline add form */}
         {isAddingServing ? (
           <div className="flex flex-col gap-3 rounded-lg border border-divider p-3">
             <div className="grid grid-cols-3 gap-3">
@@ -353,10 +337,8 @@ export default function FoodForm({
         )}
       </fieldset>
 
-      {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-      {/* Actions */}
       <div className="flex flex-row gap-2 pt-2">
         <Button
           isPending={isSubmitting}

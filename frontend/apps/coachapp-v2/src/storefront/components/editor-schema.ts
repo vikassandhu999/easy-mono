@@ -1,8 +1,5 @@
 import {z} from 'zod';
 
-// ── Editor form schema + type ────────────────────────────────
-// Shared by storefront-editor.tsx and all section editor components.
-
 const intakeQuestionSchema = z.object({
   label: z.string().min(1, 'Question text is required'),
   options: z.array(z.string()).optional(),

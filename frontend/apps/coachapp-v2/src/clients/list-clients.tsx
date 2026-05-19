@@ -87,7 +87,6 @@ export default function ListClients() {
       }
       title="Clients"
     >
-      {/* Search + status filter */}
       <div className="mb-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end py-2">
         <SearchField
           aria-label="Search clients"
@@ -100,7 +99,6 @@ export default function ListClients() {
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
-        {/* Status filter */}
         <Autocomplete
           aria-label="Filter by status"
           onChange={(key) => setActiveFilter(key ?? 'all')}

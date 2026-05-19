@@ -54,7 +54,6 @@ export default function ListNutritionPlans() {
       }
       title="Nutrition Plans"
     >
-      {/* Back to library */}
       <Button
         className="mb-4"
         onPress={goBack}
@@ -65,7 +64,6 @@ export default function ListNutritionPlans() {
         Library
       </Button>
 
-      {/* Search */}
       <div className="mb-4">
         <div className="relative">
           <Search

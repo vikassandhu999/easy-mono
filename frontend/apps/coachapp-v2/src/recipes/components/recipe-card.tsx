@@ -13,7 +13,6 @@ export default function RecipeCard({recipe}: {recipe: Recipe}) {
       className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
       to={`/library/recipes/${recipe.id}`}
     >
-      {/* Icon / image */}
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         {recipe.image_url ? (
           <img
@@ -29,7 +28,6 @@ export default function RecipeCard({recipe}: {recipe: Recipe}) {
         )}
       </div>
 
-      {/* Name + category */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{recipe.name}</p>
         {recipe.category ? (
@@ -43,7 +41,6 @@ export default function RecipeCard({recipe}: {recipe: Recipe}) {
         )}
       </div>
 
-      {/* Summary chips — hidden on small screens */}
       <div className="hidden gap-1.5 sm:flex">
         {cal !== undefined && (
           <Chip

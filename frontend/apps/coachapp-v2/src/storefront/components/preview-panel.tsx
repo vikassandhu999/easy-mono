@@ -17,7 +17,6 @@ export default function PreviewPanel({
 
   return (
     <div className="flex h-full flex-col bg-default-50">
-      {/* Device toggle bar */}
       <div className="flex items-center justify-center gap-2 border-b border-divider px-4 py-2">
         <Button
           className={`min-h-11 ${device === 'desktop' ? 'bg-default-200 text-foreground' : 'text-foreground-400'}`}
@@ -37,7 +36,6 @@ export default function PreviewPanel({
         </Button>
       </div>
 
-      {/* Iframe container */}
       <div className="flex flex-1 items-start justify-center overflow-auto p-4">
         {previewUrl ? (
           <div

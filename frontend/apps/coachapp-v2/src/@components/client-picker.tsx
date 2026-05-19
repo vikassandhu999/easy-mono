@@ -8,20 +8,13 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Client, useListClientsQuery} from '@/api/clients';
 
 type ClientPickerProps = {
-  /** Called when the user selects a client from the list */
   onSelect: (client: Client) => void;
-  /** Optional label text */
   label?: string;
-  /** Optional description text */
   description?: string;
-  /** Optional placeholder text */
   placeholder?: string;
-  /** IDs of clients to exclude (shown as disabled) */
   excludeIds?: string[];
-  /** Whether the picker is disabled (e.g. during a mutation) */
   isDisabled?: boolean;
   // eslint-disable-next-line jsx-a11y/no-autofocus -- opt-in per call site
-  /** Auto-focus the search input when the picker mounts */
   autoFocus?: boolean;
 };
 
@@ -29,15 +22,9 @@ function getFullName(firstName: null | string, lastName: null | string): string 
   return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
 }
 
-/**
- * Inline client search + select using HeroUI Autocomplete with async server filtering.
- *
- * Container decision: INLINE — single text input that opens a popover with results.
- *
- * Shared component because nutrition plans and training plans both assign/copy
- * plans to clients. Uses Autocomplete in single-select mode. After selecting a
- * client, the selection is cleared and the full Client object is passed to onSelect.
- */
+// Shared component because nutrition plans and training plans both assign/copy
+// plans to clients. After selecting a client the selection is cleared and the
+// full Client object is passed to onSelect.
 export default function ClientPicker({
   onSelect,
   label,

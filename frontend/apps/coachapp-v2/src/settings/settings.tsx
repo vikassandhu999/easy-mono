@@ -8,27 +8,8 @@ import {api} from '@/api/base';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
 import SectionHeading from '@/settings/components/section-heading';
+import {getFullName, getInitials, splitName} from '@/settings/lib/profile';
 import {store} from '@/store';
-
-// ── Helpers ─────────────────────────────────────────────────
-
-function getInitials(firstName: null | string, lastName: null | string): string {
-  const f = firstName?.charAt(0) ?? '';
-  const l = lastName?.charAt(0) ?? '';
-  return (f + l).toUpperCase() || '?';
-}
-
-function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ');
-}
-
-function splitName(fullName: string): {first_name: string; last_name: string} {
-  const spaceIndex = fullName.indexOf(' ');
-  if (spaceIndex === -1) return {first_name: fullName, last_name: ''};
-  return {first_name: fullName.slice(0, spaceIndex), last_name: fullName.slice(spaceIndex + 1)};
-}
-
-// ── Section components ──────────────────────────────────────
 
 function ProfileSection({
   onUpdate,
@@ -44,8 +25,8 @@ function ProfileSection({
 
   const handleNameSave = useCallback(
     async (value: string) => {
-      const {first_name, last_name} = splitName(value.trim());
-      await onUpdate({first_name, last_name}).unwrap();
+      const {first_name: firstName, last_name: lastName} = splitName(value.trim());
+      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
     },
     [onUpdate],
   );
@@ -68,7 +49,6 @@ function ProfileSection({
     <section>
       <SectionHeading title="Profile" />
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
-        {/* Header with avatar */}
         <div className="flex items-center gap-3 border-b border-divider p-4">
           <Avatar
             className="size-12"
@@ -82,7 +62,6 @@ function ProfileSection({
           </div>
         </div>
 
-        {/* Editable rows */}
         <EditableRow
           label="Name"
           onSave={handleNameSave}
@@ -156,8 +135,6 @@ function AccountSection({email}: {email: string}) {
   );
 }
 
-// ── Main page ───────────────────────────────────────────────
-
 export default function Settings() {
   const {data, isLoading} = useGetCoachProfileQuery();
   const [updateProfile] = useUpdateCoachProfileMutation();
@@ -166,7 +143,7 @@ export default function Settings() {
   const handleLogout = useCallback(() => {
     clearTokens();
     store.dispatch(api.util.resetApiState());
-    navigate('/login');
+    navigate('/login', {replace: true});
   }, [navigate]);
 
   if (isLoading) {
@@ -193,14 +170,12 @@ export default function Settings() {
         <InviteLinkSection slug={profile.business.slug} />
         <AccountSection email={profile.email} />
 
-        {/* Logout */}
         <div className="py-4">
           <Separator className="mb-4" />
           <Button
             className="w-full"
-            color="danger"
             onPress={handleLogout}
-            variant="ghost"
+            variant="danger-soft"
           >
             Log out
           </Button>

@@ -8,11 +8,8 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Exercise, useListExercisesQuery} from '@/api/exercises';
 
 type ExercisePickerProps = {
-  /** IDs of exercises already in this workout (shown as disabled) */
   excludeIds?: string[];
-  /** Called when the user selects an exercise */
   onSelect: (exercise: Exercise) => void;
-  /** Optional placeholder text */
   placeholder?: string;
 };
 

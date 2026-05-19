@@ -36,10 +36,6 @@ export function getLoadUnitButtonLabel(loadUnit: LoadUnitValue): string {
 }
 
 type UnitPickerProps = {
-  /**
-   * Extra classes applied to the pill trigger button. Lets the caller match
-   * the pill to sibling inputs (`min-h-12 shrink-0 px-3` etc.).
-   */
   className?: string;
   onChange: (unit: LoadUnitValue) => void;
   value: LoadUnitValue;

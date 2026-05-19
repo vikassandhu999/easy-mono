@@ -7,14 +7,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISSED_KEY = 'pwa-install-dismissed';
 
-/**
- * Captures the browser's `beforeinstallprompt` event and exposes
- * `canInstall` (true when installable) and `promptInstall()` to trigger
- * the native install dialog.
- *
- * Respects a localStorage flag so the banner stays hidden after the user
- * explicitly dismisses it for the current session.
- */
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isDismissed, setIsDismissed] = useState(() => sessionStorage.getItem(DISMISSED_KEY) === '1');

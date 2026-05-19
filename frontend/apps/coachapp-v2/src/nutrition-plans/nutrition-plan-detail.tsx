@@ -248,7 +248,6 @@ export default function NutritionPlanDetail() {
 
   return (
     <PageLayout title="Nutrition Plan">
-      {/* Navigation */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Button
           onPress={goBack}
@@ -335,7 +334,6 @@ export default function NutritionPlanDetail() {
         </AlertDialog>
       </div>
 
-      {/* Copy to client — revealed inline below nav bar */}
       {showCopyToClient && (
         <div className="mb-4 max-w-md rounded-xl border border-divider bg-content1 p-4">
           <p className="mb-2 text-sm text-foreground-500">
@@ -357,10 +355,8 @@ export default function NutritionPlanDetail() {
       )}
 
       <div className="min-w-0 max-w-2xl overflow-hidden">
-        {/* Personal-plan client banner — only shown when assigned to a client */}
         {plan.client ? <ClientPlanBanner client={plan.client} /> : null}
 
-        {/* Plan header */}
         <div className="pb-6">
           <h2 className="text-lg font-semibold">{plan.name}</h2>
           {plan.description && <p className="mt-1 text-sm text-foreground-500">{plan.description}</p>}
@@ -384,7 +380,6 @@ export default function NutritionPlanDetail() {
           </div>
         </div>
 
-        {/* Macros goal */}
         {macrosGoalEntries.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
@@ -411,7 +406,6 @@ export default function NutritionPlanDetail() {
           </section>
         )}
 
-        {/* Daily totals vs goal */}
         {macrosData?.data && meals.some((m) => m.meal_items.length > 0) && (
           <DailyTotals
             goal={plan.macros_goal}
@@ -419,7 +413,6 @@ export default function NutritionPlanDetail() {
           />
         )}
 
-        {/* Meals builder */}
         <section className="border-t border-divider py-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Meals</h3>
@@ -442,7 +435,7 @@ export default function NutritionPlanDetail() {
             </p>
           )}
 
-          {/* Add meal — inline input (keyboard rule: single field = INLINE) */}
+          {/* keyboard rule: single field = INLINE */}
           <div className="mt-3">
             {isAddingMeal ? (
               <div className="flex items-end gap-2">
@@ -497,7 +490,6 @@ export default function NutritionPlanDetail() {
           </div>
         </section>
 
-        {/* Day planner — assign meals to days */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h3>
           <DayPlanner
@@ -507,7 +499,6 @@ export default function NutritionPlanDetail() {
           />
         </section>
 
-        {/* Meta */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">

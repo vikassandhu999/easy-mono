@@ -5,7 +5,6 @@ import {useState} from 'react';
 import type {Food} from '@/api/foods';
 import type {ServingSize} from '@/api/shared';
 
-/** A single ingredient entry with food reference + editable amount/unit/weight */
 export type IngredientItem = {
   food: Food;
   food_id: string;
@@ -15,15 +14,12 @@ export type IngredientItem = {
 };
 
 type IngredientListProps = {
-  /** Current list of ingredients */
   value: IngredientItem[];
-  /** Called when the list changes (add, remove, edit) */
   onChange: (items: IngredientItem[]) => void;
-  /** food_id to auto-expand (set by parent when a new ingredient is added) */
   autoExpandId?: null | string;
 };
 
-/** Format ingredient summary for collapsed rows — same rules as RX-1 detail page */
+// Summary string for collapsed rows — same formatting rules as the recipe detail page.
 function formatIngredientSummary(item: IngredientItem): string {
   const hasAmount = item.amount !== '' && item.amount != null && Number(item.amount) !== 0;
   const hasWeight = item.weight_g !== '' && item.weight_g != null && Number(item.weight_g) !== 0;
@@ -36,7 +32,6 @@ function formatIngredientSummary(item: IngredientItem): string {
   return [amountPart, weightPart].filter(Boolean).join(' \u00b7 ');
 }
 
-/** Format a serving size for display on chips */
 function formatServingLabel(s: ServingSize): string {
   const amt = s.amount ?? 1;
   if (s.unit === 'g' && s.weight_g != null && amt === s.weight_g) {
@@ -49,13 +44,6 @@ function formatServingLabel(s: ServingSize): string {
   return base;
 }
 
-/**
- * Compact ingredient list — collapsed rows by default, tap to expand and edit.
- *
- * Container decision: INLINE — keyboard inputs are part of the form flow.
- *
- * Reusable: lives in foods/components/. Takes value/onChange so any parent can control state.
- */
 export default function IngredientList({value, onChange, autoExpandId}: IngredientListProps) {
   const [expandedId, setExpandedId] = useState<null | string>(null);
   // Track active serving size chip per ingredient (keyed by food_id → serving index)
@@ -115,14 +103,13 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
             className="rounded-xl border border-divider"
             key={item.food_id}
           >
-            {/* Collapsed row — always visible */}
             <div className="flex min-h-11 items-center gap-2 px-3">
-              <button
+              <Button
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.food.name}`}
                 className="flex min-h-11 min-w-0 flex-1 items-center gap-2"
-                onClick={() => toggleExpand(item.food_id)}
-                type="button"
+                onPress={() => toggleExpand(item.food_id)}
+                variant="ghost"
               >
                 <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-content2">
                   {item.food.image_url ? (
@@ -151,7 +138,7 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                     size={14}
                   />
                 )}
-              </button>
+              </Button>
               <Button
                 aria-label={`Remove ${item.food.name}`}
                 className="min-h-11 min-w-11"
@@ -163,16 +150,14 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
               </Button>
             </div>
 
-            {/* Expanded area — serving size chips + amount/unit/weight inputs */}
             {isExpanded && (
               <div className="border-t border-divider px-3 pb-3 pt-2">
-                {/* Serving size quick-fill chips */}
                 {item.food.serving_sizes.length > 0 && (
                   <div className="-mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1">
                     {item.food.serving_sizes.map((s, sIdx) => {
                       const isActive = activeServingMap[item.food_id] === sIdx;
                       return (
-                        <button
+                        <Button
                           aria-label={`Use serving: ${formatServingLabel(s)}`}
                           className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
                             isActive
@@ -180,11 +165,11 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                               : 'bg-content2 text-foreground-500 hover:bg-content3'
                           }`}
                           key={sIdx}
-                          onClick={() => applyServing(index, item.food_id, s, sIdx)}
-                          type="button"
+                          onPress={() => applyServing(index, item.food_id, s, sIdx)}
+                          variant="ghost"
                         >
                           {formatServingLabel(s)}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>

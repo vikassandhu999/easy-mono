@@ -23,13 +23,6 @@ function getInitials(client: PlanClient): string {
   return (first + last).toUpperCase() || '?';
 }
 
-/**
- * Banner shown at the top of a plan detail page when the plan is personal
- * (assigned to a specific client rather than a library template).
- *
- * Renders as a tappable Link back to the client's detail page so the coach
- * can jump to the client context from the plan they're editing.
- */
 export default function ClientPlanBanner({client, endDate, startDate}: ClientPlanBannerProps) {
   const fullName = getFullName(client);
   const initials = getInitials(client);

@@ -36,17 +36,6 @@ type DayPlannerProps = {
   meals: Meal[];
 };
 
-/**
- * Day planner grid for assigning meals to day + meal_type slots.
- *
- * Layout: day tabs across the top, meal_type rows within each day.
- * Each slot shows the assigned meal or a picker to assign one.
- *
- * Container decisions:
- * - Assigning a meal = tap-only select from existing meals → INLINE (native select)
- * - Removing assignment = button press (just unlinking, no delete confirmation)
- * - Copy day = button that copies all assignments from current day to a target day
- */
 export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) {
   const [selectedDay, setSelectedDay] = useState<string>('monday');
   const [createMeal] = useCreateMealMutation();
@@ -141,13 +130,12 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
 
   return (
     <div className="min-w-0">
-      {/* Day tabs — horizontally scrollable on mobile */}
       <div className="-mx-1 mb-4 flex gap-1 overflow-x-auto px-1 pb-1">
         {DAYS.map((day) => {
           const isActive = selectedDay === day.value;
           const hasItems = planItems.some((pi) => pi.day === day.value);
           return (
-            <button
+            <Button
               className={`min-h-11 shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-foreground text-background'
@@ -156,19 +144,19 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                     : 'bg-content1 text-foreground-400 hover:bg-content2'
               }`}
               key={day.value}
-              onClick={() => {
+              onPress={() => {
                 setSelectedDay(day.value);
                 setAssigningSlot(null);
               }}
-              type="button"
+              variant="ghost"
             >
               {day.label}
-            </button>
+            </Button>
           );
         })}
       </div>
 
-      {/* Copy day — dialog trigger (tap-only selection = DIALOG per container rules) */}
+      {/* tap-only selection = DIALOG per container rules */}
       {currentDayHasItems && (
         <div className="mb-3">
           <AlertDialog>
@@ -198,7 +186,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                           </AlertDialog.Heading>
                         </AlertDialog.Header>
                         <AlertDialog.Body>
-                          {/* Day selector — tap to pick target day */}
                           <p className="mb-2 text-sm font-medium text-foreground-500">Target day</p>
                           <div className="mb-4 flex flex-wrap gap-2">
                             {DAYS.filter((d) => d.value !== selectedDay).map((day) => (
@@ -216,7 +203,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                             ))}
                           </div>
 
-                          {/* Merge option — only when target day already has meals */}
                           {copyTargetDay && targetHasMeals && (
                             <RadioGroup
                               aria-label="How to handle existing meals"
@@ -292,7 +278,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
         </div>
       )}
 
-      {/* Meal type slots for selected day */}
       <div className="flex flex-col gap-2">
         {dayItems.map(({mealType, slotKey, planItem, assignedMeal}) => {
           const isSaving = savingSlot === slotKey;
@@ -303,12 +288,10 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
               className="flex min-h-11 items-center gap-3 overflow-hidden rounded-lg border border-divider bg-content1 px-3 py-2"
               key={slotKey}
             >
-              {/* Meal type label */}
               <span className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wider text-foreground-400">
                 {mealType.label}
               </span>
 
-              {/* Slot content */}
               <div className="min-w-0 flex-1">
                 {isSaving ? (
                   <div className="flex items-center gap-4">
@@ -364,7 +347,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
         })}
       </div>
 
-      {/* Hint if no meals exist yet */}
       {meals.length === 0 && (
         <p className="mt-3 text-xs text-foreground-400">Create meals above first, then assign them to days here.</p>
       )}

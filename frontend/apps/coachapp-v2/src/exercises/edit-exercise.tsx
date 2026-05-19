@@ -15,8 +15,7 @@ import {
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/components/exercise-form';
 
-/** Inner component that mounts only when exercise data is available.
- *  This lets us initialise useState(exercise.images) without useEffect. */
+// Mounts only when exercise data is available, so useState(exercise.images) initialises without useEffect.
 function EditExerciseForm({
   backPath,
   exercise,

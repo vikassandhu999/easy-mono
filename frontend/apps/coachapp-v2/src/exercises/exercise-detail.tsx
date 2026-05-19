@@ -93,7 +93,6 @@ export default function ExerciseDetail() {
 
   return (
     <PageLayout title="Exercise">
-      {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
           onPress={goBack}
@@ -167,7 +166,6 @@ export default function ExerciseDetail() {
       </div>
 
       <div className="max-w-lg">
-        {/* Header — image/icon + name + chips */}
         <div className="flex items-start gap-4 pb-6">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
             {exercise.images[0] ? (
@@ -208,7 +206,6 @@ export default function ExerciseDetail() {
           </div>
         </div>
 
-        {/* Description */}
         {exercise.description && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Description</h3>
@@ -216,7 +213,6 @@ export default function ExerciseDetail() {
           </section>
         )}
 
-        {/* Instructions */}
         {exercise.instructions && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Instructions</h3>
@@ -224,7 +220,6 @@ export default function ExerciseDetail() {
           </section>
         )}
 
-        {/* Muscles */}
         {muscleNames.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Target Muscles</h3>
@@ -242,7 +237,6 @@ export default function ExerciseDetail() {
           </section>
         )}
 
-        {/* Equipment */}
         {equipmentNames.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Equipment</h3>
@@ -260,7 +254,6 @@ export default function ExerciseDetail() {
           </section>
         )}
 
-        {/* Images */}
         {exercise.images.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Images</h3>
@@ -277,7 +270,6 @@ export default function ExerciseDetail() {
           </section>
         )}
 
-        {/* Meta */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">

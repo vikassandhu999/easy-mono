@@ -12,7 +12,6 @@ import NutritionPlanForm, {
   useNutritionPlanForm,
 } from '@/nutrition-plans/components/nutrition-plan-form';
 
-/** Build the macros_goal Record from form values, omitting empty fields */
 function buildMacrosGoal(data: NutritionPlanFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;

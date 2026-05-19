@@ -15,7 +15,6 @@ export default function TestimonialCard({testimonial}: {testimonial: Testimonial
       className="flex min-h-11 items-start gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
       to={`/storefront/testimonials/${testimonial.id}/edit`}
     >
-      {/* Photo thumbnails or icon */}
       {hasPhotos ? (
         <div className="flex shrink-0 gap-1">
           <img
@@ -45,7 +44,6 @@ export default function TestimonialCard({testimonial}: {testimonial: Testimonial
         </div>
       )}
 
-      {/* Name + subtitle + quote preview */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{testimonial.client_name}</p>
         {subtitle && <p className="truncate text-xs text-foreground-500">{subtitle}</p>}
@@ -54,7 +52,6 @@ export default function TestimonialCard({testimonial}: {testimonial: Testimonial
         )}
       </div>
 
-      {/* Badges */}
       <div className="hidden shrink-0 gap-1.5 sm:flex">
         {testimonial.is_featured && (
           <Chip

@@ -13,7 +13,6 @@ import OfferForm, {
   useOfferForm,
 } from '@/storefront/components/offer-form';
 
-/** Inner component — only mounts when offer data is available. */
 function EditOfferForm({offerId}: {offerId: string}) {
   const navigate = useNavigate();
   const {data} = useGetOfferQuery(offerId);

@@ -8,7 +8,6 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
 import {normalizeMacros} from '@/api/shared';
 
-/** Well-known macro keys to display in a structured way */
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   calories_per_100g: {label: 'Calories', unit: ''},
   protein_g: {label: 'Protein', unit: 'g'},
@@ -81,7 +80,6 @@ export default function FoodDetail() {
 
   return (
     <PageLayout title="Food">
-      {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
           onPress={goBack}
@@ -154,7 +152,6 @@ export default function FoodDetail() {
       </div>
 
       <div className="max-w-lg">
-        {/* Header — image/icon + name + category chip */}
         <div className="flex items-start gap-4 pb-6">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
             {food.image_url ? (
@@ -196,7 +193,6 @@ export default function FoodDetail() {
           </div>
         </div>
 
-        {/* Macros */}
         {(knownMacros.length > 0 || unknownMacros.length > 0) && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
@@ -228,7 +224,6 @@ export default function FoodDetail() {
           </section>
         )}
 
-        {/* Serving Sizes */}
         {food.serving_sizes.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Serving Sizes</h3>
@@ -250,7 +245,6 @@ export default function FoodDetail() {
           </section>
         )}
 
-        {/* Tags */}
         {food.tags.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Tags</h3>
@@ -268,7 +262,6 @@ export default function FoodDetail() {
           </section>
         )}
 
-        {/* Notes */}
         {food.notes && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Notes</h3>
@@ -276,7 +269,6 @@ export default function FoodDetail() {
           </section>
         )}
 
-        {/* Meta */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">

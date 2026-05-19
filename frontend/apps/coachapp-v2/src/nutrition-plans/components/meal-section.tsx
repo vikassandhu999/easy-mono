@@ -34,19 +34,9 @@ function formatServingLabel(s: ServingSize): string {
 type MealSectionProps = {
   meal: Meal;
   planId: string;
-  /** Optional ref for scrolling to this section (supports both RefObject and callback refs) */
   sectionRef?: Ref<HTMLDivElement>;
 };
 
-/**
- * A single meal card inside the nutrition plan builder.
- *
- * Shows the meal name, its items (foods/recipes), and controls to:
- * - Add a food or recipe via tabbed picker (MealItemPicker)
- * - Set amount/unit/weight before confirming
- * - Remove items
- * - Delete the entire meal (AlertDialog confirmation)
- */
 export default function MealSection({meal, planId, sectionRef}: MealSectionProps) {
   const [createMealItem, {isLoading: isAddingItem}] = useCreateMealItemMutation();
   const [deleteMealItem, {isLoading: isDeletingItem}] = useDeleteMealItemMutation();
@@ -182,7 +172,6 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
       className="min-w-0 overflow-hidden rounded-xl border border-divider bg-content1 p-4"
       ref={sectionRef}
     >
-      {/* Meal header */}
       <div className="mb-3 flex items-center justify-between gap-2">
         {isEditingName ? (
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -206,20 +195,20 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
             {isSavingName && <Spinner size="sm" />}
           </div>
         ) : (
-          <button
+          <Button
             className="flex min-h-11 min-w-0 items-center gap-1.5 rounded-md px-1 text-left transition-colors hover:bg-content2"
-            onClick={() => {
+            onPress={() => {
               setEditName(meal.name);
               setIsEditingName(true);
             }}
-            type="button"
+            variant="ghost"
           >
             <h3 className="truncate text-sm font-semibold">{meal.name}</h3>
             <Pencil
               className="shrink-0 text-foreground-400"
               size={12}
             />
-          </button>
+          </Button>
         )}
         <AlertDialog>
           <Button
@@ -265,7 +254,6 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
         </AlertDialog>
       </div>
 
-      {/* Meal items list */}
       {meal.meal_items.length > 0 && (
         <div className="mb-3 flex flex-col gap-2">
           {meal.meal_items.map((item) => (
@@ -281,7 +269,6 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
         </div>
       )}
 
-      {/* Per-meal macro summary */}
       {meal.meal_items.length > 0 && (mealMacros.calories || mealMacros.protein_g) ? (
         <div className="mb-3 border-t border-dashed border-divider pt-2">
           <p className="text-xs text-foreground-500">
@@ -299,34 +286,32 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
         <p className="mb-3 text-xs text-foreground-400">No items yet. Add a food or recipe below.</p>
       )}
 
-      {/* Add item flow */}
       {selectedItem ? (
         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-divider p-3">
           <p className="text-xs font-medium text-foreground-500">
             Adding: <span className="text-foreground">{selectedName}</span>
           </p>
 
-          {/* Serving size quick-fill chips */}
           {servingSizes.length > 0 && (
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
               {servingSizes.map((s, idx) => {
                 const isActive = selectedServingIdx === idx;
                 return (
-                  <button
+                  <Button
                     className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
                       isActive ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
                     }`}
                     key={idx}
-                    onClick={() => {
+                    onPress={() => {
                       setAmount(String(s.amount ?? 1));
                       setUnit(s.unit);
                       setWeightG(s.weight_g != null ? String(s.weight_g) : '');
                       setSelectedServingIdx(idx);
                     }}
-                    type="button"
+                    variant="ghost"
                   >
                     {formatServingLabel(s)}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

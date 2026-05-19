@@ -41,7 +41,6 @@ export const RECIPE_FORM_DEFAULTS: RecipeFormValues = {
   sugar_g: '',
 };
 
-/** Hook wrapper so screens don't need to import zod/resolver separately */
 export function useRecipeForm(options?: {values?: RecipeFormValues}) {
   return useForm<RecipeFormValues>({
     defaultValues: options?.values ? undefined : RECIPE_FORM_DEFAULTS,
@@ -51,21 +50,13 @@ export function useRecipeForm(options?: {values?: RecipeFormValues}) {
 }
 
 type RecipeFormProps = {
-  /** The react-hook-form instance returned by useRecipeForm */
   form: ReturnType<typeof useRecipeForm>;
-  /** Called with validated form data */
   onSubmit: (data: RecipeFormValues) => void;
-  /** Whether the mutation is in progress */
   isSubmitting: boolean;
-  /** Label for the submit button */
   submitLabel: string;
-  /** Label shown while submitting */
   submittingLabel: string;
-  /** Called when Cancel is pressed */
   onCancel: () => void;
-  /** Current ingredients list (managed by parent) */
   ingredients: IngredientItem[];
-  /** Called when ingredients change */
   onIngredientsChange: (items: IngredientItem[]) => void;
 };
 
@@ -161,7 +152,6 @@ export default function RecipeForm({
       className="flex max-w-lg flex-col gap-4"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">
           Name <span className="text-danger">*</span>
@@ -174,7 +164,6 @@ export default function RecipeForm({
         {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
       </div>
 
-      {/* Category + Source side by side on md */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="category">Category</Label>
@@ -196,7 +185,6 @@ export default function RecipeForm({
         </div>
       </div>
 
-      {/* Ingredients */}
       <fieldset className="flex flex-col gap-3">
         <div>
           <legend className="text-sm font-semibold">Ingredients</legend>
@@ -213,7 +201,6 @@ export default function RecipeForm({
         />
       </fieldset>
 
-      {/* Instructions — right after Ingredients to match coach workflow */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="instructions">Instructions</Label>
         <TextArea
@@ -225,7 +212,6 @@ export default function RecipeForm({
         {errors.instructions && <p className="text-xs text-danger">{errors.instructions.message}</p>}
       </div>
 
-      {/* Cooked weight */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="cooked_weight_g">Cooked Weight (g)</Label>
         <Input
@@ -238,7 +224,6 @@ export default function RecipeForm({
         {errors.cooked_weight_g && <p className="text-xs text-danger">{errors.cooked_weight_g.message}</p>}
       </div>
 
-      {/* Macros per 100g */}
       <fieldset className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <legend className="text-sm font-semibold">Nutrition per 100g</legend>
@@ -328,10 +313,8 @@ export default function RecipeForm({
         </div>
       </fieldset>
 
-      {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-      {/* Actions */}
       <div className="flex flex-row gap-2 pt-2">
         <Button
           isPending={isSubmitting}

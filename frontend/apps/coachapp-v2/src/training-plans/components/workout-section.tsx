@@ -24,8 +24,6 @@ import InlineExerciseForm, {
   type InlineExerciseFormValues,
 } from '@/training-plans/components/inline-exercise-form';
 
-// ── Component ────────────────────────────────────────────────────────
-
 type WorkoutSectionProps = {
   /** All workouts in the plan — needed for copy exercise target selection */
   allWorkouts: Workout[];
@@ -63,8 +61,6 @@ export default function WorkoutSection({
   // manually picks a different unit in any exercise form.
   const [sessionLoadUnit, setSessionLoadUnit] = useState<LoadUnitValue>('kg');
 
-  // ── Inline workout name editing ────────────────────────────────
-
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(workout.name);
   const [isWorkoutMenuOpen, setIsWorkoutMenuOpen] = useState(false);
@@ -100,8 +96,6 @@ export default function WorkoutSection({
     if (node) node.focus();
   }, []);
 
-  // ── Inline workout notes editing ────────────────────────────────
-
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editNotes, setEditNotes] = useState(workout.notes ?? '');
 
@@ -126,8 +120,6 @@ export default function WorkoutSection({
     if (node) node.focus();
   }, []);
 
-  // ── Delete workout ─────────────────────────────────────────────
-
   const handleDeleteWorkout = async () => {
     try {
       await deleteWorkout({id: workout.id, planId}).unwrap();
@@ -136,8 +128,6 @@ export default function WorkoutSection({
     }
   };
 
-  // ── Add exercise (inline, v3) ──────────────────────────────────
-  //
   // Two-step inline flow (never leaves the workout page):
   //   1. Coach taps `+ Add exercise` → picker renders in place.
   //   2. Coach picks an exercise → InlineExerciseForm renders in place with
@@ -182,7 +172,6 @@ export default function WorkoutSection({
     setIsAddPickerOpen(false);
   };
 
-  // ── Undo toast for exercise removal ────────────────────────────
   // On remove: hide element, start 3s timer. On timeout: fire delete. On undo: restore.
 
   const [pendingRemoval, setPendingRemoval] = useState<null | WorkoutElement>(null);
@@ -239,8 +228,6 @@ export default function WorkoutSection({
   // Filter out pending removal from displayed elements
   const visibleElements = pendingRemoval ? sortedElements.filter((e) => e.id !== pendingRemoval.id) : sortedElements;
 
-  // ── Duplicate exercise (same exercise + sets in same workout) ───
-
   const handleDuplicateExercise = (element: WorkoutElement) => {
     const nextPosition =
       workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
@@ -274,8 +261,6 @@ export default function WorkoutSection({
       toast.danger('Failed to duplicate workout');
     }
   };
-
-  // ── Copy exercise to another workout ───────────────────────────
 
   const [copyingElementId, setCopyingElementId] = useState<null | string>(null);
   const otherWorkouts = allWorkouts.filter((w) => w.id !== workout.id);
@@ -323,15 +308,12 @@ export default function WorkoutSection({
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────
-
   return (
     <div
       className="min-w-0 scroll-mt-20 overflow-hidden rounded-xl border border-divider bg-content1 p-4"
       id={`workout-${workout.id}`}
       ref={sectionRef}
     >
-      {/* Workout header */}
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {isEditingName ? (
@@ -357,17 +339,17 @@ export default function WorkoutSection({
               {isSavingName && <Spinner size="sm" />}
             </div>
           ) : (
-            <button
+            <Button
               className="flex min-h-11 min-w-0 items-center rounded-md px-1 text-left transition-colors hover:bg-content2"
-              onClick={() => {
+              onPress={() => {
                 setEditName(workout.name);
                 setIsEditingNotes(false);
                 setIsEditingName(true);
               }}
-              type="button"
+              variant="ghost"
             >
               <h3 className="truncate text-sm font-semibold">{workout.name}</h3>
-            </button>
+            </Button>
           )}
           <p className="mt-1 px-1 text-xs text-foreground-400">{usedOnLabel}</p>
           {!isEditingName && isEditingNotes ? (
@@ -393,17 +375,17 @@ export default function WorkoutSection({
               />
             </div>
           ) : !isEditingName && workout.notes ? (
-            <button
+            <Button
               className="mt-0.5 flex min-h-11 items-center rounded-md px-1 text-left text-xs text-foreground-400 transition-colors hover:bg-content2"
-              onClick={() => {
+              onPress={() => {
                 setEditNotes(workout.notes ?? '');
                 setIsEditingName(false);
                 setIsEditingNotes(true);
               }}
-              type="button"
+              variant="ghost"
             >
               {workout.notes}
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -486,7 +468,6 @@ export default function WorkoutSection({
         />
       ) : null}
 
-      {/* Exercise elements */}
       {visibleElements.length > 0 ? (
         <div className="mb-3 flex flex-col gap-1">
           {visibleElements.map((element) => (
@@ -509,7 +490,6 @@ export default function WorkoutSection({
                 }}
                 planId={planId}
               />
-              {/* Copy exercise target selector */}
               {copyingElementId === element.id && otherWorkouts.length > 1 && (
                 <div className="mt-1 flex flex-wrap gap-1 rounded-lg border border-dashed border-divider p-2">
                   <span className="w-full text-xs text-foreground-400">Copy to:</span>
@@ -600,19 +580,19 @@ function WorkoutActionItem({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button
       className={[
         'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors',
         'hover:bg-content2 active:bg-content2',
         isDanger ? 'text-danger' : '',
         isPending ? 'opacity-60' : '',
       ].join(' ')}
-      disabled={isPending}
-      onClick={onSelect}
-      type="button"
+      isDisabled={isPending}
+      onPress={onSelect}
+      variant={isDanger ? 'danger' : 'ghost'}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

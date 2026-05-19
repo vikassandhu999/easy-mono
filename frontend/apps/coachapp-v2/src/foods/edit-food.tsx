@@ -11,7 +11,6 @@ import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
 
-/** Build the macros Record from form values, omitting empty fields */
 function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
@@ -24,11 +23,8 @@ function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-/**
- * Inner component rendered only when food data is available.
- * This avoids the need for useEffect to sync server state into local state,
- * which the React Compiler lint rule forbids.
- */
+// Rendered only when food data is available, avoiding useEffect to sync server state
+// into local state (which the React Compiler lint rule forbids).
 function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
   const goBack = useGoBack(backPath);
   const {data} = useGetFoodQuery(foodId);

@@ -1,4 +1,4 @@
-import {Card, Description, Input, Label, Spinner, Switch} from '@heroui/react';
+import {Button, Card, Description, Input, Label, Spinner, Switch} from '@heroui/react';
 import {Check, ExternalLink, X} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
 import {Controller, type UseFormReturn} from 'react-hook-form';
@@ -60,7 +60,6 @@ export default function SettingsEditor({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Page URL */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="slug">Page URL *</Label>
         <div className="flex items-center gap-2">
@@ -95,7 +94,6 @@ export default function SettingsEditor({
         {errors.slug ? <p className="text-xs text-danger">{errors.slug.message}</p> : null}
       </div>
 
-      {/* Theme color */}
       <div className="flex flex-col gap-1.5">
         <Label>Theme color</Label>
         <Controller
@@ -104,12 +102,14 @@ export default function SettingsEditor({
           render={({field}) => (
             <div className="flex gap-3">
               {THEME_COLORS.map((tc) => (
-                <button
+                <Button
+                  aria-label={tc.label}
                   className={`flex min-h-11 min-w-11 items-center justify-center rounded-full ${tc.color} transition-transform ${field.value === tc.value ? 'ring-2 ring-offset-2 ring-offset-background' : 'opacity-60'}`}
+                  isIconOnly
                   key={tc.value}
-                  onClick={() => field.onChange(tc.value)}
-                  title={tc.label}
-                  type="button"
+                  onPress={() => field.onChange(tc.value)}
+                  size="sm"
+                  variant="ghost"
                 >
                   {field.value === tc.value ? (
                     <Check
@@ -117,14 +117,13 @@ export default function SettingsEditor({
                       size={16}
                     />
                   ) : null}
-                </button>
+                </Button>
               ))}
             </div>
           )}
         />
       </div>
 
-      {/* WhatsApp CTA */}
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium">WhatsApp button</p>
         <Controller
@@ -155,7 +154,6 @@ export default function SettingsEditor({
         </div>
       </div>
 
-      {/* Publish toggle */}
       <Card>
         <Card.Content className="flex flex-col gap-3">
           <Controller

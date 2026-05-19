@@ -120,11 +120,6 @@ export const recipesApi = api.injectEndpoints({
         {type: 'Recipe', id: 'LIST'},
       ],
     }),
-    /**
-     * Infinite-scroll variant of listRecipes.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useRecipesInfiniteQuery
-     */
     recipes: build.infiniteQuery<ApiListResponse<Recipe>, ListRecipesFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/recipes',

@@ -4,14 +4,12 @@ import {ClipboardCopy, MessageCircle, Send, Trash2} from 'lucide-react';
 import {type Client, useResendClientInviteMutation, useRevokeInvitationMutation} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
 
-// ── Time helpers ─────────────────────────────────────────────
 // Inline because the monorepo's shared utils don't have relative-time
 // formatting and pulling in Intl.RelativeTimeFormat by hand keeps the
 // widget self-contained. Swap for date-fns/dayjs when one is adopted.
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-/** "just now", "2 hours ago", "3 days ago" — coarse and good enough for an invite widget. */
 function formatSentAgo(sentAt: string): string {
   const sentMs = new Date(sentAt).getTime();
   const diffMs = Date.now() - sentMs;
@@ -41,8 +39,6 @@ function formatExpiresIn(expiresAt: string): string {
   return `in ${days} days`;
 }
 
-// ── WhatsApp helper ──────────────────────────────────────────
-
 function buildWhatsAppUrl({
   phone,
   firstName,
@@ -61,8 +57,6 @@ function buildWhatsAppUrl({
   const cleanPhone = phone?.replace(/\D/g, '');
   return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
 }
-
-// ── Widget ───────────────────────────────────────────────────
 
 interface InvitationWidgetProps {
   client: Client;
@@ -162,7 +156,6 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           <p className="text-xs text-foreground-500">Share this link with {displayName} to onboard them:</p>
         </div>
 
-        {/* Invite URL row — truncated display + copy button */}
         <div className="flex min-h-11 items-center gap-2 rounded-lg border border-divider bg-content2 px-3 py-2">
           <p className="min-w-0 flex-1 truncate text-xs text-foreground-500">{inviteUrl}</p>
           <Button
@@ -176,7 +169,6 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           </Button>
         </div>
 
-        {/* Primary + secondary actions */}
         <div className="flex flex-wrap gap-2">
           <a
             className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
@@ -197,12 +189,10 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
             Resend email
           </Button>
         </div>
-        {/* Explain why Resend is disabled */}
         {!client.email ? (
           <p className="text-xs text-foreground-400">No email on file — use WhatsApp to share the link.</p>
         ) : null}
 
-        {/* Timestamp + expiry context */}
         {sentAgo || expiresIn ? (
           <div className="flex flex-col gap-0.5 text-xs text-foreground-500">
             {sentAgo ? <p>Invited {sentAgo}.</p> : null}
@@ -210,7 +200,6 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
           </div>
         ) : null}
 
-        {/* Revoke — destructive, tucked at the bottom, behind a confirmation */}
         <Separator />
         <AlertDialog>
           <Button

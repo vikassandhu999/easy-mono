@@ -8,13 +8,9 @@ import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type TrainingPlan, useListTrainingPlansQuery} from '@/api/trainingPlans';
 
 type TrainingPlanPickerProps = {
-  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
   autoFocus?: boolean;
-  /** IDs of plans to exclude (shown as disabled) */
   excludeIds?: string[];
-  /** Called when the user selects a training plan */
   onSelect: (plan: TrainingPlan) => void;
-  /** Optional placeholder text */
   placeholder?: string;
 };
 

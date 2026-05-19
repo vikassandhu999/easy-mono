@@ -17,8 +17,6 @@ import SettingsEditor from '@/storefront/components/settings-editor';
 import TestimonialsSummary from '@/storefront/components/testimonials-summary';
 import TrustStatsEditor from '@/storefront/components/trust-stats-editor';
 
-// ── Section status helpers ───────────────────────────────────
-
 type SectionStatus = 'complete' | 'optional' | 'partial';
 
 function getSectionStatuses(values: EditorFormValues, offerCount: number, testimonialCount: number) {
@@ -51,8 +49,6 @@ function statusLabel(status: SectionStatus) {
   if (status === 'partial') return 'Incomplete';
   return 'Optional';
 }
-
-// ── Section config ───────────────────────────────────────────
 
 type SectionId = 'faq' | 'hero' | 'intake' | 'offers' | 'settings' | 'testimonials' | 'trustStats';
 
@@ -99,8 +95,6 @@ const SECTIONS: SectionConfig[] = [
     sublabel: (v) => (v.is_published ? 'Published' : 'Draft'),
   },
 ];
-
-// ── Editor Panel ─────────────────────────────────────────────
 
 export default function EditorPanel({
   form,

@@ -1,14 +1,10 @@
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
-// ── Enums ────────────────────────────────────────────────────
-
 export type WorkoutSessionState = 'active' | 'completed' | 'discarded';
 export type LoadUnit = 'bodyweight' | 'kg' | 'lbs' | 'none' | 'percent_1rm' | 'rpe';
 export type DistanceUnit = 'km' | 'meters' | 'miles' | 'none' | 'yards';
 export type SetType = 'amrap' | 'backoff' | 'cluster' | 'dropset' | 'emom' | 'rest_pause' | 'warmup' | 'working';
-
-// ── Snapshot types (embedded in WorkoutSession) ──────────────
 
 export type PlannedSnapshotSet = {
   distance_unit: DistanceUnit | null;
@@ -39,16 +35,12 @@ export type PlannedSnapshot = {
   workout_name: string;
 };
 
-// ── ExerciseBrief (preload on PerformedSet) ──────────────────
-
 export type ExerciseBrief = {
   force: null | string;
   id: string;
   mechanics: null | string;
   name: string;
 };
-
-// ── PerformedSet ─────────────────────────────────────────────
 
 export type PerformedSet = {
   actual_reps: null | string;
@@ -73,8 +65,6 @@ export type PerformedSet = {
   workout_session_id: string;
 };
 
-// ── WorkoutSession ───────────────────────────────────────────
-
 export type WorkoutSession = {
   business_id: string;
   client_id: string;
@@ -90,8 +80,6 @@ export type WorkoutSession = {
   state: WorkoutSessionState;
   updated_at: string;
 };
-
-// ── Request types ────────────────────────────────────────────
 
 export type WorkoutSessionCreateRequest = {
   client_id: string;
@@ -143,8 +131,6 @@ export type PerformedSetUpdateRequest = {
   tempo_actual?: null | string;
 };
 
-// ── List params ──────────────────────────────────────────────
-
 export type ListWorkoutSessionsParams = {
   client_id?: string;
   limit?: number;
@@ -158,8 +144,6 @@ export type ListWorkoutSessionsFilters = {
 };
 
 const PAGE_SIZE = 20;
-
-// ── Endpoints ────────────────────────────────────────────────
 
 export const workoutSessionsApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -269,7 +253,6 @@ export const workoutSessionsApi = api.injectEndpoints({
         {type: 'WorkoutSession', id: 'LIST'},
       ],
     }),
-    // ── Performed Set CRUD ─────────────────────────────────────
     createPerformedSet: build.mutation<ApiResponse<PerformedSet>, PerformedSetCreateRequest>({
       query: (body) => ({
         body,

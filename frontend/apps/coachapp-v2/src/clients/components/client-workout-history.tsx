@@ -9,8 +9,6 @@ import {useListWorkoutSessionsQuery} from '@/api/workoutSessions';
 
 const PREVIEW_LIMIT = 7;
 
-// ── Helpers ──────────────────────────────────────────────────
-
 function getWorkoutTitle(session: WorkoutSession): string {
   if (session.planned_snapshot) {
     return session.planned_snapshot.workout_name;
@@ -72,8 +70,6 @@ function buildSubtitle(session: WorkoutSession): string {
   return parts.join(' \u00B7 ');
 }
 
-// ── Session card (exported for reuse) ────────────────────────
-
 export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
   const title = getWorkoutTitle(session);
   const dateStr = formatSessionDate(session.started_at);
@@ -126,8 +122,6 @@ export function SessionCard({clientId, session}: {clientId: string; session: Wor
     </Link>
   );
 }
-
-// ── Preview component (for client detail page) ───────────────
 
 export default function ClientWorkoutHistory({clientId}: {clientId: string}) {
   const {data, isLoading} = useListWorkoutSessionsQuery({

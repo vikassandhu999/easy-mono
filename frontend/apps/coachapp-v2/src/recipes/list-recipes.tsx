@@ -52,7 +52,6 @@ export default function ListRecipes() {
       }
       title="Recipes"
     >
-      {/* Back to library */}
       <Button
         className="mb-4"
         onPress={goBack}
@@ -63,7 +62,6 @@ export default function ListRecipes() {
         Library
       </Button>
 
-      {/* Search */}
       <div className="mb-4">
         <div className="relative">
           <Search

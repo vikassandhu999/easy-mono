@@ -1,8 +1,6 @@
 import {api} from '@/api/base';
 import {ApiResponse} from '@/api/shared';
 
-// ── Types ───────────────────────────────────────────────────
-
 export type CoachProfileBusiness = {
   id: string;
   name: string;
@@ -24,8 +22,6 @@ export type UpdateProfileRequest = {
   phone?: string;
   business_name?: string;
 };
-
-// ── Endpoints ───────────────────────────────────────────────
 
 export const profileApi = api.injectEndpoints({
   endpoints: (build) => ({

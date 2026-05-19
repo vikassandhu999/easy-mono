@@ -16,7 +16,6 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Photo + Cover thumbnails */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label>Photo</Label>
@@ -65,7 +64,6 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
         </div>
       </div>
 
-      {/* Display name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="display_name">Display name *</Label>
         <Input
@@ -76,7 +74,6 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
         {errors.display_name ? <p className="text-xs text-danger">{errors.display_name.message}</p> : null}
       </div>
 
-      {/* Headline */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="headline">Headline</Label>
         <Input
@@ -90,7 +87,6 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
         {errors.headline ? <p className="text-xs text-danger">{errors.headline.message}</p> : null}
       </div>
 
-      {/* Bio */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="bio">Bio</Label>
         <TextArea
@@ -103,7 +99,6 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
         {errors.bio ? <p className="text-xs text-danger">{errors.bio.message}</p> : null}
       </div>
 
-      {/* Social links */}
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium">Social links</p>
 

@@ -51,8 +51,6 @@ export default function IntakeQuestionsEditor({form}: {form: UseFormReturn<Edito
   );
 }
 
-// ── Intake Question Row ──────────────────────────────────────
-
 function IntakeQuestionRow({
   control,
   errors,
@@ -157,8 +155,6 @@ function IntakeQuestionRow({
   );
 }
 
-// ── Select Options Editor ────────────────────────────────────
-
 function SelectOptionsEditor({
   control,
   index,
@@ -185,13 +181,15 @@ function SelectOptionsEditor({
             key={option || optionIndex}
           >
             {option || `Option ${optionIndex + 1}`}
-            <button
+            <Button
               className="ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-default-200 active:bg-default-300"
-              onClick={() => remove(optionIndex)}
-              type="button"
+              isIconOnly
+              onPress={() => remove(optionIndex)}
+              size="sm"
+              variant="ghost"
             >
               <X size={12} />
-            </button>
+            </Button>
           </span>
         ))}
       </div>

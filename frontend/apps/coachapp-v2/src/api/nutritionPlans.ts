@@ -82,7 +82,6 @@ export type AssignNutritionPlanRequest = {
   client_id: string;
 };
 
-/** Params for listing nutrition plan templates (library). Only templates — no client_id. */
 export type ListNutritionPlansParams = {
   limit?: number;
   offset?: number;
@@ -96,7 +95,6 @@ export type ListNutritionPlansFilters = {
   status?: NutritionPlanStatus;
 };
 
-/** Params for listing a single client's nutrition plans. */
 export type ListClientNutritionPlansParams = {
   clientId: string;
   limit?: number;
@@ -208,11 +206,6 @@ export const nutritionPlansApi = api.injectEndpoints({
             ]
           : [{type: 'NutritionPlan' as const, id: 'LIST'}],
     }),
-    /**
-     * Infinite-scroll variant of listNutritionPlans — templates only.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useNutritionPlansInfiniteQuery
-     */
     nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/nutrition_plans',

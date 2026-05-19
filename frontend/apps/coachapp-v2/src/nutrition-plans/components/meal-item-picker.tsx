@@ -1,6 +1,6 @@
 import type {Key} from '@heroui/react';
 
-import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
+import {Autocomplete, Button, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Apple, ChefHat} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 
@@ -12,25 +12,12 @@ import {normalizeMacros} from '@/api/shared';
 type PickerTab = 'food' | 'recipe';
 
 type MealItemPickerProps = {
-  /** Called when the user selects a food */
   onSelectFood: (food: Food) => void;
-  /** Called when the user selects a recipe */
   onSelectRecipe: (recipe: Recipe) => void;
-  /** IDs of foods already in the meal (shown as disabled) */
   excludeFoodIds?: string[];
-  /** IDs of recipes already in the meal (shown as disabled) */
   excludeRecipeIds?: string[];
 };
 
-/**
- * Tabbed autocomplete picker for adding foods OR recipes to a meal.
- *
- * Two tabs at the top (Foods / Recipes) control which entity is searched.
- * Uses server-side search via useListFoodsQuery / useListRecipesQuery.
- * After selection, fires onSelectFood or onSelectRecipe and clears the input.
- *
- * Container decision: INLINE — single search input with tabbed popover.
- */
 export default function MealItemPicker({
   onSelectFood,
   onSelectRecipe,
@@ -93,37 +80,35 @@ export default function MealItemPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Tabs */}
       <div className="flex gap-1">
-        <button
+        <Button
           className={`min-h-9 rounded-md px-3 text-xs font-medium transition-colors ${
             activeTab === 'food' ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
           }`}
-          onClick={() => {
+          onPress={() => {
             setActiveTab('food');
             setSearchInput('');
           }}
-          type="button"
+          variant="ghost"
         >
           Foods
-        </button>
-        <button
+        </Button>
+        <Button
           className={`min-h-9 rounded-md px-3 text-xs font-medium transition-colors ${
             activeTab === 'recipe'
               ? 'bg-foreground text-background'
               : 'bg-content2 text-foreground-500 hover:bg-content3'
           }`}
-          onClick={() => {
+          onPress={() => {
             setActiveTab('recipe');
             setSearchInput('');
           }}
-          type="button"
+          variant="ghost"
         >
           Recipes
-        </button>
+        </Button>
       </div>
 
-      {/* Autocomplete */}
       <Autocomplete
         allowsEmptyCollection
         className="w-full"

@@ -1,13 +1,11 @@
 import {MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
-import {Button, Spinner} from '@heroui/react';
+import {Button, Spinner, Table} from '@heroui/react';
 import {ArrowLeft, Check, Minus, Plus, RefreshCw} from 'lucide-react';
 import {useMemo} from 'react';
 
 import type {CoachMealLog, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
 
 import {useListCoachMealLogsQuery} from '@/api/mealLogs';
-
-// ── Types ───────────────────────────────────────────────────
 
 type ComparisonType = 'followed' | 'partial' | 'replaced' | 'skipped';
 
@@ -16,8 +14,6 @@ type ComparisonItem = {
   planned: PlannedSnapshotItem;
   type: ComparisonType;
 };
-
-// ── Helpers ──────────────────────────────────────────────────
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -44,8 +40,6 @@ function buildComparison(mealLog: CoachMealLog): {comparison: ComparisonItem[]; 
 
   return {comparison, unplanned};
 }
-
-// ── Status icon ──────────────────────────────────────────────
 
 function StatusIcon({type}: {type: ComparisonType}) {
   switch (type) {
@@ -80,8 +74,6 @@ function StatusIcon({type}: {type: ComparisonType}) {
   }
 }
 
-// ── Meal section with comparison ─────────────────────────────
-
 function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
   const {comparison, unplanned} = useMemo(() => buildComparison(mealLog), [mealLog]);
   const slotLabel = MEAL_SLOT_LABELS[mealLog.meal_slot] ?? mealLog.meal_slot;
@@ -107,58 +99,58 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
         ) : null}
       </div>
 
-      {/* Plan vs Done table */}
       {hasSnapshot && comparison.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-divider">
-          <table className="w-full table-fixed text-sm">
-            <thead>
-              <tr className="border-b border-divider bg-content2 text-xs text-foreground-400">
-                <th className="w-auto px-3 py-1.5 text-left font-medium">Food</th>
-                <th className="w-16 px-2 py-1.5 text-right font-medium">Plan</th>
-                <th className="w-16 px-2 py-1.5 text-right font-medium">Done</th>
-                <th className="w-8 px-2 py-1.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.map((item, index) => (
-                <tr
-                  className={`border-b border-divider last:border-b-0 ${item.type === 'skipped' ? 'border-dashed opacity-50' : ''}`}
-                  key={index}
-                >
-                  <td className="truncate px-3 py-2">
-                    {item.type === 'replaced' && item.entry ? (
-                      <div>
-                        <p className="truncate text-foreground-400 line-through">{item.planned.food_name}</p>
-                        <p className="truncate">{item.entry.food_name}</p>
-                      </div>
-                    ) : (
-                      <span className={item.type === 'skipped' ? 'text-foreground-300' : ''}>
-                        {item.planned.food_name}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-right text-foreground-400">
-                    {item.planned.amount}
-                    {item.planned.unit}
-                  </td>
-                  <td className="px-2 py-2 text-right">
-                    {item.entry ? (
-                      <span>
-                        {item.entry.amount}
-                        {item.entry.unit}
-                      </span>
-                    ) : (
-                      <span className="text-foreground-300">&mdash;</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <StatusIcon type={item.type} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content aria-label="Planned vs eaten foods">
+              <Table.Header>
+                <Table.Column isRowHeader>Food</Table.Column>
+                <Table.Column className="text-right">Plan</Table.Column>
+                <Table.Column className="text-right">Done</Table.Column>
+                <Table.Column>{''}</Table.Column>
+              </Table.Header>
+              <Table.Body>
+                {comparison.map((item, index) => (
+                  <Table.Row
+                    className={item.type === 'skipped' ? 'border-dashed opacity-50' : ''}
+                    id={index}
+                    key={index}
+                  >
+                    <Table.Cell className="truncate">
+                      {item.type === 'replaced' && item.entry ? (
+                        <div>
+                          <p className="truncate text-foreground-400 line-through">{item.planned.food_name}</p>
+                          <p className="truncate">{item.entry.food_name}</p>
+                        </div>
+                      ) : (
+                        <span className={item.type === 'skipped' ? 'text-foreground-300' : ''}>
+                          {item.planned.food_name}
+                        </span>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell className="text-right text-foreground-400">
+                      {item.planned.amount}
+                      {item.planned.unit}
+                    </Table.Cell>
+                    <Table.Cell className="text-right">
+                      {item.entry ? (
+                        <span>
+                          {item.entry.amount}
+                          {item.entry.unit}
+                        </span>
+                      ) : (
+                        <span className="text-foreground-300">&mdash;</span>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell className="text-center">
+                      <StatusIcon type={item.type} />
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
       ) : !hasSnapshot ? (
         // No plan — show flat entry list
         <div className="overflow-hidden rounded-lg border border-divider">
@@ -188,7 +180,6 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
         </div>
       ) : null}
 
-      {/* Unplanned items */}
       {unplanned.length > 0 ? (
         <div className="mt-2 overflow-hidden rounded-lg border border-dashed border-divider">
           <table className="w-full table-fixed text-sm">
@@ -221,8 +212,6 @@ function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
   );
 }
 
-// ── Skipped meal section (no MealLog exists) ─────────────────
-
 function SkippedMealSlot({slotLabel}: {slotLabel: string}) {
   return (
     <section>
@@ -233,8 +222,6 @@ function SkippedMealSlot({slotLabel}: {slotLabel: string}) {
     </section>
   );
 }
-
-// ── Main component ───────────────────────────────────────────
 
 export default function ClientNutritionDetail({
   clientId,
@@ -312,7 +299,6 @@ export default function ClientNutritionDetail({
             />
           ))}
 
-          {/* Show skipped meal slot indicators for known slots not logged */}
           {sortedLogs.some((ml) => ml.planned_snapshot != null)
             ? MEAL_SLOTS.filter((slot) => !loggedSlots.has(slot)).map((slot) => (
                 <SkippedMealSlot

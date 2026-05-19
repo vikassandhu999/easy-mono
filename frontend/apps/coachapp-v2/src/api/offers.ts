@@ -3,8 +3,6 @@ import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
-// ── Types ────────────────────────────────────────────────────
-
 export type OfferType = 'combo' | 'consultation' | 'nutrition_plan' | 'other' | 'training_plan';
 
 export type OfferStatus = 'active' | 'archived';
@@ -65,8 +63,6 @@ export type ListOffersParams = {
 /** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
 export type ListOffersFilters = Record<string, never>;
 
-// ── Endpoints ────────────────────────────────────────────────
-
 export const offersApi = api.injectEndpoints({
   endpoints: (build) => ({
     createOffer: build.mutation<ApiResponse<Offer>, OfferCreateRequest>({
@@ -100,11 +96,6 @@ export const offersApi = api.injectEndpoints({
             ]
           : [{type: 'Offer' as const, id: 'LIST'}],
     }),
-    /**
-     * Infinite-scroll variant of listOffers.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useOffersInfiniteQuery
-     */
     offers: build.infiniteQuery<ApiListResponse<Offer>, ListOffersFilters | void, number>({
       query: ({pageParam}) => ({
         url: '/v1/coach/offers',

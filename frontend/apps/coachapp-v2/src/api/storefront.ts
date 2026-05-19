@@ -9,8 +9,6 @@ import type {
 import {api} from '@/api/base';
 import {ApiResponse} from '@/api/shared';
 
-// ── Store Profile (extends public profile with coach-private fields) ──
-
 export type StoreProfile = PublicStoreProfile & {
   id: string;
   is_published: boolean;
@@ -40,8 +38,6 @@ export type StoreProfileResponse = {
   data: null | StoreProfile;
 };
 
-// ── Slug check ───────────────────────────────────────────────
-
 export type SlugCheckRequest = {
   slug: string;
 };
@@ -49,8 +45,6 @@ export type SlugCheckRequest = {
 export type SlugCheckResponse = {
   available: boolean;
 };
-
-// ── Endpoints ────────────────────────────────────────────────
 
 export const storefrontApi = api.injectEndpoints({
   endpoints: (build) => ({

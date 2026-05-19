@@ -10,8 +10,6 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {allowedStatusesFor, type AllowedUpdateStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 
-// ── Schema ───────────────────────────────────────────────────
-
 const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
   active: 'Active',
   inactive: 'Inactive',
@@ -29,10 +27,8 @@ const schema = z.object({
 
 type EditClientFormValues = z.infer<typeof schema>;
 
-/** Schema fields — see applyFormErrors docstring for why this matters. */
+// Schema fields — see applyFormErrors docstring for why this matters.
 const KNOWN_FIELDS = ['email', 'first_name', 'last_name', 'notes', 'phone', 'status'] as const;
-
-// ── Component ────────────────────────────────────────────────
 
 export default function EditClient() {
   const {id} = useParams<{id: string}>();
@@ -111,7 +107,6 @@ export default function EditClient() {
         className="flex max-w-lg flex-col gap-4"
         onSubmit={handleSubmit(onSubmit)}
       >
-        {/* ── Name ────────────────────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="first_name">First name</Label>
@@ -133,7 +128,6 @@ export default function EditClient() {
           </div>
         </div>
 
-        {/* ── Contact ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="phone">Phone</Label>
@@ -158,7 +152,6 @@ export default function EditClient() {
         </div>
 
         {/*
-          ── Status ──────────────────────────────────────────
           Per v2 spec: no dropdown for pending clients — the status is
           locked at Pending until the client accepts the invitation (or the
           coach revokes via the invitation widget). For all other statuses,
@@ -200,7 +193,6 @@ export default function EditClient() {
           />
         )}
 
-        {/* ── Notes ───────────────────────────────────────── */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="notes">Notes</Label>
           <TextArea
@@ -211,7 +203,6 @@ export default function EditClient() {
           />
         </div>
 
-        {/* ── Form errors + actions ──────────────────────── */}
         {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 
         <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">

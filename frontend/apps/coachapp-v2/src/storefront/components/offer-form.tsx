@@ -5,8 +5,6 @@ import {useState} from 'react';
 import {Controller, useFieldArray, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-// ── Schema ───────────────────────────────────────────────────
-
 const offerFormSchema = z.object({
   cta_text: z.string().optional(),
   description: z.string().max(5000, 'Maximum 5000 characters').optional(),
@@ -47,17 +45,13 @@ export function useOfferForm(options?: {values?: OfferFormValues}) {
   });
 }
 
-/** Convert a string[] from the API to the form's {value: string}[] shape */
 export function featuresToFormValues(features: string[]): OfferFormValues['features'] {
   return features.map((f) => ({value: f}));
 }
 
-/** Convert the form's {value: string}[] back to a plain string[] for the API */
 export function formValuesToFeatures(features: OfferFormValues['features']): string[] {
   return features.map((f) => f.value).filter(Boolean);
 }
-
-// ── Component ────────────────────────────────────────────────
 
 export default function OfferForm({
   form,
@@ -162,7 +156,6 @@ export default function OfferForm({
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
       </div>
 
-      {/* Features list — managed by useFieldArray */}
       <div className="flex flex-col gap-1.5">
         <Label>Features</Label>
         <div className="flex flex-col gap-2">
@@ -248,8 +241,6 @@ export default function OfferForm({
     </form>
   );
 }
-
-// ── Feature Adder ────────────────────────────────────────────
 
 function FeatureAdder({onAdd}: {onAdd: (value: string) => void}) {
   const [value, setValue] = useState('');

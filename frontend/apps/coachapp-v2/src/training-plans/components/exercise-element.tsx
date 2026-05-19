@@ -12,8 +12,6 @@ import InlineExerciseForm, {
   type InlineExerciseFormValues,
 } from '@/training-plans/components/inline-exercise-form';
 
-// ── Summary formatting ─────────────────────────────────────────────
-
 function formatLoadSummary(set: PlannedSet): string {
   if (!set.load_unit || set.load_unit === 'none') return '';
   if (set.load_unit === 'bodyweight') return set.load_value != null ? `BW + ${set.load_value}` : 'BW';
@@ -39,13 +37,9 @@ export function formatSetSchemeSummary(sets: PlannedSet[]): string {
   return `${sets.length} × ${reps}${loadPart}${restPart}`;
 }
 
-// ── Component ───────────────────────────────────────────────────────
-
 type ExerciseElementProps = {
   element: WorkoutElement;
-  /** Session-wide load unit memory (sticks after the first manual change). */
   fallbackLoadUnit?: LoadUnitValue;
-  /** True when this row is in edit mode (form open). Only one row edits at a time. */
   isEditing: boolean;
   onCancel: () => void;
   onCopy?: () => void;
@@ -110,18 +104,18 @@ export default function ExerciseElement({
   // trigger so they remain available on touch devices.
   return (
     <div className="flex min-h-12 items-center gap-1 rounded-lg px-2 py-1.5 transition-colors hover:bg-content2">
-      <button
+      <Button
         aria-label={`Edit ${exerciseName}`}
         className="flex min-w-0 flex-1 touch-manipulation flex-col items-start rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        onClick={onStartEditing}
-        type="button"
+        onPress={onStartEditing}
+        variant="ghost"
       >
         <span className="block w-full truncate text-sm font-medium">{exerciseName}</span>
         <span className="block w-full truncate text-xs text-foreground-400">
           {formatSetSchemeSummary(element.planned_sets)}
           {element.notes ? <span className="ml-1.5">· {element.notes}</span> : null}
         </span>
-      </button>
+      </Button>
 
       <div className="flex shrink-0 items-center gap-0.5">
         <Popover
@@ -192,16 +186,16 @@ function ExerciseActionItem({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button
       className={[
         'flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm transition-colors',
         'hover:bg-content2 active:bg-content2',
         isDanger ? 'text-danger' : '',
       ].join(' ')}
-      onClick={onSelect}
-      type="button"
+      onPress={onSelect}
+      variant={isDanger ? 'danger' : 'ghost'}
     >
       {children}
-    </button>
+    </Button>
   );
 }

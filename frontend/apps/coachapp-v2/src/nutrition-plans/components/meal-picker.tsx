@@ -9,31 +9,15 @@ import type {Meal} from '@/api/meals';
 const CREATE_NEW_ID = '__create_new__';
 
 type MealPickerProps = {
-  /** Open the popover and focus the search field on mount. Used when the picker is rendered in response to an explicit user action. */
   autoFocus?: boolean;
-  /** The plan's existing meals to pick from */
   meals: Meal[];
-  /** Called when the user picks the "New meal" option. Receives the typed name (may be empty). */
   onCreate?: (name: string) => void;
-  /** Called when the user selects an existing meal */
   onSelect: (meal: Meal) => void;
-  /** Optional placeholder text */
   placeholder?: string;
 };
 
-/** Item shape for the combined list (create action + meals) */
 type PickerItem = {id: string; kind: 'create'; name: string} | {id: string; kind: 'meal'; meal: Meal};
 
-/**
- * Autocomplete picker for selecting from a plan's existing meals,
- * with a permanent "New meal" action as the first option.
- *
- * - No text typed → shows "New meal" + all meals
- * - Text typed → shows "Create [name]" + filtered meals
- *
- * Client-side filtering from the meals array prop.
- * After selection, the input clears and onSelect/onCreate fires.
- */
 export default function MealPicker({
   autoFocus = false,
   meals,

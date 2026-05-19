@@ -7,7 +7,6 @@ import type {Food} from '@/api/foods';
 
 import {normalizeMacros} from '@/api/shared';
 
-/** Well-known macro keys displayed as summary on the card */
 const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
   {key: 'calories_per_100g', label: 'Cal', unit: ''},
   {key: 'protein_g', label: 'P', unit: 'g'},
@@ -34,7 +33,6 @@ export default function FoodCard({food}: {food: Food}) {
       className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
       to={`/library/foods/${food.id}`}
     >
-      {/* Icon / image */}
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         {food.image_url ? (
           <img
@@ -50,7 +48,6 @@ export default function FoodCard({food}: {food: Food}) {
         )}
       </div>
 
-      {/* Name + category */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{food.name}</p>
         {subtitle ? (
@@ -64,7 +61,6 @@ export default function FoodCard({food}: {food: Food}) {
         )}
       </div>
 
-      {/* Macro summary chips — hidden on small screens */}
       {hasMacros && (
         <div className="hidden gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {

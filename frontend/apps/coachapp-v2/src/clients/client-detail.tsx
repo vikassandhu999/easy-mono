@@ -6,75 +6,31 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {type ClientStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
+import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
   type NutritionPlan,
-  type NutritionPlanStatus,
   useAssignNutritionPlanMutation,
   useListClientNutritionPlansQuery,
 } from '@/api/nutritionPlans';
-import {
-  type TrainingPlan,
-  type TrainingPlanStatus,
-  useAssignTrainingPlanMutation,
-  useListClientTrainingPlansQuery,
-} from '@/api/trainingPlans';
+import {type TrainingPlan, useAssignTrainingPlanMutation, useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
+import {
+  formatDate,
+  getFullName,
+  getInitials,
+  getWhatsAppUrl,
+  PLAN_STATUS_MAP,
+  STATUS_CHIP_COLOR,
+  UNKNOWN_PLAN_STATUS,
+} from '@/clients/lib/client';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
-
-// ── Helpers ──────────────────────────────────────────────────
-
-const STATUS_CHIP_COLOR: Record<ClientStatus, 'default' | 'success'> = {
-  active: 'success',
-  pending: 'default',
-  inactive: 'default',
-  archived: 'default',
-};
-
-type PlanStatus = NutritionPlanStatus | TrainingPlanStatus;
-
-const PLAN_STATUS_MAP: Record<PlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'warning', label: 'Archived'},
-};
-
-// Fallback for statuses the backend might return that we don't recognize (e.g. legacy `draft` rows
-// that escaped migration). Keeps the UI resilient instead of crashing on undefined lookups.
-const UNKNOWN_PLAN_STATUS = {color: 'default' as const, label: 'Unknown'};
-
-function getInitials(firstName: null | string, lastName: null | string): string {
-  const first = firstName?.charAt(0)?.toUpperCase() ?? '';
-  const last = lastName?.charAt(0)?.toUpperCase() ?? '';
-  return first + last || '?';
-}
-
-function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function getWhatsAppUrl(phone: string): string {
-  const cleanPhone = phone.replace(/\D/g, '');
-  return `https://wa.me/${cleanPhone}`;
-}
-
-// ── Section heading ──────────────────────────────────────────
 
 function SectionHeading({title}: {title: string}) {
   return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">{title}</h3>;
 }
-
-// ── Client Plans (unified) ───────────────────────────────────
 
 function ClientPlans({clientId}: {clientId: string}) {
   const [showNutritionPicker, setShowNutritionPicker] = useState(false);
@@ -122,7 +78,6 @@ function ClientPlans({clientId}: {clientId: string}) {
         </div>
       ) : (
         <>
-          {/* Plan cards */}
           {hasPlans ? (
             <div className="flex flex-col gap-2">
               {nutritionPlans.map((plan: NutritionPlan) => {
@@ -181,7 +136,6 @@ function ClientPlans({clientId}: {clientId: string}) {
             <p className="text-sm text-foreground-400">No plans assigned yet.</p>
           )}
 
-          {/* Assign buttons */}
           <div className="mt-2 flex gap-2">
             <Button
               className="text-foreground-500"
@@ -207,7 +161,6 @@ function ClientPlans({clientId}: {clientId: string}) {
             </Button>
           </div>
 
-          {/* Inline pickers */}
           {showNutritionPicker ? (
             <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
               <p className="mb-2 text-sm text-foreground-500">
@@ -251,8 +204,6 @@ function ClientPlans({clientId}: {clientId: string}) {
     </section>
   );
 }
-
-// ── Inline Notes ─────────────────────────────────────────────
 
 function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: null | string}) {
   const [isEditing, setIsEditing] = useState(false);
@@ -324,8 +275,6 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
   );
 }
 
-// ── Main component ───────────────────────────────────────────
-
 export default function ClientDetail() {
   const {id} = useParams<{id: string}>();
   const navigate = useNavigate();
@@ -373,7 +322,6 @@ export default function ClientDetail() {
 
   return (
     <PageLayout title="Client">
-      {/* ── Header bar ──────────────────────────────────── */}
       <div className="mb-4 flex items-center justify-between">
         <Button
           onPress={goBack}
@@ -394,9 +342,7 @@ export default function ClientDetail() {
       </div>
 
       <div className="max-w-lg">
-        {/* ── Hero card ──────────────────────────────────── */}
         <div className="rounded-xl border border-divider bg-content1 p-4">
-          {/* Identity row */}
           <div className="flex items-center gap-3">
             <Avatar
               className="size-12"
@@ -417,7 +363,6 @@ export default function ClientDetail() {
             </Chip>
           </div>
 
-          {/* Action buttons — WhatsApp + Call when phone exists */}
           {client.phone ? (
             <div className="mt-3 flex gap-2 border-t border-divider pt-3">
               <a
@@ -441,7 +386,6 @@ export default function ClientDetail() {
         </div>
 
         {/*
-          ── Invitation widget (pending only) ────────────
           Per spec, this is the FIRST section after the hero for pending
           clients — getting them to accept is the coach's most urgent task
           here. It disappears automatically once the status flips to active.
@@ -460,10 +404,8 @@ export default function ClientDetail() {
           </section>
         ) : null}
 
-        {/* ── Plans (nutrition + training) ────────────── */}
         <ClientPlans clientId={client.id} />
 
-        {/* ── Notes section (inline-editable) ────────────── */}
         <section className="py-4">
           <Separator className="mb-4" />
           <SectionHeading title="Notes" />
@@ -473,13 +415,10 @@ export default function ClientDetail() {
           />
         </section>
 
-        {/* ── Nutrition Adherence ────────────────────────── */}
         <ClientNutritionAdherence clientId={client.id} />
 
-        {/* ── Workout History ───────────────────────────── */}
         <ClientWorkoutHistory clientId={client.id} />
 
-        {/* ── Meta ──────────────────────────────────────── */}
         <section className="py-4">
           <Separator className="mb-4" />
           <p className="text-sm text-foreground-400">Added {formatDate(client.inserted_at)}</p>

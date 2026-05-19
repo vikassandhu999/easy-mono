@@ -2,38 +2,19 @@ import {Spinner} from '@heroui/react';
 import {type ReactNode} from 'react';
 
 type InfiniteListProps<T> = {
-  /** The flattened items to render (all pages combined) */
   items: T[];
-  /** Render function for each item */
   renderItem: (item: T, index: number) => ReactNode;
-  /** Unique key extractor */
   keyExtractor: (item: T) => string;
-  /** Whether the initial load is in progress (no data yet) */
   isLoading: boolean;
-  /** Whether the next page is being fetched — from RTK's useInfiniteQuery */
   isFetchingNextPage: boolean;
-  /** Whether the query errored */
   isError: boolean;
-  /** Whether there are more pages — from RTK's useInfiniteQuery */
   hasNextPage: boolean;
-  /** Ref callback to attach to the sentinel div — from useInfiniteScroll */
   sentinelRef: (node: HTMLDivElement | null) => void;
-  /** Content to show when items is empty and not loading/erroring */
   emptyState?: ReactNode;
-  /** Content to show on error */
   errorState?: ReactNode;
-  /** Optional className for the list container */
   className?: string;
 };
 
-/**
- * Reusable infinite-scrolling list component.
- *
- * Renders items, a bottom sentinel for triggering next-page loads,
- * and handles loading / error / empty / end-of-list states.
- *
- * Pair with `useInfiniteScroll` hook and a `build.infiniteQuery` endpoint.
- */
 export default function InfiniteList<T>({
   items,
   renderItem,

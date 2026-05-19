@@ -60,7 +60,6 @@ export default function ListExercises() {
       }
       title="Exercises"
     >
-      {/* Back to library */}
       <Button
         className="mb-4"
         onPress={goBack}
@@ -71,7 +70,6 @@ export default function ListExercises() {
         Library
       </Button>
 
-      {/* Search */}
       <div className="mb-4">
         <div className="relative">
           <Search
@@ -89,7 +87,6 @@ export default function ListExercises() {
         </div>
       </div>
 
-      {/* Muscle group filter */}
       <div className="max-w-[220px] sm:max-w-xs space-y-4 rounded-3xl mb-4">
         <MusclePicker
           onChange={setSelectedMuscleIds}

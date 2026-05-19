@@ -11,7 +11,6 @@ import TestimonialForm, {
   useTestimonialForm,
 } from '@/storefront/components/testimonial-form';
 
-/** Inner component — only mounts when testimonial data is available. */
 function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   const navigate = useNavigate();
   const {data} = useGetTestimonialQuery(testimonialId);

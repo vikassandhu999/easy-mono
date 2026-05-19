@@ -35,10 +35,6 @@ type InviteClientFormValues = z.infer<typeof schema>;
  */
 const KNOWN_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
 
-/**
- * Split a single name string into first_name and last_name.
- * First word becomes first_name, the rest becomes last_name.
- */
 function splitName(name: string): {firstName: string; lastName?: string} {
   const trimmed = name.trim();
   const spaceIndex = trimmed.indexOf(' ');
@@ -64,10 +60,6 @@ function getWhatsAppUrl(phone: string | undefined, name: string, inviteUrl: stri
   return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
 }
 
-/**
- * Confirmation screen shown after a successful invite.
- * Displays the invite link with copy and WhatsApp share options.
- */
 function InviteConfirmation({client, onInviteAnother}: {client: Client; onInviteAnother: () => void}) {
   const navigate = useNavigate();
   const inviteUrl = client.invite_url;
@@ -86,7 +78,6 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
   return (
     <div className="flex max-w-lg flex-col gap-6">
-      {/* Success header */}
       <Alert status="success">
         <Alert.Indicator />
         <Alert.Content>
@@ -99,7 +90,6 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
         </Alert.Content>
       </Alert>
 
-      {/* Invite link section */}
       {inviteUrl ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium">Share the invite link with your client:</p>
@@ -146,7 +136,6 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
         </Card>
       )}
 
-      {/* Actions */}
       <Separator />
       <div className="flex flex-wrap gap-2 pt-4">
         <Button onPress={() => navigate(`/clients/${client.id}`, {replace: true})}>View client</Button>

@@ -1,18 +1,16 @@
-import {Separator, Spinner} from '@heroui/react';
+import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
 import type {DailyNutritionSummary} from '@/api/mealLogs';
 import type {Macros} from '@/api/shared';
 
 import {useGetCoachMealLogSummaryQuery} from '@/api/mealLogs';
-import {useListNutritionPlansQuery} from '@/api/nutritionPlans';
+import {useListClientNutritionPlansQuery} from '@/api/nutritionPlans';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
-
-// ── Helpers ──────────────────────────────────────────────────
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/** Format a Date as YYYY-MM-DD in local time (not UTC). */
+// Format a Date as YYYY-MM-DD in local time (not UTC).
 function fmtLocal(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -73,8 +71,6 @@ const ADHERENCE_STYLES: Record<AdherenceLevel, {bg: string; icon: string}> = {
   none: {bg: 'bg-default', icon: '\u25CB'},
 };
 
-// ── Component ───────────────────────────────────────────────
-
 export default function ClientNutritionAdherence({
   clientId,
   macrosGoal: macrosGoalProp,
@@ -84,7 +80,7 @@ export default function ClientNutritionAdherence({
 }) {
   const {from, to} = useMemo(() => getWeekRange(), []);
   const {data, isLoading} = useGetCoachMealLogSummaryQuery({client_id: clientId, from, to});
-  const {data: plansData} = useListNutritionPlansQuery({client_id: clientId});
+  const {data: plansData} = useListClientNutritionPlansQuery({clientId});
   const [selectedDate, setSelectedDate] = useState<null | string>(null);
 
   const summaries = useMemo(() => data?.data ?? [], [data]);
@@ -135,15 +131,14 @@ export default function ClientNutritionAdherence({
         </div>
       ) : (
         <>
-          {/* Weekly strip */}
           <div className="flex justify-between gap-1">
             {days.map((day) => (
-              <button
+              <Button
                 className="flex flex-1 flex-col items-center gap-1"
-                disabled={day.level === 'future'}
+                isDisabled={day.level === 'future'}
                 key={day.dateStr}
-                onClick={() => handleDayTap(day.dateStr, day.level)}
-                type="button"
+                onPress={() => handleDayTap(day.dateStr, day.level)}
+                variant="ghost"
               >
                 <p className="text-[10px] text-foreground-400">{day.label}</p>
                 <div
@@ -158,11 +153,10 @@ export default function ClientNutritionAdherence({
                 ) : (
                   <p className="text-[10px] text-foreground-400">&nbsp;</p>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
 
-          {/* Legend */}
           <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-foreground-400">
             <span>{'\u2713'} &ge;80%</span>
             <span>{'\u25D0'} 50-80%</span>
@@ -170,7 +164,6 @@ export default function ClientNutritionAdherence({
             <span>{'\u2014'} future</span>
           </div>
 
-          {/* Recent days list */}
           {!selectedDate && summaries.length > 0 ? (
             <div className="mt-4 flex flex-col gap-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Recent days</p>
@@ -185,11 +178,11 @@ export default function ClientNutritionAdherence({
                   if (summary.unplanned_count > 0) parts.push(`${summary.unplanned_count} added`);
 
                   return (
-                    <button
+                    <Button
                       className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-divider px-3 py-2 text-left transition-colors hover:bg-content2 active:bg-content2"
                       key={summary.date}
-                      onClick={() => setSelectedDate(summary.date)}
-                      type="button"
+                      onPress={() => setSelectedDate(summary.date)}
+                      variant="ghost"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">
@@ -203,13 +196,12 @@ export default function ClientNutritionAdherence({
                         </p>
                         <p className="text-xs text-foreground-400">{parts.join(' \u00B7 ')}</p>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
             </div>
           ) : null}
 
-          {/* Drill-down: daily detail */}
           {selectedDate ? (
             <div className="mt-4 rounded-xl border border-divider bg-content1 p-4">
               <ClientNutritionDetail

@@ -33,7 +33,6 @@ export default function TestimonialsSummary({testimonials}: {testimonials: Testi
     <div className="flex flex-col gap-3">
       <p className="text-xs text-foreground-400">Testimonials are managed on a separate page.</p>
 
-      {/* Summary stats */}
       <div className="flex flex-wrap gap-3 text-sm">
         <span className="inline-flex items-center gap-1.5 text-foreground-500">
           <Star
@@ -49,7 +48,6 @@ export default function TestimonialsSummary({testimonials}: {testimonials: Testi
         <span className="text-foreground-400">{testimonials.length} total</span>
       </div>
 
-      {/* Featured list */}
       {featured.length > 0 ? (
         <div className="flex flex-col gap-1.5">
           <p className="text-xs font-medium text-foreground-400">Featured (shown as spotlight):</p>

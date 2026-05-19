@@ -94,11 +94,6 @@ export const foodsApi = api.injectEndpoints({
         {type: 'Food', id: 'LIST'},
       ],
     }),
-    /**
-     * Infinite-scroll variant of listFoods.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useFoodsInfiniteQuery
-     */
     foods: build.infiniteQuery<ApiListResponse<Food>, ListFoodsFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/foods',

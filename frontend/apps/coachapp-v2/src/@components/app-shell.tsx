@@ -1,4 +1,4 @@
-import {Button, Chip, Separator, Toast} from '@heroui/react';
+import {Button, Chip, CloseButton, Separator, Toast} from '@heroui/react';
 import {
   BookOpen,
   ChevronRight,
@@ -149,7 +149,6 @@ function SidebarNavItem({item}: {item: NavItem}) {
   );
 }
 
-/** Small pill showing count of pending (invited) clients. Hidden when 0. */
 function PendingClientBadge() {
   const {data} = useListClientsQuery({status: 'pending', limit: 0});
   const count = data?.summary?.pending ?? 0;
@@ -171,19 +170,20 @@ function SidebarNavGroupSection({group}: {group: NavGroup}) {
 
   return (
     <div>
-      <button
+      <Button
         className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
           isGroupActive && !open
             ? 'bg-primary/10 font-semibold text-primary'
             : 'font-medium text-foreground-500 hover:bg-default-100 active:bg-default-200'
         }`}
-        onClick={() => setOpen((prev) => !prev)}
-        type="button"
+        fullWidth
+        onPress={() => setOpen((prev) => !prev)}
+        variant="ghost"
       >
         {group.icon}
         <span className="flex-1 text-left">{group.label}</span>
         <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
-      </button>
+      </Button>
       {open ? (
         <div className="ml-3 mt-1 space-y-0.5 border-l border-divider pl-3">
           {group.items.map((item) => (
@@ -242,7 +242,6 @@ export default function AppShell() {
       {/* Global toast renderer — queued via toast() from @heroui/react */}
       <Toast.Provider placement="bottom end" />
 
-      {/* Desktop sidebar */}
       <aside className="hidden border-r border-divider bg-content1 lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex h-16 items-center px-6">
           <img
@@ -272,7 +271,6 @@ export default function AppShell() {
               />
             ))}
           </div>
-          {/* Desktop install prompt */}
           {canInstall ? (
             <div className="mx-1 mt-3 rounded-lg border border-divider bg-content2 p-3">
               <p className="text-xs text-foreground-500">Install the app for quick access</p>
@@ -324,13 +322,12 @@ export default function AppShell() {
             >
               Install
             </Button>
-            <button
-              className="flex min-h-11 min-w-11 items-center justify-center text-foreground-400"
-              onClick={dismiss}
-              type="button"
+            <CloseButton
+              className="min-h-11 min-w-11 text-foreground-400"
+              onPress={dismiss}
             >
               <X size={16} />
-            </button>
+            </CloseButton>
           </div>
         </div>
       ) : null}

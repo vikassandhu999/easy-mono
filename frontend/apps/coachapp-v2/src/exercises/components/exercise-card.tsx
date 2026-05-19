@@ -27,7 +27,6 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
       className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
       to={`/library/exercises/${exercise.id}`}
     >
-      {/* Icon placeholder (or first image thumbnail) */}
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         {exercise.images[0] ? (
           <img
@@ -43,7 +42,6 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
         )}
       </div>
 
-      {/* Name + muscles */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{exercise.name}</p>
         {muscleNames ? (
@@ -58,7 +56,6 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
         )}
       </div>
 
-      {/* Metadata chips — hidden on small screens to save space */}
       <div className="hidden gap-1.5 sm:flex">
         {mechanics && (
           <Chip

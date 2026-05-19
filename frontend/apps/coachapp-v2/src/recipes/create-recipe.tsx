@@ -13,7 +13,6 @@ import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
 
-/** Build the macros Record from form values, omitting empty fields */
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
@@ -26,7 +25,6 @@ function buildMacros(data: RecipeFormValues): Record<string, number> | undefined
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-/** Convert ingredient items to API format */
 function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] | undefined {
   if (items.length === 0) return undefined;
   return items.map((item) => ({

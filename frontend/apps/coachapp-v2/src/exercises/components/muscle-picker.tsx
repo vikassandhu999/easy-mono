@@ -6,21 +6,10 @@ import {useCallback} from 'react';
 import {type Muscle, useListMusclesQuery} from '@/api/exercises';
 
 type MusclePickerProps = {
-  /** Currently selected muscle IDs */
   value: string[];
-  /** Called with the updated array of selected muscle IDs */
   onChange: (muscleIds: string[]) => void;
 };
 
-/**
- * Multiselect muscle group filter using HeroUI Autocomplete.
- *
- * Fetches muscles from the API via `useListMusclesQuery`. Selected muscles
- * are shown as removable tags in the trigger. The popover provides a
- * searchable list with checkmark indicators.
- *
- * Container decision: INLINE — select-style trigger in the page flow.
- */
 export default function MusclePicker({value, onChange}: MusclePickerProps) {
   const {data: musclesData} = useListMusclesQuery();
   const muscles = musclesData?.data ?? [];

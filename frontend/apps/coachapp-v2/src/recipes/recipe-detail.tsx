@@ -8,7 +8,6 @@ import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/recipes';
 import {normalizeMacros} from '@/api/shared';
 
-/** Well-known macro keys to display in a structured way */
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   calories_per_100g: {label: 'Calories', unit: ''},
   protein_g: {label: 'Protein', unit: 'g'},
@@ -80,7 +79,6 @@ export default function RecipeDetail() {
 
   return (
     <PageLayout title="Recipe">
-      {/* Navigation */}
       <div className="mb-4 flex items-center gap-2">
         <Button
           onPress={goBack}
@@ -141,7 +139,6 @@ export default function RecipeDetail() {
       </div>
 
       <div className="max-w-lg">
-        {/* Header — image/icon + name + category/source chips */}
         <div className="flex items-start gap-4 pb-6">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
             {recipe.image_url ? (
@@ -183,7 +180,6 @@ export default function RecipeDetail() {
           </div>
         </div>
 
-        {/* Cooked weight */}
         {recipe.cooked_weight_g != null && recipe.cooked_weight_g > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Cooked Weight</h3>
@@ -191,7 +187,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Macros */}
         {(knownMacros.length > 0 || unknownMacros.length > 0) && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
@@ -223,7 +218,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Ingredients */}
         {recipe.recipe_ingredients.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Ingredients</h3>
@@ -251,7 +245,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Instructions */}
         {recipe.instructions && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Instructions</h3>
@@ -259,7 +252,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Serving Sizes */}
         {recipe.serving_sizes.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Serving Sizes</h3>
@@ -281,7 +273,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Tags */}
         {recipe.tags.length > 0 && (
           <section className="border-t border-divider py-4">
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Tags</h3>
@@ -299,7 +290,6 @@ export default function RecipeDetail() {
           </section>
         )}
 
-        {/* Meta */}
         <section className="border-t border-divider py-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">

@@ -3,11 +3,7 @@ import {ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 50;
 
-// ── Enums ────────────────────────────────────────────────────
-
 export type ClientStatus = 'active' | 'archived' | 'inactive' | 'pending';
-
-// ── Client ───────────────────────────────────────────────────
 
 export type Client = {
   id: string;
@@ -36,8 +32,6 @@ export type Client = {
   inserted_at: string;
   updated_at: string;
 };
-
-// ── Request types ────────────────────────────────────────────
 
 export type ClientInviteRequest = {
   email?: string;
@@ -89,8 +83,6 @@ export function allowedStatusesFor(current: ClientStatus): AllowedUpdateStatus[]
   }
 }
 
-// ── List response with summary ───────────────────────────────
-
 export type ClientSummary = {
   active: number;
   archived: number;
@@ -115,8 +107,6 @@ export type ListClientsFilters = {
   search?: string;
   status?: string;
 };
-
-// ── Endpoints ────────────────────────────────────────────────
 
 export const clientsApi = api.injectEndpoints({
   endpoints: (build) => ({

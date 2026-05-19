@@ -76,7 +76,6 @@ export const EXERCISE_FORM_DEFAULTS: ExerciseFormValues = {
   name: '',
 };
 
-/** Hook wrapper so screens don't need to import zod/resolver separately */
 export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
   return useForm<ExerciseFormValues>({
     defaultValues: options?.values ? undefined : EXERCISE_FORM_DEFAULTS,
@@ -86,25 +85,15 @@ export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
 }
 
 type ExerciseFormProps = {
-  /** The react-hook-form instance returned by useExerciseForm */
   form: ReturnType<typeof useExerciseForm>;
-  /** Current list of image URLs */
   images: string[];
-  /** Available muscles from the API */
   muscles: Muscle[];
-  /** Available equipment from the API */
   equipment: Equipment[];
-  /** Called with validated form data */
   onSubmit: (data: ExerciseFormValues) => void;
-  /** Whether the mutation is in progress */
   isSubmitting: boolean;
-  /** Label for the submit button (e.g. "Create Exercise" or "Save Changes") */
   submitLabel: string;
-  /** Label shown while submitting (e.g. "Creating..." or "Saving...") */
   submittingLabel: string;
-  /** Called when Cancel is pressed */
   onCancel: () => void;
-  /** Called when images list changes */
   onImagesChange: (images: string[]) => void;
 };
 
@@ -157,7 +146,6 @@ export default function ExerciseForm({
       className="flex max-w-lg flex-col gap-4"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* Name */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="name">
           Name <span className="text-danger">*</span>
@@ -170,7 +158,6 @@ export default function ExerciseForm({
         {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
       </div>
 
-      {/* Description */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="description">Description</Label>
         <TextArea
@@ -182,7 +169,6 @@ export default function ExerciseForm({
         {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
       </div>
 
-      {/* Instructions */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="instructions">Instructions</Label>
         <TextArea
@@ -194,7 +180,6 @@ export default function ExerciseForm({
         {errors.instructions && <p className="text-xs text-danger">{errors.instructions.message}</p>}
       </div>
 
-      {/* Mechanics + Force side by side on md */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Controller
@@ -267,7 +252,6 @@ export default function ExerciseForm({
         </div>
       </div>
 
-      {/* Muscles */}
       {muscles.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <Controller
@@ -302,7 +286,6 @@ export default function ExerciseForm({
         </div>
       )}
 
-      {/* Equipment */}
       {equipment.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <Controller
@@ -337,11 +320,9 @@ export default function ExerciseForm({
         </div>
       )}
 
-      {/* Images */}
       <fieldset className="flex flex-col gap-2">
         <Label>Images</Label>
 
-        {/* Existing image rows */}
         {images.length > 0 && (
           <div className="flex flex-col gap-2">
             {images.map((url, i) => (
@@ -351,19 +332,19 @@ export default function ExerciseForm({
               >
                 <ImageThumbnail url={url} />
                 <p className="min-w-0 flex-1 truncate text-xs text-foreground-500">{url}</p>
-                <button
+                <Button
                   className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground-400 transition-colors hover:bg-content2 hover:text-danger"
-                  onClick={() => handleRemoveImage(i)}
-                  type="button"
+                  isIconOnly
+                  onPress={() => handleRemoveImage(i)}
+                  variant="ghost"
                 >
                   <X size={14} />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Add image URL — inline form */}
         {showImageInput ? (
           <div className="flex flex-col gap-2 rounded-lg border border-divider bg-content1 p-3">
             <Input
@@ -398,20 +379,18 @@ export default function ExerciseForm({
             </div>
           </div>
         ) : (
-          <button
+          <Button
             className="min-h-11 rounded-lg border border-dashed border-divider px-3 py-2 text-xs font-medium text-foreground-400 transition-colors hover:border-foreground-300 hover:text-foreground-500"
-            onClick={() => setShowImageInput(true)}
-            type="button"
+            onPress={() => setShowImageInput(true)}
+            variant="ghost"
           >
             + Add image URL
-          </button>
+          </Button>
         )}
       </fieldset>
 
-      {/* Root error */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-      {/* Actions */}
       <div className="flex flex-row gap-2 pt-2">
         <Button
           isPending={isSubmitting}

@@ -1,4 +1,4 @@
-import {Button, Input, Spinner} from '@heroui/react';
+import {Button, FieldError, Input, Spinner, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
@@ -64,15 +64,18 @@ export default function EditableRow({
       >
         <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
         <div className="min-w-0 flex-1">
-          <Input
-            autoFocus
+          <TextField
             className="w-full"
             isInvalid={!!errorMessage}
-            size="sm"
             type={inputType}
-            {...register('value')}
-          />
-          {errorMessage && <p className="mt-0.5 text-xs text-danger">{errorMessage}</p>}
+          >
+            <Input
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              {...register('value')}
+            />
+            {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+          </TextField>
         </div>
         <Button
           isPending={isSubmitting}
@@ -104,13 +107,14 @@ export default function EditableRow({
     <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
       <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{value || '\u2014'}</span>
-      <button
+      <Button
         className="shrink-0 text-sm text-accent"
-        onClick={startEdit}
-        type="button"
+        onPress={startEdit}
+        size="sm"
+        variant="ghost"
       >
         Edit
-      </button>
+      </Button>
     </div>
   );
 }

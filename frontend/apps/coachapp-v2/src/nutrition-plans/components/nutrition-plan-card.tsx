@@ -20,7 +20,6 @@ export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
       className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
       to={`/library/nutrition-plans/${plan.id}`}
     >
-      {/* Icon */}
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         <ClipboardList
           className="text-foreground-400"
@@ -28,7 +27,6 @@ export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
         />
       </div>
 
-      {/* Name + meta */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{plan.name}</p>
         {mealCount > 0 ? (
@@ -42,7 +40,6 @@ export default function NutritionPlanCard({plan}: {plan: NutritionPlan}) {
         )}
       </div>
 
-      {/* Status chip — hidden on small screens */}
       <div className="hidden gap-1.5 sm:flex">
         <Chip
           color={status.color}

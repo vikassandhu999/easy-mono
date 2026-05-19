@@ -76,7 +76,6 @@ export type TrainingPlanItem = {
   workout_type: TrainingWorkoutType;
 };
 
-/** Minimal client info embedded in plan responses for banner display. */
 export type PlanClient = {
   first_name: null | string;
   id: string;
@@ -178,7 +177,6 @@ export type WorkoutElementUpdateRequest = {
   superset_group_id?: string;
 };
 
-/** Params for listing training plan templates (library). Only templates — no client_id. */
 export type ListTrainingPlansParams = {
   limit?: number;
   offset?: number;
@@ -192,7 +190,6 @@ export type ListTrainingPlansFilters = {
   status?: TrainingPlanStatus;
 };
 
-/** Params for listing a single client's training plans. */
 export type ListClientTrainingPlansParams = {
   clientId: string;
   limit?: number;
@@ -240,11 +237,6 @@ export const trainingPlansApi = api.injectEndpoints({
             ]
           : [{type: 'TrainingPlan' as const, id: 'LIST'}],
     }),
-    /**
-     * Infinite-scroll variant of listTrainingPlans — templates only.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useTrainingPlansInfiniteQuery
-     */
     trainingPlans: build.infiniteQuery<ApiListResponse<TrainingPlan>, ListTrainingPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/training_plans',
@@ -677,8 +669,6 @@ export const {
   useUpdateWorkoutMutation,
 } = trainingPlansApi;
 
-// ── Training plan item error helpers ────────────────────────────
-//
 // The backend returns field-keyed 422s under `error_detail.fields.*`. Two
 // error shapes are relevant for training plan items:
 //

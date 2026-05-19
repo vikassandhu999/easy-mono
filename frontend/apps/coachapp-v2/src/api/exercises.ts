@@ -107,11 +107,6 @@ export const exercisesApi = api.injectEndpoints({
             ]
           : [{type: 'Exercise' as const, id: 'LIST'}],
     }),
-    /**
-     * Infinite-scroll variant of listExercises.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useExercisesInfiniteQuery
-     */
     exercises: build.infiniteQuery<ApiListResponse<Exercise>, ListExercisesFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/exercises',

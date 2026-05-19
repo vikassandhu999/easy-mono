@@ -4,8 +4,6 @@ import {Star} from 'lucide-react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-// ── Schema ───────────────────────────────────────────────────
-
 const testimonialFormSchema = z.object({
   after_image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   after_weight: z.union([z.number().positive('Must be positive'), z.nan(), z.literal('')]).optional(),
@@ -45,8 +43,6 @@ export function useTestimonialForm(options?: {values?: TestimonialFormValues}) {
     values: options?.values,
   });
 }
-
-// ── Component ────────────────────────────────────────────────
 
 export default function TestimonialForm({
   form,
@@ -96,7 +92,6 @@ export default function TestimonialForm({
       className="flex max-w-lg flex-col gap-6"
       onSubmit={handleSubmit(onSubmit)}
     >
-      {/* ── Client details ────────────────────────────────────── */}
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-2 text-base font-semibold">Client details</legend>
 
@@ -120,7 +115,6 @@ export default function TestimonialForm({
         </div>
       </fieldset>
 
-      {/* ── Transformation photos ─────────────────────────────── */}
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-2 text-base font-semibold">Transformation photos</legend>
 
@@ -179,7 +173,6 @@ export default function TestimonialForm({
         </div>
       </fieldset>
 
-      {/* ── Result details ────────────────────────────────────── */}
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-2 text-base font-semibold">Result details</legend>
 
@@ -214,7 +207,6 @@ export default function TestimonialForm({
         </div>
       </fieldset>
 
-      {/* ── Testimonial text ──────────────────────────────────── */}
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-2 text-base font-semibold">Testimonial text</legend>
 
@@ -236,11 +228,13 @@ export default function TestimonialForm({
             render={({field}) => (
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button
+                  <Button
                     className="min-h-11 min-w-11 rounded-lg p-2 transition-colors hover:bg-default-100 active:bg-default-200"
+                    isIconOnly
                     key={star}
-                    onClick={() => field.onChange(field.value === star ? undefined : star)}
-                    type="button"
+                    onPress={() => field.onChange(field.value === star ? undefined : star)}
+                    size="sm"
+                    variant="ghost"
                   >
                     <Star
                       className={
@@ -248,7 +242,7 @@ export default function TestimonialForm({
                       }
                       size={20}
                     />
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -276,7 +270,6 @@ export default function TestimonialForm({
         </div>
       </fieldset>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
       {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
       <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">

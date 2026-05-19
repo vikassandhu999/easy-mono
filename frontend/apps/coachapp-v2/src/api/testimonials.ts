@@ -3,8 +3,6 @@ import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
-// ── Types ────────────────────────────────────────────────────
-
 export type TestimonialStatus = 'active' | 'archived';
 
 export type Testimonial = {
@@ -68,8 +66,6 @@ export type ListTestimonialsParams = {
 /** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
 export type ListTestimonialsFilters = Record<string, never>;
 
-// ── Endpoints ────────────────────────────────────────────────
-
 export const testimonialsApi = api.injectEndpoints({
   endpoints: (build) => ({
     createTestimonial: build.mutation<ApiResponse<Testimonial>, TestimonialCreateRequest>({
@@ -103,11 +99,6 @@ export const testimonialsApi = api.injectEndpoints({
             ]
           : [{type: 'Testimonial' as const, id: 'LIST'}],
     }),
-    /**
-     * Infinite-scroll variant of listTestimonials.
-     * Uses RTK Query 2.9's native build.infiniteQuery with offset-based pagination.
-     * Hook: useTestimonialsInfiniteQuery
-     */
     testimonials: build.infiniteQuery<ApiListResponse<Testimonial>, ListTestimonialsFilters | void, number>({
       query: ({pageParam}) => ({
         url: '/v1/coach/testimonials',

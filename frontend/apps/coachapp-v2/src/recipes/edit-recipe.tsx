@@ -12,7 +12,6 @@ import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
 
-/** Build the macros Record from form values, omitting empty fields */
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
@@ -25,7 +24,6 @@ function buildMacros(data: RecipeFormValues): Record<string, number> | undefined
   return Object.keys(macros).length > 0 ? macros : undefined;
 }
 
-/** Convert ingredient items to API format */
 function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] {
   return items.map((item) => ({
     food_id: item.food_id,
@@ -43,11 +41,8 @@ function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] {
   }));
 }
 
-/**
- * Inner component rendered only when recipe data is available.
- * This avoids the need for useEffect to sync server state into local state,
- * which the React Compiler lint rule forbids.
- */
+// Rendered only when recipe data is available, avoiding useEffect to sync server state
+// into local state (which the React Compiler lint rule forbids).
 function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: string}) {
   const goBack = useGoBack(backPath);
   const {data} = useGetRecipeQuery(recipeId);

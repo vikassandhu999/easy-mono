@@ -9,27 +9,13 @@ import {type Food, useListFoodsQuery} from '@/api/foods';
 import {normalizeMacros} from '@/api/shared';
 
 type FoodPickerProps = {
-  /** Called when the user selects a food from the list */
   onSelect: (food: Food) => void;
-  /** Optional label text */
   label?: string;
-  /** Optional description text */
   description?: string;
-  /** Optional placeholder text */
   placeholder?: string;
-  /** IDs of foods already selected (shown as disabled) */
   excludeIds?: string[];
 };
 
-/**
- * Inline food search + select using HeroUI Autocomplete with async server filtering.
- *
- * Container decision: INLINE — single text input that opens a popover with results.
- *
- * Reusable: lives in foods/components/ and takes a generic onSelect callback.
- * Uses Autocomplete in single-select mode. After selecting a food, the selection
- * is cleared and the full Food object is passed to onSelect.
- */
 export default function FoodPicker({
   onSelect,
   label,

@@ -55,7 +55,7 @@ function PageTitle({children, className}: PageTitleProps) {
   return (
     <Typography
       className={className}
-      type="h3"
+      type="h4"
     >
       {children}
     </Typography>

@@ -1,9 +1,8 @@
-import {Button, Chip, Spinner} from '@heroui/react';
+import {Button, Chip, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
-import ClientPlanBanner from '@/@components/client-plan-banner';
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
@@ -24,31 +23,45 @@ export default function TrainingPlanDetail() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Training Plan">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2">
+          <Page.TitleGroup>
+            <Page.Title>Training Plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content>
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <PageLayout title="Training Plan">
-        <div className="mb-4">
-          <Button
-            onPress={goBack}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load training plan. It may not exist or you don&apos;t have access.
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2">
+          <Page.TitleGroup>
+            <Page.Title>Training Plan</Page.Title>
+          </Page.TitleGroup>
+          <Page.Actions>
+            <Button
+              onPress={goBack}
+              size="sm"
+              variant="ghost"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </Button>
+          </Page.Actions>
+        </Page.Header>
+        <Page.Content>
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
+            Failed to load training plan. It may not exist or you don&apos;t have access.
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -58,38 +71,37 @@ export default function TrainingPlanDetail() {
   const isTemplate = !plan.client_id;
 
   return (
-    <PageLayout title="Training Plan">
-      <div className="mb-4 flex items-center justify-between gap-2 min-w-0 max-w-4xl">
+    <Page>
+      <Page.Header className="py-4 max-w-4xl sm:py-8 items-center">
         <Button
-          className="min-h-11"
+          className={'-ml-3'}
           onPress={goBack}
-          size="sm"
-          variant="ghost"
+          size={'sm'}
+          variant={'ghost'}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={18} />
           Back
         </Button>
-        <div className="flex items-center gap-1.5">
+        <div className={'flex gap-2'}>
           <PlanAddToClient plan={plan} />
           <PlanActions
             onDeleted={() => goBack()}
             plan={plan}
           />
         </div>
-      </div>
-
-      <div className="min-w-0 max-w-4xl overflow-hidden">
-        {plan.client ? (
-          <ClientPlanBanner
-            client={plan.client}
-            endDate={plan.end_date}
-            startDate={plan.start_date}
-          />
-        ) : null}
-
-        <div className="pb-6">
-          <h2 className="text-lg font-semibold">{plan.name}</h2>
-          {plan.description && <p className="mt-1 text-sm text-foreground-500">{plan.description}</p>}
+      </Page.Header>
+      <Page.Toolbar className={'flex items-center justify-between max-w-4xl'}>
+        <div>
+          <Typography type="h5">{plan.name}</Typography>
+          {plan.description && (
+            <Typography
+              className="mt-1"
+              color="muted"
+              type="body-sm"
+            >
+              {plan.description}
+            </Typography>
+          )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Chip
               color={status?.color}
@@ -110,44 +122,85 @@ export default function TrainingPlanDetail() {
           </div>
           {/* Start / End dates — hidden when the client banner already shows them */}
           {!plan.client && (plan.start_date || plan.end_date) ? (
-            <div className="mt-2 flex gap-4 text-sm text-foreground-500">
-              <span>Start: {plan.start_date ? formatIsoDate(plan.start_date) : '\u2014'}</span>
-              <span>End: {plan.end_date ? formatIsoDate(plan.end_date) : '\u2014'}</span>
+            <div className="mt-2 flex gap-4">
+              <Typography
+                color="muted"
+                type="body-sm"
+              >
+                Start: {plan.start_date ? formatIsoDate(plan.start_date) : '\u2014'}
+              </Typography>
+              <Typography
+                color="muted"
+                type="body-sm"
+              >
+                End: {plan.end_date ? formatIsoDate(plan.end_date) : '\u2014'}
+              </Typography>
             </div>
           ) : null}
         </div>
+      </Page.Toolbar>
+      <Page.Content className={'px-4 md:px-6 lg:px-8'}>
+        <div className="min-w-0 max-w-4xl overflow-hidden">
+          {/* Weekly schedule — section header + summary are rendered inside WeeklyOverview */}
+          <section className="border-t border-divider py-4"></section>
 
-        {/* Weekly schedule — section header + summary are rendered inside WeeklyOverview */}
-        <section className="border-t border-divider py-4"></section>
-
-        <section className="border-t border-divider py-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Workouts</h3>
+          <section className="border-t border-divider py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <Typography
+                  className="uppercase tracking-wider"
+                  color="muted"
+                  type="body-xs"
+                  weight="semibold"
+                >
+                  Workouts
+                </Typography>
+              </div>
             </div>
-          </div>
 
-          <p className="mb-3 text-sm text-foreground-400">
-            No workouts yet. Create your first workout to start building this plan.
-          </p>
+            <Typography
+              className="mb-3"
+              color="muted"
+              type="body-sm"
+            >
+              No workouts yet. Create your first workout to start building this plan.
+            </Typography>
 
-          <div className="mt-3"></div>
-        </section>
+            <div className="mt-3"></div>
+          </section>
 
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-foreground-400">Created</p>
-              <p>{formatIsoDate(plan.inserted_at)}</p>
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-2 uppercase tracking-wider"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Details
+            </Typography>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Created
+                </Typography>
+                <Typography type="body-sm">{formatIsoDate(plan.inserted_at)}</Typography>
+              </div>
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Last updated
+                </Typography>
+                <Typography type="body-sm">{formatIsoDate(plan.updated_at)}</Typography>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-foreground-400">Last updated</p>
-              <p>{formatIsoDate(plan.updated_at)}</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </PageLayout>
+          </section>
+        </div>
+      </Page.Content>
+    </Page>
   );
 }

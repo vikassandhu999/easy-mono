@@ -1,4 +1,4 @@
-import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox, Separator} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {MessageCircle} from 'lucide-react';
 
@@ -71,7 +71,7 @@ export default function ClientListItem({className, client, showIndicator = false
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
+      className={cn('min-h-fit rounded-none px-4 py-3 sm:px-8', className)}
       id={client.id}
       textValue={getClientDisplayName(client)}
     >
@@ -105,6 +105,10 @@ export default function ClientListItem({className, client, showIndicator = false
         </Chip>
         {showIndicator && <ListBox.ItemIndicator />}
       </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
+      />
     </ListBox.Item>
   );
 }

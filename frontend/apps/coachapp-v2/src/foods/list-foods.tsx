@@ -8,7 +8,7 @@ import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
 
-import FoodsList from './components/foods-list';
+import {FoodsBrowseList} from './foods-list';
 
 export default function ListFoods() {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ export default function ListFoods() {
         </SearchField>
       </Page.Toolbar>
       <Page.Content>
-        <FoodsList
+        <FoodsBrowseList
           hasFilter={!!debouncedSearch}
           search={debouncedSearch}
         />

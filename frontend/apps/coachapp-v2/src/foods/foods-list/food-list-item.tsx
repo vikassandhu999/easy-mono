@@ -1,4 +1,5 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {Apple} from 'lucide-react';
 import {useMemo} from 'react';
 
@@ -20,14 +21,14 @@ function getSubtitle(food: Food, isSystem: boolean): string {
   return 'No category';
 }
 
-export default function FoodCard({food}: {food: Food}) {
+export default function FoodListItem({className, food}: {className?: string; food: Food}) {
   const normalized = useMemo(() => normalizeMacros(food.macros), [food.macros]);
   const hasMacros = Object.keys(food.macros).length > 0;
   const isSystem = food.source === 'system';
 
   return (
     <ListBox.Item
-      className="min-h-fit px-4 py-2 sm:px-8"
+      className={cn('min-h-fit rounded-none px-4 py-2 sm:px-8', className)}
       id={food.id}
       textValue={food.name}
     >
@@ -69,6 +70,10 @@ export default function FoodCard({food}: {food: Food}) {
           })}
         </div>
       )}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
+      />
     </ListBox.Item>
   );
 }

@@ -25,6 +25,7 @@ export function PlanAddToClient({plan}: Props) {
         aria-label="Menu"
         isDisabled={pickerState.isOpen}
         onPress={() => pickerState.open()}
+        size={'sm'}
         variant="secondary"
       >
         <UserPlus size={18} />

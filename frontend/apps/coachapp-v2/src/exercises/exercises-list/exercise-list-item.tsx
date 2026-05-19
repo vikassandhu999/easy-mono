@@ -1,6 +1,6 @@
-import {Chip} from '@heroui/react';
+import {Chip, Description, Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {Dumbbell} from 'lucide-react';
-import {Link} from 'react-router-dom';
 
 import type {Exercise} from '@/api/exercises';
 
@@ -16,16 +16,25 @@ const FORCE_MAP: Record<string, string> = {
   static: 'Static',
 };
 
-export default function ExerciseCard({exercise}: {exercise: Exercise}) {
+function getExerciseSubtitle(exercise: Exercise): string {
+  const muscleNames = exercise.muscles.map((muscle) => muscle.name).join(', ');
+  const isSystem = exercise.business_id === null;
+
+  if (muscleNames && isSystem) return `${muscleNames} · system`;
+  if (muscleNames) return muscleNames;
+  if (isSystem) return 'system';
+  return 'No muscles assigned';
+}
+
+export default function ExerciseListItem({className, exercise}: {className?: string; exercise: Exercise}) {
   const mechanics = exercise.mechanics ? MECHANICS_MAP[exercise.mechanics] : null;
   const force = exercise.force ? FORCE_MAP[exercise.force] : null;
-  const isSystem = exercise.business_id === null;
-  const muscleNames = exercise.muscles.map((m) => m.name).join(', ');
 
   return (
-    <Link
-      className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2 sm:p-4"
-      to={`/library/exercises/${exercise.id}`}
+    <ListBox.Item
+      className={cn('min-h-fit rounded-none px-4 py-2 sm:px-8', className)}
+      id={exercise.id}
+      textValue={exercise.name}
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-content2">
         {exercise.images[0] ? (
@@ -42,21 +51,12 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
         )}
       </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{exercise.name}</p>
-        {muscleNames ? (
-          <p className="truncate text-xs text-foreground-500">
-            {muscleNames}
-            {isSystem && <span className="text-foreground-400"> · system</span>}
-          </p>
-        ) : isSystem ? (
-          <p className="text-xs text-foreground-400">system</p>
-        ) : (
-          <p className="text-xs text-foreground-400">No muscles assigned</p>
-        )}
+      <div className="flex min-w-0 flex-col">
+        <Label className="truncate">{exercise.name}</Label>
+        <Description className="truncate">{getExerciseSubtitle(exercise)}</Description>
       </div>
 
-      <div className="hidden gap-1.5 sm:flex">
+      <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
         {mechanics && (
           <Chip
             color={mechanics.color}
@@ -75,6 +75,10 @@ export default function ExerciseCard({exercise}: {exercise: Exercise}) {
           </Chip>
         )}
       </div>
-    </Link>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
+      />
+    </ListBox.Item>
   );
 }

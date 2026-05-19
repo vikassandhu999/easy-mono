@@ -3,48 +3,34 @@ import type {ReactNode} from 'react';
 
 import {Collection, ListBox, ListBoxLoadMoreItem, Spinner, Typography} from '@heroui/react';
 
-import type {Client} from '@/api/clients';
-
-import type {ClientListSelection} from './types';
-
-type ClientSelectionMode = 'multiple' | 'none' | 'single';
+import type {NutritionPlan} from '@/api/nutritionPlans';
 
 type Props = {
-  'aria-label'?: string;
-  clients: Client[];
   emptyState: ReactNode;
   fetchNextPage: () => void;
   isLoading: boolean;
   onAction?: (key: Key) => void;
-  onSelectionChange?: (keys: ClientListSelection) => void;
-  renderItem: (client: Client) => ReactNode;
-  selectedKeys?: 'all' | Iterable<Key>;
-  selectionMode?: ClientSelectionMode;
+  plans: NutritionPlan[];
+  renderItem: (plan: NutritionPlan) => ReactNode;
 };
 
-export default function ClientListBox({
-  'aria-label': ariaLabel = 'Clients',
-  clients,
+export default function NutritionPlanListBox({
   emptyState,
   fetchNextPage,
   isLoading,
   onAction,
-  onSelectionChange,
+  plans,
   renderItem,
-  selectedKeys,
-  selectionMode = 'none',
 }: Props) {
   return (
     <ListBox
-      aria-label={ariaLabel}
+      aria-label="Nutrition plans"
       className={'flex-1 gap-0'}
       onAction={onAction}
-      onSelectionChange={onSelectionChange}
       renderEmptyState={() => emptyState}
-      selectedKeys={selectedKeys}
-      selectionMode={selectionMode}
+      selectionMode="none"
     >
-      <Collection items={clients}>{renderItem}</Collection>
+      <Collection items={plans}>{renderItem}</Collection>
       <ListBoxLoadMoreItem
         isLoading={isLoading}
         onLoadMore={fetchNextPage}

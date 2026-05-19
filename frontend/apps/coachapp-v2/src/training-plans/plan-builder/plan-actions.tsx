@@ -38,6 +38,7 @@ export function PlanActions({plan, onDeleted}: Props) {
           aria-label="Menu"
           isIconOnly
           isPending={blocking}
+          size={'sm'}
           variant="secondary"
         >
           <MoreHorizontal size={18} />

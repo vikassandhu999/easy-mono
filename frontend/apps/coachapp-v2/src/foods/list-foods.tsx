@@ -35,7 +35,7 @@ export default function ListFoods() {
       </Page.Header>
       <Page.Toolbar
         className={
-          'sticky top-0 z-10 flex shrink-0 flex-col gap-3 bg-background pt-2 pb-3 backdrop-blur after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:shadow-sm after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100 supports-[backdrop-filter]:bg-background/80'
+          'sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100'
         }
       >
         <Button

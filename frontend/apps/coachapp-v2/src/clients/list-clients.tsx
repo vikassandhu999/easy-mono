@@ -10,7 +10,7 @@ import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 
-import ClientsList from './components/clients-list';
+import {ClientsBrowseList} from './clients-list';
 
 type FilterOption = {
   id: string;
@@ -60,7 +60,7 @@ export default function ListClients() {
       </Page.Header>
       <Page.Toolbar
         className={
-          'sticky top-0 z-10 flex shrink-0 flex-col gap-3 bg-background pt-2 pb-3 backdrop-blur after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:shadow-sm after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100 supports-[backdrop-filter]:bg-background/80'
+          'sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100'
         }
       >
         <SearchField
@@ -97,7 +97,7 @@ export default function ListClients() {
         </Tabs>
       </Page.Toolbar>
       <Page.Content>
-        <ClientsList
+        <ClientsBrowseList
           hasFilter={!!debouncedSearch || activeFilter !== 'all'}
           search={debouncedSearch}
           status={FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status}

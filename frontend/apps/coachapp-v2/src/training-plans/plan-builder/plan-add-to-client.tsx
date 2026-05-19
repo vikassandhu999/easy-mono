@@ -5,7 +5,7 @@ import {useBlocker} from 'react-router-dom';
 
 import {Client} from '@/api/clients';
 import {TrainingPlan} from '@/api/trainingPlans';
-import {ClientPicker} from '@/clients/components/client-picker/client-picker';
+import {ClientSingleSelectPicker} from '@/clients/client-pickers';
 
 export type Props = {
   plan: TrainingPlan;
@@ -30,8 +30,8 @@ export function PlanAddToClient({plan}: Props) {
         <UserPlus size={18} />
         Add to client
       </Button>
-      <ClientPicker
-        heading={'Choose client'}
+      <ClientSingleSelectPicker
+        heading="Choose client"
         onSelect={(selected) => {
           pickerState.close();
           setClient(selected);

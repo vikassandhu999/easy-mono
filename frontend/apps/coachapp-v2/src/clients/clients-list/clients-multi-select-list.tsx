@@ -1,0 +1,57 @@
+import type {Key} from '@heroui/react';
+
+import {memo} from 'react';
+
+import type {Client} from '@/api/clients';
+
+import type {ClientListSelection, ClientsListFilters} from './types';
+
+import ClientEmptyState from './client-empty-state';
+import ClientListBox from './client-list-box';
+import ClientListItem from './client-list-item';
+import ClientsListQuery from './clients-list-query';
+
+type Props = ClientsListFilters & {
+  hasFilter: boolean;
+  onSelectionChange: (keys: ClientListSelection, clients: Client[]) => void;
+  selectedKeys?: 'all' | Iterable<Key>;
+};
+
+const ClientsMultiSelectList = memo(function ClientsMultiSelectList({
+  hasFilter,
+  onSelectionChange,
+  search,
+  selectedKeys,
+  status,
+}: Props) {
+  return (
+    <ClientsListQuery
+      search={search}
+      status={status}
+    >
+      {({clients, fetchNextPage, isLoading}) => (
+        <ClientListBox
+          clients={clients}
+          emptyState={<ClientEmptyState hasFilter={hasFilter || !!search} />}
+          fetchNextPage={fetchNextPage}
+          isLoading={isLoading}
+          onSelectionChange={(keys) => {
+            const selectedClients = keys === 'all' ? clients : clients.filter((client) => keys.has(client.id));
+            onSelectionChange(keys, selectedClients);
+          }}
+          renderItem={(client) => (
+            <ClientListItem
+              client={client}
+              showIndicator
+              showQuickActions={false}
+            />
+          )}
+          selectedKeys={selectedKeys}
+          selectionMode="multiple"
+        />
+      )}
+    </ClientsListQuery>
+  );
+});
+
+export default ClientsMultiSelectList;

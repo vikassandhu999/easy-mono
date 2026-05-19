@@ -1,4 +1,5 @@
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
 import {MessageCircle} from 'lucide-react';
 
 import type {Client, ClientStatus} from '@/api/clients';
@@ -6,6 +7,13 @@ import type {Client, ClientStatus} from '@/api/clients';
 type StatusConfig = {
   color: 'default' | 'success';
   label: string;
+};
+
+type Props = {
+  className?: string;
+  client: Client;
+  showIndicator?: boolean;
+  showQuickActions?: boolean;
 };
 
 const STATUS_MAP: Record<ClientStatus, StatusConfig> = {
@@ -33,7 +41,7 @@ function formatDateShort(dateString: string): string {
   return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
 }
 
-function getSubtitle(client: Client): string {
+export function getClientSubtitle(client: Client): string {
   if (client.status === 'active') {
     return `Active · since ${formatDateShort(client.inserted_at)}`;
   }
@@ -43,7 +51,7 @@ function getSubtitle(client: Client): string {
   return client.email ?? client.phone ?? client.status;
 }
 
-function getDisplayName(client: Client): string {
+export function getClientDisplayName(client: Client): string {
   const parts = [client.first_name, client.last_name].filter(Boolean);
   return parts.length > 0 ? parts.join(' ') : (client.email ?? client.phone ?? 'Unknown');
 }
@@ -57,27 +65,27 @@ function getInitials(client: Client): string {
   return (client.email?.[0] ?? '?').toUpperCase();
 }
 
-export default function ClientCard({client}: {client: Client}) {
+export default function ClientListItem({className, client, showIndicator = false, showQuickActions = true}: Props) {
   const status = STATUS_MAP[client.status] ?? {color: 'default' as const, label: client.status};
   const whatsappNumber = client.phone?.replace(/\D/g, '');
 
   return (
     <ListBox.Item
-      className={'px-4 sm:px-8 py-2 min-h-fit'}
+      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
       id={client.id}
-      textValue={getDisplayName(client)}
+      textValue={getClientDisplayName(client)}
     >
       <Avatar size="sm">
         <Avatar.Fallback>{getInitials(client)}</Avatar.Fallback>
       </Avatar>
       <div className="flex min-w-0 flex-col">
-        <Label className="truncate">{getDisplayName(client)}</Label>
-        <Description className="truncate">{getSubtitle(client)}</Description>
+        <Label className="truncate">{getClientDisplayName(client)}</Label>
+        <Description className="truncate">{getClientSubtitle(client)}</Description>
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2">
-        {whatsappNumber ? (
+        {showQuickActions && whatsappNumber ? (
           <a
-            aria-label={`Message ${getDisplayName(client)} on WhatsApp`}
+            aria-label={`Message ${getClientDisplayName(client)} on WhatsApp`}
             className="flex min-h-9 min-w-9 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 hover:text-success active:bg-default-200"
             href={`https://wa.me/${whatsappNumber}`}
             onClick={(e) => e.stopPropagation()}
@@ -95,6 +103,7 @@ export default function ClientCard({client}: {client: Client}) {
         >
           {status.label}
         </Chip>
+        {showIndicator && <ListBox.ItemIndicator />}
       </div>
     </ListBox.Item>
   );

@@ -91,6 +91,14 @@ defmodule Easy.Training.TrainingPlan do
     |> validate_length(:description, max: 5000)
     |> validate_date_range()
     |> validate_rest_days()
+    |> check_constraint(:start_date,
+      name: :valid_date_range,
+      message: "end date must be after start date"
+    )
+    |> check_constraint(:start_date,
+      name: :assigned_plans_have_dates,
+      message: "assigned plans must have start and end dates"
+    )
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:original_template_id)
   end
@@ -258,7 +266,12 @@ defmodule Easy.Training.TrainingPlan do
     end)
   end
 
-  @spec assign_to_client(t(), String.t() | nil, String.t() | nil, String.t() | nil) ::
+  @spec assign_to_client(
+          t(),
+          String.t() | nil,
+          Date.t() | String.t() | nil,
+          Date.t() | String.t() | nil
+        ) ::
           {:ok, t()} | {:error, Ecto.Changeset.t() | :not_found}
   def assign_to_client(_plan, nil, _start_date, _end_date), do: {:error, :not_found}
   def assign_to_client(_plan, "", _start_date, _end_date), do: {:error, :not_found}

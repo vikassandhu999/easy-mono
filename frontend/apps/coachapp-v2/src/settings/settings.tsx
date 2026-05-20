@@ -1,8 +1,8 @@
-import {Avatar, Button, Separator, Spinner} from '@heroui/react';
+import {Avatar, Button, Separator, Spinner, Typography} from '@heroui/react';
 import {useCallback, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {clearTokens} from '@/api/authStorage';
 import {api} from '@/api/base';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
@@ -57,8 +57,13 @@ function ProfileSection({
             <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="text-base font-medium">{fullName || 'No name'}</p>
-            <p className="text-sm text-foreground-500">{profile.business.name}</p>
+            <Typography weight="medium">{fullName || 'No name'}</Typography>
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              {profile.business.name}
+            </Typography>
           </div>
         </div>
 
@@ -109,9 +114,13 @@ function InviteLinkSection({slug}: {slug: string}) {
             {copied ? 'Copied' : 'Copy'}
           </Button>
         </div>
-        <p className="border-t border-divider px-4 py-2 text-xs text-foreground-400">
+        <Typography
+          className="border-t border-divider px-4 py-2"
+          color="muted"
+          type="body-xs"
+        >
           Share this link with clients to invite them
-        </p>
+        </Typography>
       </div>
     </section>
   );
@@ -123,12 +132,37 @@ function AccountSection({email}: {email: string}) {
       <SectionHeading title="Account" />
       <div className="overflow-hidden rounded-xl border border-divider bg-content1">
         <div className="flex min-h-11 items-center px-4 py-3">
-          <span className="w-20 shrink-0 text-sm text-foreground-400">Email</span>
-          <span className="min-w-0 flex-1 truncate text-sm text-foreground-500">{email}</span>
+          <Typography
+            className="w-20 shrink-0"
+            color="muted"
+            type="body-sm"
+          >
+            Email
+          </Typography>
+          <Typography
+            className="min-w-0 flex-1"
+            color="muted"
+            truncate
+            type="body-sm"
+          >
+            {email}
+          </Typography>
         </div>
         <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
-          <span className="w-20 shrink-0 text-sm text-foreground-400">Auth</span>
-          <span className="flex-1 text-sm text-foreground-500">Email OTP</span>
+          <Typography
+            className="w-20 shrink-0"
+            color="muted"
+            type="body-sm"
+          >
+            Auth
+          </Typography>
+          <Typography
+            className="flex-1"
+            color="muted"
+            type="body-sm"
+          >
+            Email OTP
+          </Typography>
         </div>
       </div>
     </section>
@@ -148,11 +182,18 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Settings">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Settings</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -161,27 +202,41 @@ export default function Settings() {
   const profile = data.data;
 
   return (
-    <PageLayout title="Settings">
-      <div className="max-w-lg">
-        <ProfileSection
-          onUpdate={updateProfile}
-          profile={profile}
-        />
-        <InviteLinkSection slug={profile.business.slug} />
-        <AccountSection email={profile.email} />
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Settings</Page.Title>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <div className="max-w-lg">
+          <ProfileSection
+            onUpdate={updateProfile}
+            profile={profile}
+          />
+          <InviteLinkSection slug={profile.business.slug} />
+          <AccountSection email={profile.email} />
 
-        <div className="py-4">
-          <Separator className="mb-4" />
-          <Button
-            className="w-full"
-            onPress={handleLogout}
-            variant="danger-soft"
-          >
-            Log out
-          </Button>
-          <p className="mt-4 text-center text-xs text-foreground-400">CoachApp v{__APP_VERSION__}</p>
+          <div className="py-4">
+            <Separator className="mb-4" />
+            <Button
+              className="w-full"
+              onPress={handleLogout}
+              variant="danger-soft"
+            >
+              Log out
+            </Button>
+            <Typography
+              align="center"
+              className="mt-4"
+              color="muted"
+              type="body-xs"
+            >
+              CoachApp v{__APP_VERSION__}
+            </Typography>
+          </div>
         </div>
-      </div>
-    </PageLayout>
+      </Page.Content>
+    </Page>
   );
 }

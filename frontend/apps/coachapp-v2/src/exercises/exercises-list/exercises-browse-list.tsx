@@ -3,11 +3,12 @@ import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 
+import type {ExercisesListFilters} from './types';
+
 import ExerciseEmptyState from './exercise-empty-state';
 import ExerciseListBox from './exercise-list-box';
 import ExerciseListItem from './exercise-list-item';
 import ExercisesListQuery from './exercises-list-query';
-import type {ExercisesListFilters} from './types';
 
 type Props = ExercisesListFilters & {
   hasFilter: boolean;

@@ -433,9 +433,9 @@ export default function WorkoutSection({
               </WorkoutActionItem>
               <WorkoutActionItem
                 isPending={isDuplicatingWorkout}
-                onSelect={() => {
+                onSelect={async () => {
                   setIsWorkoutMenuOpen(false);
-                  void handleDuplicateWorkout();
+                  await handleDuplicateWorkout();
                 }}
               >
                 Duplicate workout
@@ -640,8 +640,8 @@ function DeleteWorkoutDialog({
               </Button>
               <Button
                 isPending={isDeleting}
-                onPress={() => {
-                  void onConfirm();
+                onPress={async () => {
+                  await onConfirm();
                 }}
                 variant="danger"
               >

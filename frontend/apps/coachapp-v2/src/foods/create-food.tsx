@@ -6,19 +6,19 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import type {Food} from '@/api/foods';
 import type {ServingSize} from '@/api/shared';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateFoodMutation} from '@/api/foods';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
-import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
+import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
 
 function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -42,12 +42,12 @@ export default function CreateFood() {
       category: duplicateFrom.category ?? '',
       source: '', // Clear source — this will be a coach-owned food
       notes: duplicateFrom.notes ?? '',
-      calories_per_100g: m.calories_per_100g ?? '',
-      protein_g: m.protein_g ?? '',
-      carbs_g: m.carbs_g ?? '',
-      fats_g: m.fats_g ?? '',
-      fiber_g: m.fiber_g ?? '',
-      sugar_g: m.sugar_g ?? '',
+      calories_per_100g: m.calories_per_100g,
+      protein_g: m.protein_g,
+      carbs_g: m.carbs_g,
+      fats_g: m.fats_g,
+      fiber_g: m.fiber_g,
+      sugar_g: m.sugar_g,
     };
   }, [duplicateFrom]);
 
@@ -69,16 +69,19 @@ export default function CreateFood() {
       const result = await createFood(body).unwrap();
       navigate(`/library/foods/${result.data.id}`, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create food. Please try again.', form.setError);
+      applyFormErrors(err, "Food wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Add a new food item to your library."
-      title="Create Food"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Create food</Page.Title>
+          <Page.Description>Add nutrition details, serving sizes, and notes</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
@@ -87,18 +90,19 @@ export default function CreateFood() {
           <ArrowLeft size={16} />
           Foods
         </Button>
-      </div>
-
-      <FoodForm
-        form={form}
-        isSubmitting={isLoading}
-        onCancel={() => navigate(ROUTES.FOODS)}
-        onServingSizesChange={setServingSizes}
-        onSubmit={onSubmit}
-        servingSizes={servingSizes}
-        submitLabel="Create Food"
-        submittingLabel="Creating..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8  max-w-2xl">
+        <FoodForm
+          form={form}
+          isSubmitting={isLoading}
+          onCancel={() => navigate(ROUTES.FOODS)}
+          onServingSizesChange={setServingSizes}
+          onSubmit={onSubmit}
+          servingSizes={servingSizes}
+          submitLabel="Create food"
+          submittingLabel="Creating food"
+        />
+      </Page.Content>
+    </Page>
   );
 }

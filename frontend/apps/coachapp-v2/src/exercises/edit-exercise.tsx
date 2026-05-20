@@ -3,7 +3,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {
   type Exercise,
@@ -60,39 +60,43 @@ function EditExerciseForm({
       await updateExercise({body, id: exerciseId}).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update exercise. Please try again.', form.setError);
+      applyFormErrors(err, "Exercise wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description={exercise.name}
-      title="Edit Exercise"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit exercise</Page.Title>
+          <Page.Description>{exercise.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Exercise
         </Button>
-      </div>
-
-      <ExerciseForm
-        equipment={equipmentData?.data ?? []}
-        form={form}
-        images={images}
-        isSubmitting={isUpdating}
-        muscles={musclesData?.data ?? []}
-        onCancel={goBack}
-        onImagesChange={setImages}
-        onSubmit={onSubmit}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <ExerciseForm
+          equipment={equipmentData?.data ?? []}
+          form={form}
+          images={images}
+          isSubmitting={isUpdating}
+          muscles={musclesData?.data ?? []}
+          onCancel={goBack}
+          onImagesChange={setImages}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }
 
@@ -105,11 +109,18 @@ export default function EditExercise() {
 
   if (isFetching || !exercise) {
     return (
-      <PageLayout title="Edit Exercise">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit exercise</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 

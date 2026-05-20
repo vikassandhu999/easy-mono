@@ -3,11 +3,12 @@ import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
 
+import type {FoodsListFilters} from './types';
+
 import FoodEmptyState from './food-empty-state';
 import FoodListBox from './food-list-box';
 import FoodListItem from './food-list-item';
 import FoodsListQuery from './foods-list-query';
-import type {FoodsListFilters} from './types';
 
 type Props = FoodsListFilters & {
   hasFilter: boolean;

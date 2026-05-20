@@ -2,7 +2,7 @@ import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
@@ -30,16 +30,19 @@ export default function CreateTrainingPlan() {
       const result = await createPlan(body).unwrap();
       navigate(`/library/training-plans/${result.data.id}`, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create training plan. Please try again.', form.setError);
+      applyFormErrors(err, "Training plan wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Set up the basics, then build workouts on the next screen."
-      title="Create Training Plan"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Create training plan</Page.Title>
+          <Page.Description>Set plan details now, then build workouts next</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           className="min-h-11"
           onPress={goBack}
@@ -47,18 +50,19 @@ export default function CreateTrainingPlan() {
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Training plans
         </Button>
-      </div>
-
-      <TrainingPlanForm
-        form={form}
-        isSubmitting={isLoading}
-        onCancel={() => navigate(ROUTES.TRAINING_PLANS)}
-        onSubmit={onSubmit}
-        submitLabel="Create Plan"
-        submittingLabel="Creating..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <TrainingPlanForm
+          form={form}
+          isSubmitting={isLoading}
+          onCancel={() => navigate(ROUTES.TRAINING_PLANS)}
+          onSubmit={onSubmit}
+          submitLabel="Create plan"
+          submittingLabel="Creating plan"
+        />
+      </Page.Content>
+    </Page>
   );
 }

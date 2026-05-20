@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router-dom';
 import type {RecipeIngredientInput} from '@/api/recipes';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/recipes';
@@ -72,16 +72,19 @@ export default function CreateRecipe() {
       const result = await createRecipe(body).unwrap();
       navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create recipe. Please try again.', form.setError);
+      applyFormErrors(err, "Recipe wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Add a new recipe to your library."
-      title="Create Recipe"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Create recipe</Page.Title>
+          <Page.Description>Add ingredients, nutrition details, and instructions</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
@@ -90,18 +93,19 @@ export default function CreateRecipe() {
           <ArrowLeft size={16} />
           Recipes
         </Button>
-      </div>
-
-      <RecipeForm
-        form={form}
-        ingredients={ingredients}
-        isSubmitting={isLoading}
-        onCancel={() => navigate(ROUTES.RECIPES)}
-        onIngredientsChange={setIngredients}
-        onSubmit={onSubmit}
-        submitLabel="Create Recipe"
-        submittingLabel="Creating..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <RecipeForm
+          form={form}
+          ingredients={ingredients}
+          isSubmitting={isLoading}
+          onCancel={() => navigate(ROUTES.RECIPES)}
+          onIngredientsChange={setIngredients}
+          onSubmit={onSubmit}
+          submitLabel="Create recipe"
+          submittingLabel="Creating recipe"
+        />
+      </Page.Content>
+    </Page>
   );
 }

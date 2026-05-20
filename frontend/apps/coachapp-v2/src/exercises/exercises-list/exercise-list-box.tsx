@@ -14,7 +14,14 @@ type Props = {
   renderItem: (exercise: Exercise) => ReactNode;
 };
 
-export default function ExerciseListBox({emptyState, exercises, fetchNextPage, isLoading, onAction, renderItem}: Props) {
+export default function ExerciseListBox({
+  emptyState,
+  exercises,
+  fetchNextPage,
+  isLoading,
+  onAction,
+  renderItem,
+}: Props) {
   return (
     <ListBox
       aria-label="Exercises"

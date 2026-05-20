@@ -67,7 +67,10 @@ export default function ClientPickerDialog({
         scroll="inside"
         size={isMobile ? 'full' : 'lg'}
       >
-        <Modal.Dialog className={'p-0'}>
+        <Modal.Dialog
+          aria-label={heading}
+          className={'p-0'}
+        >
           <ClientsListQuery
             enabled={state.isOpen}
             search={queryFilterText}

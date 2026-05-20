@@ -1,4 +1,4 @@
-import {AlertDialog, Button, Chip, Input, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Chip, Input, Label, Spinner, TextField, toast, Typography} from '@heroui/react';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -10,7 +10,7 @@ import type {Macros} from '@/api/shared';
 import ClientPicker from '@/@components/client-picker';
 import ClientPlanBanner from '@/@components/client-plan-banner';
 import CopyMenu from '@/@components/copy-menu';
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateMealMutation} from '@/api/meals';
@@ -55,8 +55,7 @@ function getProgressColor(percentage: number): string {
   return 'bg-warning';
 }
 
-function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
-  // Only show columns where total > 0 or goal is set
+function DailyTotals({totals, goal}: {goal?: Macros; totals: Macros}) {
   const columns = MACRO_KEYS.filter((key) => {
     const total = totals[key] ?? 0;
     const goalVal = goal?.[key] ?? 0;
@@ -67,7 +66,14 @@ function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
 
   return (
     <section className="border-t border-divider py-4">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Daily Totals</h3>
+      <Typography
+        className="mb-2"
+        color="muted"
+        type="body-xs"
+        weight="semibold"
+      >
+        Daily totals
+      </Typography>
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         {columns.map((key) => {
           const meta = MACRO_LABELS[key];
@@ -77,18 +83,26 @@ function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
 
           return (
             <div key={key}>
-              <p className="text-xs text-foreground-400">{meta ? meta.label : key}</p>
-              <p className="font-medium">
+              <Typography
+                color="muted"
+                type="body-xs"
+              >
+                {meta ? meta.label : key}
+              </Typography>
+              <Typography weight="medium">
                 {total}
                 {meta ? meta.unit : ''}
                 {goalVal ? (
-                  <span className="text-foreground-400">
+                  <Typography
+                    color="muted"
+                    elementType="span"
+                  >
                     {' '}
                     / {goalVal}
                     {meta ? meta.unit : ''}
-                  </span>
+                  </Typography>
                 ) : null}
-              </p>
+              </Typography>
               {percentage != null && (
                 <>
                   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-content2">
@@ -97,7 +111,13 @@ function DailyTotals({totals, goal}: {totals: Macros; goal?: Macros}) {
                       style={{width: `${Math.min(percentage, 100)}%`}}
                     />
                   </div>
-                  <p className="mt-0.5 text-xs text-foreground-400">{percentage}%</p>
+                  <Typography
+                    className="mt-0.5"
+                    color="muted"
+                    type="body-xs"
+                  >
+                    {percentage}%
+                  </Typography>
                 </>
               )}
             </div>
@@ -120,7 +140,6 @@ export default function NutritionPlanDetail() {
   const [updatePlan, {isLoading: isUpdatingStatus}] = useUpdateNutritionPlanMutation();
   const {data: macrosData} = useGetNutritionPlanMacrosQuery(id!);
 
-  // Inline copy-to-client state
   const [showCopyToClient, setShowCopyToClient] = useState(false);
 
   const handleCopyToClient = async (client: Client) => {
@@ -136,7 +155,7 @@ export default function NutritionPlanDetail() {
       });
       setShowCopyToClient(false);
     } catch {
-      toast.danger('Failed to copy plan to client.');
+      toast.danger("Plan wasn't copied");
     }
   };
 
@@ -152,16 +171,14 @@ export default function NutritionPlanDetail() {
         },
       });
     } catch {
-      toast.danger('Failed to duplicate plan.');
+      toast.danger("Plan wasn't duplicated");
     }
   };
 
-  // Inline add-meal state
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [newMealName, setNewMealName] = useState('');
   const [scrollToMealId, setScrollToMealId] = useState<null | string>(null);
 
-  // Callback ref that scrolls a MealSection into view then clears the scroll target
   const scrollRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (node && scrollToMealId) {
@@ -186,7 +203,7 @@ export default function NutritionPlanDetail() {
       await updatePlan({id: id!, body: {status: nextStatus}}).unwrap();
       toast.success(nextStatus === 'archived' ? 'Plan archived' : 'Plan restored');
     } catch {
-      toast.danger('Failed to update plan status');
+      toast.danger("Plan status wasn't updated");
     }
   };
 
@@ -207,55 +224,76 @@ export default function NutritionPlanDetail() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Nutrition Plan">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Nutrition plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <PageLayout title="Nutrition Plan">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Nutrition plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBack}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Nutrition plans
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load nutrition plan. It may not exist or you don&apos;t have access.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Nutrition plan couldn&apos;t load. It may not exist, or you may not have access
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   const plan = data.data;
   const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
-  // Defensive: matches both `null` and `undefined` in case the backend omits the key.
   const isTemplate = !plan.client_id;
   const macrosGoalEntries = plan.macros_goal ? Object.entries(plan.macros_goal) : [];
-  // `meals` and `plan_items` are preloaded on the show endpoint but typed as optional
-  // since list endpoints don't include them — default to [] to satisfy the type system.
   const meals = plan.meals ?? [];
   const planItems = plan.plan_items ?? [];
   const sortedMeals = [...meals].sort((a, b) => a.position - b.position);
 
   return (
-    <PageLayout title="Nutrition Plan">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Nutrition plan</Page.Title>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar className="flex flex-wrap items-center gap-2">
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Nutrition plans
         </Button>
         <Button
           onPress={() => navigate(`/library/nutrition-plans/${plan.id}/edit`)}
@@ -308,10 +346,10 @@ export default function NutritionPlanDetail() {
                   <AlertDialog.Heading>Delete plan?</AlertDialog.Heading>
                 </AlertDialog.Header>
                 <AlertDialog.Body>
-                  <p>
+                  <Typography>
                     This will permanently delete <strong>{plan.name}</strong> and all its meals. This action cannot be
                     undone.
-                  </p>
+                  </Typography>
                 </AlertDialog.Body>
                 <AlertDialog.Footer>
                   <Button
@@ -325,194 +363,251 @@ export default function NutritionPlanDetail() {
                     onPress={handleDeletePlan}
                     variant="danger"
                   >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
+                    {isDeleting ? 'Deleting' : 'Delete'}
                   </Button>
                 </AlertDialog.Footer>
               </AlertDialog.Dialog>
             </AlertDialog.Container>
           </AlertDialog.Backdrop>
         </AlertDialog>
-      </div>
+      </Page.Toolbar>
 
-      {showCopyToClient && (
-        <div className="mb-4 max-w-md rounded-xl border border-divider bg-content1 p-4">
-          <p className="mb-2 text-sm text-foreground-500">
-            Search for a client to copy this plan to. A new plan will be created for the selected client.
-          </p>
-          <ClientPicker
-            excludeIds={plan.client_id ? [plan.client_id] : undefined}
-            isDisabled={isAssigning}
-            onSelect={handleCopyToClient}
-            placeholder="Search clients..."
-          />
-          {isAssigning && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
-              <Spinner size="sm" />
-              Copying plan...
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="min-w-0 max-w-2xl overflow-hidden">
-        {plan.client ? <ClientPlanBanner client={plan.client} /> : null}
-
-        <div className="pb-6">
-          <h2 className="text-lg font-semibold">{plan.name}</h2>
-          {plan.description && <p className="mt-1 text-sm text-foreground-500">{plan.description}</p>}
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Chip
-              color={status.color}
-              size="sm"
-              variant="soft"
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        {showCopyToClient && (
+          <div className="mb-4 max-w-md rounded-xl border border-divider bg-content1 p-4">
+            <Typography
+              className="mb-2"
+              color="muted"
+              type="body-sm"
             >
-              {status.label}
-            </Chip>
-            {isTemplate ? (
+              Search for a client. We&apos;ll create a new copy for the selected client
+            </Typography>
+            <ClientPicker
+              excludeIds={plan.client_id ? [plan.client_id] : undefined}
+              isDisabled={isAssigning}
+              onSelect={handleCopyToClient}
+              placeholder="Search clients"
+            />
+            {isAssigning && (
+              <div className="mt-2 flex items-center gap-2">
+                <Spinner size="sm" />
+                <Typography
+                  color="muted"
+                  type="body-sm"
+                >
+                  Copying plan
+                </Typography>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="min-w-0 max-w-2xl overflow-hidden">
+          {plan.client ? <ClientPlanBanner client={plan.client} /> : null}
+
+          <div className="pb-6">
+            <Typography type="h5">{plan.name}</Typography>
+            {plan.description && (
+              <Typography
+                className="mt-1"
+                color="muted"
+                type="body-sm"
+              >
+                {plan.description}
+              </Typography>
+            )}
+            <div className="mt-2 flex flex-wrap gap-1.5">
               <Chip
-                color="default"
+                color={status.color}
                 size="sm"
                 variant="soft"
               >
-                Template
+                {status.label}
               </Chip>
-            ) : null}
-          </div>
-        </div>
-
-        {macrosGoalEntries.length > 0 && (
-          <section className="border-t border-divider py-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
-              Daily Macros Goal
-            </h3>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-              {macrosGoalEntries.map(([key, value]) => {
-                const meta = MACRO_LABELS[key];
-                return (
-                  <div key={key}>
-                    <p className="text-xs text-foreground-400">{meta ? meta.label : key}</p>
-                    {value ? (
-                      <p className="font-medium">
-                        {value}
-                        {meta ? meta.unit : ''}
-                      </p>
-                    ) : (
-                      <p className="font-medium text-foreground-300">&mdash;</p>
-                    )}
-                  </div>
-                );
-              })}
+              {isTemplate ? (
+                <Chip
+                  color="default"
+                  size="sm"
+                  variant="soft"
+                >
+                  Template
+                </Chip>
+              ) : null}
             </div>
-          </section>
-        )}
-
-        {macrosData?.data && meals.some((m) => m.meal_items.length > 0) && (
-          <DailyTotals
-            goal={plan.macros_goal}
-            totals={macrosData.data}
-          />
-        )}
-
-        <section className="border-t border-divider py-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Meals</h3>
           </div>
 
-          {sortedMeals.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {sortedMeals.map((meal) => (
-                <MealSection
-                  key={meal.id}
-                  meal={meal}
-                  planId={plan.id}
-                  sectionRef={meal.id === scrollToMealId ? scrollRef : undefined}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mb-3 text-sm text-foreground-400">
-              No meals yet. Add your first meal to start building the plan.
-            </p>
+          {macrosGoalEntries.length > 0 && (
+            <section className="border-t border-divider py-4">
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Daily macro goal
+              </Typography>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                {macrosGoalEntries.map(([key, value]) => {
+                  const meta = MACRO_LABELS[key];
+                  return (
+                    <div key={key}>
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
+                        {meta ? meta.label : key}
+                      </Typography>
+                      {value ? (
+                        <Typography weight="medium">
+                          {value}
+                          {meta ? meta.unit : ''}
+                        </Typography>
+                      ) : (
+                        <Typography color="muted">&mdash;</Typography>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           )}
 
-          {/* keyboard rule: single field = INLINE */}
-          <div className="mt-3">
-            {isAddingMeal ? (
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <label
-                    className="mb-1 block text-xs text-foreground-400"
-                    htmlFor="new-meal-name"
-                  >
-                    Meal name
-                  </label>
-                  <Input
-                    id="new-meal-name"
-                    onChange={(e) => setNewMealName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddMeal();
-                      }
-                    }}
-                    placeholder="e.g. Breakfast, Snack 1"
-                    value={newMealName}
+          {macrosData?.data && meals.some((m) => m.meal_items.length > 0) && (
+            <DailyTotals
+              goal={plan.macros_goal}
+              totals={macrosData.data}
+            />
+          )}
+
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-3"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Meals
+            </Typography>
+
+            {sortedMeals.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {sortedMeals.map((meal) => (
+                  <MealSection
+                    key={meal.id}
+                    meal={meal}
+                    planId={plan.id}
+                    sectionRef={meal.id === scrollToMealId ? scrollRef : undefined}
                   />
-                </div>
-                <Button
-                  isPending={isCreatingMeal}
-                  onPress={handleAddMeal}
-                  size="sm"
-                >
-                  {isCreatingMeal ? 'Adding...' : 'Add'}
-                </Button>
-                <Button
-                  onPress={() => {
-                    setIsAddingMeal(false);
-                    setNewMealName('');
-                  }}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Cancel
-                </Button>
+                ))}
               </div>
             ) : (
-              <Button
-                onPress={() => setIsAddingMeal(true)}
-                size="sm"
-                variant="secondary"
+              <Typography
+                className="mb-3"
+                color="muted"
+                type="body-sm"
               >
-                <Plus size={14} />
-                Add Meal
-              </Button>
+                No meals yet. Add your first meal to start building the plan
+              </Typography>
             )}
-          </div>
-        </section>
 
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly Schedule</h3>
-          <DayPlanner
-            meals={sortedMeals}
-            planId={plan.id}
-            planItems={planItems}
-          />
-        </section>
+            <div className="mt-3">
+              {isAddingMeal ? (
+                <div className="flex items-end gap-2">
+                  <TextField
+                    className="flex-1"
+                    onChange={setNewMealName}
+                    value={newMealName}
+                  >
+                    <Label>Meal name</Label>
+                    <Input
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddMeal();
+                        }
+                      }}
+                      placeholder="Breakfast or snack 1"
+                    />
+                  </TextField>
+                  <Button
+                    isPending={isCreatingMeal}
+                    onPress={handleAddMeal}
+                    size="sm"
+                  >
+                    {isCreatingMeal ? 'Adding' : 'Add'}
+                  </Button>
+                  <Button
+                    onPress={() => {
+                      setIsAddingMeal(false);
+                      setNewMealName('');
+                    }}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onPress={() => setIsAddingMeal(true)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  <Plus size={14} />
+                  Add meal
+                </Button>
+              )}
+            </div>
+          </section>
 
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-foreground-400">Created</p>
-              <p>{formatDate(plan.inserted_at)}</p>
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-3"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Weekly schedule
+            </Typography>
+            <DayPlanner
+              meals={sortedMeals}
+              planId={plan.id}
+              planItems={planItems}
+            />
+          </section>
+
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-2"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Details
+            </Typography>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Created
+                </Typography>
+                <Typography>{formatDate(plan.inserted_at)}</Typography>
+              </div>
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Last updated
+                </Typography>
+                <Typography>{formatDate(plan.updated_at)}</Typography>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-foreground-400">Last updated</p>
-              <p>{formatDate(plan.updated_at)}</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </PageLayout>
+          </section>
+        </div>
+      </Page.Content>
+    </Page>
   );
 }

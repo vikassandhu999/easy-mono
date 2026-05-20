@@ -1,9 +1,9 @@
-import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, toast} from '@heroui/react';
+import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, toast, Typography} from '@heroui/react';
 import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
@@ -29,7 +29,16 @@ import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-pic
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
 
 function SectionHeading({title}: {title: string}) {
-  return <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-400">{title}</h3>;
+  return (
+    <Typography
+      className="mb-3"
+      color="muted"
+      type="body-xs"
+      weight="semibold"
+    >
+      {title}
+    </Typography>
+  );
 }
 
 function ClientPlans({clientId}: {clientId: string}) {
@@ -53,7 +62,7 @@ function ClientPlans({clientId}: {clientId: string}) {
       toast.success(`"${plan.name}" assigned to client`);
       setShowNutritionPicker(false);
     } catch {
-      toast.danger('Failed to assign nutrition plan.');
+      toast.danger("Nutrition plan wasn't assigned");
     }
   };
 
@@ -63,7 +72,7 @@ function ClientPlans({clientId}: {clientId: string}) {
       toast.success(`"${plan.name}" assigned to client`);
       setShowTrainingPicker(false);
     } catch {
-      toast.danger('Failed to assign training plan.');
+      toast.danger("Training plan wasn't assigned");
     }
   };
 
@@ -90,10 +99,19 @@ function ClientPlans({clientId}: {clientId: string}) {
                     to={`/library/nutrition-plans/${plan.id}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">{plan.name}</p>
-                      <p className="text-xs text-foreground-500">
-                        Nutrition{mealCount > 0 ? ` \u00B7 ${mealCount} meal${mealCount !== 1 ? 's' : ''}` : ''}
-                      </p>
+                      <Typography
+                        truncate
+                        type="body-sm"
+                        weight="semibold"
+                      >
+                        {plan.name}
+                      </Typography>
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
+                        Nutrition{mealCount > 0 ? ` · ${mealCount} meal${mealCount !== 1 ? 's' : ''}` : ''}
+                      </Typography>
                     </div>
                     <Chip
                       color={planStatus.color}
@@ -115,11 +133,20 @@ function ClientPlans({clientId}: {clientId: string}) {
                     to={`/library/training-plans/${plan.id}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">{plan.name}</p>
-                      <p className="text-xs text-foreground-500">
+                      <Typography
+                        truncate
+                        type="body-sm"
+                        weight="semibold"
+                      >
+                        {plan.name}
+                      </Typography>
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
                         Training
-                        {workoutCount > 0 ? ` \u00B7 ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
-                      </p>
+                        {workoutCount > 0 ? ` · ${workoutCount} workout${workoutCount !== 1 ? 's' : ''}` : ''}
+                      </Typography>
                     </div>
                     <Chip
                       color={planStatus.color}
@@ -133,7 +160,12 @@ function ClientPlans({clientId}: {clientId: string}) {
               })}
             </div>
           ) : (
-            <p className="text-sm text-foreground-400">No plans assigned yet.</p>
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              No plans assigned yet
+            </Typography>
           )}
 
           <div className="mt-2 flex gap-2">
@@ -163,38 +195,56 @@ function ClientPlans({clientId}: {clientId: string}) {
 
           {showNutritionPicker ? (
             <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
-              <p className="mb-2 text-sm text-foreground-500">
-                Search for a nutrition plan template to copy to this client.
-              </p>
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-sm"
+              >
+                Search for a nutrition plan template to copy to this client
+              </Typography>
               <NutritionPlanPicker
                 // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
                 onSelect={handleAssignNutrition}
-                placeholder="Search nutrition plans..."
+                placeholder="Search nutrition plans"
               />
               {isAssigningNutrition ? (
-                <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
+                <div className="mt-2 flex items-center gap-2">
                   <Spinner size="sm" />
-                  Assigning plan...
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    Assigning plan
+                  </Typography>
                 </div>
               ) : null}
             </div>
           ) : null}
           {showTrainingPicker ? (
             <div className="mt-2 rounded-xl border border-divider bg-content1 p-3">
-              <p className="mb-2 text-sm text-foreground-500">
-                Search for a training plan template to copy to this client.
-              </p>
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-sm"
+              >
+                Search for a training plan template to copy to this client
+              </Typography>
               <TrainingPlanPicker
                 // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
                 onSelect={handleAssignTraining}
-                placeholder="Search training plans..."
+                placeholder="Search training plans"
               />
               {isAssigningTraining ? (
-                <div className="mt-2 flex items-center gap-2 text-sm text-foreground-400">
+                <div className="mt-2 flex items-center gap-2">
                   <Spinner size="sm" />
-                  Assigning plan...
+                  <Typography
+                    color="muted"
+                    type="body-sm"
+                  >
+                    Assigning plan
+                  </Typography>
                 </div>
               ) : null}
             </div>
@@ -220,7 +270,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
       await updateClient({id: clientId, body: {notes: draft || null}}).unwrap();
       setIsEditing(false);
     } catch {
-      toast.danger('Failed to save notes.');
+      toast.danger("Notes weren't saved");
     }
   };
 
@@ -229,7 +279,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
       <div className="flex flex-col gap-2">
         <TextArea
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Add notes about this client..."
+          placeholder="Add notes about this client"
           ref={(el) => el?.focus()}
           rows={3}
           value={draft}
@@ -267,9 +317,19 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
       tabIndex={0}
     >
       {initialNotes ? (
-        <p className="whitespace-pre-wrap text-sm">{initialNotes}</p>
+        <Typography
+          className="whitespace-pre-wrap"
+          type="body-sm"
+        >
+          {initialNotes}
+        </Typography>
       ) : (
-        <p className="text-sm text-foreground-400">Tap to add notes...</p>
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Tap to add notes
+        </Typography>
       )}
     </div>
   );
@@ -283,35 +343,49 @@ export default function ClientDetail() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Client">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <PageLayout title="Client">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBack}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Clients
           </Button>
-        </div>
-        <Alert status="danger">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Title>Failed to load client</Alert.Title>
-            <Alert.Description>They may not exist or you don&apos;t have access.</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <Alert status="danger">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Client couldn&apos;t load</Alert.Title>
+              <Alert.Description>They may not exist, or you may not have access</Alert.Description>
+            </Alert.Content>
+          </Alert>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -321,15 +395,20 @@ export default function ClientDetail() {
   const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
 
   return (
-    <PageLayout title="Client">
-      <div className="mb-4 flex items-center justify-between">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Client</Page.Title>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar className="flex items-center justify-between">
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Clients
         </Button>
         <Button
           onPress={() => navigate(`/clients/${client.id}/edit`)}
@@ -339,91 +418,102 @@ export default function ClientDetail() {
           <Pencil size={16} />
           Edit
         </Button>
-      </div>
+      </Page.Toolbar>
 
-      <div className="max-w-lg">
-        <div className="rounded-xl border border-divider bg-content1 p-4">
-          <div className="flex items-center gap-3">
-            <Avatar
-              className="size-12"
-              color="accent"
-            >
-              <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-semibold">{fullName}</h2>
-              {client.phone ? <p className="truncate text-sm text-foreground-500">{client.phone}</p> : null}
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <div className="max-w-lg">
+          <div className="rounded-xl border border-divider bg-content1 p-4">
+            <div className="flex items-center gap-3">
+              <Avatar
+                className="size-12"
+                color="accent"
+              >
+                <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <Typography
+                  truncate
+                  type="h5"
+                >
+                  {fullName}
+                </Typography>
+                {client.phone ? (
+                  <Typography
+                    color="muted"
+                    truncate
+                    type="body-sm"
+                  >
+                    {client.phone}
+                  </Typography>
+                ) : null}
+              </div>
+              <Chip
+                color={statusColor}
+                size="sm"
+                variant="soft"
+              >
+                {client.status}
+              </Chip>
             </div>
-            <Chip
-              color={statusColor}
-              size="sm"
-              variant="soft"
-            >
-              {client.status}
-            </Chip>
+
+            {client.phone ? (
+              <div className="mt-3 flex gap-2 border-t border-divider pt-3">
+                <a
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
+                  href={getWhatsAppUrl(client.phone)}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </a>
+                <a
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
+                  href={`tel:${client.phone}`}
+                >
+                  <Phone size={16} />
+                  Call
+                </a>
+              </div>
+            ) : null}
           </div>
 
-          {client.phone ? (
-            <div className="mt-3 flex gap-2 border-t border-divider pt-3">
-              <a
-                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100 active:bg-success-200"
-                href={getWhatsAppUrl(client.phone)}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <MessageCircle size={16} />
-                WhatsApp
-              </a>
-              <a
-                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-divider px-3 py-2 text-sm font-medium transition-colors hover:bg-default-100 active:bg-default-200"
-                href={`tel:${client.phone}`}
-              >
-                <Phone size={16} />
-                Call
-              </a>
-            </div>
+          {client.status === 'pending' ? (
+            <section className="py-4">
+              <Separator className="mb-4" />
+              <InvitationWidget
+                client={client}
+                onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+              />
+            </section>
           ) : null}
-        </div>
 
-        {/*
-          Per spec, this is the FIRST section after the hero for pending
-          clients — getting them to accept is the coach's most urgent task
-          here. It disappears automatically once the status flips to active.
+          <ClientPlans clientId={client.id} />
 
-          On revoke the client row is hard-deleted, so we navigate back to
-          the list (the widget's onRevoked callback keeps navigation here
-          rather than inside the component — see invitation-widget.tsx).
-        */}
-        {client.status === 'pending' ? (
           <section className="py-4">
             <Separator className="mb-4" />
-            <InvitationWidget
-              client={client}
-              onRevoked={() => navigate(ROUTES.CLIENTS, {replace: true})}
+            <SectionHeading title="Notes" />
+            <InlineNotes
+              clientId={client.id}
+              initialNotes={client.notes}
             />
           </section>
-        ) : null}
 
-        <ClientPlans clientId={client.id} />
+          <ClientNutritionAdherence clientId={client.id} />
 
-        <section className="py-4">
-          <Separator className="mb-4" />
-          <SectionHeading title="Notes" />
-          <InlineNotes
-            clientId={client.id}
-            initialNotes={client.notes}
-          />
-        </section>
+          <ClientWorkoutHistory clientId={client.id} />
 
-        <ClientNutritionAdherence clientId={client.id} />
-
-        <ClientWorkoutHistory clientId={client.id} />
-
-        <section className="py-4">
-          <Separator className="mb-4" />
-          <p className="text-sm text-foreground-400">Added {formatDate(client.inserted_at)}</p>
-        </section>
-      </div>
-    </PageLayout>
+          <section className="py-4">
+            <Separator className="mb-4" />
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              Added {formatDate(client.inserted_at)}
+            </Typography>
+          </section>
+        </div>
+      </Page.Content>
+    </Page>
   );
 }

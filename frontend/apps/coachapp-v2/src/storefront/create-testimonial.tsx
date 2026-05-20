@@ -2,7 +2,7 @@ import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTestimonialMutation} from '@/api/testimonials';
@@ -39,16 +39,19 @@ export default function CreateTestimonial() {
       }).unwrap();
       navigate(ROUTES.STOREFRONT_TESTIMONIALS, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create testimonial. Please try again.', form.setError);
+      applyFormErrors(err, "Testimonial wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Add a client result or testimonial."
-      title="Add Testimonial"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Add testimonial</Page.Title>
+          <Page.Description>Add a client result to your storefront</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={() => navigate(ROUTES.STOREFRONT_TESTIMONIALS)}
           size="sm"
@@ -57,16 +60,17 @@ export default function CreateTestimonial() {
           <ArrowLeft size={16} />
           Testimonials
         </Button>
-      </div>
-
-      <TestimonialForm
-        form={form}
-        isSubmitting={isLoading}
-        onCancel={() => navigate(ROUTES.STOREFRONT_TESTIMONIALS)}
-        onSubmit={onSubmit}
-        submitLabel="Save Testimonial"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <TestimonialForm
+          form={form}
+          isSubmitting={isLoading}
+          onCancel={() => navigate(ROUTES.STOREFRONT_TESTIMONIALS)}
+          onSubmit={onSubmit}
+          submitLabel="Save testimonial"
+          submittingLabel="Saving testimonial"
+        />
+      </Page.Content>
+    </Page>
   );
 }

@@ -1,4 +1,4 @@
-import {Alert, Button, Card, Input, Label, Separator, Spinner, TextArea, toast} from '@heroui/react';
+import {Alert, Button, Card, Input, Label, Separator, Spinner, TextArea, toast, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
@@ -6,7 +6,7 @@ import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useInviteClientMutation} from '@/api/clients';
@@ -92,10 +92,17 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
 
       {inviteUrl ? (
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium">Share the invite link with your client:</p>
+          <Typography weight="medium">Share the invite link with your client</Typography>
           <Card>
             <Card.Content className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate text-sm text-foreground-500">{inviteUrl}</p>
+              <Typography
+                className="min-w-0 flex-1"
+                color="muted"
+                truncate
+                type="body-sm"
+              >
+                {inviteUrl}
+              </Typography>
               <Button
                 aria-label="Copy invite link"
                 onPress={handleCopyLink}
@@ -129,9 +136,12 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
       ) : (
         <Card>
           <Card.Content>
-            <p className="text-sm text-foreground-500">
-              The invite has been sent. The invite link will be available once the backend is updated to return it.
-            </p>
+            <Typography
+              color="muted"
+              type="body-sm"
+            >
+              The invite has been sent. The invite link will be available once the backend returns it
+            </Typography>
           </Card.Content>
         </Card>
       )}
@@ -178,7 +188,7 @@ export default function InviteClient() {
       }).unwrap();
       setInviteResult(result.data);
     } catch (err) {
-      applyFormErrors(err, 'Failed to invite client. Please try again.', setError, KNOWN_FIELDS);
+      applyFormErrors(err, "Client wasn't invited. Check the details and try again", setError, KNOWN_FIELDS);
     }
   };
 
@@ -188,109 +198,153 @@ export default function InviteClient() {
   };
 
   return (
-    <PageLayout
-      description={inviteResult ? undefined : 'Send an invitation to a new client.'}
-      title={inviteResult ? 'Invite Sent' : 'Invite Client'}
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>{inviteResult ? 'Invite sent' : 'Invite client'}</Page.Title>
+          {!inviteResult && <Page.Description>Send an invite to a new client</Page.Description>}
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Clients
         </Button>
-      </div>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        {inviteResult ? (
+          <InviteConfirmation
+            client={inviteResult}
+            onInviteAnother={handleInviteAnother}
+          />
+        ) : (
+          <form
+            className="flex max-w-lg flex-col gap-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="name">
+                Name <span className="text-danger">*</span>
+              </Label>
+              <Input
+                autoComplete="name"
+                id="name"
+                placeholder="Vikas Sandhu"
+                {...register('name')}
+              />
+              {errors.name ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.name.message}
+                </Typography>
+              ) : null}
+            </div>
 
-      {inviteResult ? (
-        <InviteConfirmation
-          client={inviteResult}
-          onInviteAnother={handleInviteAnother}
-        />
-      ) : (
-        <form
-          className="flex max-w-lg flex-col gap-4"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">
-              Name <span className="text-danger">*</span>
-            </Label>
-            <Input
-              autoComplete="name"
-              id="name"
-              placeholder="Vikas Sandhu"
-              {...register('name')}
-            />
-            {errors.name ? <p className="text-xs text-danger">{errors.name.message}</p> : null}
-          </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                autoComplete="email"
+                id="email"
+                placeholder="client@example.com"
+                type="email"
+                {...register('email')}
+              />
+              {errors.email ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.email.message}
+                </Typography>
+              ) : null}
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              autoComplete="email"
-              id="email"
-              placeholder="client@example.com"
-              type="email"
-              {...register('email')}
-            />
-            {errors.email ? <p className="text-xs text-danger">{errors.email.message}</p> : null}
-          </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                autoComplete="tel"
+                id="phone"
+                placeholder="+91 98765 43210"
+                type="tel"
+                {...register('phone')}
+              />
+              {errors.phone ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.phone.message}
+                </Typography>
+              ) : null}
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              autoComplete="tel"
-              id="phone"
-              placeholder="+91 98765 43210"
-              type="tel"
-              {...register('phone')}
-            />
-            {errors.phone ? <p className="text-xs text-danger">{errors.phone.message}</p> : null}
-          </div>
-
-          <p className="text-xs text-foreground-400">At least one of email or phone is required.</p>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="notes">Notes</Label>
-            <TextArea
-              id="notes"
-              placeholder="Any notes about this client..."
-              rows={3}
-              {...register('notes')}
-            />
-            {errors.notes ? <p className="text-xs text-danger">{errors.notes.message}</p> : null}
-          </div>
-
-          {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
-
-          <div className="flex flex-row gap-2 pt-2">
-            <Button
-              isPending={isLoading}
-              type="submit"
+            <Typography
+              color="muted"
+              type="body-xs"
             >
-              {isLoading ? (
-                <>
-                  <Spinner
-                    color="current"
-                    size="sm"
-                  />
-                  Sending invite...
-                </>
-              ) : (
-                'Send Invite'
-              )}
-            </Button>
-            <Button
-              onPress={() => goBack()}
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
-    </PageLayout>
+              Add email or phone
+            </Typography>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="notes">Notes</Label>
+              <TextArea
+                id="notes"
+                placeholder="Any notes about this client..."
+                rows={3}
+                {...register('notes')}
+              />
+              {errors.notes ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.notes.message}
+                </Typography>
+              ) : null}
+            </div>
+
+            {errors.root ? (
+              <Typography
+                className="text-danger"
+                type="body-sm"
+              >
+                {errors.root.message}
+              </Typography>
+            ) : null}
+
+            <div className="flex flex-row gap-2 pt-2">
+              <Button
+                isPending={isLoading}
+                type="submit"
+              >
+                {isLoading ? (
+                  <>
+                    <Spinner
+                      color="current"
+                      size="sm"
+                    />
+                    Sending invite
+                  </>
+                ) : (
+                  'Send invite'
+                )}
+              </Button>
+              <Button
+                onPress={() => goBack()}
+                variant="ghost"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </Page.Content>
+    </Page>
   );
 }

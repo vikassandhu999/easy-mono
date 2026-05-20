@@ -2,7 +2,7 @@ import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
@@ -47,11 +47,18 @@ export default function EditNutritionPlan() {
 
   if (isFetching || !plan) {
     return (
-      <PageLayout title="Edit Nutrition Plan">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit nutrition plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -66,34 +73,38 @@ export default function EditNutritionPlan() {
       await updatePlan({body, id: id!}).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update nutrition plan. Please try again.', form.setError);
+      applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description={plan.name}
-      title="Edit Nutrition Plan"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit nutrition plan</Page.Title>
+          <Page.Description>{plan.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Nutrition plan
         </Button>
-      </div>
-
-      <NutritionPlanForm
-        form={form}
-        isSubmitting={isUpdating}
-        onCancel={goBack}
-        onSubmit={onSubmit}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <NutritionPlanForm
+          form={form}
+          isSubmitting={isUpdating}
+          onCancel={goBack}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }

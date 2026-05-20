@@ -1,11 +1,11 @@
-import {Button, Input, Label, ListBox, Select, Spinner, TextArea} from '@heroui/react';
+import {Button, Input, Label, ListBox, Select, Spinner, TextArea, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft} from 'lucide-react';
 import {Controller, useForm} from 'react-hook-form';
 import {useParams} from 'react-router-dom';
 import {z} from 'zod';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {allowedStatusesFor, type AllowedUpdateStatus, useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
@@ -63,11 +63,18 @@ export default function EditClient() {
 
   if (isFetching || !client) {
     return (
-      <PageLayout title="Edit Client">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit client</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -86,150 +93,191 @@ export default function EditClient() {
       }).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update client.', setError, KNOWN_FIELDS);
+      applyFormErrors(err, "Client wasn't updated. Check the details and try again", setError, KNOWN_FIELDS);
     }
   };
 
   return (
-    <PageLayout title="Edit Client">
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit client</Page.Title>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Client
         </Button>
-      </div>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <form
+          className="flex max-w-lg flex-col gap-4"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="first_name">First name</Label>
+              <Input
+                id="first_name"
+                placeholder="Vikas"
+                {...register('first_name')}
+              />
+              {errors.first_name ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.first_name.message}
+                </Typography>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="last_name">Last name</Label>
+              <Input
+                id="last_name"
+                placeholder="Sandhu"
+                {...register('last_name')}
+              />
+              {errors.last_name ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.last_name.message}
+                </Typography>
+              ) : null}
+            </div>
+          </div>
 
-      <form
-        className="flex max-w-lg flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="first_name">First name</Label>
-            <Input
-              id="first_name"
-              placeholder="Vikas"
-              {...register('first_name')}
-            />
-            {errors.first_name ? <p className="text-xs text-danger">{errors.first_name.message}</p> : null}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                placeholder="+91 98765 43210"
+                type="tel"
+                {...register('phone')}
+              />
+              {errors.phone ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.phone.message}
+                </Typography>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                placeholder="vikas@email.com"
+                type="email"
+                {...register('email')}
+              />
+              {errors.email ? (
+                <Typography
+                  className="text-danger"
+                  type="body-xs"
+                >
+                  {errors.email.message}
+                </Typography>
+              ) : null}
+            </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="last_name">Last name</Label>
-            <Input
-              id="last_name"
-              placeholder="Sandhu"
-              {...register('last_name')}
-            />
-            {errors.last_name ? <p className="text-xs text-danger">{errors.last_name.message}</p> : null}
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              placeholder="+91 98765 43210"
-              type="tel"
-              {...register('phone')}
-            />
-            {errors.phone ? <p className="text-xs text-danger">{errors.phone.message}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder="vikas@email.com"
-              type="email"
-              {...register('email')}
-            />
-            {errors.email ? <p className="text-xs text-danger">{errors.email.message}</p> : null}
-          </div>
-        </div>
-
-        {/*
+          {/*
           Per v2 spec: no dropdown for pending clients — the status is
           locked at Pending until the client accepts the invitation (or the
           coach revokes via the invitation widget). For all other statuses,
           show only the three valid transitions from allowedStatusesFor().
         */}
-        {client.status === 'pending' ? null : (
-          <Controller
-            control={control}
-            name="status"
-            render={({field}) => {
-              const statusOptions = allowedStatusesFor(client.status);
-              return (
-                <Select
-                  onSelectionChange={(key) => field.onChange(key)}
-                  selectedKey={field.value || null}
-                >
-                  <Label>Status</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      {statusOptions.map((value) => (
-                        <ListBox.Item
-                          id={value}
-                          key={value}
-                          textValue={STATUS_LABELS[value]}
-                        >
-                          {STATUS_LABELS[value]}
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
-              );
-            }}
-          />
-        )}
+          {client.status === 'pending' ? null : (
+            <Controller
+              control={control}
+              name="status"
+              render={({field}) => {
+                const statusOptions = allowedStatusesFor(client.status);
+                return (
+                  <Select
+                    onSelectionChange={(key) => field.onChange(key)}
+                    selectedKey={field.value || null}
+                  >
+                    <Label>Status</Label>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        {statusOptions.map((value) => (
+                          <ListBox.Item
+                            id={value}
+                            key={value}
+                            textValue={STATUS_LABELS[value]}
+                          >
+                            {STATUS_LABELS[value]}
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
+                );
+              }}
+            />
+          )}
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="notes">Notes</Label>
-          <TextArea
-            id="notes"
-            placeholder="Any notes about this client..."
-            rows={3}
-            {...register('notes')}
-          />
-        </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="notes">Notes</Label>
+            <TextArea
+              id="notes"
+              placeholder="Any notes about this client..."
+              rows={3}
+              {...register('notes')}
+            />
+          </div>
 
-        {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
+          {errors.root ? (
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              {errors.root.message}
+            </Typography>
+          ) : null}
 
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
-          <Button
-            onPress={goBack}
-            variant="ghost"
-          >
-            Cancel
-          </Button>
-          <Button
-            isPending={isUpdating}
-            type="submit"
-          >
-            {isUpdating ? (
-              <>
-                <Spinner
-                  color="current"
-                  size="sm"
-                />
-                Saving...
-              </>
-            ) : (
-              'Save Changes'
-            )}
-          </Button>
-        </div>
-      </form>
-    </PageLayout>
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              onPress={goBack}
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+            <Button
+              isPending={isUpdating}
+              type="submit"
+            >
+              {isUpdating ? (
+                <>
+                  <Spinner
+                    color="current"
+                    size="sm"
+                  />
+                  Saving changes
+                </>
+              ) : (
+                'Save changes'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Page.Content>
+    </Page>
   );
 }

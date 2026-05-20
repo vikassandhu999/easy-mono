@@ -1,8 +1,8 @@
-import {AlertDialog, Button, Spinner} from '@heroui/react';
+import {AlertDialog, Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useDeleteOfferMutation, useGetOfferQuery, useUpdateOfferMutation} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
@@ -52,7 +52,7 @@ function EditOfferForm({offerId}: {offerId: string}) {
       }).unwrap();
       navigate(ROUTES.STOREFRONT_OFFERS);
     } catch (err) {
-      applyFormErrors(err, 'Failed to update offer. Please try again.', form.setError);
+      applyFormErrors(err, "Offer wasn't updated. Check the details and try again", form.setError);
     }
   };
 
@@ -66,11 +66,14 @@ function EditOfferForm({offerId}: {offerId: string}) {
   };
 
   return (
-    <PageLayout
-      description={offer.name}
-      title="Edit Offer"
-    >
-      <div className="mb-4 flex items-center justify-between">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit offer</Page.Title>
+          <Page.Description>{offer.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar className="flex items-center justify-between">
         <Button
           onPress={() => navigate(ROUTES.STOREFRONT_OFFERS)}
           size="sm"
@@ -97,9 +100,9 @@ function EditOfferForm({offerId}: {offerId: string}) {
                   <AlertDialog.Heading>Delete offer?</AlertDialog.Heading>
                 </AlertDialog.Header>
                 <AlertDialog.Body>
-                  <p>
+                  <Typography>
                     This will permanently delete <strong>{offer.name}</strong>. This action cannot be undone.
-                  </p>
+                  </Typography>
                 </AlertDialog.Body>
                 <AlertDialog.Footer>
                   <Button
@@ -113,24 +116,26 @@ function EditOfferForm({offerId}: {offerId: string}) {
                     onPress={handleDelete}
                     variant="danger"
                   >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
+                    {isDeleting ? 'Deleting' : 'Delete'}
                   </Button>
                 </AlertDialog.Footer>
               </AlertDialog.Dialog>
             </AlertDialog.Container>
           </AlertDialog.Backdrop>
         </AlertDialog>
-      </div>
+      </Page.Toolbar>
 
-      <OfferForm
-        form={form}
-        isSubmitting={isUpdating}
-        onCancel={() => navigate(ROUTES.STOREFRONT_OFFERS)}
-        onSubmit={onSubmit}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <OfferForm
+          form={form}
+          isSubmitting={isUpdating}
+          onCancel={() => navigate(ROUTES.STOREFRONT_OFFERS)}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }
 
@@ -141,18 +146,30 @@ export default function EditOffer() {
 
   if (isFetching || !data) {
     return (
-      <PageLayout title="Edit Offer">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit offer</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError) {
     return (
-      <PageLayout title="Edit Offer">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit offer</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={() => navigate(ROUTES.STOREFRONT_OFFERS)}
             size="sm"
@@ -161,11 +178,18 @@ export default function EditOffer() {
             <ArrowLeft size={16} />
             Offers
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load offer.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Offer couldn't load
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 

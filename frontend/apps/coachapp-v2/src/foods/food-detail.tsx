@@ -1,8 +1,8 @@
-import {AlertDialog, Button, Chip, Spinner} from '@heroui/react';
+import {AlertDialog, Button, Chip, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowLeft, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
@@ -43,31 +43,50 @@ export default function FoodDetail() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Food">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Food</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <PageLayout title="Food">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Food</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBack}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Foods
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load food. It may not exist or you don&apos;t have access.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Food couldn&apos;t load. It may not exist, or you may not have access
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
@@ -79,15 +98,20 @@ export default function FoodDetail() {
   const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 
   return (
-    <PageLayout title="Food">
-      <div className="mb-4 flex items-center gap-2">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Food</Page.Title>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar className="flex items-center gap-2">
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Foods
         </Button>
         {!isSystemFood && (
           <Button
@@ -125,9 +149,9 @@ export default function FoodDetail() {
                     <AlertDialog.Heading>Delete food?</AlertDialog.Heading>
                   </AlertDialog.Header>
                   <AlertDialog.Body>
-                    <p>
+                    <Typography>
                       This will permanently delete <strong>{food.name}</strong>. This action cannot be undone.
-                    </p>
+                    </Typography>
                   </AlertDialog.Body>
                   <AlertDialog.Footer>
                     <Button
@@ -141,7 +165,7 @@ export default function FoodDetail() {
                       onPress={handleDelete}
                       variant="danger"
                     >
-                      {isDeleting ? 'Deleting...' : 'Delete'}
+                      {isDeleting ? 'Deleting' : 'Delete'}
                     </Button>
                   </AlertDialog.Footer>
                 </AlertDialog.Dialog>
@@ -149,140 +173,205 @@ export default function FoodDetail() {
             </AlertDialog.Backdrop>
           </AlertDialog>
         )}
-      </div>
+      </Page.Toolbar>
 
-      <div className="max-w-lg">
-        <div className="flex items-start gap-4 pb-6">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
-            {food.image_url ? (
-              <img
-                alt={food.name}
-                className="size-14 rounded-xl object-cover"
-                src={food.image_url}
-              />
-            ) : (
-              <Apple
-                className="text-foreground-400"
-                size={24}
-              />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold">{food.name}</h2>
-            {(food.category || food.source) && (
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {food.category && (
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                  >
-                    {food.category}
-                  </Chip>
-                )}
-                {food.source && (
-                  <Chip
-                    color="default"
-                    size="sm"
-                    variant="soft"
-                  >
-                    {food.source}
-                  </Chip>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {(knownMacros.length > 0 || unknownMacros.length > 0) && (
-          <section className="border-t border-divider py-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">
-              Nutrition per 100g
-            </h3>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-              {knownMacros.map(([key, value]) => {
-                const meta = MACRO_LABELS[key] as {
-                  label: string;
-                  unit: string;
-                };
-                return (
-                  <div key={key}>
-                    <p className="text-xs text-foreground-400">{meta.label}</p>
-                    <p className="font-medium">
-                      {value}
-                      {meta.unit}
-                    </p>
-                  </div>
-                );
-              })}
-              {unknownMacros.map(([key, value]) => (
-                <div key={key}>
-                  <p className="text-xs text-foreground-400">{key}</p>
-                  <p className="font-medium">{value}</p>
-                </div>
-              ))}
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <div className="max-w-lg">
+          <div className="flex items-start gap-4 pb-6">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-content2">
+              {food.image_url ? (
+                <img
+                  alt={food.name}
+                  className="size-14 rounded-xl object-cover"
+                  src={food.image_url}
+                />
+              ) : (
+                <Apple
+                  className="text-foreground-400"
+                  size={24}
+                />
+              )}
             </div>
-          </section>
-        )}
-
-        {food.serving_sizes.length > 0 && (
-          <section className="border-t border-divider py-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Serving Sizes</h3>
-            <div className="flex flex-col gap-2">
-              {food.serving_sizes.map((serving, i) => (
-                <div
-                  className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
-                  key={i}
-                >
-                  <span className="font-medium">
-                    {serving.amount ?? 1} {serving.unit}
-                  </span>
-                  {serving.weight_g != null && serving.weight_g > 0 && (
-                    <span className="text-foreground-500">{serving.weight_g}g</span>
+            <div className="min-w-0 flex-1">
+              <Typography type="h5">{food.name}</Typography>
+              {(food.category || food.source) && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {food.category && (
+                    <Chip
+                      size="sm"
+                      variant="soft"
+                    >
+                      {food.category}
+                    </Chip>
+                  )}
+                  {food.source && (
+                    <Chip
+                      color="default"
+                      size="sm"
+                      variant="soft"
+                    >
+                      {food.source}
+                    </Chip>
                   )}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {food.tags.length > 0 && (
-          <section className="border-t border-divider py-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Tags</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {food.tags.map((tag) => (
-                <Chip
-                  key={tag}
-                  size="sm"
-                  variant="soft"
-                >
-                  {tag}
-                </Chip>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {food.notes && (
-          <section className="border-t border-divider py-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Notes</h3>
-            <p className="whitespace-pre-wrap text-sm">{food.notes}</p>
-          </section>
-        )}
-
-        <section className="border-t border-divider py-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-400">Details</h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-foreground-400">Created</p>
-              <p>{formatDate(food.inserted_at)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-foreground-400">Last updated</p>
-              <p>{formatDate(food.updated_at)}</p>
+              )}
             </div>
           </div>
-        </section>
-      </div>
-    </PageLayout>
+
+          {(knownMacros.length > 0 || unknownMacros.length > 0) && (
+            <section className="border-t border-divider py-4">
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Nutrition for 100 g
+              </Typography>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                {knownMacros.map(([key, value]) => {
+                  const meta = MACRO_LABELS[key] as {
+                    label: string;
+                    unit: string;
+                  };
+                  return (
+                    <div key={key}>
+                      <Typography
+                        color="muted"
+                        type="body-xs"
+                      >
+                        {meta.label}
+                      </Typography>
+                      <Typography weight="medium">
+                        {value}
+                        {meta.unit}
+                      </Typography>
+                    </div>
+                  );
+                })}
+                {unknownMacros.map(([key, value]) => (
+                  <div key={key}>
+                    <Typography
+                      color="muted"
+                      type="body-xs"
+                    >
+                      {key}
+                    </Typography>
+                    <Typography weight="medium">{value}</Typography>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {food.serving_sizes.length > 0 && (
+            <section className="border-t border-divider py-4">
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Serving sizes
+              </Typography>
+              <div className="flex flex-col gap-2">
+                {food.serving_sizes.map((serving, i) => (
+                  <div
+                    className="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
+                    key={i}
+                  >
+                    <Typography weight="medium">
+                      {serving.amount ?? 1} {serving.unit}
+                    </Typography>
+                    {serving.weight_g != null && serving.weight_g > 0 && (
+                      <Typography
+                        color="muted"
+                        type="body-sm"
+                      >
+                        {serving.weight_g}g
+                      </Typography>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {food.tags.length > 0 && (
+            <section className="border-t border-divider py-4">
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Tags
+              </Typography>
+              <div className="flex flex-wrap gap-1.5">
+                {food.tags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    size="sm"
+                    variant="soft"
+                  >
+                    {tag}
+                  </Chip>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {food.notes && (
+            <section className="border-t border-divider py-4">
+              <Typography
+                className="mb-2"
+                color="muted"
+                type="body-xs"
+                weight="semibold"
+              >
+                Notes
+              </Typography>
+              <Typography
+                className="whitespace-pre-wrap"
+                type="body-sm"
+              >
+                {food.notes}
+              </Typography>
+            </section>
+          )}
+
+          <section className="border-t border-divider py-4">
+            <Typography
+              className="mb-2"
+              color="muted"
+              type="body-xs"
+              weight="semibold"
+            >
+              Details
+            </Typography>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Created
+                </Typography>
+                <Typography>{formatDate(food.inserted_at)}</Typography>
+              </div>
+              <div>
+                <Typography
+                  color="muted"
+                  type="body-xs"
+                >
+                  Last updated
+                </Typography>
+                <Typography>{formatDate(food.updated_at)}</Typography>
+              </div>
+            </div>
+          </section>
+        </div>
+      </Page.Content>
+    </Page>
   );
 }

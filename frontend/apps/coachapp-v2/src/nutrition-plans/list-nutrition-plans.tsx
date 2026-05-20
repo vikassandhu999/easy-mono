@@ -39,6 +39,7 @@ export default function ListNutritionPlans() {
         }
       >
         <Button
+          className={'md:hidden' /* Hide on small screens and up */}
           onPress={goBack}
           size="sm"
           variant="ghost"

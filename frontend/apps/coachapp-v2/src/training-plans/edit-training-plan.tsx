@@ -1,8 +1,8 @@
-import {Button, Spinner} from '@heroui/react';
+import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {applyFormErrors} from '@/api/shared';
 import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
@@ -43,35 +43,39 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
       await updatePlan({body, id: planId}).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update training plan. Please try again.', form.setError);
+      applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description={plan.name}
-      title="Edit Training Plan"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit training plan</Page.Title>
+          <Page.Description>{plan.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Training plan
         </Button>
-      </div>
-
-      <TrainingPlanForm
-        form={form}
-        isSubmitting={isUpdating}
-        onCancel={goBack}
-        onSubmit={onSubmit}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <TrainingPlanForm
+          form={form}
+          isSubmitting={isUpdating}
+          onCancel={goBack}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }
 
@@ -83,31 +87,50 @@ export default function EditTrainingPlan() {
 
   if (isFetching) {
     return (
-      <PageLayout title="Edit Training Plan">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit training plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError || !data) {
     return (
-      <PageLayout title="Edit Training Plan">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit training plan</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Training plan
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load training plan.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Training plan couldn't load
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 

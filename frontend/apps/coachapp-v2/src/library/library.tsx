@@ -1,6 +1,7 @@
+import {Typography} from '@heroui/react';
 import {Link} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 
 interface LibrarySection {
@@ -39,22 +40,37 @@ const SECTIONS: LibrarySection[] = [
 
 export default function Library() {
   return (
-    <PageLayout
-      description="Your exercises, foods, recipes, and plans"
-      title="Library"
-    >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((section) => (
-          <Link
-            className="flex min-h-11 flex-col gap-1 rounded-xl border border-divider bg-content1 p-4 transition-colors hover:bg-content2 active:bg-content2"
-            key={section.path}
-            to={section.path}
-          >
-            <span className="text-sm font-semibold">{section.label}</span>
-            <span className="text-xs text-foreground-500">{section.description}</span>
-          </Link>
-        ))}
-      </div>
-    </PageLayout>
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Library</Page.Title>
+          <Page.Description>Your exercises, foods, recipes, and plans</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {SECTIONS.map((section) => (
+            <Link
+              className="flex min-h-11 flex-col gap-1 rounded-xl border border-divider bg-content1 p-4 transition-colors hover:bg-content2 active:bg-content2"
+              key={section.path}
+              to={section.path}
+            >
+              <Typography
+                type="body-sm"
+                weight="semibold"
+              >
+                {section.label}
+              </Typography>
+              <Typography
+                color="muted"
+                type="body-xs"
+              >
+                {section.description}
+              </Typography>
+            </Link>
+          ))}
+        </div>
+      </Page.Content>
+    </Page>
   );
 }

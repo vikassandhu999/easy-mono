@@ -1,4 +1,4 @@
-import {Avatar, Chip, Description, Label, ListBox, Separator} from '@heroui/react';
+import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {MessageCircle} from 'lucide-react';
 

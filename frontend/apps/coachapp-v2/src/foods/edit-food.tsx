@@ -1,22 +1,22 @@
-import {Button, Spinner} from '@heroui/react';
+import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
 
 import type {ServingSize} from '@/api/shared';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
-import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/components/food-form';
+import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
 
 function buildMacros(data: FoodFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -41,12 +41,12 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
       category: food.category ?? '',
       source: food.source ?? '',
       notes: food.notes ?? '',
-      calories_per_100g: macros.calories_per_100g ?? '',
-      protein_g: macros.protein_g ?? '',
-      carbs_g: macros.carbs_g ?? '',
-      fats_g: macros.fats_g ?? '',
-      fiber_g: macros.fiber_g ?? '',
-      sugar_g: macros.sugar_g ?? '',
+      calories_per_100g: macros.calories_per_100g,
+      protein_g: macros.protein_g,
+      carbs_g: macros.carbs_g,
+      fats_g: macros.fats_g,
+      fiber_g: macros.fiber_g,
+      sugar_g: macros.sugar_g,
     },
   });
 
@@ -64,37 +64,41 @@ function EditFoodForm({backPath, foodId}: {backPath: string; foodId: string}) {
       await updateFood({body, id: foodId}).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update food. Please try again.', form.setError);
+      applyFormErrors(err, "Food wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description={food.name}
-      title="Edit Food"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit food</Page.Title>
+          <Page.Description>{food.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Food
         </Button>
-      </div>
-
-      <FoodForm
-        form={form}
-        isSubmitting={isUpdating}
-        onCancel={goBack}
-        onServingSizesChange={setServingSizes}
-        onSubmit={onSubmit}
-        servingSizes={servingSizes}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <FoodForm
+          form={form}
+          isSubmitting={isUpdating}
+          onCancel={goBack}
+          onServingSizesChange={setServingSizes}
+          onSubmit={onSubmit}
+          servingSizes={servingSizes}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }
 
@@ -106,31 +110,50 @@ export default function EditFood() {
 
   if (isFetching || !data) {
     return (
-      <PageLayout title="Edit Food">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit food</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError) {
     return (
-      <PageLayout title="Edit Food">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit food</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Food
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load food.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Food couldn't load
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 

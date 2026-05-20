@@ -1,4 +1,4 @@
-import {Button, Spinner} from '@heroui/react';
+import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useParams} from 'react-router-dom';
@@ -6,7 +6,7 @@ import {useParams} from 'react-router-dom';
 import type {RecipeIngredientInput} from '@/api/recipes';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
@@ -100,37 +100,41 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
       await updateRecipe({body, id: recipeId}).unwrap();
       goBack();
     } catch (err) {
-      applyFormErrors(err, 'Failed to update recipe. Please try again.', form.setError);
+      applyFormErrors(err, "Recipe wasn't updated. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description={recipe.name}
-      title="Edit Recipe"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Edit recipe</Page.Title>
+          <Page.Description>{recipe.name}</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Back
+          Recipe
         </Button>
-      </div>
-
-      <RecipeForm
-        form={form}
-        ingredients={ingredients}
-        isSubmitting={isUpdating}
-        onCancel={goBack}
-        onIngredientsChange={setIngredients}
-        onSubmit={onSubmit}
-        submitLabel="Save Changes"
-        submittingLabel="Saving..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <RecipeForm
+          form={form}
+          ingredients={ingredients}
+          isSubmitting={isUpdating}
+          onCancel={goBack}
+          onIngredientsChange={setIngredients}
+          onSubmit={onSubmit}
+          submitLabel="Save changes"
+          submittingLabel="Saving changes"
+        />
+      </Page.Content>
+    </Page>
   );
 }
 
@@ -142,31 +146,50 @@ export default function EditRecipe() {
 
   if (isFetching || !data) {
     return (
-      <PageLayout title="Edit Recipe">
-        <div className="flex items-center justify-center py-20">
-          <Spinner color="accent" />
-        </div>
-      </PageLayout>
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit recipe</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-20">
+            <Spinner color="accent" />
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 
   if (isError) {
     return (
-      <PageLayout title="Edit Recipe">
-        <div className="mb-4">
+      <Page>
+        <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+          <Page.TitleGroup>
+            <Page.Title>Edit recipe</Page.Title>
+          </Page.TitleGroup>
+        </Page.Header>
+        <Page.Toolbar>
           <Button
             onPress={goBackOuter}
             size="sm"
             variant="ghost"
           >
             <ArrowLeft size={16} />
-            Back
+            Recipe
           </Button>
-        </div>
-        <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center text-sm text-danger">
-          Failed to load recipe.
-        </div>
-      </PageLayout>
+        </Page.Toolbar>
+        <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+          <div className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-center">
+            <Typography
+              className="text-danger"
+              type="body-sm"
+            >
+              Recipe couldn't load
+            </Typography>
+          </div>
+        </Page.Content>
+      </Page>
     );
   }
 

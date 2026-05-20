@@ -2,7 +2,7 @@ import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateNutritionPlanMutation} from '@/api/nutritionPlans';
@@ -42,34 +42,38 @@ export default function CreateNutritionPlan() {
       const result = await createPlan(body).unwrap();
       navigate(`/library/nutrition-plans/${result.data.id}`, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create nutrition plan. Please try again.', form.setError);
+      applyFormErrors(err, "Nutrition plan wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Set up the basics, then build out meals on the next screen."
-      title="Create Nutrition Plan"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Create nutrition plan</Page.Title>
+          <Page.Description>Set plan goals now, then add meals next</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
           variant="ghost"
         >
           <ArrowLeft size={16} />
-          Nutrition Plans
+          Nutrition plans
         </Button>
-      </div>
-
-      <NutritionPlanForm
-        form={form}
-        isSubmitting={isLoading}
-        onCancel={() => navigate(ROUTES.NUTRITION_PLANS)}
-        onSubmit={onSubmit}
-        submitLabel="Create Plan"
-        submittingLabel="Creating..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <NutritionPlanForm
+          form={form}
+          isSubmitting={isLoading}
+          onCancel={() => navigate(ROUTES.NUTRITION_PLANS)}
+          onSubmit={onSubmit}
+          submitLabel="Create plan"
+          submittingLabel="Creating plan"
+        />
+      </Page.Content>
+    </Page>
   );
 }

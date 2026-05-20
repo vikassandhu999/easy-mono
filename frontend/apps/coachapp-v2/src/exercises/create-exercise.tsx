@@ -3,7 +3,7 @@ import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import PageLayout from '@/@components/page-layout';
+import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
@@ -39,16 +39,19 @@ export default function CreateExercise() {
       const result = await createExercise(body).unwrap();
       navigate(`/library/exercises/${result.data.id}`, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to create exercise. Please try again.', form.setError);
+      applyFormErrors(err, "Exercise wasn't created. Check the details and try again", form.setError);
     }
   };
 
   return (
-    <PageLayout
-      description="Add a new exercise to your library."
-      title="Create Exercise"
-    >
-      <div className="mb-4">
+    <Page>
+      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+        <Page.TitleGroup>
+          <Page.Title>Create exercise</Page.Title>
+          <Page.Description>Add muscles, equipment, instructions, and images</Page.Description>
+        </Page.TitleGroup>
+      </Page.Header>
+      <Page.Toolbar>
         <Button
           onPress={goBack}
           size="sm"
@@ -57,20 +60,21 @@ export default function CreateExercise() {
           <ArrowLeft size={16} />
           Exercises
         </Button>
-      </div>
-
-      <ExerciseForm
-        equipment={equipmentData?.data ?? []}
-        form={form}
-        images={images}
-        isSubmitting={isLoading}
-        muscles={musclesData?.data ?? []}
-        onCancel={() => navigate(ROUTES.EXERCISES)}
-        onImagesChange={setImages}
-        onSubmit={onSubmit}
-        submitLabel="Create Exercise"
-        submittingLabel="Creating..."
-      />
-    </PageLayout>
+      </Page.Toolbar>
+      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
+        <ExerciseForm
+          equipment={equipmentData?.data ?? []}
+          form={form}
+          images={images}
+          isSubmitting={isLoading}
+          muscles={musclesData?.data ?? []}
+          onCancel={() => navigate(ROUTES.EXERCISES)}
+          onImagesChange={setImages}
+          onSubmit={onSubmit}
+          submitLabel="Create exercise"
+          submittingLabel="Creating exercise"
+        />
+      </Page.Content>
+    </Page>
   );
 }

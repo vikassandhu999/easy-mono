@@ -7,13 +7,9 @@ import {
   FieldError,
   Fieldset,
   Form,
-  Input,
   Label,
   ListBox,
-  Select,
   Spinner,
-  TextArea,
-  TextField,
   Typography,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -21,6 +17,7 @@ import {ImageOff, Plus, X} from 'lucide-react';
 import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 import {type Equipment, type ExerciseForce, type ExerciseMechanics, type Muscle} from '@/api/exercises';
 
@@ -135,65 +132,31 @@ export default function ExerciseForm({
         <Description>Name the exercise and add coaching instructions</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Use the name coaches and clients will recognize"
+            fullWidth
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                <Description>Use the name coaches and clients will recognize</Description>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Summarize what this exercise is for"
+            fullWidth
+            label="Description (optional)"
             name="description"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.description}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Description (optional)</Label>
-                <Description>Summarize what this exercise is for</Description>
-                {errors.description && <FieldError>{errors.description.message}</FieldError>}
-                <TextArea rows={2} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 2}}
           />
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Add cues, setup notes, and execution steps"
+            fullWidth
+            label="Instructions (optional)"
             name="instructions"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.instructions}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Instructions (optional)</Label>
-                <Description>Add cues, setup notes, and execution steps</Description>
-                {errors.instructions && <FieldError>{errors.instructions.message}</FieldError>}
-                <TextArea rows={3} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 3}}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -203,71 +166,39 @@ export default function ExerciseForm({
         <Description>Choose how this exercise should be categorized</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormSelectField
             control={control}
+            label="Mechanics (optional)"
             name="mechanics"
-            render={({field}) => (
-              <Select
-                isInvalid={!!errors.mechanics}
-                onSelectionChange={(key) => field.onChange(key ?? '')}
-                selectedKey={field.value || null}
+          >
+            {MECHANICS_OPTIONS.map((option) => (
+              <ListBox.Item
+                id={option.value}
+                key={option.value}
+                textValue={option.label}
               >
-                <Label>Mechanics (optional)</Label>
-                {errors.mechanics && <FieldError>{errors.mechanics.message}</FieldError>}
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {MECHANICS_OPTIONS.map((option) => (
-                      <ListBox.Item
-                        id={option.value}
-                        key={option.value}
-                        textValue={option.label}
-                      >
-                        {option.label}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            )}
-          />
+                {option.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </FormSelectField>
 
-          <Controller
+          <FormSelectField
             control={control}
+            label="Force (optional)"
             name="force"
-            render={({field}) => (
-              <Select
-                isInvalid={!!errors.force}
-                onSelectionChange={(key) => field.onChange(key ?? '')}
-                selectedKey={field.value || null}
+          >
+            {FORCE_OPTIONS.map((option) => (
+              <ListBox.Item
+                id={option.value}
+                key={option.value}
+                textValue={option.label}
               >
-                <Label>Force (optional)</Label>
-                {errors.force && <FieldError>{errors.force.message}</FieldError>}
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {FORCE_OPTIONS.map((option) => (
-                      <ListBox.Item
-                        id={option.value}
-                        key={option.value}
-                        textValue={option.label}
-                      >
-                        {option.label}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            )}
-          />
+                {option.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </FormSelectField>
         </Fieldset.Group>
       </Fieldset>
 
@@ -385,30 +316,18 @@ export default function ExerciseForm({
 
           {showImageInput ? (
             <Fieldset>
-              <Controller
+              <FormTextField
                 control={control}
+                description="Paste a full URL that starts with http:// or https://"
+                fullWidth
+                label="Image URL (required)"
                 name="image_url"
-                render={({field}) => (
-                  <TextField
-                    fullWidth
-                    isInvalid={!!errors.image_url}
-                    name={field.name}
-                    onBlur={field.onBlur}
-                    onChange={(value) => {
-                      field.onChange(value);
-                      if (errors.image_url) {
-                        form.clearErrors('image_url');
-                      }
-                    }}
-                    type="url"
-                    value={field.value ?? ''}
-                  >
-                    <Label>Image URL (required)</Label>
-                    <Description>Paste a full URL that starts with http:// or https://</Description>
-                    {errors.image_url && <FieldError>{errors.image_url.message}</FieldError>}
-                    <Input />
-                  </TextField>
-                )}
+                onValueChange={() => {
+                  if (errors.image_url) {
+                    form.clearErrors('image_url');
+                  }
+                }}
+                type="url"
               />
               <Fieldset.Actions>
                 <Button

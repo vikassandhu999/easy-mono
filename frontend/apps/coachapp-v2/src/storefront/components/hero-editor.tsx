@@ -1,14 +1,12 @@
-import {Description, FieldError, Fieldset, Input, Label, TextArea, TextField, Typography} from '@heroui/react';
+import {Description, Fieldset, Typography} from '@heroui/react';
 import type {UseFormReturn} from 'react-hook-form';
-import {Controller, useWatch} from 'react-hook-form';
+import {useWatch} from 'react-hook-form';
 
+import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
-  const {
-    control,
-    formState: {errors},
-  } = form;
+  const {control} = form;
 
   const photoUrl = useWatch({control, name: 'photo_url'});
   const coverUrl = useWatch({control, name: 'cover_image_url'});
@@ -35,24 +33,12 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
                 No photo
               </div>
             )}
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              label="Photo URL (optional)"
               name="photo_url"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.photo_url}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  type="url"
-                  value={field.value ?? ''}
-                >
-                  <Label>Photo URL (optional)</Label>
-                  {errors.photo_url && <FieldError>{errors.photo_url.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
+              type="url"
             />
           </div>
 
@@ -71,149 +57,66 @@ export default function HeroEditor({form}: {form: UseFormReturn<EditorFormValues
                 No cover
               </div>
             )}
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              label="Cover image URL (optional)"
               name="cover_image_url"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.cover_image_url}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  type="url"
-                  value={field.value ?? ''}
-                >
-                  <Label>Cover image URL (optional)</Label>
-                  {errors.cover_image_url && <FieldError>{errors.cover_image_url.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
+              type="url"
             />
           </div>
         </Fieldset.Group>
 
-        <Controller
+        <FormTextField
           control={control}
+          fullWidth
+          isRequired
+          label="Display name (required)"
           name="display_name"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!errors.display_name}
-              isRequired
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              value={field.value}
-            >
-              <Label>Display name (required)</Label>
-              {errors.display_name && <FieldError>{errors.display_name.message}</FieldError>}
-              <Input />
-            </TextField>
-          )}
         />
 
-        <Controller
+        <FormTextField
           control={control}
+          description="A short statement about what you help clients achieve"
+          fullWidth
+          label="Headline (optional)"
           name="headline"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!errors.headline}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              value={field.value ?? ''}
-            >
-              <Label>Headline (optional)</Label>
-              <Description>A short statement about what you help clients achieve</Description>
-              {errors.headline && <FieldError>{errors.headline.message}</FieldError>}
-              <Input />
-            </TextField>
-          )}
         />
 
-        <Controller
+        <FormTextAreaField
           control={control}
+          description="Use 2–3 sentences about who you are and what you do"
+          fullWidth
+          label="Bio (optional)"
           name="bio"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!errors.bio}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              value={field.value ?? ''}
-            >
-              <Label>Bio (optional)</Label>
-              <Description>Use 2–3 sentences about who you are and what you do</Description>
-              {errors.bio && <FieldError>{errors.bio.message}</FieldError>}
-              <TextArea rows={3} />
-            </TextField>
-          )}
+          textAreaProps={{rows: 3}}
         />
       </Fieldset.Group>
 
       <Fieldset>
         <Fieldset.Legend>Social links</Fieldset.Legend>
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="Instagram (optional)"
             name="instagram"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.instagram}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="url"
-                value={field.value ?? ''}
-              >
-                <Label>Instagram (optional)</Label>
-                {errors.instagram && <FieldError>{errors.instagram.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="url"
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="YouTube (optional)"
             name="youtube"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.youtube}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="url"
-                value={field.value ?? ''}
-              >
-                <Label>YouTube (optional)</Label>
-                {errors.youtube && <FieldError>{errors.youtube.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="url"
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="WhatsApp (optional)"
             name="whatsapp"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.whatsapp}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>WhatsApp (optional)</Label>
-                {errors.whatsapp && <FieldError>{errors.whatsapp.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
         </Fieldset.Group>
       </Fieldset>

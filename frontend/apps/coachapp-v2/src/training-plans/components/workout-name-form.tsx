@@ -1,9 +1,10 @@
-import {Button, ErrorMessage, FieldError, Form, Input, Label, TextField} from '@heroui/react';
+import {Button, ErrorMessage, Form} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus} from 'lucide-react';
 import {useId} from 'react';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
+import {FormTextField} from '@/@components/form-fields';
 
 import {applyFormErrors} from '@/api/shared';
 
@@ -65,31 +66,20 @@ export default function WorkoutNameForm({
       className="flex flex-col gap-2"
       onSubmit={handleFormSubmit}
     >
-      <Controller
+      <FormTextField
         control={control}
+        fullWidth
+        inputProps={{
+          id: inputId,
+          onKeyDown: (event) => {
+            if (event.key === 'Escape' && !isSubmitting) {
+              onCancel();
+            }
+          },
+          placeholder,
+        }}
+        label={label}
         name="name"
-        render={({field}) => (
-          <TextField
-            fullWidth
-            isInvalid={!!errors.name}
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={field.onChange}
-            value={field.value}
-          >
-            <Label>{label}</Label>
-            {errors.name && <FieldError>{errors.name.message}</FieldError>}
-            <Input
-              id={inputId}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape' && !isSubmitting) {
-                  onCancel();
-                }
-              }}
-              placeholder={placeholder}
-            />
-          </TextField>
-        )}
       />
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}

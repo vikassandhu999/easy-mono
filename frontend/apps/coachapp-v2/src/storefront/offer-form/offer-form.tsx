@@ -1,24 +1,9 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  ListBox,
-  Select,
-  Spinner,
-  Switch,
-  TextArea,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, ListBox, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus, X} from 'lucide-react';
-import {Controller, useFieldArray, useForm} from 'react-hook-form';
+import {useFieldArray, useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormSelectField, FormSwitchField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 const offerFormSchema = z.object({
   cta_text: z.string().optional(),
@@ -100,119 +85,56 @@ export default function OfferForm({
         <Description>Describe what clients can buy from your storefront</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Use a clear program or service name"
+            fullWidth
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                <Description>Use a clear program or service name</Description>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormSelectField
             control={control}
+            label="Type (optional)"
             name="type"
-            render={({field}) => (
-              <Select
-                isInvalid={!!errors.type}
-                onSelectionChange={(key) => field.onChange(key || undefined)}
-                selectedKey={field.value || null}
+          >
+            {OFFER_TYPES.map((option) => (
+              <ListBox.Item
+                id={option.value}
+                key={option.value}
+                textValue={option.label}
               >
-                <Label>Type (optional)</Label>
-                {errors.type && <FieldError>{errors.type.message}</FieldError>}
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {OFFER_TYPES.map((option) => (
-                      <ListBox.Item
-                        id={option.value}
-                        key={option.value}
-                        textValue={option.label}
-                      >
-                        {option.label}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            )}
-          />
+                {option.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </FormSelectField>
 
           <Fieldset.Group>
-            <Controller
+            <FormTextField
               control={control}
+              description="Example: 8 weeks"
+              fullWidth
+              label="Duration (optional)"
               name="duration_text"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.duration_text}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Duration (optional)</Label>
-                  <Description>Example: 8 weeks</Description>
-                  {errors.duration_text && <FieldError>{errors.duration_text.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
-            <Controller
+            <FormTextField
               control={control}
+              description="Example: ₹4,999"
+              fullWidth
+              label="Price display (optional)"
               name="price_display"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.price_display}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Price display (optional)</Label>
-                  <Description>Example: ₹4,999</Description>
-                  {errors.price_display && <FieldError>{errors.price_display.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
           </Fieldset.Group>
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Explain who it is for and what clients get"
+            fullWidth
+            label="Description (optional)"
             name="description"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.description}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Description (optional)</Label>
-                <Description>Explain who it is for and what clients get</Description>
-                {errors.description && <FieldError>{errors.description.message}</FieldError>}
-                <TextArea rows={3} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 3}}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -224,25 +146,11 @@ export default function OfferForm({
         <Fieldset.Group>
           {fields.map((field, index) => (
             <Fieldset.Group key={field.id}>
-              <Controller
+              <FormTextField
                 control={control}
+                fullWidth
+                label={`Feature ${index + 1}`}
                 name={`features.${index}.value`}
-                render={({field: featureField}) => (
-                  <TextField
-                    fullWidth
-                    isInvalid={!!errors.features?.[index]?.value}
-                    name={featureField.name}
-                    onBlur={featureField.onBlur}
-                    onChange={featureField.onChange}
-                    value={featureField.value}
-                  >
-                    <Label>Feature {index + 1}</Label>
-                    {errors.features?.[index]?.value && (
-                      <FieldError>{errors.features[index]?.value?.message}</FieldError>
-                    )}
-                    <Input />
-                  </TextField>
-                )}
               />
               <Fieldset.Actions>
                 <Button
@@ -271,43 +179,18 @@ export default function OfferForm({
       <Fieldset>
         <Fieldset.Legend>Call to action</Fieldset.Legend>
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Example: Get started"
+            fullWidth
+            label="Button text (optional)"
             name="cta_text"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.cta_text}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Button text (optional)</Label>
-                <Description>Example: Get started</Description>
-                {errors.cta_text && <FieldError>{errors.cta_text.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormSwitchField
             control={control}
+            label={<Typography type="body-sm">Feature this offer</Typography>}
             name="is_featured"
-            render={({field}) => (
-              <Switch
-                isSelected={field.value}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-              >
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content>
-                  <Typography type="body-sm">Feature this offer</Typography>
-                </Switch.Content>
-              </Switch>
-            )}
           />
         </Fieldset.Group>
       </Fieldset>

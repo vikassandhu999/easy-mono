@@ -1,8 +1,9 @@
-import {Button, InputOTP, Label, Link, REGEXP_ONLY_DIGITS, Spinner, toast} from '@heroui/react';
+import {Button, Link, Spinner, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {FormOtpField} from '@/@components/form-otp-field';
 
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation, useSendOtpMutation} from '@/api/auth';
@@ -109,36 +110,13 @@ export default function VerifyLoginOtp() {
         className="flex flex-col gap-4"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <div className="flex flex-col gap-2">
-          <Label>Verification code</Label>
-          <Controller
-            control={control}
-            name="otp"
-            render={({field}) => (
-              <InputOTP
-                autoFocus
-                isInvalid={!!errors.otp || !!errors.root}
-                maxLength={6}
-                onChange={field.onChange}
-                pattern={REGEXP_ONLY_DIGITS}
-                value={field.value}
-              >
-                <InputOTP.Group>
-                  <InputOTP.Slot index={0} />
-                  <InputOTP.Slot index={1} />
-                  <InputOTP.Slot index={2} />
-                </InputOTP.Group>
-                <InputOTP.Separator />
-                <InputOTP.Group>
-                  <InputOTP.Slot index={3} />
-                  <InputOTP.Slot index={4} />
-                  <InputOTP.Slot index={5} />
-                </InputOTP.Group>
-              </InputOTP>
-            )}
-          />
-          {errors.otp ? <p className="text-xs text-danger">{errors.otp.message}</p> : null}
-        </div>
+        <FormOtpField
+          autoFocus
+          control={control}
+          label="Verification code"
+          name="otp"
+        />
+        {errors.otp ? <p className="text-xs text-danger">{errors.otp.message}</p> : null}
 
         {errors.root ? <p className="text-sm text-danger">{errors.root.message}</p> : null}
 

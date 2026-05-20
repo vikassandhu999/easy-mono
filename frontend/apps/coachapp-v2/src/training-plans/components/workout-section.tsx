@@ -1,23 +1,13 @@
 import {formatUsedOnDays, getWorkoutUsedOnDays} from '@easy/utils';
-import {
-  AlertDialog,
-  Button,
-  FieldError,
-  Form,
-  Input,
-  Label,
-  Popover,
-  TextField,
-  Typography,
-  toast,
-} from '@heroui/react';
+import {AlertDialog, Button, Form, Popover, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {MoreHorizontal, Plus} from 'lucide-react';
 import type {Ref} from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
+import {FormTextField} from '@/@components/form-fields';
 import type {Exercise} from '@/api/exercises';
 import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
 import {
@@ -584,41 +574,30 @@ function WorkoutTextForm({
       className="flex min-w-0 flex-1 flex-col gap-1"
       onSubmit={handleSubmit}
     >
-      <Controller
+      <FormTextField
+        aria-label={ariaLabel}
+        className="max-w-[240px]"
         control={form.control}
+        inputProps={{
+          onKeyDown: (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+            if (event.key === 'Escape' && !isSubmitting) {
+              onCancel();
+            }
+          },
+          placeholder,
+          ref: (node) => {
+            node?.focus();
+          },
+        }}
+        label={<span className="sr-only">{ariaLabel}</span>}
         name="value"
-        render={({field}) => (
-          <TextField
-            aria-label={ariaLabel}
-            className="max-w-[240px]"
-            isInvalid={!!form.formState.errors.value}
-            name={field.name}
-            onBlur={() => {
-              field.onBlur();
-              handleSubmit().catch(() => undefined);
-            }}
-            onChange={field.onChange}
-            value={field.value}
-          >
-            <Label className="sr-only">{ariaLabel}</Label>
-            {form.formState.errors.value && <FieldError>{form.formState.errors.value.message}</FieldError>}
-            <Input
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                }
-                if (event.key === 'Escape' && !isSubmitting) {
-                  onCancel();
-                }
-              }}
-              placeholder={placeholder}
-              ref={(node) => {
-                node?.focus();
-              }}
-            />
-          </TextField>
-        )}
+        onFieldBlur={() => {
+          handleSubmit().catch(() => undefined);
+        }}
       />
     </Form>
   );

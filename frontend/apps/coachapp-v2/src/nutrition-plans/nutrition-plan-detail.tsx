@@ -1,16 +1,4 @@
-import {
-  AlertDialog,
-  Button,
-  Chip,
-  FieldError,
-  Form,
-  Input,
-  Label,
-  Spinner,
-  TextField,
-  Typography,
-  toast,
-} from '@heroui/react';
+import {AlertDialog, Button, Chip, Form, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
@@ -20,6 +8,7 @@ import {z} from 'zod';
 import ClientPicker from '@/@components/client-picker';
 import ClientPlanBanner from '@/@components/client-plan-banner';
 import CopyMenu from '@/@components/copy-menu';
+import {FormTextField} from '@/@components/form-fields';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -97,23 +86,12 @@ function AddMealForm({
       className="flex items-end gap-2"
       onSubmit={form.handleSubmit(onSubmit)}
     >
-      <Controller
+      <FormTextField
+        className="flex-1"
         control={form.control}
+        inputProps={{placeholder: 'Breakfast or snack 1'}}
+        label="Meal name"
         name="name"
-        render={({field}) => (
-          <TextField
-            className="flex-1"
-            isInvalid={!!form.formState.errors.name}
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={field.onChange}
-            value={field.value}
-          >
-            <Label>Meal name</Label>
-            {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
-            <Input placeholder="Breakfast or snack 1" />
-          </TextField>
-        )}
       />
       <Button
         isPending={isSubmitting}

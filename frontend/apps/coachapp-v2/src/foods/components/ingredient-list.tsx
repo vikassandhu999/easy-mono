@@ -1,9 +1,10 @@
-import {Button, FieldError, Form, Input, Label, NumberField, TextField, Typography} from '@heroui/react';
+import {Button, Form, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
 import type {Food} from '@/api/foods';
 import type {ServingSize} from '@/api/shared';
@@ -88,78 +89,30 @@ function IngredientFieldsForm({
 
   return (
     <Form className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-      <Controller
+      <FormNumberField
         control={form.control}
+        fullWidth
+        label="Amount"
+        minValue={0}
         name="amount"
-        render={({field}) => (
-          <NumberField
-            fullWidth
-            isInvalid={!!form.formState.errors.amount}
-            minValue={0}
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={(value) => {
-              const nextValue = Number.isNaN(value) ? undefined : value;
-              field.onChange(nextValue);
-              onChange('amount', nextValue ?? '');
-            }}
-            step={0.1}
-            value={field.value}
-          >
-            <Label>Amount</Label>
-            {form.formState.errors.amount && <FieldError>{form.formState.errors.amount.message}</FieldError>}
-            <NumberField.Group>
-              <NumberField.Input />
-            </NumberField.Group>
-          </NumberField>
-        )}
+        onValueChange={(value) => onChange('amount', value ?? '')}
+        step={0.1}
       />
-      <Controller
+      <FormTextField
         control={form.control}
+        fullWidth
+        label="Unit"
         name="unit"
-        render={({field}) => (
-          <TextField
-            fullWidth
-            isInvalid={!!form.formState.errors.unit}
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={(value) => {
-              field.onChange(value);
-              onChange('unit', value);
-            }}
-            value={field.value ?? ''}
-          >
-            <Label>Unit</Label>
-            {form.formState.errors.unit && <FieldError>{form.formState.errors.unit.message}</FieldError>}
-            <Input />
-          </TextField>
-        )}
+        onValueChange={(value) => onChange('unit', value)}
       />
-      <Controller
+      <FormNumberField
         control={form.control}
+        fullWidth
+        label="Weight, grams"
+        minValue={0}
         name="weight_g"
-        render={({field}) => (
-          <NumberField
-            fullWidth
-            isInvalid={!!form.formState.errors.weight_g}
-            minValue={0}
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={(value) => {
-              const nextValue = Number.isNaN(value) ? undefined : value;
-              field.onChange(nextValue);
-              onChange('weight_g', nextValue ?? '');
-            }}
-            step={0.1}
-            value={field.value}
-          >
-            <Label>Weight, grams</Label>
-            {form.formState.errors.weight_g && <FieldError>{form.formState.errors.weight_g.message}</FieldError>}
-            <NumberField.Group>
-              <NumberField.Input />
-            </NumberField.Group>
-          </NumberField>
-        )}
+        onValueChange={(value) => onChange('weight_g', value ?? '')}
+        step={0.1}
       />
     </Form>
   );

@@ -1,19 +1,8 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  Spinner,
-  TextArea,
-  TextField,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 export const trainingPlanFormSchema = z.object({
   description: z.string().optional(),
@@ -69,45 +58,22 @@ export default function TrainingPlanForm({
         <Description>Name the plan and add optional coaching context</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Use a clear name, like push pull legs"
+            fullWidth
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                <Description>Use a clear name, like push pull legs</Description>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Add goals, training split, or coaching notes"
+            fullWidth
+            label="Description (optional)"
             name="description"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.description}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Description (optional)</Label>
-                <Description>Add goals, training split, or coaching notes</Description>
-                {errors.description && <FieldError>{errors.description.message}</FieldError>}
-                <TextArea rows={2} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 2}}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -117,44 +83,20 @@ export default function TrainingPlanForm({
         <Description>Set dates only if this plan has a fixed timeline</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="Start date (optional)"
             name="start_date"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.start_date}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="date"
-                value={field.value ?? ''}
-              >
-                <Label>Start date (optional)</Label>
-                {errors.start_date && <FieldError>{errors.start_date.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="date"
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="End date (optional)"
             name="end_date"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.end_date}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="date"
-                value={field.value ?? ''}
-              >
-                <Label>End date (optional)</Label>
-                {errors.end_date && <FieldError>{errors.end_date.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="date"
           />
         </Fieldset.Group>
       </Fieldset>

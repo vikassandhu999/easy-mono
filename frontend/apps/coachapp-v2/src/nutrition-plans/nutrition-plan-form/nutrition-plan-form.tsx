@@ -1,20 +1,8 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  NumberField,
-  Spinner,
-  TextArea,
-  TextField,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 
@@ -77,30 +65,14 @@ function MacroNumberField({
   fieldConfig: MacroFieldConfig;
   form: ReturnType<typeof useNutritionPlanForm>;
 }) {
-  const error = form.formState.errors[fieldConfig.name]?.message;
-
   return (
-    <Controller
+    <FormNumberField
       control={form.control}
+      fullWidth
+      label={fieldConfig.label}
+      minValue={0}
       name={fieldConfig.name}
-      render={({field}) => (
-        <NumberField
-          fullWidth
-          isInvalid={!!error}
-          minValue={0}
-          name={field.name}
-          onBlur={field.onBlur}
-          onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-          step={fieldConfig.step}
-          value={field.value}
-        >
-          <Label>{fieldConfig.label}</Label>
-          {error && <FieldError>{error}</FieldError>}
-          <NumberField.Group>
-            <NumberField.Input />
-          </NumberField.Group>
-        </NumberField>
-      )}
+      step={fieldConfig.step}
     />
   );
 }
@@ -126,45 +98,22 @@ export default function NutritionPlanForm({
         <Description>Name the plan and describe who it is for</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Use a clear name, like fat loss week 1"
+            fullWidth
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                <Description>Use a clear name, like fat loss week 1</Description>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Add goals, constraints, or coaching notes"
+            fullWidth
+            label="Description (optional)"
             name="description"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.description}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Description (optional)</Label>
-                <Description>Add goals, constraints, or coaching notes</Description>
-                {errors.description && <FieldError>{errors.description.message}</FieldError>}
-                <TextArea rows={2} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 2}}
           />
         </Fieldset.Group>
       </Fieldset>

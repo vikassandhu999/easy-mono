@@ -1,23 +1,9 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  NumberField,
-  Spinner,
-  Switch,
-  TextArea,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Star} from 'lucide-react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
+import {FormNumberField, FormSwitchField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 const optionalUrl = z.string().url('Enter a valid URL').optional().or(z.literal(''));
 const optionalPositiveNumber = z.number().positive('Use a number above 0').optional();
@@ -110,43 +96,19 @@ export default function TestimonialForm({
         <Description>Add the client name and optional public handle</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            isRequired
+            label="Client name (required)"
             name="client_name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.client_name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Client name (required)</Label>
-                {errors.client_name && <FieldError>{errors.client_name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="Instagram handle (optional)"
             name="client_handle"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.client_handle}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Instagram handle (optional)</Label>
-                {errors.client_handle && <FieldError>{errors.client_handle.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -156,94 +118,38 @@ export default function TestimonialForm({
         <Description>Add optional before and after photos</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="Before photo URL (optional)"
             name="before_image_url"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.before_image_url}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="url"
-                value={field.value ?? ''}
-              >
-                <Label>Before photo URL (optional)</Label>
-                {errors.before_image_url && <FieldError>{errors.before_image_url.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="url"
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="After photo URL (optional)"
             name="after_image_url"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.after_image_url}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="url"
-                value={field.value ?? ''}
-              >
-                <Label>After photo URL (optional)</Label>
-                {errors.after_image_url && <FieldError>{errors.after_image_url.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
+            type="url"
           />
 
-          <Controller
+          <FormNumberField
             control={control}
+            fullWidth
+            label="Before weight, kg (optional)"
+            minValue={0}
             name="before_weight"
-            render={({field}) => (
-              <NumberField
-                fullWidth
-                isInvalid={!!errors.before_weight}
-                minValue={0}
-                name={field.name}
-                onBlur={() => {
-                  field.onBlur();
-                  suggestResultTag();
-                }}
-                onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-                value={field.value}
-              >
-                <Label>Before weight, kg (optional)</Label>
-                {errors.before_weight && <FieldError>{errors.before_weight.message}</FieldError>}
-                <NumberField.Group>
-                  <NumberField.Input />
-                </NumberField.Group>
-              </NumberField>
-            )}
+            onFieldBlur={suggestResultTag}
           />
 
-          <Controller
+          <FormNumberField
             control={control}
+            fullWidth
+            label="After weight, kg (optional)"
+            minValue={0}
             name="after_weight"
-            render={({field}) => (
-              <NumberField
-                fullWidth
-                isInvalid={!!errors.after_weight}
-                minValue={0}
-                name={field.name}
-                onBlur={() => {
-                  field.onBlur();
-                  suggestResultTag();
-                }}
-                onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-                value={field.value}
-              >
-                <Label>After weight, kg (optional)</Label>
-                {errors.after_weight && <FieldError>{errors.after_weight.message}</FieldError>}
-                <NumberField.Group>
-                  <NumberField.Input />
-                </NumberField.Group>
-              </NumberField>
-            )}
+            onFieldBlur={suggestResultTag}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -253,63 +159,27 @@ export default function TestimonialForm({
         <Description>Add the headline, program, and timeline shown on your storefront</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Example: Lost 15kg or gained muscle"
+            fullWidth
+            label="Result headline (optional)"
             name="result_tag"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.result_tag}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Result headline (optional)</Label>
-                <Description>Example: Lost 15kg or gained muscle</Description>
-                {errors.result_tag && <FieldError>{errors.result_tag.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            label="Program name (optional)"
             name="program_name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.program_name}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Program name (optional)</Label>
-                {errors.program_name && <FieldError>{errors.program_name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            description="Example: 12 weeks"
+            fullWidth
+            label="Duration (optional)"
             name="duration_text"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.duration_text}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Duration (optional)</Label>
-                <Description>Example: 12 weeks</Description>
-                {errors.duration_text && <FieldError>{errors.duration_text.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
         </Fieldset.Group>
       </Fieldset>
@@ -319,23 +189,12 @@ export default function TestimonialForm({
         <Description>Add the quote, rating, and featured status</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextAreaField
             control={control}
+            fullWidth
+            label="Quote (optional)"
             name="quote"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.quote}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Quote (optional)</Label>
-                {errors.quote && <FieldError>{errors.quote.message}</FieldError>}
-                <TextArea rows={4} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 4}}
           />
 
           <Controller
@@ -368,23 +227,10 @@ export default function TestimonialForm({
             )}
           />
 
-          <Controller
+          <FormSwitchField
             control={control}
+            label={<Typography type="body-sm">Feature this testimonial</Typography>}
             name="is_featured"
-            render={({field}) => (
-              <Switch
-                isSelected={field.value}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-              >
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content>
-                  <Typography type="body-sm">Feature this testimonial</Typography>
-                </Switch.Content>
-              </Switch>
-            )}
           />
         </Fieldset.Group>
       </Fieldset>

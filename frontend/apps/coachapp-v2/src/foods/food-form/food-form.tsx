@@ -9,7 +9,6 @@ import {
   Label,
   NumberField,
   Spinner,
-  TextArea,
   TextField,
   Typography,
 } from '@heroui/react';
@@ -19,6 +18,7 @@ import {useCallback, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
+import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {ServingSize} from '@/api/shared';
 
 export const foodFormSchema = z.object({
@@ -86,30 +86,14 @@ const MACRO_FIELDS: MacroFieldConfig[] = [
 ];
 
 function MacroNumberField({fieldConfig, form}: {fieldConfig: MacroFieldConfig; form: ReturnType<typeof useFoodForm>}) {
-  const error = form.formState.errors[fieldConfig.name]?.message;
-
   return (
-    <Controller
+    <FormNumberField
       control={form.control}
+      fullWidth
+      label={fieldConfig.label}
+      minValue={0}
       name={fieldConfig.name}
-      render={({field}) => (
-        <NumberField
-          fullWidth
-          isInvalid={!!error}
-          minValue={0}
-          name={field.name}
-          onBlur={field.onBlur}
-          onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-          step={fieldConfig.step}
-          value={field.value}
-        >
-          <Label>{fieldConfig.label}</Label>
-          {error && <FieldError>{error}</FieldError>}
-          <NumberField.Group>
-            <NumberField.Input />
-          </NumberField.Group>
-        </NumberField>
-      )}
+      step={fieldConfig.step}
     />
   );
 }
@@ -170,86 +154,39 @@ export default function FoodForm({
         <Fieldset.Legend>Food details</Fieldset.Legend>
         <Description>Name the food and choose where it belongs</Description>
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            description="Use the name clients will recognize"
+            fullWidth
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                <Description>Use the name clients will recognize</Description>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input />
-              </TextField>
-            )}
           />
 
           <Fieldset.Group>
-            <Controller
+            <FormTextField
               control={control}
+              description="Group similar foods, like protein or grains"
+              fullWidth
+              label="Category (optional)"
               name="category"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.category}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Category (optional)</Label>
-                  <Description>Group similar foods, like protein or grains</Description>
-                  {errors.category && <FieldError>{errors.category.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
-            <Controller
+            <FormTextField
               control={control}
+              description="Add the brand, database, or source"
+              fullWidth
+              label="Source (optional)"
               name="source"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.source}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Source (optional)</Label>
-                  <Description>Add the brand, database, or source</Description>
-                  {errors.source && <FieldError>{errors.source.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
           </Fieldset.Group>
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Add prep, shopping, or coaching notes"
+            fullWidth
+            label="Notes (optional)"
             name="notes"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.notes}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Notes (optional)</Label>
-                <Description>Add prep, shopping, or coaching notes</Description>
-                {errors.notes && <FieldError>{errors.notes.message}</FieldError>}
-                <TextArea rows={2} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 2}}
           />
         </Fieldset.Group>
       </Fieldset>

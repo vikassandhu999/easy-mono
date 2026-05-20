@@ -1,8 +1,9 @@
-import {Button, ErrorMessage, FieldError, Form, Input, Label, Spinner, TextField, Typography} from '@heroui/react';
+import {Button, ErrorMessage, Form, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormTextField} from '@/@components/form-fields';
 
 import {applyFormErrors} from '@/api/shared';
 
@@ -62,24 +63,12 @@ export default function EditableRow({
           {label}
         </Typography>
         <div className="min-w-0 flex-1">
-          <Controller
+          <FormTextField
+            className="w-full"
             control={form.control}
+            label={<span className="sr-only">{label}</span>}
             name="value"
-            render={({field}) => (
-              <TextField
-                className="w-full"
-                isInvalid={!!form.formState.errors.value}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type={inputType}
-                value={field.value}
-              >
-                <Label className="sr-only">{label}</Label>
-                {form.formState.errors.value ? <FieldError>{form.formState.errors.value.message}</FieldError> : null}
-                <Input />
-              </TextField>
-            )}
+            type={inputType}
           />
         </div>
         <Button

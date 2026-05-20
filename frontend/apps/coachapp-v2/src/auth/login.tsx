@@ -1,19 +1,9 @@
-import {
-  Button,
-  ErrorMessage,
-  FieldError,
-  Form,
-  Input,
-  Label,
-  Link,
-  Spinner,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, ErrorMessage, Form, Link, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation} from '@/api/auth';
@@ -55,24 +45,13 @@ export default function Login() {
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <Controller
+        <FormTextField
           control={form.control}
+          fullWidth
+          inputProps={{autoComplete: 'email'}}
+          label="Email"
           name="email"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!form.formState.errors.email}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              type="email"
-              value={field.value}
-            >
-              <Label>Email</Label>
-              {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
-              <Input autoComplete="email" />
-            </TextField>
-          )}
+          type="email"
         />
 
         {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}

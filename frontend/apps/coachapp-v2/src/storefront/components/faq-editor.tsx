@@ -1,25 +1,12 @@
-import {
-  Button,
-  Card,
-  Description,
-  FieldError,
-  Fieldset,
-  Input,
-  Label,
-  TextArea,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, Card, Description, Fieldset, Typography} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
-import {Controller, type UseFormReturn, useFieldArray} from 'react-hook-form';
+import {type UseFormReturn, useFieldArray} from 'react-hook-form';
 
+import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 export default function FaqEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
-  const {
-    control,
-    formState: {errors},
-  } = form;
+  const {control} = form;
   const {append, fields, remove} = useFieldArray({control, name: 'faq_items'});
 
   return (
@@ -32,25 +19,11 @@ export default function FaqEditor({form}: {form: UseFormReturn<EditorFormValues>
           <Card key={field.id}>
             <Card.Content className="flex flex-col gap-3">
               <div className="flex items-start gap-2">
-                <Controller
+                <FormTextField
                   control={control}
+                  fullWidth
+                  label="Question"
                   name={`faq_items.${index}.question`}
-                  render={({field: questionField}) => (
-                    <TextField
-                      fullWidth
-                      isInvalid={!!errors.faq_items?.[index]?.question}
-                      name={questionField.name}
-                      onBlur={questionField.onBlur}
-                      onChange={questionField.onChange}
-                      value={questionField.value}
-                    >
-                      <Label>Question</Label>
-                      {errors.faq_items?.[index]?.question && (
-                        <FieldError>{errors.faq_items[index].question.message}</FieldError>
-                      )}
-                      <Input />
-                    </TextField>
-                  )}
                 />
                 <Button
                   aria-label={`Remove FAQ ${index + 1}`}
@@ -63,25 +36,12 @@ export default function FaqEditor({form}: {form: UseFormReturn<EditorFormValues>
                 </Button>
               </div>
 
-              <Controller
+              <FormTextAreaField
                 control={control}
+                fullWidth
+                label="Answer"
                 name={`faq_items.${index}.answer`}
-                render={({field: answerField}) => (
-                  <TextField
-                    fullWidth
-                    isInvalid={!!errors.faq_items?.[index]?.answer}
-                    name={answerField.name}
-                    onBlur={answerField.onBlur}
-                    onChange={answerField.onChange}
-                    value={answerField.value}
-                  >
-                    <Label>Answer</Label>
-                    {errors.faq_items?.[index]?.answer && (
-                      <FieldError>{errors.faq_items[index].answer.message}</FieldError>
-                    )}
-                    <TextArea rows={2} />
-                  </TextField>
-                )}
+                textAreaProps={{rows: 2}}
               />
             </Card.Content>
           </Card>

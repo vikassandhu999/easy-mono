@@ -1,9 +1,10 @@
-import {Button, ErrorMessage, FieldError, Form, Input, Label, TextArea, TextField, Typography} from '@heroui/react';
+import {Button, ErrorMessage, Form, Input, Label, TextField, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Dumbbell} from 'lucide-react';
 import {useEffect, useId, useRef} from 'react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
+import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {applyFormErrors} from '@/api/shared';
 import type {PlannedSet} from '@/api/trainingPlans';
 import UnitPicker, {type LoadUnitValue} from '@/training-plans/components/unit-picker';
@@ -312,54 +313,30 @@ export default function InlineExerciseForm({
       <div className="flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(70px,1fr)_minmax(90px,1fr)_minmax(150px,1.5fr)_minmax(140px,1.5fr)_minmax(160px,2fr)] xl:items-end xl:gap-3">
         <div className="grid grid-cols-2 gap-3 xl:contents">
           <div className="flex flex-col gap-1">
-            <Controller
+            <FormTextField
               control={control}
+              inputProps={{
+                className: 'h-12',
+                id: `${uid}-sets`,
+                inputMode: 'numeric',
+                placeholder: '4',
+              }}
+              label="Sets"
               name="sets"
-              render={({field}) => (
-                <TextField
-                  isInvalid={!!errors.sets}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value}
-                >
-                  <Label>Sets</Label>
-                  {errors.sets && <FieldError>{errors.sets.message}</FieldError>}
-                  <Input
-                    className="h-12"
-                    id={`${uid}-sets`}
-                    inputMode="numeric"
-                    placeholder="4"
-                  />
-                </TextField>
-              )}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Controller
+            <FormTextField
               control={control}
+              inputProps={{
+                className: 'h-12',
+                id: `${uid}-reps`,
+                inputMode: 'text',
+                placeholder: '8-12',
+              }}
+              label="Reps"
               name="reps"
-              render={({field}) => (
-                <TextField
-                  isInvalid={!!errors.reps}
-                  name={field.name}
-                  onBlur={() => {
-                    field.onBlur();
-                    handleRepsBlur();
-                  }}
-                  onChange={field.onChange}
-                  value={field.value}
-                >
-                  <Label>Reps</Label>
-                  {errors.reps && <FieldError>{errors.reps.message}</FieldError>}
-                  <Input
-                    className="h-12"
-                    id={`${uid}-reps`}
-                    inputMode="text"
-                    placeholder="8-12"
-                  />
-                </TextField>
-              )}
+              onFieldBlur={handleRepsBlur}
             />
           </div>
         </div>
@@ -441,24 +418,15 @@ export default function InlineExerciseForm({
 
         {/* Notes — full-width on mobile/mid; fifth cell at xl. */}
         <div className="flex min-w-0 flex-col gap-1 xl:col-start-5">
-          <Controller
+          <FormTextAreaField
+            className="w-full"
             control={control}
+            label="Notes (optional)"
             name="exerciseNotes"
-            render={({field}) => (
-              <TextField
-                className="w-full"
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Notes (optional)</Label>
-                <TextArea
-                  id={`${uid}-notes`}
-                  rows={1}
-                />
-              </TextField>
-            )}
+            textAreaProps={{
+              id: `${uid}-notes`,
+              rows: 1,
+            }}
           />
         </div>
       </div>

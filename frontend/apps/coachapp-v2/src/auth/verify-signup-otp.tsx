@@ -1,18 +1,9 @@
-import {
-  Button,
-  ErrorMessage,
-  Form,
-  InputOTP,
-  Label,
-  Link,
-  REGEXP_ONLY_DIGITS,
-  Spinner,
-  Typography,
-} from '@heroui/react';
+import {Button, ErrorMessage, Form, Link, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {FormOtpField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useSendOtpMutation, useVerifyOtpMutation} from '@/api/auth';
@@ -90,36 +81,11 @@ export default function VerifySignupOtp() {
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="flex flex-col gap-2">
-          <Label>Verification code</Label>
-          <Controller
-            control={form.control}
-            name="otp"
-            render={({field}) => (
-              <InputOTP
-                isInvalid={!!form.formState.errors.otp || !!form.formState.errors.root}
-                maxLength={6}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                pattern={REGEXP_ONLY_DIGITS}
-                value={field.value}
-              >
-                <InputOTP.Group>
-                  <InputOTP.Slot index={0} />
-                  <InputOTP.Slot index={1} />
-                  <InputOTP.Slot index={2} />
-                </InputOTP.Group>
-                <InputOTP.Separator />
-                <InputOTP.Group>
-                  <InputOTP.Slot index={3} />
-                  <InputOTP.Slot index={4} />
-                  <InputOTP.Slot index={5} />
-                </InputOTP.Group>
-              </InputOTP>
-            )}
-          />
-          {form.formState.errors.otp && <ErrorMessage>{form.formState.errors.otp.message}</ErrorMessage>}
-        </div>
+        <FormOtpField
+          control={form.control}
+          label="Verification code"
+          name="otp"
+        />
 
         {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 

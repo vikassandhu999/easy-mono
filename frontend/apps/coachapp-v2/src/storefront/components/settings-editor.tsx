@@ -7,7 +7,6 @@ import {
   Input,
   Label,
   Spinner,
-  Switch,
   TextField,
   Typography,
 } from '@heroui/react';
@@ -15,6 +14,7 @@ import {Check, ExternalLink, X} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
 import type {UseFormReturn} from 'react-hook-form';
 import {Controller} from 'react-hook-form';
+import {FormSwitchField, FormTextField} from '@/@components/form-fields';
 import {useCheckSlugAvailabilityMutation} from '@/api/storefront';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
@@ -149,71 +149,35 @@ export default function SettingsEditor({
         <Fieldset>
           <Fieldset.Legend>WhatsApp button</Fieldset.Legend>
           <Fieldset.Group>
-            <Controller
+            <FormSwitchField
               control={control}
+              label={<Typography type="body-sm">Show floating WhatsApp button on my page</Typography>}
               name="whatsapp_cta_enabled"
-              render={({field}) => (
-                <Switch
-                  isSelected={field.value}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                >
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  <Switch.Content>
-                    <Typography type="body-sm">Show floating WhatsApp button on my page</Typography>
-                  </Switch.Content>
-                </Switch>
-              )}
             />
 
-            <Controller
+            <FormTextField
               control={control}
+              description="Message visitors see when they tap the WhatsApp button"
+              fullWidth
+              label="Pre-filled message (optional)"
               name="whatsapp_cta_message"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.whatsapp_cta_message}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Pre-filled message (optional)</Label>
-                  <Description>Message visitors see when they tap the WhatsApp button</Description>
-                  {errors.whatsapp_cta_message && <FieldError>{errors.whatsapp_cta_message.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
           </Fieldset.Group>
         </Fieldset>
 
         <Card>
           <Card.Content className="flex flex-col gap-3">
-            <Controller
+            <FormSwitchField
               control={control}
-              name="is_published"
-              render={({field}) => (
-                <Switch
-                  isSelected={field.value}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
+              label={
+                <Typography
+                  type="body-sm"
+                  weight="medium"
                 >
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  <Switch.Content>
-                    <Typography
-                      type="body-sm"
-                      weight="medium"
-                    >
-                      {field.value ? 'Published' : 'Unpublished'}
-                    </Typography>
-                  </Switch.Content>
-                </Switch>
-              )}
+                  {isPublished ? 'Published' : 'Unpublished'}
+                </Typography>
+              }
+              name="is_published"
             />
 
             {isPublished ? (

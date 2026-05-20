@@ -1,9 +1,10 @@
-import {Button, FieldError, Form, Input, Label, NumberField, TextField, Typography, toast} from '@heroui/react';
+import {Button, Form, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, Check, ChefHat, Trash2} from 'lucide-react';
 import {useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
 import type {MealItem} from '@/api/meals';
 
@@ -119,65 +120,25 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
           onSubmit={form.handleSubmit(handleSave)}
         >
           <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-            <Controller
+            <FormNumberField
               control={form.control}
+              fullWidth
+              label="Amount"
+              minValue={0}
               name="amount"
-              render={({field}) => (
-                <NumberField
-                  fullWidth
-                  isInvalid={!!form.formState.errors.amount}
-                  minValue={0}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-                  value={field.value}
-                >
-                  <Label>Amount</Label>
-                  {form.formState.errors.amount && <FieldError>{form.formState.errors.amount.message}</FieldError>}
-                  <NumberField.Group>
-                    <NumberField.Input />
-                  </NumberField.Group>
-                </NumberField>
-              )}
             />
-            <Controller
+            <FormTextField
               control={form.control}
+              fullWidth
+              label="Unit"
               name="unit"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!form.formState.errors.unit}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Unit</Label>
-                  {form.formState.errors.unit && <FieldError>{form.formState.errors.unit.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
-            <Controller
+            <FormNumberField
               control={form.control}
+              fullWidth
+              label="Weight, grams"
+              minValue={0}
               name="weight_g"
-              render={({field}) => (
-                <NumberField
-                  fullWidth
-                  isInvalid={!!form.formState.errors.weight_g}
-                  minValue={0}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
-                  value={field.value}
-                >
-                  <Label>Weight, grams</Label>
-                  {form.formState.errors.weight_g && <FieldError>{form.formState.errors.weight_g.message}</FieldError>}
-                  <NumberField.Group>
-                    <NumberField.Input />
-                  </NumberField.Group>
-                </NumberField>
-              )}
             />
           </div>
           <div className="flex gap-2">

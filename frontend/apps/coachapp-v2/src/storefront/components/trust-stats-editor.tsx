@@ -1,14 +1,12 @@
-import {Button, Description, FieldError, Fieldset, Input, Label, TextField, Typography} from '@heroui/react';
+import {Button, Description, Fieldset, Typography} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
-import {Controller, type UseFormReturn, useFieldArray} from 'react-hook-form';
+import {type UseFormReturn, useFieldArray} from 'react-hook-form';
 
+import {FormTextField} from '@/@components/form-fields';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 export default function TrustStatsEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
-  const {
-    control,
-    formState: {errors},
-  } = form;
+  const {control} = form;
   const {append, fields, remove} = useFieldArray({control, name: 'trust_stats'});
 
   return (
@@ -20,45 +18,17 @@ export default function TrustStatsEditor({form}: {form: UseFormReturn<EditorForm
         {fields.map((field, index) => (
           <Fieldset.Group key={field.id}>
             <div className="flex items-start gap-2">
-              <Controller
+              <FormTextField
+                className="w-28 shrink-0"
                 control={control}
+                label="Value"
                 name={`trust_stats.${index}.value`}
-                render={({field: valueField}) => (
-                  <TextField
-                    className="w-28 shrink-0"
-                    isInvalid={!!errors.trust_stats?.[index]?.value}
-                    name={valueField.name}
-                    onBlur={valueField.onBlur}
-                    onChange={valueField.onChange}
-                    value={valueField.value}
-                  >
-                    <Label>Value</Label>
-                    {errors.trust_stats?.[index]?.value && (
-                      <FieldError>{errors.trust_stats[index].value.message}</FieldError>
-                    )}
-                    <Input />
-                  </TextField>
-                )}
               />
-              <Controller
+              <FormTextField
                 control={control}
+                fullWidth
+                label="Label"
                 name={`trust_stats.${index}.label`}
-                render={({field: labelField}) => (
-                  <TextField
-                    fullWidth
-                    isInvalid={!!errors.trust_stats?.[index]?.label}
-                    name={labelField.name}
-                    onBlur={labelField.onBlur}
-                    onChange={labelField.onChange}
-                    value={labelField.value}
-                  >
-                    <Label>Label</Label>
-                    {errors.trust_stats?.[index]?.label && (
-                      <FieldError>{errors.trust_stats[index].label.message}</FieldError>
-                    )}
-                    <Input />
-                  </TextField>
-                )}
               />
               <Button
                 aria-label={`Remove stat ${index + 1}`}

@@ -1,8 +1,9 @@
-import {Button, Description, ErrorMessage, FieldError, Form, Input, Label, Spinner, TextField} from '@heroui/react';
+import {Button, ErrorMessage, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useExchangeTokenMutation} from '@/api/auth';
@@ -73,47 +74,24 @@ export default function RegisterBusiness() {
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <Controller
+        <FormTextField
           control={form.control}
+          fullWidth
+          inputProps={{autoComplete: 'organization'}}
+          label="Business name"
           name="name"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!form.formState.errors.name}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={(value) => {
-                field.onChange(value);
-                const handle = generateHandle(value);
-                form.setValue('handle', handle, {shouldValidate: !!nameValue});
-              }}
-              value={field.value}
-            >
-              <Label>Business name</Label>
-              {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
-              <Input autoComplete="organization" />
-            </TextField>
-          )}
+          onValueChange={(value) => {
+            const handle = generateHandle(value);
+            form.setValue('handle', handle, {shouldValidate: !!nameValue});
+          }}
         />
 
-        <Controller
+        <FormTextField
           control={form.control}
+          description="This will be your unique URL identifier"
+          fullWidth
+          label="Handle"
           name="handle"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!form.formState.errors.handle}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              value={field.value}
-            >
-              <Label>Handle</Label>
-              <Description>This will be your unique URL identifier</Description>
-              {form.formState.errors.handle && <FieldError>{form.formState.errors.handle.message}</FieldError>}
-              <Input />
-            </TextField>
-          )}
         />
 
         {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}

@@ -1,21 +1,9 @@
-import {
-  Button,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  ListBox,
-  Select,
-  Spinner,
-  TextArea,
-  TextField,
-} from '@heroui/react';
+import {Button, ErrorMessage, Fieldset, Form, ListBox, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
+import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {type AllowedUpdateStatus, allowedStatusesFor, type Client} from '@/api/clients';
 
 const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
@@ -53,11 +41,7 @@ type EditClientFormProps = {
 };
 
 export default function EditClientForm({client, form, isSubmitting, onCancel, onSubmit}: EditClientFormProps) {
-  const {
-    control,
-    formState: {errors},
-    handleSubmit,
-  } = form;
+  const {control, handleSubmit} = form;
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)}>
@@ -65,145 +49,69 @@ export default function EditClientForm({client, form, isSubmitting, onCancel, on
         <Fieldset.Legend>Client details</Fieldset.Legend>
         <Fieldset.Group>
           <Fieldset.Group>
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              label="First name (optional)"
               name="first_name"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.first_name}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>First name (optional)</Label>
-                  {errors.first_name && <FieldError>{errors.first_name.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              label="Last name (optional)"
               name="last_name"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.last_name}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value ?? ''}
-                >
-                  <Label>Last name (optional)</Label>
-                  {errors.last_name && <FieldError>{errors.last_name.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
           </Fieldset.Group>
 
           <Fieldset.Group>
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              inputProps={{type: 'tel'}}
+              label="Phone (optional)"
               name="phone"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.phone}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  type="tel"
-                  value={field.value ?? ''}
-                >
-                  <Label>Phone (optional)</Label>
-                  {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
+              type="tel"
             />
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              inputProps={{type: 'email'}}
+              label="Email (optional)"
               name="email"
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!errors.email}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  type="email"
-                  value={field.value ?? ''}
-                >
-                  <Label>Email (optional)</Label>
-                  {errors.email && <FieldError>{errors.email.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
+              type="email"
             />
           </Fieldset.Group>
 
           {client.status === 'pending' ? null : (
-            <Controller
+            <FormSelectField
               control={control}
+              label="Status (optional)"
               name="status"
-              render={({field}) => {
-                const statusOptions = allowedStatusesFor(client.status);
-                return (
-                  <Select
-                    isInvalid={!!errors.status}
-                    onSelectionChange={(key) => field.onChange(key ?? undefined)}
-                    selectedKey={field.value || null}
-                  >
-                    <Label>Status (optional)</Label>
-                    {errors.status && <FieldError>{errors.status.message}</FieldError>}
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        {statusOptions.map((value) => (
-                          <ListBox.Item
-                            id={value}
-                            key={value}
-                            textValue={STATUS_LABELS[value]}
-                          >
-                            {STATUS_LABELS[value]}
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                );
-              }}
-            />
+            >
+              {allowedStatusesFor(client.status).map((value) => (
+                <ListBox.Item
+                  id={value}
+                  key={value}
+                  textValue={STATUS_LABELS[value]}
+                >
+                  {STATUS_LABELS[value]}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </FormSelectField>
           )}
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            fullWidth
+            label="Notes (optional)"
             name="notes"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.notes}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Notes (optional)</Label>
-                {errors.notes && <FieldError>{errors.notes.message}</FieldError>}
-                <TextArea rows={3} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 3}}
           />
         </Fieldset.Group>
       </Fieldset>
 
-      {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
+      {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
       <Fieldset.Actions>
         <Button

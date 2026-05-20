@@ -1,20 +1,9 @@
-import {
-  Button,
-  Description,
-  FieldError,
-  Fieldset,
-  Input,
-  Label,
-  ListBox,
-  Select,
-  Switch,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, Description, Fieldset, Input, Label, ListBox, TextField, Typography} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
 import {useState} from 'react';
-import {Controller, type UseFormReturn, useFieldArray} from 'react-hook-form';
+import {type UseFormReturn, useFieldArray} from 'react-hook-form';
 
+import {FormSelectField, FormSwitchField, FormTextField} from '@/@components/form-fields';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 const QUESTION_TYPES = [
@@ -24,11 +13,7 @@ const QUESTION_TYPES = [
 ] as const;
 
 export default function IntakeQuestionsEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
-  const {
-    control,
-    formState: {errors},
-    watch,
-  } = form;
+  const {control, watch} = form;
   const {append, fields, remove} = useFieldArray({control, name: 'intake_questions'});
 
   return (
@@ -40,7 +25,6 @@ export default function IntakeQuestionsEditor({form}: {form: UseFormReturn<Edito
         {fields.map((field, index) => (
           <IntakeQuestionRow
             control={control}
-            errors={errors}
             index={index}
             key={field.id}
             onRemove={() => remove(index)}
@@ -64,93 +48,51 @@ export default function IntakeQuestionsEditor({form}: {form: UseFormReturn<Edito
 
 function IntakeQuestionRow({
   control,
-  errors,
   index,
   onRemove,
   watch,
 }: {
   control: UseFormReturn<EditorFormValues>['control'];
-  errors: UseFormReturn<EditorFormValues>['formState']['errors'];
   index: number;
   onRemove: () => void;
   watch: UseFormReturn<EditorFormValues>['watch'];
 }) {
   const questionType = watch(`intake_questions.${index}.type`);
-  const questionErrors = errors.intake_questions?.[index];
 
   return (
     <Fieldset>
       <Fieldset.Group>
         <div className="flex items-start gap-2">
           <div className="flex flex-1 flex-col gap-3">
-            <Controller
+            <FormTextField
               control={control}
+              fullWidth
+              label="Question text"
               name={`intake_questions.${index}.label`}
-              render={({field}) => (
-                <TextField
-                  fullWidth
-                  isInvalid={!!questionErrors?.label}
-                  name={field.name}
-                  onBlur={field.onBlur}
-                  onChange={field.onChange}
-                  value={field.value}
-                >
-                  <Label>Question text</Label>
-                  {questionErrors?.label && <FieldError>{questionErrors.label.message}</FieldError>}
-                  <Input />
-                </TextField>
-              )}
             />
 
             <Fieldset.Actions>
-              <Controller
+              <FormSelectField
+                className="w-full sm:w-48"
                 control={control}
+                label="Type"
                 name={`intake_questions.${index}.type`}
-                render={({field}) => (
-                  <Select
-                    className="w-full sm:w-48"
-                    onSelectionChange={(key) => field.onChange(key)}
-                    selectedKey={field.value || null}
+              >
+                {QUESTION_TYPES.map((questionType) => (
+                  <ListBox.Item
+                    id={questionType.value}
+                    key={questionType.value}
+                    textValue={questionType.label}
                   >
-                    <Label>Type</Label>
-                    <Select.Trigger>
-                      <Select.Value />
-                      <Select.Indicator />
-                    </Select.Trigger>
-                    <Select.Popover>
-                      <ListBox>
-                        {QUESTION_TYPES.map((questionType) => (
-                          <ListBox.Item
-                            id={questionType.value}
-                            key={questionType.value}
-                            textValue={questionType.label}
-                          >
-                            {questionType.label}
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                      </ListBox>
-                    </Select.Popover>
-                  </Select>
-                )}
-              />
-              <Controller
+                    {questionType.label}
+                    <ListBox.ItemIndicator />
+                  </ListBox.Item>
+                ))}
+              </FormSelectField>
+              <FormSwitchField
                 control={control}
+                label={<Typography type="body-xs">Required</Typography>}
                 name={`intake_questions.${index}.required`}
-                render={({field}) => (
-                  <Switch
-                    isSelected={field.value ?? false}
-                    onBlur={field.onBlur}
-                    onChange={field.onChange}
-                  >
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
-                    <Switch.Content>
-                      <Typography type="body-xs">Required</Typography>
-                    </Switch.Content>
-                  </Switch>
-                )}
               />
             </Fieldset.Actions>
           </div>

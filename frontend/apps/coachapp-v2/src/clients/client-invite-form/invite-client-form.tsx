@@ -1,19 +1,8 @@
-import {
-  Button,
-  Description,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Input,
-  Label,
-  Spinner,
-  TextArea,
-  TextField,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
 export const inviteClientFormSchema = z
   .object({
@@ -71,85 +60,41 @@ export default function InviteClientForm({form, isSubmitting, onCancel, onSubmit
         <Description>Add a name and at least one contact method</Description>
 
         <Fieldset.Group>
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            inputProps={{autoComplete: 'name'}}
+            isRequired
+            label="Name (required)"
             name="name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.name}
-                isRequired
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value}
-              >
-                <Label>Name (required)</Label>
-                {errors.name && <FieldError>{errors.name.message}</FieldError>}
-                <Input autoComplete="name" />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            description="Add email or phone so the client can receive the invite"
+            fullWidth
+            inputProps={{autoComplete: 'email'}}
+            label="Email (optional)"
             name="email"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.email}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="email"
-                value={field.value ?? ''}
-              >
-                <Label>Email (optional)</Label>
-                <Description>Add email or phone so the client can receive the invite</Description>
-                {errors.email && <FieldError>{errors.email.message}</FieldError>}
-                <Input autoComplete="email" />
-              </TextField>
-            )}
+            type="email"
           />
 
-          <Controller
+          <FormTextField
             control={control}
+            fullWidth
+            inputProps={{autoComplete: 'tel'}}
+            label="Phone (optional)"
             name="phone"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.phone}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="tel"
-                value={field.value ?? ''}
-              >
-                <Label>Phone (optional)</Label>
-                {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
-                <Input autoComplete="tel" />
-              </TextField>
-            )}
+            type="tel"
           />
 
-          <Controller
+          <FormTextAreaField
             control={control}
+            description="Add private notes about this client"
+            fullWidth
+            label="Notes (optional)"
             name="notes"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!errors.notes}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Notes (optional)</Label>
-                <Description>Add private notes about this client</Description>
-                {errors.notes && <FieldError>{errors.notes.message}</FieldError>}
-                <TextArea rows={3} />
-              </TextField>
-            )}
+            textAreaProps={{rows: 3}}
           />
         </Fieldset.Group>
       </Fieldset>

@@ -1,19 +1,9 @@
-import {
-  Button,
-  ErrorMessage,
-  FieldError,
-  Form,
-  Input,
-  Label,
-  Link,
-  Spinner,
-  TextField,
-  Typography,
-} from '@heroui/react';
+import {Button, ErrorMessage, Form, Link, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {FormTextField} from '@/@components/form-fields';
 
 import {ROUTES} from '@/@config/routes';
 import {useSignupMutation} from '@/api/auth';
@@ -62,65 +52,30 @@ export default function Signup() {
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Controller
+          <FormTextField
             control={form.control}
+            fullWidth
+            inputProps={{autoComplete: 'given-name'}}
+            label="First name (optional)"
             name="first_name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!form.formState.errors.first_name}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>First name (optional)</Label>
-                {form.formState.errors.first_name && (
-                  <FieldError>{form.formState.errors.first_name.message}</FieldError>
-                )}
-                <Input autoComplete="given-name" />
-              </TextField>
-            )}
           />
 
-          <Controller
+          <FormTextField
             control={form.control}
+            fullWidth
+            inputProps={{autoComplete: 'family-name'}}
+            label="Last name (optional)"
             name="last_name"
-            render={({field}) => (
-              <TextField
-                fullWidth
-                isInvalid={!!form.formState.errors.last_name}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                value={field.value ?? ''}
-              >
-                <Label>Last name (optional)</Label>
-                {form.formState.errors.last_name && <FieldError>{form.formState.errors.last_name.message}</FieldError>}
-                <Input autoComplete="family-name" />
-              </TextField>
-            )}
           />
         </div>
 
-        <Controller
+        <FormTextField
           control={form.control}
+          fullWidth
+          inputProps={{autoComplete: 'email'}}
+          label="Email"
           name="email"
-          render={({field}) => (
-            <TextField
-              fullWidth
-              isInvalid={!!form.formState.errors.email}
-              name={field.name}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              type="email"
-              value={field.value}
-            >
-              <Label>Email</Label>
-              {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
-              <Input autoComplete="email" />
-            </TextField>
-          )}
+          type="email"
         />
 
         {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}

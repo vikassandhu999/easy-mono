@@ -36,7 +36,8 @@ defmodule Easy.Training.WorkoutSession do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @cast_fields [:started_at, :ended_at, :state, :soreness_rating, :notes, :workout_id]
+  @cast_fields [:ended_at, :state, :soreness_rating, :notes, :workout_id]
+  @update_fields [:ended_at, :state, :soreness_rating, :notes]
   @client_update_fields [:soreness_rating, :notes]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
@@ -45,6 +46,7 @@ defmodule Easy.Training.WorkoutSession do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
+    |> put_change(:started_at, DateTime.utc_now())
     |> validate_required([:state, :started_at])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
@@ -61,11 +63,10 @@ defmodule Easy.Training.WorkoutSession do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(session, attrs) do
     session
-    |> cast(attrs, @cast_fields)
+    |> cast(attrs, @update_fields)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:soreness_rating, greater_than_or_equal_to: 1, less_than_or_equal_to: 5)
     |> validate_end_after_start()
-    |> foreign_key_constraint(:workout_id)
     |> unique_constraint([:business_id, :client_id],
       name: :workout_sessions_one_active_per_client_index,
       message: "you already have an active workout session — finish or discard it first"
@@ -138,14 +139,7 @@ defmodule Easy.Training.WorkoutSession do
 
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(business_id, client_id, attrs) do
-    attrs =
-      attrs
-      |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-      |> Map.put("started_at", DateTime.utc_now())
-
-    changeset = insert_changeset(business_id, client_id, attrs)
-
-    changeset
+    insert_changeset(business_id, client_id, attrs)
     |> maybe_put_snapshot(business_id)
     |> Repo.insert()
     |> preload_result()
@@ -157,7 +151,10 @@ defmodule Easy.Training.WorkoutSession do
         changeset
 
       workout_id ->
-        put_change(changeset, :planned_snapshot, build_snapshot(business_id, workout_id))
+        case build_snapshot(business_id, workout_id) do
+          nil -> add_error(changeset, :workout_id, "does not exist")
+          snapshot -> put_change(changeset, :planned_snapshot, snapshot)
+        end
     end
   end
 

@@ -64,7 +64,7 @@ defmodule Easy.Training.Workout do
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
-    from(w in query, order_by: [asc: w.name])
+    from(w in query, order_by: [asc: w.name, asc: w.id])
   end
 
   @spec with_elements(Ecto.Queryable.t()) :: Ecto.Query.t()

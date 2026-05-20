@@ -198,7 +198,7 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(t in query, order_by: [desc: t.inserted_at])
+    from(t in query, order_by: [desc: t.inserted_at, desc: t.id])
   end
 
   @spec with_workouts(Ecto.Queryable.t()) :: Ecto.Query.t()

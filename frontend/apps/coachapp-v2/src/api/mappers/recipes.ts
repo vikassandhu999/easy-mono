@@ -1,5 +1,6 @@
 import {normalizeMacros} from '@easy/utils';
 import {foodFromApi} from '@/api/mappers/foods';
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {
   Recipe,
   RecipeCreateRequest,
@@ -12,15 +13,6 @@ import type {IngredientItem} from '@/foods/components/ingredient-list';
 import type {RecipeFormValues} from '@/recipes/recipe-form/recipe-form';
 
 const RECIPE_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 function toOptionalNumber(value: number | string): number | undefined {
   if (value === '' || value == null) {

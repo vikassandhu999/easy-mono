@@ -1,18 +1,10 @@
 import {normalizeMacros} from '@easy/utils';
 import type {Food, FoodCreateRequest, FoodUpdateRequest} from '@/api/foods';
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {Macros, ServingSize} from '@/api/shared';
 import type {FoodFormValues} from '@/foods/food-form';
 
 const FOOD_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 function toOptionalMacros(values: FoodFormValues): Macros | undefined {
   const macros = FOOD_MACRO_KEYS.reduce<Macros>((result, key) => {

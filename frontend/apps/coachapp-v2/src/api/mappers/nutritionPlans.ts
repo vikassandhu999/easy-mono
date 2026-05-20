@@ -1,18 +1,10 @@
 import {mealFromApi} from '@/api/mappers/meals';
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {NutritionPlan, NutritionPlanCreateRequest, NutritionPlanUpdateRequest} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 import type {NutritionPlanFormValues} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 
 const NUTRITION_PLAN_MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 function toOptionalMacrosGoal(values: NutritionPlanFormValues): Macros | undefined {
   const macros = NUTRITION_PLAN_MACRO_KEYS.reduce<Macros>((result, key) => {

@@ -1,17 +1,8 @@
+import {toNullableText, toOptionalText} from '@/api/mappers/shared';
 import type {AllowedUpdateStatus, Client, ClientInviteRequest, ClientListResponse, ClientUpdateRequest} from '@/api/clients';
 import type {EditClientFormValues} from '@/clients/client-form/edit-client-form';
 import type {InviteClientFormValues} from '@/clients/client-invite-form/invite-client-form';
 import {splitName} from '@/clients/lib/invite-client';
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-function toNullableText(value: string | undefined): null | string {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
 
 export function clientFromApi(client: Client): Client {
   return client;

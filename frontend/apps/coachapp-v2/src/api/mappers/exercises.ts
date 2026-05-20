@@ -1,3 +1,4 @@
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {
   Equipment,
   Exercise,
@@ -6,15 +7,6 @@ import type {
   Muscle,
 } from '@/api/exercises';
 import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form';
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 function toOptionalArray<T>(value: T[] | undefined): T[] | undefined {
   return value && value.length > 0 ? value : undefined;

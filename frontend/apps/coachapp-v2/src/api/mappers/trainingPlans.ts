@@ -1,3 +1,4 @@
+import {omitUndefined, toNullableText, toOptionalText} from '@/api/mappers/shared';
 import type {
   PlannedSet,
   TrainingPlan,
@@ -12,20 +13,6 @@ import type {
   WorkoutUpdateRequest,
 } from '@/api/trainingPlans';
 import type {TrainingPlanFormValues} from '@/training-plans/training-plan-form/training-plan-form';
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-function toNullableText(value: string): null | string {
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
 
 function toNullableDate(value: string): null | string {
   return value || null;

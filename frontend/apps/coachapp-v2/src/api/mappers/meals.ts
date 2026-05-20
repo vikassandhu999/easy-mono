@@ -1,6 +1,7 @@
 import type {Food} from '@/api/foods';
 import {foodFromApi} from '@/api/mappers/foods';
 import {recipeFromApi} from '@/api/mappers/recipes';
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {
   Meal,
   MealCreateRequest,
@@ -11,15 +12,6 @@ import type {
 } from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
 import type {ServingSize} from '@/api/shared';
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 export type MealItemDraftValues = {
   amount?: number;

@@ -1,18 +1,10 @@
+import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {Offer, OfferCreateRequest, OfferUpdateRequest, OfferType} from '@/api/offers';
 import type {StoreProfile, StoreProfileUpsertRequest} from '@/api/storefront';
 import type {Testimonial, TestimonialCreateRequest, TestimonialUpdateRequest} from '@/api/testimonials';
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 import {featuresToFormValues, formValuesToFeatures, type OfferFormValues} from '@/storefront/offer-form/offer-form';
 import type {TestimonialFormValues} from '@/storefront/testimonial-form/testimonial-form';
-
-function omitUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
-}
-
-function toOptionalText(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
-}
 
 function toOptionalOptions(value: string[] | undefined, type: string): string[] | undefined {
   return type === 'select' ? value?.filter(Boolean) : undefined;

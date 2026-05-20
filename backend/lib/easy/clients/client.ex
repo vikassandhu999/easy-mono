@@ -4,6 +4,7 @@ defmodule Easy.Clients.Client do
   alias Easy.Identity.User
   alias Easy.Orgs
   alias Easy.Orgs.Coaches
+
   alias Easy.Repo
 
   import Ecto.Changeset
@@ -292,7 +293,7 @@ defmodule Easy.Clients.Client do
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do
-    from(c in query, order_by: [desc: c.inserted_at])
+    from(c in query, order_by: [desc: c.inserted_at, desc: c.id])
   end
 
   @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()

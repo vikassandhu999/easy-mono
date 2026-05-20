@@ -201,19 +201,35 @@ defmodule Easy.Training.Exercise do
   defp authorize_access(_exercise, _business_id), do: {:error, :not_found}
 
   defp generate_copy_name(original_name, business_id) do
-    base_name = String.replace(original_name, ~r/\s*\(Copy(?:\s+\d+)?\)$/, "")
+    base_name =
+      original_name
+      |> String.replace(~r/\s*\(Copy\s*\d*\)\s*$/, "")
+      |> String.trim()
 
-    copy_count =
+    existing_names =
       from(e in __MODULE__,
         where: e.business_id == ^business_id,
-        where:
-          e.name == ^"#{base_name} (Copy)" or
-            fragment("? ~ ?", e.name, ^"^#{Regex.escape(base_name)} \\(Copy \\d+\\)$"),
-        select: count(e.id)
+        where: e.name == ^base_name or like(e.name, ^"#{base_name} (Copy%)"),
+        select: e.name
       )
-      |> Repo.one()
+      |> Repo.all()
+      |> MapSet.new()
 
-    if copy_count == 0, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{copy_count + 1})"
+    find_available_copy_name(base_name, existing_names, 1)
+  end
+
+  defp find_available_copy_name(base_name, existing_names, attempt) when attempt <= 100 do
+    candidate = if attempt == 1, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{attempt})"
+
+    if MapSet.member?(existing_names, candidate) do
+      find_available_copy_name(base_name, existing_names, attempt + 1)
+    else
+      candidate
+    end
+  end
+
+  defp find_available_copy_name(base_name, _existing_names, _attempt) do
+    "#{base_name} (Copy #{System.system_time(:second)})"
   end
 
   defp preload_result({:ok, record}) do

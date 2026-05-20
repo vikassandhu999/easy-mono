@@ -37,6 +37,22 @@ defmodule Easy.Training.PlannedSet do
     :notes
   ]
 
+  @spec to_attrs(t()) :: map()
+  def to_attrs(%__MODULE__{} = set) do
+    Map.take(set, [
+      :target_reps,
+      :load_value,
+      :load_unit,
+      :intensity_target,
+      :tempo,
+      :rest_seconds,
+      :duration_seconds,
+      :distance_value,
+      :distance_unit,
+      :notes
+    ])
+  end
+
   @spec to_snapshot(t()) :: map()
   def to_snapshot(%__MODULE__{} = set) do
     %{

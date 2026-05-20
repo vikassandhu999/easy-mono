@@ -4,7 +4,7 @@ defmodule Easy.Training.TrainingPlan do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{PlanItem, Workout, WorkoutElement}
+  alias Easy.Training.{PlanItem, Workout}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -268,31 +268,7 @@ defmodule Easy.Training.TrainingPlan do
 
   defp copy_workouts(workouts, new_plan) do
     Enum.reduce(workouts, %{}, fn workout, id_map ->
-      workout_attrs = %{name: workout.name, notes: workout.notes}
-
-      new_workout =
-        case Workout.insert_changeset(new_plan.id, new_plan.business_id, workout_attrs)
-             |> Repo.insert() do
-          {:ok, w} -> w
-          {:error, reason} -> Repo.rollback(reason)
-        end
-
-      Enum.each(workout.workout_elements, fn element ->
-        element_attrs = %{
-          position: element.position,
-          superset_group_id: element.superset_group_id,
-          notes: element.notes,
-          exercise_id: element.exercise_id,
-          planned_sets: copy_sets(element.planned_sets)
-        }
-
-        case WorkoutElement.insert_changeset(new_workout.id, new_plan.business_id, element_attrs)
-             |> Repo.insert() do
-          {:ok, _} -> :ok
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
-
+      new_workout = Workout.copy_into!(workout, new_plan.id)
       Map.put(id_map, workout.id, new_workout.id)
     end)
   end
@@ -314,25 +290,6 @@ defmodule Easy.Training.TrainingPlan do
       end
     end)
   end
-
-  defp copy_sets(sets) when is_list(sets) do
-    Enum.map(sets, fn set ->
-      %{
-        target_reps: set.target_reps,
-        load_value: set.load_value,
-        load_unit: set.load_unit,
-        intensity_target: set.intensity_target,
-        tempo: set.tempo,
-        rest_seconds: set.rest_seconds,
-        duration_seconds: set.duration_seconds,
-        distance_value: set.distance_value,
-        distance_unit: set.distance_unit,
-        notes: set.notes
-      }
-    end)
-  end
-
-  defp copy_sets(_), do: []
 
   defp generate_copy_name(original_name, business_id) do
     base_name = String.replace(original_name, ~r/\s*\(Copy\s*\d*\)\s*$/, "") |> String.trim()

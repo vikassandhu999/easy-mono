@@ -29,6 +29,17 @@ defmodule Easy.Training.WorkoutElement do
 
   @cast_fields [:position, :superset_group_id, :notes, :exercise_id]
 
+  @spec copy_attrs(t()) :: map()
+  def copy_attrs(%__MODULE__{} = element) do
+    %{
+      position: element.position,
+      superset_group_id: element.superset_group_id,
+      notes: element.notes,
+      exercise_id: element.exercise_id,
+      planned_sets: Enum.map(element.planned_sets, &PlannedSet.to_attrs/1)
+    }
+  end
+
   @spec to_snapshot(t()) :: map()
   def to_snapshot(%__MODULE__{} = element) do
     %{

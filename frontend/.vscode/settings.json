@@ -13,7 +13,7 @@
   "editor.formatOnSave": true,
   "editor.fontSize": 13,
   "window.zoomLevel": 1,
-  "eslint.format.enable": true,
+  "eslint.format.enable": false,
   "tailwindCSS.experimental.configFile": {
     "apps/clientapp-v2/src/index.css": "apps/clientapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
     "apps/coachapp-v2/src/index.css": "apps/coachapp-v2/src/**/*.{js,jsx,ts,tsx,css}",

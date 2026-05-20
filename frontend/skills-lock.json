@@ -1,10 +1,19 @@
 {
   "version": 1,
   "skills": {
+    "adr-management": {
+      "source": "local",
+      "sourceType": "github"
+    },
     "heroui-react": {
       "source": "heroui-inc/heroui",
       "sourceType": "github",
-      "computedHash": "6116a849a6039e8b4d9dda3f6251c462e4ce8f583c53fda77838d0b2c124fe41"
+      "skillPath": "skills/heroui-react/SKILL.md",
+      "computedHash": "c9e1bb41fbc3cee782faae08bd465ae05cd685a6ed7cc3392464fdf29b3ab467"
+    },
+    "mobile-first-design": {
+      "source": "local",
+      "sourceType": "github"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
@@ -20,14 +29,6 @@
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
-    },
-    "mobile-first-design": {
-      "source": "local",
-      "sourceType": "github"
-    },
-    "adr-management": {
-      "source": "local",
-      "sourceType": "github"
     }
   }
 }

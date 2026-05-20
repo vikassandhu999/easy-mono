@@ -4,7 +4,7 @@ defmodule Easy.Training.WorkoutSession do
   alias Easy.Clients
   alias Easy.Orgs
   alias Easy.Repo
-  alias Easy.Training.{Workout, WorkoutElement, PerformedSet}
+  alias Easy.Training.{Workout, WorkoutElement, PerformedSet, TrainingPlan}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -143,6 +143,44 @@ defmodule Easy.Training.WorkoutSession do
     |> maybe_put_snapshot(business_id)
     |> Repo.insert()
     |> preload_result()
+  end
+
+  @spec client_create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def client_create(business_id, client_id, attrs) do
+    insert_changeset(business_id, client_id, attrs)
+    |> validate_client_workout_accessible(business_id, client_id)
+    |> maybe_put_snapshot(business_id)
+    |> Repo.insert()
+    |> preload_result()
+  end
+
+  defp validate_client_workout_accessible(%{valid?: false} = changeset, _business_id, _client_id), do: changeset
+
+  defp validate_client_workout_accessible(changeset, business_id, client_id) do
+    case get_field(changeset, :workout_id) do
+      nil ->
+        changeset
+
+      workout_id ->
+        today = Date.utc_today()
+
+        exists? =
+          Workout
+          |> Workout.for_business(business_id)
+          |> join(:inner, [w], t in TrainingPlan,
+            on:
+              t.id == w.training_plan_id and t.business_id == ^business_id and
+                t.client_id == ^client_id
+          )
+          |> where(
+            [w, t],
+            w.id == ^workout_id and t.status == ^:active and t.start_date <= ^today and
+              t.end_date >= ^today
+          )
+          |> Repo.exists?()
+
+        if exists?, do: changeset, else: add_error(changeset, :workout_id, "does not exist")
+    end
   end
 
   defp maybe_put_snapshot(changeset, business_id) do

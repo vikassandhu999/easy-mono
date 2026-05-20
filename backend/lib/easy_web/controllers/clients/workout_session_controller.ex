@@ -2,18 +2,16 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   use EasyWeb, :controller
 
   alias Easy.Clients.Client
-  alias Easy.Training.Reads
+  alias Easy.Training.SessionReads
   alias Easy.Training.WorkoutSession
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
-    workout_id = Map.get(params, "workout_id")
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
          :ok <- WorkoutSession.ensure_no_active(business_id, client.id),
-         {:ok, :valid} <- Reads.ensure_client_workout(business_id, client.id, workout_id),
-         {:ok, session} <- WorkoutSession.create(business_id, client.id, params) do
+         {:ok, session} <- WorkoutSession.client_create(business_id, client.id, params) do
       conn
       |> put_status(:created)
       |> render(:show, session: session)
@@ -30,7 +28,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
       state = parse_enum(params, "state", WorkoutSession.states())
 
       with {:ok, %{sessions: sessions, count: count}} <-
-             Reads.list_sessions(business_id, client.id, state, offset, limit) do
+             SessionReads.list_sessions(business_id, client.id, state, offset, limit) do
         render(conn, :index, sessions: sessions, count: count)
       end
     end
@@ -41,7 +39,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, session} <- Reads.fetch_client_session_with_sets(business_id, client.id, id) do
+         {:ok, session} <- SessionReads.fetch_client_session_with_sets(business_id, client.id, id) do
       render(conn, :show, session: session)
     end
   end
@@ -51,7 +49,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, session} <- Reads.fetch_active_client_session(business_id, client.id) do
+         {:ok, session} <- SessionReads.fetch_active_client_session(business_id, client.id) do
       render(conn, :show, session: session)
     end
   end
@@ -61,7 +59,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, session} <- Reads.fetch_client_session_with_sets(business_id, client.id, id),
+         {:ok, session} <- SessionReads.fetch_client_session_with_sets(business_id, client.id, id),
          {:ok, completed} <- WorkoutSession.complete(session, conn.body_params) do
       render(conn, :show, session: completed)
     end
@@ -72,7 +70,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, session} <- Reads.fetch_client_session_with_sets(business_id, client.id, id),
+         {:ok, session} <- SessionReads.fetch_client_session_with_sets(business_id, client.id, id),
          {:ok, discarded} <- WorkoutSession.discard(session) do
       render(conn, :show, session: discarded)
     end
@@ -83,7 +81,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, session} <- Reads.fetch_client_session_with_sets(business_id, client.id, id),
+         {:ok, session} <- SessionReads.fetch_client_session_with_sets(business_id, client.id, id),
          {:ok, updated} <- WorkoutSession.client_update(session, conn.body_params) do
       render(conn, :show, session: updated)
     end

@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Nutrition
   alias Easy.Nutrition.Plan
-  alias Easy.Training
+  alias Easy.Training.PlanReads
   alias Easy.Training.TrainingPlan
 
   @spec training_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.ClientPlanController do
       status = parse_enum(params, "status", TrainingPlan.statuses())
 
       with {:ok, %{plans: plans, count: count}} <-
-             Training.Reads.list_client_plans(business_id, client_id, status, offset, limit) do
+             PlanReads.list_client_plans(business_id, client_id, status, offset, limit) do
         render(conn, :training_plans, plans: plans, count: count)
       end
     end

@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.ExerciseController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Reads
+  alias Easy.Training.ExerciseReads
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
@@ -13,7 +13,7 @@ defmodule EasyWeb.Clients.ExerciseController do
     muscle_ids = parse_list(params, "muscle_ids")
 
     with {:ok, %{exercises: exercises, count: count}} <-
-           Reads.list_exercises(business_id, search, muscle_ids, offset, limit) do
+           ExerciseReads.list_exercises(business_id, search, muscle_ids, offset, limit) do
       render(conn, :index, exercises: exercises, count: count)
     end
   end
@@ -22,7 +22,7 @@ defmodule EasyWeb.Clients.ExerciseController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, exercise} <- Reads.fetch_exercise(business_id, id) do
+    with {:ok, exercise} <- ExerciseReads.fetch_exercise(business_id, id) do
       render(conn, :show, exercise: exercise)
     end
   end

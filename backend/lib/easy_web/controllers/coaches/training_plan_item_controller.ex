@@ -3,16 +3,14 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
 
   alias Easy.Orgs.Coaches
   alias Easy.Training.PlanItem
-  alias Easy.Training.Reads
+  alias Easy.Training.PlanReads
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     claims = conn.assigns.claims
-    workout_id = Map.get(params, "workout_id")
 
     with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
-         {:ok, :valid} <- Reads.ensure_workout_for_plan(plan.id, claims.business_id, workout_id),
+         {:ok, plan} <- PlanReads.fetch_plan(claims.business_id, plan_id),
          {:ok, plan_item} <- PlanItem.create(plan.id, claims.business_id, coach.id, params) do
       conn
       |> put_status(:created)
@@ -24,7 +22,7 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
   def update(conn, %{"id" => plan_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan_item} <- Reads.fetch_plan_item(business_id, plan_item_id),
+    with {:ok, plan_item} <- PlanReads.fetch_plan_item(business_id, plan_item_id),
          {:ok, updated_plan_item} <- PlanItem.update(plan_item, conn.body_params) do
       render(conn, :show, plan_item: updated_plan_item)
     end
@@ -34,7 +32,7 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
   def delete(conn, %{"id" => plan_item_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan_item} <- Reads.fetch_plan_item(business_id, plan_item_id),
+    with {:ok, plan_item} <- PlanReads.fetch_plan_item(business_id, plan_item_id),
          {:ok, _deleted} <- PlanItem.delete(plan_item) do
       send_resp(conn, :no_content, "")
     end
@@ -44,7 +42,7 @@ defmodule EasyWeb.Coaches.TrainingPlanItemController do
   def index(conn, %{"plan_id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan_items} <- Reads.list_plan_items(business_id, plan_id) do
+    with {:ok, plan_items} <- PlanReads.list_plan_items(business_id, plan_id) do
       conn
       |> put_status(:ok)
       |> render(:index, plan_items: plan_items)

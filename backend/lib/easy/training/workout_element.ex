@@ -59,11 +59,24 @@ defmodule Easy.Training.WorkoutElement do
     |> cast(attrs, @cast_fields)
     |> put_change(:workout_id, workout_id)
     |> put_change(:business_id, business_id)
+    |> common_validations()
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(element, attrs) do
+    element
+    |> cast(attrs, @cast_fields)
+    |> common_validations()
+  end
+
+  defp common_validations(changeset) do
+    changeset
     |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
     |> validate_required([:position, :exercise_id])
     |> validate_length(:planned_sets, min: 1)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
+    |> validate_exercise_in_business()
     |> unique_constraint([:position, :workout_id],
       name: :workout_elements_position_workout_id_index
     )
@@ -72,20 +85,22 @@ defmodule Easy.Training.WorkoutElement do
     |> foreign_key_constraint(:business_id)
   end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(element, attrs) do
-    element
-    |> cast(attrs, @cast_fields)
-    |> cast_embed(:planned_sets, with: &PlannedSet.changeset/2)
-    |> validate_length(:planned_sets, min: 1)
-    |> validate_length(:notes, max: 5000)
-    |> validate_number(:position, greater_than_or_equal_to: 0)
-    |> unique_constraint([:position, :workout_id],
-      name: :workout_elements_position_workout_id_index
-    )
-    |> foreign_key_constraint(:workout_id)
-    |> foreign_key_constraint(:exercise_id)
-    |> foreign_key_constraint(:business_id)
+  defp validate_exercise_in_business(%{valid?: false} = changeset), do: changeset
+
+  defp validate_exercise_in_business(changeset) do
+    business_id = get_field(changeset, :business_id)
+    exercise_id = get_field(changeset, :exercise_id)
+
+    cond do
+      is_nil(business_id) || is_nil(exercise_id) ->
+        changeset
+
+      Exercise |> Exercise.for_business(business_id) |> Repo.get(exercise_id) ->
+        changeset
+
+      true ->
+        add_error(changeset, :exercise_id, "does not exist")
+    end
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

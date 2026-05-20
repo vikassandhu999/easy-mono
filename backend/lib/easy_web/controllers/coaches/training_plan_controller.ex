@@ -3,7 +3,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
 
   alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Orgs.Coaches
-  alias Easy.Training.Reads
+  alias Easy.Training.PlanReads
   alias Easy.Training.TrainingPlan
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -22,7 +22,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id) do
+    with {:ok, plan} <- PlanReads.fetch_plan_full(business_id, id) do
       render(conn, :show, plan: plan)
     end
   end
@@ -31,7 +31,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, id),
+    with {:ok, plan} <- PlanReads.fetch_plan(business_id, id),
          {:ok, updated} <- TrainingPlan.update(plan, conn.body_params) do
       render(conn, :show, plan: updated)
     end
@@ -41,7 +41,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, id),
+    with {:ok, plan} <- PlanReads.fetch_plan(business_id, id),
          {:ok, _plan} <- TrainingPlan.delete(plan) do
       send_resp(conn, :no_content, "")
     end
@@ -57,7 +57,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Reads.list_template_plans(business_id, search, status, offset, limit) do
+           PlanReads.list_template_plans(business_id, search, status, offset, limit) do
       render(conn, :index, plans: plans, count: count)
     end
   end
@@ -66,7 +66,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id),
+    with {:ok, plan} <- PlanReads.fetch_plan_full(business_id, id),
          {:ok, duplicated} <- TrainingPlan.duplicate(plan) do
       conn
       |> put_status(:created)
@@ -78,7 +78,7 @@ defmodule EasyWeb.Coaches.TrainingPlanController do
   def assign(conn, %{"id" => id, "client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan_full(business_id, id),
+    with {:ok, plan} <- PlanReads.fetch_plan_full(business_id, id),
          {:ok, _client} <- ClientReads.fetch_client(business_id, client_id),
          {:ok, assigned} <-
            TrainingPlan.assign_to_client(

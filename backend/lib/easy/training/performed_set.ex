@@ -85,6 +85,7 @@ defmodule Easy.Training.PerformedSet do
     |> validate_at_least_one_performance_metric()
     |> validate_load_requires_unit()
     |> validate_distance_requires_unit()
+    |> validate_exercise_in_business()
     |> validate_workout_element_matches_session()
     |> unique_constraint([:workout_session_id, :position],
       name: :performed_sets_workout_session_id_position_index,
@@ -94,6 +95,24 @@ defmodule Easy.Training.PerformedSet do
     |> foreign_key_constraint(:workout_element_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
+  end
+
+  defp validate_exercise_in_business(%{valid?: false} = changeset), do: changeset
+
+  defp validate_exercise_in_business(changeset) do
+    business_id = get_field(changeset, :business_id)
+    exercise_id = get_field(changeset, :exercise_id)
+
+    cond do
+      is_nil(business_id) || is_nil(exercise_id) ->
+        changeset
+
+      Exercise |> Exercise.for_business(business_id) |> Repo.get(exercise_id) ->
+        changeset
+
+      true ->
+        add_error(changeset, :exercise_id, "does not exist")
+    end
   end
 
   defp validate_at_least_one_performance_metric(changeset) do

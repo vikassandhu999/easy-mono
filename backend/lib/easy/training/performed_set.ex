@@ -64,6 +64,18 @@ defmodule Easy.Training.PerformedSet do
     |> cast(attrs, @cast_fields)
     |> put_change(:workout_session_id, workout_session_id)
     |> put_change(:business_id, business_id)
+    |> common_validations()
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(set, attrs) do
+    set
+    |> cast(attrs, @cast_fields)
+    |> common_validations()
+  end
+
+  defp common_validations(changeset) do
+    changeset
     |> validate_required([:position, :exercise_id])
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
@@ -73,28 +85,7 @@ defmodule Easy.Training.PerformedSet do
     |> validate_at_least_one_performance_metric()
     |> validate_load_requires_unit()
     |> validate_distance_requires_unit()
-    |> unique_constraint([:workout_session_id, :position],
-      name: :performed_sets_workout_session_id_position_index,
-      message: "position already exists in this workout session"
-    )
-    |> foreign_key_constraint(:workout_session_id)
-    |> foreign_key_constraint(:workout_element_id)
-    |> foreign_key_constraint(:exercise_id)
-    |> foreign_key_constraint(:business_id)
-  end
-
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(set, attrs) do
-    set
-    |> cast(attrs, @cast_fields)
-    |> validate_length(:notes, max: 5000)
-    |> validate_number(:position, greater_than_or_equal_to: 0)
-    |> validate_number(:rpe, greater_than_or_equal_to: 1, less_than_or_equal_to: 10)
-    |> validate_number(:rir, greater_than_or_equal_to: 0)
-    |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
-    |> validate_at_least_one_performance_metric()
-    |> validate_load_requires_unit()
-    |> validate_distance_requires_unit()
+    |> validate_workout_element_matches_session()
     |> unique_constraint([:workout_session_id, :position],
       name: :performed_sets_workout_session_id_position_index,
       message: "position already exists in this workout session"
@@ -148,7 +139,9 @@ defmodule Easy.Training.PerformedSet do
     end
   end
 
-  defp check_workout_element_matches_session(changeset) do
+  defp validate_workout_element_matches_session(%{valid?: false} = changeset), do: changeset
+
+  defp validate_workout_element_matches_session(changeset) do
     element_id = get_field(changeset, :workout_element_id)
     exercise_id = get_field(changeset, :exercise_id)
     session_id = get_field(changeset, :workout_session_id)
@@ -229,7 +222,6 @@ defmodule Easy.Training.PerformedSet do
   @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(workout_session_id, business_id, attrs) do
     insert_changeset(workout_session_id, business_id, attrs)
-    |> check_context()
     |> Repo.insert()
     |> preload_result()
   end
@@ -237,16 +229,12 @@ defmodule Easy.Training.PerformedSet do
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(set, attrs) do
     update_changeset(set, attrs)
-    |> check_context()
     |> Repo.update()
     |> preload_result()
   end
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def delete(set), do: Repo.delete(set)
-
-  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
-  defp check_context(changeset), do: check_workout_element_matches_session(changeset)
 
   defp preload_result({:ok, record}), do: {:ok, Repo.preload(record, [:exercise])}
   defp preload_result(error), do: error

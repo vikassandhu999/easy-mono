@@ -43,15 +43,8 @@ defmodule Easy.Training.PlanItem do
     |> put_change(:training_plan_id, training_plan_id)
     |> put_change(:business_id, business_id)
     |> put_change(:creator_id, creator_id)
-    |> validate_required([:day, :workout_type, :workout_id])
-    |> validate_inclusion(:day, @days)
-    |> validate_inclusion(:workout_type, @workout_types)
-    |> unique_constraint([:training_plan_id, :day, :workout_type],
-      name: :training_plan_items_plan_id_day_workout_type_index,
-      message: "already has a workout of this type on this day"
-    )
+    |> common_validations()
     |> foreign_key_constraint(:training_plan_id)
-    |> foreign_key_constraint(:workout_id)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:creator_id)
   end
@@ -62,9 +55,16 @@ defmodule Easy.Training.PlanItem do
   def update_changeset(plan_item, attrs) do
     plan_item
     |> cast(attrs, @update_fields)
+    |> common_validations()
+  end
+
+  defp common_validations(changeset) do
+    changeset
     |> validate_required([:day, :workout_type, :workout_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
+    |> validate_workout_belongs_to_plan()
+    |> validate_day_is_not_rest_day()
     |> unique_constraint([:training_plan_id, :day, :workout_type],
       name: :training_plan_items_plan_id_day_workout_type_index,
       message: "already has a workout of this type on this day"
@@ -72,7 +72,9 @@ defmodule Easy.Training.PlanItem do
     |> foreign_key_constraint(:workout_id)
   end
 
-  defp check_workout_belongs_to_plan(changeset) do
+  defp validate_workout_belongs_to_plan(%{valid?: false} = changeset), do: changeset
+
+  defp validate_workout_belongs_to_plan(changeset) do
     workout_id = get_field(changeset, :workout_id)
     plan_id = get_field(changeset, :training_plan_id)
     business_id = get_field(changeset, :business_id)
@@ -85,7 +87,9 @@ defmodule Easy.Training.PlanItem do
     end
   end
 
-  defp check_day_is_not_rest_day(changeset) do
+  defp validate_day_is_not_rest_day(%{valid?: false} = changeset), do: changeset
+
+  defp validate_day_is_not_rest_day(changeset) do
     day = get_field(changeset, :day)
     plan_id = get_field(changeset, :training_plan_id)
     business_id = get_field(changeset, :business_id)
@@ -133,27 +137,15 @@ defmodule Easy.Training.PlanItem do
           {:ok, t()} | {:error, Ecto.Changeset.t()}
   def create(training_plan_id, business_id, creator_id, attrs) do
     insert_changeset(training_plan_id, business_id, creator_id, attrs)
-    |> check_context()
     |> Repo.insert()
   end
 
   @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def update(plan_item, attrs) do
     update_changeset(plan_item, attrs)
-    |> check_context()
     |> Repo.update()
   end
 
   @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(plan_item) do
-    Repo.delete(plan_item)
-  end
-
-  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
-
-  defp check_context(changeset) do
-    changeset
-    |> check_workout_belongs_to_plan()
-    |> check_day_is_not_rest_day()
-  end
+  def delete(plan_item), do: Repo.delete(plan_item)
 end

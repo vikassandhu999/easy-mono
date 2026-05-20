@@ -3,6 +3,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
 
   alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Training.SessionReads
+  alias Easy.Training.WorkoutReads
   alias Easy.Training.WorkoutSession
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -11,6 +12,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
 
     with {:ok, _client} <- ClientReads.fetch_client(business_id, client_id),
          :ok <- WorkoutSession.ensure_no_active(business_id, client_id),
+         {:ok, _workout} <- fetch_optional_workout(business_id, Map.get(params, "workout_id")),
          {:ok, session} <- WorkoutSession.create(business_id, client_id, params) do
       conn
       |> put_status(:created)
@@ -71,4 +73,8 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  defp fetch_optional_workout(_business_id, nil), do: {:ok, nil}
+  defp fetch_optional_workout(_business_id, ""), do: {:ok, nil}
+  defp fetch_optional_workout(business_id, workout_id), do: WorkoutReads.fetch_workout(business_id, workout_id)
 end

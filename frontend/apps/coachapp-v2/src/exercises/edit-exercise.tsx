@@ -1,6 +1,5 @@
 import {Button, Spinner} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -13,7 +12,7 @@ import {
   useUpdateExerciseMutation,
 } from '@/api/exercises';
 import {applyFormErrors} from '@/api/shared';
-import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/components/exercise-form';
+import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
 
 // Mounts only when exercise data is available, so useState(exercise.images) initialises without useEffect.
 function EditExerciseForm({
@@ -29,13 +28,14 @@ function EditExerciseForm({
   const [updateExercise, {isLoading: isUpdating}] = useUpdateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
   const {data: equipmentData} = useListEquipmentQuery();
-  const [images, setImages] = useState<string[]>(exercise.images);
 
   const form = useExerciseForm({
     values: {
       description: exercise.description ?? '',
       equipment_ids: exercise.equipment.map((e) => e.id),
       force: exercise.force ?? '',
+      image_url: '',
+      images: exercise.images,
       instructions: exercise.instructions ?? '',
       mechanics: exercise.mechanics ?? '',
       muscle_ids: exercise.muscles.map((m) => m.id),
@@ -55,7 +55,7 @@ function EditExerciseForm({
         ...(force && {force}),
         muscle_ids: formData.muscle_ids ?? [],
         equipment_ids: formData.equipment_ids ?? [],
-        images,
+        images: formData.images ?? [],
       };
       await updateExercise({body, id: exerciseId}).unwrap();
       goBack();
@@ -86,11 +86,9 @@ function EditExerciseForm({
         <ExerciseForm
           equipment={equipmentData?.data ?? []}
           form={form}
-          images={images}
           isSubmitting={isUpdating}
           muscles={musclesData?.data ?? []}
           onCancel={goBack}
-          onImagesChange={setImages}
           onSubmit={onSubmit}
           submitLabel="Save changes"
           submittingLabel="Saving changes"

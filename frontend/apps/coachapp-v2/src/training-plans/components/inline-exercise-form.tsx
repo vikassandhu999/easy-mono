@@ -1,8 +1,8 @@
-import {Button, Input, TextArea} from '@heroui/react';
+import {Button, ErrorMessage, FieldError, Form, Input, Label, TextArea, TextField, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Dumbbell} from 'lucide-react';
 import {useEffect, useId, useRef} from 'react';
-import {useForm, useWatch} from 'react-hook-form';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import type {PlannedSet} from '@/api/trainingPlans';
@@ -157,7 +157,6 @@ export default function InlineExerciseForm({
     control,
     formState: {errors},
     handleSubmit,
-    register,
     setError,
     setValue,
   } = useForm<InlineExerciseFormValues>({
@@ -245,7 +244,7 @@ export default function InlineExerciseForm({
   };
 
   return (
-    <form
+    <Form
       autoComplete="off"
       className="flex flex-col gap-3.5 rounded-xl border border-divider bg-content1 p-3.5"
       onSubmit={handleFormSubmit}
@@ -256,8 +255,23 @@ export default function InlineExerciseForm({
           className="shrink-0 text-foreground-400"
           size={16}
         />
-        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{exerciseName}</p>
-        {isEditing ? <span className="shrink-0 text-xs font-medium text-foreground-400">Editing</span> : null}
+        <Typography
+          className="min-w-0 flex-1 truncate"
+          type="body-sm"
+          weight="semibold"
+        >
+          {exerciseName}
+        </Typography>
+        {isEditing ? (
+          <Typography
+            className="shrink-0"
+            color="muted"
+            type="body-xs"
+            weight="medium"
+          >
+            Editing
+          </Typography>
+        ) : null}
       </div>
 
       {/* Chip row — tight, inline, not stretched. Secondary action: they
@@ -286,36 +300,55 @@ export default function InlineExerciseForm({
       <div className="flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(70px,1fr)_minmax(90px,1fr)_minmax(150px,1.5fr)_minmax(140px,1.5fr)_minmax(160px,2fr)] xl:items-end xl:gap-3">
         <div className="grid grid-cols-2 gap-3 xl:contents">
           <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-500"
-              htmlFor={`${uid}-sets`}
-            >
-              Sets
-            </label>
-            <Input
-              className="h-12"
-              id={`${uid}-sets`}
-              inputMode="numeric"
-              placeholder="4"
-              {...register('sets')}
+            <Controller
+              control={control}
+              name="sets"
+              render={({field}) => (
+                <TextField
+                  isInvalid={!!errors.sets}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                >
+                  <Label>Sets</Label>
+                  {errors.sets && <FieldError>{errors.sets.message}</FieldError>}
+                  <Input
+                    className="h-12"
+                    id={`${uid}-sets`}
+                    inputMode="numeric"
+                    placeholder="4"
+                  />
+                </TextField>
+              )}
             />
-            {errors.sets ? <p className="text-xs text-danger">{errors.sets.message}</p> : null}
           </div>
           <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-500"
-              htmlFor={`${uid}-reps`}
-            >
-              Reps
-            </label>
-            <Input
-              className="h-12"
-              id={`${uid}-reps`}
-              inputMode="text"
-              placeholder="8-12"
-              {...register('reps', {onBlur: handleRepsBlur})}
+            <Controller
+              control={control}
+              name="reps"
+              render={({field}) => (
+                <TextField
+                  isInvalid={!!errors.reps}
+                  name={field.name}
+                  onBlur={() => {
+                    field.onBlur();
+                    handleRepsBlur();
+                  }}
+                  onChange={field.onChange}
+                  value={field.value}
+                >
+                  <Label>Reps</Label>
+                  {errors.reps && <FieldError>{errors.reps.message}</FieldError>}
+                  <Input
+                    className="h-12"
+                    id={`${uid}-reps`}
+                    inputMode="text"
+                    placeholder="8-12"
+                  />
+                </TextField>
+              )}
             />
-            {errors.reps ? <p className="text-xs text-danger">{errors.reps.message}</p> : null}
           </div>
         </div>
 
@@ -323,93 +356,102 @@ export default function InlineExerciseForm({
             single-row grid via `xl:contents`. */}
         <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 xl:contents">
           <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-500"
-              htmlFor={`${uid}-load`}
-            >
-              Load
-            </label>
-            <div className="flex gap-1">
-              {(() => {
-                const {ref: rhfRef, ...rest} = register('loadValue');
-                return (
-                  <Input
-                    className="h-12 min-w-0 flex-1"
-                    id={`${uid}-load`}
-                    inputMode="decimal"
-                    placeholder="—"
-                    ref={(el) => {
-                      rhfRef(el);
-                      loadInputRef.current = el;
-                    }}
-                    {...rest}
-                  />
-                );
-              })()}
-              <UnitPicker
-                className="min-h-12 shrink-0 px-3"
-                onChange={(unit) => {
-                  setValue('loadUnit', unit, {shouldDirty: true});
-                  onLoadUnitChange?.(unit);
-                }}
-                value={loadUnitValue}
-              />
-            </div>
+            <Controller
+              control={control}
+              name="loadValue"
+              render={({field}) => (
+                <TextField
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                >
+                  <Label>Load</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-12 min-w-0 flex-1"
+                      id={`${uid}-load`}
+                      inputMode="decimal"
+                      placeholder="—"
+                      ref={(el) => {
+                        field.ref(el);
+                        loadInputRef.current = el;
+                      }}
+                    />
+                    <UnitPicker
+                      className="min-h-12 shrink-0 px-3"
+                      onChange={(unit) => {
+                        setValue('loadUnit', unit, {shouldDirty: true});
+                        onLoadUnitChange?.(unit);
+                      }}
+                      value={loadUnitValue}
+                    />
+                  </div>
+                </TextField>
+              )}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-500"
-              htmlFor={`${uid}-rest`}
-            >
-              Rest
-            </label>
-            <div className="flex gap-1">
-              <Input
-                className="h-12 min-w-0 flex-1"
-                id={`${uid}-rest`}
-                inputMode="decimal"
-                placeholder={restUnitValue === 'min' ? '1.5' : '90'}
-                {...register('rest')}
-              />
-              <Button
-                aria-label={`Rest unit: ${getRestPillLabel()}`}
-                className="min-h-12 shrink-0 px-3"
-                onPress={toggleRestUnit}
-                type="button"
-                variant="secondary"
-              >
-                {getRestPillLabel()}
-              </Button>
-            </div>
+            <Controller
+              control={control}
+              name="rest"
+              render={({field}) => (
+                <TextField
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                >
+                  <Label>Rest</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      className="h-12 min-w-0 flex-1"
+                      id={`${uid}-rest`}
+                      inputMode="decimal"
+                      placeholder={restUnitValue === 'min' ? '1.5' : '90'}
+                    />
+                    <Button
+                      aria-label={`Rest unit: ${getRestPillLabel()}`}
+                      className="min-h-12 shrink-0 px-3"
+                      onPress={toggleRestUnit}
+                      type="button"
+                      variant="secondary"
+                    >
+                      {getRestPillLabel()}
+                    </Button>
+                  </div>
+                </TextField>
+              )}
+            />
           </div>
         </div>
 
         {/* Notes — full-width on mobile/mid; fifth cell at xl. */}
         <div className="flex min-w-0 flex-col gap-1 xl:col-start-5">
-          <label
-            className="text-xs text-foreground-500"
-            htmlFor={`${uid}-notes`}
-          >
-            Notes (optional)
-          </label>
-          <TextArea
-            className="w-full"
-            id={`${uid}-notes`}
-            rows={1}
-            {...register('exerciseNotes')}
+          <Controller
+            control={control}
+            name="exerciseNotes"
+            render={({field}) => (
+              <TextField
+                className="w-full"
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                value={field.value}
+              >
+                <Label>Notes (optional)</Label>
+                <TextArea
+                  id={`${uid}-notes`}
+                  rows={1}
+                />
+              </TextField>
+            )}
           />
         </div>
       </div>
 
-      {errors.root ? (
-        <p
-          aria-live="polite"
-          className="text-sm text-danger"
-        >
-          {errors.root.message}
-        </p>
-      ) : null}
+      {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
       <div className="flex items-center justify-end gap-2">
         <Button
@@ -428,6 +470,6 @@ export default function InlineExerciseForm({
           {isSubmitting ? `${actionLabel}ing…` : actionLabel}
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }

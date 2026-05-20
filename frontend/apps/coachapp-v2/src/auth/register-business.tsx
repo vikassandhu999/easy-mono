@@ -1,6 +1,6 @@
-import {Button, Input, Label, Spinner} from '@heroui/react';
+import {Button, Description, ErrorMessage, FieldError, Form, Input, Label, Spinner, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm, useWatch} from 'react-hook-form';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -12,15 +12,24 @@ import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
 const schema = z.object({
-  name: z.string().min(1, 'Business name is required').max(100, 'Name is too long'),
+  name: z.string().min(1, 'Enter business name').max(100, 'Use 100 characters or fewer'),
   handle: z
     .string()
-    .min(3, 'Handle must be at least 3 characters')
-    .max(30, 'Handle is too long')
-    .regex(/^[a-z0-9_-]+$/, 'Only lowercase letters, numbers, hyphens and underscores'),
+    .min(3, 'Use at least 3 characters')
+    .max(30, 'Use 30 characters or fewer')
+    .regex(/^[a-z0-9_-]+$/, 'Use lowercase letters, numbers, hyphens, and underscores'),
 });
 
 type RegisterBusinessFormValues = z.infer<typeof schema>;
+
+function generateHandle(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 30);
+}
 
 export default function RegisterBusiness() {
   const navigate = useNavigate();
@@ -28,33 +37,17 @@ export default function RegisterBusiness() {
   const [exchangeToken, {isLoading: isExchanging}] = useExchangeTokenMutation();
   const isLoading = isCreating || isExchanging;
 
-  const {
-    formState: {errors},
-    handleSubmit,
-    register,
-    setError,
-    setValue,
-    control,
-  } = useForm<RegisterBusinessFormValues>({
+  const form = useForm<RegisterBusinessFormValues>({
+    defaultValues: {handle: '', name: ''},
     resolver: zodResolver(schema),
   });
 
-  const nameValue = useWatch({control, name: 'name'});
-
-  const generateHandle = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .slice(0, 30);
-  };
+  const nameValue = useWatch({control: form.control, name: 'name'});
 
   const onSubmit = async (data: RegisterBusinessFormValues) => {
     try {
       await createBusiness({name: data.name, handle: data.handle}).unwrap();
 
-      // Exchange guest token for coach token that contains the business_id
       const refreshToken = getRefreshToken();
       if (refreshToken) {
         const tokens = await exchangeToken({
@@ -67,7 +60,7 @@ export default function RegisterBusiness() {
 
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Failed to register business. Please try again.', setError);
+      applyFormErrors(err, "Business wasn't registered. Try again", form.setError);
     }
   };
 
@@ -76,38 +69,54 @@ export default function RegisterBusiness() {
       description="Set up your coaching business to get started."
       title="Register your business"
     >
-      <form
+      <Form
         className="flex flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="name">Business name</Label>
-          <Input
-            autoComplete="organization"
-            id="name"
-            placeholder="Peak Performance Coaching"
-            {...register('name', {
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                const handle = generateHandle(e.target.value);
-                setValue('handle', handle, {shouldValidate: !!nameValue});
-              },
-            })}
-          />
-          {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
-        </div>
+        <Controller
+          control={form.control}
+          name="name"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!form.formState.errors.name}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(value);
+                const handle = generateHandle(value);
+                form.setValue('handle', handle, {shouldValidate: !!nameValue});
+              }}
+              value={field.value}
+            >
+              <Label>Business name</Label>
+              {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+              <Input autoComplete="organization" />
+            </TextField>
+          )}
+        />
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="handle">Handle</Label>
-          <Input
-            id="handle"
-            placeholder="peak-performance"
-            {...register('handle')}
-          />
-          <p className="text-xs text-foreground-400">This will be your unique URL identifier</p>
-          {errors.handle && <p className="text-xs text-danger">{errors.handle.message}</p>}
-        </div>
+        <Controller
+          control={form.control}
+          name="handle"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!form.formState.errors.handle}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              value={field.value}
+            >
+              <Label>Handle</Label>
+              <Description>This will be your unique URL identifier</Description>
+              {form.formState.errors.handle && <FieldError>{form.formState.errors.handle.message}</FieldError>}
+              <Input />
+            </TextField>
+          )}
+        />
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
         <Button
           fullWidth
@@ -120,13 +129,13 @@ export default function RegisterBusiness() {
                 color="current"
                 size="sm"
               />
-              Creating business...
+              Creating business
             </>
           ) : (
             'Continue'
           )}
         </Button>
-      </form>
+      </Form>
     </AuthLayout>
   );
 }

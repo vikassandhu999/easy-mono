@@ -9,13 +9,8 @@ import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trai
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   useTrainingPlanForm,
-} from '@/training-plans/components/training-plan-form';
+} from '@/training-plans/training-plan-form/training-plan-form';
 
-/**
- * Inner component rendered only when plan data is available.
- * This avoids the need for useEffect to sync server state into local state,
- * which the React Compiler lint rule forbids.
- */
 function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: string}) {
   const goBack = useGoBack(backPath);
   const {data} = useGetTrainingPlanQuery(planId);

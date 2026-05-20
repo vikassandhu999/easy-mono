@@ -1,6 +1,5 @@
 import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
@@ -8,7 +7,7 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
 import {applyFormErrors} from '@/api/shared';
-import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/components/exercise-form';
+import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
 
 export default function CreateExercise() {
   const navigate = useNavigate();
@@ -16,8 +15,6 @@ export default function CreateExercise() {
   const [createExercise, {isLoading}] = useCreateExerciseMutation();
   const {data: musclesData} = useListMusclesQuery();
   const {data: equipmentData} = useListEquipmentQuery();
-  const [images, setImages] = useState<string[]>([]);
-
   const form = useExerciseForm();
 
   const onSubmit = async (data: ExerciseFormValues) => {
@@ -34,7 +31,7 @@ export default function CreateExercise() {
         ...(data.equipment_ids?.length && {
           equipment_ids: data.equipment_ids,
         }),
-        ...(images.length > 0 && {images}),
+        ...((data.images?.length ?? 0) > 0 && {images: data.images}),
       };
       const result = await createExercise(body).unwrap();
       navigate(`/library/exercises/${result.data.id}`, {replace: true});
@@ -65,11 +62,9 @@ export default function CreateExercise() {
         <ExerciseForm
           equipment={equipmentData?.data ?? []}
           form={form}
-          images={images}
           isSubmitting={isLoading}
           muscles={musclesData?.data ?? []}
           onCancel={() => navigate(ROUTES.EXERCISES)}
-          onImagesChange={setImages}
           onSubmit={onSubmit}
           submitLabel="Create exercise"
           submittingLabel="Creating exercise"

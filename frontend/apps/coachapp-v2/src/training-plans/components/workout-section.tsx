@@ -1,9 +1,23 @@
 import type {Ref} from 'react';
 
 import {formatUsedOnDays, getWorkoutUsedOnDays} from '@easy/utils';
-import {AlertDialog, Button, Input, Popover, Spinner, toast} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  Popover,
+  TextField,
+  toast,
+  Typography,
+} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {MoreHorizontal, Plus} from 'lucide-react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {z} from 'zod';
 
 import type {Exercise} from '@/api/exercises';
 import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
@@ -62,7 +76,6 @@ export default function WorkoutSection({
   const [sessionLoadUnit, setSessionLoadUnit] = useState<LoadUnitValue>('kg');
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editName, setEditName] = useState(workout.name);
   const [isWorkoutMenuOpen, setIsWorkoutMenuOpen] = useState(false);
   const [showDeleteWorkoutDialog, setShowDeleteWorkoutDialog] = useState(false);
   const usedOnDays = useMemo(() => getWorkoutUsedOnDays(planItems, workout.id), [planItems, workout.id]);
@@ -71,14 +84,9 @@ export default function WorkoutSection({
     [usedOnDays],
   );
 
-  const handleSaveName = async () => {
-    const trimmed = editName.trim();
-    if (!trimmed) {
-      setEditName(workout.name);
-      setIsEditingName(false);
-      return;
-    }
-    if (trimmed === workout.name) {
+  const handleSaveName = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === workout.name) {
       setIsEditingName(false);
       return;
     }
@@ -86,21 +94,15 @@ export default function WorkoutSection({
       await updateWorkout({id: workout.id, planId, body: {name: trimmed}}).unwrap();
       setIsEditingName(false);
     } catch {
-      setEditName(workout.name);
       setIsEditingName(false);
       toast.danger('Failed to rename workout.');
     }
   };
 
-  const nameInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) node.focus();
-  }, []);
-
   const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [editNotes, setEditNotes] = useState(workout.notes ?? '');
 
-  const handleSaveNotes = async () => {
-    const trimmed = editNotes.trim();
+  const handleSaveNotes = async (notes: string) => {
+    const trimmed = notes.trim();
     const current = workout.notes ?? '';
     if (trimmed === current) {
       setIsEditingNotes(false);
@@ -110,15 +112,10 @@ export default function WorkoutSection({
       await updateWorkout({id: workout.id, planId, body: {notes: trimmed || null}}).unwrap();
       setIsEditingNotes(false);
     } catch {
-      setEditNotes(workout.notes ?? '');
       setIsEditingNotes(false);
       toast.danger('Failed to update notes.');
     }
   };
-
-  const notesInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) node.focus();
-  }, []);
 
   const handleDeleteWorkout = async () => {
     try {
@@ -317,61 +314,46 @@ export default function WorkoutSection({
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {isEditingName ? (
-            <div className="flex min-w-0 items-center gap-2">
-              <Input
-                aria-label="Workout name"
-                className="max-w-[240px]"
-                onBlur={handleSaveName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    (e.target as HTMLInputElement).blur();
-                  }
-                  if (e.key === 'Escape') {
-                    setEditName(workout.name);
-                    setIsEditingName(false);
-                  }
-                }}
-                ref={nameInputRef}
-                value={editName}
-              />
-              {isSavingName && <Spinner size="sm" />}
-            </div>
+            <WorkoutTextForm
+              ariaLabel="Workout name"
+              defaultValue={workout.name}
+              isSubmitting={isSavingName}
+              onCancel={() => setIsEditingName(false)}
+              onSubmit={handleSaveName}
+            />
           ) : (
             <Button
               className="flex min-h-11 min-w-0 items-center rounded-md px-1 text-left transition-colors hover:bg-content2"
               onPress={() => {
-                setEditName(workout.name);
                 setIsEditingNotes(false);
                 setIsEditingName(true);
               }}
               variant="ghost"
             >
-              <h3 className="truncate text-sm font-semibold">{workout.name}</h3>
+              <Typography
+                className="truncate"
+                type="body-sm"
+                weight="semibold"
+              >
+                {workout.name}
+              </Typography>
             </Button>
           )}
-          <p className="mt-1 px-1 text-xs text-foreground-400">{usedOnLabel}</p>
+          <Typography
+            className="mt-1 px-1"
+            color="muted"
+            type="body-xs"
+          >
+            {usedOnLabel}
+          </Typography>
           {!isEditingName && isEditingNotes ? (
-            <div className="mt-1 flex items-center gap-2 px-1">
-              <Input
-                aria-label="Workout notes"
-                className="flex-1"
-                onBlur={handleSaveNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    (e.target as HTMLInputElement).blur();
-                  }
-                  if (e.key === 'Escape') {
-                    setEditNotes(workout.notes ?? '');
-                    setIsEditingNotes(false);
-                  }
-                }}
-                placeholder="Add notes..."
-                ref={notesInputRef}
-                value={editNotes}
+            <div className="mt-1 px-1">
+              <WorkoutTextForm
+                ariaLabel="Workout notes"
+                defaultValue={workout.notes ?? ''}
+                onCancel={() => setIsEditingNotes(false)}
+                onSubmit={handleSaveNotes}
+                placeholder="Add notes"
               />
             </div>
           ) : !isEditingName && workout.notes ? (
@@ -414,7 +396,6 @@ export default function WorkoutSection({
               <WorkoutActionItem
                 onSelect={() => {
                   setIsWorkoutMenuOpen(false);
-                  setEditName(workout.name);
                   setIsEditingNotes(false);
                   setIsEditingName(true);
                 }}
@@ -424,7 +405,6 @@ export default function WorkoutSection({
               <WorkoutActionItem
                 onSelect={() => {
                   setIsWorkoutMenuOpen(false);
-                  setEditNotes(workout.notes ?? '');
                   setIsEditingName(false);
                   setIsEditingNotes(true);
                 }}
@@ -565,6 +545,81 @@ export default function WorkoutSection({
         </Button>
       )}
     </div>
+  );
+}
+
+const workoutTextFormSchema = z.object({
+  value: z.string(),
+});
+
+type WorkoutTextFormValues = z.infer<typeof workoutTextFormSchema>;
+
+function WorkoutTextForm({
+  ariaLabel,
+  defaultValue,
+  isSubmitting,
+  onCancel,
+  onSubmit,
+  placeholder,
+}: {
+  ariaLabel: string;
+  defaultValue: string;
+  isSubmitting?: boolean;
+  onCancel: () => void;
+  onSubmit: (value: string) => Promise<void> | void;
+  placeholder?: string;
+}) {
+  const form = useForm<WorkoutTextFormValues>({
+    defaultValues: {value: defaultValue},
+    resolver: zodResolver(workoutTextFormSchema),
+  });
+
+  const handleSubmit = form.handleSubmit(async ({value}) => {
+    await onSubmit(value);
+  });
+
+  return (
+    <Form
+      className="flex min-w-0 flex-1 flex-col gap-1"
+      onSubmit={handleSubmit}
+    >
+      <Controller
+        control={form.control}
+        name="value"
+        render={({field}) => (
+          <TextField
+            aria-label={ariaLabel}
+            className="max-w-[240px]"
+            isInvalid={!!form.formState.errors.value}
+            name={field.name}
+            onBlur={() => {
+              field.onBlur();
+              handleSubmit().catch(() => undefined);
+            }}
+            onChange={field.onChange}
+            value={field.value}
+          >
+            <Label className="sr-only">{ariaLabel}</Label>
+            {form.formState.errors.value && <FieldError>{form.formState.errors.value.message}</FieldError>}
+            <Input
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+                if (event.key === 'Escape' && !isSubmitting) {
+                  onCancel();
+                }
+              }}
+              placeholder={placeholder}
+              ref={(node) => {
+                node?.focus();
+              }}
+            />
+          </TextField>
+        )}
+      />
+    </Form>
   );
 }
 

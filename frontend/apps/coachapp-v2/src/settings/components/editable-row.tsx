@@ -1,13 +1,13 @@
-import {Button, FieldError, Input, Spinner, TextField} from '@heroui/react';
+import {Button, ErrorMessage, FieldError, Form, Input, Label, Spinner, TextField, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useState} from 'react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {applyFormErrors} from '@/api/shared';
 
 const schema = z.object({
-  value: z.string().min(1, 'Required'),
+  value: z.string().min(1, 'Enter a value'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -25,24 +25,18 @@ export default function EditableRow({
 }) {
   const [editing, setEditing] = useState(false);
 
-  const {
-    formState: {errors, isSubmitting},
-    handleSubmit,
-    register,
-    reset,
-    setError,
-  } = useForm<FormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
 
   const startEdit = () => {
-    reset({value: value || ''});
+    form.reset({value: value || ''});
     setEditing(true);
   };
 
   const cancel = () => {
     setEditing(false);
-    reset();
+    form.reset();
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -50,39 +44,50 @@ export default function EditableRow({
       await onSave(data.value);
       setEditing(false);
     } catch (err) {
-      applyFormErrors(err, 'Failed to save. Try again.', setError);
+      applyFormErrors(err, "Value wasn't saved. Try again", form.setError);
     }
   };
 
-  const errorMessage = errors.value?.message || errors.root?.message;
-
   if (editing) {
     return (
-      <form
+      <Form
         className="flex items-center gap-2 border-t border-divider px-4 py-2"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
-        <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
+        <Typography
+          className="w-20 shrink-0"
+          color="muted"
+          type="body-sm"
+        >
+          {label}
+        </Typography>
         <div className="min-w-0 flex-1">
-          <TextField
-            className="w-full"
-            isInvalid={!!errorMessage}
-            type={inputType}
-          >
-            <Input
-              // eslint-disable-next-line jsx-a11y/no-autofocus
-              autoFocus
-              {...register('value')}
-            />
-            {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-          </TextField>
+          <Controller
+            control={form.control}
+            name="value"
+            render={({field}) => (
+              <TextField
+                className="w-full"
+                isInvalid={!!form.formState.errors.value}
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                type={inputType}
+                value={field.value}
+              >
+                <Label className="sr-only">{label}</Label>
+                {form.formState.errors.value ? <FieldError>{form.formState.errors.value.message}</FieldError> : null}
+                <Input />
+              </TextField>
+            )}
+          />
         </div>
         <Button
-          isPending={isSubmitting}
+          isPending={form.formState.isSubmitting}
           size="sm"
           type="submit"
         >
-          {isSubmitting ? (
+          {form.formState.isSubmitting ? (
             <Spinner
               color="current"
               size="sm"
@@ -99,14 +104,27 @@ export default function EditableRow({
         >
           Cancel
         </Button>
-      </form>
+        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
+      </Form>
     );
   }
 
   return (
     <div className="flex min-h-11 items-center border-t border-divider px-4 py-3">
-      <span className="w-20 shrink-0 text-sm text-foreground-400">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{value || '\u2014'}</span>
+      <Typography
+        className="w-20 shrink-0"
+        color="muted"
+        type="body-sm"
+      >
+        {label}
+      </Typography>
+      <Typography
+        className="min-w-0 flex-1 truncate"
+        type="body-sm"
+        weight="medium"
+      >
+        {value || '—'}
+      </Typography>
       <Button
         className="shrink-0 text-sm text-accent"
         onPress={startEdit}

@@ -10,14 +10,14 @@ import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
   useNutritionPlanForm,
-} from '@/nutrition-plans/components/nutrition-plan-form';
+} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 
 function buildMacrosGoal(data: NutritionPlanFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -68,7 +68,7 @@ export default function CreateNutritionPlan() {
         <NutritionPlanForm
           form={form}
           isSubmitting={isLoading}
-          onCancel={() => navigate(ROUTES.NUTRITION_PLANS)}
+          onCancel={goBack}
           onSubmit={onSubmit}
           submitLabel="Create plan"
           submittingLabel="Creating plan"

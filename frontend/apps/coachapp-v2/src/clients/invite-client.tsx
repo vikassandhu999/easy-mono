@@ -1,64 +1,19 @@
-import {Alert, Button, Card, Input, Label, Separator, Spinner, TextArea, toast, Typography} from '@heroui/react';
-import {zodResolver} from '@hookform/resolvers/zod';
+import {Alert, Button, Card, Separator, toast, Typography} from '@heroui/react';
 import {ArrowLeft, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
-import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
-import {z} from 'zod';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useInviteClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
-
-const schema = z
-  .object({
-    email: z.string().email('Invalid email address').or(z.literal('')).optional(),
-    name: z.string().min(1, 'Name is required'),
-    notes: z.string().optional(),
-    phone: z.string().optional(),
-  })
-  .refine((data) => (data.email && data.email.length > 0) || (data.phone && data.phone.length > 0), {
-    message: 'At least one of email or phone is required',
-  });
-
-type InviteClientFormValues = z.infer<typeof schema>;
-
-/**
- * Schema fields react-hook-form can actually highlight. Backend field keys
- * NOT in this list (e.g. `first_name`, `last_name`, `base`) get hoisted into
- * the form-root message by applyFormErrors — without this, the parser would
- * silently `setError('first_name', ...)` on a form that has no `first_name`
- * registered and the user would see "Please review highlighted fields" with
- * nothing highlighted.
- */
-const KNOWN_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
-
-function splitName(name: string): {firstName: string; lastName?: string} {
-  const trimmed = name.trim();
-  const spaceIndex = trimmed.indexOf(' ');
-  if (spaceIndex === -1) {
-    return {firstName: trimmed};
-  }
-  return {
-    firstName: trimmed.slice(0, spaceIndex),
-    lastName: trimmed.slice(spaceIndex + 1).trim() || undefined,
-  };
-}
-
-function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ') || '';
-}
-
-function getWhatsAppUrl(phone: string | undefined, name: string, inviteUrl: string): string {
-  const message = name
-    ? `Hi ${name}, I've set up your coaching profile! Use this link to get started: ${inviteUrl}`
-    : `I've set up your coaching profile! Use this link to get started: ${inviteUrl}`;
-  const encodedMessage = encodeURIComponent(message);
-  const cleanPhone = phone?.replace(/\D/g, '');
-  return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
-}
+import InviteClientForm, {
+  INVITE_CLIENT_FORM_FIELDS,
+  type InviteClientFormValues,
+  useInviteClientForm,
+} from '@/clients/client-invite-form/invite-client-form';
+import {getFullName, getWhatsAppUrl, splitName} from '@/clients/lib/invite-client';
 
 function InviteConfirmation({client, onInviteAnother}: {client: Client; onInviteAnother: () => void}) {
   const navigate = useNavigate();
@@ -72,7 +27,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
       await navigator.clipboard.writeText(inviteUrl);
       toast.success('Invite link copied to clipboard');
     } catch {
-      toast.danger('Failed to copy link');
+      toast.danger('Invite link could not be copied');
     }
   };
 
@@ -84,7 +39,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
           <Alert.Title>Invite sent to {contactLabel}</Alert.Title>
           <Alert.Description>
             {client.email
-              ? 'The email invite has been sent automatically. You can also share the link below directly.'
+              ? 'The email invite was sent. You can also share the link below.'
               : 'Share the link below with your client to get them started.'}
           </Alert.Description>
         </Alert.Content>
@@ -140,7 +95,7 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
               color="muted"
               type="body-sm"
             >
-              The invite has been sent. The invite link will be available once the backend returns it
+              The invite was sent. The invite link will appear once the backend returns it
             </Typography>
           </Card.Content>
         </Card>
@@ -166,15 +121,7 @@ export default function InviteClient() {
   const [inviteClient, {isLoading}] = useInviteClientMutation();
   const [inviteResult, setInviteResult] = useState<Client | null>(null);
 
-  const {
-    formState: {errors},
-    handleSubmit,
-    register,
-    reset,
-    setError,
-  } = useForm<InviteClientFormValues>({
-    resolver: zodResolver(schema),
-  });
+  const form = useInviteClientForm();
 
   const onSubmit = async (data: InviteClientFormValues) => {
     try {
@@ -188,13 +135,18 @@ export default function InviteClient() {
       }).unwrap();
       setInviteResult(result.data);
     } catch (err) {
-      applyFormErrors(err, "Client wasn't invited. Check the details and try again", setError, KNOWN_FIELDS);
+      applyFormErrors(
+        err,
+        "Client wasn't invited. Check the details and try again",
+        form.setError,
+        INVITE_CLIENT_FORM_FIELDS,
+      );
     }
   };
 
   const handleInviteAnother = () => {
     setInviteResult(null);
-    reset();
+    form.reset();
   };
 
   return (
@@ -222,127 +174,12 @@ export default function InviteClient() {
             onInviteAnother={handleInviteAnother}
           />
         ) : (
-          <form
-            className="flex max-w-lg flex-col gap-4"
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">
-                Name <span className="text-danger">*</span>
-              </Label>
-              <Input
-                autoComplete="name"
-                id="name"
-                placeholder="Vikas Sandhu"
-                {...register('name')}
-              />
-              {errors.name ? (
-                <Typography
-                  className="text-danger"
-                  type="body-xs"
-                >
-                  {errors.name.message}
-                </Typography>
-              ) : null}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                autoComplete="email"
-                id="email"
-                placeholder="client@example.com"
-                type="email"
-                {...register('email')}
-              />
-              {errors.email ? (
-                <Typography
-                  className="text-danger"
-                  type="body-xs"
-                >
-                  {errors.email.message}
-                </Typography>
-              ) : null}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                autoComplete="tel"
-                id="phone"
-                placeholder="+91 98765 43210"
-                type="tel"
-                {...register('phone')}
-              />
-              {errors.phone ? (
-                <Typography
-                  className="text-danger"
-                  type="body-xs"
-                >
-                  {errors.phone.message}
-                </Typography>
-              ) : null}
-            </div>
-
-            <Typography
-              color="muted"
-              type="body-xs"
-            >
-              Add email or phone
-            </Typography>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="notes">Notes</Label>
-              <TextArea
-                id="notes"
-                placeholder="Any notes about this client..."
-                rows={3}
-                {...register('notes')}
-              />
-              {errors.notes ? (
-                <Typography
-                  className="text-danger"
-                  type="body-xs"
-                >
-                  {errors.notes.message}
-                </Typography>
-              ) : null}
-            </div>
-
-            {errors.root ? (
-              <Typography
-                className="text-danger"
-                type="body-sm"
-              >
-                {errors.root.message}
-              </Typography>
-            ) : null}
-
-            <div className="flex flex-row gap-2 pt-2">
-              <Button
-                isPending={isLoading}
-                type="submit"
-              >
-                {isLoading ? (
-                  <>
-                    <Spinner
-                      color="current"
-                      size="sm"
-                    />
-                    Sending invite
-                  </>
-                ) : (
-                  'Send invite'
-                )}
-              </Button>
-              <Button
-                onPress={() => goBack()}
-                variant="ghost"
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
+          <InviteClientForm
+            form={form}
+            isSubmitting={isLoading}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+          />
         )}
       </Page.Content>
     </Page>

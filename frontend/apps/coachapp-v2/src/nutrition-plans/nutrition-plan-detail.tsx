@@ -1,7 +1,22 @@
-import {AlertDialog, Button, Chip, Input, Label, Spinner, TextField, toast, Typography} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  Chip,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  Spinner,
+  TextField,
+  toast,
+  Typography,
+} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
+import {z} from 'zod';
 
 import type {Client} from '@/api/clients';
 import type {NutritionPlanStatus} from '@/api/nutritionPlans';
@@ -49,10 +64,71 @@ function formatDate(dateString: string): string {
 
 const MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
 
+const addMealFormSchema = z.object({
+  name: z.string().trim().min(1, 'Enter meal name'),
+});
+
+type AddMealFormValues = z.infer<typeof addMealFormSchema>;
+
 function getProgressColor(percentage: number): string {
   if (percentage >= 90 && percentage <= 110) return 'bg-success';
   if (percentage > 120) return 'bg-danger';
   return 'bg-warning';
+}
+
+function AddMealForm({
+  isSubmitting,
+  onCancel,
+  onSubmit,
+}: {
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onSubmit: (values: AddMealFormValues) => Promise<void>;
+}) {
+  const form = useForm<AddMealFormValues>({
+    defaultValues: {name: ''},
+    resolver: zodResolver(addMealFormSchema),
+  });
+
+  return (
+    <Form
+      className="flex items-end gap-2"
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
+      <Controller
+        control={form.control}
+        name="name"
+        render={({field}) => (
+          <TextField
+            className="flex-1"
+            isInvalid={!!form.formState.errors.name}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value}
+          >
+            <Label>Meal name</Label>
+            {form.formState.errors.name && <FieldError>{form.formState.errors.name.message}</FieldError>}
+            <Input placeholder="Breakfast or snack 1" />
+          </TextField>
+        )}
+      />
+      <Button
+        isPending={isSubmitting}
+        size="sm"
+        type="submit"
+      >
+        {isSubmitting ? 'Adding' : 'Add'}
+      </Button>
+      <Button
+        onPress={onCancel}
+        size="sm"
+        variant="ghost"
+      >
+        Cancel
+      </Button>
+    </Form>
+  );
 }
 
 function DailyTotals({totals, goal}: {goal?: Macros; totals: Macros}) {
@@ -176,7 +252,6 @@ export default function NutritionPlanDetail() {
   };
 
   const [isAddingMeal, setIsAddingMeal] = useState(false);
-  const [newMealName, setNewMealName] = useState('');
   const [scrollToMealId, setScrollToMealId] = useState<null | string>(null);
 
   const scrollRef = useCallback(
@@ -207,14 +282,12 @@ export default function NutritionPlanDetail() {
     }
   };
 
-  const handleAddMeal = async () => {
-    if (!newMealName.trim()) return;
+  const handleAddMeal = async ({name}: AddMealFormValues) => {
     try {
       const result = await createMeal({
         planId: id!,
-        body: {name: newMealName.trim()},
+        body: {name},
       }).unwrap();
-      setNewMealName('');
       setIsAddingMeal(false);
       setScrollToMealId(result.data.id);
     } catch {
@@ -512,41 +585,11 @@ export default function NutritionPlanDetail() {
 
             <div className="mt-3">
               {isAddingMeal ? (
-                <div className="flex items-end gap-2">
-                  <TextField
-                    className="flex-1"
-                    onChange={setNewMealName}
-                    value={newMealName}
-                  >
-                    <Label>Meal name</Label>
-                    <Input
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddMeal();
-                        }
-                      }}
-                      placeholder="Breakfast or snack 1"
-                    />
-                  </TextField>
-                  <Button
-                    isPending={isCreatingMeal}
-                    onPress={handleAddMeal}
-                    size="sm"
-                  >
-                    {isCreatingMeal ? 'Adding' : 'Add'}
-                  </Button>
-                  <Button
-                    onPress={() => {
-                      setIsAddingMeal(false);
-                      setNewMealName('');
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                <AddMealForm
+                  isSubmitting={isCreatingMeal}
+                  onCancel={() => setIsAddingMeal(false)}
+                  onSubmit={handleAddMeal}
+                />
               ) : (
                 <Button
                   onPress={() => setIsAddingMeal(true)}

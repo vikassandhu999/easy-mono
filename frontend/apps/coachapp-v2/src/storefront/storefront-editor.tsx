@@ -1,4 +1,4 @@
-import {Alert, Button, Spinner, toast} from '@heroui/react';
+import {Alert, Button, Form, Spinner, toast, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Eye, Save} from 'lucide-react';
 import {useRef, useState} from 'react';
@@ -169,7 +169,7 @@ function EditorInner({
         }
       }, 500);
     } catch (err) {
-      applyFormErrors(err, 'Failed to save profile. Please try again.', form.setError);
+      applyFormErrors(err, "Profile wasn't saved. Check the details and try again", form.setError);
     }
   };
 
@@ -204,11 +204,11 @@ function EditorInner({
   }
 
   return (
-    <form
-      className="flex h-[calc(100vh-64px)] flex-col lg:h-screen"
-      onSubmit={(e) => {
-        e.preventDefault();
-        form.handleSubmit(onSubmit)(e);
+    <Form
+      className="flex h-[calc(100vh-64px)] flex-col gap-0 lg:h-screen"
+      onSubmit={(event) => {
+        event.preventDefault();
+        form.handleSubmit(onSubmit)(event);
       }}
     >
       <div className="flex items-center justify-between border-b border-divider px-4 py-3">
@@ -219,7 +219,7 @@ function EditorInner({
           >
             <ArrowLeft size={16} />
           </Link>
-          <h1 className="text-base font-semibold">Edit Page</h1>
+          <Typography weight="semibold">Edit page</Typography>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -242,7 +242,7 @@ function EditorInner({
                   color="current"
                   size="sm"
                 />
-                Saving...
+                Saving
               </>
             ) : (
               <>
@@ -279,6 +279,6 @@ function EditorInner({
           </Alert.Content>
         </Alert>
       ) : null}
-    </form>
+    </Form>
   );
 }

@@ -10,7 +10,7 @@ import {useCreateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
   useTrainingPlanForm,
-} from '@/training-plans/components/training-plan-form';
+} from '@/training-plans/training-plan-form/training-plan-form';
 
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function CreateTrainingPlan() {
         <TrainingPlanForm
           form={form}
           isSubmitting={isLoading}
-          onCancel={() => navigate(ROUTES.TRAINING_PLANS)}
+          onCancel={goBack}
           onSubmit={onSubmit}
           submitLabel="Create plan"
           submittingLabel="Creating plan"

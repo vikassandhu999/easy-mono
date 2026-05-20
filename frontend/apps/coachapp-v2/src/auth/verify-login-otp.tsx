@@ -1,4 +1,14 @@
-import {Button, InputOTP, Label, Link, REGEXP_ONLY_DIGITS, Spinner} from '@heroui/react';
+import {
+  Button,
+  ErrorMessage,
+  Form,
+  InputOTP,
+  Label,
+  Link,
+  REGEXP_ONLY_DIGITS,
+  Spinner,
+  Typography,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {Navigate, useLocation, useNavigate} from 'react-router-dom';
@@ -28,20 +38,13 @@ export default function VerifyLoginOtp() {
   const [exchangeToken, {isLoading}] = useExchangeTokenMutation();
   const [sendOtp, {isLoading: isResending}] = useSendOtpMutation();
 
-  const {
-    control,
-    formState: {errors},
-    handleSubmit,
-    reset,
-    setError,
-  } = useForm<VerifyLoginOtpFormValues>({
+  const form = useForm<VerifyLoginOtpFormValues>({
     defaultValues: {otp: ''},
     resolver: zodResolver(schema),
   });
 
-  const otpValue = useWatch({control, name: 'otp'});
+  const otpValue = useWatch({control: form.control, name: 'otp'});
 
-  // Guard: must arrive via login with email in state
   if (!state?.email) {
     return (
       <Navigate
@@ -64,8 +67,8 @@ export default function VerifyLoginOtp() {
       setTokens(result);
       navigate(ROUTES.DASHBOARD, {replace: true});
     } catch (err) {
-      applyFormErrors(err, 'Invalid code. Please try again.', setError);
-      reset({otp: ''});
+      applyFormErrors(err, 'Invalid code. Try again', form.setError);
+      form.reset({otp: ''});
     }
   };
 
@@ -73,7 +76,7 @@ export default function VerifyLoginOtp() {
     try {
       await sendOtp({email: state.email, type: 'authentication'}).unwrap();
     } catch (err) {
-      applyFormErrors(err, 'Failed to resend code. Please try again.', setError);
+      applyFormErrors(err, "Code wasn't resent. Try again", form.setError);
     }
   };
 
@@ -82,21 +85,20 @@ export default function VerifyLoginOtp() {
       description={`We sent a 6-digit code to ${maskedEmail}`}
       title="Check your email"
     >
-      <form
+      <Form
         className="flex flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="flex flex-col gap-2">
           <Label>Verification code</Label>
           <Controller
-            control={control}
+            control={form.control}
             name="otp"
             render={({field}) => (
               <InputOTP
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus
-                isInvalid={!!errors.otp || !!errors.root}
+                isInvalid={!!form.formState.errors.otp || !!form.formState.errors.root}
                 maxLength={6}
+                onBlur={field.onBlur}
                 onChange={field.onChange}
                 pattern={REGEXP_ONLY_DIGITS}
                 value={field.value}
@@ -115,10 +117,10 @@ export default function VerifyLoginOtp() {
               </InputOTP>
             )}
           />
-          {errors.otp && <p className="text-xs text-danger">{errors.otp.message}</p>}
+          {form.formState.errors.otp && <ErrorMessage>{form.formState.errors.otp.message}</ErrorMessage>}
         </div>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
         <Button
           fullWidth
@@ -132,22 +134,27 @@ export default function VerifyLoginOtp() {
                 color="current"
                 size="sm"
               />
-              Verifying...
+              Verifying
             </>
           ) : (
             'Verify'
           )}
         </Button>
-      </form>
+      </Form>
 
       <div className="mt-6 flex items-center justify-center gap-1">
-        <p className="text-sm text-foreground-500">Didn&apos;t receive a code?</p>
+        <Typography
+          color="muted"
+          type="body-sm"
+        >
+          Didn&apos;t receive a code?
+        </Typography>
         <Link
           className="text-sm text-foreground underline"
           isDisabled={isResending}
           onPress={handleResend}
         >
-          {isResending ? 'Sending...' : 'Resend'}
+          {isResending ? 'Sending' : 'Resend'}
         </Link>
       </div>
     </AuthLayout>

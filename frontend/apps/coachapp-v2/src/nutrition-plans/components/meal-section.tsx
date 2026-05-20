@@ -1,6 +1,21 @@
-import {AlertDialog, Button, Input, Spinner, toast} from '@heroui/react';
+import {
+  AlertDialog,
+  Button,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  NumberField,
+  Spinner,
+  TextField,
+  toast,
+  Typography,
+} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Pencil, Plus, Trash2} from 'lucide-react';
 import {type Ref, useCallback, useMemo, useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {z} from 'zod';
 
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
@@ -18,6 +33,14 @@ import MealItemRow from '@/nutrition-plans/components/meal-item-row';
 
 type SelectedItem = {kind: 'food'; food: Food} | {kind: 'recipe'; recipe: Recipe};
 
+const mealItemFormSchema = z.object({
+  amount: z.number().min(0, 'Use 0 or higher').optional(),
+  unit: z.string().optional(),
+  weight_g: z.number().min(0, 'Use 0 or higher').optional(),
+});
+
+type MealItemFormValues = z.infer<typeof mealItemFormSchema>;
+
 function formatServingLabel(s: ServingSize): string {
   const amt = s.amount ?? 1;
   // If unit is "g" and amount equals weight_g, just show "{amount}g"
@@ -29,6 +52,156 @@ function formatServingLabel(s: ServingSize): string {
     return `${base} · ${s.weight_g}g`;
   }
   return base;
+}
+
+function AddMealItemForm({
+  isSubmitting,
+  itemName,
+  onCancel,
+  onSubmit,
+  servingSizes,
+}: {
+  isSubmitting: boolean;
+  itemName: string;
+  onCancel: () => void;
+  onSubmit: (values: MealItemFormValues) => Promise<void>;
+  servingSizes: ServingSize[];
+}) {
+  const [selectedServingIdx, setSelectedServingIdx] = useState<null | number>(null);
+  const form = useForm<MealItemFormValues>({
+    defaultValues: {amount: undefined, unit: '', weight_g: undefined},
+    resolver: zodResolver(mealItemFormSchema),
+  });
+
+  return (
+    <Form
+      className="flex flex-col gap-2 rounded-lg border border-dashed border-divider p-3"
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
+      <Typography
+        color="muted"
+        type="body-xs"
+        weight="medium"
+      >
+        Adding: <span className="text-foreground">{itemName}</span>
+      </Typography>
+
+      {servingSizes.length > 0 && (
+        <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {servingSizes.map((serving, index) => {
+            const isActive = selectedServingIdx === index;
+            return (
+              <Button
+                className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
+                  isActive ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
+                }`}
+                key={index}
+                onPress={() => {
+                  form.setValue('amount', serving.amount ?? 1, {shouldDirty: true});
+                  form.setValue('unit', serving.unit, {shouldDirty: true});
+                  form.setValue('weight_g', serving.weight_g ?? undefined, {shouldDirty: true});
+                  setSelectedServingIdx(index);
+                }}
+                type="button"
+                variant="ghost"
+              >
+                {formatServingLabel(serving)}
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+        <Controller
+          control={form.control}
+          name="amount"
+          render={({field}) => (
+            <NumberField
+              fullWidth
+              isInvalid={!!form.formState.errors.amount}
+              minValue={0}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(Number.isNaN(value) ? undefined : value);
+                setSelectedServingIdx(null);
+              }}
+              value={field.value}
+            >
+              <Label>Amount</Label>
+              {form.formState.errors.amount && <FieldError>{form.formState.errors.amount.message}</FieldError>}
+              <NumberField.Group>
+                <NumberField.Input />
+              </NumberField.Group>
+            </NumberField>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="unit"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!form.formState.errors.unit}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(value);
+                setSelectedServingIdx(null);
+              }}
+              value={field.value ?? ''}
+            >
+              <Label>Unit</Label>
+              {form.formState.errors.unit && <FieldError>{form.formState.errors.unit.message}</FieldError>}
+              <Input />
+            </TextField>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="weight_g"
+          render={({field}) => (
+            <NumberField
+              fullWidth
+              isInvalid={!!form.formState.errors.weight_g}
+              minValue={0}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(Number.isNaN(value) ? undefined : value);
+                setSelectedServingIdx(null);
+              }}
+              value={field.value}
+            >
+              <Label>Weight, grams</Label>
+              {form.formState.errors.weight_g && <FieldError>{form.formState.errors.weight_g.message}</FieldError>}
+              <NumberField.Group>
+                <NumberField.Input />
+              </NumberField.Group>
+            </NumberField>
+          )}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          isPending={isSubmitting}
+          size="sm"
+          type="submit"
+        >
+          <Plus size={14} />
+          {isSubmitting ? 'Adding' : 'Add'}
+        </Button>
+        <Button
+          onPress={onCancel}
+          size="sm"
+          variant="ghost"
+        >
+          Cancel
+        </Button>
+      </div>
+    </Form>
+  );
 }
 
 type MealSectionProps = {
@@ -77,10 +250,6 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
 
   // Inline add-item state
   const [selectedItem, setSelectedItem] = useState<null | SelectedItem>(null);
-  const [amount, setAmount] = useState('');
-  const [unit, setUnit] = useState('');
-  const [weightG, setWeightG] = useState('');
-  const [selectedServingIdx, setSelectedServingIdx] = useState<null | number>(null);
 
   // Track which item is being removed (for loading state per row)
   const [removingItemId, setRemovingItemId] = useState<null | string>(null);
@@ -116,21 +285,18 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
     setSelectedItem({kind: 'recipe', recipe});
   };
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (values: MealItemFormValues) => {
     if (!selectedItem) return;
     try {
+      const unit = values.unit?.trim() || undefined;
       const body = {
         ...(selectedItem.kind === 'food' ? {food_id: selectedItem.food.id} : {recipe_id: selectedItem.recipe.id}),
-        ...(amount && {amount: Number(amount)}),
+        ...(values.amount !== undefined && {amount: values.amount}),
         ...(unit && {unit}),
-        ...(weightG && {weight_g: Number(weightG)}),
+        ...(values.weight_g !== undefined && {weight_g: values.weight_g}),
       };
       await createMealItem({mealId: meal.id, planId, body}).unwrap();
       setSelectedItem(null);
-      setAmount('');
-      setUnit('');
-      setWeightG('');
-      setSelectedServingIdx(null);
     } catch {
       // Error handled by RTK Query cache
     }
@@ -271,133 +437,38 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
 
       {meal.meal_items.length > 0 && (mealMacros.calories || mealMacros.protein_g) ? (
         <div className="mb-3 border-t border-dashed border-divider pt-2">
-          <p className="text-xs text-foreground-500">
+          <Typography
+            color="muted"
+            type="body-xs"
+          >
             {[
               mealMacros.calories ? `${Math.round(mealMacros.calories)} kcal` : null,
               mealMacros.protein_g ? `${Math.round(mealMacros.protein_g)}g protein` : null,
             ]
               .filter(Boolean)
               .join(' · ')}
-          </p>
+          </Typography>
         </div>
       ) : null}
 
       {meal.meal_items.length === 0 && !selectedItem && (
-        <p className="mb-3 text-xs text-foreground-400">No items yet. Add a food or recipe below.</p>
+        <Typography
+          className="mb-3"
+          color="muted"
+          type="body-xs"
+        >
+          No items yet. Add a food or recipe below.
+        </Typography>
       )}
 
       {selectedItem ? (
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-divider p-3">
-          <p className="text-xs font-medium text-foreground-500">
-            Adding: <span className="text-foreground">{selectedName}</span>
-          </p>
-
-          {servingSizes.length > 0 && (
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-              {servingSizes.map((s, idx) => {
-                const isActive = selectedServingIdx === idx;
-                return (
-                  <Button
-                    className={`min-h-11 shrink-0 rounded-md px-3 text-xs font-medium transition-colors ${
-                      isActive ? 'bg-foreground text-background' : 'bg-content2 text-foreground-500 hover:bg-content3'
-                    }`}
-                    key={idx}
-                    onPress={() => {
-                      setAmount(String(s.amount ?? 1));
-                      setUnit(s.unit);
-                      setWeightG(s.weight_g != null ? String(s.weight_g) : '');
-                      setSelectedServingIdx(idx);
-                    }}
-                    variant="ghost"
-                  >
-                    {formatServingLabel(s)}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col gap-1">
-              <label
-                className="text-xs text-foreground-400"
-                htmlFor={`amount-${meal.id}`}
-              >
-                Amount
-              </label>
-              <Input
-                id={`amount-${meal.id}`}
-                inputMode="decimal"
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  setSelectedServingIdx(null);
-                }}
-                placeholder="1"
-                type="number"
-                value={amount}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label
-                className="text-xs text-foreground-400"
-                htmlFor={`unit-${meal.id}`}
-              >
-                Unit
-              </label>
-              <Input
-                id={`unit-${meal.id}`}
-                onChange={(e) => {
-                  setUnit(e.target.value);
-                  setSelectedServingIdx(null);
-                }}
-                placeholder="serving"
-                value={unit}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label
-                className="text-xs text-foreground-400"
-                htmlFor={`weight-${meal.id}`}
-              >
-                Weight (g)
-              </label>
-              <Input
-                id={`weight-${meal.id}`}
-                inputMode="decimal"
-                onChange={(e) => {
-                  setWeightG(e.target.value);
-                  setSelectedServingIdx(null);
-                }}
-                placeholder="100"
-                type="number"
-                value={weightG}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              isPending={isAddingItem}
-              onPress={handleAddItem}
-              size="sm"
-            >
-              <Plus size={14} />
-              {isAddingItem ? 'Adding...' : 'Add'}
-            </Button>
-            <Button
-              onPress={() => {
-                setSelectedItem(null);
-                setAmount('');
-                setUnit('');
-                setWeightG('');
-                setSelectedServingIdx(null);
-              }}
-              size="sm"
-              variant="ghost"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <AddMealItemForm
+          isSubmitting={isAddingItem}
+          itemName={selectedName}
+          onCancel={() => setSelectedItem(null)}
+          onSubmit={handleAddItem}
+          servingSizes={servingSizes}
+        />
       ) : (
         <MealItemPicker
           excludeFoodIds={existingFoodIds}

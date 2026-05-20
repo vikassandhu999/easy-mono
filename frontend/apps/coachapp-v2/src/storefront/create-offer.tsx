@@ -6,7 +6,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useCreateOfferMutation} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
-import OfferForm, {formValuesToFeatures, type OfferFormValues, useOfferForm} from '@/storefront/components/offer-form';
+import OfferForm, {formValuesToFeatures, type OfferFormValues, useOfferForm} from '@/storefront/offer-form/offer-form';
 
 export default function CreateOffer() {
   const navigate = useNavigate();

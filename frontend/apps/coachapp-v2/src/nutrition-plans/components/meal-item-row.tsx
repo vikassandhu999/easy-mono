@@ -1,17 +1,28 @@
-import {Button, Input, toast} from '@heroui/react';
+import {Button, FieldError, Form, Input, Label, NumberField, TextField, toast, Typography} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, Check, ChefHat, Trash2} from 'lucide-react';
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {z} from 'zod';
 
 import type {MealItem} from '@/api/meals';
 
 import {useUpdateMealItemMutation} from '@/api/meals';
 
+const mealItemFormSchema = z.object({
+  amount: z.number().min(0, 'Use 0 or higher').optional(),
+  unit: z.string().optional(),
+  weight_g: z.number().min(0, 'Use 0 or higher').optional(),
+});
+
+type MealItemFormValues = z.infer<typeof mealItemFormSchema>;
+
 type MealItemRowProps = {
+  isRemoving: boolean;
   item: MealItem;
   mealId: string;
-  planId: string;
   onRemove: (itemId: string) => void;
-  isRemoving: boolean;
+  planId: string;
 };
 
 export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}: MealItemRowProps) {
@@ -21,49 +32,49 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
   const imageUrl = isRecipe ? item.recipe?.image_url : item.food?.image_url;
 
   const [updateMealItem, {isLoading: isSaving}] = useUpdateMealItemMutation();
-
-  // Editing state
   const [isEditing, setIsEditing] = useState(false);
-  const [editAmount, setEditAmount] = useState('');
-  const [editUnit, setEditUnit] = useState('');
-  const [editWeightG, setEditWeightG] = useState('');
 
-  const startEditing = useCallback(() => {
-    setEditAmount(item.amount != null ? String(item.amount) : '');
-    setEditUnit(item.unit ?? '');
-    setEditWeightG(item.weight_g != null ? String(item.weight_g) : '');
-    setIsEditing(true);
-  }, [item.amount, item.unit, item.weight_g]);
+  const form = useForm<MealItemFormValues>({
+    defaultValues: {
+      amount: item.amount ?? undefined,
+      unit: item.unit ?? '',
+      weight_g: item.weight_g ?? undefined,
+    },
+    resolver: zodResolver(mealItemFormSchema),
+    values: isEditing
+      ? {
+          amount: item.amount ?? undefined,
+          unit: item.unit ?? '',
+          weight_g: item.weight_g ?? undefined,
+        }
+      : undefined,
+  });
 
-  const cancelEditing = () => {
-    setIsEditing(false);
-  };
+  const startEditing = () => setIsEditing(true);
+  const cancelEditing = () => setIsEditing(false);
 
-  const handleSave = async () => {
-    const amt = editAmount.trim() ? Number(editAmount) : undefined;
-    const u = editUnit.trim() || undefined;
-    const wg = editWeightG.trim() ? Number(editWeightG) : undefined;
+  const handleSave = async (values: MealItemFormValues) => {
+    const unit = values.unit?.trim() || undefined;
 
-    // If all empty, cancel instead
-    if (amt === undefined && u === undefined && wg === undefined) {
+    if (values.amount === undefined && unit === undefined && values.weight_g === undefined) {
       setIsEditing(false);
       return;
     }
 
     try {
       await updateMealItem({
+        body: {
+          ...(values.amount !== undefined ? {amount: values.amount} : {}),
+          ...(unit !== undefined ? {unit} : {}),
+          ...(values.weight_g !== undefined ? {weight_g: values.weight_g} : {}),
+        },
         id: item.id,
         mealId,
         planId,
-        body: {
-          ...(amt !== undefined ? {amount: amt} : {}),
-          ...(u !== undefined ? {unit: u} : {}),
-          ...(wg !== undefined ? {weight_g: wg} : {}),
-        },
       }).unwrap();
       setIsEditing(false);
     } catch {
-      toast.danger('Failed to update amounts.');
+      toast.danger('Amounts were not updated');
     }
   };
 
@@ -91,94 +102,98 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
               />
             )}
           </div>
-          <p className="min-w-0 truncate text-sm font-medium">{name ?? (isRecipe ? 'Recipe' : 'Food')}</p>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-400"
-              htmlFor={`edit-amt-${item.id}`}
-            >
-              Amount
-            </label>
-            <Input
-              id={`edit-amt-${item.id}`}
-              inputMode="decimal"
-              onChange={(e) => setEditAmount(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSave();
-                }
-                if (e.key === 'Escape') cancelEditing();
-              }}
-              placeholder="1"
-              type="number"
-              value={editAmount}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-400"
-              htmlFor={`edit-unit-${item.id}`}
-            >
-              Unit
-            </label>
-            <Input
-              id={`edit-unit-${item.id}`}
-              onChange={(e) => setEditUnit(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSave();
-                }
-                if (e.key === 'Escape') cancelEditing();
-              }}
-              placeholder="serving"
-              value={editUnit}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label
-              className="text-xs text-foreground-400"
-              htmlFor={`edit-wg-${item.id}`}
-            >
-              Weight (g)
-            </label>
-            <Input
-              id={`edit-wg-${item.id}`}
-              inputMode="decimal"
-              onChange={(e) => setEditWeightG(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSave();
-                }
-                if (e.key === 'Escape') cancelEditing();
-              }}
-              placeholder="100"
-              type="number"
-              value={editWeightG}
-            />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            isPending={isSaving}
-            onPress={handleSave}
-            size="sm"
+          <Typography
+            className="min-w-0 truncate"
+            type="body-sm"
+            weight="medium"
           >
-            <Check size={14} />
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-          <Button
-            onPress={cancelEditing}
-            size="sm"
-            variant="ghost"
-          >
-            Cancel
-          </Button>
+            {name ?? (isRecipe ? 'Recipe' : 'Food')}
+          </Typography>
         </div>
+        <Form
+          className="gap-2"
+          onSubmit={form.handleSubmit(handleSave)}
+        >
+          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+            <Controller
+              control={form.control}
+              name="amount"
+              render={({field}) => (
+                <NumberField
+                  fullWidth
+                  isInvalid={!!form.formState.errors.amount}
+                  minValue={0}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
+                  value={field.value}
+                >
+                  <Label>Amount</Label>
+                  {form.formState.errors.amount && <FieldError>{form.formState.errors.amount.message}</FieldError>}
+                  <NumberField.Group>
+                    <NumberField.Input />
+                  </NumberField.Group>
+                </NumberField>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="unit"
+              render={({field}) => (
+                <TextField
+                  fullWidth
+                  isInvalid={!!form.formState.errors.unit}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value ?? ''}
+                >
+                  <Label>Unit</Label>
+                  {form.formState.errors.unit && <FieldError>{form.formState.errors.unit.message}</FieldError>}
+                  <Input />
+                </TextField>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="weight_g"
+              render={({field}) => (
+                <NumberField
+                  fullWidth
+                  isInvalid={!!form.formState.errors.weight_g}
+                  minValue={0}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={(value) => field.onChange(Number.isNaN(value) ? undefined : value)}
+                  value={field.value}
+                >
+                  <Label>Weight, grams</Label>
+                  {form.formState.errors.weight_g && <FieldError>{form.formState.errors.weight_g.message}</FieldError>}
+                  <NumberField.Group>
+                    <NumberField.Input />
+                  </NumberField.Group>
+                </NumberField>
+              )}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              isPending={isSaving}
+              size="sm"
+              type="submit"
+            >
+              <Check size={14} />
+              {isSaving ? 'Saving' : 'Save'}
+            </Button>
+            <Button
+              onPress={cancelEditing}
+              size="sm"
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+          </div>
+        </Form>
       </div>
     );
   }
@@ -201,7 +216,13 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{name ?? (isRecipe ? 'Recipe' : 'Food')}</p>
+        <Typography
+          className="truncate"
+          type="body-sm"
+          weight="medium"
+        >
+          {name ?? (isRecipe ? 'Recipe' : 'Food')}
+        </Typography>
         {hasAmounts ? (
           <Button
             className="min-h-11 text-left text-xs text-foreground-500 transition-colors hover:text-foreground"

@@ -9,7 +9,7 @@ import {useCreateTestimonialMutation} from '@/api/testimonials';
 import TestimonialForm, {
   type TestimonialFormValues,
   useTestimonialForm,
-} from '@/storefront/components/testimonial-form';
+} from '@/storefront/testimonial-form/testimonial-form';
 
 export default function CreateTestimonial() {
   const navigate = useNavigate();
@@ -17,17 +17,12 @@ export default function CreateTestimonial() {
   const form = useTestimonialForm();
 
   const onSubmit = async (data: TestimonialFormValues) => {
-    const beforeWeight =
-      typeof data.before_weight === 'number' && !isNaN(data.before_weight) ? data.before_weight : undefined;
-    const afterWeight =
-      typeof data.after_weight === 'number' && !isNaN(data.after_weight) ? data.after_weight : undefined;
-
     try {
       await createTestimonial({
         after_image_url: data.after_image_url || undefined,
-        after_weight: afterWeight,
+        after_weight: data.after_weight,
         before_image_url: data.before_image_url || undefined,
-        before_weight: beforeWeight,
+        before_weight: data.before_weight,
         client_handle: data.client_handle || undefined,
         client_name: data.client_name,
         duration_text: data.duration_text || undefined,

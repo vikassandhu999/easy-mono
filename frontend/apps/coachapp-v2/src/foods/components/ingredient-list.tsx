@@ -1,6 +1,9 @@
-import {Button, Input} from '@heroui/react';
+import {Button, FieldError, Form, Input, Label, NumberField, TextField, Typography} from '@heroui/react';
+import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, ChevronDown, ChevronUp, X} from 'lucide-react';
 import {useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {z} from 'zod';
 
 import type {Food} from '@/api/foods';
 import type {ServingSize} from '@/api/shared';
@@ -18,6 +21,14 @@ type IngredientListProps = {
   onChange: (items: IngredientItem[]) => void;
   autoExpandId?: null | string;
 };
+
+const ingredientFieldsSchema = z.object({
+  amount: z.number().min(0, 'Use 0 or higher').optional(),
+  unit: z.string().optional(),
+  weight_g: z.number().min(0, 'Use 0 or higher').optional(),
+});
+
+type IngredientFieldsValues = z.infer<typeof ingredientFieldsSchema>;
 
 // Summary string for collapsed rows — same formatting rules as the recipe detail page.
 function formatIngredientSummary(item: IngredientItem): string {
@@ -42,6 +53,112 @@ function formatServingLabel(s: ServingSize): string {
     return `${base} \u00b7 ${s.weight_g}g`;
   }
   return base;
+}
+
+function toOptionalNumber(value: number | string): number | undefined {
+  if (value === '' || value == null) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function IngredientFieldsForm({
+  item,
+  onChange,
+}: {
+  item: IngredientItem;
+  onChange: (field: keyof IngredientItem, fieldValue: number | string) => void;
+}) {
+  const form = useForm<IngredientFieldsValues>({
+    defaultValues: {
+      amount: toOptionalNumber(item.amount),
+      unit: item.unit,
+      weight_g: toOptionalNumber(item.weight_g),
+    },
+    resolver: zodResolver(ingredientFieldsSchema),
+    values: {
+      amount: toOptionalNumber(item.amount),
+      unit: item.unit,
+      weight_g: toOptionalNumber(item.weight_g),
+    },
+  });
+
+  return (
+    <Form className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+      <Controller
+        control={form.control}
+        name="amount"
+        render={({field}) => (
+          <NumberField
+            fullWidth
+            isInvalid={!!form.formState.errors.amount}
+            minValue={0}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={(value) => {
+              const nextValue = Number.isNaN(value) ? undefined : value;
+              field.onChange(nextValue);
+              onChange('amount', nextValue ?? '');
+            }}
+            step={0.1}
+            value={field.value}
+          >
+            <Label>Amount</Label>
+            {form.formState.errors.amount && <FieldError>{form.formState.errors.amount.message}</FieldError>}
+            <NumberField.Group>
+              <NumberField.Input />
+            </NumberField.Group>
+          </NumberField>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="unit"
+        render={({field}) => (
+          <TextField
+            fullWidth
+            isInvalid={!!form.formState.errors.unit}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={(value) => {
+              field.onChange(value);
+              onChange('unit', value);
+            }}
+            value={field.value ?? ''}
+          >
+            <Label>Unit</Label>
+            {form.formState.errors.unit && <FieldError>{form.formState.errors.unit.message}</FieldError>}
+            <Input />
+          </TextField>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="weight_g"
+        render={({field}) => (
+          <NumberField
+            fullWidth
+            isInvalid={!!form.formState.errors.weight_g}
+            minValue={0}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={(value) => {
+              const nextValue = Number.isNaN(value) ? undefined : value;
+              field.onChange(nextValue);
+              onChange('weight_g', nextValue ?? '');
+            }}
+            step={0.1}
+            value={field.value}
+          >
+            <Label>Weight, grams</Label>
+            {form.formState.errors.weight_g && <FieldError>{form.formState.errors.weight_g.message}</FieldError>}
+            <NumberField.Group>
+              <NumberField.Input />
+            </NumberField.Group>
+          </NumberField>
+        )}
+      />
+    </Form>
+  );
 }
 
 export default function IngredientList({value, onChange, autoExpandId}: IngredientListProps) {
@@ -90,7 +207,14 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
   };
 
   if (value.length === 0) {
-    return <p className="text-xs text-foreground-400">No ingredients added yet. Use the search above to add foods.</p>;
+    return (
+      <Typography
+        color="muted"
+        type="body-xs"
+      >
+        No ingredients added yet. Use the search above to add foods.
+      </Typography>
+    );
   }
 
   return (
@@ -125,8 +249,20 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                     />
                   )}
                 </div>
-                <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">{item.food.name}</span>
-                <span className="shrink-0 text-xs text-foreground-400">{formatIngredientSummary(item)}</span>
+                <Typography
+                  className="min-w-0 flex-1 truncate text-left"
+                  type="body-sm"
+                  weight="medium"
+                >
+                  {item.food.name}
+                </Typography>
+                <Typography
+                  className="shrink-0"
+                  color="muted"
+                  type="body-xs"
+                >
+                  {formatIngredientSummary(item)}
+                </Typography>
                 {isExpanded ? (
                   <ChevronUp
                     className="shrink-0 text-foreground-400"
@@ -175,44 +311,13 @@ export default function IngredientList({value, onChange, autoExpandId}: Ingredie
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    aria-label="Amount"
-                    className="text-sm"
-                    inputMode="decimal"
-                    onChange={(e) => {
-                      updateItem(index, 'amount', e.target.value);
-                      clearActiveServing(item.food_id);
-                    }}
-                    placeholder="Amount"
-                    step="0.1"
-                    type="number"
-                    value={String(item.amount)}
-                  />
-                  <Input
-                    aria-label="Unit"
-                    className="text-sm"
-                    onChange={(e) => {
-                      updateItem(index, 'unit', e.target.value);
-                      clearActiveServing(item.food_id);
-                    }}
-                    placeholder="Unit (e.g. cup)"
-                    value={item.unit}
-                  />
-                  <Input
-                    aria-label="Weight (g)"
-                    className="text-sm"
-                    inputMode="decimal"
-                    onChange={(e) => {
-                      updateItem(index, 'weight_g', e.target.value);
-                      clearActiveServing(item.food_id);
-                    }}
-                    placeholder="Weight (g)"
-                    step="0.1"
-                    type="number"
-                    value={String(item.weight_g)}
-                  />
-                </div>
+                <IngredientFieldsForm
+                  item={item}
+                  onChange={(field, fieldValue) => {
+                    updateItem(index, field, fieldValue);
+                    clearActiveServing(item.food_id);
+                  }}
+                />
               </div>
             )}
           </div>

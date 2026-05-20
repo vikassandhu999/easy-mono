@@ -11,7 +11,7 @@ import OfferForm, {
   formValuesToFeatures,
   type OfferFormValues,
   useOfferForm,
-} from '@/storefront/components/offer-form';
+} from '@/storefront/offer-form/offer-form';
 
 function EditOfferForm({offerId}: {offerId: string}) {
   const navigate = useNavigate();

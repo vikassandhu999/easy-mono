@@ -9,7 +9,7 @@ import {useDeleteTestimonialMutation, useGetTestimonialQuery, useUpdateTestimoni
 import TestimonialForm, {
   type TestimonialFormValues,
   useTestimonialForm,
-} from '@/storefront/components/testimonial-form';
+} from '@/storefront/testimonial-form/testimonial-form';
 
 function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   const navigate = useNavigate();
@@ -22,9 +22,9 @@ function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   const form = useTestimonialForm({
     values: {
       after_image_url: testimonial.after_image_url ?? '',
-      after_weight: testimonial.after_weight ? parseFloat(testimonial.after_weight) : '',
+      after_weight: testimonial.after_weight ? parseFloat(testimonial.after_weight) : undefined,
       before_image_url: testimonial.before_image_url ?? '',
-      before_weight: testimonial.before_weight ? parseFloat(testimonial.before_weight) : '',
+      before_weight: testimonial.before_weight ? parseFloat(testimonial.before_weight) : undefined,
       client_handle: testimonial.client_handle ?? '',
       client_name: testimonial.client_name,
       duration_text: testimonial.duration_text ?? '',
@@ -37,18 +37,13 @@ function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   });
 
   const onSubmit = async (formData: TestimonialFormValues) => {
-    const beforeWeight =
-      typeof formData.before_weight === 'number' && !isNaN(formData.before_weight) ? formData.before_weight : undefined;
-    const afterWeight =
-      typeof formData.after_weight === 'number' && !isNaN(formData.after_weight) ? formData.after_weight : undefined;
-
     try {
       await updateTestimonial({
         body: {
           after_image_url: formData.after_image_url || undefined,
-          after_weight: afterWeight,
+          after_weight: formData.after_weight,
           before_image_url: formData.before_image_url || undefined,
-          before_weight: beforeWeight,
+          before_weight: formData.before_weight,
           client_handle: formData.client_handle || undefined,
           client_name: formData.client_name,
           duration_text: formData.duration_text || undefined,

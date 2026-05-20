@@ -1,6 +1,17 @@
-import {Button, Input, Label, Link, Spinner} from '@heroui/react';
+import {
+  Button,
+  ErrorMessage,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  Link,
+  Spinner,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -10,7 +21,7 @@ import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  email: z.string().min(1, 'Enter email').email('Enter a valid email'),
 });
 
 type LoginFormValues = z.infer<typeof schema>;
@@ -19,12 +30,8 @@ export default function Login() {
   const navigate = useNavigate();
   const [sendOtp, {isLoading}] = useSendOtpMutation();
 
-  const {
-    formState: {errors},
-    handleSubmit,
-    register,
-    setError,
-  } = useForm<LoginFormValues>({
+  const form = useForm<LoginFormValues>({
+    defaultValues: {email: ''},
     resolver: zodResolver(schema),
   });
 
@@ -35,7 +42,7 @@ export default function Login() {
         state: {email: data.email},
       });
     } catch (err) {
-      applyFormErrors(err, 'Failed to send verification code. Please try again.', setError);
+      applyFormErrors(err, "Verification code wasn't sent. Try again", form.setError);
     }
   };
 
@@ -44,23 +51,31 @@ export default function Login() {
       description="Enter your email and we'll send you a verification code."
       title="Welcome back"
     >
-      <form
+      <Form
         className="flex flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            autoComplete="email"
-            id="email"
-            placeholder="you@example.com"
-            type="email"
-            {...register('email')}
-          />
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
-        </div>
+        <Controller
+          control={form.control}
+          name="email"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!form.formState.errors.email}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              type="email"
+              value={field.value}
+            >
+              <Label>Email</Label>
+              {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
+              <Input autoComplete="email" />
+            </TextField>
+          )}
+        />
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
         <Button
           fullWidth
@@ -73,15 +88,19 @@ export default function Login() {
                 color="current"
                 size="sm"
               />
-              Sending code...
+              Sending code
             </>
           ) : (
             'Continue with email'
           )}
         </Button>
-      </form>
+      </Form>
 
-      <p className="mt-6 text-center text-sm text-foreground-500">
+      <Typography
+        className="mt-6 text-center"
+        color="muted"
+        type="body-sm"
+      >
         Don&apos;t have an account?{' '}
         <Link
           className="text-sm text-foreground underline"
@@ -89,7 +108,7 @@ export default function Login() {
         >
           Sign up
         </Link>
-      </p>
+      </Typography>
     </AuthLayout>
   );
 }

@@ -1,70 +1,109 @@
-import {Button, Card, Description, Input, TextArea} from '@heroui/react';
+import {
+  Button,
+  Card,
+  Description,
+  FieldError,
+  Fieldset,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
-import {useFieldArray, type UseFormReturn} from 'react-hook-form';
+import {Controller, useFieldArray, type UseFormReturn} from 'react-hook-form';
 
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 export default function FaqEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
   const {
+    control,
     formState: {errors},
-    register,
   } = form;
-  const {append, fields, remove} = useFieldArray({control: form.control, name: 'faq_items'});
+  const {append, fields, remove} = useFieldArray({control, name: 'faq_items'});
 
   return (
-    <div className="flex flex-col gap-3">
-      <Description>Common questions visitors might have. Helps overcome hesitation.</Description>
+    <Fieldset>
+      <Fieldset.Legend>FAQs</Fieldset.Legend>
+      <Description>Answer common questions visitors may have before they apply</Description>
 
-      {fields.map((field, index) => (
-        <Card key={field.id}>
-          <Card.Content className="flex flex-col gap-2">
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <Input
-                  aria-label="Question"
-                  placeholder="How does the coaching work?"
-                  {...register(`faq_items.${index}.question`)}
+      <Fieldset.Group>
+        {fields.map((field, index) => (
+          <Card key={field.id}>
+            <Card.Content className="flex flex-col gap-3">
+              <div className="flex items-start gap-2">
+                <Controller
+                  control={control}
+                  name={`faq_items.${index}.question`}
+                  render={({field: questionField}) => (
+                    <TextField
+                      fullWidth
+                      isInvalid={!!errors.faq_items?.[index]?.question}
+                      name={questionField.name}
+                      onBlur={questionField.onBlur}
+                      onChange={questionField.onChange}
+                      value={questionField.value}
+                    >
+                      <Label>Question</Label>
+                      {errors.faq_items?.[index]?.question && (
+                        <FieldError>{errors.faq_items[index].question.message}</FieldError>
+                      )}
+                      <Input />
+                    </TextField>
+                  )}
                 />
-                {errors.faq_items?.[index]?.question ? (
-                  <p className="text-xs text-danger">{errors.faq_items[index].question.message}</p>
-                ) : null}
+                <Button
+                  aria-label={`Remove FAQ ${index + 1}`}
+                  isIconOnly
+                  onPress={() => remove(index)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <X size={14} />
+                </Button>
               </div>
-              <Button
-                isIconOnly
-                onPress={() => remove(index)}
-                size="sm"
-                variant="ghost"
-              >
-                <X size={14} />
-              </Button>
-            </div>
-            <TextArea
-              aria-label="Answer"
-              placeholder="After you apply, I'll review your details and create a custom plan..."
-              rows={2}
-              {...register(`faq_items.${index}.answer`)}
-            />
-            {errors.faq_items?.[index]?.answer ? (
-              <p className="text-xs text-danger">{errors.faq_items[index].answer.message}</p>
-            ) : null}
-          </Card.Content>
-        </Card>
-      ))}
 
-      <Button
-        className="self-start"
-        onPress={() => append({answer: '', question: ''})}
-        size="sm"
-        variant="ghost"
-      >
-        <Plus size={14} />
-        Add FAQ
-      </Button>
+              <Controller
+                control={control}
+                name={`faq_items.${index}.answer`}
+                render={({field: answerField}) => (
+                  <TextField
+                    fullWidth
+                    isInvalid={!!errors.faq_items?.[index]?.answer}
+                    name={answerField.name}
+                    onBlur={answerField.onBlur}
+                    onChange={answerField.onChange}
+                    value={answerField.value}
+                  >
+                    <Label>Answer</Label>
+                    {errors.faq_items?.[index]?.answer && (
+                      <FieldError>{errors.faq_items[index].answer.message}</FieldError>
+                    )}
+                    <TextArea rows={2} />
+                  </TextField>
+                )}
+              />
+            </Card.Content>
+          </Card>
+        ))}
 
-      <p className="text-xs text-foreground-400">
-        Suggested: &ldquo;What does the program include?&rdquo;, &ldquo;What if I&apos;m not seeing results?&rdquo;,
-        &ldquo;How do I pay?&rdquo;
-      </p>
-    </div>
+        <Button
+          className="self-start"
+          onPress={() => append({answer: '', question: ''})}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={14} />
+          Add FAQ
+        </Button>
+
+        <Typography
+          color="muted"
+          type="body-xs"
+        >
+          Suggested: What does the program include? What if I am not seeing results? How do I pay?
+        </Typography>
+      </Fieldset.Group>
+    </Fieldset>
   );
 }

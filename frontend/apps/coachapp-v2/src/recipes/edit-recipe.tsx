@@ -10,14 +10,14 @@ import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
-import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
+import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -71,13 +71,13 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
       category: recipe.category ?? '',
       source: recipe.source ?? '',
       instructions: recipe.instructions ?? '',
-      cooked_weight_g: recipe.cooked_weight_g ?? '',
-      calories_per_100g: macros.calories_per_100g ?? '',
-      protein_g: macros.protein_g ?? '',
-      carbs_g: macros.carbs_g ?? '',
-      fats_g: macros.fats_g ?? '',
-      fiber_g: macros.fiber_g ?? '',
-      sugar_g: macros.sugar_g ?? '',
+      cooked_weight_g: recipe.cooked_weight_g ?? undefined,
+      calories_per_100g: macros.calories_per_100g ?? undefined,
+      protein_g: macros.protein_g ?? undefined,
+      carbs_g: macros.carbs_g ?? undefined,
+      fats_g: macros.fats_g ?? undefined,
+      fiber_g: macros.fiber_g ?? undefined,
+      sugar_g: macros.sugar_g ?? undefined,
     },
   });
 
@@ -91,9 +91,7 @@ function EditRecipeForm({recipeId, backPath}: {backPath: string; recipeId: strin
         category: formData.category || undefined,
         source: formData.source || undefined,
         instructions: formData.instructions || undefined,
-        ...(cookedWeight !== '' && cookedWeight !== undefined && typeof cookedWeight === 'number'
-          ? {cooked_weight_g: cookedWeight}
-          : {}),
+        ...(cookedWeight !== undefined ? {cooked_weight_g: cookedWeight} : {}),
         ...(macros ? {macros} : {}),
         recipe_ingredients: recipeIngredients,
       };

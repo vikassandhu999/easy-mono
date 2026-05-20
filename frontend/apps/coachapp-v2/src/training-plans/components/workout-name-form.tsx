@@ -1,14 +1,14 @@
-import {Button, Input, Label} from '@heroui/react';
+import {Button, ErrorMessage, FieldError, Form, Input, Label, TextField} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Plus} from 'lucide-react';
 import {useId} from 'react';
-import {useForm, useWatch} from 'react-hook-form';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import {applyFormErrors} from '@/api/shared';
 
 const workoutNameFormSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required'),
+  name: z.string().trim().min(1, 'Enter workout name'),
 });
 
 export type WorkoutNameFormValues = z.infer<typeof workoutNameFormSchema>;
@@ -31,7 +31,7 @@ export default function WorkoutNameForm({
   label,
   onCancel,
   onSubmit,
-  placeholder = 'e.g. Push Day',
+  placeholder = 'e.g. Push day',
   submitLabel,
 }: WorkoutNameFormProps) {
   const generatedId = useId();
@@ -41,7 +41,6 @@ export default function WorkoutNameForm({
     control,
     formState: {errors},
     handleSubmit,
-    register,
     reset,
     setError,
   } = useForm<WorkoutNameFormValues>({
@@ -62,38 +61,38 @@ export default function WorkoutNameForm({
   });
 
   return (
-    <form
+    <Form
       className="flex flex-col gap-2"
       onSubmit={handleFormSubmit}
     >
-      <div className="flex flex-col gap-1">
-        <Label
-          className="text-xs text-foreground-400"
-          htmlFor={inputId}
-        >
-          {label}
-        </Label>
-        <Input
-          id={inputId}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && !isSubmitting) {
-              onCancel();
-            }
-          }}
-          placeholder={placeholder}
-          {...register('name')}
-        />
-        {errors.name ? <p className="text-xs text-danger">{errors.name.message}</p> : null}
-      </div>
+      <Controller
+        control={control}
+        name="name"
+        render={({field}) => (
+          <TextField
+            fullWidth
+            isInvalid={!!errors.name}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            value={field.value}
+          >
+            <Label>{label}</Label>
+            {errors.name && <FieldError>{errors.name.message}</FieldError>}
+            <Input
+              id={inputId}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && !isSubmitting) {
+                  onCancel();
+                }
+              }}
+              placeholder={placeholder}
+            />
+          </TextField>
+        )}
+      />
 
-      {errors.root ? (
-        <p
-          aria-live="polite"
-          className="text-xs text-danger"
-        >
-          {errors.root.message}
-        </p>
-      ) : null}
+      {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -117,6 +116,6 @@ export default function WorkoutNameForm({
           Cancel
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }

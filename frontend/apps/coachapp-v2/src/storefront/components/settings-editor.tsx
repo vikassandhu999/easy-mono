@@ -1,7 +1,21 @@
-import {Button, Card, Description, Input, Label, Spinner, Switch} from '@heroui/react';
+import type {UseFormReturn} from 'react-hook-form';
+
+import {
+  Button,
+  Card,
+  Description,
+  FieldError,
+  Fieldset,
+  Input,
+  Label,
+  Spinner,
+  Switch,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {Check, ExternalLink, X} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
-import {Controller, type UseFormReturn} from 'react-hook-form';
+import {Controller} from 'react-hook-form';
 
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
@@ -24,7 +38,6 @@ export default function SettingsEditor({
   const {
     control,
     formState: {errors},
-    register,
     watch,
   } = form;
   const [checkSlug] = useCheckSlugAvailabilityMutation();
@@ -35,7 +48,6 @@ export default function SettingsEditor({
   const isPublished = watch('is_published');
   const pageUrl = slugValue ? `coacheasy.app/coach/${slugValue}` : '';
 
-  // Debounced slug check — called from the onChange handler, not from useEffect
   const handleSlugChange = useCallback(
     (slug: string) => {
       if (slugTimerRef.current) clearTimeout(slugTimerRef.current);
@@ -56,144 +68,186 @@ export default function SettingsEditor({
     [checkSlug, originalSlug],
   );
 
-  const slugRegistration = register('slug');
-
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="slug">Page URL *</Label>
-        <div className="flex items-center gap-2">
-          <span className="hidden whitespace-nowrap text-sm text-foreground-500 sm:inline">coacheasy.app/coach/</span>
-          <div className="flex-1">
-            <Input
-              id="slug"
-              placeholder="fitness-junction"
-              {...slugRegistration}
-              onChange={(e) => {
-                slugRegistration.onChange(e);
-                handleSlugChange(e.target.value);
+    <Fieldset>
+      <Fieldset.Legend>Page settings</Fieldset.Legend>
+      <Description>Set your storefront URL, theme, and publishing status</Description>
+
+      <Fieldset.Group>
+        <Controller
+          control={control}
+          name="slug"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!errors.slug || slugStatus === 'taken'}
+              isRequired
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(value);
+                handleSlugChange(value);
               }}
-            />
-          </div>
-          {slugStatus === 'checking' ? <Spinner size="sm" /> : null}
-          {slugStatus === 'available' ? (
-            <Check
-              className="text-success"
-              size={18}
-            />
-          ) : null}
-          {slugStatus === 'taken' ? (
-            <X
-              className="text-danger"
-              size={18}
-            />
-          ) : null}
-        </div>
-        <Description className="sm:hidden">coacheasy.app/coach/{slugValue || '...'}</Description>
-        {slugStatus === 'taken' ? <p className="text-xs text-danger">This slug is already taken</p> : null}
-        {errors.slug ? <p className="text-xs text-danger">{errors.slug.message}</p> : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>Theme color</Label>
-        <Controller
-          control={control}
-          name="theme_color"
-          render={({field}) => (
-            <div className="flex gap-3">
-              {THEME_COLORS.map((tc) => (
-                <Button
-                  aria-label={tc.label}
-                  className={`flex min-h-11 min-w-11 items-center justify-center rounded-full ${tc.color} transition-transform ${field.value === tc.value ? 'ring-2 ring-offset-2 ring-offset-background' : 'opacity-60'}`}
-                  isIconOnly
-                  key={tc.value}
-                  onPress={() => field.onChange(tc.value)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  {field.value === tc.value ? (
-                    <Check
-                      className="text-white"
-                      size={16}
-                    />
-                  ) : null}
-                </Button>
-              ))}
-            </div>
-          )}
-        />
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-medium">WhatsApp button</p>
-        <Controller
-          control={control}
-          name="whatsapp_cta_enabled"
-          render={({field}) => (
-            <Switch
-              isSelected={field.value}
-              onChange={field.onChange}
+              value={field.value}
             >
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
-              <Switch.Content>
-                <span className="text-sm">Show floating WhatsApp button on my page</span>
-              </Switch.Content>
-            </Switch>
+              <Label>Page URL (required)</Label>
+              <Description>coacheasy.app/coach/{slugValue || 'your-page'}</Description>
+              {slugStatus === 'taken' && <FieldError>This URL is already taken</FieldError>}
+              {errors.slug && <FieldError>{errors.slug.message}</FieldError>}
+              <div className="flex items-center gap-2">
+                <span className="hidden whitespace-nowrap text-sm text-foreground-500 sm:inline">
+                  coacheasy.app/coach/
+                </span>
+                <Input />
+                {slugStatus === 'checking' ? <Spinner size="sm" /> : null}
+                {slugStatus === 'available' ? (
+                  <Check
+                    className="text-success"
+                    size={18}
+                  />
+                ) : null}
+                {slugStatus === 'taken' ? (
+                  <X
+                    className="text-danger"
+                    size={18}
+                  />
+                ) : null}
+              </div>
+            </TextField>
           )}
         />
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="whatsapp_cta_message">Pre-filled message</Label>
-          <Input
-            id="whatsapp_cta_message"
-            placeholder="Hi! I'm interested in your coaching services."
-            {...register('whatsapp_cta_message')}
-          />
-          <Description>Message visitors see when they tap the WhatsApp button.</Description>
-        </div>
-      </div>
 
-      <Card>
-        <Card.Content className="flex flex-col gap-3">
+        <Fieldset>
+          <Fieldset.Legend>Theme color</Fieldset.Legend>
           <Controller
             control={control}
-            name="is_published"
+            name="theme_color"
             render={({field}) => (
-              <Switch
-                isSelected={field.value}
-                onChange={field.onChange}
-              >
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content>
-                  <span className="text-sm font-medium">{field.value ? 'Published' : 'Unpublished'}</span>
-                </Switch.Content>
-              </Switch>
+              <Fieldset.Actions>
+                {THEME_COLORS.map((themeColor) => (
+                  <Button
+                    aria-label={themeColor.label}
+                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-full ${themeColor.color} transition-transform ${field.value === themeColor.value ? 'ring-2 ring-offset-2 ring-offset-background' : 'opacity-60'}`}
+                    isIconOnly
+                    key={themeColor.value}
+                    onPress={() => field.onChange(themeColor.value)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {field.value === themeColor.value ? (
+                      <Check
+                        className="text-white"
+                        size={16}
+                      />
+                    ) : null}
+                  </Button>
+                ))}
+              </Fieldset.Actions>
             )}
           />
+        </Fieldset>
 
-          {isPublished ? (
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-success">Your page is live. Changes appear within 60 seconds after saving.</p>
-              {pageUrl ? (
-                <a
-                  className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline"
-                  href={`https://${pageUrl}`}
-                  rel="noopener noreferrer"
-                  target="_blank"
+        <Fieldset>
+          <Fieldset.Legend>WhatsApp button</Fieldset.Legend>
+          <Fieldset.Group>
+            <Controller
+              control={control}
+              name="whatsapp_cta_enabled"
+              render={({field}) => (
+                <Switch
+                  isSelected={field.value}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
                 >
-                  <ExternalLink size={14} />
-                  {pageUrl}
-                </a>
-              ) : null}
-            </div>
-          ) : (
-            <p className="text-xs text-foreground-400">Your page is not visible. Toggle on and save to make it live.</p>
-          )}
-        </Card.Content>
-      </Card>
-    </div>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Content>
+                    <Typography type="body-sm">Show floating WhatsApp button on my page</Typography>
+                  </Switch.Content>
+                </Switch>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="whatsapp_cta_message"
+              render={({field}) => (
+                <TextField
+                  fullWidth
+                  isInvalid={!!errors.whatsapp_cta_message}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value ?? ''}
+                >
+                  <Label>Pre-filled message (optional)</Label>
+                  <Description>Message visitors see when they tap the WhatsApp button</Description>
+                  {errors.whatsapp_cta_message && <FieldError>{errors.whatsapp_cta_message.message}</FieldError>}
+                  <Input />
+                </TextField>
+              )}
+            />
+          </Fieldset.Group>
+        </Fieldset>
+
+        <Card>
+          <Card.Content className="flex flex-col gap-3">
+            <Controller
+              control={control}
+              name="is_published"
+              render={({field}) => (
+                <Switch
+                  isSelected={field.value}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                >
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Content>
+                    <Typography
+                      type="body-sm"
+                      weight="medium"
+                    >
+                      {field.value ? 'Published' : 'Unpublished'}
+                    </Typography>
+                  </Switch.Content>
+                </Switch>
+              )}
+            />
+
+            {isPublished ? (
+              <div className="flex flex-col gap-1">
+                <Typography
+                  className="text-success"
+                  type="body-xs"
+                >
+                  Your page is live. Changes appear within 60 seconds after saving.
+                </Typography>
+                {pageUrl ? (
+                  <a
+                    className="inline-flex min-h-11 items-center gap-1.5 text-sm text-primary hover:underline"
+                    href={`https://${pageUrl}`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <ExternalLink size={14} />
+                    {pageUrl}
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <Typography
+                color="muted"
+                type="body-xs"
+              >
+                Your page is not visible. Toggle on and save to make it live.
+              </Typography>
+            )}
+          </Card.Content>
+        </Card>
+      </Fieldset.Group>
+    </Fieldset>
   );
 }

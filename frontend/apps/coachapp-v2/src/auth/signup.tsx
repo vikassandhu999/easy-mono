@@ -1,6 +1,17 @@
-import {Button, Input, Label, Link, Spinner} from '@heroui/react';
+import {
+  Button,
+  ErrorMessage,
+  FieldError,
+  Form,
+  Input,
+  Label,
+  Link,
+  Spinner,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
 
@@ -10,7 +21,7 @@ import {applyFormErrors} from '@/api/shared';
 import AuthLayout from '@/auth/components/auth-layout';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  email: z.string().min(1, 'Enter email').email('Enter a valid email'),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
 });
@@ -21,12 +32,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const [signup, {isLoading}] = useSignupMutation();
 
-  const {
-    formState: {errors},
-    handleSubmit,
-    register,
-    setError,
-  } = useForm<SignupFormValues>({
+  const form = useForm<SignupFormValues>({
+    defaultValues: {email: '', first_name: '', last_name: ''},
     resolver: zodResolver(schema),
   });
 
@@ -41,7 +48,7 @@ export default function Signup() {
         state: {email: data.email},
       });
     } catch (err) {
-      applyFormErrors(err, 'Failed to create account. Please try again.', setError);
+      applyFormErrors(err, "Account wasn't created. Try again", form.setError);
     }
   };
 
@@ -50,47 +57,73 @@ export default function Signup() {
       description="Create your coaching account to get started."
       title="Create account"
     >
-      <form
+      <Form
         className="flex flex-col gap-4"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="first_name">First name</Label>
-            <Input
-              autoComplete="given-name"
-              id="first_name"
-              placeholder="Jane"
-              {...register('first_name')}
-            />
-            {errors.first_name && <p className="text-xs text-danger">{errors.first_name.message}</p>}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="last_name">Last name</Label>
-            <Input
-              autoComplete="family-name"
-              id="last_name"
-              placeholder="Doe"
-              {...register('last_name')}
-            />
-            {errors.last_name && <p className="text-xs text-danger">{errors.last_name.message}</p>}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            autoComplete="email"
-            id="email"
-            placeholder="you@example.com"
-            type="email"
-            {...register('email')}
+          <Controller
+            control={form.control}
+            name="first_name"
+            render={({field}) => (
+              <TextField
+                fullWidth
+                isInvalid={!!form.formState.errors.first_name}
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                value={field.value ?? ''}
+              >
+                <Label>First name (optional)</Label>
+                {form.formState.errors.first_name && (
+                  <FieldError>{form.formState.errors.first_name.message}</FieldError>
+                )}
+                <Input autoComplete="given-name" />
+              </TextField>
+            )}
           />
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+
+          <Controller
+            control={form.control}
+            name="last_name"
+            render={({field}) => (
+              <TextField
+                fullWidth
+                isInvalid={!!form.formState.errors.last_name}
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                value={field.value ?? ''}
+              >
+                <Label>Last name (optional)</Label>
+                {form.formState.errors.last_name && <FieldError>{form.formState.errors.last_name.message}</FieldError>}
+                <Input autoComplete="family-name" />
+              </TextField>
+            )}
+          />
         </div>
 
-        {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
+        <Controller
+          control={form.control}
+          name="email"
+          render={({field}) => (
+            <TextField
+              fullWidth
+              isInvalid={!!form.formState.errors.email}
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              type="email"
+              value={field.value}
+            >
+              <Label>Email</Label>
+              {form.formState.errors.email && <FieldError>{form.formState.errors.email.message}</FieldError>}
+              <Input autoComplete="email" />
+            </TextField>
+          )}
+        />
+
+        {form.formState.errors.root && <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>}
 
         <Button
           fullWidth
@@ -103,15 +136,19 @@ export default function Signup() {
                 color="current"
                 size="sm"
               />
-              Creating account...
+              Creating account
             </>
           ) : (
             'Create account'
           )}
         </Button>
-      </form>
+      </Form>
 
-      <p className="mt-6 text-center text-sm text-foreground-500">
+      <Typography
+        className="mt-6 text-center"
+        color="muted"
+        type="body-sm"
+      >
         Already have an account?{' '}
         <Link
           className="text-sm text-foreground underline"
@@ -119,7 +156,7 @@ export default function Signup() {
         >
           Log in
         </Link>
-      </p>
+      </Typography>
     </AuthLayout>
   );
 }

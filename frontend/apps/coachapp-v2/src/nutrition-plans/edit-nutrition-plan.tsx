@@ -9,14 +9,14 @@ import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
   useNutritionPlanForm,
-} from '@/nutrition-plans/components/nutrition-plan-form';
+} from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 
 function buildMacrosGoal(data: NutritionPlanFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -35,12 +35,12 @@ export default function EditNutritionPlan() {
   const form = useNutritionPlanForm({
     values: plan
       ? {
-          calories: plan.macros_goal?.calories ?? '',
-          carbs_g: plan.macros_goal?.carbs_g ?? '',
+          calories: plan.macros_goal?.calories ?? undefined,
+          carbs_g: plan.macros_goal?.carbs_g ?? undefined,
           description: plan.description ?? '',
-          fats_g: plan.macros_goal?.fats_g ?? '',
+          fats_g: plan.macros_goal?.fats_g ?? undefined,
           name: plan.name,
-          protein_g: plan.macros_goal?.protein_g ?? '',
+          protein_g: plan.macros_goal?.protein_g ?? undefined,
         }
       : undefined,
   });

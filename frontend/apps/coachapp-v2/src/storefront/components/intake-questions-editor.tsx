@@ -1,4 +1,16 @@
-import {Button, Description, Input, Label, ListBox, Select, Switch} from '@heroui/react';
+import {
+  Button,
+  Description,
+  FieldError,
+  Fieldset,
+  Input,
+  Label,
+  ListBox,
+  Select,
+  Switch,
+  TextField,
+  Typography,
+} from '@heroui/react';
 import {Plus, X} from 'lucide-react';
 import {useState} from 'react';
 import {Controller, useFieldArray, type UseFormReturn} from 'react-hook-form';
@@ -8,46 +20,45 @@ import type {EditorFormValues} from '@/storefront/components/editor-schema';
 const QUESTION_TYPES = [
   {label: 'Text', value: 'text'},
   {label: 'Number', value: 'number'},
-  {label: 'Select (dropdown)', value: 'select'},
+  {label: 'Select', value: 'select'},
 ] as const;
 
 export default function IntakeQuestionsEditor({form}: {form: UseFormReturn<EditorFormValues>}) {
   const {
     control,
     formState: {errors},
-    register,
     watch,
   } = form;
   const {append, fields, remove} = useFieldArray({control, name: 'intake_questions'});
 
   return (
-    <div className="flex flex-col gap-3">
-      <Description>
-        Default fields (Name, Email, Phone, Instagram) are always shown. Add custom questions below.
-      </Description>
+    <Fieldset>
+      <Fieldset.Legend>Intake questions</Fieldset.Legend>
+      <Description>Default fields for name, email, phone, and Instagram are always shown</Description>
 
-      {fields.map((field, index) => (
-        <IntakeQuestionRow
-          control={control}
-          errors={errors}
-          index={index}
-          key={field.id}
-          onRemove={() => remove(index)}
-          register={register}
-          watch={watch}
-        />
-      ))}
+      <Fieldset.Group>
+        {fields.map((field, index) => (
+          <IntakeQuestionRow
+            control={control}
+            errors={errors}
+            index={index}
+            key={field.id}
+            onRemove={() => remove(index)}
+            watch={watch}
+          />
+        ))}
 
-      <Button
-        className="self-start"
-        onPress={() => append({label: '', options: [], required: false, type: 'text'})}
-        size="sm"
-        variant="ghost"
-      >
-        <Plus size={16} />
-        Add question
-      </Button>
-    </div>
+        <Button
+          className="self-start"
+          onPress={() => append({label: '', options: [], required: false, type: 'text'})}
+          size="sm"
+          variant="ghost"
+        >
+          <Plus size={16} />
+          Add question
+        </Button>
+      </Fieldset.Group>
+    </Fieldset>
   );
 }
 
@@ -56,102 +67,114 @@ function IntakeQuestionRow({
   errors,
   index,
   onRemove,
-  register,
   watch,
 }: {
   control: UseFormReturn<EditorFormValues>['control'];
   errors: UseFormReturn<EditorFormValues>['formState']['errors'];
   index: number;
   onRemove: () => void;
-  register: UseFormReturn<EditorFormValues>['register'];
   watch: UseFormReturn<EditorFormValues>['watch'];
 }) {
   const questionType = watch(`intake_questions.${index}.type`);
   const questionErrors = errors.intake_questions?.[index];
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-divider p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-1 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Input
-              placeholder="Question text"
-              {...register(`intake_questions.${index}.label`)}
+    <Fieldset>
+      <Fieldset.Group>
+        <div className="flex items-start gap-2">
+          <div className="flex flex-1 flex-col gap-3">
+            <Controller
+              control={control}
+              name={`intake_questions.${index}.label`}
+              render={({field}) => (
+                <TextField
+                  fullWidth
+                  isInvalid={!!questionErrors?.label}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                >
+                  <Label>Question text</Label>
+                  {questionErrors?.label && <FieldError>{questionErrors.label.message}</FieldError>}
+                  <Input />
+                </TextField>
+              )}
             />
-            {questionErrors?.label ? <p className="text-xs text-danger">{questionErrors.label.message}</p> : null}
+
+            <Fieldset.Actions>
+              <Controller
+                control={control}
+                name={`intake_questions.${index}.type`}
+                render={({field}) => (
+                  <Select
+                    className="w-full sm:w-48"
+                    onSelectionChange={(key) => field.onChange(key)}
+                    selectedKey={field.value || null}
+                  >
+                    <Label>Type</Label>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        {QUESTION_TYPES.map((questionType) => (
+                          <ListBox.Item
+                            id={questionType.value}
+                            key={questionType.value}
+                            textValue={questionType.label}
+                          >
+                            {questionType.label}
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
+                )}
+              />
+              <Controller
+                control={control}
+                name={`intake_questions.${index}.required`}
+                render={({field}) => (
+                  <Switch
+                    isSelected={field.value ?? false}
+                    onBlur={field.onBlur}
+                    onChange={field.onChange}
+                  >
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Switch.Content>
+                      <Typography type="body-xs">Required</Typography>
+                    </Switch.Content>
+                  </Switch>
+                )}
+              />
+            </Fieldset.Actions>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Controller
-              control={control}
-              name={`intake_questions.${index}.type`}
-              render={({field}) => (
-                <Select
-                  className="w-full sm:w-48"
-                  onSelectionChange={(key) => field.onChange(key)}
-                  placeholder="Type"
-                  selectedKey={field.value || null}
-                >
-                  <Label>Type</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox>
-                      {QUESTION_TYPES.map((qt) => (
-                        <ListBox.Item
-                          id={qt.value}
-                          key={qt.value}
-                          textValue={qt.label}
-                        >
-                          {qt.label}
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
-                    </ListBox>
-                  </Select.Popover>
-                </Select>
-              )}
-            />
-            <Controller
-              control={control}
-              name={`intake_questions.${index}.required`}
-              render={({field}) => (
-                <Switch
-                  isSelected={field.value ?? false}
-                  onChange={field.onChange}
-                >
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  <Switch.Content>
-                    <span className="text-xs">Required</span>
-                  </Switch.Content>
-                </Switch>
-              )}
-            />
-          </div>
+          <Button
+            aria-label={`Remove question ${index + 1}`}
+            isIconOnly
+            onPress={onRemove}
+            size="sm"
+            variant="ghost"
+          >
+            <X size={14} />
+          </Button>
         </div>
 
-        <Button
-          isIconOnly
-          onPress={onRemove}
-          size="sm"
-          variant="ghost"
-        >
-          <X size={14} />
-        </Button>
-      </div>
-
-      {questionType === 'select' ? (
-        <SelectOptionsEditor
-          control={control}
-          index={index}
-          watch={watch}
-        />
-      ) : null}
-    </div>
+        {questionType === 'select' ? (
+          <SelectOptionsEditor
+            control={control}
+            index={index}
+            watch={watch}
+          />
+        ) : null}
+      </Fieldset.Group>
+    </Fieldset>
   );
 }
 
@@ -172,30 +195,33 @@ function SelectOptionsEditor({
   });
 
   return (
-    <div className="flex flex-col gap-2 pl-2">
-      <Label className="text-xs text-foreground-500">Options</Label>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option, optionIndex) => (
-          <span
-            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-default-100 px-3 text-xs"
-            key={option || optionIndex}
-          >
-            {option || `Option ${optionIndex + 1}`}
-            <Button
-              className="ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-default-200 active:bg-default-300"
-              isIconOnly
-              onPress={() => remove(optionIndex)}
-              size="sm"
-              variant="ghost"
+    <Fieldset>
+      <Fieldset.Legend>Options</Fieldset.Legend>
+      <Fieldset.Group>
+        <div className="flex flex-wrap gap-2">
+          {options.map((option, optionIndex) => (
+            <span
+              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-default-100 px-3 text-xs"
+              key={option || optionIndex}
             >
-              <X size={12} />
-            </Button>
-          </span>
-        ))}
-      </div>
-      {/* @ts-expect-error — useFieldArray append types don't support nested string arrays well */}
-      <OptionAdder onAdd={(value) => append(value)} />
-    </div>
+              {option || `Option ${optionIndex + 1}`}
+              <Button
+                aria-label={`Remove option ${optionIndex + 1}`}
+                className="ml-1 flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-default-200 active:bg-default-300"
+                isIconOnly
+                onPress={() => remove(optionIndex)}
+                size="sm"
+                variant="ghost"
+              >
+                <X size={12} />
+              </Button>
+            </span>
+          ))}
+        </div>
+        {/* @ts-expect-error — useFieldArray append types don't support nested string arrays well */}
+        <OptionAdder onAdd={(value) => append(value)} />
+      </Fieldset.Group>
+    </Fieldset>
   );
 }
 
@@ -212,18 +238,21 @@ function OptionAdder({onAdd}: {onAdd: (value: string) => void}) {
 
   return (
     <div className="flex gap-2">
-      <Input
+      <TextField
         className="flex-1"
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAdd();
-          }
-        }}
-        placeholder="Add option..."
+        onChange={setValue}
         value={value}
-      />
+      >
+        <Label>Add option</Label>
+        <Input
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              handleAdd();
+            }
+          }}
+        />
+      </TextField>
       <Button
         isDisabled={!value.trim()}
         onPress={handleAdd}

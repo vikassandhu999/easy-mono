@@ -11,14 +11,14 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
-import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/components/recipe-form';
+import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
   const macros: Record<string, number> = {};
   const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
   for (const key of keys) {
     const val = data[key];
-    if (val !== '' && val !== undefined && typeof val === 'number') {
+    if (val !== undefined) {
       macros[key] = val;
     }
   }
@@ -61,11 +61,7 @@ export default function CreateRecipe() {
         ...(data.category && {category: data.category}),
         ...(data.source && {source: data.source}),
         ...(data.instructions && {instructions: data.instructions}),
-        ...(cookedWeight !== '' &&
-          cookedWeight !== undefined &&
-          typeof cookedWeight === 'number' && {
-            cooked_weight_g: cookedWeight,
-          }),
+        ...(cookedWeight !== undefined && {cooked_weight_g: cookedWeight}),
         ...(macros && {macros}),
         ...(recipeIngredients && {recipe_ingredients: recipeIngredients}),
       };
@@ -99,7 +95,7 @@ export default function CreateRecipe() {
           form={form}
           ingredients={ingredients}
           isSubmitting={isLoading}
-          onCancel={() => navigate(ROUTES.RECIPES)}
+          onCancel={goBack}
           onIngredientsChange={setIngredients}
           onSubmit={onSubmit}
           submitLabel="Create recipe"

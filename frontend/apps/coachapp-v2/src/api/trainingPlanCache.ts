@@ -45,7 +45,9 @@ export function removeTrainingPlanItemFromPlan(draft: TrainingPlanCacheDraft, it
 
 export function upsertWorkoutElementInPlan(draft: TrainingPlanCacheDraft, element: WorkoutElement) {
   const workout = draft.data.workouts.find((item) => item.id === element.workout_id);
-  if (!workout) return;
+  if (!workout) {
+    return;
+  }
 
   const index = workout.workout_elements.findIndex((item) => item.id === element.id);
   if (index === -1) {

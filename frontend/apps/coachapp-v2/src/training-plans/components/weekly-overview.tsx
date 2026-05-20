@@ -97,9 +97,13 @@ export default function WeeklyOverview({onScrollToWorkout, onWorkoutCreated, pla
     let rest = 0;
     let empty = 0;
     for (const state of dayStates.values()) {
-      if (state.kind === 'assigned') workouts += 1;
-      else if (state.kind === 'rest') rest += 1;
-      else empty += 1;
+      if (state.kind === 'assigned') {
+        workouts += 1;
+      } else if (state.kind === 'rest') {
+        rest += 1;
+      } else {
+        empty += 1;
+      }
     }
     return {empty, rest, workouts};
   }, [dayStates]);
@@ -243,7 +247,9 @@ function RowGrid({day, onScrollToWorkout, onToggleExpand, onWorkoutCreated, plan
       // rarely has more than one). Tapping the row always jumps to the
       // primary workout section if present.
       const primary = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
-      if (primary) onScrollToWorkout(primary.workout_id);
+      if (primary) {
+        onScrollToWorkout(primary.workout_id);
+      }
     }
     // Rest day taps are no-ops — action only via overflow menu.
   };
@@ -417,7 +423,9 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
   };
 
   const handleDuplicate = async () => {
-    if (!primaryItem) return;
+    if (!primaryItem) {
+      return;
+    }
     close();
     try {
       const result = await duplicateWorkout({id: primaryItem.workout_id, planId: plan.id}).unwrap();
@@ -429,7 +437,9 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
   };
 
   const handleUnassign = async () => {
-    if (!primaryItem) return;
+    if (!primaryItem) {
+      return;
+    }
     close();
     try {
       await deletePlanItem({id: primaryItem.id, planId: primaryItem.training_plan_id}).unwrap();
@@ -450,7 +460,9 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
 
   const handleConfirmMarkRest = async () => {
     // Unassign all items on the day, then add to rest_days.
-    if (state.kind !== 'assigned') return;
+    if (state.kind !== 'assigned') {
+      return;
+    }
     try {
       for (const item of state.items) {
         await deletePlanItem({id: item.id, planId: item.training_plan_id}).unwrap();
@@ -465,7 +477,9 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
   };
 
   const handleConfirmDelete = async () => {
-    if (!primaryItem) return;
+    if (!primaryItem) {
+      return;
+    }
     try {
       await deleteWorkout({id: primaryItem.workout_id, planId: plan.id}).unwrap();
       setConfirmKind(null);
@@ -650,7 +664,9 @@ function ConfirmDialog({
     <AlertDialog
       defaultOpen
       onOpenChange={(open) => {
-        if (!open && !isPending) onCancel();
+        if (!open && !isPending) {
+          onCancel();
+        }
       }}
     >
       {/* AlertDialog expects a trigger child but we drive it with
@@ -924,7 +940,9 @@ function AssignPanel({
           <div className="flex flex-wrap gap-1.5">
             {assignedDays.map(([srcDay, item]) => {
               const workout = plan.workouts.find((w) => w.id === item.workout_id);
-              if (!workout) return null;
+              if (!workout) {
+                return null;
+              }
               return (
                 <Button
                   className="min-h-11"
@@ -968,7 +986,9 @@ function CreateWorkoutPanel({
   const isBusy = isCreating || isAssigning;
 
   const handleCreate = async ({name}: WorkoutNameFormValues) => {
-    if (isBusy) return;
+    if (isBusy) {
+      return;
+    }
     setConflictMessage(null);
 
     const workoutResult = await createWorkout({planId: plan.id, body: {name}}).unwrap();
@@ -1034,24 +1054,33 @@ function CopyToPanel({
   const takenDays = useMemo(() => {
     const map = new Set<TrainingWeekday>();
     for (const item of plan.plan_items) {
-      if (item.workout_type === 'primary') map.add(item.day);
+      if (item.workout_type === 'primary') {
+        map.add(item.day);
+      }
     }
     return map;
   }, [plan.plan_items]);
   const restDays = useMemo(() => new Set(plan.rest_days), [plan.rest_days]);
 
   const toggle = (target: TrainingWeekday) => {
-    if (takenDays.has(target) || restDays.has(target)) return;
+    if (takenDays.has(target) || restDays.has(target)) {
+      return;
+    }
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(target)) next.delete(target);
-      else next.add(target);
+      if (next.has(target)) {
+        next.delete(target);
+      } else {
+        next.add(target);
+      }
       return next;
     });
   };
 
   const handleConfirm = async () => {
-    if (!workout || selected.size === 0) return;
+    if (!workout || selected.size === 0) {
+      return;
+    }
     const targets = [...selected].filter((target) => !takenDays.has(target) && !restDays.has(target));
     if (targets.length === 0) {
       setSelected(new Set());

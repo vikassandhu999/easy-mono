@@ -35,7 +35,9 @@ function formatIngredientSummary(item: IngredientItem): string {
   const hasAmount = item.amount !== '' && item.amount != null && Number(item.amount) !== 0;
   const hasWeight = item.weight_g !== '' && item.weight_g != null && Number(item.weight_g) !== 0;
 
-  if (!hasAmount && !hasWeight) return '\u2014';
+  if (!hasAmount && !hasWeight) {
+    return '\u2014';
+  }
 
   const amountPart = hasAmount ? `${item.amount}${item.unit ? ` ${item.unit}` : ''}` : null;
   const weightPart = hasWeight ? `${item.weight_g}g` : null;
@@ -56,7 +58,9 @@ function formatServingLabel(s: ServingSize): string {
 }
 
 function toOptionalNumber(value: number | string): number | undefined {
-  if (value === '' || value == null) return undefined;
+  if (value === '' || value == null) {
+    return undefined;
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }

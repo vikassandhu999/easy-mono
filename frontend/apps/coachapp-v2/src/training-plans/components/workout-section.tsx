@@ -1,5 +1,3 @@
-import type {Ref} from 'react';
-
 import {formatUsedOnDays, getWorkoutUsedOnDays} from '@easy/utils';
 import {
   AlertDialog,
@@ -10,19 +8,18 @@ import {
   Label,
   Popover,
   TextField,
-  toast,
   Typography,
+  toast,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {MoreHorizontal, Plus} from 'lucide-react';
+import type {Ref} from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import type {Exercise} from '@/api/exercises';
 import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
-import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
-
 import {
   useCreateWorkoutElementMutation,
   useDeleteWorkoutElementMutation,
@@ -37,6 +34,7 @@ import InlineExerciseForm, {
   EMPTY_DEFAULTS,
   type InlineExerciseFormValues,
 } from '@/training-plans/components/inline-exercise-form';
+import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 type WorkoutSectionProps = {
   /** All workouts in the plan — needed for copy exercise target selection */
@@ -149,7 +147,9 @@ export default function WorkoutSection({
   };
 
   const handleSubmitAdd = async (values: InlineExerciseFormValues) => {
-    if (!pendingExercise) return;
+    if (!pendingExercise) {
+      return;
+    }
     const nextPosition =
       workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
     const plannedSets = buildPlannedSetsFromForm(values);
@@ -218,7 +218,9 @@ export default function WorkoutSection({
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
-      if (removalTimerRef.current) clearTimeout(removalTimerRef.current);
+      if (removalTimerRef.current) {
+        clearTimeout(removalTimerRef.current);
+      }
     };
   }, []);
 
@@ -360,7 +362,6 @@ export default function WorkoutSection({
             <Button
               className="mt-0.5 flex min-h-11 items-center rounded-md px-1 text-left text-xs text-foreground-400 transition-colors hover:bg-content2"
               onPress={() => {
-                setEditNotes(workout.notes ?? '');
                 setIsEditingName(false);
                 setIsEditingNotes(true);
               }}
@@ -668,7 +669,9 @@ function DeleteWorkoutDialog({
     <AlertDialog
       defaultOpen
       onOpenChange={(open) => {
-        if (!open && !isDeleting) onCancel();
+        if (!open && !isDeleting) {
+          onCancel();
+        }
       }}
     >
       <span className="hidden" />

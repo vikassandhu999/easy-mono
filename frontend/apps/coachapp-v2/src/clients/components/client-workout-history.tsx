@@ -25,7 +25,9 @@ function getExerciseCount(session: WorkoutSession): number {
 }
 
 function getReplacedCount(session: WorkoutSession): number {
-  if (!session.planned_snapshot) return 0;
+  if (!session.planned_snapshot) {
+    return 0;
+  }
   const elementExerciseMap = new Map<string, string>();
   for (const el of session.planned_snapshot.elements) {
     elementExerciseMap.set(el.element_id, el.exercise_id);
@@ -43,7 +45,9 @@ function getReplacedCount(session: WorkoutSession): number {
 }
 
 function getPlannedExerciseCount(session: WorkoutSession): null | number {
-  if (!session.planned_snapshot) return null;
+  if (!session.planned_snapshot) {
+    return null;
+  }
   return session.planned_snapshot.elements.length;
 }
 
@@ -51,7 +55,9 @@ function buildSubtitle(session: WorkoutSession): string {
   const parts: string[] = [];
 
   const duration = formatDuration(session.started_at, session.ended_at);
-  if (duration) parts.push(duration);
+  if (duration) {
+    parts.push(duration);
+  }
 
   const plannedCount = getPlannedExerciseCount(session);
   const actualCount = getExerciseCount(session);

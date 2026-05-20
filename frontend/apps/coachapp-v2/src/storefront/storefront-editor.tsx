@@ -1,18 +1,16 @@
-import {Alert, Button, Form, Spinner, toast, Typography} from '@heroui/react';
+import {Alert, Button, Form, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Eye, Save} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {useForm, useWatch} from 'react-hook-form';
 import {Link} from 'react-router-dom';
-
-import type {Offer} from '@/api/offers';
-import type {StoreProfile} from '@/api/storefront';
-import type {Testimonial} from '@/api/testimonials';
-
 import {ROUTES} from '@/@config/routes';
+import type {Offer} from '@/api/offers';
 import {useListOffersQuery} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
+import type {StoreProfile} from '@/api/storefront';
 import {useGetStoreProfileQuery, useUpsertStoreProfileMutation} from '@/api/storefront';
+import type {Testimonial} from '@/api/testimonials';
 import {useListTestimonialsQuery} from '@/api/testimonials';
 import EditorPanel from '@/storefront/components/editor-panel';
 import {type EditorFormValues, editorSchema} from '@/storefront/components/editor-schema';
@@ -132,9 +130,15 @@ function EditorInner({
 
   const onSubmit = async (data: EditorFormValues) => {
     const socialLinks: Record<string, string> = {};
-    if (data.instagram) socialLinks.instagram = data.instagram;
-    if (data.youtube) socialLinks.youtube = data.youtube;
-    if (data.whatsapp) socialLinks.whatsapp = data.whatsapp;
+    if (data.instagram) {
+      socialLinks.instagram = data.instagram;
+    }
+    if (data.youtube) {
+      socialLinks.youtube = data.youtube;
+    }
+    if (data.whatsapp) {
+      socialLinks.whatsapp = data.whatsapp;
+    }
 
     try {
       await upsertProfile({

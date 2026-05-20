@@ -2,9 +2,6 @@ import {getWorkoutTitle} from '@easy/utils';
 import {Alert, Button, Spinner} from '@heroui/react';
 import {ArrowLeft, Clock, Plus} from 'lucide-react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-
-import type {WorkoutExercise} from '@/workout/components/workout-types';
-
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
@@ -14,6 +11,7 @@ import ExerciseRow from '@/workout/components/exercise-row';
 import FinishWorkout from '@/workout/components/finish-workout';
 import SetLogger from '@/workout/components/set-logger';
 import {useWorkoutLocalState} from '@/workout/components/use-workout-local-state';
+import type {WorkoutExercise} from '@/workout/components/workout-types';
 import {buildWorkoutExercises} from '@/workout/components/workout-types';
 
 // ── Timer hook ───────────────────────────────────────────────
@@ -23,12 +21,16 @@ function useElapsedTimer(startedAt: null | string): string {
   const startMs = useMemo(() => (startedAt ? new Date(startedAt).getTime() : null), [startedAt]);
 
   useEffect(() => {
-    if (!startMs) return;
+    if (!startMs) {
+      return;
+    }
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [startMs]);
 
-  if (!startMs) return '0:00';
+  if (!startMs) {
+    return '0:00';
+  }
   const diffSec = Math.max(0, Math.floor((now - startMs) / 1000));
   const hrs = Math.floor(diffSec / 3600);
   const mins = Math.floor((diffSec % 3600) / 60);
@@ -58,7 +60,9 @@ export default function ActiveWorkout() {
 
   // Build exercise list from snapshot + performed sets + client-side state
   const exercises: WorkoutExercise[] = useMemo(() => {
-    if (!session) return [];
+    if (!session) {
+      return [];
+    }
     return buildWorkoutExercises(
       snapshot?.elements ?? [],
       session.performed_sets,
@@ -70,8 +74,12 @@ export default function ActiveWorkout() {
 
   // Derive initial expanded index: first non-done exercise, until user manually toggles
   const activeExpandedIndex = useMemo(() => {
-    if (userHasToggled) return expandedIndex;
-    if (exercises.length === 0) return null;
+    if (userHasToggled) {
+      return expandedIndex;
+    }
+    if (exercises.length === 0) {
+      return null;
+    }
     const firstActive = exercises.findIndex((ex) => ex.status === 'not_started' || ex.status === 'in_progress');
     return firstActive >= 0 ? firstActive : null;
   }, [exercises, expandedIndex, userHasToggled]);
@@ -83,7 +91,9 @@ export default function ActiveWorkout() {
 
   const handleSkip = useCallback(
     (elementId: null | string) => {
-      if (!elementId) return;
+      if (!elementId) {
+        return;
+      }
       setSkippedElementIds((prev) => {
         const next = new Set(prev);
         if (next.has(elementId)) {
@@ -99,7 +109,9 @@ export default function ActiveWorkout() {
 
   const handleReplace = useCallback(
     (elementId: null | string, selected: {id: string; name: string}) => {
-      if (!elementId) return;
+      if (!elementId) {
+        return;
+      }
       setReplacements((prev) => {
         const next = new Map(prev);
         next.set(elementId, {exerciseId: selected.id, exerciseName: selected.name});

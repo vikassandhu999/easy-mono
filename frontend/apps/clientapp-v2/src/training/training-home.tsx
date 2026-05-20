@@ -12,15 +12,13 @@ import {Button, Chip} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell, Play, Plus, UtensilsCrossed} from 'lucide-react';
 import {useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import type {ClientTrainingPlan, ClientTrainingPlanItem, ClientWorkout, TrainingWeekday} from '@/api/trainingPlans';
-import type {ClientWorkoutSession} from '@/api/workoutSessions';
-
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useListMyMealLogsQuery} from '@/api/mealLogs';
 import {useGetClientProfileQuery} from '@/api/profile';
+import type {ClientTrainingPlan, ClientTrainingPlanItem, ClientWorkout, TrainingWeekday} from '@/api/trainingPlans';
 import {useListClientTrainingPlansQuery} from '@/api/trainingPlans';
+import type {ClientWorkoutSession} from '@/api/workoutSessions';
 import {useGetActiveWorkoutSessionQuery, useStartWorkoutSessionMutation} from '@/api/workoutSessions';
 
 type ScheduledWorkout = {
@@ -41,7 +39,9 @@ function estimateWorkoutDurationMinutes(workout: ClientWorkout): null | number {
     }
   }
 
-  if (totalSeconds <= 0) return null;
+  if (totalSeconds <= 0) {
+    return null;
+  }
 
   const roundedTo5 = Math.round(totalSeconds / 300) * 5;
   return Math.max(15, roundedTo5);
@@ -246,7 +246,9 @@ function ComingUpList({todayDay, workouts}: {todayDay: TrainingWeekday; workouts
     .sort((a, b) => getDaysUntil(a.item.day, todayDay) - getDaysUntil(b.item.day, todayDay))
     .slice(0, 3);
 
-  if (upcoming.length === 0) return null;
+  if (upcoming.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mb-6">
@@ -371,7 +373,9 @@ export default function TrainingHome() {
   );
   const todayWorkouts = activePlan ? getScheduledWorkoutsForDay(workoutMap, activePlan.plan_items, todayDay) : [];
   const upcomingWorkouts = useMemo(() => {
-    if (!activePlan) return [];
+    if (!activePlan) {
+      return [];
+    }
 
     return sortPlanItems(activePlan.plan_items)
       .map((item) => {

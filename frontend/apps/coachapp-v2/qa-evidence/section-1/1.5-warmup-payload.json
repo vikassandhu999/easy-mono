@@ -8,7 +8,7 @@
     "elementId": "a686244a-891d-4cde-9bc8-2c6f9b619be8",
     "planned_sets_count": 5,
     "set_order_check": "warmup at index 0, then 4 working sets",
-    "set_types": ["warmup","working","working","working","working"],
+    "set_types": ["warmup", "working", "working", "working", "working"],
     "warmup_first_pass": true
   },
   "verdict": "PASS",

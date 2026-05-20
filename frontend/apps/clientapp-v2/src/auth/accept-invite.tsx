@@ -236,7 +236,6 @@ function WelcomeForm({
           <p className="text-xs text-foreground-500">We&apos;ll send you a login code.</p>
           <Input
             autoComplete="email"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={shouldFocusEmail}
             id="email"
             placeholder="you@example.com"

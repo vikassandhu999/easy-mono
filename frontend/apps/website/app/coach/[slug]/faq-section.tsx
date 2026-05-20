@@ -1,9 +1,8 @@
 'use client';
 
+import type {PublicStoreProfile} from '@easy/storefront-types';
 import {ChevronDown} from 'lucide-react';
 import {useState} from 'react';
-
-import type {PublicStoreProfile} from '@easy/storefront-types';
 
 /**
  * FAQ accordion — one item open at a time. Full-row tappable.
@@ -11,7 +10,9 @@ import type {PublicStoreProfile} from '@easy/storefront-types';
 export default function FaqSection({items}: {items: PublicStoreProfile['faq_items']}) {
   const [openIndex, setOpenIndex] = useState<null | number>(null);
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
@@ -33,9 +34,7 @@ export default function FaqSection({items}: {items: PublicStoreProfile['faq_item
                   size={16}
                 />
               </button>
-              {isOpen ? (
-                <div className="pb-4 text-sm text-gray-600">{item.answer}</div>
-              ) : null}
+              {isOpen ? <div className="pb-4 text-sm text-gray-600">{item.answer}</div> : null}
             </div>
           );
         })}

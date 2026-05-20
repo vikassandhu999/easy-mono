@@ -1,10 +1,9 @@
 'use client';
 
-import {useState} from 'react';
+import type {IntakeQuestion, PublicInquiryRequest, PublicOffer, PublicTestimonial} from '@easy/storefront-types';
 
 import {Lock, MessageCircle, Star} from 'lucide-react';
-
-import type {IntakeQuestion, PublicInquiryRequest, PublicOffer, PublicTestimonial} from '@easy/storefront-types';
+import {useState} from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -94,12 +93,16 @@ export default function IntakeForm({
             {coachName} will review your application and get back to you within 24 hours.
           </p>
 
-          {(instagramHandle || whatsappNumber) ? (
+          {instagramHandle || whatsappNumber ? (
             <div className="mt-6 flex flex-col items-center gap-3">
               {instagramHandle ? (
                 <a
                   className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                  href={instagramHandle.startsWith('http') ? instagramHandle : `https://instagram.com/${instagramHandle.replace('@', '')}`}
+                  href={
+                    instagramHandle.startsWith('http')
+                      ? instagramHandle
+                      : `https://instagram.com/${instagramHandle.replace('@', '')}`
+                  }
                   rel="noopener noreferrer"
                   target="_blank"
                 >
@@ -141,10 +144,14 @@ export default function IntakeForm({
       {/* Offer selector (if multiple offers and none pre-selected) */}
       {offers.length > 1 && (
         <div className="mb-6">
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+            htmlFor="offer_interest"
+          >
             I&apos;m interested in
           </label>
           <select
+            id="offer_interest"
             className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
             onChange={(e) => setOfferId(e.target.value || null)}
             value={offerId ?? ''}
@@ -289,9 +296,7 @@ export default function IntakeForm({
           </div>
         ))}
 
-        {status === 'error' && errorMessage && (
-          <p className="text-sm text-red-600">{errorMessage}</p>
-        )}
+        {status === 'error' && errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
 
         <button
           className="min-h-11 w-full rounded-lg bg-[--theme] px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"

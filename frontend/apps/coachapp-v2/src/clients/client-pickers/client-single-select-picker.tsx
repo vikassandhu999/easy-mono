@@ -16,11 +16,17 @@ export default function ClientSingleSelectPicker({heading, onSelect, selectedKey
     <ClientPickerDialog
       heading={heading}
       onSelectionChange={(keys, clients) => {
-        if (keys === 'all') return;
+        if (keys === 'all') {
+          return;
+        }
         const id = Array.from(keys)[0];
-        if (!id) return;
+        if (!id) {
+          return;
+        }
         const selected = clients.find((client) => client.id === String(id));
-        if (selected) onSelect(selected);
+        if (selected) {
+          onSelect(selected);
+        }
       }}
       selectedKeys={selectedKey ? new Set([selectedKey]) : undefined}
       selectionMode="single"

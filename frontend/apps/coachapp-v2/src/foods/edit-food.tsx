@@ -2,12 +2,10 @@ import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {Navigate, useParams} from 'react-router-dom';
-
-import type {ServingSize} from '@/api/shared';
-
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
+import type {ServingSize} from '@/api/shared';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
 

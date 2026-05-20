@@ -40,7 +40,9 @@ function PlannedItemRow({
   const isReplacement = entry?.source === 'replacement';
 
   const handlePress = () => {
-    if (isFuture) return;
+    if (isFuture) {
+      return;
+    }
     if (isLogged && entry) {
       onEditEntry(entry);
     } else {
@@ -155,7 +157,9 @@ export default function MealSlotSection({
   );
 
   const handleLogAll = async () => {
-    if (!mealId) return;
+    if (!mealId) {
+      return;
+    }
     try {
       await logMeal({
         date,

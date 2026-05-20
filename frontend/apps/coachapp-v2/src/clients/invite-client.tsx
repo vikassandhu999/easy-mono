@@ -1,4 +1,4 @@
-import {Alert, Button, Card, Separator, toast, Typography} from '@heroui/react';
+import {Alert, Button, Card, Separator, Typography, toast} from '@heroui/react';
 import {ArrowLeft, ClipboardCopy, MessageCircle, UserPlus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
@@ -22,7 +22,9 @@ function InviteConfirmation({client, onInviteAnother}: {client: Client; onInvite
   const contactLabel = client.email || client.phone || 'your client';
 
   const handleCopyLink = async () => {
-    if (!inviteUrl) return;
+    if (!inviteUrl) {
+      return;
+    }
     try {
       await navigator.clipboard.writeText(inviteUrl);
       toast.success('Invite link copied to clipboard');

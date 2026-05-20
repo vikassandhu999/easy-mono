@@ -43,8 +43,11 @@ pnpm -C apps/coachapp-v2 preview
 ### Linting & Formatting
 
 ```bash
-# Run ESLint with auto-fix (includes Prettier rules from @easy/eslint-config)
+# Run Biome checks with auto-fix
 pnpm -C apps/coachapp-v2 lint
+
+# Format files with Biome
+pnpm -C apps/coachapp-v2 exec biome format --write .
 ```
 
 ## 🏗️ Architecture

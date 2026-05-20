@@ -17,7 +17,7 @@ export const onHitTopOrBottom = (
     }
   };
 
-  const onMouseWheel = ({ currentTarget, deltaY }: WheelEvent) => {
+  const onMouseWheel = ({currentTarget, deltaY}: WheelEvent) => {
     const element = currentTarget as HTMLElement;
     const isScrollable = element.scrollHeight > element.clientHeight;
 

@@ -3,13 +3,11 @@ import type {Key} from '@heroui/react';
 import {memo, useMemo} from 'react';
 
 import type {Client} from '@/api/clients';
-
-import type {ClientListSelection, ClientsListFilters} from './types';
-
 import ClientEmptyState from './client-empty-state';
 import ClientListBox from './client-list-box';
 import ClientListItem from './client-list-item';
 import ClientsListQuery from './clients-list-query';
+import type {ClientListSelection, ClientsListFilters} from './types';
 
 type Props = ClientsListFilters & {
   hasFilter: boolean;
@@ -18,7 +16,9 @@ type Props = ClientsListFilters & {
 };
 
 function getSelectedKey(keys: ClientListSelection): Key | null {
-  if (keys === 'all') return null;
+  if (keys === 'all') {
+    return null;
+  }
   return Array.from(keys)[0] ?? null;
 }
 

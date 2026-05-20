@@ -30,11 +30,16 @@ export default function DateNavigator({date, onDateChange}: {date: Date; onDateC
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
+    if (touchStartX.current == null) {
+      return;
+    }
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
-    if (dx > SWIPE_THRESHOLD) goBack();
-    else if (dx < -SWIPE_THRESHOLD) goForward();
+    if (dx > SWIPE_THRESHOLD) {
+      goBack();
+    } else if (dx < -SWIPE_THRESHOLD) {
+      goForward();
+    }
   };
 
   const now = new Date();

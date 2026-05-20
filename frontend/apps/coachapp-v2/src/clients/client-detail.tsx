@@ -1,4 +1,4 @@
-import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, toast, Typography} from '@heroui/react';
+import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
 import {useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
@@ -203,7 +203,6 @@ function ClientPlans({clientId}: {clientId: string}) {
                 Search for a nutrition plan template to copy to this client
               </Typography>
               <NutritionPlanPicker
-                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
                 onSelect={handleAssignNutrition}
                 placeholder="Search nutrition plans"
@@ -231,7 +230,6 @@ function ClientPlans({clientId}: {clientId: string}) {
                 Search for a training plan template to copy to this client
               </Typography>
               <TrainingPlanPicker
-                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
                 onSelect={handleAssignTraining}
                 placeholder="Search training plans"

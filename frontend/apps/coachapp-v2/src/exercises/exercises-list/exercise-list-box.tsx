@@ -1,7 +1,6 @@
 import type {Key} from '@heroui/react';
-import type {ReactNode} from 'react';
-
 import {Collection, ListBox, ListBoxLoadMoreItem, Spinner, Typography} from '@heroui/react';
+import type {ReactNode} from 'react';
 
 import type {Exercise} from '@/api/exercises';
 

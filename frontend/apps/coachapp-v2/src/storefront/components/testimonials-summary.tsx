@@ -1,10 +1,8 @@
 import {Button} from '@heroui/react';
 import {Camera, MessageSquareQuote, Star} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import type {Testimonial} from '@/api/testimonials';
-
 import {ROUTES} from '@/@config/routes';
+import type {Testimonial} from '@/api/testimonials';
 
 export default function TestimonialsSummary({testimonials}: {testimonials: Testimonial[]}) {
   const navigate = useNavigate();

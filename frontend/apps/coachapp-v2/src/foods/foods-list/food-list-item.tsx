@@ -15,9 +15,15 @@ const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
 ];
 
 function getSubtitle(food: Food, isSystem: boolean): string {
-  if (food.category && isSystem) return `${food.category} · system`;
-  if (food.category) return food.category;
-  if (isSystem) return 'system';
+  if (food.category && isSystem) {
+    return `${food.category} · system`;
+  }
+  if (food.category) {
+    return food.category;
+  }
+  if (isSystem) {
+    return 'system';
+  }
   return 'No category';
 }
 
@@ -56,7 +62,9 @@ export default function FoodListItem({className, food}: {className?: string; foo
         <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {
             const value = normalized[macro.key];
-            if (value === undefined) return null;
+            if (value === undefined) {
+              return null;
+            }
             return (
               <Chip
                 key={macro.key}

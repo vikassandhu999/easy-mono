@@ -168,17 +168,23 @@ export default function RecipeForm({
 
     for (const item of ingredients) {
       const weightG = Number(item.weight_g);
-      if (!weightG || weightG <= 0) continue;
+      if (!weightG || weightG <= 0) {
+        continue;
+      }
       totalWeight += weightG;
 
       const normalized = normalizeMacros(item.food.macros);
       for (const [key, value] of Object.entries(normalized)) {
-        if (typeof value !== 'number') continue;
+        if (typeof value !== 'number') {
+          continue;
+        }
         totals[key] = (totals[key] ?? 0) + value * (weightG / 100);
       }
     }
 
-    if (totalWeight === 0) return;
+    if (totalWeight === 0) {
+      return;
+    }
 
     const divisor = cookedWeight && cookedWeight > 0 ? cookedWeight : totalWeight;
     const per100g = (value: number) => Math.round(value * (100 / divisor) * 10) / 10;

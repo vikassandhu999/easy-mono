@@ -33,7 +33,9 @@ export function useInfiniteScroll({
         observerRef.current = null;
       }
 
-      if (!node) return;
+      if (!node) {
+        return;
+      }
 
       observerRef.current = new IntersectionObserver(
         (entries) => {

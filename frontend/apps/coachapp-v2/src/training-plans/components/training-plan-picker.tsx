@@ -47,9 +47,13 @@ export default function TrainingPlanPicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const plan = planMap.get(id);
       if (plan) {
         onSelect(plan);
@@ -80,7 +84,6 @@ export default function TrainingPlanPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="training-plan-search"

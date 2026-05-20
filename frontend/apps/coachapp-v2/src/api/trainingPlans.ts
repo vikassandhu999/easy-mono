@@ -557,7 +557,9 @@ export const trainingPlansApi = api.injectEndpoints({
         url: '/v1/coach/workout_elements',
       }),
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
-        if (!planId) return;
+        if (!planId) {
+          return;
+        }
         try {
           const {data} = await queryFulfilled;
           dispatch(
@@ -597,7 +599,9 @@ export const trainingPlansApi = api.injectEndpoints({
         url: `/v1/coach/workout_elements/${id}`,
       }),
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
-        if (!planId) return;
+        if (!planId) {
+          return;
+        }
         try {
           const {data} = await queryFulfilled;
           dispatch(
@@ -622,7 +626,9 @@ export const trainingPlansApi = api.injectEndpoints({
         url: `/v1/coach/workout_elements/${id}`,
       }),
       async onQueryStarted({id, planId, workoutId}, {dispatch, queryFulfilled}) {
-        if (!planId) return;
+        if (!planId) {
+          return;
+        }
         try {
           await queryFulfilled;
           dispatch(
@@ -700,7 +706,9 @@ export function parsePlanItemValidationError(
   body: {day?: TrainingWeekday; workout_type?: TrainingWorkoutType},
 ): null | PlanItemValidationError {
   const fields = getValidationErrors(error);
-  if (!fields) return null;
+  if (!fields) {
+    return null;
+  }
 
   // Uniqueness conflict — keyed under training_plan_id per the composite index.
   const planIdMsgs = fields.training_plan_id;

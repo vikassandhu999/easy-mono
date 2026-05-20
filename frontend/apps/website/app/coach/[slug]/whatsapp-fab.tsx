@@ -10,13 +10,7 @@ const DEFAULT_MESSAGE = "Hi! I'm interested in your coaching services.";
  * Appears after 2 seconds with a scale+fade animation.
  * Position: bottom-20 on mobile (above sticky CTA bar), bottom-6 on md+.
  */
-export default function WhatsAppFab({
-  message,
-  whatsappNumber,
-}: {
-  message: null | string;
-  whatsappNumber: string;
-}) {
+export default function WhatsAppFab({message, whatsappNumber}: {message: null | string; whatsappNumber: string}) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {

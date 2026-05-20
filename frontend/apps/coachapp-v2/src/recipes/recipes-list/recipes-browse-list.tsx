@@ -2,13 +2,11 @@ import {memo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-
-import type {RecipesListFilters} from './types';
-
 import RecipeEmptyState from './recipe-empty-state';
 import RecipeListBox from './recipe-list-box';
 import RecipeListItem from './recipe-list-item';
 import RecipesListQuery from './recipes-list-query';
+import type {RecipesListFilters} from './types';
 
 type Props = RecipesListFilters & {
   hasFilter: boolean;

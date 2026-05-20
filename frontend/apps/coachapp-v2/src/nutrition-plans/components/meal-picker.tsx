@@ -28,7 +28,9 @@ export default function MealPicker({
   const [searchInput, setSearchInput] = useState('');
 
   const filteredMeals = useMemo(() => {
-    if (!searchInput) return meals;
+    if (!searchInput) {
+      return meals;
+    }
     const q = searchInput.toLowerCase();
     return meals.filter((m) => m.name.toLowerCase().includes(q));
   }, [meals, searchInput]);
@@ -59,9 +61,13 @@ export default function MealPicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
 
       if (id === CREATE_NEW_ID && onCreate) {
         onCreate(searchInput.trim());

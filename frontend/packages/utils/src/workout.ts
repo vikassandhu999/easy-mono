@@ -66,15 +66,21 @@ export const SESSION_STATE_CHIP: Record<string, {color: 'danger' | 'default' | '
 // ── Duration formatting ──────────────────────────────────────
 
 function formatMinutes(mins: number): string {
-  if (mins < 1) return '<1 min';
-  if (mins < 60) return `${mins} min`;
+  if (mins < 1) {
+    return '<1 min';
+  }
+  if (mins < 60) {
+    return `${mins} min`;
+  }
   const hrs = Math.floor(mins / 60);
   const remainMins = mins % 60;
   return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`;
 }
 
 export function formatDuration(startedAt: string, endedAt: null | string): null | string {
-  if (!endedAt) return null;
+  if (!endedAt) {
+    return null;
+  }
   const diffMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
   return formatMinutes(Math.round(diffMs / 60_000));
 }
@@ -128,7 +134,9 @@ type PlanItemLike = {
 export function sortPlanItems<T extends PlanItemLike>(items: T[]): T[] {
   return [...items].sort((a, b) => {
     const diff = WORKOUT_TYPE_ORDER[a.workout_type] - WORKOUT_TYPE_ORDER[b.workout_type];
-    if (diff !== 0) return diff;
+    if (diff !== 0) {
+      return diff;
+    }
     return a.inserted_at.localeCompare(b.inserted_at);
   });
 }
@@ -151,13 +159,17 @@ export function getWorkoutUsedOnDays<T extends WorkoutIdItem & {day: TrainingWee
 ): TrainingWeekday[] {
   const days = new Set<TrainingWeekday>();
   for (const item of planItems) {
-    if (item.workout_id === workoutId) days.add(item.day);
+    if (item.workout_id === workoutId) {
+      days.add(item.day);
+    }
   }
   return [...days].sort(compareTrainingWeekdays);
 }
 
 /** Human-readable short-form summary of the weekdays a workout is used on. */
 export function formatUsedOnDays(days: TrainingWeekday[]): string {
-  if (days.length === 0) return '';
+  if (days.length === 0) {
+    return '';
+  }
   return days.map((day) => TRAINING_DAY_SHORT_LABELS[day]).join(', ');
 }

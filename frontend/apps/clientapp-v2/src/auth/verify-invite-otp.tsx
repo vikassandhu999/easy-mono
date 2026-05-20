@@ -75,7 +75,9 @@ export default function VerifyInviteOtp() {
 
   // Countdown effect: decrements once per second, clamps at 0.
   useEffect(() => {
-    if (cooldownRemaining <= 0) return;
+    if (cooldownRemaining <= 0) {
+      return;
+    }
     const timer = setTimeout(() => setCooldownRemaining((n) => n - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldownRemaining]);
@@ -120,7 +122,9 @@ export default function VerifyInviteOtp() {
   };
 
   const handleResend = async () => {
-    if (cooldownRemaining > 0 || isResending) return;
+    if (cooldownRemaining > 0 || isResending) {
+      return;
+    }
     try {
       await resendInvite({email: state.email, invitation_token: token}).unwrap();
       setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
@@ -173,7 +177,6 @@ export default function VerifyInviteOtp() {
             name="otp"
             render={({field}) => (
               <InputOTP
-                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
                 isInvalid={!!errors.otp || !!errors.root}
                 maxLength={6}

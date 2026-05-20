@@ -1,7 +1,6 @@
-import type {ReactNode, UIEvent} from 'react';
-
 import {Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
+import type {ReactNode, UIEvent} from 'react';
 import {useState} from 'react';
 
 interface PageProps {

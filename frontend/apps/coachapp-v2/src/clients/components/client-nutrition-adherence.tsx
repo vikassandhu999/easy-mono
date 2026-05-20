@@ -2,10 +2,9 @@ import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
 import type {DailyNutritionSummary} from '@/api/mealLogs';
-import type {Macros} from '@/api/shared';
-
 import {useGetCoachMealLogSummaryQuery} from '@/api/mealLogs';
 import {useListClientNutritionPlansQuery} from '@/api/nutritionPlans';
+import type {Macros} from '@/api/shared';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -52,14 +51,24 @@ function getAdherenceLevel(
   dateStr: string,
   plannedCalories: number,
 ): AdherenceLevel {
-  if (isFutureDate(dateStr)) return 'future';
-  if (!summary || summary.total_entries === 0) return 'none';
+  if (isFutureDate(dateStr)) {
+    return 'future';
+  }
+  if (!summary || summary.total_entries === 0) {
+    return 'none';
+  }
   // When no plan exists, show high if client logged anything, none if not
-  if (plannedCalories <= 0) return summary.total_entries > 0 ? 'high' : 'none';
+  if (plannedCalories <= 0) {
+    return summary.total_entries > 0 ? 'high' : 'none';
+  }
 
   const percent = (summary.logged_calories / plannedCalories) * 100;
-  if (percent >= 80) return 'high';
-  if (percent >= 50) return 'medium';
+  if (percent >= 80) {
+    return 'high';
+  }
+  if (percent >= 50) {
+    return 'medium';
+  }
   return 'low';
 }
 
@@ -87,7 +96,9 @@ export default function ClientNutritionAdherence({
 
   // Resolve macros goal: prefer prop, fall back to active plan's macros_goal
   const macrosGoal = useMemo(() => {
-    if (macrosGoalProp) return macrosGoalProp;
+    if (macrosGoalProp) {
+      return macrosGoalProp;
+    }
     const activePlan = plansData?.data.find((p) => p.status === 'active');
     return activePlan?.macros_goal ?? null;
   }, [macrosGoalProp, plansData]);
@@ -96,7 +107,9 @@ export default function ClientNutritionAdherence({
   // The macros_goal on a plan stores the daily target, keyed as 'calories'.
   // Do NOT fall back to 'calories_per_100g' — that's a per-100g value, not a daily goal.
   const plannedCalories = useMemo(() => {
-    if (!macrosGoal) return 0;
+    if (!macrosGoal) {
+      return 0;
+    }
     return Number(macrosGoal.calories ?? 0);
   }, [macrosGoal]);
 
@@ -116,7 +129,9 @@ export default function ClientNutritionAdherence({
   }, [summaries, plannedCalories]);
 
   const handleDayTap = (dateStr: string, level: AdherenceLevel) => {
-    if (level === 'future') return;
+    if (level === 'future') {
+      return;
+    }
     setSelectedDate((prev) => (prev === dateStr ? null : dateStr));
   };
 
@@ -172,10 +187,16 @@ export default function ClientNutritionAdherence({
                 .sort((a, b) => b.date.localeCompare(a.date))
                 .map((summary) => {
                   const parts: string[] = [];
-                  if (summary.meals_logged > 0) parts.push(`${summary.meals_logged} meals`);
+                  if (summary.meals_logged > 0) {
+                    parts.push(`${summary.meals_logged} meals`);
+                  }
                   parts.push(`${summary.total_entries} items`);
-                  if (summary.replacements > 0) parts.push(`${summary.replacements} replaced`);
-                  if (summary.unplanned_count > 0) parts.push(`${summary.unplanned_count} added`);
+                  if (summary.replacements > 0) {
+                    parts.push(`${summary.replacements} replaced`);
+                  }
+                  if (summary.unplanned_count > 0) {
+                    parts.push(`${summary.unplanned_count} added`);
+                  }
 
                   return (
                     <Button

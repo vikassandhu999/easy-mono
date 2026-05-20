@@ -22,7 +22,9 @@ export default function MusclePicker({value, onChange}: MusclePickerProps) {
     [onChange, value],
   );
 
-  if (muscles.length === 0) return null;
+  if (muscles.length === 0) {
+    return null;
+  }
 
   return (
     <Autocomplete
@@ -55,7 +57,9 @@ export default function MusclePicker({value, onChange}: MusclePickerProps) {
                 <TagGroup.List>
                   {selectedItemsKeys.map((key) => {
                     const muscle = muscles.find((m: Muscle) => m.id === key);
-                    if (!muscle) return null;
+                    if (!muscle) {
+                      return null;
+                    }
                     return (
                       <Tag
                         id={muscle.id}

@@ -2,13 +2,11 @@ import {memo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-
-import type {ClientsListFilters} from './types';
-
 import ClientEmptyState from './client-empty-state';
 import ClientListBox from './client-list-box';
 import ClientListItem from './client-list-item';
 import ClientsListQuery from './clients-list-query';
+import type {ClientsListFilters} from './types';
 
 type Props = ClientsListFilters & {
   hasFilter: boolean;

@@ -13,7 +13,7 @@ import {
 } from '@heroui/react';
 import {Plus, X} from 'lucide-react';
 import {useState} from 'react';
-import {Controller, useFieldArray, type UseFormReturn} from 'react-hook-form';
+import {Controller, type UseFormReturn, useFieldArray} from 'react-hook-form';
 
 import type {EditorFormValues} from '@/storefront/components/editor-schema';
 

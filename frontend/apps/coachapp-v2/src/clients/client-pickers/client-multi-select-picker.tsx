@@ -44,7 +44,9 @@ export default function ClientMultiSelectPicker({
       )}
       heading={heading}
       onSelectionChange={(selection) => {
-        if (selection === 'all') return;
+        if (selection === 'all') {
+          return;
+        }
         setKeys(new Set(selection));
       }}
       selectedKeys={keys}

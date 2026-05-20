@@ -81,7 +81,9 @@ export function normalizeMacros(macros: Macros): Macros {
   for (const [key, value] of Object.entries(macros)) {
     const canonical = MACRO_KEY_ALIASES[key] ?? key;
     // If both the alias and the canonical key exist, prefer the canonical key's value
-    if (canonical in result) continue;
+    if (canonical in result) {
+      continue;
+    }
     result[canonical] = value;
   }
   return result;
@@ -95,7 +97,9 @@ const ZERO_MACROS: MacroTotals = {calories: 0, carbs: 0, fat: 0, protein: 0};
  * Compute actual macros from per-100g macros snapshot and weight in grams.
  */
 export function computeMacrosFromSnapshot(macrosSnapshot: Macros | null, weightG: null | number): MacroTotals {
-  if (!macrosSnapshot || !weightG || weightG <= 0) return {...ZERO_MACROS};
+  if (!macrosSnapshot || !weightG || weightG <= 0) {
+    return {...ZERO_MACROS};
+  }
   const normalized = normalizeMacros(macrosSnapshot);
   const factor = weightG / 100;
   return {

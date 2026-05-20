@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 1314 --host",
     "build": "tsc --noEmit && vite build",
-    "lint": "eslint . --fix",
+    "lint": "biome check --write .",
     "preview": "vite preview",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
@@ -26,7 +26,6 @@
     "@heroui/styles": "3.0.2",
     "@hookform/resolvers": "^3.9.1",
     "@reduxjs/toolkit": "^2.9.0",
-    "eslint": "8.57.1",
     "lucide-react": "^0.408.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.1",
@@ -39,10 +38,10 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.15",
     "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
-    "@easy/eslint-config": "workspace:^",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

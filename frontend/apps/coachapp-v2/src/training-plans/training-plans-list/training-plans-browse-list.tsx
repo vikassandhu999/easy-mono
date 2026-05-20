@@ -2,13 +2,11 @@ import {memo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-
-import type {TrainingPlansListFilters} from './types';
-
 import TrainingPlanEmptyState from './training-plan-empty-state';
 import TrainingPlanListBox from './training-plan-list-box';
 import TrainingPlanListItem from './training-plan-list-item';
 import TrainingPlansListQuery from './training-plans-list-query';
+import type {TrainingPlansListFilters} from './types';
 
 type Props = TrainingPlansListFilters & {
   hasFilter: boolean;

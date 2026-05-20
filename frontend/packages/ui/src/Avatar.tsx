@@ -1,5 +1,5 @@
-import { tv } from 'tailwind-variants';
-import { twMerge } from 'tailwind-merge';
+import {twMerge} from 'tailwind-merge';
+import {tv} from 'tailwind-variants';
 
 export interface AvatarProps {
   src: string;
@@ -29,7 +29,14 @@ const avatar = tv({
   },
 });
 
-export function Avatar({ src, alt, size, border, className, ...props }: AvatarProps) {
-  const computedClasses = twMerge(avatar({ size, border }), className);
-  return <img {...props} src={src} alt={alt} className={computedClasses} />;
+export function Avatar({src, alt, size, border, className, ...props}: AvatarProps) {
+  const computedClasses = twMerge(avatar({size, border}), className);
+  return (
+    <img
+      {...props}
+      src={src}
+      alt={alt}
+      className={computedClasses}
+    />
+  );
 }

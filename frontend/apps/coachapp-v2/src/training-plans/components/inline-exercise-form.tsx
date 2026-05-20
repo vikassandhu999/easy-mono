@@ -4,10 +4,8 @@ import {Dumbbell} from 'lucide-react';
 import {useEffect, useId, useRef} from 'react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
-
-import type {PlannedSet} from '@/api/trainingPlans';
-
 import {applyFormErrors} from '@/api/shared';
+import type {PlannedSet} from '@/api/trainingPlans';
 import UnitPicker, {type LoadUnitValue} from '@/training-plans/components/unit-picker';
 import {parseNonNegativeInt, parseNonNegativeNumber} from '@/training-plans/lib/parse';
 
@@ -66,9 +64,15 @@ export const EMPTY_DEFAULTS: InlineExerciseFormValues = {
  */
 export function deriveRestFromReps(reps: string): string {
   const parsed = parseReps(reps);
-  if (parsed == null) return '';
-  if (parsed <= 6) return '120';
-  if (parsed <= 12) return '90';
+  if (parsed == null) {
+    return '';
+  }
+  if (parsed <= 6) {
+    return '120';
+  }
+  if (parsed <= 12) {
+    return '90';
+  }
   return '60';
 }
 
@@ -78,9 +82,13 @@ export function deriveRestFromReps(reps: string): string {
  */
 function parseReps(value: string): null | number {
   const cleaned = value.trim();
-  if (!cleaned) return null;
+  if (!cleaned) {
+    return null;
+  }
   const match = cleaned.match(/\d+/);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const parsed = Number(match[0]);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -196,9 +204,13 @@ export default function InlineExerciseForm({
   };
 
   const handleRepsBlur = () => {
-    if (restValue.trim()) return;
+    if (restValue.trim()) {
+      return;
+    }
     const derived = deriveRestFromReps(repsValue);
-    if (!derived) return;
+    if (!derived) {
+      return;
+    }
     setValue('rest', derived, {shouldDirty: true});
     setValue('restUnit', 'sec', {shouldDirty: true});
   };

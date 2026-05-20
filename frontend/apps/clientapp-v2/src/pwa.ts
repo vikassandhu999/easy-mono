@@ -1,5 +1,5 @@
-import {Capacitor} from '@capacitor/core';
 import {registerSW} from 'virtual:pwa-register';
+import {Capacitor} from '@capacitor/core';
 
 /**
  * Register the PWA service worker only when running on the web.
@@ -38,7 +38,9 @@ export function registerPWA() {
       updateSW(true);
     },
     onRegisteredSW(_swUrl, registration) {
-      if (!registration) return;
+      if (!registration) {
+        return;
+      }
       // Poll for updates periodically so long-lived tabs stay fresh.
       setInterval(() => {
         // `registration.update()` asks the browser to re-fetch the SW

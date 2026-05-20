@@ -1,7 +1,6 @@
+import {api} from '@/api/base';
 import type {Food} from '@/api/foods';
 import type {Recipe} from '@/api/recipes';
-
-import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
 
 export type MealItem = {

@@ -1,6 +1,5 @@
-import {Check, Star} from 'lucide-react';
-
 import type {PublicOffer} from '@easy/storefront-types';
+import {Check, Star} from 'lucide-react';
 
 export default function OffersSection({
   offers,
@@ -9,12 +8,18 @@ export default function OffersSection({
   offers: PublicOffer[];
   onSelectOffer: (offerId: string) => void;
 }) {
-  if (offers.length === 0) return null;
+  if (offers.length === 0) {
+    return null;
+  }
 
   // Sort featured offers first so they get most attention on mobile (single column)
   const sortedOffers = [...offers].sort((a, b) => {
-    if (a.is_featured && !b.is_featured) return -1;
-    if (!a.is_featured && b.is_featured) return 1;
+    if (a.is_featured && !b.is_featured) {
+      return -1;
+    }
+    if (!a.is_featured && b.is_featured) {
+      return 1;
+    }
     return 0;
   });
 
@@ -44,13 +49,9 @@ export default function OffersSection({
 
             <h3 className="text-lg font-semibold">{offer.name}</h3>
 
-            {offer.duration_text && (
-              <p className="mt-1 text-sm text-gray-500">{offer.duration_text}</p>
-            )}
+            {offer.duration_text && <p className="mt-1 text-sm text-gray-500">{offer.duration_text}</p>}
 
-            {offer.description && (
-              <p className="mt-2 line-clamp-3 text-sm text-gray-600">{offer.description}</p>
-            )}
+            {offer.description && <p className="mt-2 line-clamp-3 text-sm text-gray-600">{offer.description}</p>}
 
             {/* Features */}
             {offer.features.length > 0 ? (
@@ -71,9 +72,7 @@ export default function OffersSection({
             ) : null}
 
             <div className="mt-auto pt-4">
-              {offer.price_display && (
-                <p className="mb-3 text-2xl font-bold">{offer.price_display}</p>
-              )}
+              {offer.price_display && <p className="mb-3 text-2xl font-bold">{offer.price_display}</p>}
 
               {offer.is_featured ? (
                 <button

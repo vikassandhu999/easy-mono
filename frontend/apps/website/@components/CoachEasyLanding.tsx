@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 const useInView = (threshold = 0.15) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -8,17 +8,29 @@ const useInView = (threshold = 0.15) => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
       },
-      { threshold },
+      {threshold},
     );
-    if (ref.current) observer.observe(ref.current);
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
     return () => observer.disconnect();
   }, [threshold]);
   return [ref, isVisible] as const;
 };
 
-const FadeIn = ({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) => {
+const FadeIn = ({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) => {
   const [ref, isVisible] = useInView();
   return (
     <div
@@ -36,8 +48,8 @@ const FadeIn = ({ children, delay = 0, className = '' }: { children: React.React
 };
 
 /* --- Ticker / Marquee --- */
-const Ticker = ({ items }: { items: string[] }) => (
-  <div style={{ overflow: 'hidden', width: '100%' }}>
+const Ticker = ({items}: {items: string[]}) => (
+  <div style={{overflow: 'hidden', width: '100%'}}>
     <div
       style={{
         display: 'flex',
@@ -59,7 +71,7 @@ const Ticker = ({ items }: { items: string[] }) => (
             gap: '12px',
           }}
         >
-          <span style={{ color: '#F97316', fontSize: '8px' }}>●</span> {t}
+          <span style={{color: '#F97316', fontSize: '8px'}}>●</span> {t}
         </span>
       ))}
     </div>
@@ -81,27 +93,7 @@ const FeatureCard = ({
   delay: number;
 }) => (
   <FadeIn delay={delay}>
-    <div
-      style={{
-        background: '#FFFFFF',
-        borderRadius: '20px',
-        padding: '36px 32px',
-        height: '100%',
-        border: '1px solid #F1F5F9',
-        transition: 'all 0.3s ease',
-        cursor: 'default',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 20px 60px rgba(0,0,0,0.08)';
-        e.currentTarget.style.borderColor = '#F97316';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-        e.currentTarget.style.borderColor = '#F1F5F9';
-      }}
-    >
+    <div className="h-full cursor-default rounded-[20px] border border-[#F1F5F9] bg-white px-8 py-9 transition-all duration-300 hover:-translate-y-1 hover:border-[#F97316] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
       <div
         style={{
           width: '52px',
@@ -165,7 +157,7 @@ const FeatureCard = ({
 );
 
 /* --- Before/After Row --- */
-const BARow = ({ before, after, delay }: { before: string; after: string; delay: number }) => (
+const BARow = ({before, after, delay}: {before: string; after: string; delay: number}) => (
   <FadeIn delay={delay}>
     <div
       style={{
@@ -188,7 +180,7 @@ const BARow = ({ before, after, delay }: { before: string; after: string; delay:
       >
         {before}
       </div>
-      <div style={{ textAlign: 'center', fontSize: '18px' }}>→</div>
+      <div style={{textAlign: 'center', fontSize: '18px'}}>→</div>
       <div
         style={{
           fontFamily: "'DM Sans', sans-serif",
@@ -232,7 +224,7 @@ const MiniStory = ({
         height: '100%',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+      <div style={{display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px'}}>
         <div
           style={{
             width: '48px',
@@ -390,7 +382,7 @@ const PricingCard = ({
       >
         {name}
       </h3>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px' }}>
+      <div style={{display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '4px'}}>
         <span
           style={{
             fontFamily: "'Outfit', sans-serif",
@@ -423,7 +415,7 @@ const PricingCard = ({
       >
         {clients}
       </p>
-      <div style={{ flex: 1 }}>
+      <div style={{flex: 1}}>
         {features.map((f, i) => (
           <div
             key={i}
@@ -434,7 +426,7 @@ const PricingCard = ({
               marginBottom: '12px',
             }}
           >
-            <span style={{ color: '#22C55E', fontSize: '16px', lineHeight: 1.5 }}>✓</span>
+            <span style={{color: '#22C55E', fontSize: '16px', lineHeight: 1.5}}>✓</span>
             <span
               style={{
                 fontFamily: "'DM Sans', sans-serif",
@@ -481,7 +473,7 @@ export default function CoachEasyLanding() {
   const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, {passive: true});
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -495,7 +487,7 @@ export default function CoachEasyLanding() {
   ];
 
   return (
-    <div style={{ background: '#FAFAF9', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{background: '#FAFAF9', minHeight: '100vh', overflowX: 'hidden'}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-33.333%); } }
@@ -563,7 +555,7 @@ export default function CoachEasyLanding() {
             </div>
             CoachEasy
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '32px'}}>
             {['Features', 'Pricing', 'Stories'].map((item) => (
               <a
                 key={item}
@@ -576,8 +568,12 @@ export default function CoachEasyLanding() {
                   fontWeight: 500,
                   transition: 'color 0.2s',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#0F172A')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#0F172A';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#64748B';
+                }}
               >
                 {item}
               </a>
@@ -648,7 +644,7 @@ export default function CoachEasyLanding() {
           }}
         />
 
-        <div style={{ maxWidth: '820px', textAlign: 'center', position: 'relative' }}>
+        <div style={{maxWidth: '820px', textAlign: 'center', position: 'relative'}}>
           <div
             style={{
               animation: 'fadeInUp 0.8s ease-out',
@@ -789,7 +785,7 @@ export default function CoachEasyLanding() {
                   gap: '8px',
                 }}
               >
-                <span style={{ color: '#F97316', fontSize: '14px' }}>✦</span>
+                <span style={{color: '#F97316', fontSize: '14px'}}>✦</span>
                 <span
                   style={{
                     fontFamily: "'DM Sans', sans-serif",
@@ -807,8 +803,8 @@ export default function CoachEasyLanding() {
       </section>
 
       {/* === SITUATIONAL TRIGGERS TICKER === */}
-      <section style={{ background: '#0F172A', padding: '20px 0', overflow: 'hidden' }}>
-        <div style={{ marginBottom: '8px' }}>
+      <section style={{background: '#0F172A', padding: '20px 0', overflow: 'hidden'}}>
+        <div style={{marginBottom: '8px'}}>
           <p
             style={{
               textAlign: 'center',
@@ -833,7 +829,7 @@ export default function CoachEasyLanding() {
           padding: '100px 24px',
         }}
       >
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{maxWidth: '900px', margin: '0 auto'}}>
           <FadeIn>
             <p
               style={{
@@ -913,7 +909,7 @@ export default function CoachEasyLanding() {
               After CoachEasy
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
             <BARow
               after="Every client's plan in one dashboard, updated live"
               before="Client plans in 14 different Google Sheets"
@@ -962,7 +958,7 @@ export default function CoachEasyLanding() {
         }}
       >
         <FadeIn>
-          <div style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{maxWidth: '720px', margin: '0 auto', textAlign: 'center'}}>
             <p
               style={{
                 fontFamily: "'Outfit', sans-serif",
@@ -982,10 +978,13 @@ export default function CoachEasyLanding() {
       </section>
 
       {/* === FEATURES === */}
-      <section id="features" style={{ padding: '100px 24px', background: '#F8FAFC' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <section
+        id="features"
+        style={{padding: '100px 24px', background: '#F8FAFC'}}
+      >
+        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <FadeIn>
-            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{textAlign: 'center', marginBottom: '64px'}}>
               <p
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
@@ -1090,7 +1089,7 @@ export default function CoachEasyLanding() {
           background: '#FFFFFF',
         }}
       >
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{maxWidth: '900px', margin: '0 auto'}}>
           <FadeIn>
             <div
               style={{
@@ -1100,7 +1099,7 @@ export default function CoachEasyLanding() {
                 marginBottom: '20px',
               }}
             >
-              <span style={{ fontSize: '32px' }}>🇮🇳</span>
+              <span style={{fontSize: '32px'}}>🇮🇳</span>
               <p
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
@@ -1173,7 +1172,10 @@ export default function CoachEasyLanding() {
                 desc: 'Food databases and recipe templates relevant to your clients. Paneer, dal, roti — not just chicken breast and broccoli.',
               },
             ].map((item, i) => (
-              <FadeIn delay={i * 0.08} key={i}>
+              <FadeIn
+                delay={i * 0.08}
+                key={i}
+              >
                 <div
                   style={{
                     background: '#FFFBEB',
@@ -1230,10 +1232,13 @@ export default function CoachEasyLanding() {
       </section>
 
       {/* === MINI STORIES === */}
-      <section id="stories" style={{ padding: '100px 24px', background: '#F8FAFC' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <section
+        id="stories"
+        style={{padding: '100px 24px', background: '#F8FAFC'}}
+      >
+        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <FadeIn>
-            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{textAlign: 'center', marginBottom: '64px'}}>
               <p
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
@@ -1301,10 +1306,13 @@ export default function CoachEasyLanding() {
       </section>
 
       {/* === PRICING === */}
-      <section id="pricing" style={{ padding: '100px 24px', background: '#FFFFFF' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section
+        id="pricing"
+        style={{padding: '100px 24px', background: '#FFFFFF'}}
+      >
+        <div style={{maxWidth: '1000px', margin: '0 auto'}}>
           <FadeIn>
-            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{textAlign: 'center', marginBottom: '64px'}}>
               <p
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
@@ -1440,7 +1448,7 @@ export default function CoachEasyLanding() {
             background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)',
           }}
         />
-        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+        <div style={{maxWidth: '700px', margin: '0 auto', textAlign: 'center', position: 'relative'}}>
           <FadeIn>
             <h2
               style={{
@@ -1522,7 +1530,7 @@ export default function CoachEasyLanding() {
                     gap: '8px',
                   }}
                 >
-                  <span style={{ color: '#4ADE80' }}>✓</span> {t}
+                  <span style={{color: '#4ADE80'}}>✓</span> {t}
                 </span>
               ))}
             </div>

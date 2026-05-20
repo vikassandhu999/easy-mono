@@ -30,9 +30,15 @@ function buildComparison(mealLog: CoachMealLog): {comparison: ComparisonItem[]; 
   const comparison: ComparisonItem[] = planned.map((item, index) => {
     const entry = entries.find((e) => e.planned_item_index === index);
 
-    if (!entry) return {type: 'skipped', planned: item, entry: null};
-    if (entry.source === 'replacement') return {type: 'replaced', planned: item, entry};
-    if (entry.amount !== item.amount) return {type: 'partial', planned: item, entry};
+    if (!entry) {
+      return {type: 'skipped', planned: item, entry: null};
+    }
+    if (entry.source === 'replacement') {
+      return {type: 'replaced', planned: item, entry};
+    }
+    if (entry.amount !== item.amount) {
+      return {type: 'partial', planned: item, entry};
+    }
     return {type: 'followed', planned: item, entry};
   });
 

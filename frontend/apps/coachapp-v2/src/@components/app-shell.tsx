@@ -152,7 +152,9 @@ function SidebarNavItem({item}: {item: NavItem}) {
 function PendingClientBadge() {
   const {data} = useListClientsQuery({status: 'pending', limit: 0});
   const count = data?.summary?.pending ?? 0;
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return (
     <Chip
       color="accent"

@@ -3,12 +3,10 @@ import {AlertDialog, Button, Separator, TextArea} from '@heroui/react';
 import {Trash2, X} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import type {WorkoutExercise} from '@/workout/components/workout-types';
-
 import {ROUTES} from '@/@config/routes';
 import {useCompleteWorkoutSessionMutation, useDiscardWorkoutSessionMutation} from '@/api/workoutSessions';
 import {clearWorkoutLocalState} from '@/workout/components/use-workout-local-state';
+import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 function computeSummary(exercises: WorkoutExercise[]): {
   completed: number;

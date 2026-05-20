@@ -1,10 +1,8 @@
 import {Button, Chip} from '@heroui/react';
 import {Gift, Star} from 'lucide-react';
 import {useNavigate} from 'react-router-dom';
-
-import type {Offer} from '@/api/offers';
-
 import {ROUTES} from '@/@config/routes';
+import type {Offer} from '@/api/offers';
 
 export default function OffersSummary({offers}: {offers: Offer[]}) {
   const navigate = useNavigate();

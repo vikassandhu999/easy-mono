@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
-import {transpileModule, ModuleKind, ScriptTarget} from 'typescript';
+import {ModuleKind, ScriptTarget, transpileModule} from 'typescript';
 
 async function loadCacheHelpers() {
   const source = await readFile(new URL('../src/api/trainingPlanCache.ts', import.meta.url), 'utf8');

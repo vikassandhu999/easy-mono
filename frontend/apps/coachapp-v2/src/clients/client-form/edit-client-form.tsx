@@ -16,7 +16,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
-import {allowedStatusesFor, type AllowedUpdateStatus, type Client} from '@/api/clients';
+import {type AllowedUpdateStatus, allowedStatusesFor, type Client} from '@/api/clients';
 
 const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
   active: 'Active',

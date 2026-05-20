@@ -2,10 +2,8 @@ import {formatDuration, formatSessionDate, getWorkoutTitle, SESSION_STATE_CHIP} 
 import {Button, Chip, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
-
-import type {ClientWorkoutSession} from '@/api/workoutSessions';
-
 import PageLayout from '@/@components/page-layout';
+import type {ClientWorkoutSession} from '@/api/workoutSessions';
 import {useClientWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
 
 function getExerciseCount(session: ClientWorkoutSession): number {

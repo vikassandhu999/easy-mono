@@ -7,8 +7,12 @@ import type {Recipe} from '@/api/recipes';
 function getRecipeSubtitle(recipe: Recipe): string {
   const ingredientCount = recipe.recipe_ingredients.length;
 
-  if (recipe.category) return recipe.category;
-  if (ingredientCount > 0) return `${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`;
+  if (recipe.category) {
+    return recipe.category;
+  }
+  if (ingredientCount > 0) {
+    return `${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`;
+  }
   return 'No category';
 }
 

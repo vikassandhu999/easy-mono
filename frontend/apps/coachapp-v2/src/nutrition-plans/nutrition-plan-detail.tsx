@@ -8,8 +8,8 @@ import {
   Label,
   Spinner,
   TextField,
-  toast,
   Typography,
+  toast,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
@@ -17,18 +17,15 @@ import {useCallback, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
 import {z} from 'zod';
-
-import type {Client} from '@/api/clients';
-import type {NutritionPlanStatus} from '@/api/nutritionPlans';
-import type {Macros} from '@/api/shared';
-
 import ClientPicker from '@/@components/client-picker';
 import ClientPlanBanner from '@/@components/client-plan-banner';
 import CopyMenu from '@/@components/copy-menu';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {Client} from '@/api/clients';
 import {useCreateMealMutation} from '@/api/meals';
+import type {NutritionPlanStatus} from '@/api/nutritionPlans';
 import {
   useAssignNutritionPlanMutation,
   useDeleteNutritionPlanMutation,
@@ -37,6 +34,7 @@ import {
   useGetNutritionPlanQuery,
   useUpdateNutritionPlanMutation,
 } from '@/api/nutritionPlans';
+import type {Macros} from '@/api/shared';
 import DayPlanner from '@/nutrition-plans/components/day-planner';
 import MealSection from '@/nutrition-plans/components/meal-section';
 
@@ -71,8 +69,12 @@ const addMealFormSchema = z.object({
 type AddMealFormValues = z.infer<typeof addMealFormSchema>;
 
 function getProgressColor(percentage: number): string {
-  if (percentage >= 90 && percentage <= 110) return 'bg-success';
-  if (percentage > 120) return 'bg-danger';
+  if (percentage >= 90 && percentage <= 110) {
+    return 'bg-success';
+  }
+  if (percentage > 120) {
+    return 'bg-danger';
+  }
   return 'bg-warning';
 }
 
@@ -138,7 +140,9 @@ function DailyTotals({totals, goal}: {goal?: Macros; totals: Macros}) {
     return total > 0 || goalVal > 0;
   });
 
-  if (columns.length === 0) return null;
+  if (columns.length === 0) {
+    return null;
+  }
 
   return (
     <section className="border-t border-divider py-4">

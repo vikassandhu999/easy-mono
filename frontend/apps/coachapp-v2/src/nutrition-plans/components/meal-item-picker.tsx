@@ -37,7 +37,9 @@ export default function MealItemPicker({
   const foods = useMemo(() => foodData?.data ?? [], [foodData]);
   const foodMap = useMemo(() => {
     const map = new Map<string, Food>();
-    for (const f of foods) map.set(f.id, f);
+    for (const f of foods) {
+      map.set(f.id, f);
+    }
     return map;
   }, [foods]);
 
@@ -49,7 +51,9 @@ export default function MealItemPicker({
   const recipes = useMemo(() => recipeData?.data ?? [], [recipeData]);
   const recipeMap = useMemo(() => {
     const map = new Map<string, Recipe>();
-    for (const r of recipes) map.set(r.id, r);
+    for (const r of recipes) {
+      map.set(r.id, r);
+    }
     return map;
   }, [recipes]);
 
@@ -57,9 +61,13 @@ export default function MealItemPicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
 
       if (activeTab === 'food') {
         const food = foodMap.get(id);
@@ -128,7 +136,6 @@ export default function MealItemPicker({
             onInputChange={setSearchInput}
           >
             <SearchField
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               className="sticky top-0 z-10"
               name="meal-item-search"

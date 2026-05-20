@@ -1,10 +1,9 @@
+import {api} from '@/api/base';
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
-import type {PlanClient} from '@/api/trainingPlans';
-
-import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
+import type {PlanClient} from '@/api/trainingPlans';
 
 export type NutritionPlanStatus = 'active' | 'archived';
 
@@ -130,7 +129,9 @@ export const nutritionPlansApi = api.injectEndpoints({
       async queryFn(id, _queryApi, _extraOptions, baseQuery) {
         // 1. Fetch the nutrition plan
         const planResult = await baseQuery(`/v1/coach/nutrition_plans/${id}`);
-        if (planResult.error) return {error: planResult.error};
+        if (planResult.error) {
+          return {error: planResult.error};
+        }
 
         const plan = (planResult.data as ApiResponse<NutritionPlan>).data;
 
@@ -142,8 +143,12 @@ export const nutritionPlansApi = api.injectEndpoints({
         const recipeIds = new Set<string>();
         for (const meal of meals) {
           for (const item of meal.meal_items) {
-            if (item.food_id && !item.food) foodIds.add(item.food_id);
-            if (item.recipe_id && !item.recipe) recipeIds.add(item.recipe_id);
+            if (item.food_id && !item.food) {
+              foodIds.add(item.food_id);
+            }
+            if (item.recipe_id && !item.recipe) {
+              recipeIds.add(item.recipe_id);
+            }
           }
         }
 

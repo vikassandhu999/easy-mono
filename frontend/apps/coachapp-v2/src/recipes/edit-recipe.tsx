@@ -2,14 +2,12 @@ import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useParams} from 'react-router-dom';
-
-import type {RecipeIngredientInput} from '@/api/recipes';
-import type {IngredientItem} from '@/foods/components/ingredient-list';
-
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {RecipeIngredientInput} from '@/api/recipes';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
+import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {

@@ -5,7 +5,9 @@ import type {PublicStoreProfile} from '@easy/storefront-types';
  * Server Component — no interactivity needed.
  */
 export default function TrustBar({stats}: {stats: PublicStoreProfile['trust_stats']}) {
-  if (stats.length === 0) return null;
+  if (stats.length === 0) {
+    return null;
+  }
 
   return (
     <section className="border-y border-gray-200 bg-white py-6">

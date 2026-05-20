@@ -1,8 +1,7 @@
 import type {Key} from '@heroui/react';
-import type {UseFormReturn} from 'react-hook-form';
-
 import {Accordion} from '@heroui/react';
 import {useState} from 'react';
+import type {UseFormReturn} from 'react-hook-form';
 import {useWatch} from 'react-hook-form';
 
 import type {Offer} from '@/api/offers';
@@ -39,14 +38,22 @@ function getSectionStatuses(values: EditorFormValues, offerCount: number, testim
 }
 
 function StatusDot({status}: {status: SectionStatus}) {
-  if (status === 'complete') return <span className="h-2 w-2 shrink-0 rounded-full bg-success" />;
-  if (status === 'partial') return <span className="h-2 w-2 shrink-0 rounded-full bg-warning" />;
+  if (status === 'complete') {
+    return <span className="h-2 w-2 shrink-0 rounded-full bg-success" />;
+  }
+  if (status === 'partial') {
+    return <span className="h-2 w-2 shrink-0 rounded-full bg-warning" />;
+  }
   return <span className="h-2 w-2 shrink-0 rounded-full bg-default-300" />;
 }
 
 function statusLabel(status: SectionStatus) {
-  if (status === 'complete') return 'Complete';
-  if (status === 'partial') return 'Incomplete';
+  if (status === 'complete') {
+    return 'Complete';
+  }
+  if (status === 'partial') {
+    return 'Incomplete';
+  }
   return 'Optional';
 }
 

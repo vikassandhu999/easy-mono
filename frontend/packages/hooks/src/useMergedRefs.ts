@@ -1,5 +1,5 @@
-import type { Ref, RefCallback, MutableRefObject } from 'react';
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import type {MutableRefObject, Ref, RefCallback} from 'react';
+import {useCallback, useLayoutEffect, useRef} from 'react';
 
 const isRefCallback = <T>(x: unknown): x is RefCallback<T> => typeof x === 'function';
 const isMutableRefObject = <T>(x: unknown): x is MutableRefObject<T> => typeof x === 'object';

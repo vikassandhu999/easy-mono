@@ -3,13 +3,11 @@ import {Button, toast} from '@heroui/react';
 import {Plus, UtensilsCrossed} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import type {FoodLogEntry, MealLog, PlannedSnapshotItem} from '@/api/mealLogs';
-import type {TodayPlanMeal} from '@/api/nutritionPlans';
-
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
+import type {FoodLogEntry, MealLog, PlannedSnapshotItem} from '@/api/mealLogs';
 import {useListMyMealLogsQuery, useLogDayMutation} from '@/api/mealLogs';
+import type {TodayPlanMeal} from '@/api/nutritionPlans';
 import {useGetTodayPlanQuery, useListMyNutritionPlansQuery} from '@/api/nutritionPlans';
 import DailyMacroProgress from '@/nutrition/components/daily-macro-progress';
 import DateNavigator from '@/nutrition/components/date-navigator';
@@ -187,10 +185,14 @@ export default function NutritionDaily() {
   const activePlanGoal = useMemo(() => {
     const plan = plansData?.data?.[0];
     const goal = plan?.macros_goal;
-    if (!goal) return null;
+    if (!goal) {
+      return null;
+    }
     const n = normalizeMacros(goal);
     const calories = Number(n.calories_per_100g ?? 0);
-    if (calories <= 0) return null;
+    if (calories <= 0) {
+      return null;
+    }
     return {
       calories,
       carbs: Number(n.carbs_g ?? 0),
@@ -201,7 +203,9 @@ export default function NutritionDaily() {
 
   const plannedMacros = useMemo(() => {
     // Priority 1: explicit macros_goal from the plan
-    if (activePlanGoal) return activePlanGoal;
+    if (activePlanGoal) {
+      return activePlanGoal;
+    }
 
     // Priority 2: sum macros from all planned meal slots
     let calories = 0;
@@ -229,12 +233,18 @@ export default function NutritionDaily() {
 
   // Check if all planned items are logged
   const allPlannedLogged = useMemo(() => {
-    if (mealSlots.length === 0) return true;
+    if (mealSlots.length === 0) {
+      return true;
+    }
     for (const slot of mealSlots) {
-      if (slot.plannedItems.length === 0) continue;
+      if (slot.plannedItems.length === 0) {
+        continue;
+      }
       for (let i = 0; i < slot.plannedItems.length; i++) {
         const hasEntry = slot.entries.some((e) => e.planned_item_index === i);
-        if (!hasEntry) return false;
+        if (!hasEntry) {
+          return false;
+        }
       }
     }
     return true;
@@ -251,7 +261,9 @@ export default function NutritionDaily() {
   }, []);
 
   const handleLogAllDay = async () => {
-    if (!todayPlan) return;
+    if (!todayPlan) {
+      return;
+    }
     try {
       await logDay({date: dateISO, plan_id: todayPlan.plan_id}).unwrap();
       toast.success('All meals logged for the day');

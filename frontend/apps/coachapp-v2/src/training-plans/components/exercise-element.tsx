@@ -3,21 +3,30 @@ import {MoreHorizontal} from 'lucide-react';
 import {useState} from 'react';
 
 import type {PlannedSet, WorkoutElement} from '@/api/trainingPlans';
-import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
-
 import {useUpdateWorkoutElementMutation} from '@/api/trainingPlans';
 import InlineExerciseForm, {
   buildPlannedSetsFromForm,
   deriveFormFromSets,
   type InlineExerciseFormValues,
 } from '@/training-plans/components/inline-exercise-form';
+import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 function formatLoadSummary(set: PlannedSet): string {
-  if (!set.load_unit || set.load_unit === 'none') return '';
-  if (set.load_unit === 'bodyweight') return set.load_value != null ? `BW + ${set.load_value}` : 'BW';
-  if (set.load_value == null) return '';
-  if (set.load_unit === 'percent_1rm') return `${set.load_value}% 1RM`;
-  if (set.load_unit === 'rpe') return `RPE ${set.load_value}`;
+  if (!set.load_unit || set.load_unit === 'none') {
+    return '';
+  }
+  if (set.load_unit === 'bodyweight') {
+    return set.load_value != null ? `BW + ${set.load_value}` : 'BW';
+  }
+  if (set.load_value == null) {
+    return '';
+  }
+  if (set.load_unit === 'percent_1rm') {
+    return `${set.load_value}% 1RM`;
+  }
+  if (set.load_unit === 'rpe') {
+    return `RPE ${set.load_value}`;
+  }
   return `${set.load_value}${set.load_unit}`;
 }
 
@@ -28,7 +37,9 @@ function formatLoadSummary(set: PlannedSet): string {
  * no "mixed" fallback. The array is always N identical PlannedSets.
  */
 export function formatSetSchemeSummary(sets: PlannedSet[]): string {
-  if (sets.length === 0) return 'No sets — tap to add';
+  if (sets.length === 0) {
+    return 'No sets — tap to add';
+  }
   const first = sets[0]!;
   const reps = first.target_reps ?? '—';
   const load = formatLoadSummary(first);

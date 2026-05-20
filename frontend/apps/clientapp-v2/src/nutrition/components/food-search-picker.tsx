@@ -25,18 +25,26 @@ export type PickedItem = {
 // ── Helpers ─────────────────────────────────────────────────
 
 function getCalorieDisplay(macros: null | Record<string, number>): string {
-  if (!macros) return '';
+  if (!macros) {
+    return '';
+  }
   const normalized = normalizeMacros(macros);
   const cal = normalized.calories_per_100g;
-  if (cal == null) return '';
+  if (cal == null) {
+    return '';
+  }
   return `${Math.round(cal)} cal/100g`;
 }
 
 function getProteinDisplay(macros: null | Record<string, number>): string {
-  if (!macros) return '';
+  if (!macros) {
+    return '';
+  }
   const normalized = normalizeMacros(macros);
   const protein = normalized.protein_g;
-  if (protein == null) return '';
+  if (protein == null) {
+    return '';
+  }
   return `${Math.round(protein)}g protein`;
 }
 
@@ -108,7 +116,9 @@ export default function FoodSearchPicker({onSelect}: {onSelect: (item: PickedIte
           aria-label="Search results"
           onAction={(key) => {
             const item = items.find((i) => i.id === key);
-            if (item) onSelect(item);
+            if (item) {
+              onSelect(item);
+            }
           }}
         >
           {items.map((item) => (

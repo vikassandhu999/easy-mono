@@ -2,20 +2,24 @@ import {formatDuration, formatSessionDateLong, getWorkoutTitle, SESSION_STATE_CH
 import {Alert, Button, Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ArrowLeft, Clock, Dumbbell, MessageSquare, Plus, RefreshCw, SkipForward} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
-import type {ClientPerformedSet, ClientWorkoutSession, PlannedSnapshotElement} from '@/api/workoutSessions';
-
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {ClientPerformedSet, ClientWorkoutSession, PlannedSnapshotElement} from '@/api/workoutSessions';
 import {useGetClientWorkoutSessionQuery} from '@/api/workoutSessions';
 
 // ── Helpers ──────────────────────────────────────────────────
 
 function formatLoad(value: null | string, unit: null | string): string {
-  if (!value) return '';
-  if (unit === 'bodyweight') return 'BW';
-  if (unit === 'none') return '';
+  if (!value) {
+    return '';
+  }
+  if (unit === 'bodyweight') {
+    return 'BW';
+  }
+  if (unit === 'none') {
+    return '';
+  }
   return `${value} ${unit ?? ''}`.trim();
 }
 

@@ -1,6 +1,5 @@
-import type {UseFormReturn} from 'react-hook-form';
-
 import {Description, FieldError, Fieldset, Input, Label, TextArea, TextField, Typography} from '@heroui/react';
+import type {UseFormReturn} from 'react-hook-form';
 import {Controller, useWatch} from 'react-hook-form';
 
 import type {EditorFormValues} from '@/storefront/components/editor-schema';

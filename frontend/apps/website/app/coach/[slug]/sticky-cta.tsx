@@ -1,8 +1,7 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
-
 import type {PublicOffer} from '@easy/storefront-types';
+import {useEffect, useRef, useState} from 'react';
 
 /**
  * Sticky mobile CTA bar — fixed bottom, visible only on mobile (md:hidden).
@@ -22,13 +21,19 @@ export default function StickyCta({offers}: {offers: PublicOffer[]}) {
     const formEl = document.getElementById('get-started');
     const heroEl = document.getElementById('hero');
 
-    if (!formEl || !heroEl) return;
+    if (!formEl || !heroEl) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.target === heroEl) heroVisibleRef.current = entry.isIntersecting;
-          if (entry.target === formEl) formVisibleRef.current = entry.isIntersecting;
+          if (entry.target === heroEl) {
+            heroVisibleRef.current = entry.isIntersecting;
+          }
+          if (entry.target === formEl) {
+            formVisibleRef.current = entry.isIntersecting;
+          }
         }
         setVisible(!heroVisibleRef.current && !formVisibleRef.current);
       },

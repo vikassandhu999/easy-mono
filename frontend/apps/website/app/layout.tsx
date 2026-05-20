@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type {Metadata} from 'next';
 
 import './globals.css';
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     'UPI payments for coaches',
     'Indian fitness coach platform',
   ],
-  authors: [{ name: 'CoachEasy', url: 'https://coacheasy.app' }],
+  authors: [{name: 'CoachEasy', url: 'https://coacheasy.app'}],
   creator: 'CoachEasy',
   publisher: 'CoachEasy',
   robots: {
@@ -147,14 +147,44 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link href="/favicon.ico" rel="icon" sizes="any" />
-        <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
-        <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
-        <link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
-        <link href="/manifest.json" rel="manifest" />
-        <meta content="#F97316" name="theme-color" />
-        <script dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} type="application/ld+json" />
-        <script dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} type="application/ld+json" />
+        <link
+          href="/favicon.ico"
+          rel="icon"
+          sizes="any"
+        />
+        <link
+          href="/favicon-32x32.png"
+          rel="icon"
+          sizes="32x32"
+          type="image/png"
+        />
+        <link
+          href="/favicon-16x16.png"
+          rel="icon"
+          sizes="16x16"
+          type="image/png"
+        />
+        <link
+          href="/apple-touch-icon.png"
+          rel="apple-touch-icon"
+          sizes="180x180"
+        />
+        <link
+          href="/manifest.json"
+          rel="manifest"
+        />
+        <meta
+          content="#F97316"
+          name="theme-color"
+        />
+        <script
+          dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd)}}
+          type="application/ld+json"
+        />
+        <script
+          dangerouslySetInnerHTML={{__html: JSON.stringify(organizationJsonLd)}}
+          type="application/ld+json"
+        />
       </head>
       <body className="antialiased">{children}</body>
     </html>

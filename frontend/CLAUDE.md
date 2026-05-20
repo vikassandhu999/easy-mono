@@ -24,7 +24,8 @@ pnpm build:clientapp-v2
 pnpm build:website
 
 # Lint & Format
-pnpm lint                 # eslint --fix across all packages
+pnpm lint                 # biome check --write across all packages
+pnpm format               # biome format --write across the repo
 ```
 
 There are no tests configured in this repository.
@@ -48,16 +49,15 @@ Legacy `coachapp` (Mantine) and `clientapp` (Mantine) folders no longer exist �
 - **@easy/websocket** — WebSocket integration
 - **@easy/error-parser** — API error parsing with `AppError` class and typed error codes
 - **@easy/typings** — Shared TypeScript types
-- **@easy/eslint-config** — Shared ESLint config used by all apps
+- **Biome** — Shared formatter/linter configuration at the repo root (`biome.json`)
 
 ## Code Style
 
-Enforced via `@easy/eslint-config` (ESLint + Prettier):
+Enforced via root `biome.json`:
 
-- **Prettier**: 120 char width, 2-space indent, single quotes, trailing commas, single attribute per line, no bracket spacing
-- **Imports**: Sorted naturally via `eslint-plugin-perfectionist` (ascending, natural order)
-- **TypeScript**: Strict mode, `@typescript-eslint/no-unused-vars` is error-level
-- JSX props sorted alphabetically (perfectionist)
+- **Formatting**: 120 char width, 2-space indent, single quotes, trailing commas, single attribute per line, no bracket spacing
+- **Imports**: Organized via Biome
+- **TypeScript**: Strict mode via TypeScript compiler
 
 ## Shared Conventions (apply to all React apps)
 

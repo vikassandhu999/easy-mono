@@ -6,14 +6,12 @@ import {useMemo, useState} from 'react';
 import {useForm, useWatch} from 'react-hook-form';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {z} from 'zod';
-
-import type {PickedItem} from '@/nutrition/components/food-search-picker';
-
 import PageLayout from '@/@components/page-layout';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateFoodLogEntryMutation} from '@/api/mealLogs';
 import {applyFormErrors} from '@/api/shared';
+import type {PickedItem} from '@/nutrition/components/food-search-picker';
 import FoodSearchPicker from '@/nutrition/components/food-search-picker';
 
 // ── Types ───────────────────────────────────────────────────
@@ -73,8 +71,12 @@ export default function AddFood() {
   const isGramLike = unit === 'g' || unit === 'ml';
   // For gram/ml units, weight equals amount. For other units, resolve from serving_sizes.
   const weightG = useMemo(() => {
-    if (isGramLike) return numericAmount;
-    if (!selectedItem) return 0;
+    if (isGramLike) {
+      return numericAmount;
+    }
+    if (!selectedItem) {
+      return 0;
+    }
     const serving = selectedItem.serving_sizes.find((s) => s.unit === unit);
     if (serving?.weight_g && serving.amount) {
       return (numericAmount / serving.amount) * serving.weight_g;
@@ -103,7 +105,9 @@ export default function AddFood() {
   };
 
   const handleLog = async () => {
-    if (!selectedItem || !mealSlot) return;
+    if (!selectedItem || !mealSlot) {
+      return;
+    }
 
     const source = isReplacement ? 'replacement' : 'unplanned';
 

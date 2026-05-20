@@ -1,4 +1,4 @@
-import {Button, FieldError, Form, Input, Label, NumberField, TextField, toast, Typography} from '@heroui/react';
+import {Button, FieldError, Form, Input, Label, NumberField, TextField, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, Check, ChefHat, Trash2} from 'lucide-react';
 import {useState} from 'react';
@@ -79,8 +79,12 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
   };
 
   const details: string[] = [];
-  if (item.amount != null) details.push(`${item.amount}${item.unit ? ` ${item.unit}` : ''}`);
-  if (item.weight_g != null) details.push(`${item.weight_g}g`);
+  if (item.amount != null) {
+    details.push(`${item.amount}${item.unit ? ` ${item.unit}` : ''}`);
+  }
+  if (item.weight_g != null) {
+    details.push(`${item.weight_g}g`);
+  }
 
   const hasAmounts = details.length > 0;
 

@@ -8,8 +8,8 @@ import {
   NumberField,
   Spinner,
   TextField,
-  toast,
   Typography,
+  toast,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Pencil, Plus, Trash2} from 'lucide-react';
@@ -19,15 +19,14 @@ import {z} from 'zod';
 
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
-import type {Recipe} from '@/api/recipes';
-import type {ServingSize} from '@/api/shared';
-
 import {
   useCreateMealItemMutation,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useUpdateMealMutation,
 } from '@/api/meals';
+import type {Recipe} from '@/api/recipes';
+import type {ServingSize} from '@/api/shared';
 import MealItemPicker from '@/nutrition-plans/components/meal-item-picker';
 import MealItemRow from '@/nutrition-plans/components/meal-item-row';
 
@@ -245,7 +244,9 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
 
   // Callback ref to auto-focus the name input when editing starts
   const nameInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) node.focus();
+    if (node) {
+      node.focus();
+    }
   }, []);
 
   // Inline add-item state
@@ -265,7 +266,9 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
     let proteinG = 0;
     for (const item of meal.meal_items) {
       const itemMacros = item.food?.macros ?? item.recipe?.macros;
-      if (!itemMacros) continue;
+      if (!itemMacros) {
+        continue;
+      }
       // Macros are per 100g. Scale by weight_g/100, or fall back to amount, or 1.
       const multiplier = item.weight_g != null ? item.weight_g / 100 : (item.amount ?? 1);
       calories += (itemMacros.calories ?? 0) * multiplier;
@@ -286,7 +289,9 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
   };
 
   const handleAddItem = async (values: MealItemFormValues) => {
-    if (!selectedItem) return;
+    if (!selectedItem) {
+      return;
+    }
     try {
       const unit = values.unit?.trim() || undefined;
       const body = {

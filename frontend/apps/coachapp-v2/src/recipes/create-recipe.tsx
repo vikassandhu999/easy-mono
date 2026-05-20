@@ -2,15 +2,13 @@ import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-
-import type {RecipeIngredientInput} from '@/api/recipes';
-import type {IngredientItem} from '@/foods/components/ingredient-list';
-
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {RecipeIngredientInput} from '@/api/recipes';
 import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
+import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
 
 function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
@@ -26,7 +24,9 @@ function buildMacros(data: RecipeFormValues): Record<string, number> | undefined
 }
 
 function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] | undefined {
-  if (items.length === 0) return undefined;
+  if (items.length === 0) {
+    return undefined;
+  }
   return items.map((item) => ({
     food_id: item.food_id,
     ...(item.unit && {unit: item.unit}),

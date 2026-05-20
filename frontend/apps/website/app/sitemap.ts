@@ -1,4 +1,4 @@
-import { MetadataRoute } from 'next';
+import {MetadataRoute} from 'next';
 
 const BASE_URL = 'https://coacheasy.app';
 

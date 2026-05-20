@@ -14,7 +14,6 @@ type ClientPickerProps = {
   placeholder?: string;
   excludeIds?: string[];
   isDisabled?: boolean;
-  // eslint-disable-next-line jsx-a11y/no-autofocus -- opt-in per call site
   autoFocus?: boolean;
 };
 
@@ -54,9 +53,13 @@ export default function ClientPicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const client = clientMap.get(id);
       if (client) {
         onSelect(client);
@@ -90,7 +93,6 @@ export default function ClientPicker({
           onInputChange={setSearchInput}
         >
           <SearchField
-            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={autoFocus}
             className="sticky top-0 z-10"
             name="client-search"

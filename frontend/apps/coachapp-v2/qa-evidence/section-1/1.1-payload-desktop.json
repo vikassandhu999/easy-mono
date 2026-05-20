@@ -5,11 +5,11 @@
   "result": {
     "elementId": "a4cfcdf6-14fc-45de-a5fd-6e9d598f9922",
     "planned_sets_count": 4,
-    "set_types": ["working","working","working","working"],
-    "target_reps": ["8-12","8-12","8-12","8-12"],
-    "load_value": ["80","80","80","80"],
-    "load_unit": ["kg","kg","kg","kg"],
-    "rest_seconds": [90,90,90,90]
+    "set_types": ["working", "working", "working", "working"],
+    "target_reps": ["8-12", "8-12", "8-12", "8-12"],
+    "load_value": ["80", "80", "80", "80"],
+    "load_unit": ["kg", "kg", "kg", "kg"],
+    "rest_seconds": [90, 90, 90, 90]
   },
   "verdict": "PASS",
   "notes": "load_value returned as string by backend (Decimal). All 4 entries identical. set_type 'working' on all. load_unit 'kg' (lowercase string)."

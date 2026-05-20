@@ -1,14 +1,10 @@
-/* eslint-disable jsx-a11y/no-autofocus */
 import type {Key, UseOverlayStateReturn} from '@heroui/react';
-import type {ReactNode} from 'react';
-
 import {cn, EmptyState, Modal, SearchField, Spinner} from '@heroui/react';
+import type {ReactNode} from 'react';
 import {useState} from 'react';
-
-import type {Client} from '@/api/clients';
-
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useIsMobile} from '@/@hooks/use-is-mobile';
+import type {Client} from '@/api/clients';
 import ClientListBox from '@/clients/clients-list/client-list-box';
 import ClientListItem from '@/clients/clients-list/client-list-item';
 import ClientsListQuery from '@/clients/clients-list/clients-list-query';

@@ -29,7 +29,9 @@ function getFullName(firstName: null | string, lastName: null | string): string 
 
 function splitName(fullName: string): {firstName: string; lastName: string} {
   const spaceIndex = fullName.indexOf(' ');
-  if (spaceIndex === -1) return {firstName: fullName, lastName: ''};
+  if (spaceIndex === -1) {
+    return {firstName: fullName, lastName: ''};
+  }
   return {firstName: fullName.slice(0, spaceIndex), lastName: fullName.slice(spaceIndex + 1)};
 }
 
@@ -192,7 +194,9 @@ export default function Settings() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   const profile = data.data;
 

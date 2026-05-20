@@ -1,8 +1,7 @@
 'use client';
 
-import {useMemo, useState} from 'react';
-
 import type {PublicStorefront} from '@easy/storefront-types';
+import {useMemo, useState} from 'react';
 
 import FaqSection from './faq-section';
 import IntakeForm from './intake-form';

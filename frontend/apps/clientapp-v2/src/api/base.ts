@@ -1,4 +1,4 @@
-import {BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError} from '@reduxjs/toolkit/query/react';
+import {BaseQueryFn, createApi, FetchArgs, FetchBaseQueryError, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
 
 import {clearTokens, getAccessToken, getRefreshToken, getTokenExpiresAt, setTokens} from '@/api/authStorage';
 
@@ -11,7 +11,9 @@ const AUTH_PATHS = new Set(['/login', '/verify-login']);
 const AUTH_PATH_PREFIXES = ['/invite/'];
 
 function isAuthPath(pathname: string): boolean {
-  if (AUTH_PATHS.has(pathname)) return true;
+  if (AUTH_PATHS.has(pathname)) {
+    return true;
+  }
   return AUTH_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -21,7 +23,9 @@ function isAuthPath(pathname: string): boolean {
  * react-router state). The login flow restores it after re-auth.
  */
 function redirectToLoginExpired() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
 
   const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const params = new URLSearchParams({session_expired: 'true'});

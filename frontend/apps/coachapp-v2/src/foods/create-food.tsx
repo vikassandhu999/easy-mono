@@ -2,14 +2,12 @@ import {Button} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
-
-import type {Food} from '@/api/foods';
-import type {ServingSize} from '@/api/shared';
-
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import type {Food} from '@/api/foods';
 import {useCreateFoodMutation} from '@/api/foods';
+import type {ServingSize} from '@/api/shared';
 import {applyFormErrors, normalizeMacros} from '@/api/shared';
 import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
 
@@ -35,7 +33,9 @@ export default function CreateFood() {
   const duplicateFrom = (location.state as null | {duplicateFrom?: Food})?.duplicateFrom ?? null;
 
   const duplicateFormValues = useMemo<FoodFormValues | undefined>(() => {
-    if (!duplicateFrom) return undefined;
+    if (!duplicateFrom) {
+      return undefined;
+    }
     const m = normalizeMacros(duplicateFrom.macros);
     return {
       name: `${duplicateFrom.name} (copy)`,

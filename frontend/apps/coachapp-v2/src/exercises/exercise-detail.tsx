@@ -1,4 +1,4 @@
-import {AlertDialog, Button, Chip, Spinner, toast, Typography} from '@heroui/react';
+import {AlertDialog, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Copy, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
 

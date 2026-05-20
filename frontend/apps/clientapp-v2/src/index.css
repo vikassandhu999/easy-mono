@@ -20,7 +20,6 @@
    ============================================================ */
 
 @layer base {
-
   /* ─────────────────────────────────────────────
      DARK THEME (Client App Default)
      
@@ -137,15 +136,12 @@
 
     /* ── Shadows — minimal, glow-based ── */
     --surface-shadow: 0 0 0 0 transparent;
-    --overlay-shadow:
-      0 0 1px 0 rgba(255, 255, 255, 0.06) inset,
-      0 16px 48px rgba(0, 0, 0, 0.4);
+    --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 48px rgba(0, 0, 0, 0.4);
     --field-shadow: 0 0 0 0 transparent;
 
     /* ── Skeleton ── */
     --skeleton-animation: shimmer;
   }
-
 
   /* ─────────────────────────────────────────────
      LIGHT THEME (Coach Admin Panel / Optional)
@@ -228,26 +224,19 @@
     --link: oklch(0.6002 0.1038 184.7);
 
     /* ── Shadows ── */
-    --surface-shadow:
-      0 1px 3px 0 rgba(0, 0, 0, 0.03),
-      0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    --overlay-shadow:
-      0 4px 16px 0 rgba(0, 0, 0, 0.06),
-      0 8px 24px 0 rgba(0, 0, 0, 0.08);
-    --field-shadow:
-      0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --surface-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --overlay-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06), 0 8px 24px 0 rgba(0, 0, 0, 0.08);
+    --field-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 
     --skeleton-animation: shimmer;
   }
 }
-
 
 /* ============================================================
    COMPONENT OVERRIDES — Dark-First Patterns
    ============================================================ */
 
 @layer components {
-
   /* ── Buttons: solid teal, no gradient (restraint) ── */
   .button {
     @apply font-semibold;
@@ -340,18 +329,14 @@
   }
 }
 
-
 /* ============================================================
    CUSTOM UTILITIES — Client App Specific
    ============================================================ */
 
 @layer utilities {
-
   /* ── Hero workout card: translucent teal glow ── */
   .card-hero-workout {
-    background: linear-gradient(135deg,
-        oklch(0.6002 0.1038 184.7 / 0.2),
-        oklch(0.5109 0.0861 186.39 / 0.1));
+    background: linear-gradient(135deg, oklch(0.6002 0.1038 184.7 / 0.2), oklch(0.5109 0.0861 186.39 / 0.1));
     border: 0.5px solid oklch(0.6002 0.1038 184.7 / 0.25);
     border-radius: calc(var(--radius) * 1.25);
   }
@@ -393,9 +378,7 @@
 
   .progress-fill-teal {
     height: 100%;
-    background: linear-gradient(90deg,
-        oklch(0.6002 0.1038 184.7),
-        oklch(0.5109 0.0861 186.39));
+    background: linear-gradient(90deg, oklch(0.6002 0.1038 184.7), oklch(0.5109 0.0861 186.39));
     border-radius: 2px;
     transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -448,9 +431,7 @@
   }
 
   .streak-today {
-    background: linear-gradient(135deg,
-        oklch(0.6002 0.1038 184.7),
-        oklch(0.5109 0.0861 186.39));
+    background: linear-gradient(135deg, oklch(0.6002 0.1038 184.7), oklch(0.5109 0.0861 186.39));
     color: white;
     border: 2px solid oklch(0.82 0.08 178 / 0.3);
   }
@@ -529,7 +510,6 @@
   }
 }
 
-
 /* ============================================================
    FONT CONFIGURATION
    
@@ -542,7 +522,6 @@
 @theme inline {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
-
 
 /* ============================================================
    DARK MODE COLOR REFERENCE

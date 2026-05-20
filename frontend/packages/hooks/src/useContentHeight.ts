@@ -1,16 +1,7 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  useLayoutEffect,
-} from "react";
+import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 
 // Debounce utility to prevent excessive calculations
-function debounce<T extends (...args: unknown[]) => void>(
-  func: T,
-  wait: number
-): T {
+function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number): T {
   let timeout: ReturnType<typeof setTimeout>;
   return ((...args: unknown[]) => {
     clearTimeout(timeout);
@@ -29,7 +20,9 @@ export function useContentHeight() {
   const isCalculating = useRef(false);
 
   const calculateHeights = useCallback(() => {
-    if (isCalculating.current) return;
+    if (isCalculating.current) {
+      return;
+    }
 
     isCalculating.current = true;
     requestAnimationFrame(() => {
@@ -44,10 +37,7 @@ export function useContentHeight() {
           return sum + (ele?.offsetHeight || 0);
         }, 0);
 
-        const newContentHeight = Math.max(
-          0,
-          windowHeight - topStaticHeight - bottomStaticHeight
-        );
+        const newContentHeight = Math.max(0, windowHeight - topStaticHeight - bottomStaticHeight);
 
         setTopHeight(topStaticHeight);
         setBottomHeight(bottomStaticHeight);
@@ -70,10 +60,10 @@ export function useContentHeight() {
       debouncedCalculateHeights();
     };
 
-    window.addEventListener("resize", handleWindowResize, { passive: true });
+    window.addEventListener('resize', handleWindowResize, {passive: true});
 
     return () => {
-      window.removeEventListener("resize", handleWindowResize);
+      window.removeEventListener('resize', handleWindowResize);
     };
   }, [debouncedCalculateHeights]);
 
@@ -102,9 +92,9 @@ export function useContentHeight() {
   }, [calculateHeights]);
 
   const useElementRef = useCallback(
-    (pos: "top" | "bottom" = "top") => {
+    (pos: 'top' | 'bottom' = 'top') => {
       return (node: HTMLElement | null) => {
-        const list = pos === "top" ? top : bottom;
+        const list = pos === 'top' ? top : bottom;
 
         if (!node) {
           // Node is being unmounted, no need to do anything
@@ -125,13 +115,13 @@ export function useContentHeight() {
         }
       };
     },
-    [debouncedCalculateHeights]
+    [debouncedCalculateHeights],
   );
 
   // Cleanup function to manually remove an element (if needed)
   const removeElement = useCallback(
-    (element: HTMLElement, pos: "top" | "bottom" = "top") => {
-      const list = pos === "top" ? top : bottom;
+    (element: HTMLElement, pos: 'top' | 'bottom' = 'top') => {
+      const list = pos === 'top' ? top : bottom;
       const index = list.current.findIndex((el) => el === element);
 
       if (index !== -1) {
@@ -140,7 +130,7 @@ export function useContentHeight() {
         debouncedCalculateHeights();
       }
     },
-    [debouncedCalculateHeights]
+    [debouncedCalculateHeights],
   );
 
   return {

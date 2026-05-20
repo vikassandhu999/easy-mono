@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import {useLayoutEffect} from 'react';
 
 const observedElements = new Map<Element, (element: Element) => void>();
 
@@ -30,7 +30,9 @@ export const useResizeObserver = (
   // We need to use a layout effect here as we want to make sure the observer is set up (and removed!) before the component is rendered
   useLayoutEffect(() => {
     if (!element) {
-      return () => {};
+      return () => {
+        // no-op cleanup when no element is attached
+      };
     }
 
     observedElements.set(element, skipFirstCall(callback));

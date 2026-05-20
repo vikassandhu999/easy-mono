@@ -7,8 +7,6 @@ type Value = {
   useWorkoutRef: (workoutId: string) => RefCallback<HTMLElement>;
   scrollToWorkout: (id: string) => void;
 };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Context = React.createContext<Value>({} as any);
 
 type Props = PropsWithChildren & {
@@ -18,33 +16,30 @@ type Props = PropsWithChildren & {
 export default function BuilderProvider({children, plan}: Props) {
   const refs = useRef<{workoutId: string; instance: HTMLElement}[]>([]);
 
-  const useWorkoutRef = useCallback(
-    (workoutId: string) => {
-      let prev: HTMLElement | null;
-      return (instance: HTMLElement | null) => {
-        if (instance == null) {
-          if (prev) {
-            refs.current = refs.current.filter((v) => v.workoutId !== workoutId);
-          }
-          prev = null;
-          return;
+  const useWorkoutRef = useCallback((workoutId: string) => {
+    let prev: HTMLElement | null;
+    return (instance: HTMLElement | null) => {
+      if (instance == null) {
+        if (prev) {
+          refs.current = refs.current.filter((v) => v.workoutId !== workoutId);
         }
-        prev = instance;
-        const val = refs.current.find((v) => v.workoutId === workoutId);
-        if (val) val.instance = instance;
-        else refs.current.push({workoutId, instance});
-      };
-    },
-    [refs],
-  );
-
-  const scrollToWorkout = useCallback(
-    (workoutId: string) => {
+        prev = null;
+        return;
+      }
+      prev = instance;
       const val = refs.current.find((v) => v.workoutId === workoutId);
-      val?.instance.scrollIntoView({behavior: 'smooth', block: 'center'});
-    },
-    [refs],
-  );
+      if (val) {
+        val.instance = instance;
+      } else {
+        refs.current.push({workoutId, instance});
+      }
+    };
+  }, []);
+
+  const scrollToWorkout = useCallback((workoutId: string) => {
+    const val = refs.current.find((v) => v.workoutId === workoutId);
+    val?.instance.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }, []);
 
   const value = useMemo(
     () => ({

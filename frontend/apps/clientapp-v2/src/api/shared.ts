@@ -22,9 +22,13 @@ function normalizeFieldMap(raw: Record<string, unknown>): null | Record<string, 
   const out: Record<string, string[]> = {};
   let anyValid = false;
   for (const [key, value] of Object.entries(raw)) {
-    if (!Array.isArray(value)) continue;
+    if (!Array.isArray(value)) {
+      continue;
+    }
     const strings = value.filter((v): v is string => typeof v === 'string');
-    if (strings.length === 0) continue;
+    if (strings.length === 0) {
+      continue;
+    }
     out[key] = strings;
     anyValid = true;
   }
@@ -65,7 +69,9 @@ export const getValidationErrors = (error: unknown): null | Record<string, strin
         const fields = (errorDetail as {fields?: unknown}).fields;
         if (fields && typeof fields === 'object') {
           const normalized = normalizeFieldMap(fields as Record<string, unknown>);
-          if (normalized) return normalized;
+          if (normalized) {
+            return normalized;
+          }
         }
       }
       // Shape 3: fields are the top-level keys of error_detail itself.
@@ -121,7 +127,6 @@ export const getApiErrorCode = (error: unknown): null | string => {
 export const applyFormErrors = (
   error: unknown,
   fallbackMessage: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setError: (name: any, error: {message: string}) => void,
   knownFields?: readonly string[],
 ) => {
@@ -138,7 +143,9 @@ export const applyFormErrors = (
 
   for (const [field, messages] of Object.entries(fieldErrors)) {
     const msg = messages[0];
-    if (!msg) continue;
+    if (!msg) {
+      continue;
+    }
 
     if (known && !known.has(field)) {
       unmatchedMessages.push(msg);

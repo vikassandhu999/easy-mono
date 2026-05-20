@@ -35,8 +35,11 @@ export default function CopyMenu({clientId, onCopyToClient, onDuplicate}: CopyMe
           <ListBox
             aria-label="Copy options"
             onAction={(key) => {
-              if (key === 'copy-to-client') onCopyToClient();
-              else if (key === 'duplicate') onDuplicate();
+              if (key === 'copy-to-client') {
+                onCopyToClient();
+              } else if (key === 'duplicate') {
+                onDuplicate();
+              }
               setIsOpen(false);
             }}
             selectionMode="none"

@@ -3,10 +3,8 @@ import type {Key} from '@heroui/react';
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
-
-import type {ClientExercise} from '@/api/exercises';
-
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import type {ClientExercise} from '@/api/exercises';
 import {useListClientExercisesQuery} from '@/api/exercises';
 
 type ExercisePickerProps = {
@@ -52,9 +50,13 @@ export default function ExercisePicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const exercise = exerciseMap.get(id);
       if (exercise) {
         onSelect({id: exercise.id, name: exercise.name});

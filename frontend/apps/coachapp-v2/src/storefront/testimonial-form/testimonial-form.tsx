@@ -91,7 +91,9 @@ export default function TestimonialForm({
   const resultTag = useWatch({control, name: 'result_tag'});
 
   const suggestResultTag = () => {
-    if (resultTag || !beforeWeight || !afterWeight) return;
+    if (resultTag || !beforeWeight || !afterWeight) {
+      return;
+    }
 
     const diff = Math.round(Math.abs(beforeWeight - afterWeight));
     if (afterWeight < beforeWeight) {

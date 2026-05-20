@@ -1,5 +1,3 @@
-import type {UseFormReturn} from 'react-hook-form';
-
 import {
   Button,
   Card,
@@ -15,11 +13,10 @@ import {
 } from '@heroui/react';
 import {Check, ExternalLink, X} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
+import type {UseFormReturn} from 'react-hook-form';
 import {Controller} from 'react-hook-form';
-
-import type {EditorFormValues} from '@/storefront/components/editor-schema';
-
 import {useCheckSlugAvailabilityMutation} from '@/api/storefront';
+import type {EditorFormValues} from '@/storefront/components/editor-schema';
 
 const THEME_COLORS = [
   {color: 'bg-orange-500', label: 'Orange', value: 'orange'},
@@ -50,7 +47,9 @@ export default function SettingsEditor({
 
   const handleSlugChange = useCallback(
     (slug: string) => {
-      if (slugTimerRef.current) clearTimeout(slugTimerRef.current);
+      if (slugTimerRef.current) {
+        clearTimeout(slugTimerRef.current);
+      }
       if (!slug || slug.length < 3 || slug === originalSlug) {
         setSlugStatus(null);
         return;

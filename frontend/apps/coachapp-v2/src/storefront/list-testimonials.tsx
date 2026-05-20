@@ -16,7 +16,9 @@ export default function ListTestimonials() {
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useTestimonialsInfiniteQuery();
 
   const testimonials = useMemo<Testimonial[]>(() => {
-    if (!data?.pages) return [];
+    if (!data?.pages) {
+      return [];
+    }
     return data.pages.flatMap((page) => page.data);
   }, [data]);
 

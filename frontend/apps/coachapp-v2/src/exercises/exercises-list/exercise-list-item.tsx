@@ -20,9 +20,15 @@ function getExerciseSubtitle(exercise: Exercise): string {
   const muscleNames = exercise.muscles.map((muscle) => muscle.name).join(', ');
   const isSystem = exercise.business_id === null;
 
-  if (muscleNames && isSystem) return `${muscleNames} · system`;
-  if (muscleNames) return muscleNames;
-  if (isSystem) return 'system';
+  if (muscleNames && isSystem) {
+    return `${muscleNames} · system`;
+  }
+  if (muscleNames) {
+    return muscleNames;
+  }
+  if (isSystem) {
+    return 'system';
+  }
   return 'No muscles assigned';
 }
 

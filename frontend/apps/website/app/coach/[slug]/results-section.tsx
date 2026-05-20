@@ -1,6 +1,5 @@
-import {Star} from 'lucide-react';
-
 import type {PublicTestimonial} from '@easy/storefront-types';
+import {Star} from 'lucide-react';
 
 /**
  * Categorize testimonials into three groups:
@@ -11,9 +10,7 @@ import type {PublicTestimonial} from '@easy/storefront-types';
 export function categorizeTestimonials(testimonials: PublicTestimonial[]) {
   const spotlight = testimonials.filter((t) => t.is_featured && t.before_image_url && t.after_image_url).slice(0, 2);
   const spotlightIds = new Set(spotlight.map((t) => t.id));
-  const photoGrid = testimonials.filter(
-    (t) => !spotlightIds.has(t.id) && t.before_image_url && t.after_image_url,
-  );
+  const photoGrid = testimonials.filter((t) => !spotlightIds.has(t.id) && t.before_image_url && t.after_image_url);
   const textOnly = testimonials.filter((t) => !t.before_image_url && !t.after_image_url && t.quote);
   return {photoGrid, spotlight, textOnly};
 }
@@ -23,7 +20,9 @@ export function categorizeTestimonials(testimonials: PublicTestimonial[]) {
  * Maximum 2 testimonials with before/after photos.
  */
 export function ResultsSpotlight({testimonials}: {testimonials: PublicTestimonial[]}) {
-  if (testimonials.length === 0) return null;
+  if (testimonials.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -43,14 +42,10 @@ export function ResultsSpotlight({testimonials}: {testimonials: PublicTestimonia
 /**
  * Remaining results — photo grid + text quotes. Shown AFTER offers.
  */
-export function ResultsGrid({
-  photoGrid,
-  textOnly,
-}: {
-  photoGrid: PublicTestimonial[];
-  textOnly: PublicTestimonial[];
-}) {
-  if (photoGrid.length === 0 && textOnly.length === 0) return null;
+export function ResultsGrid({photoGrid, textOnly}: {photoGrid: PublicTestimonial[]; textOnly: PublicTestimonial[]}) {
+  if (photoGrid.length === 0 && textOnly.length === 0) {
+    return null;
+  }
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -126,18 +121,14 @@ function TransformationSpotlight({testimonial}: {testimonial: PublicTestimonial}
       <div className="p-4 sm:p-5">
         <div className="flex items-baseline gap-2">
           <p className="text-base font-semibold">{testimonial.client_name}</p>
-          {testimonial.client_handle && (
-            <span className="text-sm text-gray-400">{testimonial.client_handle}</span>
-          )}
+          {testimonial.client_handle && <span className="text-sm text-gray-400">{testimonial.client_handle}</span>}
           {testimonial.rating && <StarRating rating={testimonial.rating} />}
         </div>
 
         {subtitle && <p className="mt-1 text-sm font-medium text-gray-600">{subtitle}</p>}
 
         {testimonial.quote && (
-          <p className="mt-3 line-clamp-3 text-sm italic text-gray-600">
-            &ldquo;{testimonial.quote}&rdquo;
-          </p>
+          <p className="mt-3 line-clamp-3 text-sm italic text-gray-600">&ldquo;{testimonial.quote}&rdquo;</p>
         )}
       </div>
     </div>

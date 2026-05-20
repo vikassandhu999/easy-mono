@@ -96,6 +96,7 @@ function ImageThumbnail({url}: {url: string}) {
   }
 
   return (
+    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: onError is used only as an image fallback handler.
     <img
       alt=""
       className="size-8 shrink-0 rounded object-cover"
@@ -395,7 +396,9 @@ export default function ExerciseForm({
                     onBlur={field.onBlur}
                     onChange={(value) => {
                       field.onChange(value);
-                      if (errors.image_url) form.clearErrors('image_url');
+                      if (errors.image_url) {
+                        form.clearErrors('image_url');
+                      }
                     }}
                     type="url"
                     value={field.value ?? ''}

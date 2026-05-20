@@ -1,7 +1,6 @@
-import type {ClientExerciseSummary, DistanceUnit, LoadUnit, SetType} from '@/api/trainingPlans';
-
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
+import type {ClientExerciseSummary, DistanceUnit, LoadUnit, SetType} from '@/api/trainingPlans';
 
 // ── Enums ────────────────────────────────────────────────────
 

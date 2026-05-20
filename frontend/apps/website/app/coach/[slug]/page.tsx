@@ -1,8 +1,6 @@
-import type {Metadata} from 'next';
-
-import {notFound} from 'next/navigation';
-
 import type {PublicStorefront} from '@easy/storefront-types';
+import type {Metadata} from 'next';
+import {notFound} from 'next/navigation';
 
 import HeroSection from './hero-section';
 import StorefrontClient from './storefront-client';
@@ -23,7 +21,9 @@ async function getStorefront(slug: string, isPreview: boolean): Promise<PublicSt
     const res = await fetch(url, {
       next: isPreview ? {revalidate: 0} : {revalidate: 60},
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return null;
+    }
     const json = (await res.json()) as {data: PublicStorefront};
     return json.data;
   } catch {
@@ -38,7 +38,9 @@ type PageParams = {params: Promise<{slug: string}>};
 export async function generateMetadata({params}: PageParams): Promise<Metadata> {
   const {slug} = await params;
   const data = await getStorefront(slug, false);
-  if (!data) return {title: 'Coach Not Found'};
+  if (!data) {
+    return {title: 'Coach Not Found'};
+  }
 
   return {
     description: data.profile.bio ?? `Check out ${data.profile.display_name}'s coaching services`,
@@ -63,7 +65,9 @@ export default async function CoachStorefrontPage({
   const isPreview = resolvedSearchParams.preview === 'true';
   const data = await getStorefront(slug, isPreview);
 
-  if (!data) notFound();
+  if (!data) {
+    notFound();
+  }
 
   // Resolve offer from ?offer=slug query param
   const offerSlug = typeof resolvedSearchParams.offer === 'string' ? resolvedSearchParams.offer : null;

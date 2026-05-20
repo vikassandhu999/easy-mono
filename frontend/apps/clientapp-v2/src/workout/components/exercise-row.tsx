@@ -1,11 +1,9 @@
 import {Button, Chip} from '@heroui/react';
 import {Check, ChevronDown, ChevronUp, Plus, RefreshCw, SkipForward} from 'lucide-react';
 import {useMemo, useState} from 'react';
-
-import type {WorkoutExercise} from '@/workout/components/workout-types';
-
 import {useGetClientExerciseQuery} from '@/api/exercises';
 import ExercisePicker from '@/workout/components/exercise-picker';
+import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 // ── Status badge ─────────────────────────────────────────────
 
@@ -29,11 +27,15 @@ function formatCollapsedSummary(exercise: WorkoutExercise): string {
     const scheme = [totalPlanned.toString(), reps ? `\u00D7 ${reps}` : '', load ? `@ ${load}` : '']
       .filter(Boolean)
       .join(' ');
-    if (totalLogged > 0) return `${scheme} \u00B7 ${totalLogged}/${totalPlanned} done`;
+    if (totalLogged > 0) {
+      return `${scheme} \u00B7 ${totalLogged}/${totalPlanned} done`;
+    }
     return scheme;
   }
 
-  if (totalLogged > 0) return `${totalLogged} set${totalLogged !== 1 ? 's' : ''} logged`;
+  if (totalLogged > 0) {
+    return `${totalLogged} set${totalLogged !== 1 ? 's' : ''} logged`;
+  }
   return 'No sets';
 }
 
@@ -62,7 +64,9 @@ export default function ExerciseRow({
   });
   const replaceMuscleIds = useMemo(() => {
     const muscles = exerciseDetail?.data?.muscles;
-    if (!muscles || muscles.length === 0) return undefined;
+    if (!muscles || muscles.length === 0) {
+      return undefined;
+    }
     return muscles.map((m) => m.id).join(',');
   }, [exerciseDetail]);
 

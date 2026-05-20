@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import { useNavigate } from "react-router";
-import { useMutation } from "@tanstack/react-query";
+import {useMutation} from '@tanstack/react-query';
+import {useCallback} from 'react';
+import {useNavigate} from 'react-router';
 
 /**
  * Hook: useHandleLogout
@@ -19,12 +19,14 @@ export interface UseHandleLogoutOptions {
 }
 
 export function useHandleLogout(options: UseHandleLogoutOptions = {}) {
-  const { performLogout, redirectTo = "/signin", onSuccess, onError } = options;
+  const {performLogout, redirectTo = '/signin', onSuccess, onError} = options;
   const navigate = useNavigate();
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (performLogout) await performLogout();
+      if (performLogout) {
+        await performLogout();
+      }
     },
     onSuccess: () => {
       onSuccess?.();
@@ -37,7 +39,9 @@ export function useHandleLogout(options: UseHandleLogoutOptions = {}) {
   });
 
   const handle = useCallback(() => {
-    if (!mutation.isPending) mutation.mutate();
+    if (!mutation.isPending) {
+      mutation.mutate();
+    }
   }, [mutation]);
 
   return {

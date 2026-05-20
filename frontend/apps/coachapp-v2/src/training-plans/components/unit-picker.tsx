@@ -28,10 +28,18 @@ const OPTIONS: UnitOption[] = [
  * one of the three supported units by tapping the pill.
  */
 export function getLoadUnitButtonLabel(loadUnit: LoadUnitValue): string {
-  if (loadUnit === 'bodyweight') return 'bw';
-  if (loadUnit === 'percent_1rm') return '% 1RM';
-  if (loadUnit === 'rpe') return 'RPE';
-  if (loadUnit === 'none') return '—';
+  if (loadUnit === 'bodyweight') {
+    return 'bw';
+  }
+  if (loadUnit === 'percent_1rm') {
+    return '% 1RM';
+  }
+  if (loadUnit === 'rpe') {
+    return 'RPE';
+  }
+  if (loadUnit === 'none') {
+    return '—';
+  }
   return loadUnit;
 }
 
@@ -58,7 +66,9 @@ export default function UnitPicker({className, onChange, value}: UnitPickerProps
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSelectionChange = (key: Key | null) => {
-    if (key == null) return;
+    if (key == null) {
+      return;
+    }
     onChange(key as LoadUnitValue);
     setIsOpen(false);
   };
@@ -86,7 +96,9 @@ export default function UnitPicker({className, onChange, value}: UnitPickerProps
           <ListBox
             aria-label="Load unit"
             onSelectionChange={(keys) => {
-              if (keys === 'all') return;
+              if (keys === 'all') {
+                return;
+              }
               const next = keys.values().next().value ?? null;
               handleSelectionChange(next);
             }}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {AxiosError} from 'axios';
 
 export const assert = function (assertion: unknown, message: string): void {
@@ -234,11 +233,15 @@ export const withThrottling =
 
     function throttled(this: ThisParameterType<TFunction>, ...args: Parameters<TFunction>) {
       const now = Date.now();
-      if (!previous && leading === false) previous = now;
+      if (!previous && leading === false) {
+        previous = now;
+      }
       const remaining = wait - (now - previous);
 
       if (remaining <= 0 || remaining > wait) {
-        if (timer) clearTimeout(timer);
+        if (timer) {
+          clearTimeout(timer);
+        }
         timer = undefined;
         previous = now;
         result = fn.apply(this, args);
@@ -254,7 +257,9 @@ export const withThrottling =
     }
 
     const cancel = () => {
-      if (timer) clearTimeout(timer);
+      if (timer) {
+        clearTimeout(timer);
+      }
       previous = 0;
       timer = undefined;
     };
@@ -278,11 +283,15 @@ export const withDebouncing =
             timer = setTimeout(later, wait - passed);
           } else {
             timer = undefined;
-            if (!immediate) result = fn.apply(this, args);
+            if (!immediate) {
+              result = fn.apply(this, args);
+            }
           }
         };
         timer = setTimeout(later, wait);
-        if (immediate) result = fn.apply(this, args);
+        if (immediate) {
+          result = fn.apply(this, args);
+        }
       }
       return result;
     }

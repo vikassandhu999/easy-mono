@@ -12,8 +12,12 @@ export type ExerciseGroup = {
 };
 
 export function formatLoad(value: null | number, unit: null | string): string {
-  if (value == null) return '';
-  if (unit === 'bodyweight' || unit === 'none') return unit === 'bodyweight' ? 'BW' : '';
+  if (value == null) {
+    return '';
+  }
+  if (unit === 'bodyweight' || unit === 'none') {
+    return unit === 'bodyweight' ? 'BW' : '';
+  }
   return `${value} ${unit ?? ''}`.trim();
 }
 

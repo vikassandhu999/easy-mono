@@ -28,10 +28,18 @@ export function deriveExerciseStatus(
   performedSets: ClientPerformedSet[],
   isSkipped: boolean,
 ): ExerciseStatus {
-  if (isSkipped) return 'skipped';
-  if (performedSets.length === 0) return 'not_started';
-  if (plannedSets.length > 0 && performedSets.length >= plannedSets.length) return 'done';
-  if (performedSets.length > 0) return 'in_progress';
+  if (isSkipped) {
+    return 'skipped';
+  }
+  if (performedSets.length === 0) {
+    return 'not_started';
+  }
+  if (plannedSets.length > 0 && performedSets.length >= plannedSets.length) {
+    return 'done';
+  }
+  if (performedSets.length > 0) {
+    return 'in_progress';
+  }
   return 'not_started';
 }
 

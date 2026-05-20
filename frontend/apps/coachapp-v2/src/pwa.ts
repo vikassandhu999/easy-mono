@@ -31,7 +31,9 @@ export function registerPWA() {
       updateSW(true);
     },
     onRegisteredSW(_swUrl, registration) {
-      if (!registration) return;
+      if (!registration) {
+        return;
+      }
       // Poll for updates periodically so long-lived tabs stay fresh.
       setInterval(() => {
         // `registration.update()` asks the browser to re-fetch the SW

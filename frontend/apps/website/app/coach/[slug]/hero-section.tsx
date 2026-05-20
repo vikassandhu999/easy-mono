@@ -1,6 +1,5 @@
-import {Instagram, MessageCircle, Youtube} from 'lucide-react';
-
 import type {PublicStoreProfile} from '@easy/storefront-types';
+import {Instagram, MessageCircle, Youtube} from 'lucide-react';
 
 import HeroCtaButton from './hero-cta-button';
 
@@ -15,9 +14,7 @@ const SOCIAL_LABELS: Record<string, string> = {
 };
 
 export default function HeroSection({profile}: {profile: PublicStoreProfile}) {
-  const socialEntries = Object.entries(profile.social_links).filter(
-    ([key, url]) => Boolean(url) && key !== 'whatsapp',
-  );
+  const socialEntries = Object.entries(profile.social_links).filter(([key, url]) => Boolean(url) && key !== 'whatsapp');
 
   const whatsappNumber = profile.social_links.whatsapp;
 
@@ -61,9 +58,7 @@ export default function HeroSection({profile}: {profile: PublicStoreProfile}) {
             <p className="max-w-lg text-xl font-semibold text-gray-800 sm:text-2xl">{profile.headline}</p>
           ) : null}
 
-          {profile.bio ? (
-            <p className="max-w-lg text-sm text-gray-600 sm:text-base">{profile.bio}</p>
-          ) : null}
+          {profile.bio ? <p className="max-w-lg text-sm text-gray-600 sm:text-base">{profile.bio}</p> : null}
 
           {/* CTAs — primary themed (client component for scroll) + secondary WhatsApp (plain link) */}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">

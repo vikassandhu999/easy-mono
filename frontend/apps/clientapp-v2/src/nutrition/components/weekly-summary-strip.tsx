@@ -28,8 +28,12 @@ function getWeekDates(referenceDate: Date): string[] {
 type DotLevel = 'future' | 'high' | 'low' | 'medium' | 'none';
 
 function getDotLevel(dateStr: string, todayStr: string, logsForDay: MealLog[]): DotLevel {
-  if (dateStr > todayStr) return 'future';
-  if (logsForDay.length === 0) return 'none';
+  if (dateStr > todayStr) {
+    return 'future';
+  }
+  if (logsForDay.length === 0) {
+    return 'none';
+  }
 
   let loggedCal = 0;
   let plannedCal = 0;
@@ -38,11 +42,17 @@ function getDotLevel(dateStr: string, todayStr: string, logsForDay: MealLog[]): 
     plannedCal += ml.planned_snapshot?.total_calories ?? 0;
   }
 
-  if (plannedCal <= 0) return loggedCal > 0 ? 'high' : 'none';
+  if (plannedCal <= 0) {
+    return loggedCal > 0 ? 'high' : 'none';
+  }
 
   const percent = (loggedCal / plannedCal) * 100;
-  if (percent >= 80) return 'high';
-  if (percent >= 50) return 'medium';
+  if (percent >= 80) {
+    return 'high';
+  }
+  if (percent >= 50) {
+    return 'medium';
+  }
   return 'low';
 }
 
@@ -83,7 +93,9 @@ export default function WeeklySummaryStrip({
   }, [dates, allLogs, todayStr, selectedStr]);
 
   const handleTap = (dateStr: string, level: DotLevel) => {
-    if (level === 'future') return;
+    if (level === 'future') {
+      return;
+    }
     onSelectDate(new Date(dateStr + 'T00:00:00'));
   };
 

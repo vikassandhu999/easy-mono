@@ -46,9 +46,13 @@ export default function ExercisePicker({
 
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const exercise = exerciseMap.get(id);
       if (exercise) {
         onSelect(exercise);

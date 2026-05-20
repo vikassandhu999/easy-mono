@@ -3,9 +3,8 @@ import {Copy, Plus, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
 import type {Meal} from '@/api/meals';
-import type {PlanItem} from '@/api/nutritionPlans';
-
 import {useCreateMealMutation} from '@/api/meals';
+import type {PlanItem} from '@/api/nutritionPlans';
 import {
   useCopyNutritionPlanDayMutation,
   useCreatePlanItemMutation,
@@ -243,7 +242,9 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                             isDisabled={!copyTargetDay}
                             isPending={isCopying}
                             onPress={async () => {
-                              if (!copyTargetDay) return;
+                              if (!copyTargetDay) {
+                                return;
+                              }
                               try {
                                 await copyDay({
                                   id: planId,
@@ -314,7 +315,6 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                   <div className="flex min-w-0 items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <MealPicker
-                        // eslint-disable-next-line jsx-a11y/no-autofocus
                         autoFocus
                         meals={meals}
                         onCreate={(name) => handleCreateAndAssign(selectedDay, mealType.value, name)}

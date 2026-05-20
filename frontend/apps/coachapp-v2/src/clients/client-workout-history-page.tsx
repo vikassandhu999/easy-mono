@@ -2,14 +2,12 @@ import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useMemo} from 'react';
 import {useParams} from 'react-router-dom';
-
-import type {WorkoutSession} from '@/api/workoutSessions';
-
 import InfiniteList from '@/@components/infinite-list';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
 import {useGetClientQuery} from '@/api/clients';
+import type {WorkoutSession} from '@/api/workoutSessions';
 import {useWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
 import {SessionCard} from '@/clients/components/client-workout-history';
 
@@ -24,7 +22,9 @@ export default function ClientWorkoutHistoryPage() {
   });
 
   const sessions = useMemo<WorkoutSession[]>(() => {
-    if (!data?.pages) return [];
+    if (!data?.pages) {
+      return [];
+    }
     return data.pages.flatMap((page) => page.data);
   }, [data]);
 

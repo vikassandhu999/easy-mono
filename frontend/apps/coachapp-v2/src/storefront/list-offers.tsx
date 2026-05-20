@@ -16,7 +16,9 @@ export default function ListOffers() {
   const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useOffersInfiniteQuery();
 
   const offers = useMemo<Offer[]>(() => {
-    if (!data?.pages) return [];
+    if (!data?.pages) {
+      return [];
+    }
     return data.pages.flatMap((page) => page.data);
   }, [data]);
 

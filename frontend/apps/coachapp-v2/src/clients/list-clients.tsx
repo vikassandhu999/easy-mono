@@ -28,7 +28,9 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 function getOptionLabel(option: FilterOption, summary: ClientSummary | undefined): string {
-  if (!summary || !option.summaryKey) return option.label;
+  if (!summary || !option.summaryKey) {
+    return option.label;
+  }
   const count = (summary as Record<string, number>)[option.summaryKey];
   return count ? `${option.label} (${count})` : option.label;
 }

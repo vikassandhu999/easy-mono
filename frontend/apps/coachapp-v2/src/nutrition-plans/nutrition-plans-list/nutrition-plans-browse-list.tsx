@@ -2,13 +2,11 @@ import {memo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
-
-import type {NutritionPlansListFilters} from './types';
-
 import NutritionPlanEmptyState from './nutrition-plan-empty-state';
 import NutritionPlanListBox from './nutrition-plan-list-box';
 import NutritionPlanListItem from './nutrition-plan-list-item';
 import NutritionPlansListQuery from './nutrition-plans-list-query';
+import type {NutritionPlansListFilters} from './types';
 
 type Props = NutritionPlansListFilters & {
   hasFilter: boolean;

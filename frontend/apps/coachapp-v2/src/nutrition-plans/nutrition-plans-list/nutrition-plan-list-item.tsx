@@ -13,7 +13,9 @@ const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 function getNutritionPlanSubtitle(plan: NutritionPlan): string {
   const mealCount = plan.meals?.length ?? 0;
 
-  if (mealCount > 0) return `${mealCount} meal${mealCount !== 1 ? 's' : ''}`;
+  if (mealCount > 0) {
+    return `${mealCount} meal${mealCount !== 1 ? 's' : ''}`;
+  }
   return plan.description || 'No meals yet';
 }
 

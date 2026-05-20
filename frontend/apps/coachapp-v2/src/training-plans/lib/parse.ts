@@ -7,9 +7,13 @@
  */
 
 export function parseNonNegativeNumber(value: string): null | number {
-  if (!value.trim()) return null;
+  if (!value.trim()) {
+    return null;
+  }
   const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return null;
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
   return Math.max(0, parsed);
 }
 
@@ -19,8 +23,12 @@ export function parseNonNegativeInt(value: string): null | number {
 }
 
 export function parseOptionalNumber(value: null | string | undefined): null | number {
-  if (value == null) return null;
-  if (!value.trim()) return null;
+  if (value == null) {
+    return null;
+  }
+  if (!value.trim()) {
+    return null;
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }

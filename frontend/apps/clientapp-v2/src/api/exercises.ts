@@ -1,7 +1,6 @@
-import type {ExerciseForce, ExerciseMechanics} from '@/api/trainingPlans';
-
 import {api} from '@/api/base';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
+import type {ExerciseForce, ExerciseMechanics} from '@/api/trainingPlans';
 
 // ── Muscle / Equipment ───────────────────────────────────────
 

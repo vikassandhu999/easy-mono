@@ -7,7 +7,9 @@ const AUTH_ROUTES = new Set(['/login', '/verify-login']);
 const AUTH_ROUTE_PREFIXES = ['/invite/'];
 
 function isAuthRoute(pathname: string): boolean {
-  if (AUTH_ROUTES.has(pathname)) return true;
+  if (AUTH_ROUTES.has(pathname)) {
+    return true;
+  }
   return AUTH_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 

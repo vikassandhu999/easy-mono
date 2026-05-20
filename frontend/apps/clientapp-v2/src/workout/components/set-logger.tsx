@@ -3,14 +3,13 @@ import {Check, Circle, Pencil, Plus, SkipForward, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
 
 import type {ClientPerformedSet, PlannedSnapshotSet} from '@/api/workoutSessions';
-import type {WorkoutExercise} from '@/workout/components/workout-types';
-
 import {
   useDeletePerformedSetMutation,
   useLogPerformedSetMutation,
   useUpdatePerformedSetMutation,
 } from '@/api/workoutSessions';
 import RestTimer from '@/workout/components/rest-timer';
+import type {WorkoutExercise} from '@/workout/components/workout-types';
 
 const LOAD_UNITS = ['kg', 'lbs', 'bodyweight'] as const;
 type LoadUnitOption = (typeof LOAD_UNITS)[number];
@@ -27,40 +26,58 @@ function nextLoadUnit(current: LoadUnitOption): LoadUnitOption {
 }
 
 function toLoadUnitOption(unit: null | string): LoadUnitOption {
-  if (unit === 'lbs') return 'lbs';
-  if (unit === 'bodyweight') return 'bodyweight';
+  if (unit === 'lbs') {
+    return 'lbs';
+  }
+  if (unit === 'bodyweight') {
+    return 'bodyweight';
+  }
   return 'kg';
 }
 
 function parseLoadValue(value: string): null | number {
-  if (!value.trim()) return null;
+  if (!value.trim()) {
+    return null;
+  }
   const num = parseFloat(value);
   return isNaN(num) ? null : num;
 }
 
 function formatLoad(value: null | string, unit: null | string): string {
-  if (!value) return '';
-  if (unit === 'bodyweight') return 'BW';
-  if (!unit || unit === 'none') return String(value);
+  if (!value) {
+    return '';
+  }
+  if (unit === 'bodyweight') {
+    return 'BW';
+  }
+  if (!unit || unit === 'none') {
+    return String(value);
+  }
   return `${value} ${unit}`;
 }
 
 function formatPlannedTarget(planned: PlannedSnapshotSet | undefined): string {
-  if (!planned) return 'Plan: —';
+  if (!planned) {
+    return 'Plan: —';
+  }
   const reps = planned.target_reps ? `${planned.target_reps}` : '—';
   const load = formatLoad(planned.load_value, planned.load_unit);
   return `Plan: ${reps}${load ? ` @ ${load}` : ''}`;
 }
 
 function formatNextSetSummary(planned: PlannedSnapshotSet | undefined, setIndex: number): null | string {
-  if (!planned) return null;
+  if (!planned) {
+    return null;
+  }
   const reps = planned.target_reps ? `${planned.target_reps}` : '—';
   const load = formatLoad(planned.load_value, planned.load_unit);
   return `Set ${setIndex + 1} · ${reps}${load ? ` @ ${load}` : ''}`;
 }
 
 function formatDoneTarget(set: ClientPerformedSet): string {
-  if (!set.completed) return 'Done: skipped';
+  if (!set.completed) {
+    return 'Done: skipped';
+  }
   const reps = set.actual_reps ?? '—';
   const load = formatLoad(set.load_value, set.load_unit);
   return `Done: ${reps}${load ? ` @ ${load}` : ''}`;

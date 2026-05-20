@@ -3,7 +3,9 @@ import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {ArrowLeft, Calendar, Dumbbell} from 'lucide-react';
 import {useMemo} from 'react';
 import {useParams} from 'react-router-dom';
-
+import PageLayout from '@/@components/page-layout';
+import {ROUTES} from '@/@config/routes';
+import {useGoBack} from '@/@hooks/use-go-back';
 import type {
   ClientTrainingPlanItem,
   ClientWorkout,
@@ -12,10 +14,6 @@ import type {
   TrainingPlanStatus,
   TrainingWeekday,
 } from '@/api/trainingPlans';
-
-import PageLayout from '@/@components/page-layout';
-import {ROUTES} from '@/@config/routes';
-import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientTrainingPlanQuery} from '@/api/trainingPlans';
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
@@ -26,16 +24,28 @@ const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'wa
 const UNKNOWN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
 function formatLoad(set: PlannedSet): string {
-  if (!set.load_value) return '';
-  if (set.load_unit === 'bodyweight') return 'BW';
-  if (set.load_unit === 'none' || !set.load_unit) return '';
-  if (set.load_unit === 'percent_1rm') return `${set.load_value}% 1RM`;
-  if (set.load_unit === 'rpe') return `RPE ${set.load_value}`;
+  if (!set.load_value) {
+    return '';
+  }
+  if (set.load_unit === 'bodyweight') {
+    return 'BW';
+  }
+  if (set.load_unit === 'none' || !set.load_unit) {
+    return '';
+  }
+  if (set.load_unit === 'percent_1rm') {
+    return `${set.load_value}% 1RM`;
+  }
+  if (set.load_unit === 'rpe') {
+    return `RPE ${set.load_value}`;
+  }
   return `${set.load_value}${set.load_unit}`;
 }
 
 function formatSetSummary(sets: PlannedSet[]): string {
-  if (sets.length === 0) return 'No sets';
+  if (sets.length === 0) {
+    return 'No sets';
+  }
   const first = sets[0]!;
   const reps = first.target_reps ?? '\u2014';
   const load = formatLoad(first);

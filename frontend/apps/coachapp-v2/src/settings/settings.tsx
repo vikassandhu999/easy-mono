@@ -197,7 +197,9 @@ export default function Settings() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   const profile = data.data;
 

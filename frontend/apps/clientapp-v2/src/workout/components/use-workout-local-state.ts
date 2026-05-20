@@ -28,7 +28,9 @@ function getStorageKey(sessionId: string): string {
 function loadState(sessionId: string): WorkoutLocalState {
   try {
     const raw = sessionStorage.getItem(getStorageKey(sessionId));
-    if (!raw) return emptyState();
+    if (!raw) {
+      return emptyState();
+    }
     const parsed: SerializedState = JSON.parse(raw);
     return {
       addedExercises: parsed.addedExercises ?? [],
@@ -88,7 +90,9 @@ export function useWorkoutLocalState(sessionId: null | string) {
   }, [addedExercises, replacements, skippedElementIds]);
 
   const persist = useCallback(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      return;
+    }
     saveState(sessionId, stateRef.current);
   }, [sessionId]);
 

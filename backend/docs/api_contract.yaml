@@ -746,10 +746,10 @@ paths:
         Creates a performed set within the client's active workout session.
         Links to exercise_id (required) and optionally workout_element_id for
         planned exercise slots. Position is a global counter across all exercises
-        in the session. Frontend pattern - call after client taps "Log set" or
-        the one-tap checkbox; optimistically add the set to local state, rollback
-        on error. Invalidate the parent WorkoutSession cache to refetch with the
-        new set.
+        in the session. Invalid exercise_id or workout_element_id values return
+        422. Frontend pattern - call after client taps "Log set" or the one-tap
+        checkbox; optimistically add the set to local state, rollback on error.
+        Invalidate the parent WorkoutSession cache to refetch with the new set.
       operationId: createClientPerformedSet
       security:
         - bearerAuth: []
@@ -787,8 +787,9 @@ paths:
       summary: Update a logged set
       description: >-
         Updates any fields on a performed set. Used when the client edits a
-        previously logged set (e.g., correcting reps or load). Frontend pattern -
-        optimistic update, rollback on error.
+        previously logged set (e.g., correcting reps or load). Invalid
+        exercise_id values return 422. Frontend pattern - optimistic update,
+        rollback on error.
       operationId: updateClientPerformedSet
       security:
         - bearerAuth: []
@@ -3470,7 +3471,8 @@ paths:
         Creates a day-to-workout mapping entry used by the weekly plan schedule.
         Each item links a workout to a specific weekday at a specific
         workout_type slot. Uniqueness is enforced on (plan, day, workout_type)
-        — only one PlanItem per slot, duplicates return 422. MVP uses
+        — only one PlanItem per slot, duplicates return 422. A workout_id that
+        does not belong to the selected training plan also returns 422. MVP uses
         `primary` only; `alternative` is reserved for a future iteration.
         Frontend pattern - optimistically add item to the selected day column
         and reconcile from 201 payload; on 422 surface the field error
@@ -3689,7 +3691,7 @@ paths:
   /v1/coach/workout_elements:
     post:
       summary: Create workout element
-      description: Adds an exercise block to a workout with an inline add-exercise form; frontend sends one entry in planned_sets per set (N identical entries for N sets). Frontend pattern - optimistic append/insert and sync order with the returned payload; show the 422 validation response inline on the form (e.g. empty planned_sets or non-positive load_value).
+      description: Adds an exercise block to a workout with an inline add-exercise form; frontend sends one entry in planned_sets per set (N identical entries for N sets). Invalid exercise_id values return 422. Frontend pattern - optimistic append/insert and sync order with the returned payload; show the 422 validation response inline on the form (e.g. empty planned_sets, non-positive load_value, or invalid exercise_id).
       operationId: createWorkoutElement
       security:
         - bearerAuth: []
@@ -3758,7 +3760,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       summary: Update workout element
-      description: Saves changes to exercise selection, ordering, notes, and planned sets from inline edits. The planned_sets array is replaced entirely on each update; changing the Sets count means sending N entries (all identical). Frontend pattern - optimistic edit with rollback on 422.
+      description: Saves changes to exercise selection, ordering, notes, and planned sets from inline edits. The planned_sets array is replaced entirely on each update; changing the Sets count means sending N entries (all identical). Invalid exercise_id values return 422. Frontend pattern - optimistic edit with rollback on 422.
       operationId: updateWorkoutElement
       security:
         - bearerAuth: []
@@ -3990,7 +3992,8 @@ paths:
         Records a single performed set within an active workout session. Called each time
         the client completes (or skips) a set during a workout. When logging against a planned
         workout, include workout_element_id to link the set to the planned exercise slot.
-        For freestyle exercises (not in the plan), omit workout_element_id.
+        For freestyle exercises (not in the plan), omit workout_element_id. Invalid
+        exercise_id or workout_element_id values return 422.
         Frontend pattern - call immediately after user taps "Log set" or the one-tap checkbox;
         optimistic update to the set table, reconcile with response.
       operationId: createPerformedSet
@@ -4058,8 +4061,9 @@ paths:
       summary: Update a performed set
       description: >-
         Updates a previously logged set. Used when the client corrects reps, load,
-        or other values after initial logging. Frontend pattern - call on blur/save
-        from the set editing UI; optimistic update, reconcile with response.
+        or other values after initial logging. Invalid exercise_id values return
+        422. Frontend pattern - call on blur/save from the set editing UI;
+        optimistic update, reconcile with response.
       operationId: updatePerformedSet
       security:
         - bearerAuth: []

@@ -49,20 +49,30 @@ defmodule Easy.Training.TrainingPlan do
     :rest_days
   ]
 
-  @relationship_fields [:client_id, :original_template_id]
-
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, author_id, attrs) do
-    base_insert_changeset(business_id, author_id, attrs)
-    |> reject_relationship_fields(attrs)
-  end
-
-  defp base_insert_changeset(business_id, author_id, attrs, relationship_changes \\ []) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:author_id, author_id)
-    |> put_relationship_changes(relationship_changes)
+    |> common_validations()
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:author_id)
+    |> foreign_key_constraint(:client_id)
+    |> foreign_key_constraint(:original_template_id)
+  end
+
+  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(plan, attrs) do
+    plan
+    |> cast(attrs, @cast_fields)
+    |> common_validations()
+    |> foreign_key_constraint(:client_id)
+    |> foreign_key_constraint(:original_template_id)
+  end
+
+  defp common_validations(changeset) do
+    changeset
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
@@ -76,47 +86,6 @@ defmodule Easy.Training.TrainingPlan do
       name: :assigned_plans_have_dates,
       message: "assigned plans must have start and end dates"
     )
-    |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:author_id)
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:original_template_id)
-  end
-
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(plan, attrs) do
-    plan
-    |> cast(attrs, @cast_fields)
-    |> reject_relationship_fields(attrs)
-    |> validate_length(:name, max: 255)
-    |> validate_length(:description, max: 5000)
-    |> validate_date_range()
-    |> validate_rest_days()
-    |> check_constraint(:start_date,
-      name: :valid_date_range,
-      message: "end date must be after start date"
-    )
-    |> check_constraint(:start_date,
-      name: :assigned_plans_have_dates,
-      message: "assigned plans must have start and end dates"
-    )
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:original_template_id)
-  end
-
-  defp put_relationship_changes(changeset, relationship_changes) do
-    Enum.reduce(relationship_changes, changeset, fn {field, value}, changeset ->
-      put_change(changeset, field, value)
-    end)
-  end
-
-  defp reject_relationship_fields(changeset, attrs) do
-    Enum.reduce(@relationship_fields, changeset, fn field, changeset ->
-      if Map.has_key?(attrs, field) || Map.has_key?(attrs, Atom.to_string(field)) do
-        add_error(changeset, field, "cannot be set directly")
-      else
-        changeset
-      end
-    end)
   end
 
   defp validate_date_range(changeset) do
@@ -240,30 +209,13 @@ defmodule Easy.Training.TrainingPlan do
 
   @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
   def duplicate(plan) do
-    copy_name = generate_copy_name(plan.name, plan.business_id)
-    plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
+    attrs = %{
+      name: generate_copy_name(plan.name, plan.business_id),
+      description: plan.description,
+      rest_days: plan.rest_days
+    }
 
-    Repo.transaction(fn ->
-      attrs = %{
-        name: copy_name,
-        description: plan.description,
-        rest_days: plan.rest_days
-      }
-
-      relationship_changes = [original_template_id: plan.id]
-
-      case base_insert_changeset(plan.business_id, plan.author_id, attrs, relationship_changes)
-           |> Repo.insert() do
-        {:ok, new_plan} ->
-          workout_id_map = copy_workouts(plan.workouts, new_plan)
-          copy_plan_items(plan.plan_items, new_plan, workout_id_map)
-
-          preload_full(new_plan)
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
+    clone_plan(plan, attrs, original_template_id: plan.id)
   end
 
   @spec assign_to_client(
@@ -277,30 +229,40 @@ defmodule Easy.Training.TrainingPlan do
   def assign_to_client(_plan, "", _start_date, _end_date), do: {:error, :not_found}
 
   def assign_to_client(plan, client_id, start_date, end_date) do
+    attrs = %{
+      name: plan.name,
+      description: plan.description,
+      rest_days: plan.rest_days,
+      start_date: start_date,
+      end_date: end_date
+    }
+
+    clone_plan(plan, attrs, client_id: client_id, original_template_id: plan.id)
+  end
+
+  defp clone_plan(plan, attrs, relationship_changes) do
     plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
 
     Repo.transaction(fn ->
-      attrs = %{
-        name: plan.name,
-        description: plan.description,
-        rest_days: plan.rest_days,
-        start_date: start_date,
-        end_date: end_date
-      }
+      changeset =
+        insert_changeset(plan.business_id, plan.author_id, attrs)
+        |> put_relationship_changes(relationship_changes)
 
-      relationship_changes = [client_id: client_id, original_template_id: plan.id]
-
-      case base_insert_changeset(plan.business_id, plan.author_id, attrs, relationship_changes)
-           |> Repo.insert() do
+      case Repo.insert(changeset) do
         {:ok, new_plan} ->
           workout_id_map = copy_workouts(plan.workouts, new_plan)
           copy_plan_items(plan.plan_items, new_plan, workout_id_map)
-
           preload_full(new_plan)
 
         {:error, reason} ->
           Repo.rollback(reason)
       end
+    end)
+  end
+
+  defp put_relationship_changes(changeset, relationship_changes) do
+    Enum.reduce(relationship_changes, changeset, fn {field, value}, changeset ->
+      put_change(changeset, field, value)
     end)
   end
 

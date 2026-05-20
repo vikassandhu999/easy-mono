@@ -52,11 +52,11 @@ defmodule Easy.Training.PlannedSet do
   end
 
   defp validate_has_target(changeset) do
-    has_reps = get_field(changeset, :target_reps)
-    has_duration = get_field(changeset, :duration_seconds)
-    has_distance = get_field(changeset, :distance_value)
+    reps = get_field(changeset, :target_reps)
+    duration = get_field(changeset, :duration_seconds)
+    distance = get_field(changeset, :distance_value)
 
-    if !has_reps && !has_duration && !has_distance do
+    if blank?(reps) and is_nil(duration) and is_nil(distance) do
       add_error(
         changeset,
         :target_reps,
@@ -66,6 +66,11 @@ defmodule Easy.Training.PlannedSet do
       changeset
     end
   end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(_), do: false
 
   defp validate_load_unit(changeset) do
     load = get_field(changeset, :load_value)

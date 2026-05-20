@@ -29,6 +29,19 @@ defmodule Easy.Training.WorkoutElement do
 
   @cast_fields [:position, :superset_group_id, :notes, :exercise_id]
 
+  @spec to_snapshot(t()) :: map()
+  def to_snapshot(%__MODULE__{} = element) do
+    %{
+      "element_id" => element.id,
+      "position" => element.position,
+      "superset_group_id" => element.superset_group_id,
+      "notes" => element.notes,
+      "exercise_id" => element.exercise_id,
+      "exercise_name" => element.exercise.name,
+      "planned_sets" => Enum.map(element.planned_sets, &PlannedSet.to_snapshot/1)
+    }
+  end
+
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(workout_id, business_id, attrs) do
     %__MODULE__{}

@@ -162,46 +162,19 @@ defmodule Easy.Training.WorkoutSession do
   defp build_snapshot(business_id, workout_id) do
     element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
 
-    workout =
-      Workout
-      |> Workout.for_business(business_id)
-      |> Repo.get(workout_id)
-      |> Repo.preload(workout_elements: element_query)
-
-    case workout do
+    Workout
+    |> Workout.for_business(business_id)
+    |> Repo.get(workout_id)
+    |> case do
       nil ->
         nil
 
       workout ->
+        workout = Repo.preload(workout, workout_elements: element_query)
+
         %{
           "workout_name" => workout.name,
-          "elements" =>
-            Enum.map(workout.workout_elements, fn element ->
-              %{
-                "element_id" => element.id,
-                "position" => element.position,
-                "superset_group_id" => element.superset_group_id,
-                "notes" => element.notes,
-                "exercise_id" => element.exercise_id,
-                "exercise_name" => element.exercise.name,
-                "planned_sets" =>
-                  Enum.map(element.planned_sets, fn set ->
-                    %{
-                      "target_reps" => set.target_reps,
-                      "load_value" => set.load_value && Decimal.to_string(set.load_value),
-                      "load_unit" => set.load_unit && Atom.to_string(set.load_unit),
-                      "rest_seconds" => set.rest_seconds,
-                      "duration_seconds" => set.duration_seconds,
-                      "distance_value" =>
-                        set.distance_value && Decimal.to_string(set.distance_value),
-                      "distance_unit" => set.distance_unit && Atom.to_string(set.distance_unit),
-                      "intensity_target" => set.intensity_target,
-                      "tempo" => set.tempo,
-                      "notes" => set.notes
-                    }
-                  end)
-              }
-            end)
+          "elements" => Enum.map(workout.workout_elements, &WorkoutElement.to_snapshot/1)
         }
     end
   end

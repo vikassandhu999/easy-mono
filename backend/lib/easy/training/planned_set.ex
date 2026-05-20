@@ -37,6 +37,22 @@ defmodule Easy.Training.PlannedSet do
     :notes
   ]
 
+  @spec to_snapshot(t()) :: map()
+  def to_snapshot(%__MODULE__{} = set) do
+    %{
+      "target_reps" => set.target_reps,
+      "load_value" => set.load_value && Decimal.to_string(set.load_value),
+      "load_unit" => set.load_unit && Atom.to_string(set.load_unit),
+      "rest_seconds" => set.rest_seconds,
+      "duration_seconds" => set.duration_seconds,
+      "distance_value" => set.distance_value && Decimal.to_string(set.distance_value),
+      "distance_unit" => set.distance_unit && Atom.to_string(set.distance_unit),
+      "intensity_target" => set.intensity_target,
+      "tempo" => set.tempo,
+      "notes" => set.notes
+    }
+  end
+
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(planned_set, attrs) do
     planned_set

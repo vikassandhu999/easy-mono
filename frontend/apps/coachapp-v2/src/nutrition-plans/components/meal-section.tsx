@@ -9,6 +9,13 @@ import {FormNumberField, FormTextField} from '@/@components/form-fields';
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
 import {
+  mealItemToCreateRequest,
+  mealToUpdateRequest,
+  getSelectedMealItemName,
+  getSelectedMealItemServingSizes,
+  type SelectedMealItem,
+} from '@/api/mappers/meals';
+import {
   useCreateMealItemMutation,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
@@ -16,10 +23,10 @@ import {
 } from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
 import type {ServingSize} from '@/api/shared';
+import {getMealMacroSummary} from '@/domain/nutrition-plans';
 import MealItemPicker from '@/nutrition-plans/components/meal-item-picker';
 import MealItemRow from '@/nutrition-plans/components/meal-item-row';
 
-type SelectedItem = {kind: 'food'; food: Food} | {kind: 'recipe'; recipe: Recipe};
 
 const mealItemFormSchema = z.object({
   amount: z.number().min(0, 'Use 0 or higher').optional(),
@@ -176,7 +183,7 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
       return;
     }
     try {
-      await updateMeal({id: meal.id, planId, body: {name: trimmed}}).unwrap();
+      await updateMeal({id: meal.id, planId, body: mealToUpdateRequest(trimmed)}).unwrap();
       setIsEditingName(false);
     } catch {
       setEditName(meal.name);
@@ -193,32 +200,13 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
   }, []);
 
   // Inline add-item state
-  const [selectedItem, setSelectedItem] = useState<null | SelectedItem>(null);
+  const [selectedItem, setSelectedItem] = useState<null | SelectedMealItem>(null);
 
   // Track which item is being removed (for loading state per row)
   const [removingItemId, setRemovingItemId] = useState<null | string>(null);
 
   // Compute per-meal macro totals
-  const mealMacros = useMemo(() => {
-    // If server provides pre-computed macros, use them
-    if (meal.macros && (meal.macros.calories || meal.macros.protein_g)) {
-      return meal.macros;
-    }
-    // Otherwise compute client-side from resolved food/recipe macros
-    let calories = 0;
-    let proteinG = 0;
-    for (const item of meal.meal_items) {
-      const itemMacros = item.food?.macros ?? item.recipe?.macros;
-      if (!itemMacros) {
-        continue;
-      }
-      // Macros are per 100g. Scale by weight_g/100, or fall back to amount, or 1.
-      const multiplier = item.weight_g != null ? item.weight_g / 100 : (item.amount ?? 1);
-      calories += (itemMacros.calories ?? 0) * multiplier;
-      proteinG += (itemMacros.protein_g ?? 0) * multiplier;
-    }
-    return {calories, protein_g: proteinG};
-  }, [meal.macros, meal.meal_items]);
+  const mealMacros = useMemo(() => getMealMacroSummary(meal), [meal]);
 
   const existingFoodIds = meal.meal_items.filter((i) => i.food_id).map((i) => i.food_id as string);
   const existingRecipeIds = meal.meal_items.filter((i) => i.recipe_id).map((i) => i.recipe_id as string);
@@ -236,14 +224,7 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
       return;
     }
     try {
-      const unit = values.unit?.trim() || undefined;
-      const body = {
-        ...(selectedItem.kind === 'food' ? {food_id: selectedItem.food.id} : {recipe_id: selectedItem.recipe.id}),
-        ...(values.amount !== undefined && {amount: values.amount}),
-        ...(unit && {unit}),
-        ...(values.weight_g !== undefined && {weight_g: values.weight_g}),
-      };
-      await createMealItem({mealId: meal.id, planId, body}).unwrap();
+      await createMealItem({mealId: meal.id, planId, body: mealItemToCreateRequest({selectedItem, values})}).unwrap();
       setSelectedItem(null);
     } catch {
       // Error handled by RTK Query cache
@@ -269,17 +250,8 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
     }
   };
 
-  const selectedName = selectedItem
-    ? selectedItem.kind === 'food'
-      ? selectedItem.food.name
-      : selectedItem.recipe.name
-    : '';
-
-  const servingSizes: ServingSize[] = selectedItem
-    ? selectedItem.kind === 'food'
-      ? (selectedItem.food.serving_sizes ?? [])
-      : (selectedItem.recipe.serving_sizes ?? [])
-    : [];
+  const selectedName = getSelectedMealItemName(selectedItem);
+  const servingSizes: ServingSize[] = getSelectedMealItemServingSizes(selectedItem);
 
   return (
     <div

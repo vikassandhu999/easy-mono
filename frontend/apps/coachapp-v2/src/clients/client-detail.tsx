@@ -6,6 +6,7 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {clientNotesToUpdateRequest} from '@/api/mappers/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {
   type NutritionPlan,
@@ -265,7 +266,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 
   const handleSave = async () => {
     try {
-      await updateClient({id: clientId, body: {notes: draft || null}}).unwrap();
+      await updateClient({id: clientId, body: clientNotesToUpdateRequest(draft)}).unwrap();
       setIsEditing(false);
     } catch {
       toast.danger("Notes weren't saved");

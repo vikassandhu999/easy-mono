@@ -7,7 +7,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 import {type Recipe, useListRecipesQuery} from '@/api/recipes';
-import {normalizeMacros} from '@/api/shared';
 
 type PickerTab = 'food' | 'recipe';
 
@@ -161,9 +160,8 @@ export default function MealItemPicker({
                 )}
               >
                 {(food: Food) => {
-                  const m = normalizeMacros(food.macros);
-                  const cal = m.calories_per_100g;
-                  const pro = m.protein_g;
+                  const cal = food.macros.calories_per_100g;
+                  const pro = food.macros.protein_g;
                   return (
                     <ListBox.Item
                       id={food.id}
@@ -212,9 +210,8 @@ export default function MealItemPicker({
                 )}
               >
                 {(recipe: Recipe) => {
-                  const m = normalizeMacros(recipe.macros);
-                  const cal = m.calories_per_100g;
-                  const pro = m.protein_g;
+                  const cal = recipe.macros.calories_per_100g;
+                  const pro = recipe.macros.protein_g;
                   return (
                     <ListBox.Item
                       id={recipe.id}

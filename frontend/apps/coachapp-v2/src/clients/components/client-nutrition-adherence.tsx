@@ -1,84 +1,23 @@
 import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
-import type {DailyNutritionSummary} from '@/api/mealLogs';
 import {useGetCoachMealLogSummaryQuery} from '@/api/mealLogs';
 import {useListClientNutritionPlansQuery} from '@/api/nutritionPlans';
 import type {Macros} from '@/api/shared';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
+import {
+  ADHERENCE_STYLES,
+  buildRecentNutritionDaySubtitle,
+  getAdherenceLevel,
+  getCurrentWeekRange,
+  getDateForWeekdayIndex,
+  getDayPercent,
+  getPlannedDailyCalories,
+  resolveNutritionMacrosGoal,
+  type AdherenceLevel,
+} from '@/domain/client-nutrition';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-// Format a Date as YYYY-MM-DD in local time (not UTC).
-function fmtLocal(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function getWeekRange(): {from: string; to: string} {
-  const now = new Date();
-  const jsDay = now.getDay();
-  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
-
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  return {from: fmtLocal(monday), to: fmtLocal(sunday)};
-}
-
-function getDateForWeekday(weekdayIndex: number): string {
-  const {from} = getWeekRange();
-  const monday = new Date(from + 'T00:00:00');
-  const d = new Date(monday);
-  d.setDate(monday.getDate() + weekdayIndex);
-  return fmtLocal(d);
-}
-
-function isFutureDate(dateStr: string): boolean {
-  const today = fmtLocal(new Date());
-  return dateStr > today;
-}
-
-type AdherenceLevel = 'future' | 'high' | 'low' | 'medium' | 'none';
-
-function getAdherenceLevel(
-  summary: DailyNutritionSummary | undefined,
-  dateStr: string,
-  plannedCalories: number,
-): AdherenceLevel {
-  if (isFutureDate(dateStr)) {
-    return 'future';
-  }
-  if (!summary || summary.total_entries === 0) {
-    return 'none';
-  }
-  // When no plan exists, show high if client logged anything, none if not
-  if (plannedCalories <= 0) {
-    return summary.total_entries > 0 ? 'high' : 'none';
-  }
-
-  const percent = (summary.logged_calories / plannedCalories) * 100;
-  if (percent >= 80) {
-    return 'high';
-  }
-  if (percent >= 50) {
-    return 'medium';
-  }
-  return 'low';
-}
-
-const ADHERENCE_STYLES: Record<AdherenceLevel, {bg: string; icon: string}> = {
-  future: {bg: 'bg-default', icon: '\u2014'},
-  high: {bg: 'bg-success/20', icon: '\u2713'},
-  low: {bg: 'bg-danger/20', icon: '\u25CB'},
-  medium: {bg: 'bg-warning/20', icon: '\u25D0'},
-  none: {bg: 'bg-default', icon: '\u25CB'},
-};
 
 export default function ClientNutritionAdherence({
   clientId,
@@ -87,42 +26,28 @@ export default function ClientNutritionAdherence({
   clientId: string;
   macrosGoal?: Macros | null;
 }) {
-  const {from, to} = useMemo(() => getWeekRange(), []);
+  const {from, to} = useMemo(() => getCurrentWeekRange(), []);
   const {data, isLoading} = useGetCoachMealLogSummaryQuery({client_id: clientId, from, to});
   const {data: plansData} = useListClientNutritionPlansQuery({clientId});
   const [selectedDate, setSelectedDate] = useState<null | string>(null);
 
   const summaries = useMemo(() => data?.data ?? [], [data]);
 
-  // Resolve macros goal: prefer prop, fall back to active plan's macros_goal
-  const macrosGoal = useMemo(() => {
-    if (macrosGoalProp) {
-      return macrosGoalProp;
-    }
-    const activePlan = plansData?.data.find((p) => p.status === 'active');
-    return activePlan?.macros_goal ?? null;
-  }, [macrosGoalProp, plansData]);
+  const macrosGoal = useMemo(
+    () => resolveNutritionMacrosGoal({fallback: macrosGoalProp, plans: plansData?.data}),
+    [macrosGoalProp, plansData],
+  );
 
-  // Get planned daily calories from macros goal.
-  // The macros_goal on a plan stores the daily target, keyed as 'calories'.
-  // Do NOT fall back to 'calories_per_100g' — that's a per-100g value, not a daily goal.
-  const plannedCalories = useMemo(() => {
-    if (!macrosGoal) {
-      return 0;
-    }
-    return Number(macrosGoal.calories ?? 0);
-  }, [macrosGoal]);
+  const plannedCalories = useMemo(() => getPlannedDailyCalories(macrosGoal), [macrosGoal]);
 
   // Build per-day data
   const days = useMemo(() => {
     return WEEKDAYS.map((label, index) => {
-      const dateStr = getDateForWeekday(index);
+      const dateStr = getDateForWeekdayIndex(index);
       const summary = summaries.find((s) => s.date === dateStr);
       const level = getAdherenceLevel(summary, dateStr, plannedCalories);
       const style = ADHERENCE_STYLES[level];
-      // Show percentage only when there's a plan target
-      const percent =
-        summary && plannedCalories > 0 ? Math.round((summary.logged_calories / plannedCalories) * 100) : null;
+      const percent = getDayPercent(summary, plannedCalories);
 
       return {dateStr, label, level, percent, style, summary};
     });
@@ -186,18 +111,6 @@ export default function ClientNutritionAdherence({
                 .filter((s) => s.total_entries > 0)
                 .sort((a, b) => b.date.localeCompare(a.date))
                 .map((summary) => {
-                  const parts: string[] = [];
-                  if (summary.meals_logged > 0) {
-                    parts.push(`${summary.meals_logged} meals`);
-                  }
-                  parts.push(`${summary.total_entries} items`);
-                  if (summary.replacements > 0) {
-                    parts.push(`${summary.replacements} replaced`);
-                  }
-                  if (summary.unplanned_count > 0) {
-                    parts.push(`${summary.unplanned_count} added`);
-                  }
-
                   return (
                     <Button
                       className="flex min-h-11 w-full items-center gap-3 rounded-lg border border-divider px-3 py-2 text-left transition-colors hover:bg-content2 active:bg-content2"
@@ -215,7 +128,7 @@ export default function ClientNutritionAdherence({
                             {summary.planned_calories > 0 ? ` / ${Math.round(summary.planned_calories)} cal` : ' cal'}
                           </span>
                         </p>
-                        <p className="text-xs text-foreground-400">{parts.join(' \u00B7 ')}</p>
+                        <p className="text-xs text-foreground-400">{buildRecentNutritionDaySubtitle(summary)}</p>
                       </div>
                     </Button>
                   );

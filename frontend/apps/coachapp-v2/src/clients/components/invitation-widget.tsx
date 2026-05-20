@@ -3,74 +3,11 @@ import {ClipboardCopy, MessageCircle, Send, Trash2} from 'lucide-react';
 
 import {type Client, useResendClientInviteMutation, useRevokeInvitationMutation} from '@/api/clients';
 import {getApiErrorMessage} from '@/api/shared';
-
-// Inline because the monorepo's shared utils don't have relative-time
-// formatting and pulling in Intl.RelativeTimeFormat by hand keeps the
-// widget self-contained. Swap for date-fns/dayjs when one is adopted.
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-function formatSentAgo(sentAt: string): string {
-  const sentMs = new Date(sentAt).getTime();
-  const diffMs = Date.now() - sentMs;
-  if (Number.isNaN(diffMs)) {
-    return '';
-  }
-
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) {
-    return 'just now';
-  }
-  if (mins < 60) {
-    return `${mins} minute${mins === 1 ? '' : 's'} ago`;
-  }
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) {
-    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  }
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? '' : 's'} ago`;
-}
-
-/**
- * "in 28 days" / "in 1 day" / "today" / "expired". Returns a fragment suitable
- * for "Invitation expires {...}" copy. For already-expired tokens the backend
- * will have switched the lookup state, so we rarely render this path.
- */
-function formatExpiresIn(expiresAt: string): string {
-  const expiresMs = new Date(expiresAt).getTime();
-  const diffMs = expiresMs - Date.now();
-  if (Number.isNaN(diffMs)) {
-    return '';
-  }
-  if (diffMs <= 0) {
-    return 'expired';
-  }
-  const days = Math.ceil(diffMs / MS_PER_DAY);
-  if (days <= 1) {
-    return 'today';
-  }
-  return `in ${days} days`;
-}
-
-function buildWhatsAppUrl({
-  phone,
-  firstName,
-  inviteUrl,
-}: {
-  firstName: null | string;
-  inviteUrl: string;
-  phone: null | string;
-}): string {
-  // When there's a first name we personalise; when there isn't we drop the
-  // greeting entirely rather than send an awkward floating "Hi, " comma.
-  const message = firstName
-    ? `Hi ${firstName}, I've set up your coaching profile. Tap this link to get started: ${inviteUrl}`
-    : `I've set up your coaching profile. Tap this link to get started: ${inviteUrl}`;
-  const encoded = encodeURIComponent(message);
-  const cleanPhone = phone?.replace(/\D/g, '');
-  return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
-}
+import {
+  buildInvitationWhatsAppUrl,
+  formatInvitationExpiresIn,
+  formatInvitationSentAgo,
+} from '@/domain/client-invitations';
 
 interface InvitationWidgetProps {
   client: Client;
@@ -156,9 +93,9 @@ export default function InvitationWidget({client, onRevoked}: InvitationWidgetPr
     }
   };
 
-  const whatsappUrl = buildWhatsAppUrl({phone: client.phone, firstName, inviteUrl});
-  const sentAgo = client.invitation_sent_at ? formatSentAgo(client.invitation_sent_at) : null;
-  const expiresIn = client.invitation_expires_at ? formatExpiresIn(client.invitation_expires_at) : null;
+  const whatsappUrl = buildInvitationWhatsAppUrl({phone: client.phone, firstName, inviteUrl});
+  const sentAgo = client.invitation_sent_at ? formatInvitationSentAgo(client.invitation_sent_at) : null;
+  const expiresIn = client.invitation_expires_at ? formatInvitationExpiresIn(client.invitation_expires_at) : null;
 
   const resendDisabled = !client.email || isResending;
 

@@ -1,7 +1,11 @@
 import {api} from '@/api/base';
 import type {Food} from '@/api/foods';
+import {foodFromApi} from '@/api/mappers/foods';
+import {mealFromApi} from '@/api/mappers/meals';
+import {nutritionPlanFromApi} from '@/api/mappers/nutritionPlans';
 import type {Meal} from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
+import {recipeFromApi} from '@/api/mappers/recipes';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
 import type {PlanClient} from '@/api/trainingPlans';
 
@@ -30,6 +34,8 @@ export type NutritionPlan = {
   tags: string[];
   updated_at: string;
 };
+
+export type ApiNutritionPlan = NutritionPlan;
 
 export type NutritionPlanCreateRequest = {
   description?: string;
@@ -115,6 +121,20 @@ const PAGE_SIZE = 20;
 
 const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
+function mapNutritionPlanResponse(response: ApiResponse<ApiNutritionPlan>): ApiResponse<NutritionPlan> {
+  return {
+    ...response,
+    data: nutritionPlanFromApi(response.data),
+  };
+}
+
+function mapNutritionPlanListResponse(response: ApiListResponse<ApiNutritionPlan>): ApiListResponse<NutritionPlan> {
+  return {
+    ...response,
+    data: response.data.map(nutritionPlanFromApi),
+  };
+}
+
 export const nutritionPlansApi = api.injectEndpoints({
   endpoints: (build) => ({
     createNutritionPlan: build.mutation<ApiResponse<NutritionPlan>, NutritionPlanCreateRequest>({
@@ -123,6 +143,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapNutritionPlanResponse,
       invalidatesTags: [{type: 'NutritionPlan', id: 'LIST'}],
     }),
     getNutritionPlan: build.query<ApiResponse<NutritionPlan>, string>({
@@ -162,29 +183,31 @@ export const nutritionPlansApi = api.injectEndpoints({
         const foodMap = new Map<string, Food>();
         for (const r of foodResults) {
           if (!r.error && r.data) {
-            const food = (r.data as ApiResponse<Food>).data;
+            const food = foodFromApi((r.data as ApiResponse<Food>).data);
             foodMap.set(food.id, food);
           }
         }
         const recipeMap = new Map<string, Recipe>();
         for (const r of recipeResults) {
           if (!r.error && r.data) {
-            const recipe = (r.data as ApiResponse<Recipe>).data;
+            const recipe = recipeFromApi((r.data as ApiResponse<Recipe>).data);
             recipeMap.set(recipe.id, recipe);
           }
         }
 
         // 4. Merge food/recipe into each meal_item
-        const hydratedMeals: Meal[] = meals.map((meal) => ({
-          ...meal,
-          meal_items: meal.meal_items.map((item) => ({
-            ...item,
-            food: item.food ?? (item.food_id ? (foodMap.get(item.food_id) ?? null) : null),
-            recipe: item.recipe ?? (item.recipe_id ? (recipeMap.get(item.recipe_id) ?? null) : null),
-          })),
-        }));
+        const hydratedMeals: Meal[] = meals.map((meal) =>
+          mealFromApi({
+            ...meal,
+            meal_items: meal.meal_items.map((item) => ({
+              ...item,
+              food: item.food ?? (item.food_id ? (foodMap.get(item.food_id) ?? null) : null),
+              recipe: item.recipe ?? (item.recipe_id ? (recipeMap.get(item.recipe_id) ?? null) : null),
+            })),
+          }),
+        );
 
-        return {data: {data: {...plan, meals: hydratedMeals}} as ApiResponse<NutritionPlan>};
+        return {data: mapNutritionPlanResponse({data: {...plan, meals: hydratedMeals}})};
       },
       providesTags: (_, __, id) => [
         {type: 'NutritionPlan', id},
@@ -200,6 +223,7 @@ export const nutritionPlansApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/nutrition_plans',
+      transformResponse: mapNutritionPlanListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -221,6 +245,7 @@ export const nutritionPlansApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: mapNutritionPlanListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -250,6 +275,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/clients/${clientId}/nutrition_plans`,
       }),
+      transformResponse: mapNutritionPlanListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -267,6 +293,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
+      transformResponse: mapNutritionPlanResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
@@ -292,6 +319,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapNutritionPlanResponse,
       invalidatesTags: (_, __, {body, id}) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},
@@ -305,6 +333,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         url: `/v1/coach/nutrition_plans/${id}/duplicate`,
         method: 'POST',
       }),
+      transformResponse: mapNutritionPlanResponse,
       invalidatesTags: (_, __, id) => [
         {type: 'NutritionPlan', id},
         {type: 'NutritionPlan', id: 'LIST'},

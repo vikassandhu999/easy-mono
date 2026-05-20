@@ -5,43 +5,11 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import type {RecipeIngredientInput} from '@/api/recipes';
+import {recipeToCreateRequest} from '@/api/mappers/recipes';
 import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
 import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
-
-function buildMacros(data: RecipeFormValues): Record<string, number> | undefined {
-  const macros: Record<string, number> = {};
-  const keys = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
-  for (const key of keys) {
-    const val = data[key];
-    if (val !== undefined) {
-      macros[key] = val;
-    }
-  }
-  return Object.keys(macros).length > 0 ? macros : undefined;
-}
-
-function buildIngredients(items: IngredientItem[]): RecipeIngredientInput[] | undefined {
-  if (items.length === 0) {
-    return undefined;
-  }
-  return items.map((item) => ({
-    food_id: item.food_id,
-    ...(item.unit && {unit: item.unit}),
-    ...(item.amount !== '' &&
-      typeof Number(item.amount) === 'number' &&
-      !isNaN(Number(item.amount)) && {
-        amount: Number(item.amount),
-      }),
-    ...(item.weight_g !== '' &&
-      typeof Number(item.weight_g) === 'number' &&
-      !isNaN(Number(item.weight_g)) && {
-        weight_g: Number(item.weight_g),
-      }),
-  }));
-}
 
 export default function CreateRecipe() {
   const navigate = useNavigate();
@@ -53,19 +21,7 @@ export default function CreateRecipe() {
 
   const onSubmit = async (data: RecipeFormValues) => {
     try {
-      const macros = buildMacros(data);
-      const cookedWeight = data.cooked_weight_g;
-      const recipeIngredients = buildIngredients(ingredients);
-      const body = {
-        name: data.name,
-        ...(data.category && {category: data.category}),
-        ...(data.source && {source: data.source}),
-        ...(data.instructions && {instructions: data.instructions}),
-        ...(cookedWeight !== undefined && {cooked_weight_g: cookedWeight}),
-        ...(macros && {macros}),
-        ...(recipeIngredients && {recipe_ingredients: recipeIngredients}),
-      };
-      const result = await createRecipe(body).unwrap();
+      const result = await createRecipe(recipeToCreateRequest({ingredients, values: data})).unwrap();
       navigate(`/library/recipes/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Recipe wasn't created. Check the details and try again", form.setError);

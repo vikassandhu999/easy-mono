@@ -1,12 +1,4 @@
-import {
-  compareTrainingWeekdays,
-  formatUsedOnDays,
-  getWorkoutUsedOnDays,
-  sortPlanItems,
-  TRAINING_DAY_LABELS,
-  TRAINING_DAY_SHORT_LABELS,
-  TRAINING_WEEKDAYS,
-} from '@easy/utils';
+import {TRAINING_DAY_LABELS, TRAINING_DAY_SHORT_LABELS, TRAINING_WEEKDAYS} from '@easy/utils';
 import {AlertDialog, Button, Dropdown, toast} from '@heroui/react';
 import {Check, MoreHorizontal, Plus} from 'lucide-react';
 import {useMemo, useState} from 'react';
@@ -22,11 +14,31 @@ import {
   useDuplicateWorkoutMutation,
   useUpdateTrainingPlanMutation,
 } from '@/api/trainingPlans';
+import {
+  buildClearRestDayUpdate,
+  buildConflictDaysLabel,
+  buildExerciseCountLabel,
+  buildRestDaysUpdate,
+  buildWeeklySummaryLabel,
+  createDayStates,
+  createPlanItemsByDay,
+  createRestDaysSet,
+  createWorkoutsById,
+  findWorkoutById,
+  getAssignedDays,
+  getCopyTargets,
+  getPrimaryAssignedItem,
+  getRowContentMeta,
+  getTakenPrimaryDays,
+  getWorkoutUsageLabel,
+  sortWorkoutsByName,
+  summarizeDayStates,
+  toggleWeekdaySelection,
+  type DayState,
+} from '@/domain/training-weekly-overview';
 import WorkoutNameForm, {type WorkoutNameFormValues} from '@/training-plans/components/workout-name-form';
 
 // ── Types ────────────────────────────────────────────────────────────
-
-type DayState = {items: [TrainingPlanItem, ...TrainingPlanItem[]]; kind: 'assigned'} | {kind: 'empty'} | {kind: 'rest'};
 
 type WeeklyOverviewProps = {
   /**
@@ -46,67 +58,22 @@ type WeeklyOverviewProps = {
 
 export default function WeeklyOverview({onScrollToWorkout, onWorkoutCreated, plan}: WeeklyOverviewProps) {
   // Lookup tables computed once per plan change.
-  const workoutsById = useMemo(() => {
-    const map = new Map<string, Workout>();
-    for (const workout of plan.workouts) {
-      map.set(workout.id, workout);
-    }
-    return map;
-  }, [plan.workouts]);
+  const workoutsById = useMemo(() => createWorkoutsById(plan.workouts), [plan.workouts]);
 
-  const planItemsByDay = useMemo(() => {
-    const map = new Map<TrainingWeekday, TrainingPlanItem[]>();
-    for (const day of TRAINING_WEEKDAYS) {
-      map.set(day, []);
-    }
-    for (const item of plan.plan_items) {
-      map.get(item.day)?.push(item);
-    }
-    for (const [day, items] of map) {
-      map.set(day, sortPlanItems(items));
-    }
-    return map;
-  }, [plan.plan_items]);
+  const planItemsByDay = useMemo(() => createPlanItemsByDay(plan.plan_items), [plan.plan_items]);
 
-  const restDays = useMemo(() => new Set(plan.rest_days), [plan.rest_days]);
+  const restDays = useMemo(() => createRestDaysSet(plan.rest_days), [plan.rest_days]);
 
   // Per-day state derivation. Assigned takes precedence over rest — if a day
   // has plan items AND is in rest_days we render it as assigned (backend
   // shouldn't allow that combination, but defensive).
-  const dayStates = useMemo<Map<TrainingWeekday, DayState>>(() => {
-    const map = new Map<TrainingWeekday, DayState>();
-    for (const day of TRAINING_WEEKDAYS) {
-      const items = planItemsByDay.get(day) ?? [];
-      const [first, ...rest] = items;
-      if (first) {
-        // Destructuring lets TS narrow to a non-empty tuple without an
-        // `unknown` cast. `rest` collects any alternatives after the first.
-        map.set(day, {items: [first, ...rest], kind: 'assigned'});
-      } else if (restDays.has(day)) {
-        map.set(day, {kind: 'rest'});
-      } else {
-        map.set(day, {kind: 'empty'});
-      }
-    }
-    return map;
-  }, [planItemsByDay, restDays]);
+  const dayStates = useMemo<Map<TrainingWeekday, DayState>>(
+    () => createDayStates({planItemsByDay, restDays}),
+    [planItemsByDay, restDays],
+  );
 
   // Summary for the section header.
-  const summary = useMemo(() => {
-    let workouts = 0;
-    let rest = 0;
-    let empty = 0;
-    for (const state of dayStates.values()) {
-      if (state.kind === 'assigned') {
-        workouts += 1;
-      } else if (state.kind === 'rest') {
-        rest += 1;
-      } else {
-        empty += 1;
-      }
-    }
-    return {empty, rest, workouts};
-  }, [dayStates]);
+  const summary = useMemo(() => summarizeDayStates(dayStates), [dayStates]);
 
   // One row can be expanded at a time (shows the Assign / Create / Copy
   // sub-UI). Collapsing on day change keeps the list compact.
@@ -123,10 +90,7 @@ export default function WeeklyOverview({onScrollToWorkout, onWorkoutCreated, pla
       {/* Section header: title + summary. Stacked on mobile, inline on desktop. */}
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-400">Weekly schedule</h3>
-        <p className="text-xs text-foreground-400">
-          {summary.workouts} workout{summary.workouts !== 1 ? 's' : ''} · {summary.rest} rest
-          {summary.rest !== 1 ? ' days' : ' day'} · {summary.empty} empty
-        </p>
+        <p className="text-xs text-foreground-400">{buildWeeklySummaryLabel(summary)}</p>
       </div>
 
       {/* Single outer container, 7 rows stacked inside. */}
@@ -326,12 +290,12 @@ function RowContent({state, workoutsById}: {state: DayState; workoutsById: Map<s
   // Assigned — if there are multiple workouts on the day (primary +
   // alternatives), show primary as the headline and count alternatives in
   // the subtitle.
-  const primary = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
-  const alternatives = state.items.filter((it) => it.id !== primary.id);
-  const workout = workoutsById.get(primary.workout_id);
-  const isMissing = !workout;
-  const exerciseCount = workout ? workout.workout_elements.length : 0;
-  const isIncomplete = !isMissing && exerciseCount === 0;
+  const meta = getRowContentMeta({state, workoutsById});
+  const workout = meta?.workout ?? null;
+  const isMissing = meta?.isMissing ?? false;
+  const isIncomplete = meta?.isIncomplete ?? false;
+  const exerciseCount = meta?.exerciseCount ?? 0;
+  const alternativeCount = meta?.alternativeCount ?? 0;
 
   return (
     <div className="min-w-0">
@@ -348,9 +312,7 @@ function RowContent({state, workoutsById}: {state: DayState; workoutsById: Map<s
           ? 'Workout was removed'
           : isIncomplete
             ? 'No exercises yet'
-            : `${exerciseCount} exercise${exerciseCount !== 1 ? 's' : ''}${
-                alternatives.length > 0 ? ` · +${alternatives.length} alt` : ''
-              }`}
+            : buildExerciseCountLabel(exerciseCount, alternativeCount)}
       </p>
     </div>
   );
@@ -409,7 +371,7 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
   const [updatePlan, {isLoading: isUpdatingRest}] = useUpdateTrainingPlanMutation();
 
   // State values used in menus / dialogs. Computed once per render.
-  const primaryItem = state.kind === 'assigned' ? state.items[0] : null;
+  const primaryItem = state.kind === 'assigned' ? getPrimaryAssignedItem(state) : null;
   const primaryWorkout = primaryItem ? (workoutsById.get(primaryItem.workout_id) ?? null) : null;
 
   const close = () => setIsOpen(false);
@@ -450,9 +412,8 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
 
   const handleClearRest = async () => {
     close();
-    const next = [...new Set(plan.rest_days.filter((value) => value !== day))].sort(compareTrainingWeekdays);
     try {
-      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+      await updatePlan({id: plan.id, body: {rest_days: buildClearRestDayUpdate(plan.rest_days, day)}}).unwrap();
     } catch {
       toast.danger('Failed to clear rest day.');
     }
@@ -467,8 +428,7 @@ function DayOverflowMenu({day, onToggleExpand, onWorkoutCreated, plan, state, wo
       for (const item of state.items) {
         await deletePlanItem({id: item.id, planId: item.training_plan_id}).unwrap();
       }
-      const next = [...new Set([day, ...plan.rest_days])].sort(compareTrainingWeekdays);
-      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+      await updatePlan({id: plan.id, body: {rest_days: buildRestDaysUpdate(plan.rest_days, day)}}).unwrap();
       setConfirmKind(null);
     } catch {
       toast.danger('Failed to mark rest day.');
@@ -784,18 +744,10 @@ function AssignPanel({
   const [showCopyFrom, setShowCopyFrom] = useState(false);
   const [conflictMessage, setConflictMessage] = useState<null | string>(null);
 
-  const workouts = useMemo(() => [...plan.workouts].sort((a, b) => a.name.localeCompare(b.name)), [plan.workouts]);
+  const workouts = useMemo(() => sortWorkoutsByName(plan.workouts), [plan.workouts]);
 
   // Days that already have an assigned workout — targets for "copy from".
-  const assignedDays = useMemo(() => {
-    const map = new Map<TrainingWeekday, TrainingPlanItem>();
-    for (const item of plan.plan_items) {
-      if (item.workout_type === 'primary' && !map.has(item.day)) {
-        map.set(item.day, item);
-      }
-    }
-    return [...map.entries()].filter(([d]) => d !== day).sort(([a], [b]) => compareTrainingWeekdays(a, b));
-  }, [plan.plan_items, day]);
+  const assignedDays = useMemo(() => getAssignedDays(plan.plan_items, day), [plan.plan_items, day]);
 
   const handleAssign = async (workoutId: string) => {
     setConflictMessage(null);
@@ -816,9 +768,8 @@ function AssignPanel({
   };
 
   const handleMarkRest = async () => {
-    const next = [...new Set([day, ...plan.rest_days])].sort(compareTrainingWeekdays);
     try {
-      await updatePlan({id: plan.id, body: {rest_days: next}}).unwrap();
+      await updatePlan({id: plan.id, body: {rest_days: buildRestDaysUpdate(plan.rest_days, day)}}).unwrap();
       onClose();
     } catch {
       toast.danger('Failed to mark rest day.');
@@ -852,8 +803,7 @@ function AssignPanel({
           <p className="text-[11px] font-medium uppercase tracking-wider text-foreground-400">Assign existing</p>
           <div className="overflow-hidden rounded-lg border border-divider bg-content1">
             {workouts.map((workout, index) => {
-              const usedOnDays = getWorkoutUsedOnDays(plan.plan_items, workout.id);
-              const usage = formatUsedOnDays(usedOnDays);
+              const usage = getWorkoutUsageLabel(plan.plan_items, workout.id);
               const isLast = index === workouts.length - 1;
               return (
                 <button
@@ -873,9 +823,7 @@ function AssignPanel({
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{workout.name}</span>
-                    {usedOnDays.length > 0 ? (
-                      <span className="block truncate text-xs text-foreground-400">{usage}</span>
-                    ) : null}
+                    {usage ? <span className="block truncate text-xs text-foreground-400">{usage}</span> : null}
                   </span>
                   <span className="shrink-0 text-xs text-foreground-400">Assign</span>
                 </button>
@@ -939,7 +887,7 @@ function AssignPanel({
           <p className="text-[11px] font-medium uppercase tracking-wider text-foreground-400">Copy from</p>
           <div className="flex flex-wrap gap-1.5">
             {assignedDays.map(([srcDay, item]) => {
-              const workout = plan.workouts.find((w) => w.id === item.workout_id);
+              const workout = findWorkoutById(plan.workouts, item.workout_id);
               if (!workout) {
                 return null;
               }
@@ -1047,41 +995,25 @@ function CopyToPanel({
   const [selected, setSelected] = useState<Set<TrainingWeekday>>(new Set());
   const [conflictDays, setConflictDays] = useState<Set<TrainingWeekday>>(new Set());
 
-  const primaryItem = state.items.find((it) => it.workout_type === 'primary') ?? state.items[0];
-  const workout = plan.workouts.find((w) => w.id === primaryItem.workout_id);
+  const primaryItem = getPrimaryAssignedItem(state);
+  const workout = findWorkoutById(plan.workouts, primaryItem.workout_id);
 
   // Days where a primary workout already exists — disable in the checklist.
-  const takenDays = useMemo(() => {
-    const map = new Set<TrainingWeekday>();
-    for (const item of plan.plan_items) {
-      if (item.workout_type === 'primary') {
-        map.add(item.day);
-      }
-    }
-    return map;
-  }, [plan.plan_items]);
-  const restDays = useMemo(() => new Set(plan.rest_days), [plan.rest_days]);
+  const takenDays = useMemo(() => getTakenPrimaryDays(plan.plan_items), [plan.plan_items]);
+  const restDays = useMemo(() => createRestDaysSet(plan.rest_days), [plan.rest_days]);
 
   const toggle = (target: TrainingWeekday) => {
     if (takenDays.has(target) || restDays.has(target)) {
       return;
     }
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(target)) {
-        next.delete(target);
-      } else {
-        next.add(target);
-      }
-      return next;
-    });
+    setSelected((prev) => toggleWeekdaySelection(prev, target));
   };
 
   const handleConfirm = async () => {
     if (!workout || selected.size === 0) {
       return;
     }
-    const targets = [...selected].filter((target) => !takenDays.has(target) && !restDays.has(target));
+    const targets = getCopyTargets({day, restDays, selected, takenDays});
     if (targets.length === 0) {
       setSelected(new Set());
       return;
@@ -1157,7 +1089,7 @@ function CopyToPanel({
       </div>
       {conflictDays.size > 0 ? (
         <p className="text-xs text-danger">
-          {[...conflictDays].map((d) => TRAINING_DAY_SHORT_LABELS[d]).join(', ')} already have a primary workout.
+          {buildConflictDaysLabel(conflictDays, TRAINING_DAY_SHORT_LABELS)} already have a primary workout.
         </p>
       ) : null}
       <div className="flex gap-2">

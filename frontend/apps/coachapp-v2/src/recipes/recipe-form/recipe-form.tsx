@@ -7,8 +7,11 @@ import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {Food} from '@/api/foods';
-
-import {normalizeMacros} from '@/api/shared';
+import {
+  canComputeRecipeNutrition,
+  computeRecipeNutritionFromIngredients,
+  createIngredientDraft,
+} from '@/domain/recipes';
 import FoodPicker from '@/foods/components/food-picker';
 import IngredientList, {type IngredientItem} from '@/foods/components/ingredient-list';
 
@@ -129,61 +132,34 @@ export default function RecipeForm({
   const excludeIds = useMemo(() => ingredients.map((item) => item.food_id), [ingredients]);
   const cookedWeight = useWatch({control, name: 'cooked_weight_g'});
 
-  const canCompute = useMemo(
-    () => ingredients.some((item) => item.weight_g !== '' && item.weight_g != null && Number(item.weight_g) > 0),
-    [ingredients],
-  );
+  const canCompute = useMemo(() => canComputeRecipeNutrition(ingredients), [ingredients]);
 
   const computeNutrition = useCallback(() => {
-    const totals: Record<string, number> = {};
-    let totalWeight = 0;
+    const computedNutrition = computeRecipeNutritionFromIngredients({
+      cookedWeight,
+      ingredients,
+    });
 
-    for (const item of ingredients) {
-      const weightG = Number(item.weight_g);
-      if (!weightG || weightG <= 0) {
-        continue;
-      }
-      totalWeight += weightG;
-
-      const normalized = normalizeMacros(item.food.macros);
-      for (const [key, value] of Object.entries(normalized)) {
-        if (typeof value !== 'number') {
-          continue;
-        }
-        totals[key] = (totals[key] ?? 0) + value * (weightG / 100);
-      }
-    }
-
-    if (totalWeight === 0) {
+    if (!computedNutrition) {
       return;
     }
 
-    const divisor = cookedWeight && cookedWeight > 0 ? cookedWeight : totalWeight;
-    const per100g = (value: number) => Math.round(value * (100 / divisor) * 10) / 10;
+    setValue('calories_per_100g', computedNutrition.calories_per_100g, {shouldDirty: true});
+    setValue('protein_g', computedNutrition.protein_g, {shouldDirty: true});
+    setValue('carbs_g', computedNutrition.carbs_g, {shouldDirty: true});
+    setValue('fats_g', computedNutrition.fats_g, {shouldDirty: true});
 
-    setValue('calories_per_100g', per100g(totals.calories_per_100g ?? 0), {shouldDirty: true});
-    setValue('protein_g', per100g(totals.protein_g ?? 0), {shouldDirty: true});
-    setValue('carbs_g', per100g(totals.carbs_g ?? 0), {shouldDirty: true});
-    setValue('fats_g', per100g(totals.fats_g ?? 0), {shouldDirty: true});
-
-    if (totals.fiber_g != null) {
-      setValue('fiber_g', per100g(totals.fiber_g), {shouldDirty: true});
+    if (computedNutrition.fiber_g !== undefined) {
+      setValue('fiber_g', computedNutrition.fiber_g, {shouldDirty: true});
     }
-    if (totals.sugar_g != null) {
-      setValue('sugar_g', per100g(totals.sugar_g), {shouldDirty: true});
+    if (computedNutrition.sugar_g !== undefined) {
+      setValue('sugar_g', computedNutrition.sugar_g, {shouldDirty: true});
     }
   }, [cookedWeight, ingredients, setValue]);
 
   const handleFoodSelect = useCallback(
     (food: Food) => {
-      const newItem: IngredientItem = {
-        amount: '',
-        food,
-        food_id: food.id,
-        unit: '',
-        weight_g: '',
-      };
-      onIngredientsChange([...ingredients, newItem]);
+      onIngredientsChange([...ingredients, createIngredientDraft(food)]);
       setAutoExpandId(food.id);
     },
     [ingredients, onIngredientsChange],

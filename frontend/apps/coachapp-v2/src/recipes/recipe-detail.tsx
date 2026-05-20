@@ -6,7 +6,6 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteRecipeMutation, useGetRecipeQuery} from '@/api/recipes';
-import {normalizeMacros} from '@/api/shared';
 
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   calories_per_100g: {label: 'Calories', unit: ''},
@@ -91,8 +90,7 @@ export default function RecipeDetail() {
   }
 
   const recipe = data.data;
-  const normalizedMacros = normalizeMacros(recipe.macros);
-  const macroEntries = Object.entries(normalizedMacros);
+  const macroEntries = Object.entries(recipe.macros);
   const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
   const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 

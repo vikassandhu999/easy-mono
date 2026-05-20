@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {equipmentFromApi, exerciseFromApi, muscleFromApi} from '@/api/mappers/exercises';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -68,6 +69,36 @@ export type ExerciseUpdateRequest = {
   name?: string;
 };
 
+export type ApiExercise = Exercise;
+
+function mapExerciseResponse(response: ApiResponse<ApiExercise>): ApiResponse<Exercise> {
+  return {
+    ...response,
+    data: exerciseFromApi(response.data),
+  };
+}
+
+function mapExerciseListResponse(response: ApiListResponse<ApiExercise>): ApiListResponse<Exercise> {
+  return {
+    ...response,
+    data: response.data.map(exerciseFromApi),
+  };
+}
+
+function mapMuscleListResponse(response: ApiResponse<Muscle[]>): ApiResponse<Muscle[]> {
+  return {
+    ...response,
+    data: response.data.map(muscleFromApi),
+  };
+}
+
+function mapEquipmentListResponse(response: ApiResponse<Equipment[]>): ApiResponse<Equipment[]> {
+  return {
+    ...response,
+    data: response.data.map(equipmentFromApi),
+  };
+}
+
 export const exercisesApi = api.injectEndpoints({
   endpoints: (build) => ({
     createExercise: build.mutation<ApiResponse<Exercise>, ExerciseCreateRequest>({
@@ -76,10 +107,12 @@ export const exercisesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapExerciseResponse,
       invalidatesTags: [{type: 'Exercise', id: 'LIST'}],
     }),
     getExercise: build.query<ApiResponse<Exercise>, string>({
       query: (id) => `/v1/coach/exercises/${id}`,
+      transformResponse: mapExerciseResponse,
       providesTags: (_, __, id) => [{type: 'Exercise', id}],
     }),
     listExercises: build.query<ApiListResponse<Exercise>, ListExercisesParams | void>({
@@ -96,6 +129,7 @@ export const exercisesApi = api.injectEndpoints({
           },
         };
       },
+      transformResponse: mapExerciseListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -119,6 +153,7 @@ export const exercisesApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: mapExerciseListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -145,6 +180,7 @@ export const exercisesApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
+      transformResponse: mapExerciseResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Exercise', id},
         {type: 'Exercise', id: 'LIST'},
@@ -165,6 +201,7 @@ export const exercisesApi = api.injectEndpoints({
         url: `/v1/coach/exercises/${id}/duplicate`,
         method: 'POST',
       }),
+      transformResponse: mapExerciseResponse,
       invalidatesTags: (_, __, id) => [
         {type: 'Exercise', id},
         {type: 'Exercise', id: 'LIST'},
@@ -178,6 +215,7 @@ export const exercisesApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/muscles',
+      transformResponse: mapMuscleListResponse,
       providesTags: [{type: 'Muscle', id: 'LIST'}],
     }),
     listEquipment: build.query<ApiResponse<Equipment[]>, void | {search?: string}>({
@@ -188,6 +226,7 @@ export const exercisesApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/equipment',
+      transformResponse: mapEquipmentListResponse,
       providesTags: [{type: 'Equipment', id: 'LIST'}],
     }),
   }),

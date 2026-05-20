@@ -4,24 +4,13 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {nutritionPlanToFormValues, nutritionPlanToUpdateRequest} from '@/api/mappers/nutritionPlans';
 import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
-
-function buildMacrosGoal(data: NutritionPlanFormValues): Record<string, number> | undefined {
-  const macros: Record<string, number> = {};
-  const keys = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
-  for (const key of keys) {
-    const val = data[key];
-    if (val !== undefined) {
-      macros[key] = val;
-    }
-  }
-  return Object.keys(macros).length > 0 ? macros : undefined;
-}
 
 export default function EditNutritionPlan() {
   const {id} = useParams<{id: string}>();
@@ -33,16 +22,7 @@ export default function EditNutritionPlan() {
   const goBack = useGoBack(backPath);
 
   const form = useNutritionPlanForm({
-    values: plan
-      ? {
-          calories: plan.macros_goal?.calories ?? undefined,
-          carbs_g: plan.macros_goal?.carbs_g ?? undefined,
-          description: plan.description ?? '',
-          fats_g: plan.macros_goal?.fats_g ?? undefined,
-          name: plan.name,
-          protein_g: plan.macros_goal?.protein_g ?? undefined,
-        }
-      : undefined,
+    values: plan ? nutritionPlanToFormValues(plan) : undefined,
   });
 
   if (isFetching || !plan) {
@@ -64,13 +44,7 @@ export default function EditNutritionPlan() {
 
   const onSubmit = async (formData: NutritionPlanFormValues) => {
     try {
-      const macrosGoal = buildMacrosGoal(formData);
-      const body = {
-        description: formData.description || undefined,
-        name: formData.name,
-        ...(macrosGoal ? {macros_goal: macrosGoal} : {}),
-      };
-      await updatePlan({body, id: id!}).unwrap();
+      await updatePlan({body: nutritionPlanToUpdateRequest(formData), id: id!}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Nutrition plan wasn't updated. Check the details and try again", form.setError);

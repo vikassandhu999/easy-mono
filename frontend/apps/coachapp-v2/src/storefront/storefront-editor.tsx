@@ -7,6 +7,7 @@ import {Link} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import type {Offer} from '@/api/offers';
 import {useListOffersQuery} from '@/api/offers';
+import {storefrontProfileToFormValues, storefrontProfileToUpsertRequest} from '@/api/mappers/storefront';
 import {applyFormErrors} from '@/api/shared';
 import type {StoreProfile} from '@/api/storefront';
 import {useGetStoreProfileQuery, useUpsertStoreProfileMutation} from '@/api/storefront';
@@ -20,32 +21,6 @@ const PREVIEW_BASE_URL = import.meta.env.VITE_WEBSITE_URL ?? 'https://coacheasy.
 
 export function getPreviewUrl(slug: string) {
   return `${PREVIEW_BASE_URL}/coach/${slug}?preview=true`;
-}
-
-function profileToFormValues(profile: StoreProfile): EditorFormValues {
-  return {
-    bio: profile.bio ?? '',
-    cover_image_url: profile.cover_image_url ?? '',
-    display_name: profile.display_name,
-    faq_items: profile.faq_items,
-    headline: profile.headline ?? '',
-    instagram: profile.social_links?.instagram ?? '',
-    intake_questions: profile.intake_questions.map((q) => ({
-      label: q.label,
-      options: q.options ?? [],
-      required: q.required ?? false,
-      type: q.type,
-    })),
-    is_published: profile.is_published,
-    photo_url: profile.photo_url ?? '',
-    slug: profile.slug,
-    theme_color: profile.theme_color,
-    trust_stats: profile.trust_stats,
-    whatsapp: profile.social_links?.whatsapp ?? '',
-    whatsapp_cta_enabled: profile.whatsapp_cta_enabled,
-    whatsapp_cta_message: profile.whatsapp_cta_message ?? '',
-    youtube: profile.social_links?.youtube ?? '',
-  };
 }
 
 const DEFAULT_VALUES: EditorFormValues = {
@@ -123,45 +98,14 @@ function EditorInner({
   const form = useForm<EditorFormValues>({
     defaultValues: profile ? undefined : DEFAULT_VALUES,
     resolver: zodResolver(editorSchema),
-    values: profile ? profileToFormValues(profile) : undefined,
+    values: profile ? storefrontProfileToFormValues(profile) : undefined,
   });
 
   const slugValue = useWatch({control: form.control, name: 'slug'});
 
   const onSubmit = async (data: EditorFormValues) => {
-    const socialLinks: Record<string, string> = {};
-    if (data.instagram) {
-      socialLinks.instagram = data.instagram;
-    }
-    if (data.youtube) {
-      socialLinks.youtube = data.youtube;
-    }
-    if (data.whatsapp) {
-      socialLinks.whatsapp = data.whatsapp;
-    }
-
     try {
-      await upsertProfile({
-        bio: data.bio || undefined,
-        cover_image_url: data.cover_image_url || undefined,
-        display_name: data.display_name,
-        faq_items: data.faq_items.filter((f) => f.question && f.answer),
-        headline: data.headline || undefined,
-        intake_questions: data.intake_questions.map((q) => ({
-          label: q.label,
-          options: q.type === 'select' ? (q.options ?? []).filter(Boolean) : undefined,
-          required: q.required ?? false,
-          type: q.type,
-        })),
-        is_published: data.is_published,
-        photo_url: data.photo_url || undefined,
-        slug: data.slug,
-        social_links: socialLinks,
-        theme_color: data.theme_color,
-        trust_stats: data.trust_stats.filter((s) => s.value && s.label),
-        whatsapp_cta_enabled: data.whatsapp_cta_enabled,
-        whatsapp_cta_message: data.whatsapp_cta_message || undefined,
-      }).unwrap();
+      await upsertProfile(storefrontProfileToUpsertRequest(data)).unwrap();
       toast.success('Profile saved');
       // Reload preview iframe after ISR revalidation
       setTimeout(() => {

@@ -7,13 +7,14 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useInviteClientMutation} from '@/api/clients';
+import {inviteClientToRequest} from '@/api/mappers/clients';
 import {applyFormErrors} from '@/api/shared';
 import InviteClientForm, {
   INVITE_CLIENT_FORM_FIELDS,
   type InviteClientFormValues,
   useInviteClientForm,
 } from '@/clients/client-invite-form/invite-client-form';
-import {getFullName, getWhatsAppUrl, splitName} from '@/clients/lib/invite-client';
+import {getFullName, getWhatsAppUrl} from '@/clients/lib/invite-client';
 
 function InviteConfirmation({client, onInviteAnother}: {client: Client; onInviteAnother: () => void}) {
   const navigate = useNavigate();
@@ -127,14 +128,7 @@ export default function InviteClient() {
 
   const onSubmit = async (data: InviteClientFormValues) => {
     try {
-      const {firstName, lastName} = splitName(data.name);
-      const result = await inviteClient({
-        email: data.email || undefined,
-        first_name: firstName,
-        last_name: lastName,
-        notes: data.notes || undefined,
-        phone: data.phone || undefined,
-      }).unwrap();
+      const result = await inviteClient(inviteClientToRequest(data)).unwrap();
       setInviteResult(result.data);
     } catch (err) {
       applyFormErrors(

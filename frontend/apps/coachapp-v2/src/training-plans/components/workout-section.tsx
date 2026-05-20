@@ -9,6 +9,11 @@ import {z} from 'zod';
 
 import {FormTextField} from '@/@components/form-fields';
 import type {Exercise} from '@/api/exercises';
+import {
+  workoutElementToCreateRequest,
+  workoutNameToUpdateRequest,
+  workoutNotesToUpdateRequest,
+} from '@/api/mappers/trainingPlans';
 import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
 import {
   useCreateWorkoutElementMutation,
@@ -17,13 +22,11 @@ import {
   useDuplicateWorkoutMutation,
   useUpdateWorkoutMutation,
 } from '@/api/trainingPlans';
+import {buildPlannedSetsFromForm} from '@/domain/training-exercise-form';
+import {findWorkoutById, getNextWorkoutElementPosition} from '@/domain/training-plans';
 import ExerciseElement from '@/training-plans/components/exercise-element';
 import ExercisePicker from '@/training-plans/components/exercise-picker';
-import InlineExerciseForm, {
-  buildPlannedSetsFromForm,
-  EMPTY_DEFAULTS,
-  type InlineExerciseFormValues,
-} from '@/training-plans/components/inline-exercise-form';
+import InlineExerciseForm, {EMPTY_DEFAULTS, type InlineExerciseFormValues} from '@/training-plans/components/inline-exercise-form';
 import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 type WorkoutSectionProps = {
@@ -79,7 +82,7 @@ export default function WorkoutSection({
       return;
     }
     try {
-      await updateWorkout({id: workout.id, planId, body: {name: trimmed}}).unwrap();
+      await updateWorkout({id: workout.id, planId, body: workoutNameToUpdateRequest(trimmed)}).unwrap();
       setIsEditingName(false);
     } catch {
       setIsEditingName(false);
@@ -97,7 +100,7 @@ export default function WorkoutSection({
       return;
     }
     try {
-      await updateWorkout({id: workout.id, planId, body: {notes: trimmed || null}}).unwrap();
+      await updateWorkout({id: workout.id, planId, body: workoutNotesToUpdateRequest(notes)}).unwrap();
       setIsEditingNotes(false);
     } catch {
       setIsEditingNotes(false);
@@ -140,20 +143,18 @@ export default function WorkoutSection({
     if (!pendingExercise) {
       return;
     }
-    const nextPosition =
-      workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
+    const nextPosition = getNextWorkoutElementPosition(workout.workout_elements);
     const plannedSets = buildPlannedSetsFromForm(values);
-    const trimmedNotes = values.exerciseNotes.trim();
     await createElement({
       planId,
       workoutId: workout.id,
-      body: {
-        exercise_id: pendingExercise.id,
-        workout_id: workout.id,
+      body: workoutElementToCreateRequest({
+        exerciseId: pendingExercise.id,
+        notes: values.exerciseNotes,
+        plannedSets,
         position: nextPosition,
-        planned_sets: plannedSets,
-        ...(trimmedNotes && {notes: trimmedNotes}),
-      },
+        workoutId: workout.id,
+      }),
     }).unwrap();
     setPendingExercise(null);
     setIsAddPickerOpen(false);
@@ -218,18 +219,17 @@ export default function WorkoutSection({
   const visibleElements = pendingRemoval ? sortedElements.filter((e) => e.id !== pendingRemoval.id) : sortedElements;
 
   const handleDuplicateExercise = (element: WorkoutElement) => {
-    const nextPosition =
-      workout.workout_elements.length > 0 ? Math.max(...workout.workout_elements.map((e) => e.position)) + 1 : 0;
+    const nextPosition = getNextWorkoutElementPosition(workout.workout_elements);
     createElement({
       planId,
       workoutId: workout.id,
-      body: {
-        exercise_id: element.exercise_id,
-        workout_id: workout.id,
+      body: workoutElementToCreateRequest({
+        exerciseId: element.exercise_id,
+        notes: element.notes ?? '',
+        plannedSets: element.planned_sets,
         position: nextPosition,
-        planned_sets: element.planned_sets,
-        ...(element.notes && {notes: element.notes}),
-      },
+        workoutId: workout.id,
+      }),
     })
       .unwrap()
       .then(() => {
@@ -255,22 +255,18 @@ export default function WorkoutSection({
   const otherWorkouts = allWorkouts.filter((w) => w.id !== workout.id);
 
   const handleCopyExercise = (element: WorkoutElement, targetWorkoutId: string) => {
-    const targetWorkout = allWorkouts.find((w) => w.id === targetWorkoutId);
-    const nextPosition = targetWorkout
-      ? targetWorkout.workout_elements.length > 0
-        ? Math.max(...targetWorkout.workout_elements.map((e) => e.position)) + 1
-        : 0
-      : 0;
+    const targetWorkout = findWorkoutById(allWorkouts, targetWorkoutId);
+    const nextPosition = getNextWorkoutElementPosition(targetWorkout?.workout_elements ?? []);
     createElement({
       planId,
       workoutId: targetWorkoutId,
-      body: {
-        exercise_id: element.exercise_id,
-        ...(element.notes != null && {notes: element.notes}),
-        workout_id: targetWorkoutId,
+      body: workoutElementToCreateRequest({
+        exerciseId: element.exercise_id,
+        notes: element.notes ?? '',
+        plannedSets: element.planned_sets,
         position: nextPosition,
-        planned_sets: element.planned_sets,
-      },
+        workoutId: targetWorkoutId,
+      }),
     })
       .unwrap()
       .then(() => {

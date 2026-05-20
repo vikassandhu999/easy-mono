@@ -4,6 +4,7 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {trainingPlanToFormValues, trainingPlanToUpdateRequest} from '@/api/mappers/trainingPlans';
 import {applyFormErrors} from '@/api/shared';
 import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
@@ -19,23 +20,12 @@ function EditTrainingPlanForm({backPath, planId}: {backPath: string; planId: str
   const plan = data!.data;
 
   const form = useTrainingPlanForm({
-    values: {
-      description: plan.description ?? '',
-      end_date: plan.end_date ?? '',
-      name: plan.name,
-      start_date: plan.start_date ?? '',
-    },
+    values: trainingPlanToFormValues(plan),
   });
 
   const onSubmit = async (formData: TrainingPlanFormValues) => {
     try {
-      const body = {
-        description: formData.description?.trim() || null,
-        end_date: formData.end_date || null,
-        name: formData.name,
-        start_date: formData.start_date || null,
-      };
-      await updatePlan({body, id: planId}).unwrap();
+      await updatePlan({body: trainingPlanToUpdateRequest(formData), id: planId}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Training plan wasn't updated. Check the details and try again", form.setError);

@@ -6,7 +6,6 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useDeleteFoodMutation, useGetFoodQuery} from '@/api/foods';
-import {normalizeMacros} from '@/api/shared';
 
 const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   calories_per_100g: {label: 'Calories', unit: ''},
@@ -92,8 +91,7 @@ export default function FoodDetail() {
 
   const food = data.data;
   const isSystemFood = food.source === 'system';
-  const normalizedMacros = normalizeMacros(food.macros);
-  const macroEntries = Object.entries(normalizedMacros);
+  const macroEntries = Object.entries(food.macros);
   const knownMacros = macroEntries.filter(([key, value]) => key in MACRO_LABELS && value !== 0);
   const unknownMacros = macroEntries.filter(([key, value]) => !(key in MACRO_LABELS) && value !== 0);
 

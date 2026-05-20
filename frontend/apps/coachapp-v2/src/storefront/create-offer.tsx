@@ -4,9 +4,10 @@ import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {offerToCreateRequest} from '@/api/mappers/storefront';
 import {useCreateOfferMutation} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
-import OfferForm, {formValuesToFeatures, type OfferFormValues, useOfferForm} from '@/storefront/offer-form/offer-form';
+import OfferForm, {type OfferFormValues, useOfferForm} from '@/storefront/offer-form/offer-form';
 
 export default function CreateOffer() {
   const navigate = useNavigate();
@@ -14,18 +15,8 @@ export default function CreateOffer() {
   const form = useOfferForm();
 
   const onSubmit = async (data: OfferFormValues) => {
-    const features = formValuesToFeatures(data.features);
     try {
-      const result = await createOffer({
-        cta_text: data.cta_text || undefined,
-        description: data.description || undefined,
-        duration_text: data.duration_text || undefined,
-        features: features.length > 0 ? features : undefined,
-        is_featured: data.is_featured,
-        name: data.name,
-        price_display: data.price_display || undefined,
-        type: data.type || undefined,
-      }).unwrap();
+      const result = await createOffer(offerToCreateRequest(data)).unwrap();
       navigate(`/storefront/offers/${result.data.id}/edit`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Offer wasn't created. Check the details and try again", form.setError);

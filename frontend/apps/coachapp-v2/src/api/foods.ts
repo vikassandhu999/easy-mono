@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {foodFromApi} from '@/api/mappers/foods';
 import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -17,6 +18,8 @@ export type Food = {
   inserted_at: string;
   updated_at: string;
 };
+
+export type ApiFood = Food;
 
 export type ListFoodsParams = {
   offset?: number;
@@ -51,6 +54,20 @@ export type FoodUpdateRequest = {
   serving_sizes?: ServingSize[];
 };
 
+function mapFoodResponse(response: ApiResponse<ApiFood>): ApiResponse<Food> {
+  return {
+    ...response,
+    data: foodFromApi(response.data),
+  };
+}
+
+function mapFoodListResponse(response: ApiListResponse<ApiFood>): ApiListResponse<Food> {
+  return {
+    ...response,
+    data: response.data.map(foodFromApi),
+  };
+}
+
 export const foodsApi = api.injectEndpoints({
   endpoints: (build) => ({
     createFood: build.mutation<ApiResponse<Food>, FoodCreateRequest>({
@@ -59,10 +76,12 @@ export const foodsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapFoodResponse,
       invalidatesTags: [{type: 'Food', id: 'LIST'}],
     }),
     getFood: build.query<ApiResponse<Food>, string>({
       query: (id) => `/v1/coach/foods/${id}`,
+      transformResponse: mapFoodResponse,
       providesTags: (_, __, id) => [{type: 'Food', id}],
     }),
     listFoods: build.query<ApiListResponse<Food>, ListFoodsParams | void>({
@@ -73,6 +92,7 @@ export const foodsApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/foods',
+      transformResponse: mapFoodListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -103,6 +123,7 @@ export const foodsApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: mapFoodListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -129,6 +150,7 @@ export const foodsApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
+      transformResponse: mapFoodResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Food', id},
         {type: 'Food', id: 'LIST'},

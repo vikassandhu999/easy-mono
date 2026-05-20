@@ -1,50 +1,25 @@
-import {MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 import {Button, Spinner, Table} from '@heroui/react';
 import {ArrowLeft, Check, Minus, Plus, RefreshCw} from 'lucide-react';
 import {useMemo} from 'react';
 
-import type {CoachMealLog, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
+import type {CoachMealLog} from '@/api/mealLogs';
 
 import {useListCoachMealLogsQuery} from '@/api/mealLogs';
-
-type ComparisonType = 'followed' | 'partial' | 'replaced' | 'skipped';
-
-type ComparisonItem = {
-  entry: FoodLogEntry | null;
-  planned: PlannedSnapshotItem;
-  type: ComparisonType;
-};
+import {
+  buildMealLogComparison,
+  getMealSlotLabel,
+  getNutritionDayTotals,
+  getSkippedMealSlots,
+  sortMealLogsBySlot,
+  type ComparisonType,
+} from '@/domain/client-nutrition';
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(`${dateStr}T00:00:00`);
   const weekday = d.toLocaleDateString(undefined, {weekday: 'long'});
   const month = d.toLocaleDateString(undefined, {month: 'short'});
   const day = d.getDate();
   return `${weekday}, ${month} ${day}`;
-}
-
-function buildComparison(mealLog: CoachMealLog): {comparison: ComparisonItem[]; unplanned: FoodLogEntry[]} {
-  const entries = mealLog.food_log_entries;
-  const planned = mealLog.planned_snapshot?.items ?? [];
-
-  const comparison: ComparisonItem[] = planned.map((item, index) => {
-    const entry = entries.find((e) => e.planned_item_index === index);
-
-    if (!entry) {
-      return {type: 'skipped', planned: item, entry: null};
-    }
-    if (entry.source === 'replacement') {
-      return {type: 'replaced', planned: item, entry};
-    }
-    if (entry.amount !== item.amount) {
-      return {type: 'partial', planned: item, entry};
-    }
-    return {type: 'followed', planned: item, entry};
-  });
-
-  const unplanned = entries.filter((e) => e.source === 'unplanned' || e.planned_item_index == null);
-
-  return {comparison, unplanned};
 }
 
 function StatusIcon({type}: {type: ComparisonType}) {
@@ -81,8 +56,8 @@ function StatusIcon({type}: {type: ComparisonType}) {
 }
 
 function MealComparisonSection({mealLog}: {mealLog: CoachMealLog}) {
-  const {comparison, unplanned} = useMemo(() => buildComparison(mealLog), [mealLog]);
-  const slotLabel = MEAL_SLOT_LABELS[mealLog.meal_slot] ?? mealLog.meal_slot;
+  const {comparison, unplanned} = useMemo(() => buildMealLogComparison(mealLog), [mealLog]);
+  const slotLabel = getMealSlotLabel(mealLog.meal_slot);
   const loggedCal = Math.round(mealLog.logged_calories ?? 0);
   const plannedCal = Math.round(mealLog.planned_snapshot?.total_calories ?? 0);
   const hasSnapshot = mealLog.planned_snapshot != null;
@@ -240,30 +215,12 @@ export default function ClientNutritionDetail({
 }) {
   const {data, isLoading} = useListCoachMealLogsQuery({client_id: clientId, date});
   const mealLogs = useMemo(() => data?.data ?? [], [data]);
-
-  // Sort meal logs by canonical meal slot order
-  const sortedLogs = useMemo(
-    () =>
-      [...mealLogs].sort(
-        (a, b) =>
-          MEAL_SLOTS.indexOf(a.meal_slot as (typeof MEAL_SLOTS)[number]) -
-          MEAL_SLOTS.indexOf(b.meal_slot as (typeof MEAL_SLOTS)[number]),
-      ),
+  const sortedLogs = useMemo(() => sortMealLogsBySlot(mealLogs), [mealLogs]);
+  const {adherencePercent, totalEntries, totalLoggedCal, totalPlannedCal} = useMemo(
+    () => getNutritionDayTotals(mealLogs),
     [mealLogs],
   );
-
-  // Total day calories
-  const totalLoggedCal = useMemo(() => mealLogs.reduce((sum, ml) => sum + (ml.logged_calories ?? 0), 0), [mealLogs]);
-  const totalPlannedCal = useMemo(
-    () => mealLogs.reduce((sum, ml) => sum + (ml.planned_snapshot?.total_calories ?? 0), 0),
-    [mealLogs],
-  );
-  const totalEntries = useMemo(() => mealLogs.reduce((sum, ml) => sum + ml.food_log_entries.length, 0), [mealLogs]);
-
-  // Detect meal slots that were logged vs those that exist only in snapshots
-  const loggedSlots = useMemo(() => new Set(mealLogs.map((ml) => ml.meal_slot)), [mealLogs]);
-
-  const adherencePercent = totalPlannedCal > 0 ? Math.round((totalLoggedCal / totalPlannedCal) * 100) : null;
+  const skippedMealSlots = useMemo(() => getSkippedMealSlots(sortedLogs), [sortedLogs]);
 
   if (isLoading) {
     return (
@@ -305,14 +262,12 @@ export default function ClientNutritionDetail({
             />
           ))}
 
-          {sortedLogs.some((ml) => ml.planned_snapshot != null)
-            ? MEAL_SLOTS.filter((slot) => !loggedSlots.has(slot)).map((slot) => (
-                <SkippedMealSlot
-                  key={slot}
-                  slotLabel={MEAL_SLOT_LABELS[slot] ?? slot}
-                />
-              ))
-            : null}
+          {skippedMealSlots.map((slot) => (
+            <SkippedMealSlot
+              key={slot}
+              slotLabel={getMealSlotLabel(slot)}
+            />
+          ))}
         </div>
       )}
     </div>

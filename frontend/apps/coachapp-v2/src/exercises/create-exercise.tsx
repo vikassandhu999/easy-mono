@@ -5,6 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {exerciseToCreateRequest} from '@/api/mappers/exercises';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
@@ -19,21 +20,7 @@ export default function CreateExercise() {
 
   const onSubmit = async (data: ExerciseFormValues) => {
     try {
-      const mechanics = data.mechanics || undefined;
-      const force = data.force || undefined;
-      const body = {
-        name: data.name,
-        ...(data.description && {description: data.description}),
-        ...(data.instructions && {instructions: data.instructions}),
-        ...(mechanics && {mechanics}),
-        ...(force && {force}),
-        ...(data.muscle_ids?.length && {muscle_ids: data.muscle_ids}),
-        ...(data.equipment_ids?.length && {
-          equipment_ids: data.equipment_ids,
-        }),
-        ...((data.images?.length ?? 0) > 0 && {images: data.images}),
-      };
-      const result = await createExercise(body).unwrap();
+      const result = await createExercise(exerciseToCreateRequest(data)).unwrap();
       navigate(`/library/exercises/${result.data.id}`, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't created. Check the details and try again", form.setError);

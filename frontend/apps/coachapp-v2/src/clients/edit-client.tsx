@@ -4,6 +4,7 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {clientToEditFormValues, editClientToUpdateRequest} from '@/api/mappers/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import EditClientForm, {
@@ -22,16 +23,7 @@ export default function EditClient() {
   const client = data?.data;
 
   const form = useEditClientForm({
-    values: client
-      ? {
-          email: client.email ?? '',
-          first_name: client.first_name ?? '',
-          last_name: client.last_name ?? '',
-          notes: client.notes ?? '',
-          phone: client.phone ?? '',
-          status: client.status === 'pending' ? undefined : client.status,
-        }
-      : undefined,
+    values: client ? clientToEditFormValues(client) : undefined,
   });
 
   if (isFetching || !client) {
@@ -54,14 +46,7 @@ export default function EditClient() {
   const onSubmit = async (formData: EditClientFormValues) => {
     try {
       await updateClient({
-        body: {
-          email: formData.email || null,
-          first_name: formData.first_name || undefined,
-          last_name: formData.last_name || undefined,
-          notes: formData.notes || null,
-          phone: formData.phone || null,
-          status: formData.status,
-        },
+        body: editClientToUpdateRequest(formData),
         id: id!,
       }).unwrap();
       goBack();

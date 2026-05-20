@@ -4,6 +4,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {testimonialToFormValues, testimonialToUpdateRequest} from '@/api/mappers/storefront';
 import {applyFormErrors} from '@/api/shared';
 import {useDeleteTestimonialMutation, useGetTestimonialQuery, useUpdateTestimonialMutation} from '@/api/testimonials';
 import TestimonialForm, {
@@ -20,39 +21,13 @@ function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   const testimonial = data!.data;
 
   const form = useTestimonialForm({
-    values: {
-      after_image_url: testimonial.after_image_url ?? '',
-      after_weight: testimonial.after_weight ? parseFloat(testimonial.after_weight) : undefined,
-      before_image_url: testimonial.before_image_url ?? '',
-      before_weight: testimonial.before_weight ? parseFloat(testimonial.before_weight) : undefined,
-      client_handle: testimonial.client_handle ?? '',
-      client_name: testimonial.client_name,
-      duration_text: testimonial.duration_text ?? '',
-      is_featured: testimonial.is_featured,
-      program_name: testimonial.program_name ?? '',
-      quote: testimonial.quote ?? '',
-      rating: testimonial.rating ?? undefined,
-      result_tag: testimonial.result_tag ?? '',
-    },
+    values: testimonialToFormValues(testimonial),
   });
 
   const onSubmit = async (formData: TestimonialFormValues) => {
     try {
       await updateTestimonial({
-        body: {
-          after_image_url: formData.after_image_url || undefined,
-          after_weight: formData.after_weight,
-          before_image_url: formData.before_image_url || undefined,
-          before_weight: formData.before_weight,
-          client_handle: formData.client_handle || undefined,
-          client_name: formData.client_name,
-          duration_text: formData.duration_text || undefined,
-          is_featured: formData.is_featured,
-          program_name: formData.program_name || undefined,
-          quote: formData.quote || undefined,
-          rating: formData.rating,
-          result_tag: formData.result_tag || undefined,
-        },
+        body: testimonialToUpdateRequest(formData),
         id: testimonialId,
       }).unwrap();
       navigate(ROUTES.STOREFRONT_TESTIMONIALS);

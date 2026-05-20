@@ -4,14 +4,10 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {offerToFormValues, offerToUpdateRequest} from '@/api/mappers/storefront';
 import {useDeleteOfferMutation, useGetOfferQuery, useUpdateOfferMutation} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
-import OfferForm, {
-  featuresToFormValues,
-  formValuesToFeatures,
-  type OfferFormValues,
-  useOfferForm,
-} from '@/storefront/offer-form/offer-form';
+import OfferForm, {type OfferFormValues, useOfferForm} from '@/storefront/offer-form/offer-form';
 
 function EditOfferForm({offerId}: {offerId: string}) {
   const navigate = useNavigate();
@@ -22,32 +18,13 @@ function EditOfferForm({offerId}: {offerId: string}) {
   const offer = data!.data;
 
   const form = useOfferForm({
-    values: {
-      cta_text: offer.cta_text ?? '',
-      description: offer.description ?? '',
-      duration_text: offer.duration_text ?? '',
-      features: featuresToFormValues(offer.features ?? []),
-      is_featured: offer.is_featured,
-      name: offer.name,
-      price_display: offer.price_display ?? '',
-      type: offer.type ?? undefined,
-    },
+    values: offerToFormValues(offer),
   });
 
   const onSubmit = async (formData: OfferFormValues) => {
-    const features = formValuesToFeatures(formData.features);
     try {
       await updateOffer({
-        body: {
-          cta_text: formData.cta_text || undefined,
-          description: formData.description || undefined,
-          duration_text: formData.duration_text || undefined,
-          features: features.length > 0 ? features : undefined,
-          is_featured: formData.is_featured,
-          name: formData.name,
-          price_display: formData.price_display || undefined,
-          type: formData.type || undefined,
-        },
+        body: offerToUpdateRequest(formData),
         id: offerId,
       }).unwrap();
       navigate(ROUTES.STOREFRONT_OFFERS);

@@ -6,6 +6,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
+import {mealItemToUpdateRequest} from '@/api/mappers/meals';
 import type {MealItem} from '@/api/meals';
 
 import {useUpdateMealItemMutation} from '@/api/meals';
@@ -55,20 +56,16 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
   const cancelEditing = () => setIsEditing(false);
 
   const handleSave = async (values: MealItemFormValues) => {
-    const unit = values.unit?.trim() || undefined;
+    const body = mealItemToUpdateRequest(values);
 
-    if (values.amount === undefined && unit === undefined && values.weight_g === undefined) {
+    if (Object.keys(body).length === 0) {
       setIsEditing(false);
       return;
     }
 
     try {
       await updateMealItem({
-        body: {
-          ...(values.amount !== undefined ? {amount: values.amount} : {}),
-          ...(unit !== undefined ? {unit} : {}),
-          ...(values.weight_g !== undefined ? {weight_g: values.weight_g} : {}),
-        },
+        body,
         id: item.id,
         mealId,
         planId,

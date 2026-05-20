@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {clientFromApi, clientListFromApi} from '@/api/mappers/clients';
 import {ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 50;
@@ -108,6 +109,15 @@ export type ListClientsFilters = {
   status?: string;
 };
 
+export type ApiClient = Client;
+
+function mapClientResponse(response: ApiResponse<ApiClient>): ApiResponse<Client> {
+  return {
+    ...response,
+    data: clientFromApi(response.data),
+  };
+}
+
 export const clientsApi = api.injectEndpoints({
   endpoints: (build) => ({
     inviteClient: build.mutation<ApiResponse<Client>, ClientInviteRequest>({
@@ -116,10 +126,12 @@ export const clientsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapClientResponse,
       invalidatesTags: [{type: 'Client', id: 'LIST'}],
     }),
     getClient: build.query<ApiResponse<Client>, string>({
       query: (id) => `/v1/coach/clients/${id}`,
+      transformResponse: mapClientResponse,
       providesTags: (_, __, id) => [{type: 'Client', id}],
     }),
     listClients: build.query<ClientListResponse, ListClientsParams | void>({
@@ -130,6 +142,7 @@ export const clientsApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/clients',
+      transformResponse: clientListFromApi,
       providesTags: (result) =>
         result
           ? [
@@ -151,6 +164,7 @@ export const clientsApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: clientListFromApi,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -176,6 +190,7 @@ export const clientsApi = api.injectEndpoints({
         url: `/v1/coach/clients/${id}/resend-invite`,
         method: 'POST',
       }),
+      transformResponse: mapClientResponse,
       invalidatesTags: (_, __, id) => [
         {type: 'Client', id},
         {type: 'Client', id: 'LIST'},
@@ -204,6 +219,7 @@ export const clientsApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
+      transformResponse: mapClientResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Client', id},
         {type: 'Client', id: 'LIST'},

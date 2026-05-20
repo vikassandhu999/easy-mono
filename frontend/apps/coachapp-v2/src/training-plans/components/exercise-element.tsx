@@ -2,13 +2,11 @@ import {Button, Popover, toast} from '@heroui/react';
 import {MoreHorizontal} from 'lucide-react';
 import {useState} from 'react';
 
+import {workoutElementToUpdateRequest} from '@/api/mappers/trainingPlans';
 import type {PlannedSet, WorkoutElement} from '@/api/trainingPlans';
 import {useUpdateWorkoutElementMutation} from '@/api/trainingPlans';
-import InlineExerciseForm, {
-  buildPlannedSetsFromForm,
-  deriveFormFromSets,
-  type InlineExerciseFormValues,
-} from '@/training-plans/components/inline-exercise-form';
+import {buildPlannedSetsFromForm, deriveFormFromSets} from '@/domain/training-exercise-form';
+import InlineExerciseForm, {EMPTY_DEFAULTS, type InlineExerciseFormValues} from '@/training-plans/components/inline-exercise-form';
 import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 function formatLoadSummary(set: PlannedSet): string {
@@ -81,12 +79,11 @@ export default function ExerciseElement({
 
   const handleSave = async (values: InlineExerciseFormValues) => {
     const plannedSets = buildPlannedSetsFromForm(values);
-    const trimmedNotes = values.exerciseNotes.trim();
     await updateElement({
       id: element.id,
       planId,
       workoutId: element.workout_id,
-      body: {planned_sets: plannedSets, notes: trimmedNotes || null},
+      body: workoutElementToUpdateRequest({notes: values.exerciseNotes, plannedSets}),
     }).unwrap();
     onCancel(); // close form (same callback — edit mode exits on save)
     toast.success('Saved');
@@ -94,7 +91,7 @@ export default function ExerciseElement({
 
   if (isEditing) {
     const defaults: Partial<InlineExerciseFormValues> = {
-      ...deriveFormFromSets(element.planned_sets, fallbackLoadUnit),
+      ...deriveFormFromSets(EMPTY_DEFAULTS, element.planned_sets, fallbackLoadUnit),
       exerciseNotes: element.notes ?? '',
     };
     return (

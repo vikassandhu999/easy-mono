@@ -1,4 +1,5 @@
 import {api} from '@/api/base';
+import {workoutSessionFromApi, performedSetFromApi} from '@/api/mappers/workoutSessions';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 export type WorkoutSessionState = 'active' | 'completed' | 'discarded';
@@ -143,7 +144,31 @@ export type ListWorkoutSessionsFilters = {
   state?: WorkoutSessionState;
 };
 
+export type ApiWorkoutSession = WorkoutSession;
+export type ApiPerformedSet = PerformedSet;
+
 const PAGE_SIZE = 20;
+
+function mapWorkoutSessionResponse(response: ApiResponse<ApiWorkoutSession>): ApiResponse<WorkoutSession> {
+  return {
+    ...response,
+    data: workoutSessionFromApi(response.data),
+  };
+}
+
+function mapWorkoutSessionListResponse(response: ApiListResponse<ApiWorkoutSession>): ApiListResponse<WorkoutSession> {
+  return {
+    ...response,
+    data: response.data.map(workoutSessionFromApi),
+  };
+}
+
+function mapPerformedSetResponse(response: ApiResponse<ApiPerformedSet>): ApiResponse<PerformedSet> {
+  return {
+    ...response,
+    data: performedSetFromApi(response.data),
+  };
+}
 
 export const workoutSessionsApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -153,6 +178,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/workout_sessions',
       }),
+      transformResponse: mapWorkoutSessionResponse,
       invalidatesTags: [{type: 'WorkoutSession', id: 'LIST'}],
     }),
     listWorkoutSessions: build.query<ApiListResponse<WorkoutSession>, ListWorkoutSessionsParams | void>({
@@ -163,6 +189,7 @@ export const workoutSessionsApi = api.injectEndpoints({
               url: '/v1/coach/workout_sessions',
             }
           : '/v1/coach/workout_sessions',
+      transformResponse: mapWorkoutSessionListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -184,6 +211,7 @@ export const workoutSessionsApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: mapWorkoutSessionListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -206,6 +234,7 @@ export const workoutSessionsApi = api.injectEndpoints({
     }),
     getWorkoutSession: build.query<ApiResponse<WorkoutSession>, string>({
       query: (id) => `/v1/coach/workout_sessions/${id}`,
+      transformResponse: mapWorkoutSessionResponse,
       providesTags: (_, __, id) => [{type: 'WorkoutSession', id}],
     }),
     updateWorkoutSession: build.mutation<ApiResponse<WorkoutSession>, {body: WorkoutSessionUpdateRequest; id: string}>({
@@ -214,6 +243,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workout_sessions/${id}`,
       }),
+      transformResponse: mapWorkoutSessionResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'WorkoutSession', id},
         {type: 'WorkoutSession', id: 'LIST'},
@@ -228,6 +258,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/workout_sessions/${id}/complete`,
       }),
+      transformResponse: mapWorkoutSessionResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'WorkoutSession', id},
         {type: 'WorkoutSession', id: 'LIST'},
@@ -238,6 +269,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/workout_sessions/${id}/discard`,
       }),
+      transformResponse: mapWorkoutSessionResponse,
       invalidatesTags: (_, __, id) => [
         {type: 'WorkoutSession', id},
         {type: 'WorkoutSession', id: 'LIST'},
@@ -259,6 +291,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/performed_sets',
       }),
+      transformResponse: mapPerformedSetResponse,
       invalidatesTags: (result) =>
         result
           ? [
@@ -276,6 +309,7 @@ export const workoutSessionsApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/performed_sets/${id}`,
       }),
+      transformResponse: mapPerformedSetResponse,
       invalidatesTags: (_, __, {id, sessionId}) => [
         {type: 'PerformedSet', id},
         {type: 'WorkoutSession', id: sessionId},

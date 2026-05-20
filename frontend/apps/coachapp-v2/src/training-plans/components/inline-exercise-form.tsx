@@ -6,9 +6,14 @@ import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import {applyFormErrors} from '@/api/shared';
-import type {PlannedSet} from '@/api/trainingPlans';
+import {
+  buildPlannedSetsFromForm,
+  deriveFormFromSets,
+  deriveRestFromReps,
+  isValidSetCountInput,
+  toggleRestUnitValue,
+} from '@/domain/training-exercise-form';
 import UnitPicker, {type LoadUnitValue} from '@/training-plans/components/unit-picker';
-import {parseNonNegativeInt, parseNonNegativeNumber} from '@/training-plans/lib/parse';
 
 export type InlineExerciseFormValues = {
   exerciseNotes: string;
@@ -32,10 +37,7 @@ const schema = z.object({
   sets: z
     .string()
     .min(1, 'Required')
-    .refine((value) => {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) && parsed >= 1;
-    }, 'Must be at least 1'),
+    .refine(isValidSetCountInput, 'Must be at least 1'),
 });
 
 export const PRESETS = [
@@ -55,80 +57,6 @@ export const EMPTY_DEFAULTS: InlineExerciseFormValues = {
   sets: '4',
 };
 
-/**
- * Smart rest default derived from the rep range. Applied only when the rest
- * field is empty so we never overwrite what the coach typed.
- *
- *  ≤ 6 reps  → 120s  (heavy strength — more recovery)
- *  7–12 reps →  90s  (hypertrophy — middle ground)
- *  13+ reps  →  60s  (endurance — shorter rests)
- */
-export function deriveRestFromReps(reps: string): string {
-  const parsed = parseReps(reps);
-  if (parsed == null) {
-    return '';
-  }
-  if (parsed <= 6) {
-    return '120';
-  }
-  if (parsed <= 12) {
-    return '90';
-  }
-  return '60';
-}
-
-/**
- * Reps can be "8", "8-12", "8–12" (en-dash), or "10 reps". We seed the rest
- * default from the lower bound of the range.
- */
-function parseReps(value: string): null | number {
-  const cleaned = value.trim();
-  if (!cleaned) {
-    return null;
-  }
-  const match = cleaned.match(/\d+/);
-  if (!match) {
-    return null;
-  }
-  const parsed = Number(match[0]);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-export function buildPlannedSetsFromForm(values: InlineExerciseFormValues): PlannedSet[] {
-  const setsCount = Math.max(1, parseNonNegativeInt(values.sets) ?? 1);
-  const loadValue = parseNonNegativeNumber(values.loadValue);
-  const restRaw = parseNonNegativeNumber(values.rest);
-  const restSeconds = restRaw != null ? Math.round(values.restUnit === 'min' ? restRaw * 60 : restRaw) : null;
-
-  const one: PlannedSet = {
-    load_unit: values.loadUnit,
-    ...(values.reps && {target_reps: values.reps}),
-    ...(loadValue != null && {load_value: loadValue}),
-    ...(restSeconds != null && {rest_seconds: restSeconds}),
-  };
-
-  return Array.from({length: setsCount}, () => ({...one}));
-}
-
-export function deriveFormFromSets(
-  sets: PlannedSet[],
-  fallbackLoadUnit: LoadUnitValue = 'kg',
-): InlineExerciseFormValues {
-  const first = sets[0];
-  const count = sets.length;
-  if (!first) {
-    return {...EMPTY_DEFAULTS, loadUnit: fallbackLoadUnit};
-  }
-  return {
-    exerciseNotes: '',
-    loadUnit: (first.load_unit as LoadUnitValue | undefined) ?? fallbackLoadUnit,
-    loadValue: first.load_value != null ? String(first.load_value) : '',
-    reps: first.target_reps ?? '',
-    rest: first.rest_seconds != null ? String(first.rest_seconds) : '',
-    restUnit: 'sec',
-    sets: String(Math.max(1, count)),
-  };
-}
 
 type InlineExerciseFormProps = {
   actionLabel: 'Add' | 'Save';
@@ -238,22 +166,9 @@ export default function InlineExerciseForm({
    * conversion when the field is empty.
    */
   const toggleRestUnit = () => {
-    const nextUnit: 'min' | 'sec' = restUnitValue === 'sec' ? 'min' : 'sec';
-    const trimmed = (restValue ?? '').trim();
-    if (!trimmed) {
-      setValue('restUnit', nextUnit, {shouldDirty: true});
-      return;
-    }
-    const parsed = Number(trimmed);
-    if (!Number.isFinite(parsed)) {
-      setValue('restUnit', nextUnit, {shouldDirty: true});
-      return;
-    }
-    const converted = nextUnit === 'min' ? parsed / 60 : parsed * 60;
-    const rounded = Math.round(converted * 100) / 100;
-    const displayed = Number.isInteger(rounded) ? String(rounded) : String(rounded);
-    setValue('rest', displayed, {shouldDirty: true});
-    setValue('restUnit', nextUnit, {shouldDirty: true});
+    const next = toggleRestUnitValue({rest: restValue, restUnit: restUnitValue});
+    setValue('rest', next.rest, {shouldDirty: true});
+    setValue('restUnit', next.restUnit, {shouldDirty: true});
   };
 
   return (

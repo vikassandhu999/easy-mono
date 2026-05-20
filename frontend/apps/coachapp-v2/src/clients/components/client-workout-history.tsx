@@ -1,4 +1,4 @@
-import {formatDuration, formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
+import {formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
 import {Chip, Separator, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
@@ -6,80 +6,14 @@ import {Link} from 'react-router-dom';
 import type {WorkoutSession} from '@/api/workoutSessions';
 
 import {useListWorkoutSessionsQuery} from '@/api/workoutSessions';
+import {buildWorkoutSessionSubtitle, getWorkoutSessionTitle} from '@/domain/workout-sessions';
 
 const PREVIEW_LIMIT = 7;
 
-function getWorkoutTitle(session: WorkoutSession): string {
-  if (session.planned_snapshot) {
-    return session.planned_snapshot.workout_name;
-  }
-  return 'Freestyle workout';
-}
-
-function getExerciseCount(session: WorkoutSession): number {
-  const exerciseIds = new Set<string>();
-  for (const set of session.performed_sets) {
-    exerciseIds.add(set.exercise_id);
-  }
-  return exerciseIds.size;
-}
-
-function getReplacedCount(session: WorkoutSession): number {
-  if (!session.planned_snapshot) {
-    return 0;
-  }
-  const elementExerciseMap = new Map<string, string>();
-  for (const el of session.planned_snapshot.elements) {
-    elementExerciseMap.set(el.element_id, el.exercise_id);
-  }
-  const replacedElements = new Set<string>();
-  for (const set of session.performed_sets) {
-    if (set.workout_element_id) {
-      const plannedExerciseId = elementExerciseMap.get(set.workout_element_id);
-      if (plannedExerciseId && plannedExerciseId !== set.exercise_id) {
-        replacedElements.add(set.workout_element_id);
-      }
-    }
-  }
-  return replacedElements.size;
-}
-
-function getPlannedExerciseCount(session: WorkoutSession): null | number {
-  if (!session.planned_snapshot) {
-    return null;
-  }
-  return session.planned_snapshot.elements.length;
-}
-
-function buildSubtitle(session: WorkoutSession): string {
-  const parts: string[] = [];
-
-  const duration = formatDuration(session.started_at, session.ended_at);
-  if (duration) {
-    parts.push(duration);
-  }
-
-  const plannedCount = getPlannedExerciseCount(session);
-  const actualCount = getExerciseCount(session);
-
-  if (plannedCount !== null) {
-    parts.push(`${actualCount}/${plannedCount} exercises`);
-  } else if (actualCount > 0) {
-    parts.push(`${actualCount} exercise${actualCount !== 1 ? 's' : ''}`);
-  }
-
-  const replacedCount = getReplacedCount(session);
-  if (replacedCount > 0) {
-    parts.push(`${replacedCount} replaced`);
-  }
-
-  return parts.join(' \u00B7 ');
-}
-
 export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
-  const title = getWorkoutTitle(session);
+  const title = getWorkoutSessionTitle(session);
   const dateStr = formatSessionDate(session.started_at);
-  const subtitle = buildSubtitle(session);
+  const subtitle = buildWorkoutSessionSubtitle(session);
   const stateChip = SESSION_STATE_CHIP[session.state];
 
   return (

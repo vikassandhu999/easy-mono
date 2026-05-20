@@ -1,5 +1,6 @@
 import {api} from '@/api/base';
 import {Food} from '@/api/foods';
+import {recipeFromApi} from '@/api/mappers/recipes';
 import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -37,6 +38,8 @@ export type Recipe = {
   inserted_at: string;
   updated_at: string;
 };
+
+export type ApiRecipe = Recipe;
 
 export type ListRecipesParams = {
   offset?: number;
@@ -77,6 +80,20 @@ export type RecipeUpdateRequest = {
   recipe_ingredients?: RecipeIngredientInput[];
 };
 
+function mapRecipeResponse(response: ApiResponse<ApiRecipe>): ApiResponse<Recipe> {
+  return {
+    ...response,
+    data: recipeFromApi(response.data),
+  };
+}
+
+function mapRecipeListResponse(response: ApiListResponse<ApiRecipe>): ApiListResponse<Recipe> {
+  return {
+    ...response,
+    data: response.data.map(recipeFromApi),
+  };
+}
+
 export const recipesApi = api.injectEndpoints({
   endpoints: (build) => ({
     createRecipe: build.mutation<ApiResponse<Recipe>, RecipeCreateRequest>({
@@ -85,10 +102,12 @@ export const recipesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: mapRecipeResponse,
       invalidatesTags: [{type: 'Recipe', id: 'LIST'}],
     }),
     getRecipe: build.query<ApiResponse<Recipe>, string>({
       query: (id) => `/v1/coach/recipes/${id}`,
+      transformResponse: mapRecipeResponse,
       providesTags: (_, __, id) => [{type: 'Recipe', id}],
     }),
     listRecipes: build.query<ApiListResponse<Recipe>, ListRecipesParams | void>({
@@ -99,6 +118,7 @@ export const recipesApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/recipes',
+      transformResponse: mapRecipeListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -129,6 +149,7 @@ export const recipesApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
+      transformResponse: mapRecipeListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -155,6 +176,7 @@ export const recipesApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
+      transformResponse: mapRecipeResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Recipe', id},
         {type: 'Recipe', id: 'LIST'},

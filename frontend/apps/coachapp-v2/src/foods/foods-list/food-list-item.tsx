@@ -1,11 +1,8 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {Apple} from 'lucide-react';
-import {useMemo} from 'react';
 
 import type {Food} from '@/api/foods';
-
-import {normalizeMacros} from '@/api/shared';
 
 const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
   {key: 'calories_per_100g', label: 'Cal', unit: ''},
@@ -28,7 +25,6 @@ function getSubtitle(food: Food, isSystem: boolean): string {
 }
 
 export default function FoodListItem({className, food}: {className?: string; food: Food}) {
-  const normalized = useMemo(() => normalizeMacros(food.macros), [food.macros]);
   const hasMacros = Object.keys(food.macros).length > 0;
   const isSystem = food.source === 'system';
 
@@ -61,7 +57,7 @@ export default function FoodListItem({className, food}: {className?: string; foo
       {hasMacros && (
         <div className="ms-auto hidden shrink-0 gap-1.5 sm:flex">
           {MACRO_DISPLAY.map((macro) => {
-            const value = normalized[macro.key];
+            const value = food.macros[macro.key];
             if (value === undefined) {
               return null;
             }

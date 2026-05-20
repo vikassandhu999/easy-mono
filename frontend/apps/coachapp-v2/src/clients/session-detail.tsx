@@ -7,6 +7,7 @@ import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetWorkoutSessionQuery} from '@/api/workoutSessions';
 import {buildExerciseGroups, type ExerciseGroup, formatLoad, getAdherenceSummary} from '@/clients/lib/session';
+import {getWorkoutSessionTitle} from '@/domain/workout-sessions';
 
 function ExerciseGroupSection({group}: {group: ExerciseGroup}) {
   const isSkipped = group.sets.length === 0 && !group.isAdded;
@@ -157,7 +158,7 @@ export default function SessionDetail() {
 
   const session = data.data;
   const snapshot = session.planned_snapshot;
-  const title = snapshot ? snapshot.workout_name : 'Freestyle workout';
+  const title = getWorkoutSessionTitle(session);
   const dateStr = formatSessionDateLong(session.started_at);
   const duration = formatDuration(session.started_at, session.ended_at);
   const groups = buildExerciseGroups(session);

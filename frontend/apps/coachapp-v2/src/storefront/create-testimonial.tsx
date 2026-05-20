@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
+import {testimonialToCreateRequest} from '@/api/mappers/storefront';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTestimonialMutation} from '@/api/testimonials';
 import TestimonialForm, {
@@ -18,20 +19,7 @@ export default function CreateTestimonial() {
 
   const onSubmit = async (data: TestimonialFormValues) => {
     try {
-      await createTestimonial({
-        after_image_url: data.after_image_url || undefined,
-        after_weight: data.after_weight,
-        before_image_url: data.before_image_url || undefined,
-        before_weight: data.before_weight,
-        client_handle: data.client_handle || undefined,
-        client_name: data.client_name,
-        duration_text: data.duration_text || undefined,
-        is_featured: data.is_featured,
-        program_name: data.program_name || undefined,
-        quote: data.quote || undefined,
-        rating: data.rating,
-        result_tag: data.result_tag || undefined,
-      }).unwrap();
+      await createTestimonial(testimonialToCreateRequest(data)).unwrap();
       navigate(ROUTES.STOREFRONT_TESTIMONIALS, {replace: true});
     } catch (err) {
       applyFormErrors(err, "Testimonial wasn't created. Check the details and try again", form.setError);

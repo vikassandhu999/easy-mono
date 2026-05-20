@@ -6,7 +6,6 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
-import {normalizeMacros} from '@/api/shared';
 
 type FoodPickerProps = {
   onSelect: (food: Food) => void;
@@ -103,9 +102,8 @@ export default function FoodPicker({
             renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
           >
             {(food: Food) => {
-              const m = normalizeMacros(food.macros);
-              const cal = m.calories_per_100g;
-              const pro = m.protein_g;
+              const cal = food.macros.calories_per_100g;
+              const pro = food.macros.protein_g;
               return (
                 <ListBox.Item
                   id={food.id}

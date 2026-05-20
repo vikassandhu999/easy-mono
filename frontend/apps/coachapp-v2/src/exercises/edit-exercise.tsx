@@ -4,6 +4,7 @@ import {Navigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {exerciseToFormValues, exerciseToUpdateRequest} from '@/api/mappers/exercises';
 import {
   type Exercise,
   useGetExerciseQuery,
@@ -30,34 +31,12 @@ function EditExerciseForm({
   const {data: equipmentData} = useListEquipmentQuery();
 
   const form = useExerciseForm({
-    values: {
-      description: exercise.description ?? '',
-      equipment_ids: exercise.equipment.map((e) => e.id),
-      force: exercise.force ?? '',
-      image_url: '',
-      images: exercise.images,
-      instructions: exercise.instructions ?? '',
-      mechanics: exercise.mechanics ?? '',
-      muscle_ids: exercise.muscles.map((m) => m.id),
-      name: exercise.name,
-    },
+    values: exerciseToFormValues(exercise),
   });
 
   const onSubmit = async (formData: ExerciseFormValues) => {
     try {
-      const mechanics = formData.mechanics || undefined;
-      const force = formData.force || undefined;
-      const body = {
-        name: formData.name,
-        description: formData.description || undefined,
-        instructions: formData.instructions || undefined,
-        ...(mechanics && {mechanics}),
-        ...(force && {force}),
-        muscle_ids: formData.muscle_ids ?? [],
-        equipment_ids: formData.equipment_ids ?? [],
-        images: formData.images ?? [],
-      };
-      await updateExercise({body, id: exerciseId}).unwrap();
+      await updateExercise({body: exerciseToUpdateRequest(formData), id: exerciseId}).unwrap();
       goBack();
     } catch (err) {
       applyFormErrors(err, "Exercise wasn't updated. Check the details and try again", form.setError);

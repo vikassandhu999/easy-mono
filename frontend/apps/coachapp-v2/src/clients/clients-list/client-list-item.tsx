@@ -1,3 +1,4 @@
+import {formatIsoDateShort, formatTimeAgo} from '@easy/utils';
 import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {MessageCircle} from 'lucide-react';
@@ -23,35 +24,10 @@ const STATUS_MAP: Record<ClientStatus, StatusConfig> = {
   pending: {color: 'default', label: 'Pending'},
 };
 
-function formatTimeAgo(dateString: string): string {
-  const now = Date.now();
-  const then = new Date(dateString).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) {
-    return 'just now';
-  }
-  if (diffMin < 60) {
-    return `${diffMin}m ago`;
-  }
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) {
-    return `${diffHrs}h ago`;
-  }
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 30) {
-    return `${diffDays}d ago`;
-  }
-  return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
-}
-
-function formatDateShort(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
-}
 
 export function getClientSubtitle(client: Client): string {
   if (client.status === 'active') {
-    return `Active · since ${formatDateShort(client.inserted_at)}`;
+    return `Active · since ${formatIsoDateShort(client.inserted_at)}`;
   }
   if (client.status === 'pending') {
     return `Invited · ${formatTimeAgo(client.inserted_at)}`;

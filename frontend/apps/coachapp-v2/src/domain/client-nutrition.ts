@@ -1,4 +1,4 @@
-import {MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
+import {getCurrentWeekRange, getDateForWeekdayIndex, isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 
 import type {CoachMealLog, DailyNutritionSummary, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
 import type {Macros} from '@/api/shared';
@@ -20,39 +20,6 @@ export const ADHERENCE_STYLES: Record<AdherenceLevel, {bg: string; icon: string}
   medium: {bg: 'bg-warning/20', icon: '◐'},
   none: {bg: 'bg-default', icon: '○'},
 };
-
-export function formatLocalDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-export function getCurrentWeekRange(): {from: string; to: string} {
-  const now = new Date();
-  const jsDay = now.getDay();
-  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
-
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  return {from: formatLocalDate(monday), to: formatLocalDate(sunday)};
-}
-
-export function getDateForWeekdayIndex(weekdayIndex: number): string {
-  const {from} = getCurrentWeekRange();
-  const monday = new Date(`${from}T00:00:00`);
-  const date = new Date(monday);
-  date.setDate(monday.getDate() + weekdayIndex);
-  return formatLocalDate(date);
-}
-
-export function isFutureDate(dateStr: string): boolean {
-  return dateStr > formatLocalDate(new Date());
-}
 
 export function getPlannedDailyCalories(macrosGoal: Macros | null | undefined): number {
   return macrosGoal?.calories ?? 0;

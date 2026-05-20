@@ -170,35 +170,3 @@ export function formatMacroValue(value: number, unit: string): string {
   return `${rounded}${unit}`;
 }
 
-// ── Date helpers ─────────────────────────────────────────────
-
-/**
- * Convert a Date to a weekday string (e.g., "monday")
- */
-export function getWeekdayFromDate(date: Date): string {
-  const jsDay = date.getDay();
-  // JS getDay(): 0=Sun, 1=Mon, ...6=Sat → map to our WEEKDAYS array (0=Mon...6=Sun)
-  const index = jsDay === 0 ? 6 : jsDay - 1;
-  return WEEKDAYS[index] ?? 'monday';
-}
-
-/**
- * Format a Date as ISO date string "YYYY-MM-DD"
- */
-export function formatDateISO(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-/**
- * Format a Date for display: "Monday, Mar 25"
- */
-export function formatDateDisplay(date: Date): string {
-  const weekday = getWeekdayFromDate(date);
-  const label = WEEKDAY_LABELS[weekday] ?? weekday;
-  const month = date.toLocaleDateString(undefined, {month: 'short'});
-  const day = date.getDate();
-  return `${label}, ${month} ${day}`;
-}

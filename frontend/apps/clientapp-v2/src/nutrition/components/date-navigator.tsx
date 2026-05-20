@@ -1,4 +1,4 @@
-import {formatDateDisplay} from '@easy/utils';
+import {formatDateDisplay, isTodayDate, shiftDateByDays} from '@easy/utils';
 import {Button} from '@heroui/react';
 import {ChevronLeft, ChevronRight} from 'lucide-react';
 import {useCallback, useRef} from 'react';
@@ -9,15 +9,11 @@ export default function DateNavigator({date, onDateChange}: {date: Date; onDateC
   const touchStartX = useRef<null | number>(null);
 
   const goBack = useCallback(() => {
-    const prev = new Date(date);
-    prev.setDate(prev.getDate() - 1);
-    onDateChange(prev);
+    onDateChange(shiftDateByDays(date, -1));
   }, [date, onDateChange]);
 
   const goForward = useCallback(() => {
-    const next = new Date(date);
-    next.setDate(next.getDate() + 1);
-    onDateChange(next);
+    onDateChange(shiftDateByDays(date, 1));
   }, [date, onDateChange]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -42,9 +38,7 @@ export default function DateNavigator({date, onDateChange}: {date: Date; onDateC
     }
   };
 
-  const now = new Date();
-  const isToday =
-    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+  const isToday = isTodayDate(date);
 
   return (
     <div

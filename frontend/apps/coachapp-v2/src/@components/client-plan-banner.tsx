@@ -1,3 +1,4 @@
+import {formatDateShort} from '@easy/utils';
 import {Avatar, Chip} from '@heroui/react';
 import {Link} from 'react-router-dom';
 
@@ -8,10 +9,6 @@ type ClientPlanBannerProps = {
   endDate?: null | string;
   startDate?: null | string;
 };
-
-function formatDateShort(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
-}
 
 function getFullName(client: PlanClient): string {
   return [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client';

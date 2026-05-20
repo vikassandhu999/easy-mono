@@ -1,4 +1,4 @@
-import {buildWorkoutMap, sortPlanItems, TRAINING_DAY_LABELS, TRAINING_WEEKDAYS} from '@easy/utils';
+import {buildWorkoutMap, formatDateLong, sortPlanItems, TRAINING_DAY_LABELS, TRAINING_WEEKDAYS} from '@easy/utils';
 import {Alert, Button, Chip, Spinner} from '@heroui/react';
 import {ArrowLeft, Calendar, Dumbbell} from 'lucide-react';
 import {useMemo} from 'react';
@@ -66,13 +66,6 @@ function formatSetSummary(sets: PlannedSet[]): string {
   return `${sets.length} sets (mixed)${rest}`;
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 function ExerciseCard({element, index}: {element: ClientWorkoutElement; index: number}) {
   const summary = formatSetSummary(element.planned_sets);
@@ -289,9 +282,9 @@ export default function TrainingPlanDetail() {
         {plan.start_date || plan.end_date ? (
           <div className="mt-2 flex items-center gap-1.5 text-xs text-foreground-400">
             <Calendar size={12} />
-            {plan.start_date ? formatDate(plan.start_date) : '—'}
+            {plan.start_date ? formatDateLong(plan.start_date) : '—'}
             {' — '}
-            {plan.end_date ? formatDate(plan.end_date) : 'ongoing'}
+            {plan.end_date ? formatDateLong(plan.end_date) : 'ongoing'}
           </div>
         ) : null}
       </div>

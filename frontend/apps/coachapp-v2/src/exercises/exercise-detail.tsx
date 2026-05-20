@@ -1,3 +1,4 @@
+import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Spinner, Typography, toast} from '@heroui/react';
 import {ArrowLeft, Copy, Dumbbell, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -18,14 +19,6 @@ const FORCE_LABEL: Record<string, string> = {
   push: 'Push',
   static: 'Static',
 };
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 export default function ExerciseDetail() {
   const {id} = useParams<{id: string}>();
@@ -357,7 +350,7 @@ export default function ExerciseDetail() {
                 >
                   Created
                 </Typography>
-                <Typography>{formatDate(exercise.inserted_at)}</Typography>
+                <Typography>{formatIsoDateOnly(exercise.inserted_at)}</Typography>
               </div>
               <div>
                 <Typography
@@ -366,7 +359,7 @@ export default function ExerciseDetail() {
                 >
                   Last updated
                 </Typography>
-                <Typography>{formatDate(exercise.updated_at)}</Typography>
+                <Typography>{formatIsoDateOnly(exercise.updated_at)}</Typography>
               </div>
             </div>
           </section>

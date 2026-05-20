@@ -1,4 +1,4 @@
-import {formatDateISO} from '@easy/utils';
+import {formatDateISO, getWeekDates, isFutureDate, toLocalDate} from '@easy/utils';
 import {Button} from '@heroui/react';
 import {useMemo} from 'react';
 
@@ -10,25 +10,10 @@ import {useListMyMealLogsQuery} from '@/api/mealLogs';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function getWeekDates(referenceDate: Date): string[] {
-  const jsDay = referenceDate.getDay();
-  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
-  const monday = new Date(referenceDate);
-  monday.setDate(referenceDate.getDate() + mondayOffset);
-
-  const dates: string[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    dates.push(formatDateISO(d));
-  }
-  return dates;
-}
-
 type DotLevel = 'future' | 'high' | 'low' | 'medium' | 'none';
 
 function getDotLevel(dateStr: string, todayStr: string, logsForDay: MealLog[]): DotLevel {
-  if (dateStr > todayStr) {
+  if (isFutureDate(dateStr, todayStr)) {
     return 'future';
   }
   if (logsForDay.length === 0) {
@@ -96,7 +81,7 @@ export default function WeeklySummaryStrip({
     if (level === 'future') {
       return;
     }
-    onSelectDate(new Date(dateStr + 'T00:00:00'));
+    onSelectDate(toLocalDate(dateStr));
   };
 
   return (

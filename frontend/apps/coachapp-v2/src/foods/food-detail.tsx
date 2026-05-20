@@ -1,3 +1,4 @@
+import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Spinner, Typography} from '@heroui/react';
 import {Apple, ArrowLeft, Copy, Pencil, Trash2} from 'lucide-react';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -15,14 +16,6 @@ const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   fiber_g: {label: 'Fiber', unit: 'g'},
   sugar_g: {label: 'Sugar', unit: 'g'},
 };
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 export default function FoodDetail() {
   const {id} = useParams<{id: string}>();
@@ -355,7 +348,7 @@ export default function FoodDetail() {
                 >
                   Created
                 </Typography>
-                <Typography>{formatDate(food.inserted_at)}</Typography>
+                <Typography>{formatIsoDateOnly(food.inserted_at)}</Typography>
               </div>
               <div>
                 <Typography
@@ -364,7 +357,7 @@ export default function FoodDetail() {
                 >
                   Last updated
                 </Typography>
-                <Typography>{formatDate(food.updated_at)}</Typography>
+                <Typography>{formatIsoDateOnly(food.updated_at)}</Typography>
               </div>
             </div>
           </section>

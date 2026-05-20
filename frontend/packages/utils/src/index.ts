@@ -220,6 +220,7 @@ export class Result<T> {
   }
 }
 
+export * from './date';
 export * from './format-start-end';
 export * from './nutrition';
 export * from './workout';

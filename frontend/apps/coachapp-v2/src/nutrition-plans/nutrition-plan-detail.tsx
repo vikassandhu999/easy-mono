@@ -1,3 +1,4 @@
+import {formatIsoDateOnly} from '@easy/utils';
 import {AlertDialog, Button, Chip, Form, Spinner, Typography, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
@@ -40,14 +41,6 @@ const MACRO_LABELS: Record<string, {label: string; unit: string}> = {
   carbs_g: {label: 'Carbs', unit: 'g'},
   fats_g: {label: 'Fats', unit: 'g'},
 };
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 const MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
 
@@ -618,7 +611,7 @@ export default function NutritionPlanDetail() {
                 >
                   Created
                 </Typography>
-                <Typography>{formatDate(plan.inserted_at)}</Typography>
+                <Typography>{formatIsoDateOnly(plan.inserted_at)}</Typography>
               </div>
               <div>
                 <Typography
@@ -627,7 +620,7 @@ export default function NutritionPlanDetail() {
                 >
                   Last updated
                 </Typography>
-                <Typography>{formatDate(plan.updated_at)}</Typography>
+                <Typography>{formatIsoDateOnly(plan.updated_at)}</Typography>
               </div>
             </div>
           </section>

@@ -1,3 +1,5 @@
+import {formatIsoDateLong, formatIsoDateShort} from './date';
+
 // ── Day helpers (weekday mapping for training plans) ────────
 
 export const TRAINING_WEEKDAYS = [
@@ -93,18 +95,11 @@ export function formatDurationFromNow(startedAt: string): string {
 // ── Date formatting ──────────────────────────────────────────
 
 export function formatSessionDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-  });
+  return formatIsoDateShort(dateString);
 }
 
 export function formatSessionDateLong(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatIsoDateLong(dateString);
 }
 
 // ── Workout title ────────────────────────────────────────────

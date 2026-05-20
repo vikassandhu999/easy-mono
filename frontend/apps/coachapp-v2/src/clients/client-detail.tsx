@@ -1,3 +1,4 @@
+import {formatIsoDateOnly} from '@easy/utils';
 import {Alert, Avatar, Button, Chip, Separator, Spinner, TextArea, Typography, toast} from '@heroui/react';
 import {ArrowLeft, MessageCircle, Pencil, Phone} from 'lucide-react';
 import {useState} from 'react';
@@ -18,7 +19,6 @@ import ClientNutritionAdherence from '@/clients/components/client-nutrition-adhe
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
 import {
-  formatDate,
   getFullName,
   getInitials,
   getWhatsAppUrl,
@@ -508,7 +508,7 @@ export default function ClientDetail() {
               color="muted"
               type="body-sm"
             >
-              Added {formatDate(client.inserted_at)}
+              Added {formatIsoDateOnly(client.inserted_at)}
             </Typography>
           </section>
         </div>

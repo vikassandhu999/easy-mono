@@ -30,14 +30,6 @@ export function getFullName(firstName: null | string, lastName: null | string): 
   return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
 }
 
-export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 export function getWhatsAppUrl(phone: string): string {
   const cleanPhone = phone.replace(/\D/g, '');
   return `https://wa.me/${cleanPhone}`;

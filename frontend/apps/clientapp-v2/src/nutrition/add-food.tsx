@@ -1,4 +1,4 @@
-import {computeMacrosFromSnapshot, formatMacroValue, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
+import {computeMacrosFromSnapshot, formatDateISO, formatMacroValue, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 import {Button, Input, Label, Separator, toast} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ArrowLeft, Check} from 'lucide-react';
@@ -40,7 +40,7 @@ export default function AddFood() {
   const state = (location.state as LocationState) ?? {};
 
   const goBack = useGoBack(ROUTES.NUTRITION);
-  const dateISO = state.date ?? new Date().toISOString().slice(0, 10);
+  const dateISO = state.date ?? formatDateISO(new Date());
   const isReplacement = state.replace === true;
   const plannedItemIndex = state.plannedItemIndex ?? null;
 

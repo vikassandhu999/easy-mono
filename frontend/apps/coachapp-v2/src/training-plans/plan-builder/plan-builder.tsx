@@ -6,7 +6,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
-import {formatIsoDate} from '@/utils';
+import {formatDateLong, formatIsoDate} from '@easy/utils';
 
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';
@@ -127,13 +127,13 @@ export default function TrainingPlanDetail() {
                 color="muted"
                 type="body-sm"
               >
-                Start: {plan.start_date ? formatIsoDate(plan.start_date) : '\u2014'}
+                Start: {plan.start_date ? formatDateLong(plan.start_date) : '\u2014'}
               </Typography>
               <Typography
                 color="muted"
                 type="body-sm"
               >
-                End: {plan.end_date ? formatIsoDate(plan.end_date) : '\u2014'}
+                End: {plan.end_date ? formatDateLong(plan.end_date) : '\u2014'}
               </Typography>
             </div>
           ) : null}

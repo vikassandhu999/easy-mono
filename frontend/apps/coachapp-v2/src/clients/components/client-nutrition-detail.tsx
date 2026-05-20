@@ -1,3 +1,4 @@
+import {formatDateDisplay} from '@easy/utils';
 import {Button, Spinner, Table} from '@heroui/react';
 import {ArrowLeft, Check, Minus, Plus, RefreshCw} from 'lucide-react';
 import {useMemo} from 'react';
@@ -13,14 +14,6 @@ import {
   sortMealLogsBySlot,
   type ComparisonType,
 } from '@/domain/client-nutrition';
-
-function formatDate(dateStr: string): string {
-  const d = new Date(`${dateStr}T00:00:00`);
-  const weekday = d.toLocaleDateString(undefined, {weekday: 'long'});
-  const month = d.toLocaleDateString(undefined, {month: 'short'});
-  const day = d.getDate();
-  return `${weekday}, ${month} ${day}`;
-}
 
 function StatusIcon({type}: {type: ComparisonType}) {
   switch (type) {
@@ -243,7 +236,7 @@ export default function ClientNutritionDetail({
         </Button>
       </div>
 
-      <h3 className="mb-1 text-sm font-semibold">{formatDate(date)}</h3>
+      <h3 className="mb-1 text-sm font-semibold">{formatDateDisplay(date)}</h3>
       <p className="mb-4 text-xs text-foreground-400">
         Logged: {Math.round(totalLoggedCal)} cal
         {totalPlannedCal > 0 ? ` \u00B7 Plan: ${Math.round(totalPlannedCal)} cal` : ''}

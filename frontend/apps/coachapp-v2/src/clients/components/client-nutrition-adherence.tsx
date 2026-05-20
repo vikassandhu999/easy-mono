@@ -1,3 +1,4 @@
+import {formatWeekday} from '@easy/utils';
 import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
@@ -120,9 +121,7 @@ export default function ClientNutritionAdherence({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">
-                          {new Date(summary.date + 'T00:00:00').toLocaleDateString(undefined, {
-                            weekday: 'long',
-                          })}
+                          {formatWeekday(summary.date)}
                           <span className="ml-1 font-normal text-foreground-400">
                             {Math.round(summary.logged_calories)}
                             {summary.planned_calories > 0 ? ` / ${Math.round(summary.planned_calories)} cal` : ' cal'}

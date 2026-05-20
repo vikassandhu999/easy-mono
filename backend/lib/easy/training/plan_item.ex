@@ -123,11 +123,6 @@ defmodule Easy.Training.PlanItem do
     from(p in query, where: p.day == ^day)
   end
 
-  @spec for_workout_type(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_workout_type(query \\ __MODULE__, workout_type) do
-    from(p in query, where: p.workout_type == ^workout_type)
-  end
-
   @spec with_workout(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_workout(query \\ __MODULE__) do
     from(p in query, preload: [:workout])

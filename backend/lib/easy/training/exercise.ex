@@ -186,8 +186,8 @@ defmodule Easy.Training.Exercise do
         name: generate_copy_name(exercise.name, business_id),
         description: exercise.description,
         instructions: exercise.instructions,
-        mechanics: exercise.mechanics && Atom.to_string(exercise.mechanics),
-        force: exercise.force && Atom.to_string(exercise.force),
+        mechanics: exercise.mechanics,
+        force: exercise.force,
         muscle_ids: Enum.map(exercise.exercise_muscles, & &1.muscle_id),
         equipment_ids: Enum.map(exercise.exercise_equipment, & &1.equipment_id)
       }

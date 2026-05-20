@@ -4,14 +4,14 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
 
-export const trainingPlanFormSchema = z.object({
+export const schema = z.object({
   description: z.string().optional(),
   end_date: z.string().optional(),
   name: z.string().min(1, 'Enter plan name'),
   start_date: z.string().optional(),
 });
 
-export type TrainingPlanFormValues = z.infer<typeof trainingPlanFormSchema>;
+export type TrainingPlanFormValues = z.infer<typeof schema>;
 
 export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
   description: '',
@@ -23,7 +23,7 @@ export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
 export function useTrainingPlanForm(options?: {values?: TrainingPlanFormValues}) {
   return useForm<TrainingPlanFormValues>({
     defaultValues: options?.values ? undefined : TRAINING_PLAN_FORM_DEFAULTS,
-    resolver: zodResolver(trainingPlanFormSchema),
+    resolver: zodResolver(schema),
     values: options?.values,
   });
 }

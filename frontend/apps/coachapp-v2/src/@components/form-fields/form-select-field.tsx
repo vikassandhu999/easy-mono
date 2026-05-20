@@ -26,8 +26,8 @@ export function FormSelectField<T extends FieldValues>({
         <Select
           {...props}
           isInvalid={!!fieldState.error}
-          onSelectionChange={(key) => field.onChange(key ?? undefined)}
-          selectedKey={field.value || null}
+          onChange={(key) => field.onChange(key ?? undefined)}
+          value={field.value || null}
         >
           <Label>{label}</Label>
           {description ? <Description>{description}</Description> : null}

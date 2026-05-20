@@ -8,11 +8,11 @@ import {FormTextField} from '@/@components/form-fields';
 
 import {applyFormErrors} from '@/api/shared';
 
-const workoutNameFormSchema = z.object({
+const name = z.object({
   name: z.string().trim().min(1, 'Enter workout name'),
 });
 
-export type WorkoutNameFormValues = z.infer<typeof workoutNameFormSchema>;
+export type WorkoutNameFormValues = z.infer<typeof name>;
 
 type WorkoutNameFormProps = {
   fallbackError: string;
@@ -47,7 +47,7 @@ export default function WorkoutNameForm({
   } = useForm<WorkoutNameFormValues>({
     defaultValues: {name: ''},
     mode: 'onChange',
-    resolver: zodResolver(workoutNameFormSchema),
+    resolver: zodResolver(name),
   });
 
   const nameValue = useWatch({control, name: 'name'}) ?? '';

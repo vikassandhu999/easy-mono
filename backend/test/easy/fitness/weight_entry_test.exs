@@ -3,6 +3,7 @@ defmodule Easy.Fitness.WeightEntryTest do
 
   alias Easy.Error
   alias Easy.Fitness.WeightEntry
+  alias Easy.Fitness.WeightEntries
 
   describe "insert_changeset/3" do
     test "is valid with required fields" do
@@ -133,7 +134,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       insert_weight_entry(client: client, date: Date.add(today, -40))
 
       assert {:ok, %{logged_days: 2, window_days: 30}} =
-               WeightEntry.adherence(client.business_id, client.id)
+               WeightEntries.adherence(client.business_id, client.id)
     end
 
     test "counts an upserted date only once" do
@@ -141,21 +142,21 @@ defmodule Easy.Fitness.WeightEntryTest do
       today = Date.utc_today()
 
       {:ok, _first} =
-        WeightEntry.upsert(client.id, client.business_id, %{
+        WeightEntries.upsert(client.id, client.business_id, %{
           "date" => Date.to_iso8601(today),
           "value" => "90.00",
           "unit" => "kg"
         })
 
       {:ok, _second} =
-        WeightEntry.upsert(client.id, client.business_id, %{
+        WeightEntries.upsert(client.id, client.business_id, %{
           "date" => Date.to_iso8601(today),
           "value" => "89.50",
           "unit" => "kg"
         })
 
       assert {:ok, %{logged_days: 1, window_days: 30}} =
-               WeightEntry.adherence(client.business_id, client.id)
+               WeightEntries.adherence(client.business_id, client.id)
     end
   end
 
@@ -177,7 +178,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:ok, entry} =
-               WeightEntry.upsert(client.id, client.business_id, %{
+               WeightEntries.upsert(client.id, client.business_id, %{
                  "date" => "2026-04-22",
                  "value" => "91.40",
                  "unit" => "kg",
@@ -202,7 +203,7 @@ defmodule Easy.Fitness.WeightEntryTest do
         )
 
       assert {:ok, updated} =
-               WeightEntry.upsert(client.id, client.business_id, %{
+               WeightEntries.upsert(client.id, client.business_id, %{
                  "date" => "2026-04-22",
                  "value" => "91.40",
                  "unit" => "kg",
@@ -218,7 +219,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:error, %Error{detail: %{fields: %{date: ["is invalid"]}}}} =
-               WeightEntry.upsert(client.id, client.business_id, %{
+               WeightEntries.upsert(client.id, client.business_id, %{
                  "date" => "bad-date",
                  "value" => 91.4,
                  "unit" => "kg"
@@ -229,7 +230,7 @@ defmodule Easy.Fitness.WeightEntryTest do
       client = insert_client()
 
       assert {:error, %Error{detail: %{fields: %{date: ["cannot be in the future"]}}}} =
-               WeightEntry.upsert(client.id, client.business_id, %{
+               WeightEntries.upsert(client.id, client.business_id, %{
                  "date" => Date.utc_today() |> Date.add(2) |> Date.to_iso8601(),
                  "value" => 91.4,
                  "unit" => "kg"
@@ -241,7 +242,7 @@ defmodule Easy.Fitness.WeightEntryTest do
     test "deletes the entry" do
       entry = insert_weight_entry()
 
-      assert {:ok, _deleted} = WeightEntry.delete(entry)
+      assert {:ok, _deleted} = WeightEntries.delete_entry(entry)
       assert Repo.get(WeightEntry, entry.id) == nil
     end
   end

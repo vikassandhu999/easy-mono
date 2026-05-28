@@ -1,64 +1,22 @@
 defmodule EasyWeb.Public.StorefrontController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
-  alias Easy.Repo
-  alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
+  alias Easy.Storefront
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"slug" => slug}) do
-    case StoreProfile |> StoreProfile.by_slug(slug) |> StoreProfile.published() |> Repo.one() do
-      nil ->
-        {:error, :not_found}
-
-      profile ->
-        offers =
-          Offer
-          |> Offer.for_business(profile.business_id)
-          |> Offer.active()
-          |> Offer.ordered()
-          |> Repo.all()
-
-        testimonials =
-          Testimonial
-          |> Testimonial.for_business(profile.business_id)
-          |> Testimonial.active()
-          |> Testimonial.ordered()
-          |> Repo.all()
-
-        render(conn, :show, profile: profile, offers: offers, testimonials: testimonials)
+    with {:ok, %{profile: profile, offers: offers, testimonials: testimonials}} <-
+           Storefront.fetch_public_profile(slug) do
+      render(conn, :show, profile: profile, offers: offers, testimonials: testimonials)
     end
   end
 
   @spec create_inquiry(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create_inquiry(conn, %{"slug" => slug} = params) do
-    case StoreProfile |> StoreProfile.by_slug(slug) |> StoreProfile.published() |> Repo.one() do
-      nil ->
-        {:error, :not_found}
-
-      profile ->
-        inquiry_params = parse_inquiry_params(params)
-
-        with {:ok, client} <- Client.create_inquiry(profile.business_id, inquiry_params) do
-          conn
-          |> put_status(:created)
-          |> render(:inquiry, client: client)
-        end
+    with {:ok, client} <- Storefront.create_inquiry(slug, params) do
+      conn
+      |> put_status(:created)
+      |> render(:inquiry, client: client)
     end
   end
-
-  defp parse_inquiry_params(%{"name" => name} = params) when is_binary(name) do
-    {first_name, last_name} =
-      case String.split(name, " ", parts: 2) do
-        [first, last] -> {first, last}
-        [first] -> {first, nil}
-      end
-
-    params
-    |> Map.put_new("first_name", first_name)
-    |> Map.put_new("last_name", last_name)
-    |> Map.delete("name")
-  end
-
-  defp parse_inquiry_params(params), do: params
 end

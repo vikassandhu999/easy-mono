@@ -1,7 +1,7 @@
 defmodule Easy.Clients.ReadBoundaryTest do
   use Easy.SchemaCase
 
-  alias Easy.Clients.Reads
+  alias Easy.Clients
 
   @training_schemas [
     "lib/easy/training/exercise.ex",
@@ -38,8 +38,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
     other_client =
       insert(:client, business: other_business, creator: other_coach, user: insert(:user))
 
-    assert {:ok, %{id: client_id}} = Reads.fetch_client(business.id, client.id)
+    assert {:ok, %{id: client_id}} = Clients.fetch_client(business.id, client.id)
     assert client_id == client.id
-    assert {:error, :not_found} = Reads.fetch_client(business.id, other_client.id)
+    assert {:error, :not_found} = Clients.fetch_client(business.id, other_client.id)
   end
 end

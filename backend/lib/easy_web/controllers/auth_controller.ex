@@ -1,7 +1,6 @@
 defmodule EasyWeb.AuthController do
-  alias Easy.Clients.Client
+  alias Easy.Clients
   alias Easy.Identity
-  alias Easy.Repo
   alias Easy.Utils
   use EasyWeb, :controller
 
@@ -47,30 +46,10 @@ defmodule EasyWeb.AuthController do
 
   @spec show_invitation(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show_invitation(conn, %{"token" => token}) do
-    body =
-      case Client.resolve_invitation_token(token) do
-        {:ok, client} ->
-          client = Repo.preload(client, [:business, :creator])
-
-          %{
-            state: "pending",
-            business_name: client.business.name,
-            coach_first_name: coach_display_name(client.creator),
-            prefill_email: client.email,
-            expires_at: Client.invitation_expires_at(client)
-          }
-
-        {:error, state} ->
-          %{state: Atom.to_string(state)}
-      end
-
-    conn |> put_status(200) |> json(%{data: body})
+    with {:ok, body} <- Clients.invitation_preview(token) do
+      conn |> put_status(200) |> json(%{data: body})
+    end
   end
-
-  defp coach_display_name(nil), do: "Coach"
-  defp coach_display_name(%{first_name: nil}), do: "Coach"
-  defp coach_display_name(%{first_name: ""}), do: "Coach"
-  defp coach_display_name(%{first_name: name}), do: name
 
   def verify(conn, %{"token" => token_hash}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")

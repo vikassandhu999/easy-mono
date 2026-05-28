@@ -1,5 +1,5 @@
 defmodule Easy.Identity.Invitations do
-  alias Easy.Clients.Client
+  alias Easy.Clients
   alias Easy.Identity.AuthTokens
   alias Easy.Identity.Errors
   alias Easy.Identity.Mailer
@@ -22,7 +22,7 @@ defmodule Easy.Identity.Invitations do
     # ownership via OTP.
     result =
       Repo.transaction(fn ->
-        with {:ok, _client} <- Client.resolve_invitation_token(token),
+        with {:ok, _client} <- Clients.resolve_invitation_token(token),
              :ok <- rotate_invitation_otp(email),
              {:ok, _} <- OneTimeTokens.create_invitation_acceptance_token(otp, email, token) do
           :ok
@@ -58,9 +58,9 @@ defmodule Easy.Identity.Invitations do
     Repo.transaction(fn ->
       with {:ok, ott} <- OneTimeTokens.get_by_hash(token_hash, :invitation_acceptance),
            :ok <- validate_invitation_ott_fresh(ott),
-           {:ok, client} <- Client.resolve_invitation_token(token),
+           {:ok, client} <- Clients.resolve_invitation_token(token),
            {:ok, user} <- find_or_create_confirmed_user(client, email),
-           {:ok, _client} <- Client.accept_invite(client, user.id, email),
+           {:ok, _client} <- Clients.accept_invite(client, user.id, email),
            {:ok, _} <- OneTimeTokens.delete(ott),
            {:ok, session} <-
              SessionFactory.create_session(user, Map.merge(session_opts, %{role: :client})) do

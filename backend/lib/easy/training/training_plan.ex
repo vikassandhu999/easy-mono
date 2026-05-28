@@ -1,9 +1,8 @@
 defmodule Easy.Training.TrainingPlan do
   use Ecto.Schema
 
-  alias Easy.Clients
+  alias Easy.Clients.Client
   alias Easy.Orgs
-  alias Easy.Repo
   alias Easy.Training.{PlanItem, Workout}
 
   import Ecto.Changeset
@@ -31,7 +30,7 @@ defmodule Easy.Training.TrainingPlan do
 
     belongs_to :business, Orgs.Business
     belongs_to :author, Orgs.Coach
-    belongs_to :client, Clients.Client
+    belongs_to :client, Client
     belongs_to :original_template, __MODULE__
 
     has_many :workouts, Workout, preload_order: [asc: :name]
@@ -55,6 +54,7 @@ defmodule Easy.Training.TrainingPlan do
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:author_id, author_id)
+    |> reject_relationship_attrs(attrs)
     |> common_validations()
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:author_id)
@@ -66,9 +66,24 @@ defmodule Easy.Training.TrainingPlan do
   def update_changeset(plan, attrs) do
     plan
     |> cast(attrs, @cast_fields)
+    |> reject_relationship_attrs(attrs)
     |> common_validations()
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:original_template_id)
+  end
+
+  defp reject_relationship_attrs(changeset, attrs) do
+    Enum.reduce(
+      [:business_id, :author_id, :client_id, :original_template_id],
+      changeset,
+      fn field, changeset ->
+        if Map.has_key?(attrs, field) || Map.has_key?(attrs, Atom.to_string(field)) do
+          add_error(changeset, field, "cannot be set directly")
+        else
+          changeset
+        end
+      end
+    )
   end
 
   defp common_validations(changeset) do
@@ -125,28 +140,6 @@ defmodule Easy.Training.TrainingPlan do
     end)
   end
 
-  defp check_rest_days_do_not_overlap_plan_items(changeset) do
-    rest_days = get_change(changeset, :rest_days)
-    plan_id = get_field(changeset, :id)
-    business_id = get_field(changeset, :business_id)
-
-    if rest_days && plan_id && business_id && plan_items_on_days?(business_id, plan_id, rest_days) do
-      add_error(changeset, :rest_days, "cannot include days with scheduled workouts")
-    else
-      changeset
-    end
-  end
-
-  defp plan_items_on_days?(_business_id, _plan_id, []), do: false
-
-  defp plan_items_on_days?(business_id, plan_id, days) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
-    |> PlanItem.for_plan(plan_id)
-    |> where([p], p.day in ^days)
-    |> Repo.exists?()
-  end
-
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(t in query, where: t.business_id == ^business_id)
@@ -178,158 +171,20 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, order_by: [desc: t.inserted_at, desc: t.id])
   end
 
-  @spec with_workouts(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_workouts(query \\ __MODULE__) do
-    workout_query = Workout |> Workout.ordered() |> Workout.with_elements()
+  @spec with_workouts(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_workouts(query, business_id) do
+    workout_query =
+      Workout
+      |> Workout.for_business(business_id)
+      |> Workout.ordered()
+      |> Workout.with_elements(business_id)
+
     from(t in query, preload: [workouts: ^workout_query])
   end
 
-  @spec with_plan_items(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_plan_items(query \\ __MODULE__) do
-    from(t in query, preload: [:plan_items])
-  end
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(business_id, author_id, attrs) do
-    insert_changeset(business_id, author_id, attrs)
-    |> Repo.insert()
-    |> preload_result()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(plan, attrs) do
-    update_changeset(plan, attrs)
-    |> check_context()
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(plan), do: Repo.delete(plan)
-
-  @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def duplicate(plan) do
-    attrs = %{
-      name: generate_copy_name(plan.name, plan.business_id),
-      description: plan.description,
-      rest_days: plan.rest_days
-    }
-
-    clone_plan(plan, attrs, original_template_id: plan.id)
-  end
-
-  @spec assign_to_client(
-          t(),
-          String.t() | nil,
-          Date.t() | String.t() | nil,
-          Date.t() | String.t() | nil
-        ) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t() | :not_found}
-  def assign_to_client(_plan, nil, _start_date, _end_date), do: {:error, :not_found}
-  def assign_to_client(_plan, "", _start_date, _end_date), do: {:error, :not_found}
-
-  def assign_to_client(plan, client_id, start_date, end_date) do
-    attrs = %{
-      name: plan.name,
-      description: plan.description,
-      rest_days: plan.rest_days,
-      start_date: start_date,
-      end_date: end_date
-    }
-
-    clone_plan(plan, attrs, client_id: client_id, original_template_id: plan.id)
-  end
-
-  defp clone_plan(plan, attrs, relationship_changes) do
-    plan = Repo.preload(plan, workouts: [:workout_elements], plan_items: [])
-
-    Repo.transaction(fn ->
-      changeset =
-        insert_changeset(plan.business_id, plan.author_id, attrs)
-        |> put_relationship_changes(relationship_changes)
-
-      case Repo.insert(changeset) do
-        {:ok, new_plan} ->
-          workout_id_map = copy_workouts(plan.workouts, new_plan)
-          copy_plan_items(plan.plan_items, new_plan, workout_id_map)
-          preload_full(new_plan)
-
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
-  end
-
-  defp put_relationship_changes(changeset, relationship_changes) do
-    Enum.reduce(relationship_changes, changeset, fn {field, value}, changeset ->
-      put_change(changeset, field, value)
-    end)
-  end
-
-  defp copy_workouts(workouts, new_plan) do
-    Enum.reduce(workouts, %{}, fn workout, id_map ->
-      new_workout = Workout.copy_into!(workout, new_plan.id)
-      Map.put(id_map, workout.id, new_workout.id)
-    end)
-  end
-
-  defp copy_plan_items(plan_items, new_plan, workout_id_map) do
-    Enum.each(plan_items, fn item ->
-      new_workout_id = Map.get(workout_id_map, item.workout_id, item.workout_id)
-
-      attrs = %{
-        "day" => item.day,
-        "workout_type" => item.workout_type,
-        "workout_id" => new_workout_id
-      }
-
-      case PlanItem.insert_changeset(new_plan.id, new_plan.business_id, item.creator_id, attrs)
-           |> Repo.insert() do
-        {:ok, _} -> :ok
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  defp generate_copy_name(original_name, business_id) do
-    base_name = String.replace(original_name, ~r/\s*\(Copy\s*\d*\)\s*$/, "") |> String.trim()
-
-    existing_names =
-      __MODULE__
-      |> for_business(business_id)
-      |> where([t], t.name == ^base_name or like(t.name, ^"#{base_name} (Copy%)"))
-      |> select([t], t.name)
-      |> Repo.all()
-      |> MapSet.new()
-
-    find_available_name(base_name, existing_names, 1)
-  end
-
-  defp find_available_name(base_name, existing_names, attempt) when attempt <= 100 do
-    candidate = if attempt == 1, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{attempt})"
-
-    if MapSet.member?(existing_names, candidate) do
-      find_available_name(base_name, existing_names, attempt + 1)
-    else
-      candidate
-    end
-  end
-
-  defp find_available_name(base_name, _existing_names, _attempt) do
-    "#{base_name} (Copy #{System.system_time(:second)})"
-  end
-
-  defp preload_result({:ok, plan}), do: {:ok, preload_full(plan)}
-  defp preload_result(error), do: error
-
-  defp check_context(%Ecto.Changeset{valid?: false} = changeset), do: changeset
-  defp check_context(changeset), do: check_rest_days_do_not_overlap_plan_items(changeset)
-
-  defp preload_full(plan) do
-    Repo.preload(plan,
-      workouts: Workout.with_elements(),
-      plan_items: [],
-      client: []
-    )
+  @spec with_plan_items(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_plan_items(query, business_id) do
+    item_query = PlanItem |> PlanItem.for_business(business_id)
+    from(t in query, preload: [plan_items: ^item_query])
   end
 end

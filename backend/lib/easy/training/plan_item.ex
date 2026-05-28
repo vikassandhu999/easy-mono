@@ -2,7 +2,6 @@ defmodule Easy.Training.PlanItem do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Repo
   alias Easy.Training.{TrainingPlan, Workout}
 
   import Ecto.Changeset
@@ -63,49 +62,11 @@ defmodule Easy.Training.PlanItem do
     |> validate_required([:day, :workout_type, :workout_id])
     |> validate_inclusion(:day, @days)
     |> validate_inclusion(:workout_type, @workout_types)
-    |> validate_workout_belongs_to_plan()
-    |> validate_day_is_not_rest_day()
     |> unique_constraint([:training_plan_id, :day, :workout_type],
       name: :training_plan_items_plan_id_day_workout_type_index,
       message: "already has a workout of this type on this day"
     )
     |> foreign_key_constraint(:workout_id)
-  end
-
-  defp validate_workout_belongs_to_plan(%{valid?: false} = changeset), do: changeset
-
-  defp validate_workout_belongs_to_plan(changeset) do
-    workout_id = get_field(changeset, :workout_id)
-    plan_id = get_field(changeset, :training_plan_id)
-    business_id = get_field(changeset, :business_id)
-
-    if workout_id && plan_id && business_id &&
-         not Workout.accessible_for_plan?(plan_id, business_id, workout_id) do
-      add_error(changeset, :workout_id, "must belong to the training plan")
-    else
-      changeset
-    end
-  end
-
-  defp validate_day_is_not_rest_day(%{valid?: false} = changeset), do: changeset
-
-  defp validate_day_is_not_rest_day(changeset) do
-    day = get_field(changeset, :day)
-    plan_id = get_field(changeset, :training_plan_id)
-    business_id = get_field(changeset, :business_id)
-
-    if day && plan_id && business_id && rest_day?(business_id, plan_id, day) do
-      add_error(changeset, :day, "cannot schedule workout on a rest day")
-    else
-      changeset
-    end
-  end
-
-  defp rest_day?(business_id, plan_id, day) do
-    TrainingPlan
-    |> TrainingPlan.for_business(business_id)
-    |> where([t], t.id == ^plan_id and fragment("? = ANY(?)", ^day, t.rest_days))
-    |> Repo.exists?()
   end
 
   @spec for_plan(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -123,24 +84,9 @@ defmodule Easy.Training.PlanItem do
     from(p in query, where: p.day == ^day)
   end
 
-  @spec with_workout(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_workout(query \\ __MODULE__) do
-    from(p in query, preload: [:workout])
+  @spec with_workout(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_workout(query, business_id) do
+    workout_query = Workout |> Workout.for_business(business_id)
+    from(p in query, preload: [workout: ^workout_query])
   end
-
-  @spec create(String.t(), String.t(), String.t(), map()) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(training_plan_id, business_id, creator_id, attrs) do
-    insert_changeset(training_plan_id, business_id, creator_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(plan_item, attrs) do
-    update_changeset(plan_item, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(plan_item), do: Repo.delete(plan_item)
 end

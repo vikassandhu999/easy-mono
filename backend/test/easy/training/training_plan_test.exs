@@ -1,6 +1,7 @@
 defmodule Easy.Training.TrainingPlanTest do
   use Easy.SchemaCase
 
+  alias Easy.Training.Plans
   alias Easy.Training.TrainingPlan
 
   describe "update_changeset/2" do
@@ -24,7 +25,7 @@ defmodule Easy.Training.TrainingPlanTest do
     end
   end
 
-  describe "update/2" do
+  describe "Plans.update_training_plan/2" do
     test "checks scheduled plan items at the action boundary" do
       business = insert(:business)
       coach = insert(:coach, business: business)
@@ -39,7 +40,7 @@ defmodule Easy.Training.TrainingPlanTest do
         day: "monday"
       )
 
-      assert {:error, changeset} = TrainingPlan.update(plan, %{"rest_days" => ["monday"]})
+      assert {:error, changeset} = Plans.update_training_plan(plan, %{"rest_days" => ["monday"]})
 
       assert %{rest_days: ["cannot include days with scheduled workouts"]} =
                errors_on(changeset)

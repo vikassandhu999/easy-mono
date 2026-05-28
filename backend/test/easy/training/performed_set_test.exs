@@ -1,7 +1,8 @@
 defmodule Easy.Training.PerformedSetTest do
   use Easy.SchemaCase
 
-  alias Easy.Training.{PerformedSet, WorkoutSession}
+  alias Easy.Training.Sessions
+  alias Easy.Training.PerformedSet
 
   describe "insert_changeset/3" do
     test "does not check session workout elements against the database" do
@@ -26,7 +27,7 @@ defmodule Easy.Training.PerformedSetTest do
         session_with_element_added_after_snapshot()
 
       assert {:error, changeset} =
-               PerformedSet.create(session.id, business.id, %{
+               Sessions.create_performed_set(session.id, business.id, %{
                  "exercise_id" => exercise.id,
                  "workout_element_id" => element.id,
                  "position" => 0,
@@ -52,7 +53,8 @@ defmodule Easy.Training.PerformedSetTest do
       position: 0
     )
 
-    {:ok, session} = WorkoutSession.create(business.id, client.id, %{"workout_id" => workout.id})
+    {:ok, session} =
+      Sessions.create_workout_session(business.id, client.id, %{"workout_id" => workout.id})
 
     added_exercise = insert(:exercise, business: business)
 

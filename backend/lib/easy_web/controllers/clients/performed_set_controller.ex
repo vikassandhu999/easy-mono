@@ -1,17 +1,14 @@
 defmodule EasyWeb.Clients.PerformedSetController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Client
-  alias Easy.Training.PerformedSet
-  alias Easy.Training.SessionReads
+  alias Easy.Training.Sessions
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_session_id" => session_id} = params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, _session} <- SessionReads.fetch_client_session(business_id, client.id, session_id),
-         {:ok, set} <- PerformedSet.create(session_id, business_id, params) do
+    with {:ok, set} <-
+           Sessions.create_client_performed_set_for_user(business_id, user_id, session_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, set: set)
@@ -22,9 +19,13 @@ defmodule EasyWeb.Clients.PerformedSetController do
   def update(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, set} <- SessionReads.fetch_client_performed_set(business_id, client.id, id),
-         {:ok, updated} <- PerformedSet.update(set, conn.body_params) do
+    with {:ok, updated} <-
+           Sessions.update_client_performed_set_for_user(
+             business_id,
+             user_id,
+             id,
+             conn.body_params
+           ) do
       render(conn, :show, set: updated)
     end
   end
@@ -33,9 +34,7 @@ defmodule EasyWeb.Clients.PerformedSetController do
   def delete(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, client} <- Client.get_for_user(business_id, user_id),
-         {:ok, set} <- SessionReads.fetch_client_performed_set(business_id, client.id, id),
-         {:ok, _set} <- PerformedSet.delete(set) do
+    with {:ok, _set} <- Sessions.delete_client_performed_set_for_user(business_id, user_id, id) do
       send_resp(conn, :no_content, "")
     end
   end

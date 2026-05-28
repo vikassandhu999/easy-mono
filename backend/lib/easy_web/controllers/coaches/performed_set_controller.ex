@@ -1,15 +1,13 @@
 defmodule EasyWeb.Coaches.PerformedSetController do
   use EasyWeb, :controller
 
-  alias Easy.Training.PerformedSet
-  alias Easy.Training.SessionReads
+  alias Easy.Training.Sessions
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_session_id" => session_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, _session} <- SessionReads.fetch_session_with_sets(business_id, session_id),
-         {:ok, set} <- PerformedSet.create(session_id, business_id, params) do
+    with {:ok, set} <- Sessions.create_performed_set(session_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, set: set)
@@ -20,8 +18,7 @@ defmodule EasyWeb.Coaches.PerformedSetController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, set} <- SessionReads.fetch_performed_set_with_exercise(business_id, id),
-         {:ok, updated} <- PerformedSet.update(set, conn.body_params) do
+    with {:ok, updated} <- Sessions.update_performed_set(business_id, id, conn.body_params) do
       render(conn, :show, set: updated)
     end
   end
@@ -30,8 +27,7 @@ defmodule EasyWeb.Coaches.PerformedSetController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, set} <- SessionReads.fetch_performed_set(business_id, id),
-         {:ok, _set} <- PerformedSet.delete(set) do
+    with {:ok, _set} <- Sessions.delete_performed_set(business_id, id) do
       send_resp(conn, :no_content, "")
     end
   end

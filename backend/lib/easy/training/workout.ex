@@ -2,7 +2,6 @@ defmodule Easy.Training.Workout do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Repo
   alias Easy.Training.{TrainingPlan, WorkoutElement}
 
   import Ecto.Changeset
@@ -67,68 +66,14 @@ defmodule Easy.Training.Workout do
     from(w in query, order_by: [asc: w.name, asc: w.id])
   end
 
-  @spec with_elements(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_elements(query \\ __MODULE__) do
-    element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
+  @spec with_elements(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_elements(query, business_id) do
+    element_query =
+      WorkoutElement
+      |> WorkoutElement.for_business(business_id)
+      |> WorkoutElement.ordered()
+      |> WorkoutElement.with_exercise(business_id)
+
     from(w in query, preload: [workout_elements: ^element_query])
-  end
-
-  @spec accessible_for_plan?(String.t(), String.t(), String.t()) :: boolean()
-  def accessible_for_plan?(plan_id, business_id, workout_id) do
-    __MODULE__
-    |> for_plan(plan_id)
-    |> for_business(business_id)
-    |> Repo.get(workout_id)
-    |> is_struct(__MODULE__)
-  end
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(training_plan_id, business_id, attrs) do
-    insert_changeset(training_plan_id, business_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(workout, attrs) do
-    update_changeset(workout, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(workout), do: Repo.delete(workout)
-
-  @spec duplicate(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def duplicate(workout) do
-    workout = Repo.preload(workout, :workout_elements)
-
-    Repo.transaction(fn ->
-      new_workout = copy_into!(workout, workout.training_plan_id)
-      Repo.preload(new_workout, workout_elements: WorkoutElement.with_exercise())
-    end)
-  end
-
-  # Insert a copy of `workout` (and its elements) under `dest_plan_id`.
-  # Must run inside a Repo.transaction; rolls back on changeset error.
-  @spec copy_into!(t(), String.t()) :: t()
-  def copy_into!(workout, dest_plan_id) do
-    attrs = %{name: workout.name, notes: workout.notes}
-
-    new_workout =
-      case insert_changeset(dest_plan_id, workout.business_id, attrs) |> Repo.insert() do
-        {:ok, w} -> w
-        {:error, reason} -> Repo.rollback(reason)
-      end
-
-    Enum.each(workout.workout_elements, fn element ->
-      attrs = WorkoutElement.copy_attrs(element)
-
-      case WorkoutElement.insert_changeset(new_workout.id, workout.business_id, attrs)
-           |> Repo.insert() do
-        {:ok, _} -> :ok
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-
-    new_workout
   end
 end

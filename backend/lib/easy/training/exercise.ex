@@ -2,7 +2,6 @@ defmodule Easy.Training.Exercise do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Repo
   alias Easy.Training.{ExerciseMuscle, ExerciseEquipment}
 
   import Ecto.Changeset
@@ -135,24 +134,12 @@ defmodule Easy.Training.Exercise do
     from(e in query, order_by: [desc: e.inserted_at, desc: e.id])
   end
 
-  @spec with_preloads(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_preloads(query \\ __MODULE__) do
-    muscles_query =
-      from(em in ExerciseMuscle,
-        join: m in assoc(em, :muscle),
-        preload: [muscle: m]
-      )
-
-    equipment_query =
-      from(ee in ExerciseEquipment,
-        join: eq in assoc(ee, :equipment),
-        preload: [equipment: eq]
-      )
-
+  @spec with_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_preloads(query, business_id) do
     from(e in query,
       preload: [
-        exercise_muscles: ^muscles_query,
-        exercise_equipment: ^equipment_query
+        exercise_muscles: ^muscle_preload_query(business_id),
+        exercise_equipment: ^equipment_preload_query(business_id)
       ]
     )
   end
@@ -160,97 +147,21 @@ defmodule Easy.Training.Exercise do
   @spec system(Ecto.Queryable.t()) :: Ecto.Query.t()
   def system(query \\ __MODULE__), do: from(e in query, where: is_nil(e.business_id))
 
-  @spec create(String.t() | nil, map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(business_id, attrs) do
-    insert_changeset(business_id, attrs)
-    |> Repo.insert()
-    |> preload_result()
+  defp muscle_preload_query(business_id) do
+    from(em in ExerciseMuscle,
+      join: e in assoc(em, :exercise),
+      join: m in assoc(em, :muscle),
+      where: e.business_id == ^business_id or is_nil(e.business_id),
+      preload: [muscle: m]
+    )
   end
 
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(exercise, attrs) do
-    update_changeset(exercise, attrs)
-    |> Repo.update()
-    |> preload_result()
+  defp equipment_preload_query(business_id) do
+    from(ee in ExerciseEquipment,
+      join: e in assoc(ee, :exercise),
+      join: eq in assoc(ee, :equipment),
+      where: e.business_id == ^business_id or is_nil(e.business_id),
+      preload: [equipment: eq]
+    )
   end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(exercise), do: Repo.delete(exercise)
-
-  @spec duplicate(t(), String.t()) :: {:ok, t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def duplicate(exercise, business_id) do
-    with :ok <- authorize_access(exercise, business_id) do
-      exercise = Repo.preload(exercise, [:exercise_muscles, :exercise_equipment])
-
-      attrs = %{
-        name: generate_copy_name(exercise.name, business_id),
-        description: exercise.description,
-        instructions: exercise.instructions,
-        mechanics: exercise.mechanics,
-        force: exercise.force,
-        muscle_ids: Enum.map(exercise.exercise_muscles, & &1.muscle_id),
-        equipment_ids: Enum.map(exercise.exercise_equipment, & &1.equipment_id)
-      }
-
-      create(business_id, attrs)
-    end
-  end
-
-  defp authorize_access(%__MODULE__{business_id: nil}, _business_id), do: :ok
-  defp authorize_access(%__MODULE__{business_id: business_id}, business_id), do: :ok
-  defp authorize_access(_exercise, _business_id), do: {:error, :not_found}
-
-  defp generate_copy_name(original_name, business_id) do
-    base_name =
-      original_name
-      |> String.replace(~r/\s*\(Copy\s*\d*\)\s*$/, "")
-      |> String.trim()
-
-    existing_names =
-      from(e in __MODULE__,
-        where: e.business_id == ^business_id,
-        where: e.name == ^base_name or like(e.name, ^"#{base_name} (Copy%)"),
-        select: e.name
-      )
-      |> Repo.all()
-      |> MapSet.new()
-
-    find_available_copy_name(base_name, existing_names, 1)
-  end
-
-  defp find_available_copy_name(base_name, existing_names, attempt) when attempt <= 100 do
-    candidate = if attempt == 1, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{attempt})"
-
-    if MapSet.member?(existing_names, candidate) do
-      find_available_copy_name(base_name, existing_names, attempt + 1)
-    else
-      candidate
-    end
-  end
-
-  defp find_available_copy_name(base_name, _existing_names, _attempt) do
-    "#{base_name} (Copy #{System.system_time(:second)})"
-  end
-
-  defp preload_result({:ok, record}) do
-    muscles_query =
-      from(em in ExerciseMuscle,
-        join: m in assoc(em, :muscle),
-        preload: [muscle: m]
-      )
-
-    equipment_query =
-      from(ee in ExerciseEquipment,
-        join: eq in assoc(ee, :equipment),
-        preload: [equipment: eq]
-      )
-
-    {:ok,
-     Repo.preload(record,
-       exercise_muscles: muscles_query,
-       exercise_equipment: equipment_query
-     )}
-  end
-
-  defp preload_result(error), do: error
 end

@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.PerformedSetControllerTest do
   use Easy.ConnCase
 
-  alias Easy.Training.{PerformedSet, WorkoutSession}
+  alias Easy.Training.Sessions
 
   setup do
     coach = insert(:coach)
@@ -9,7 +9,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
     exercise = insert(:exercise, business: coach.business)
     conn = build_conn() |> authenticate_client(client)
 
-    {:ok, session} = WorkoutSession.create(coach.business_id, client.id, %{})
+    {:ok, session} = Sessions.create_workout_session(coach.business_id, client.id, %{})
 
     %{
       conn: conn,
@@ -64,7 +64,8 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
           planned_sets: []
         )
 
-      {:ok, planned_session} = WorkoutSession.update(ctx.session, %{"workout_id" => workout.id})
+      {:ok, planned_session} =
+        Sessions.update_workout_session(ctx.session, %{"workout_id" => workout.id})
 
       conn =
         post(ctx.conn, "/v1/client/performed_sets", %{
@@ -108,7 +109,9 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
     test "rejects set for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       conn =
         post(ctx.conn, "/v1/client/performed_sets", %{
@@ -155,7 +158,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "PATCH /v1/client/performed_sets/:id" do
     test "updates a logged set", ctx do
       {:ok, set} =
-        PerformedSet.create(ctx.session.id, ctx.business.id, %{
+        Sessions.create_performed_set(ctx.session.id, ctx.business.id, %{
           "exercise_id" => ctx.exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -179,10 +182,12 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
     test "rejects update of another client's set", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       {:ok, other_set} =
-        PerformedSet.create(other_session.id, ctx.business.id, %{
+        Sessions.create_performed_set(other_session.id, ctx.business.id, %{
           "exercise_id" => ctx.exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -197,7 +202,7 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
   describe "DELETE /v1/client/performed_sets/:id" do
     test "deletes a logged set", ctx do
       {:ok, set} =
-        PerformedSet.create(ctx.session.id, ctx.business.id, %{
+        Sessions.create_performed_set(ctx.session.id, ctx.business.id, %{
           "exercise_id" => ctx.exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -210,10 +215,12 @@ defmodule EasyWeb.Clients.PerformedSetControllerTest do
 
     test "rejects delete of another client's set", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       {:ok, other_set} =
-        PerformedSet.create(other_session.id, ctx.business.id, %{
+        Sessions.create_performed_set(other_session.id, ctx.business.id, %{
           "exercise_id" => ctx.exercise.id,
           "position" => 0,
           "actual_reps" => "10",

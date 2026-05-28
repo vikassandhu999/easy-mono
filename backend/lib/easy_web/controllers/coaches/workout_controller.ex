@@ -1,16 +1,13 @@
 defmodule EasyWeb.Coaches.WorkoutController do
   use EasyWeb, :controller
 
-  alias Easy.Training.PlanReads
-  alias Easy.Training.Workout
-  alias Easy.Training.WorkoutReads
+  alias Easy.Training.Workouts
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, _plan} <- PlanReads.fetch_plan(business_id, plan_id),
-         {:ok, workout} <- Workout.create(plan_id, business_id, params) do
+    with {:ok, workout} <- Workouts.create_workout(plan_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, workout: workout)
@@ -21,7 +18,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, workout} <- WorkoutReads.fetch_workout_with_elements(business_id, id) do
+    with {:ok, workout} <- Workouts.fetch_workout_with_elements(business_id, id) do
       render(conn, :show, workout: workout)
     end
   end
@@ -30,8 +27,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, workout} <- WorkoutReads.fetch_workout(business_id, id),
-         {:ok, updated} <- Workout.update(workout, conn.body_params) do
+    with {:ok, updated} <- Workouts.update_workout(business_id, id, conn.body_params) do
       render(conn, :show, workout: updated)
     end
   end
@@ -40,8 +36,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, workout} <- WorkoutReads.fetch_workout(business_id, id),
-         {:ok, _workout} <- Workout.delete(workout) do
+    with {:ok, _workout} <- Workouts.delete_workout(business_id, id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -50,8 +45,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def duplicate(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, workout} <- WorkoutReads.fetch_workout(business_id, id),
-         {:ok, duplicated} <- Workout.duplicate(workout) do
+    with {:ok, duplicated} <- Workouts.duplicate_workout(business_id, id) do
       conn
       |> put_status(:created)
       |> render(:show, workout: duplicated)
@@ -66,7 +60,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
     limit = parse_integer(params, "limit", 50)
 
     with {:ok, %{workouts: workouts, count: count}} <-
-           WorkoutReads.list_workouts(business_id, plan_id, offset, limit) do
+           Workouts.list_workouts(business_id, plan_id, offset, limit) do
       render(conn, :index, workouts: workouts, count: count)
     end
   end

@@ -4,7 +4,6 @@ defmodule Easy.Clients.ReadBoundaryTest do
   alias Easy.Clients.Reads
 
   @domain_read_modules [
-    "lib/easy/training/reads.ex",
     "lib/easy/nutrition/reads.ex"
   ]
 

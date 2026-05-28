@@ -3,8 +3,7 @@ defmodule Easy.Training.WorkoutSession do
 
   alias Easy.Clients
   alias Easy.Orgs
-  alias Easy.Repo
-  alias Easy.Training.{Workout, WorkoutElement, PerformedSet, TrainingPlan}
+  alias Easy.Training.{Workout, PerformedSet}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -37,7 +36,7 @@ defmodule Easy.Training.WorkoutSession do
   end
 
   @cast_fields [:ended_at, :state, :soreness_rating, :notes, :workout_id]
-  @update_fields [:ended_at, :state, :soreness_rating, :notes]
+  @update_fields [:ended_at, :state, :soreness_rating, :notes, :workout_id]
   @client_update_fields [:soreness_rating, :notes]
 
   @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
@@ -112,147 +111,14 @@ defmodule Easy.Training.WorkoutSession do
     from(s in query, order_by: [desc: s.started_at, desc: s.id])
   end
 
-  @spec with_sets(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_sets(query \\ __MODULE__) do
-    set_query = PerformedSet |> PerformedSet.ordered() |> PerformedSet.with_exercise()
+  @spec with_sets(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_sets(query, business_id) do
+    set_query =
+      PerformedSet
+      |> PerformedSet.for_business(business_id)
+      |> PerformedSet.ordered()
+      |> PerformedSet.with_exercise(business_id)
+
     from(s in query, preload: [performed_sets: ^set_query])
   end
-
-  @spec ensure_no_active(String.t(), String.t()) :: :ok | {:error, Easy.Error.t()}
-  def ensure_no_active(business_id, client_id) do
-    exists =
-      __MODULE__
-      |> for_business(business_id)
-      |> for_client(client_id)
-      |> with_state(:active)
-      |> Repo.exists?()
-
-    if exists do
-      {:error,
-       Easy.Error.unprocessable(%{
-         session: ["you already have an active workout session — finish or discard it first"]
-       })}
-    else
-      :ok
-    end
-  end
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(business_id, client_id, attrs) do
-    insert_changeset(business_id, client_id, attrs)
-    |> maybe_put_snapshot(business_id)
-    |> Repo.insert()
-    |> preload_result()
-  end
-
-  @spec client_create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def client_create(business_id, client_id, attrs) do
-    insert_changeset(business_id, client_id, attrs)
-    |> validate_client_workout_accessible(business_id, client_id)
-    |> maybe_put_snapshot(business_id)
-    |> Repo.insert()
-    |> preload_result()
-  end
-
-  defp validate_client_workout_accessible(%{valid?: false} = changeset, _business_id, _client_id), do: changeset
-
-  defp validate_client_workout_accessible(changeset, business_id, client_id) do
-    case get_field(changeset, :workout_id) do
-      nil ->
-        changeset
-
-      workout_id ->
-        today = Date.utc_today()
-
-        exists? =
-          Workout
-          |> Workout.for_business(business_id)
-          |> join(:inner, [w], t in TrainingPlan,
-            on:
-              t.id == w.training_plan_id and t.business_id == ^business_id and
-                t.client_id == ^client_id
-          )
-          |> where(
-            [w, t],
-            w.id == ^workout_id and t.status == ^:active and t.start_date <= ^today and
-              t.end_date >= ^today
-          )
-          |> Repo.exists?()
-
-        if exists?, do: changeset, else: add_error(changeset, :workout_id, "does not exist")
-    end
-  end
-
-  defp maybe_put_snapshot(changeset, business_id) do
-    case get_field(changeset, :workout_id) do
-      nil ->
-        changeset
-
-      workout_id ->
-        case build_snapshot(business_id, workout_id) do
-          nil -> add_error(changeset, :workout_id, "does not exist")
-          snapshot -> put_change(changeset, :planned_snapshot, snapshot)
-        end
-    end
-  end
-
-  @spec build_snapshot(String.t(), String.t()) :: map() | nil
-  defp build_snapshot(business_id, workout_id) do
-    element_query = WorkoutElement |> WorkoutElement.ordered() |> WorkoutElement.with_exercise()
-
-    Workout
-    |> Workout.for_business(business_id)
-    |> Repo.get(workout_id)
-    |> case do
-      nil ->
-        nil
-
-      workout ->
-        workout = Repo.preload(workout, workout_elements: element_query)
-
-        %{
-          "workout_name" => workout.name,
-          "elements" => Enum.map(workout.workout_elements, &WorkoutElement.to_snapshot/1)
-        }
-    end
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(session, attrs) do
-    update_changeset(session, attrs)
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec client_update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def client_update(session, attrs) do
-    client_update_changeset(session, attrs)
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec complete(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def complete(session, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-      |> Map.merge(%{"ended_at" => DateTime.utc_now(), "state" => :completed})
-
-    update_changeset(session, attrs)
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec discard(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def discard(session) do
-    update_changeset(session, %{"state" => :discarded})
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(session), do: Repo.delete(session)
-
-  defp preload_result({:ok, record}), do: {:ok, Repo.preload(record, performed_sets: [:exercise])}
-  defp preload_result(error), do: error
 end

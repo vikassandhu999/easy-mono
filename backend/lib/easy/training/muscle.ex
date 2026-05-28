@@ -1,8 +1,6 @@
 defmodule Easy.Training.Muscle do
   use Ecto.Schema
 
-  alias Easy.Repo
-
   import Ecto.Changeset
   import Ecto.Query
 
@@ -49,19 +47,4 @@ defmodule Easy.Training.Muscle do
   def alphabetical(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.name])
   end
-
-  @spec create(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(attrs) do
-    insert_changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(muscle, attrs) do
-    update_changeset(muscle, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(muscle), do: Repo.delete(muscle)
 end

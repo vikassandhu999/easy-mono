@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
-  alias Easy.Training.WorkoutSession
+  alias Easy.Training.Sessions
 
   setup do
     coach = insert(:coach)
@@ -102,7 +102,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "rejects creating session when active session exists", ctx do
-      {:ok, _session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, _session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = post(ctx.conn, "/v1/client/workout_sessions", %{})
       assert %{"error_code" => "invalid_input"} = json_response(conn, 422)
@@ -116,10 +116,10 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "GET /v1/client/workout_sessions" do
     test "lists only this client's sessions", ctx do
-      {:ok, _session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, _session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, _other} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+      {:ok, _other} = Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions")
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
@@ -127,10 +127,10 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "filters by state", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
-      {:ok, _completed} = WorkoutSession.complete(session)
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+      {:ok, _completed} = Sessions.complete_workout_session(session)
 
-      {:ok, _active} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, _active} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions", %{"state" => "completed"})
       assert %{"data" => data, "count" => 1} = json_response(conn, 200)
@@ -139,8 +139,8 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
     test "paginates results", ctx do
       for _ <- 1..3 do
-        {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
-        WorkoutSession.complete(session)
+        {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
+        Sessions.complete_workout_session(session)
       end
 
       conn = get(ctx.conn, "/v1/client/workout_sessions", %{"offset" => "0", "limit" => "2"})
@@ -151,7 +151,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "GET /v1/client/workout_sessions/:id" do
     test "shows session with performed sets", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions/#{session.id}")
       assert %{"data" => data} = json_response(conn, 200)
@@ -161,14 +161,16 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
     test "returns 404 for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}")
       assert json_response(conn, 404)
     end
 
     test "does not expose business_id or client_id", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions/#{session.id}")
       assert %{"data" => data} = json_response(conn, 200)
@@ -179,7 +181,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "GET /v1/client/workout_sessions/active" do
     test "returns active session", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = get(ctx.conn, "/v1/client/workout_sessions/active")
       assert %{"data" => data} = json_response(conn, 200)
@@ -195,7 +197,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "POST /v1/client/workout_sessions/:id/complete" do
     test "completes session with optional rating and notes", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn =
         post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/complete", %{
@@ -211,7 +213,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "completes session without optional fields", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/complete", %{})
       assert %{"data" => data} = json_response(conn, 200)
@@ -221,7 +223,9 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
     test "returns 404 for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       conn = post(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}/complete", %{})
       assert json_response(conn, 404)
@@ -230,7 +234,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "POST /v1/client/workout_sessions/:id/discard" do
     test "discards session", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn = post(ctx.conn, "/v1/client/workout_sessions/#{session.id}/discard")
       assert %{"data" => data} = json_response(conn, 200)
@@ -240,7 +244,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
   describe "PATCH /v1/client/workout_sessions/:id" do
     test "updates notes and soreness_rating", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       conn =
         patch(ctx.conn, "/v1/client/workout_sessions/#{session.id}", %{
@@ -254,7 +258,7 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
     end
 
     test "does not allow state or workout retargeting", ctx do
-      {:ok, session} = WorkoutSession.create(ctx.business.id, ctx.client.id, %{})
+      {:ok, session} = Sessions.create_workout_session(ctx.business.id, ctx.client.id, %{})
 
       plan =
         insert(:training_plan,
@@ -282,7 +286,9 @@ defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
 
     test "returns 404 for another client's session", ctx do
       other_client = insert(:client, creator: ctx.coach, business: ctx.business)
-      {:ok, other_session} = WorkoutSession.create(ctx.business.id, other_client.id, %{})
+
+      {:ok, other_session} =
+        Sessions.create_workout_session(ctx.business.id, other_client.id, %{})
 
       conn = patch(ctx.conn, "/v1/client/workout_sessions/#{other_session.id}", %{"notes" => "x"})
       assert json_response(conn, 404)

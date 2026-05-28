@@ -2,7 +2,6 @@ defmodule Easy.Training.WorkoutElement do
   use Ecto.Schema
 
   alias Easy.Orgs
-  alias Easy.Repo
   alias Easy.Training.{Workout, PlannedSet, Exercise}
 
   import Ecto.Changeset
@@ -76,31 +75,12 @@ defmodule Easy.Training.WorkoutElement do
     |> validate_length(:planned_sets, min: 1)
     |> validate_length(:notes, max: 5000)
     |> validate_number(:position, greater_than_or_equal_to: 0)
-    |> validate_exercise_in_business()
     |> unique_constraint([:position, :workout_id],
       name: :workout_elements_position_workout_id_index
     )
     |> foreign_key_constraint(:workout_id)
     |> foreign_key_constraint(:exercise_id)
     |> foreign_key_constraint(:business_id)
-  end
-
-  defp validate_exercise_in_business(%{valid?: false} = changeset), do: changeset
-
-  defp validate_exercise_in_business(changeset) do
-    business_id = get_field(changeset, :business_id)
-    exercise_id = get_field(changeset, :exercise_id)
-
-    cond do
-      is_nil(business_id) || is_nil(exercise_id) ->
-        changeset
-
-      Exercise |> Exercise.for_business(business_id) |> Repo.get(exercise_id) ->
-        changeset
-
-      true ->
-        add_error(changeset, :exercise_id, "does not exist")
-    end
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
@@ -118,28 +98,9 @@ defmodule Easy.Training.WorkoutElement do
     from(e in query, order_by: [asc: e.position])
   end
 
-  @spec with_exercise(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_exercise(query \\ __MODULE__) do
-    from(e in query, preload: [:exercise])
+  @spec with_exercise(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def with_exercise(query, business_id) do
+    exercise_query = Exercise |> Exercise.for_business(business_id)
+    from(e in query, preload: [exercise: ^exercise_query])
   end
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(workout_id, business_id, attrs) do
-    insert_changeset(workout_id, business_id, attrs)
-    |> Repo.insert()
-    |> preload_result()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(element, attrs) do
-    update_changeset(element, attrs)
-    |> Repo.update()
-    |> preload_result()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(element), do: Repo.delete(element)
-
-  defp preload_result({:ok, record}), do: {:ok, Repo.preload(record, [:exercise])}
-  defp preload_result(error), do: error
 end

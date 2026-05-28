@@ -1,15 +1,13 @@
 defmodule EasyWeb.Coaches.WorkoutElementController do
   use EasyWeb, :controller
 
-  alias Easy.Training.WorkoutElement
-  alias Easy.Training.WorkoutReads
+  alias Easy.Training.Workouts
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_id" => workout_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, _workout} <- WorkoutReads.fetch_workout(business_id, workout_id),
-         {:ok, element} <- WorkoutElement.create(workout_id, business_id, params) do
+    with {:ok, element} <- Workouts.create_workout_element(workout_id, business_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, element: element)
@@ -20,7 +18,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, element} <- WorkoutReads.fetch_workout_element_with_exercise(business_id, id) do
+    with {:ok, element} <- Workouts.fetch_workout_element_with_exercise(business_id, id) do
       render(conn, :show, element: element)
     end
   end
@@ -29,8 +27,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, element} <- WorkoutReads.fetch_workout_element_with_exercise(business_id, id),
-         {:ok, updated} <- WorkoutElement.update(element, conn.body_params) do
+    with {:ok, updated} <- Workouts.update_workout_element(business_id, id, conn.body_params) do
       render(conn, :show, element: updated)
     end
   end
@@ -39,8 +36,7 @@ defmodule EasyWeb.Coaches.WorkoutElementController do
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, element} <- WorkoutReads.fetch_workout_element(business_id, id),
-         {:ok, _element} <- WorkoutElement.delete(element) do
+    with {:ok, _element} <- Workouts.delete_workout_element(business_id, id) do
       send_resp(conn, :no_content, "")
     end
   end

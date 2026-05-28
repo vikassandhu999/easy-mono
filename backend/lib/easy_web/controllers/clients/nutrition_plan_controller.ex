@@ -22,7 +22,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   def show(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Plans.fetch_client_plan_full_for_user(business_id, user_id, id) do
+    with {:ok, plan} <- Plans.get_client_plan_full_for_user(business_id, user_id, id) do
       render(conn, :show, plan: plan)
     end
   end
@@ -34,7 +34,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
     date = Easy.Utils.safe_date(params["date"]) || Date.utc_today()
 
     with {:ok, %{plan: plan, plan_items: plan_items, day: day}} <-
-           Plans.fetch_active_plan_day_for_user(business_id, user_id, date) do
+           Plans.get_active_plan_day_for_user(business_id, user_id, date) do
       render(conn, :today, plan: plan, plan_items: plan_items, date: date, day: day)
     end
   end

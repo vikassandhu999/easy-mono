@@ -27,7 +27,7 @@ defmodule Easy.Clients.ReadBoundaryTest do
     end
   end
 
-  test "fetch_client/2 returns only clients in the requested business" do
+  test "get_client/2 returns only clients in the requested business" do
     business = insert(:business)
     coach = insert(:coach, business: business)
     client = insert(:client, business: business, creator: coach, user: insert(:user))
@@ -38,8 +38,8 @@ defmodule Easy.Clients.ReadBoundaryTest do
     other_client =
       insert(:client, business: other_business, creator: other_coach, user: insert(:user))
 
-    assert {:ok, %{id: client_id}} = Clients.fetch_client(business.id, client.id)
+    assert {:ok, %{id: client_id}} = Clients.get_client(business.id, client.id)
     assert client_id == client.id
-    assert {:error, :not_found} = Clients.fetch_client(business.id, other_client.id)
+    assert {:error, :not_found} = Clients.get_client(business.id, other_client.id)
   end
 end

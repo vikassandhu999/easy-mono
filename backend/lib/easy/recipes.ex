@@ -8,8 +8,8 @@ defmodule Easy.Recipes do
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec fetch_recipe(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
-  def fetch_recipe(business_id, recipe_id) do
+  @spec get_recipe(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
+  def get_recipe(business_id, recipe_id) do
     Recipe
     |> Recipe.for_business(business_id)
     |> with_ingredients(business_id)
@@ -17,8 +17,8 @@ defmodule Easy.Recipes do
     |> ok_or_not_found()
   end
 
-  @spec fetch_recipe_plain(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
-  def fetch_recipe_plain(business_id, recipe_id) do
+  @spec get_recipe_plain(String.t(), String.t()) :: {:ok, Recipe.t()} | {:error, :not_found}
+  def get_recipe_plain(business_id, recipe_id) do
     Recipe
     |> Recipe.for_business(business_id)
     |> Repo.get(recipe_id)
@@ -55,7 +55,7 @@ defmodule Easy.Recipes do
   @spec create_recipe_for_coach_user(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_recipe_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_recipe(business_id, coach.id, attrs)
     end
   end
@@ -72,7 +72,7 @@ defmodule Easy.Recipes do
   @spec update_recipe(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_recipe(business_id, recipe_id, attrs) do
-    with {:ok, recipe} <- fetch_recipe(business_id, recipe_id) do
+    with {:ok, recipe} <- get_recipe(business_id, recipe_id) do
       update_recipe(recipe, attrs)
     end
   end
@@ -83,7 +83,7 @@ defmodule Easy.Recipes do
   @spec delete_recipe(String.t(), String.t()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_recipe(business_id, recipe_id) do
-    with {:ok, recipe} <- fetch_recipe_plain(business_id, recipe_id) do
+    with {:ok, recipe} <- get_recipe_plain(business_id, recipe_id) do
       delete_recipe(recipe)
     end
   end
@@ -127,7 +127,7 @@ defmodule Easy.Recipes do
     from(r in query, preload: [foods: ^food_query, recipe_ingredients: ^ingredient_query])
   end
 
-  defp fetch_coach_for_user(business_id, user_id) do
+  defp get_coach_for_user(business_id, user_id) do
     Coach
     |> Coach.for_business(business_id)
     |> Coach.for_user(user_id)

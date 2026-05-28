@@ -10,7 +10,7 @@ defmodule Easy.WeightEntries do
           {:ok, %{client: Clients.Client.t(), entries: [WeightEntry.t()]}}
           | {:error, :not_found | Error.t()}
   def list_entries_for_user(business_id, user_id, since) do
-    with {:ok, client} <- Clients.fetch_client_for_user(business_id, user_id),
+    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
          {:ok, since_date} <- WeightEntry.parse_since(since) do
       {:ok, %{client: client, entries: list_entries(business_id, client.id, since_date)}}
     end
@@ -20,7 +20,7 @@ defmodule Easy.WeightEntries do
           {:ok, %{client: Clients.Client.t(), entries: [WeightEntry.t()], adherence: map()}}
           | {:error, :not_found | Error.t()}
   def list_entries_for_client(business_id, client_id, since) do
-    with {:ok, client} <- Clients.fetch_client(business_id, client_id),
+    with {:ok, client} <- Clients.get_client(business_id, client_id),
          {:ok, since_date} <- WeightEntry.parse_since(since),
          {:ok, adherence} <- adherence(business_id, client.id) do
       {:ok,
@@ -35,7 +35,7 @@ defmodule Easy.WeightEntries do
   @spec upsert_for_user(String.t(), String.t(), map()) ::
           {:ok, WeightEntry.t()} | {:error, :not_found | Ecto.Changeset.t() | Error.t()}
   def upsert_for_user(business_id, user_id, attrs) do
-    with {:ok, client} <- Clients.fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id) do
       upsert(client.id, business_id, attrs)
     end
   end
@@ -43,8 +43,8 @@ defmodule Easy.WeightEntries do
   @spec delete_for_user(String.t(), String.t(), String.t()) ::
           {:ok, WeightEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_for_user(business_id, user_id, entry_id) do
-    with {:ok, client} <- Clients.fetch_client_for_user(business_id, user_id),
-         {:ok, entry} <- fetch_entry(business_id, client.id, entry_id) do
+    with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
+         {:ok, entry} <- get_entry(business_id, client.id, entry_id) do
       delete_entry(entry)
     end
   end
@@ -95,7 +95,7 @@ defmodule Easy.WeightEntries do
   defp maybe_since(query, nil), do: query
   defp maybe_since(query, date), do: WeightEntry.since(query, date)
 
-  defp fetch_entry(business_id, client_id, id) do
+  defp get_entry(business_id, client_id, id) do
     case WeightEntry
          |> WeightEntry.for_business(business_id)
          |> WeightEntry.for_client(client_id)

@@ -12,16 +12,16 @@ defmodule Easy.NutritionPlans do
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec fetch_plan(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
-  def fetch_plan(business_id, plan_id) do
+  @spec get_plan(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
+  def get_plan(business_id, plan_id) do
     Plan
     |> Plan.for_business(business_id)
     |> Repo.get(plan_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_plan_full(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
-  def fetch_plan_full(business_id, plan_id) do
+  @spec get_plan_full(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
+  def get_plan_full(business_id, plan_id) do
     Plan
     |> Plan.for_business(business_id)
     |> with_full_preloads(business_id)
@@ -30,9 +30,9 @@ defmodule Easy.NutritionPlans do
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_plan_full(String.t(), String.t(), String.t()) ::
+  @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
-  def fetch_client_plan_full(business_id, client_id, plan_id) do
+  def get_client_plan_full(business_id, client_id, plan_id) do
     Plan
     |> Plan.for_business(business_id)
     |> Plan.for_client(client_id)
@@ -41,11 +41,11 @@ defmodule Easy.NutritionPlans do
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
+  @spec get_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
-  def fetch_client_plan_full_for_user(business_id, user_id, plan_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
-      fetch_client_plan_full(business_id, client.id, plan_id)
+  def get_client_plan_full_for_user(business_id, user_id, plan_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      get_client_plan_full(business_id, client.id, plan_id)
     end
   end
 
@@ -118,7 +118,7 @@ defmodule Easy.NutritionPlans do
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
   def list_client_plans_for_user(business_id, user_id, status, offset, limit) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
       list_client_plans(business_id, client.id, status, offset, limit)
     end
   end
@@ -132,15 +132,15 @@ defmodule Easy.NutritionPlans do
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
   def list_client_plans_full_for_client(business_id, client_id, status, offset, limit) do
-    with {:ok, _client} <- fetch_client(business_id, client_id) do
+    with {:ok, _client} <- get_client(business_id, client_id) do
       list_client_plans_full(business_id, client_id, status, offset, limit)
     end
   end
 
-  @spec fetch_active_plan_day(String.t(), String.t(), Date.t()) ::
+  @spec get_active_plan_day(String.t(), String.t(), Date.t()) ::
           {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
           | {:error, :not_found}
-  def fetch_active_plan_day(business_id, client_id, date) do
+  def get_active_plan_day(business_id, client_id, date) do
     case active_plan(business_id, client_id, date) do
       nil ->
         {:error, :not_found}
@@ -160,12 +160,12 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec fetch_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
+  @spec get_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
           {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
           | {:error, :not_found}
-  def fetch_active_plan_day_for_user(business_id, user_id, date) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
-      fetch_active_plan_day(business_id, client.id, date)
+  def get_active_plan_day_for_user(business_id, user_id, date) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      get_active_plan_day(business_id, client.id, date)
     end
   end
 
@@ -180,7 +180,7 @@ defmodule Easy.NutritionPlans do
   @spec create_plan_for_coach_user(String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_plan(business_id, coach.id, attrs)
     end
   end
@@ -195,7 +195,7 @@ defmodule Easy.NutritionPlans do
   @spec update_plan(String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan(business_id, plan_id, attrs) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       update_plan(plan, attrs)
     end
   end
@@ -206,7 +206,7 @@ defmodule Easy.NutritionPlans do
   @spec delete_plan(String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       delete_plan(plan)
     end
   end
@@ -235,7 +235,7 @@ defmodule Easy.NutritionPlans do
 
   @spec shopping_list(String.t(), String.t()) :: {:ok, [map()]} | {:error, :not_found}
   def shopping_list(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       shopping_list(plan)
     end
   end
@@ -255,7 +255,7 @@ defmodule Easy.NutritionPlans do
 
   @spec macros(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
   def macros(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       macros(plan)
     end
   end
@@ -310,8 +310,8 @@ defmodule Easy.NutritionPlans do
         target_day,
         clear_existing
       ) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id),
-         {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
+         {:ok, plan} <- get_plan(business_id, plan_id) do
       copy_day(plan, source_day, target_day, coach.id, clear_existing)
     end
   end
@@ -331,9 +331,9 @@ defmodule Easy.NutritionPlans do
   @spec assign_to_client_for_coach_user(String.t(), String.t(), String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, any()}
   def assign_to_client_for_coach_user(business_id, user_id, plan_id, client_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id),
-         {:ok, plan} <- fetch_plan(business_id, plan_id),
-         {:ok, _client} <- fetch_client(business_id, client_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
+         {:ok, plan} <- get_plan(business_id, plan_id),
+         {:ok, _client} <- get_client(business_id, client_id) do
       assign_to_client(plan, client_id, coach.id, attrs)
     end
   end
@@ -351,14 +351,14 @@ defmodule Easy.NutritionPlans do
   @spec duplicate_for_coach_user(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, any()}
   def duplicate_for_coach_user(business_id, user_id, plan_id) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id),
-         {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
+         {:ok, plan} <- get_plan(business_id, plan_id) do
       duplicate(plan, coach.id)
     end
   end
 
-  @spec fetch_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
-  def fetch_plan_item(business_id, plan_item_id) do
+  @spec get_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
+  def get_plan_item(business_id, plan_item_id) do
     PlanItem
     |> PlanItem.for_business(business_id)
     |> Repo.get(plan_item_id)
@@ -368,7 +368,7 @@ defmodule Easy.NutritionPlans do
   @spec list_plan_items(String.t(), String.t()) ::
           {:ok, [PlanItem.t()]} | {:error, :not_found}
   def list_plan_items(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       plan_items =
         PlanItem
         |> PlanItem.for_business(business_id)
@@ -383,7 +383,7 @@ defmodule Easy.NutritionPlans do
   @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item(plan_id, business_id, creator_id, attrs) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id),
+    with {:ok, plan} <- get_plan(business_id, plan_id),
          {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, Map.get(attrs, "meal_id")) do
       plan.id
       |> PlanItem.insert_changeset(business_id, creator_id, attrs)
@@ -394,7 +394,7 @@ defmodule Easy.NutritionPlans do
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, plan_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_plan_item(plan_id, business_id, coach.id, attrs)
     end
   end
@@ -417,7 +417,7 @@ defmodule Easy.NutritionPlans do
   @spec update_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
-    with {:ok, plan_item} <- fetch_plan_item(business_id, plan_item_id) do
+    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       update_plan_item(plan_item, attrs)
     end
   end
@@ -428,7 +428,7 @@ defmodule Easy.NutritionPlans do
   @spec delete_plan_item(String.t(), String.t()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
-    with {:ok, plan_item} <- fetch_plan_item(business_id, plan_item_id) do
+    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       delete_plan_item(plan_item)
     end
   end
@@ -484,17 +484,17 @@ defmodule Easy.NutritionPlans do
     |> Repo.one()
   end
 
-  defp fetch_client(_business_id, nil), do: {:error, :not_found}
-  defp fetch_client(_business_id, ""), do: {:error, :not_found}
+  defp get_client(_business_id, nil), do: {:error, :not_found}
+  defp get_client(_business_id, ""), do: {:error, :not_found}
 
-  defp fetch_client(business_id, client_id) do
+  defp get_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp fetch_client_for_user(business_id, user_id) do
+  defp get_client_for_user(business_id, user_id) do
     Client
     |> Client.for_business(business_id)
     |> Client.for_user(user_id)
@@ -502,7 +502,7 @@ defmodule Easy.NutritionPlans do
     |> ok_or_not_found()
   end
 
-  defp fetch_coach_for_user(business_id, user_id) do
+  defp get_coach_for_user(business_id, user_id) do
     Coach
     |> Coach.for_business(business_id)
     |> Coach.for_user(user_id)

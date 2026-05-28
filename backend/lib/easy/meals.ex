@@ -10,16 +10,16 @@ defmodule Easy.Meals do
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec fetch_meal(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
-  def fetch_meal(business_id, meal_id) do
+  @spec get_meal(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
+  def get_meal(business_id, meal_id) do
     Meal
     |> Meal.for_business(business_id)
     |> Repo.get(meal_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_meal_with_items(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
-  def fetch_meal_with_items(business_id, meal_id) do
+  @spec get_meal_with_items(String.t(), String.t()) :: {:ok, Meal.t()} | {:error, :not_found}
+  def get_meal_with_items(business_id, meal_id) do
     Meal
     |> Meal.for_business(business_id)
     |> with_items(business_id)
@@ -30,7 +30,7 @@ defmodule Easy.Meals do
   @spec list_meals(String.t(), String.t(), non_neg_integer(), pos_integer()) ::
           {:ok, %{count: non_neg_integer(), meals: [Meal.t()]}} | {:error, :not_found}
   def list_meals(business_id, plan_id, offset, limit) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       base = Meal |> Meal.for_business(business_id) |> Meal.for_plan(plan.id)
 
       {:ok,
@@ -57,8 +57,8 @@ defmodule Easy.Meals do
   @spec create_meal_for_coach_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal_for_coach_user(business_id, user_id, plan_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id),
-         {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id),
+         {:ok, plan} <- get_plan(business_id, plan_id) do
       create_meal(plan.id, business_id, coach.id, attrs)
     end
   end
@@ -73,7 +73,7 @@ defmodule Easy.Meals do
   @spec update_meal(String.t(), String.t(), map()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_meal(business_id, meal_id, attrs) do
-    with {:ok, meal} <- fetch_meal(business_id, meal_id) do
+    with {:ok, meal} <- get_meal(business_id, meal_id) do
       update_meal(meal, attrs)
     end
   end
@@ -84,13 +84,13 @@ defmodule Easy.Meals do
   @spec delete_meal(String.t(), String.t()) ::
           {:ok, Meal.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_meal(business_id, meal_id) do
-    with {:ok, meal} <- fetch_meal(business_id, meal_id) do
+    with {:ok, meal} <- get_meal(business_id, meal_id) do
       delete_meal(meal)
     end
   end
 
-  @spec fetch_meal_item(String.t(), String.t()) :: {:ok, MealItem.t()} | {:error, :not_found}
-  def fetch_meal_item(business_id, meal_item_id) do
+  @spec get_meal_item(String.t(), String.t()) :: {:ok, MealItem.t()} | {:error, :not_found}
+  def get_meal_item(business_id, meal_item_id) do
     MealItem
     |> MealItem.for_business(business_id)
     |> Repo.get(meal_item_id)
@@ -100,7 +100,7 @@ defmodule Easy.Meals do
   @spec list_meal_items(String.t(), String.t()) ::
           {:ok, [MealItem.t()]} | {:error, :not_found}
   def list_meal_items(business_id, meal_id) do
-    with {:ok, meal} <- fetch_meal(business_id, meal_id) do
+    with {:ok, meal} <- get_meal(business_id, meal_id) do
       meal_items =
         MealItem
         |> MealItem.for_business(business_id)
@@ -116,7 +116,7 @@ defmodule Easy.Meals do
   @spec create_meal_item(String.t(), String.t(), map()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_meal_item(business_id, meal_id, attrs) do
-    with {:ok, meal} <- fetch_meal(business_id, meal_id),
+    with {:ok, meal} <- get_meal(business_id, meal_id),
          {:ok, :valid} <- ensure_food_or_recipe(attrs, business_id) do
       meal.id
       |> MealItem.insert_changeset(business_id, attrs)
@@ -128,7 +128,7 @@ defmodule Easy.Meals do
   @spec update_meal_item(String.t(), String.t(), map()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_meal_item(business_id, meal_item_id, attrs) do
-    with {:ok, meal_item} <- fetch_meal_item(business_id, meal_item_id),
+    with {:ok, meal_item} <- get_meal_item(business_id, meal_item_id),
          {:ok, :valid} <- ensure_food_or_recipe(attrs, business_id) do
       meal_item
       |> MealItem.update_changeset(attrs)
@@ -139,19 +139,19 @@ defmodule Easy.Meals do
   @spec delete_meal_item(String.t(), String.t()) ::
           {:ok, MealItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_meal_item(business_id, meal_item_id) do
-    with {:ok, meal_item} <- fetch_meal_item(business_id, meal_item_id) do
+    with {:ok, meal_item} <- get_meal_item(business_id, meal_item_id) do
       Repo.delete(meal_item)
     end
   end
 
-  defp fetch_plan(business_id, plan_id) do
+  defp get_plan(business_id, plan_id) do
     Plan
     |> Plan.for_business(business_id)
     |> Repo.get(plan_id)
     |> ok_or_not_found()
   end
 
-  defp fetch_coach_for_user(business_id, user_id) do
+  defp get_coach_for_user(business_id, user_id) do
     Coach
     |> Coach.for_business(business_id)
     |> Coach.for_user(user_id)

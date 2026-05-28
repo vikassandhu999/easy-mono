@@ -8,8 +8,8 @@ defmodule Easy.Exercises do
 
   import Ecto.Query
 
-  @spec fetch_exercise(String.t(), String.t()) :: {:ok, Exercise.t()} | {:error, :not_found}
-  def fetch_exercise(business_id, exercise_id) do
+  @spec get_exercise(String.t(), String.t()) :: {:ok, Exercise.t()} | {:error, :not_found}
+  def get_exercise(business_id, exercise_id) do
     Exercise
     |> Exercise.for_business(business_id)
     |> Exercise.with_preloads(business_id)
@@ -17,9 +17,9 @@ defmodule Easy.Exercises do
     |> ok_or_not_found()
   end
 
-  @spec fetch_business_exercise(String.t(), String.t()) ::
+  @spec get_business_exercise(String.t(), String.t()) ::
           {:ok, Exercise.t()} | {:error, :not_found}
-  def fetch_business_exercise(business_id, exercise_id) do
+  def get_business_exercise(business_id, exercise_id) do
     Exercise
     |> Exercise.for_business_only(business_id)
     |> Exercise.with_preloads(business_id)
@@ -99,7 +99,7 @@ defmodule Easy.Exercises do
   @spec update_exercise(String.t(), String.t(), map()) ::
           {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_exercise(business_id, exercise_id, attrs) do
-    with {:ok, exercise} <- fetch_business_exercise(business_id, exercise_id) do
+    with {:ok, exercise} <- get_business_exercise(business_id, exercise_id) do
       update_exercise(exercise, attrs)
     end
   end
@@ -110,7 +110,7 @@ defmodule Easy.Exercises do
   @spec delete_exercise(String.t(), String.t()) ::
           {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_exercise(business_id, exercise_id) do
-    with {:ok, exercise} <- fetch_business_exercise(business_id, exercise_id) do
+    with {:ok, exercise} <- get_business_exercise(business_id, exercise_id) do
       delete_exercise(exercise)
     end
   end
@@ -140,7 +140,7 @@ defmodule Easy.Exercises do
   end
 
   def duplicate_exercise(business_id, exercise_id) do
-    with {:ok, exercise} <- fetch_exercise(business_id, exercise_id) do
+    with {:ok, exercise} <- get_exercise(business_id, exercise_id) do
       duplicate_exercise(exercise, business_id)
     end
   end

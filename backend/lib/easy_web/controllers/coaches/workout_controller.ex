@@ -18,7 +18,7 @@ defmodule EasyWeb.Coaches.WorkoutController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, workout} <- Workouts.fetch_workout_with_elements(business_id, id) do
+    with {:ok, workout} <- Workouts.get_workout_with_elements(business_id, id) do
       render(conn, :show, workout: workout)
     end
   end

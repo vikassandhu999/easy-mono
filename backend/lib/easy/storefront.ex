@@ -4,12 +4,12 @@ defmodule Easy.Storefront do
   alias Easy.Repo
   alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
 
-  @spec fetch_public_profile(String.t()) ::
+  @spec get_public_profile(String.t()) ::
           {:ok,
            %{profile: StoreProfile.t(), offers: [Offer.t()], testimonials: [Testimonial.t()]}}
           | {:error, :not_found}
-  def fetch_public_profile(slug) do
-    with {:ok, profile} <- fetch_published_profile(slug) do
+  def get_public_profile(slug) do
+    with {:ok, profile} <- get_published_profile(slug) do
       {:ok,
        %{
          profile: profile,
@@ -22,12 +22,12 @@ defmodule Easy.Storefront do
   @spec create_inquiry(String.t(), map()) ::
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_inquiry(slug, params) do
-    with {:ok, profile} <- fetch_published_profile(slug) do
+    with {:ok, profile} <- get_published_profile(slug) do
       Clients.create_inquiry(profile.business_id, inquiry_params(params))
     end
   end
 
-  defp fetch_published_profile(slug) do
+  defp get_published_profile(slug) do
     case StoreProfile |> StoreProfile.by_slug(slug) |> StoreProfile.published() |> Repo.one() do
       nil -> {:error, :not_found}
       profile -> {:ok, profile}

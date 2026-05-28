@@ -35,7 +35,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
     with {:ok, session} <-
-           Sessions.fetch_client_session_with_sets_for_user(business_id, user_id, id) do
+           Sessions.get_client_session_with_sets_for_user(business_id, user_id, id) do
       render(conn, :show, session: session)
     end
   end
@@ -44,7 +44,7 @@ defmodule EasyWeb.Clients.WorkoutSessionController do
   def active(conn, _params) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Sessions.fetch_active_client_session_for_user(business_id, user_id) do
+    with {:ok, session} <- Sessions.get_active_client_session_for_user(business_id, user_id) do
       render(conn, :show, session: session)
     end
   end

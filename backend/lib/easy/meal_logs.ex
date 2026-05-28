@@ -38,7 +38,7 @@ defmodule Easy.MealLogs do
         ) ::
           {:ok, [MealLog.t()]} | {:error, :not_found}
   def list_meal_logs_for_client(business_id, client_id, date, from_date, to_date) do
-    with {:ok, _client} <- fetch_client(business_id, client_id) do
+    with {:ok, _client} <- get_client(business_id, client_id) do
       list_meal_logs(business_id, client_id, date, from_date, to_date)
     end
   end
@@ -52,14 +52,14 @@ defmodule Easy.MealLogs do
         ) ::
           {:ok, [MealLog.t()]} | {:error, :not_found}
   def list_meal_logs_for_user(business_id, user_id, date, from_date, to_date) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
       list_meal_logs(business_id, client.id, date, from_date, to_date)
     end
   end
 
-  @spec fetch_client_meal_log(String.t(), String.t(), String.t()) ::
+  @spec get_client_meal_log(String.t(), String.t(), String.t()) ::
           {:ok, MealLog.t()} | {:error, :not_found}
-  def fetch_client_meal_log(business_id, client_id, meal_log_id) do
+  def get_client_meal_log(business_id, client_id, meal_log_id) do
     MealLog
     |> MealLog.for_business(business_id)
     |> MealLog.for_client(client_id)
@@ -68,11 +68,11 @@ defmodule Easy.MealLogs do
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_meal_log_for_user(String.t(), String.t(), String.t()) ::
+  @spec get_client_meal_log_for_user(String.t(), String.t(), String.t()) ::
           {:ok, MealLog.t()} | {:error, :not_found}
-  def fetch_client_meal_log_for_user(business_id, user_id, meal_log_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
-      fetch_client_meal_log(business_id, client.id, meal_log_id)
+  def get_client_meal_log_for_user(business_id, user_id, meal_log_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      get_client_meal_log(business_id, client.id, meal_log_id)
     end
   end
 
@@ -104,18 +104,18 @@ defmodule Easy.MealLogs do
     end
   end
 
-  @spec fetch_business_food_log_entry(String.t(), String.t()) ::
+  @spec get_business_food_log_entry(String.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, :not_found}
-  def fetch_business_food_log_entry(business_id, entry_id) do
+  def get_business_food_log_entry(business_id, entry_id) do
     FoodLogEntry
     |> FoodLogEntry.for_business(business_id)
     |> Repo.get(entry_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_food_log_entry(String.t(), String.t(), String.t()) ::
+  @spec get_client_food_log_entry(String.t(), String.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, :not_found}
-  def fetch_client_food_log_entry(business_id, client_id, entry_id) do
+  def get_client_food_log_entry(business_id, client_id, entry_id) do
     FoodLogEntry
     |> FoodLogEntry.for_client(business_id, client_id)
     |> Repo.get(entry_id)
@@ -155,7 +155,7 @@ defmodule Easy.MealLogs do
   @spec log_entry_for_user(String.t(), String.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def log_entry_for_user(business_id, user_id, attrs) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
       log_entry(business_id, client.id, attrs)
     end
   end
@@ -180,8 +180,8 @@ defmodule Easy.MealLogs do
   @spec update_entry_for_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def update_entry_for_user(business_id, user_id, entry_id, attrs) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id),
-         {:ok, entry} <- fetch_client_food_log_entry(business_id, client.id, entry_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id),
+         {:ok, entry} <- get_client_food_log_entry(business_id, client.id, entry_id) do
       update_entry(entry, business_id, attrs)
     end
   end
@@ -205,7 +205,7 @@ defmodule Easy.MealLogs do
   @spec delete_entry_for_business(String.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def delete_entry_for_business(business_id, entry_id) do
-    with {:ok, entry} <- fetch_business_food_log_entry(business_id, entry_id) do
+    with {:ok, entry} <- get_business_food_log_entry(business_id, entry_id) do
       delete_entry(entry, business_id)
     end
   end
@@ -213,8 +213,8 @@ defmodule Easy.MealLogs do
   @spec delete_entry_for_user(String.t(), String.t(), String.t()) ::
           {:ok, FoodLogEntry.t()} | {:error, any()}
   def delete_entry_for_user(business_id, user_id, entry_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id),
-         {:ok, entry} <- fetch_client_food_log_entry(business_id, client.id, entry_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id),
+         {:ok, entry} <- get_client_food_log_entry(business_id, client.id, entry_id) do
       delete_entry(entry, business_id)
     end
   end
@@ -230,7 +230,7 @@ defmodule Easy.MealLogs do
   @spec log_meal_for_user(String.t(), String.t(), String.t(), String.t(), String.t()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
   def log_meal_for_user(business_id, user_id, date_str, meal_slot, meal_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id),
+    with {:ok, client} <- get_client_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str) do
       log_meal(business_id, client.id, date, meal_slot, meal_id)
     end
@@ -270,7 +270,7 @@ defmodule Easy.MealLogs do
   @spec log_day_for_user(String.t(), String.t(), String.t(), String.t()) ::
           {:ok, [FoodLogEntry.t()]} | {:error, any()}
   def log_day_for_user(business_id, user_id, date_str, plan_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id),
+    with {:ok, client} <- get_client_for_user(business_id, user_id),
          {:ok, date} <- parse_required_date(date_str) do
       log_day(business_id, client.id, date, plan_id)
     end
@@ -636,14 +636,14 @@ defmodule Easy.MealLogs do
     |> preload(food: ^food_query, recipe: ^recipe_query)
   end
 
-  defp fetch_client(business_id, client_id) do
+  defp get_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp fetch_client_for_user(business_id, user_id) do
+  defp get_client_for_user(business_id, user_id) do
     Client
     |> Client.for_business(business_id)
     |> Client.for_user(user_id)

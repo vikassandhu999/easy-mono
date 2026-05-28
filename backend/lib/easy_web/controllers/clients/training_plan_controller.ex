@@ -22,7 +22,7 @@ defmodule EasyWeb.Clients.TrainingPlanController do
   def show(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Plans.fetch_client_plan_full_for_user(business_id, user_id, id) do
+    with {:ok, plan} <- Plans.get_client_plan_full_for_user(business_id, user_id, id) do
       render(conn, :show, plan: plan)
     end
   end

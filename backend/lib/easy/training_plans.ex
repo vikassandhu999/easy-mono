@@ -10,17 +10,17 @@ defmodule Easy.TrainingPlans do
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec fetch_plan(String.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def fetch_plan(business_id, plan_id) do
+  @spec get_plan(String.t(), String.t()) :: {:ok, TrainingPlan.t()} | {:error, :not_found}
+  def get_plan(business_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> Repo.get(plan_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_plan_full(String.t(), String.t()) ::
+  @spec get_plan_full(String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def fetch_plan_full(business_id, plan_id) do
+  def get_plan_full(business_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> TrainingPlan.with_workouts(business_id)
@@ -30,9 +30,9 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_plan_full(String.t(), String.t(), String.t()) ::
+  @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def fetch_client_plan_full(business_id, client_id, plan_id) do
+  def get_client_plan_full(business_id, client_id, plan_id) do
     TrainingPlan
     |> TrainingPlan.for_business(business_id)
     |> TrainingPlan.for_client(client_id)
@@ -111,7 +111,7 @@ defmodule Easy.TrainingPlans do
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
   def list_client_plans_for_user(business_id, user_id, status, offset, limit) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
       list_client_plans(business_id, client.id, status, offset, limit)
     end
   end
@@ -125,31 +125,31 @@ defmodule Easy.TrainingPlans do
         ) ::
           {:ok, %{count: non_neg_integer(), plans: [TrainingPlan.t()]}} | {:error, :not_found}
   def list_client_plans_for_client(business_id, client_id, status, offset, limit) do
-    with {:ok, _client} <- fetch_client(business_id, client_id) do
+    with {:ok, _client} <- get_client(business_id, client_id) do
       list_client_plans(business_id, client_id, status, offset, limit)
     end
   end
 
-  @spec fetch_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
-  def fetch_plan_item(business_id, plan_item_id) do
+  @spec get_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
+  def get_plan_item(business_id, plan_item_id) do
     PlanItem
     |> PlanItem.for_business(business_id)
     |> Repo.get(plan_item_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
+  @spec get_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found}
-  def fetch_client_plan_full_for_user(business_id, user_id, plan_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
-      fetch_client_plan_full(business_id, client.id, plan_id)
+  def get_client_plan_full_for_user(business_id, user_id, plan_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
+      get_client_plan_full(business_id, client.id, plan_id)
     end
   end
 
   @spec list_plan_items(String.t(), String.t()) ::
           {:ok, [PlanItem.t()]} | {:error, :not_found}
   def list_plan_items(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       plan_items =
         PlanItem
         |> PlanItem.for_business(business_id)
@@ -173,7 +173,7 @@ defmodule Easy.TrainingPlans do
   @spec create_training_plan_for_coach_user(String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_training_plan_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_training_plan(business_id, coach.id, attrs)
     end
   end
@@ -191,7 +191,7 @@ defmodule Easy.TrainingPlans do
   @spec update_training_plan(String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_training_plan(business_id, plan_id, attrs) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       update_training_plan(plan, attrs)
     end
   end
@@ -203,7 +203,7 @@ defmodule Easy.TrainingPlans do
   @spec delete_training_plan(String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_training_plan(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan(business_id, plan_id) do
+    with {:ok, plan} <- get_plan(business_id, plan_id) do
       delete_training_plan(plan)
     end
   end
@@ -223,7 +223,7 @@ defmodule Easy.TrainingPlans do
   @spec duplicate_training_plan(String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_training_plan(business_id, plan_id) do
-    with {:ok, plan} <- fetch_plan_full(business_id, plan_id) do
+    with {:ok, plan} <- get_plan_full(business_id, plan_id) do
       duplicate_training_plan(plan)
     end
   end
@@ -254,8 +254,8 @@ defmodule Easy.TrainingPlans do
   end
 
   def assign_training_plan_to_client(business_id, plan_id, client_id, attrs) do
-    with {:ok, plan} <- fetch_plan_full(business_id, plan_id),
-         {:ok, _client} <- fetch_client(business_id, client_id) do
+    with {:ok, plan} <- get_plan_full(business_id, plan_id),
+         {:ok, _client} <- get_client(business_id, client_id) do
       assign_training_plan_to_client(
         plan,
         client_id,
@@ -268,7 +268,7 @@ defmodule Easy.TrainingPlans do
   @spec create_plan_item(String.t(), String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item(training_plan_id, business_id, creator_id, attrs) do
-    with {:ok, plan} <- fetch_plan(business_id, training_plan_id),
+    with {:ok, plan} <- get_plan(business_id, training_plan_id),
          :ok <- ensure_workout_for_plan(plan.id, business_id, Map.get(attrs, "workout_id")) do
       plan.id
       |> PlanItem.insert_changeset(business_id, creator_id, attrs)
@@ -280,7 +280,7 @@ defmodule Easy.TrainingPlans do
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, training_plan_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_plan_item(training_plan_id, business_id, coach.id, attrs)
     end
   end
@@ -298,7 +298,7 @@ defmodule Easy.TrainingPlans do
   @spec update_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
-    with {:ok, plan_item} <- fetch_plan_item(business_id, plan_item_id) do
+    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       update_plan_item(plan_item, attrs)
     end
   end
@@ -309,22 +309,22 @@ defmodule Easy.TrainingPlans do
   @spec delete_plan_item(String.t(), String.t()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
-    with {:ok, plan_item} <- fetch_plan_item(business_id, plan_item_id) do
+    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       delete_plan_item(plan_item)
     end
   end
 
-  defp fetch_client(_business_id, nil), do: {:error, :not_found}
-  defp fetch_client(_business_id, ""), do: {:error, :not_found}
+  defp get_client(_business_id, nil), do: {:error, :not_found}
+  defp get_client(_business_id, ""), do: {:error, :not_found}
 
-  defp fetch_client(business_id, client_id) do
+  defp get_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  defp fetch_client_for_user(business_id, user_id) do
+  defp get_client_for_user(business_id, user_id) do
     Client
     |> Client.for_business(business_id)
     |> Client.for_user(user_id)
@@ -332,7 +332,7 @@ defmodule Easy.TrainingPlans do
     |> ok_or_not_found()
   end
 
-  defp fetch_coach_for_user(business_id, user_id) do
+  defp get_coach_for_user(business_id, user_id) do
     Coach
     |> Coach.for_business(business_id)
     |> Coach.for_user(user_id)

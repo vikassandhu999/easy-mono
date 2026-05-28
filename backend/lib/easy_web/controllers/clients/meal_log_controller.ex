@@ -19,7 +19,7 @@ defmodule EasyWeb.Clients.MealLogController do
   def show(conn, %{"id" => id}) do
     %{user_id: user_id, business_id: business_id} = conn.assigns.claims
 
-    with {:ok, meal_log} <- MealLogs.fetch_client_meal_log_for_user(business_id, user_id, id) do
+    with {:ok, meal_log} <- MealLogs.get_client_meal_log_for_user(business_id, user_id, id) do
       render(conn, :show, meal_log: meal_log)
     end
   end

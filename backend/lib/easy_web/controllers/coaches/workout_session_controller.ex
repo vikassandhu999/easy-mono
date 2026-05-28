@@ -19,7 +19,7 @@ defmodule EasyWeb.Coaches.WorkoutSessionController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, session} <- Sessions.fetch_session_with_sets(business_id, id) do
+    with {:ok, session} <- Sessions.get_session_with_sets(business_id, id) do
       render(conn, :show, session: session)
     end
   end

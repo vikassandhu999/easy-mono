@@ -18,7 +18,7 @@ defmodule EasyWeb.Coaches.ClientController do
   def show(conn, %{"id" => client_id}) do
     business_id = conn.assigns.claims.business_id
 
-    with {:ok, client} <- Clients.fetch_client_with_preloads(business_id, client_id) do
+    with {:ok, client} <- Clients.get_client_with_preloads(business_id, client_id) do
       render(conn, :show, client: client)
     end
   end

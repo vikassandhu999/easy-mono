@@ -8,17 +8,17 @@ defmodule Easy.Clients do
   alias Easy.Coaches
   alias Easy.Repo
 
-  @spec fetch_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
-  def fetch_client(business_id, client_id) do
+  @spec get_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}
+  def get_client(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Repo.get(client_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_with_preloads(String.t(), String.t()) ::
+  @spec get_client_with_preloads(String.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found}
-  def fetch_client_with_preloads(business_id, client_id) do
+  def get_client_with_preloads(business_id, client_id) do
     Client
     |> Client.for_business(business_id)
     |> Client.with_preloads()
@@ -26,9 +26,9 @@ defmodule Easy.Clients do
     |> ok_or_not_found()
   end
 
-  @spec fetch_client_for_user(String.t(), String.t()) ::
+  @spec get_client_for_user(String.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found}
-  def fetch_client_for_user(business_id, user_id) do
+  def get_client_for_user(business_id, user_id) do
     Client
     |> Client.for_business(business_id)
     |> Client.for_user(user_id)
@@ -72,7 +72,7 @@ defmodule Easy.Clients do
   @spec update_client(String.t(), String.t(), map()) ::
           {:ok, Client.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_client(business_id, client_id, attrs) do
-    with {:ok, client} <- fetch_client_with_preloads(business_id, client_id),
+    with {:ok, client} <- get_client_with_preloads(business_id, client_id),
          {:ok, updated_client} <- client |> Client.update_changeset(attrs) |> Repo.update() do
       preload_client(updated_client)
     end
@@ -81,7 +81,7 @@ defmodule Easy.Clients do
   @spec revoke_invitation(String.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
   def revoke_invitation(business_id, client_id) do
-    with {:ok, client} <- fetch_client(business_id, client_id) do
+    with {:ok, client} <- get_client(business_id, client_id) do
       delete_pending_invitation(client)
     end
   end
@@ -89,7 +89,7 @@ defmodule Easy.Clients do
   @spec resend_invitation(String.t(), String.t(), String.t()) ::
           {:ok, Client.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
   def resend_invitation(business_id, user_id, client_id) do
-    with {:ok, client} <- fetch_client(business_id, client_id),
+    with {:ok, client} <- get_client(business_id, client_id),
          {:ok, coach} <- Coaches.get_by_user_id(user_id, business_id),
          {:ok, updated_client} <- resend_client_invitation(client, coach) do
       preload_client(updated_client)
@@ -99,7 +99,7 @@ defmodule Easy.Clients do
   @spec get_profile(String.t(), String.t()) ::
           {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}} | {:error, :not_found}
   def get_profile(business_id, user_id) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id) do
+    with {:ok, client} <- get_client_for_user(business_id, user_id) do
       coach =
         Orgs.Coach
         |> Orgs.Coach.for_business(business_id)
@@ -114,7 +114,7 @@ defmodule Easy.Clients do
           {:ok, %{client: Client.t(), coach: Orgs.Coach.t() | nil}}
           | {:error, :not_found | Ecto.Changeset.t()}
   def update_profile(business_id, user_id, attrs) do
-    with {:ok, client} <- fetch_client_for_user(business_id, user_id),
+    with {:ok, client} <- get_client_for_user(business_id, user_id),
          {:ok, _updated} <- client |> Client.self_update_changeset(attrs) |> Repo.update() do
       get_profile(business_id, user_id)
     end

@@ -3,16 +3,16 @@ defmodule Easy.Foods do
   alias Easy.Orgs.Coach
   alias Easy.Repo
 
-  @spec fetch_visible_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
-  def fetch_visible_food(business_id, food_id) do
+  @spec get_visible_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
+  def get_visible_food(business_id, food_id) do
     Food
     |> Food.for_business_or_system(business_id)
     |> Repo.get(food_id)
     |> ok_or_not_found()
   end
 
-  @spec fetch_business_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
-  def fetch_business_food(business_id, food_id) do
+  @spec get_business_food(String.t(), String.t()) :: {:ok, Food.t()} | {:error, :not_found}
+  def get_business_food(business_id, food_id) do
     Food
     |> Food.for_business(business_id)
     |> Repo.get(food_id)
@@ -44,7 +44,7 @@ defmodule Easy.Foods do
   @spec create_food_for_coach_user(String.t(), String.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_food_for_coach_user(business_id, user_id, attrs) do
-    with {:ok, coach} <- fetch_coach_for_user(business_id, user_id) do
+    with {:ok, coach} <- get_coach_for_user(business_id, user_id) do
       create_food(business_id, coach.id, attrs)
     end
   end
@@ -59,7 +59,7 @@ defmodule Easy.Foods do
   @spec update_food(String.t(), String.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_food(business_id, food_id, attrs) do
-    with {:ok, food} <- fetch_business_food(business_id, food_id) do
+    with {:ok, food} <- get_business_food(business_id, food_id) do
       update_food(food, attrs)
     end
   end
@@ -70,12 +70,12 @@ defmodule Easy.Foods do
   @spec delete_food(String.t(), String.t()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_food(business_id, food_id) do
-    with {:ok, food} <- fetch_business_food(business_id, food_id) do
+    with {:ok, food} <- get_business_food(business_id, food_id) do
       delete_food(food)
     end
   end
 
-  defp fetch_coach_for_user(business_id, user_id) do
+  defp get_coach_for_user(business_id, user_id) do
     Coach
     |> Coach.for_business(business_id)
     |> Coach.for_user(user_id)

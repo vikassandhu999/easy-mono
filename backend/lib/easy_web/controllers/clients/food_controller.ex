@@ -21,7 +21,7 @@ defmodule EasyWeb.Clients.FoodController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, food} <- Foods.fetch_visible_food(business_id, id) do
+    with {:ok, food} <- Foods.get_visible_food(business_id, id) do
       render(conn, :show, food: food)
     end
   end

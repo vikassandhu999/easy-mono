@@ -19,7 +19,7 @@ defmodule EasyWeb.Coaches.RecipeController do
   def show(conn, %{"id" => recipe_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, recipe} <- Recipes.fetch_recipe(business_id, recipe_id) do
+    with {:ok, recipe} <- Recipes.get_recipe(business_id, recipe_id) do
       render(conn, :show, recipe: recipe)
     end
   end

@@ -6,7 +6,7 @@ defmodule EasyWeb.Public.StorefrontController do
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"slug" => slug}) do
     with {:ok, %{profile: profile, offers: offers, testimonials: testimonials}} <-
-           Storefront.fetch_public_profile(slug) do
+           Storefront.get_public_profile(slug) do
       render(conn, :show, profile: profile, offers: offers, testimonials: testimonials)
     end
   end

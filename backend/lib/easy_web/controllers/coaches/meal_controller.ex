@@ -19,7 +19,7 @@ defmodule EasyWeb.Coaches.MealController do
   def show(conn, %{"id" => meal_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, meal} <- Meals.fetch_meal_with_items(business_id, meal_id) do
+    with {:ok, meal} <- Meals.get_meal_with_items(business_id, meal_id) do
       render(conn, :show, meal: meal)
     end
   end

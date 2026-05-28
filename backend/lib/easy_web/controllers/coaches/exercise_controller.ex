@@ -18,7 +18,7 @@ defmodule EasyWeb.Coaches.ExerciseController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, exercise} <- Exercises.fetch_exercise(business_id, id) do
+    with {:ok, exercise} <- Exercises.get_exercise(business_id, id) do
       render(conn, :show, exercise: exercise)
     end
   end

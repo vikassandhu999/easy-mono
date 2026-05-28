@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.Plan do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.Meal
-  alias Easy.Nutrition.PlanItem
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -36,7 +35,7 @@ defmodule Easy.Nutrition.Plan do
     belongs_to :client, Client
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
     has_many :meals, Meal
-    has_many :plan_items, PlanItem
+    has_many :plan_items, Easy.Nutrition.PlanItem
 
     timestamps(type: :utc_datetime)
   end
@@ -114,17 +113,5 @@ defmodule Easy.Nutrition.Plan do
       where: is_nil(p.start_date) or p.start_date <= ^date,
       where: is_nil(p.end_date) or p.end_date >= ^date
     )
-  end
-
-  @spec with_meals(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_meals(query \\ __MODULE__) do
-    meal_query = Meal |> Meal.ordered() |> Meal.with_items()
-    from(p in query, preload: [meals: ^meal_query])
-  end
-
-  @spec with_plan_items(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_plan_items(query \\ __MODULE__) do
-    plan_item_query = PlanItem |> PlanItem.with_meal()
-    from(p in query, preload: [plan_items: ^plan_item_query])
   end
 end

@@ -1,7 +1,6 @@
 defmodule Easy.Nutrition.Meal do
   use Ecto.Schema
 
-  alias Easy.Nutrition.MealItem
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -21,7 +20,7 @@ defmodule Easy.Nutrition.Meal do
     belongs_to :business, Orgs.Business
     belongs_to :plan, Easy.Nutrition.Plan
     has_many :plan_items, Easy.Nutrition.PlanItem
-    has_many :meal_items, MealItem
+    has_many :meal_items, Easy.Nutrition.MealItem
 
     timestamps(type: :utc_datetime)
   end
@@ -61,11 +60,5 @@ defmodule Easy.Nutrition.Meal do
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.inserted_at])
-  end
-
-  @spec with_items(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_items(query \\ __MODULE__) do
-    meal_item_query = MealItem |> MealItem.ordered() |> MealItem.with_food_and_recipe()
-    from(m in query, preload: [meal_items: ^meal_item_query])
   end
 end

@@ -1,9 +1,7 @@
 defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
 
-  alias Easy.Nutrition.Recipe
   alias Easy.Recipes
-  alias Easy.Repo
 
   describe "create/3" do
     test "rejects recipe ingredients whose food belongs to another business" do
@@ -20,26 +18,6 @@ defmodule Easy.Nutrition.RecipeTest do
 
       assert {:error, changeset} = Recipes.create_recipe(coach.business_id, coach.id, attrs)
       assert "has invalid food" in errors_on(changeset).recipe_ingredients
-    end
-  end
-
-  describe "with_ingredients/1" do
-    test "preloads foods through association" do
-      coach = insert_coach()
-      food = insert(:food, business: coach.business, creator: coach)
-      recipe = insert(:recipe, business: coach.business, creator: coach)
-      insert(:recipe_ingredient, recipe: recipe, food: food)
-
-      recipe =
-        Recipe
-        |> Recipe.for_business(coach.business_id)
-        |> Recipe.with_ingredients()
-        |> Repo.get!(recipe.id)
-
-      assert Ecto.assoc_loaded?(recipe.recipe_ingredients)
-      assert Ecto.assoc_loaded?(recipe.foods)
-      assert [%{id: food_id}] = recipe.foods
-      assert food_id == food.id
     end
   end
 

@@ -92,19 +92,4 @@ defmodule Easy.Nutrition.PlanItem do
   def for_day(query \\ __MODULE__, day) do
     from(p in query, where: p.day == ^day)
   end
-
-  @spec with_meal(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_meal(query \\ __MODULE__) do
-    from(p in query, preload: [:meal])
-  end
-
-  @spec with_meal_and_items(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_meal_and_items(query \\ __MODULE__) do
-    meal_item_query =
-      Easy.Nutrition.MealItem
-      |> Easy.Nutrition.MealItem.ordered()
-      |> Easy.Nutrition.MealItem.with_food_and_recipe()
-
-    from(p in query, preload: [meal: [meal_items: ^meal_item_query]])
-  end
 end

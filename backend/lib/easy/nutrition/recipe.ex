@@ -85,9 +85,4 @@ defmodule Easy.Nutrition.Recipe do
   def newest(query \\ __MODULE__) do
     from(r in query, order_by: [desc: r.inserted_at])
   end
-
-  @spec with_ingredients(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_ingredients(query \\ __MODULE__) do
-    from(r in query, preload: [:foods, recipe_ingredients: [:food]])
-  end
 end

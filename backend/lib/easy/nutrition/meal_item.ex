@@ -77,9 +77,4 @@ defmodule Easy.Nutrition.MealItem do
   def ordered(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.position, asc: m.inserted_at])
   end
-
-  @spec with_food_and_recipe(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def with_food_and_recipe(query \\ __MODULE__) do
-    from(m in query, preload: [:food, :recipe])
-  end
 end

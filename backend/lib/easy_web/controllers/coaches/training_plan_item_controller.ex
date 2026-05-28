@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.TrainingPlanItemController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Plans
+  alias Easy.TrainingPlans, as: Plans
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do

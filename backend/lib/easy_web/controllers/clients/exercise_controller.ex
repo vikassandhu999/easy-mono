@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.ExerciseController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Exercises
+  alias Easy.Exercises
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

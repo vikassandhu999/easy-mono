@@ -1,8 +1,8 @@
-defmodule Easy.Nutrition.MealLogs do
+defmodule Easy.MealLogs do
   alias Easy.Clients.Client
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.Nutrition.MacroCalc
+  alias Easy.MacroCalc
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog

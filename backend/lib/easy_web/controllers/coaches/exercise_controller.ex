@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ExerciseController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Exercises
+  alias Easy.Exercises
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.MealLogController do
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.MealLogs
+  alias Easy.MealLogs
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id} = params) do

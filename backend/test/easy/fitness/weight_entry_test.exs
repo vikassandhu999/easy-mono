@@ -3,7 +3,7 @@ defmodule Easy.Fitness.WeightEntryTest do
 
   alias Easy.Error
   alias Easy.Fitness.WeightEntry
-  alias Easy.Fitness.WeightEntries
+  alias Easy.WeightEntries
 
   describe "insert_changeset/3" do
     test "is valid with required fields" do

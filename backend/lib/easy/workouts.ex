@@ -1,4 +1,4 @@
-defmodule Easy.Training.Workouts do
+defmodule Easy.Workouts do
   alias Easy.Repo
   alias Easy.Training.Exercise
   alias Easy.Training.TrainingPlan

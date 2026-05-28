@@ -61,7 +61,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
         )
 
       {:ok, planned_session} =
-        Easy.Training.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
+        Easy.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
 
       conn =
         post(conn, "/v1/coach/performed_sets", %{
@@ -99,7 +99,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
         )
 
       {:ok, planned_session} =
-        Easy.Training.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
+        Easy.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
 
       conn =
         post(conn, "/v1/coach/performed_sets", %{
@@ -134,7 +134,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
         )
 
       {:ok, planned_session} =
-        Easy.Training.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
+        Easy.Sessions.update_workout_session(session, %{"workout_id" => workout.id})
 
       conn =
         post(conn, "/v1/coach/performed_sets", %{
@@ -207,7 +207,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
       business: business
     } do
       {:ok, set} =
-        Easy.Training.Sessions.create_performed_set(session.id, business.id, %{
+        Easy.Sessions.create_performed_set(session.id, business.id, %{
           "exercise_id" => exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -235,7 +235,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
       other_exercise = insert(:exercise, business: other.business)
 
       {:ok, set} =
-        Easy.Training.Sessions.create_performed_set(other_session.id, other.business_id, %{
+        Easy.Sessions.create_performed_set(other_session.id, other.business_id, %{
           "exercise_id" => other_exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -255,7 +255,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
       business: business
     } do
       {:ok, set} =
-        Easy.Training.Sessions.create_performed_set(session.id, business.id, %{
+        Easy.Sessions.create_performed_set(session.id, business.id, %{
           "exercise_id" => exercise.id,
           "position" => 0,
           "actual_reps" => "10",
@@ -273,7 +273,7 @@ defmodule EasyWeb.Coaches.PerformedSetControllerTest do
       other_exercise = insert(:exercise, business: other.business)
 
       {:ok, set} =
-        Easy.Training.Sessions.create_performed_set(other_session.id, other.business_id, %{
+        Easy.Sessions.create_performed_set(other_session.id, other.business_id, %{
           "exercise_id" => other_exercise.id,
           "position" => 0,
           "actual_reps" => "10",

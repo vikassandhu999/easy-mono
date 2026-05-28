@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.FoodLogEntryController do
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.MealLogs
+  alias Easy.MealLogs
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do

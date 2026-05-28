@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.ClientWeightEntryController do
   use EasyWeb, :controller
 
-  alias Easy.Fitness.WeightEntries
+  alias Easy.WeightEntries
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id} = params) do

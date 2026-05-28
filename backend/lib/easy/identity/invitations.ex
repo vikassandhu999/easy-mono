@@ -2,7 +2,7 @@ defmodule Easy.Identity.Invitations do
   alias Easy.Clients
   alias Easy.Identity.AuthTokens
   alias Easy.Identity.Errors
-  alias Easy.Identity.Mailer
+  alias Easy.Identity.Mailer, as: Mailer
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.OtpGenerator
   alias Easy.Identity.SessionFactory

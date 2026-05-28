@@ -133,7 +133,7 @@ defmodule EasyWeb.AuthController do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
 
-    token_hash = Identity.OneTimeTokens.generate_token_hash(email <> otp)
+    token_hash = Easy.Identity.OneTimeTokens.generate_token_hash(email <> otp)
 
     opts = %{
       token_hash: token_hash,

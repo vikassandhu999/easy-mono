@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.Plans do
+defmodule Easy.NutritionPlans do
   alias Easy.Clients.Client
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Meal

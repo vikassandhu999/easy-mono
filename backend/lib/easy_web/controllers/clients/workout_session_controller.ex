@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.WorkoutSessionController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Sessions
+  alias Easy.Sessions
   alias Easy.Training.WorkoutSession
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()

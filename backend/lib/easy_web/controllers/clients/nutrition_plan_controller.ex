@@ -2,7 +2,7 @@ defmodule EasyWeb.Clients.NutritionPlanController do
   use EasyWeb, :controller
 
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.Plans
+  alias Easy.NutritionPlans, as: Plans
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

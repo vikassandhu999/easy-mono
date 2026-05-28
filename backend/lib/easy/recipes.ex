@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.Recipes do
+defmodule Easy.Recipes do
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient

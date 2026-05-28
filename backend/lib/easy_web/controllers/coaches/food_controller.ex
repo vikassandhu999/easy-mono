@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.FoodController do
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.Foods
+  alias Easy.Foods
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

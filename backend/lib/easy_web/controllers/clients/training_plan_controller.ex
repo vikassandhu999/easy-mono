@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Plans
+  alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.TrainingPlan
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()

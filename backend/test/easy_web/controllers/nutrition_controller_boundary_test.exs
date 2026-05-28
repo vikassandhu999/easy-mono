@@ -36,7 +36,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
       source = File.read!(Path.join(File.cwd!(), path))
 
       refute source =~ "alias Easy.Clients", path
-      refute source =~ "alias Easy.Orgs.Coaches", path
+      refute source =~ "alias Easy.Coaches", path
       refute source =~ ~r/\bClient(Read|s)?\.\w+\(/, path
       refute source =~ ~r/\bCoaches\.\w+\(/, path
     end

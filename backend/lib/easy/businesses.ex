@@ -1,4 +1,4 @@
-defmodule Easy.Orgs.Businesses do
+defmodule Easy.Businesses do
   alias Easy.Identity
   alias Easy.Orgs
   alias Easy.Repo

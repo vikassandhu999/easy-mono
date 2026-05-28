@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.WeightEntryController do
   use EasyWeb, :controller
 
-  alias Easy.Fitness.WeightEntries
+  alias Easy.WeightEntries
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

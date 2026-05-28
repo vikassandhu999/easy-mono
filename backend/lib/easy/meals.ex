@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.Meals do
+defmodule Easy.Meals do
   alias Easy.Nutrition.Food
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem

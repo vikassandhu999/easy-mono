@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.WorkoutSessionControllerTest do
   use Easy.ConnCase
 
-  alias Easy.Training.Sessions
+  alias Easy.Sessions
 
   setup do
     coach = insert(:coach)

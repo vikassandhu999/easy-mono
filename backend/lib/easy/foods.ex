@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.Foods do
+defmodule Easy.Foods do
   alias Easy.Nutrition.Food
   alias Easy.Orgs.Coach
   alias Easy.Repo

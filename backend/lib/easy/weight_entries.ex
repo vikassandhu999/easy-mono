@@ -1,4 +1,4 @@
-defmodule Easy.Fitness.WeightEntries do
+defmodule Easy.WeightEntries do
   import Ecto.Query
 
   alias Easy.Clients

@@ -1,7 +1,7 @@
 defmodule Easy.Training.TrainingPlanTest do
   use Easy.SchemaCase
 
-  alias Easy.Training.Plans
+  alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.TrainingPlan
 
   describe "update_changeset/2" do

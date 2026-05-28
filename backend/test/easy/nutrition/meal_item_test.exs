@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.MealItemTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Nutrition.MealItem
-  alias Easy.Nutrition.Meals
+  alias Easy.Meals
 
   describe "insert_changeset/3" do
     test "does not query when building a changeset" do

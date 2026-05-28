@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.MacroCalc do
+defmodule Easy.MacroCalc do
   @spec compute(map(), [String.t()], float() | nil, float() | nil) :: float()
   def compute(macros, keys, weight_g, cooked_weight_g) do
     key = Enum.find(keys, &is_map_key(macros, &1))

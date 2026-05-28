@@ -2,8 +2,8 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   use EasyWeb, :controller
 
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.Plans, as: NutritionPlans
-  alias Easy.Training.Plans, as: TrainingPlans
+  alias Easy.NutritionPlans, as: NutritionPlans
+  alias Easy.TrainingPlans, as: TrainingPlans
   alias Easy.Training.TrainingPlan
 
   @spec training_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()

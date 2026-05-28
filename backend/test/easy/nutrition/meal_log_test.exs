@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.MealLogTest do
   use Easy.SchemaCase, async: false
 
-  alias Easy.Nutrition.MealLogs
+  alias Easy.MealLogs
   alias Easy.Repo
 
   describe "recalculate_logged_calories/1" do

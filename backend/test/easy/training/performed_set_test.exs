@@ -1,7 +1,7 @@
 defmodule Easy.Training.PerformedSetTest do
   use Easy.SchemaCase
 
-  alias Easy.Training.Sessions
+  alias Easy.Sessions
   alias Easy.Training.PerformedSet
 
   describe "insert_changeset/3" do

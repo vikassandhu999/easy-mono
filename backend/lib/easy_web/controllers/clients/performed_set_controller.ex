@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.PerformedSetController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Sessions
+  alias Easy.Sessions
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_session_id" => session_id} = params) do

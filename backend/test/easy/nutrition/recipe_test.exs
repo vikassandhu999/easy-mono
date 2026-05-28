@@ -2,7 +2,7 @@ defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Nutrition.Recipe
-  alias Easy.Nutrition.Recipes
+  alias Easy.Recipes
   alias Easy.Repo
 
   describe "create/3" do

@@ -1,4 +1,4 @@
-defmodule Easy.Training.Sessions do
+defmodule Easy.Sessions do
   alias Easy.Clients.Client
   alias Easy.Repo
   alias Easy.Training.Exercise

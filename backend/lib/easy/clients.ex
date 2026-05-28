@@ -5,7 +5,7 @@ defmodule Easy.Clients do
   alias Easy.Clients.Client
   alias Easy.Identity.User
   alias Easy.Orgs
-  alias Easy.Orgs.Coaches
+  alias Easy.Coaches
   alias Easy.Repo
 
   @spec fetch_client(String.t(), String.t()) :: {:ok, Client.t()} | {:error, :not_found}

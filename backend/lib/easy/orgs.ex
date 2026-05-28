@@ -1,10 +1,10 @@
 defmodule Easy.Orgs do
   alias Easy.Orgs.Business
-  alias Easy.Orgs.Coaches
+  alias Easy.Coaches
   alias Easy.Identity.User
   alias Easy.Orgs.Business
   alias Easy.Repo
-  alias Easy.Orgs.Businesses
+  alias Easy.Businesses
 
   # TODO: Add subscriptions and billing later.
   @spec create_business(User.t(), map()) :: {:ok, Business.t()} | {:error, Ecto.Changeset.t()}

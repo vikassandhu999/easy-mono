@@ -1,6 +1,6 @@
 defmodule Easy.Identity.OtpDelivery do
   alias Easy.Error
-  alias Easy.Identity.Mailer
+  alias Easy.Identity.Mailer, as: Mailer
   alias Easy.Identity.OneTimeTokens
   alias Easy.Identity.OtpGenerator
   alias Easy.Identity.User

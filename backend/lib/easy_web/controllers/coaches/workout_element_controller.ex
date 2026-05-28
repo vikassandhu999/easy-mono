@@ -1,7 +1,7 @@
 defmodule EasyWeb.Coaches.WorkoutElementController do
   use EasyWeb, :controller
 
-  alias Easy.Training.Workouts
+  alias Easy.Workouts
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_id" => workout_id} = params) do

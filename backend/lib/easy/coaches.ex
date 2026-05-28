@@ -1,4 +1,4 @@
-defmodule Easy.Orgs.Coaches do
+defmodule Easy.Coaches do
   alias Ecto.Changeset
   alias Easy.Identity.User
   alias Easy.Orgs.Coach

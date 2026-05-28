@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.FoodLogEntryController do
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.MealLogs
+  alias Easy.MealLogs
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

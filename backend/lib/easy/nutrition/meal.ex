@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.Meal do
 
   alias Easy.Nutrition.MealItem
   alias Easy.Orgs
-  alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
@@ -68,25 +67,5 @@ defmodule Easy.Nutrition.Meal do
   def with_items(query \\ __MODULE__) do
     meal_item_query = MealItem |> MealItem.ordered() |> MealItem.with_food_and_recipe()
     from(m in query, preload: [meal_items: ^meal_item_query])
-  end
-
-  # Actions
-
-  @spec create(String.t(), String.t(), String.t(), map()) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(plan_id, business_id, creator_id, attrs) do
-    insert_changeset(plan_id, business_id, creator_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(meal, attrs) do
-    update_changeset(meal, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(meal) do
-    Repo.delete(meal)
   end
 end

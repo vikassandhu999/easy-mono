@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.MealItemTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Nutrition.MealItem
+  alias Easy.Nutrition.Meals
 
   describe "insert_changeset/3" do
     test "does not query when building a changeset" do
@@ -36,7 +37,7 @@ defmodule Easy.Nutrition.MealItemTest do
       insert(:meal_item, meal: meal, business: meal.business, food: food, position: 0)
 
       assert {:ok, meal_item} =
-               MealItem.create(meal.id, meal.business_id, %{
+               Meals.create_meal_item(meal.business_id, meal.id, %{
                  "food_id" => food.id,
                  "weight_g" => 100.0
                })
@@ -52,7 +53,7 @@ defmodule Easy.Nutrition.MealItemTest do
       insert(:meal_item, meal: meal, business: meal.business, food: food, position: 1)
 
       assert {:ok, meal_item} =
-               MealItem.create(meal.id, meal.business_id, %{
+               Meals.create_meal_item(meal.business_id, meal.id, %{
                  "food_id" => food.id,
                  "weight_g" => 100.0,
                  "position" => 0

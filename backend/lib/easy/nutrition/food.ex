@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.Food do
 
   alias Easy.Nutrition
   alias Easy.Orgs
-  alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
@@ -107,24 +106,5 @@ defmodule Easy.Nutrition.Food do
 
   defp sanitize_tsquery_token(token) do
     String.replace(token, ~r/[^\w]/u, "")
-  end
-
-  # Actions
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(business_id, coach_id, attrs) do
-    insert_changeset(business_id, coach_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(food, attrs) do
-    update_changeset(food, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(food) do
-    Repo.delete(food)
   end
 end

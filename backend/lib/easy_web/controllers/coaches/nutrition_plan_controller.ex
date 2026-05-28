@@ -1,18 +1,15 @@
 defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Reads, as: ClientReads
   alias Easy.Nutrition.Plan
   alias Easy.Nutrition.Plans
-  alias Easy.Nutrition.Reads
-  alias Easy.Orgs.Coaches
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     claims = conn.assigns.claims
 
-    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, plan} <- Plan.create(claims.business_id, coach.id, params) do
+    with {:ok, plan} <-
+           Plans.create_plan_for_coach_user(claims.business_id, claims.user_id, params) do
       conn
       |> put_status(:created)
       |> render(:show, plan: plan)
@@ -23,7 +20,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def show(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan_full(business_id, plan_id) do
+    with {:ok, plan} <- Plans.fetch_plan_full(business_id, plan_id) do
       render(conn, :show, plan: plan)
     end
   end
@@ -32,8 +29,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def update(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
-         {:ok, updated_plan} <- Plan.update(plan, conn.body_params) do
+    with {:ok, updated_plan} <- Plans.update_plan(business_id, plan_id, conn.body_params) do
       render(conn, :show, plan: updated_plan)
     end
   end
@@ -42,8 +38,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def delete(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
-         {:ok, _deleted} <- Plan.delete(plan) do
+    with {:ok, _deleted} <- Plans.delete_plan(business_id, plan_id) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -57,7 +52,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     status = parse_enum(params, "status", Plan.statuses())
 
     with {:ok, %{count: count, plans: plans}} <-
-           Reads.list_template_plans(business_id, status, offset, limit) do
+           Plans.list_template_plans(business_id, status, offset, limit) do
       conn
       |> put_status(:ok)
       |> render(:index, count: count, plans: plans)
@@ -68,10 +63,14 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def assign(conn, %{"id" => plan_id, "client_id" => client_id} = params) do
     claims = conn.assigns.claims
 
-    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
-         {:ok, _client} <- ClientReads.fetch_client(claims.business_id, client_id),
-         {:ok, new_plan} <- Plans.assign_to_client(plan, client_id, coach.id, params) do
+    with {:ok, new_plan} <-
+           Plans.assign_to_client_for_coach_user(
+             claims.business_id,
+             claims.user_id,
+             plan_id,
+             client_id,
+             params
+           ) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -82,9 +81,8 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def duplicate(conn, %{"id" => plan_id}) do
     claims = conn.assigns.claims
 
-    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
-         {:ok, new_plan} <- Plans.duplicate(plan, coach.id) do
+    with {:ok, new_plan} <-
+           Plans.duplicate_for_coach_user(claims.business_id, claims.user_id, plan_id) do
       conn
       |> put_status(:created)
       |> render(:show, plan: new_plan)
@@ -95,8 +93,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def shopping_list(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
-         {:ok, items} <- Plans.shopping_list(plan) do
+    with {:ok, items} <- Plans.shopping_list(business_id, plan_id) do
       render(conn, :shopping_list, items: items)
     end
   end
@@ -105,8 +102,7 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
   def macros(conn, %{"id" => plan_id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, plan} <- Reads.fetch_plan(business_id, plan_id),
-         {:ok, macros} <- Plans.macros(plan) do
+    with {:ok, macros} <- Plans.macros(business_id, plan_id) do
       render(conn, :macros, macros: macros)
     end
   end
@@ -116,14 +112,13 @@ defmodule EasyWeb.Coaches.NutritionPlanController do
     claims = conn.assigns.claims
     clear_existing = parse_boolean(params, "clear_existing") != false
 
-    with {:ok, coach} <- Coaches.get_by_user_id(claims.user_id, claims.business_id),
-         {:ok, plan} <- Reads.fetch_plan(claims.business_id, plan_id),
-         {:ok, items} <-
-           Plans.copy_day(
-             plan,
+    with {:ok, items} <-
+           Plans.copy_day_for_coach_user(
+             claims.business_id,
+             claims.user_id,
+             plan_id,
              Map.get(params, "source_day"),
              Map.get(params, "target_day"),
-             coach.id,
              clear_existing
            ) do
       render(conn, :plan_items, plan_items: items)

@@ -2,10 +2,8 @@ defmodule Easy.Nutrition.Recipe do
   use Ecto.Schema
 
   alias Easy.Nutrition
-  alias Easy.Nutrition.Food
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs
-  alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
@@ -91,58 +89,5 @@ defmodule Easy.Nutrition.Recipe do
   @spec with_ingredients(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_ingredients(query \\ __MODULE__) do
     from(r in query, preload: [:foods, recipe_ingredients: [:food]])
-  end
-
-  # Actions
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(business_id, coach_id, attrs) do
-    insert_changeset(business_id, coach_id, attrs)
-    |> validate_ingredient_foods(business_id)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(recipe, attrs) do
-    update_changeset(recipe, attrs)
-    |> validate_ingredient_foods(recipe.business_id)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(recipe) do
-    Repo.delete(recipe)
-  end
-
-  defp validate_ingredient_foods(changeset, business_id) do
-    with true <- changeset.valid?,
-         ingredients when not is_nil(ingredients) <- get_change(changeset, :recipe_ingredients) do
-      ingredients
-      |> Enum.map(&get_field(&1, :food_id))
-      |> Enum.reject(&is_nil/1)
-      |> Enum.uniq()
-      |> invalid_food_ids(business_id)
-      |> maybe_add_ingredient_error(changeset)
-    else
-      _ -> changeset
-    end
-  end
-
-  defp invalid_food_ids(food_ids, business_id) do
-    valid_ids =
-      Food
-      |> Food.for_business_or_system(business_id)
-      |> where([f], f.id in ^food_ids)
-      |> select([f], f.id)
-      |> Repo.all()
-      |> MapSet.new()
-
-    Enum.reject(food_ids, &MapSet.member?(valid_ids, &1))
-  end
-
-  defp maybe_add_ingredient_error([], changeset), do: changeset
-
-  defp maybe_add_ingredient_error(_invalid_food_ids, changeset) do
-    add_error(changeset, :recipe_ingredients, "has invalid food")
   end
 end

@@ -3,10 +3,6 @@ defmodule Easy.Clients.ReadBoundaryTest do
 
   alias Easy.Clients.Reads
 
-  @domain_read_modules [
-    "lib/easy/nutrition/reads.ex"
-  ]
-
   @training_schemas [
     "lib/easy/training/exercise.ex",
     "lib/easy/training/training_plan.ex",
@@ -14,15 +10,6 @@ defmodule Easy.Clients.ReadBoundaryTest do
     "lib/easy/training/workout_element.ex",
     "lib/easy/training/workout_session.ex"
   ]
-
-  test "client reads are owned by the clients context" do
-    for path <- @domain_read_modules do
-      source = File.read!(Path.join(File.cwd!(), path))
-
-      refute source =~ ~r/def fetch_client\(/, path
-      refute source =~ "Client.for_business", path
-    end
-  end
 
   test "training plan assignment does not hide a client lookup" do
     source = File.read!(Path.join(File.cwd!(), "lib/easy/training/training_plan.ex"))

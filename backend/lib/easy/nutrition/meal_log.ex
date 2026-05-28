@@ -5,7 +5,6 @@ defmodule Easy.Nutrition.MealLog do
   alias Easy.Nutrition.FoodLogEntry
   alias Easy.Nutrition.PlanItem
   alias Easy.Orgs
-  alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
@@ -83,86 +82,5 @@ defmodule Easy.Nutrition.MealLog do
       from(e in FoodLogEntry, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
 
     from(ml in query, preload: [food_log_entries: ^entry_query])
-  end
-
-  # Actions
-
-  @spec find_or_create(String.t(), String.t(), Date.t(), String.t(), map() | nil) ::
-          {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def find_or_create(business_id, client_id, date, meal_slot, snapshot \\ nil) do
-    case get_existing(business_id, client_id, date, meal_slot) do
-      %__MODULE__{} = existing ->
-        {:ok, existing}
-
-      nil ->
-        attrs = %{date: date, meal_slot: meal_slot}
-        planned_cal = snapshot && snapshot[:total_calories]
-
-        changeset =
-          insert_changeset(business_id, client_id, attrs)
-          |> put_change(:planned_snapshot, snapshot)
-          |> put_change(:planned_calories, planned_cal && planned_cal * 1.0)
-
-        case Repo.insert(changeset) do
-          {:ok, meal_log} ->
-            {:ok, meal_log}
-
-          {:error, %{errors: errors} = changeset} ->
-            if has_unique_violation?(errors) do
-              case get_existing(business_id, client_id, date, meal_slot) do
-                %__MODULE__{} = existing -> {:ok, existing}
-                nil -> {:error, changeset}
-              end
-            else
-              {:error, changeset}
-            end
-        end
-    end
-  end
-
-  @spec recalculate_logged_calories(t()) :: {:ok, t()} | {:error, :not_found}
-  def recalculate_logged_calories(%__MODULE__{} = meal_log) do
-    case do_recalculate_logged_calories(meal_log) do
-      {1, [%{logged_calories: total}]} -> {:ok, %{meal_log | logged_calories: total}}
-      {0, []} -> {:error, :not_found}
-    end
-  end
-
-  defp do_recalculate_logged_calories(meal_log) do
-    from(ml in __MODULE__,
-      where: ml.id == ^meal_log.id and ml.business_id == ^meal_log.business_id,
-      select: %{
-        logged_calories:
-          fragment(
-            "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
-            ml.id
-          )
-      },
-      update: [
-        set: [
-          logged_calories:
-            fragment(
-              "(SELECT coalesce(sum(calories), 0.0) FROM food_log_entries WHERE meal_log_id = ?)",
-              ml.id
-            )
-        ]
-      ]
-    )
-    |> Repo.update_all([], returning: [:logged_calories])
-  end
-
-  defp get_existing(business_id, client_id, date, meal_slot) do
-    __MODULE__
-    |> for_business(business_id)
-    |> for_client(client_id)
-    |> for_date(date)
-    |> for_meal_slot(meal_slot)
-    |> Repo.one()
-  end
-
-  defp has_unique_violation?(errors) do
-    Enum.any?(errors, fn {_field, {_msg, meta}} ->
-      Keyword.get(meta, :constraint) == :unique
-    end)
   end
 end

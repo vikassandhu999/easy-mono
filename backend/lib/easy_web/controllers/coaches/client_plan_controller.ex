@@ -1,10 +1,9 @@
 defmodule EasyWeb.Coaches.ClientPlanController do
   use EasyWeb, :controller
 
-  alias Easy.Clients.Reads, as: ClientReads
-  alias Easy.Nutrition
   alias Easy.Nutrition.Plan
-  alias Easy.Training.Plans
+  alias Easy.Nutrition.Plans, as: NutritionPlans
+  alias Easy.Training.Plans, as: TrainingPlans
   alias Easy.Training.TrainingPlan
 
   @spec training_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -16,7 +15,13 @@ defmodule EasyWeb.Coaches.ClientPlanController do
     status = parse_enum(params, "status", TrainingPlan.statuses())
 
     with {:ok, %{plans: plans, count: count}} <-
-           Plans.list_client_plans_for_client(business_id, client_id, status, offset, limit) do
+           TrainingPlans.list_client_plans_for_client(
+             business_id,
+             client_id,
+             status,
+             offset,
+             limit
+           ) do
       render(conn, :training_plans, plans: plans, count: count)
     end
   end
@@ -25,15 +30,19 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   def nutrition_plans(conn, %{"client_id" => client_id} = params) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, _client} <- ClientReads.fetch_client(business_id, client_id) do
-      offset = parse_integer(params, "offset", 0)
-      limit = parse_integer(params, "limit", 10)
-      status = parse_enum(params, "status", Plan.statuses())
+    offset = parse_integer(params, "offset", 0)
+    limit = parse_integer(params, "limit", 10)
+    status = parse_enum(params, "status", Plan.statuses())
 
-      with {:ok, %{plans: plans, count: count}} <-
-             Nutrition.Reads.list_client_plans_full(business_id, client_id, status, offset, limit) do
-        render(conn, :nutrition_plans, plans: plans, count: count)
-      end
+    with {:ok, %{plans: plans, count: count}} <-
+           NutritionPlans.list_client_plans_full_for_client(
+             business_id,
+             client_id,
+             status,
+             offset,
+             limit
+           ) do
+      render(conn, :nutrition_plans, plans: plans, count: count)
     end
   end
 end

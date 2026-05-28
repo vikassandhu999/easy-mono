@@ -2,6 +2,7 @@ defmodule Easy.Nutrition.RecipeTest do
   use Easy.SchemaCase, async: false
 
   alias Easy.Nutrition.Recipe
+  alias Easy.Nutrition.Recipes
   alias Easy.Repo
 
   describe "create/3" do
@@ -17,7 +18,7 @@ defmodule Easy.Nutrition.RecipeTest do
         ]
       }
 
-      assert {:error, changeset} = Recipe.create(coach.business_id, coach.id, attrs)
+      assert {:error, changeset} = Recipes.create_recipe(coach.business_id, coach.id, attrs)
       assert "has invalid food" in errors_on(changeset).recipe_ingredients
     end
   end

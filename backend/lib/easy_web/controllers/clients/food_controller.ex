@@ -1,7 +1,7 @@
 defmodule EasyWeb.Clients.FoodController do
   use EasyWeb, :controller
 
-  alias Easy.Nutrition.Reads
+  alias Easy.Nutrition.Foods
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
@@ -12,7 +12,7 @@ defmodule EasyWeb.Clients.FoodController do
     limit = parse_integer(params, "limit", 50)
 
     with {:ok, %{foods: foods, count: count}} <-
-           Reads.list_visible_foods(business_id, search, offset, limit) do
+           Foods.list_visible_foods(business_id, search, offset, limit) do
       render(conn, :index, foods: foods, count: count)
     end
   end
@@ -21,7 +21,7 @@ defmodule EasyWeb.Clients.FoodController do
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
-    with {:ok, food} <- Reads.fetch_visible_food(business_id, id) do
+    with {:ok, food} <- Foods.fetch_visible_food(business_id, id) do
       render(conn, :show, food: food)
     end
   end

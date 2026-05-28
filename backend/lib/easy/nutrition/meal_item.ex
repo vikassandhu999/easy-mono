@@ -3,7 +3,6 @@ defmodule Easy.Nutrition.MealItem do
 
   alias Easy.Nutrition
   alias Easy.Orgs
-  alias Easy.Repo
 
   import Ecto.Changeset
   import Ecto.Query
@@ -74,19 +73,6 @@ defmodule Easy.Nutrition.MealItem do
     from(m in query, where: m.business_id == ^business_id)
   end
 
-  defp next_position(business_id, meal_id) do
-    query =
-      __MODULE__
-      |> for_business(business_id)
-      |> for_meal(meal_id)
-      |> select([m], max(m.position))
-
-    case Repo.one(query) do
-      nil -> 0
-      max -> max + 1
-    end
-  end
-
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
     from(m in query, order_by: [asc: m.position, asc: m.inserted_at])
@@ -95,37 +81,5 @@ defmodule Easy.Nutrition.MealItem do
   @spec with_food_and_recipe(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_food_and_recipe(query \\ __MODULE__) do
     from(m in query, preload: [:food, :recipe])
-  end
-
-  # Actions
-
-  @spec create(String.t(), String.t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def create(meal_id, business_id, attrs) do
-    insert_changeset(meal_id, business_id, attrs)
-    |> maybe_put_next_position(business_id, meal_id, attrs)
-    |> Repo.insert()
-  end
-
-  @spec update(t(), map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def update(meal_item, attrs) do
-    update_changeset(meal_item, attrs)
-    |> Repo.update()
-  end
-
-  @spec delete(t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  def delete(meal_item) do
-    Repo.delete(meal_item)
-  end
-
-  defp maybe_put_next_position(changeset, business_id, meal_id, attrs) do
-    if changeset.valid? and not position_present?(attrs) do
-      put_change(changeset, :position, next_position(business_id, meal_id))
-    else
-      changeset
-    end
-  end
-
-  defp position_present?(attrs) do
-    Map.has_key?(attrs, "position") or Map.has_key?(attrs, :position)
   end
 end

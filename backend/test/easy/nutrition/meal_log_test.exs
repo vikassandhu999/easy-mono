@@ -1,7 +1,7 @@
 defmodule Easy.Nutrition.MealLogTest do
   use Easy.SchemaCase, async: false
 
-  alias Easy.Nutrition.MealLog
+  alias Easy.Nutrition.MealLogs
   alias Easy.Repo
 
   describe "recalculate_logged_calories/1" do
@@ -19,7 +19,7 @@ defmodule Easy.Nutrition.MealLogTest do
       meal_log = insert(:meal_log, business: coach.business, client: client)
       Repo.delete!(meal_log)
 
-      assert {:error, :not_found} = MealLog.recalculate_logged_calories(meal_log)
+      assert {:error, :not_found} = MealLogs.recalculate_logged_calories(meal_log)
     end
   end
 

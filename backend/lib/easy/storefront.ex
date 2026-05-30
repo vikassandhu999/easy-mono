@@ -5,8 +5,7 @@ defmodule Easy.Storefront do
   alias Easy.Storefront.{Offer, StoreProfile, Testimonial}
 
   @spec get_public_profile(String.t()) ::
-          {:ok,
-           %{profile: StoreProfile.t(), offers: [Offer.t()], testimonials: [Testimonial.t()]}}
+          {:ok, %{profile: StoreProfile.t(), offers: [Offer.t()], testimonials: [Testimonial.t()]}}
           | {:error, :not_found}
   def get_public_profile(slug) do
     with {:ok, profile} <- get_published_profile(slug) do

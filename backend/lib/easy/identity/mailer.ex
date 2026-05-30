@@ -12,9 +12,7 @@ defmodule Easy.Identity.Mailer do
   def send_invitation_otp(email, code) do
     email
     |> Easy.Emails.login_otp_email(code)
-    |> Easy.MailerDelivery.deliver_async(
-      metadata: %{email: email, purpose: :invitation_acceptance}
-    )
+    |> Easy.MailerDelivery.deliver_async(metadata: %{email: email, purpose: :invitation_acceptance})
 
     :ok
   end

@@ -551,8 +551,7 @@ defmodule Easy.TrainingPlans do
     business_id = plan.business_id
 
     Repo.preload(plan,
-      workouts:
-        Workout |> Workout.for_business(business_id) |> Workout.with_elements(business_id),
+      workouts: Workout |> Workout.for_business(business_id) |> Workout.with_elements(business_id),
       plan_items: PlanItem |> PlanItem.for_business(business_id),
       client: Client.for_business(business_id)
     )

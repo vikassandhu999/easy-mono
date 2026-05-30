@@ -58,8 +58,7 @@ defmodule EasyWeb.Clients.WeightEntryJSON do
     %{
       first_entry: summary_entry_data(first_entry, first_value, current_unit),
       latest_entry: summary_entry_data(latest_entry, latest_value, current_unit),
-      total_change:
-        latest_value |> Decimal.sub(first_value) |> Decimal.round(2) |> Decimal.to_float(),
+      total_change: latest_value |> Decimal.sub(first_value) |> Decimal.round(2) |> Decimal.to_float(),
       change_unit: current_unit
     }
   end

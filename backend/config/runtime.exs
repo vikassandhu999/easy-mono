@@ -9,8 +9,7 @@ import Config
 
 # JWT Secret for all environments
 config :easy,
-  jwt_secret:
-    System.get_env("JWT_SECRET") || "dev-secret-key-minimum-32-characters-long-for-hs256",
+  jwt_secret: System.get_env("JWT_SECRET") || "dev-secret-key-minimum-32-characters-long-for-hs256",
   app_url: System.get_env("APP_URL") || "http://localhost:4000",
   frontend_url: System.get_env("FRONTEND_URL") || "http://localhost:2020",
   client_frontend_url: System.get_env("CLIENT_FRONTEND_URL") || "http://localhost:1313"

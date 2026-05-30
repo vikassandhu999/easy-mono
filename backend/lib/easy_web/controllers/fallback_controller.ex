@@ -29,8 +29,7 @@ defmodule EasyWeb.FallbackController do
 
     call(
       conn,
-      {:error,
-       Easy.Error.new(:internal_error, "An internal error occurred", %{}, :internal_server_error)}
+      {:error, Easy.Error.new(:internal_error, "An internal error occurred", %{}, :internal_server_error)}
     )
   end
 

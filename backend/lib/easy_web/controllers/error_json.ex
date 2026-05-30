@@ -37,9 +37,7 @@ defmodule EasyWeb.ErrorJSON do
   def render(template, assigns) do
     require Logger
 
-    Logger.error(
-      "Rendering error for unexpected template: #{inspect(template)} \n#{inspect(assigns)}"
-    )
+    Logger.error("Rendering error for unexpected template: #{inspect(template)} \n#{inspect(assigns)}")
 
     %{
       error_code: "unknown_error",

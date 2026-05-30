@@ -77,9 +77,7 @@ defmodule Easy.Storefront.StoreProfile do
 
   defp validate_slug(changeset) do
     changeset
-    |> validate_format(:slug, ~r/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/,
-      message: "must contain only lowercase letters, numbers, and hyphens"
-    )
+    |> validate_format(:slug, ~r/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/, message: "must contain only lowercase letters, numbers, and hyphens")
     |> validate_length(:slug, min: 3, max: 60)
   end
 

@@ -31,7 +31,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       expected_muscle_ids = sorted_ids([muscle_1, muscle_2])
       expected_equipment_ids = sorted_ids([equipment_1, equipment_2])
 
-      conn = post(conn, "/v1/coach/exercises", attrs)
+      conn = conn |> json_request() |> post("/v1/coach/exercises", attrs)
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == attrs["name"]
@@ -54,7 +54,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
     end
 
     test "returns 422 for invalid payload", %{conn: conn} do
-      conn = post(conn, "/v1/coach/exercises", %{"description" => "missing name"})
+      conn = conn |> json_request() |> post("/v1/coach/exercises", %{"description" => "missing name"})
       assert json_response(conn, 422)
     end
   end
@@ -133,4 +133,5 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
 
   defp sorted_ids(records), do: records |> Enum.map(& &1.id) |> Enum.sort()
   defp response_ids(records), do: records |> Enum.map(& &1["id"]) |> Enum.sort()
+  defp json_request(conn), do: put_req_header(conn, "content-type", "application/json")
 end

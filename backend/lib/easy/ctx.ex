@@ -1,5 +1,4 @@
 defmodule Easy.Ctx do
-  alias Easy.Identity.Token
   @enforce_keys [:business_id, :user_id]
 
   defstruct business_id: nil,

@@ -1,7 +1,32 @@
 defmodule EasyWeb.Coaches.ExerciseController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Exercises
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, ExerciseCreateRequest, ExerciseResponse}
+
+  plug OpenApiSpex.Plug.CastAndValidate, [json_render_error_v2: true] when action in [:create]
+
+  tags ["coach exercises"]
+
+  operation :show, false
+  operation :update, false
+  operation :delete, false
+  operation :duplicate, false
+  operation :index, false
+
+  operation :create,
+    summary: "Create exercise",
+    description:
+      "Creates an exercise in the coach library so the frontend can immediately offer it in workout builders and exercise pickers. Frontend pattern - optimistically insert into local lists, then reconcile with the 201 payload or rollback on validation failure.",
+    operation_id: "createExercise",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Exercise create request", "application/json", ExerciseCreateRequest, required: true},
+    responses: [
+      created: {"Exercise created", "application/json", ExerciseResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, _) do

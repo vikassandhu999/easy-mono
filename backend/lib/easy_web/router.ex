@@ -3,21 +3,25 @@ defmodule EasyWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
   end
 
   pipeline :require_user do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
   end
 
   pipeline :require_coach do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.EnsureRole, role: :coach
   end
 
   pipeline :require_client do
     plug :accepts, ["json"]
+    plug OpenApiSpex.Plug.PutApiSpec, module: EasyWeb.ApiSpec
     plug EasyWeb.Plugs.Authenticate
     plug EasyWeb.Plugs.EnsureRole, role: :client
   end
@@ -26,6 +30,16 @@ defmodule EasyWeb.Router do
     pipe_through :api
 
     get "/health", HealthController, :index
+  end
+
+  scope "/api" do
+    pipe_through :api
+
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+  end
+
+  scope "/" do
+    get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
   end
 
   scope "/v1/auth", EasyWeb do

@@ -49,7 +49,6 @@ defmodule EasyWeb.ResponseHelpers do
     base = %{
       id: format_uuid(coach.id),
       user_id: format_uuid(coach.user_id),
-      business_id: format_uuid(coach.business_id),
       status: coach.status,
       bio: coach.bio,
       specialties: coach.specialties || [],
@@ -74,7 +73,6 @@ defmodule EasyWeb.ResponseHelpers do
       full_name: client.full_name,
       phone: client.phone,
       status: client.status,
-      business_id: format_uuid(client.business_id),
       user_id: format_uuid(client.user_id),
       notes: client.notes,
       created_at: format_timestamp(client.inserted_at),
@@ -115,7 +113,6 @@ defmodule EasyWeb.ResponseHelpers do
 
   def format_business_context(context) when is_map(context) do
     %{
-      business_id: format_uuid(context[:business_id] || context.business_id),
       coach_id: format_uuid(context[:coach_id] || context.coach_id),
       client_id: format_uuid(context[:client_id] || context.client_id),
       roles: context[:roles] || context.roles || []
@@ -126,7 +123,6 @@ defmodule EasyWeb.ResponseHelpers do
   def format_available_contexts(contexts) when is_list(contexts) do
     Enum.map(contexts, fn context ->
       %{
-        business_id: format_uuid(context.business_id),
         business_name: context.business_name,
         roles: context.roles,
         coach_id: format_uuid(context[:coach_id]),
@@ -139,7 +135,6 @@ defmodule EasyWeb.ResponseHelpers do
   def format_subscription(subscription) do
     base = %{
       id: format_uuid(subscription.id),
-      business_id: format_uuid(subscription.business_id),
       plan_id: format_uuid(subscription.plan_id),
       status: subscription.status,
       started_at: format_timestamp(subscription.started_at),

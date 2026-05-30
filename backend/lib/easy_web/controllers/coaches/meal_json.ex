@@ -19,7 +19,6 @@ defmodule EasyWeb.Coaches.MealJSON do
       macros: meal.macros,
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
-      business_id: meal.business_id,
       plan_id: meal.plan_id,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
@@ -42,7 +41,6 @@ defmodule EasyWeb.Coaches.MealJSON do
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
       meal_id: meal_item.meal_id,
-      business_id: meal_item.business_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }

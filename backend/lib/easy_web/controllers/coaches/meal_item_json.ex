@@ -21,7 +21,6 @@ defmodule EasyWeb.Coaches.MealItemJSON do
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
       meal_id: meal_item.meal_id,
-      business_id: meal_item.business_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }

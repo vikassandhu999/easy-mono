@@ -20,7 +20,6 @@ defmodule EasyWeb.Coaches.WorkoutSessionJSON do
       soreness_rating: session.soreness_rating,
       notes: session.notes,
       client_id: session.client_id,
-      business_id: session.business_id,
       workout_id: session.workout_id,
       planned_snapshot: session.planned_snapshot,
       performed_sets: performed_sets_data(session.performed_sets),

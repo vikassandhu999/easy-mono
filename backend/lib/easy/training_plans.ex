@@ -58,7 +58,7 @@ defmodule Easy.TrainingPlans do
       |> TrainingPlan.for_business(business_id)
       |> TrainingPlan.templates()
       |> TrainingPlan.with_status(status)
-      |> TrainingPlan.search(search)
+      |> TrainingPlan.for_search(search)
 
     {:ok,
      %{
@@ -165,7 +165,7 @@ defmodule Easy.TrainingPlans do
           {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
   def create_training_plan(business_id, author_id, attrs) do
     business_id
-    |> TrainingPlan.insert_changeset(author_id, attrs)
+    |> TrainingPlan.create_changeset(author_id, attrs)
     |> Repo.insert()
     |> preload_plan()
   end
@@ -434,7 +434,7 @@ defmodule Easy.TrainingPlans do
 
     Repo.transaction(fn ->
       changeset =
-        TrainingPlan.insert_changeset(plan.business_id, plan.author_id, attrs)
+        TrainingPlan.create_changeset(plan.business_id, plan.author_id, attrs)
         |> put_relationship_changes(relationship_changes)
 
       case Repo.insert(changeset) do

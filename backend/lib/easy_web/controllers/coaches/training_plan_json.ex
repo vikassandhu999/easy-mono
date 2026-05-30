@@ -24,7 +24,6 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       client_id: plan.client_id,
       client: client_data(plan.client),
       author_id: plan.author_id,
-      business_id: plan.business_id,
       original_template_id: plan.original_template_id,
       workouts: workouts_data(plan.workouts),
       plan_items: plan_items_data(plan.plan_items),
@@ -42,7 +41,6 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       name: workout.name,
       notes: workout.notes,
       training_plan_id: workout.training_plan_id,
-      business_id: workout.business_id,
       workout_elements: elements_data(workout.workout_elements),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
@@ -60,7 +58,6 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       workout_id: item.workout_id,
       training_plan_id: item.training_plan_id,
       creator_id: item.creator_id,
-      business_id: item.business_id,
       inserted_at: item.inserted_at,
       updated_at: item.updated_at
     }
@@ -77,7 +74,6 @@ defmodule EasyWeb.Coaches.TrainingPlanJSON do
       notes: element.notes,
       exercise_id: element.exercise_id,
       workout_id: element.workout_id,
-      business_id: element.business_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,

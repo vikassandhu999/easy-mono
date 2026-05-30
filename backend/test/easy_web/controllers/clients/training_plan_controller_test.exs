@@ -2,11 +2,35 @@ defmodule EasyWeb.Clients.TrainingPlanControllerTest do
   use Easy.ConnCase
 
   setup do
-    coach = insert(:coach)
-    client = insert(:client, creator: coach, business: coach.business)
+    unique = Ecto.UUID.generate()
+
+    business_owner =
+      insert(:user, email: "client-training-plan-owner-#{unique}@test.com")
+
+    business =
+      insert(:business,
+        name: "Client Training Plan Business #{unique}",
+        handle: "client-training-plan-#{unique}",
+        owner: business_owner
+      )
+
+    coach_user =
+      insert(:user, email: "client-training-plan-coach-#{unique}@test.com")
+
+    coach = insert(:coach, user: coach_user, business: business)
+    client_user = insert(:user, email: "client-training-plan-client-user-#{unique}@test.com")
+
+    client =
+      insert(:client,
+        email: "client-training-plan-client-#{unique}@test.com",
+        user: client_user,
+        creator: coach,
+        business: business
+      )
+
     conn = build_conn() |> authenticate_client(client)
 
-    %{conn: conn, coach: coach, client: client, business: coach.business}
+    %{conn: conn, coach: coach, client: client, business: business}
   end
 
   describe "GET /v1/client/training_plans" do

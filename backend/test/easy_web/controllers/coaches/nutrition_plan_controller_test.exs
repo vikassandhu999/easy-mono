@@ -22,7 +22,7 @@ defmodule EasyWeb.Coaches.NutritionPlanControllerTest do
       assert data["status"] == attrs["status"]
       assert data["id"]
       assert data["creator_id"]
-      assert data["business_id"]
+      refute Map.has_key?(data, "business_id")
     end
 
     test "returns validation error when name is missing", %{conn: conn} do

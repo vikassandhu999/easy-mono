@@ -19,7 +19,6 @@ defmodule EasyWeb.Coaches.TrainingPlanItemJSON do
       workout_id: plan_item.workout_id,
       training_plan_id: plan_item.training_plan_id,
       creator_id: plan_item.creator_id,
-      business_id: plan_item.business_id,
       inserted_at: plan_item.inserted_at,
       updated_at: plan_item.updated_at
     }

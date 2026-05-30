@@ -44,7 +44,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       client: client_data(plan.client),
       source_template_id: plan.source_template_id,
       creator_id: plan.creator_id,
-      business_id: plan.business_id,
       inserted_at: plan.inserted_at,
       updated_at: plan.updated_at
     }
@@ -71,7 +70,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       macros: meal.macros,
       meal_items: meal_items_data(meal.meal_items),
       creator_id: meal.creator_id,
-      business_id: meal.business_id,
       plan_id: meal.plan_id,
       inserted_at: meal.inserted_at,
       updated_at: meal.updated_at
@@ -96,7 +94,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       recipe_id: meal_item.recipe_id,
       food_id: meal_item.food_id,
       meal_id: meal_item.meal_id,
-      business_id: meal_item.business_id,
       inserted_at: meal_item.inserted_at,
       updated_at: meal_item.updated_at
     }
@@ -118,7 +115,6 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
       meal_id: plan_item.meal_id,
       plan_id: plan_item.plan_id,
       creator_id: plan_item.creator_id,
-      business_id: plan_item.business_id,
       inserted_at: plan_item.inserted_at,
       updated_at: plan_item.updated_at
     }

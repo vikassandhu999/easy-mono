@@ -25,7 +25,6 @@ defmodule EasyWeb.Coaches.PerformedSetJSON do
       exercise_id: set.exercise_id,
       workout_element_id: set.workout_element_id,
       workout_session_id: set.workout_session_id,
-      business_id: set.business_id,
       exercise: exercise_data(set.exercise),
       inserted_at: set.inserted_at,
       updated_at: set.updated_at

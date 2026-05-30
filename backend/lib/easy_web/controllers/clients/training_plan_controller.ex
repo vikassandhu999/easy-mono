@@ -1,8 +1,54 @@
 defmodule EasyWeb.Clients.TrainingPlanController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.TrainingPlans, as: Plans
   alias Easy.Training.TrainingPlan
+  alias OpenApiSpex.{Operation, Schema}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ClientTrainingPlanListResponse,
+    ClientTrainingPlanResponse,
+    ErrorResponse
+  }
+
+  tags ["client training plans"]
+
+  operation :index,
+    summary: "List client training plans",
+    description: "Lists training plans assigned to the authenticated client in the current business.",
+    operation_id: "listClientTrainingPlans",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of training plans to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum training plans to return", required: false),
+      Operation.parameter(
+        :status,
+        :query,
+        %Schema{type: :string, enum: ["active", "archived"]},
+        "Only training plans with this status",
+        required: false
+      )
+    ],
+    responses: [
+      ok: {"Training plans", "application/json", ClientTrainingPlanListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Client not found", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get client training plan",
+    description: "Loads one training plan assigned to the authenticated client with workouts, workout elements, and plan items.",
+    operation_id: "getClientTrainingPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Training plan id")
+    ],
+    responses: [
+      ok: {"Training plan", "application/json", ClientTrainingPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

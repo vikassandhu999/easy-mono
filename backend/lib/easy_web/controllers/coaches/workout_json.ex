@@ -17,7 +17,6 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
       name: workout.name,
       notes: workout.notes,
       training_plan_id: workout.training_plan_id,
-      business_id: workout.business_id,
       workout_elements: elements_data(workout.workout_elements),
       inserted_at: workout.inserted_at,
       updated_at: workout.updated_at
@@ -35,7 +34,6 @@ defmodule EasyWeb.Coaches.WorkoutJSON do
       notes: element.notes,
       exercise_id: element.exercise_id,
       workout_id: element.workout_id,
-      business_id: element.business_id,
       exercise: exercise_data(element.exercise),
       planned_sets: planned_sets_data(element.planned_sets),
       inserted_at: element.inserted_at,

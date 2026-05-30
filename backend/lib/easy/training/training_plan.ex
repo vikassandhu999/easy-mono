@@ -14,8 +14,17 @@ defmodule Easy.Training.TrainingPlan do
   @foreign_key_type :binary_id
 
   @statuses [:active, :archived]
+  @rest_days ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+  @trusted_fields [:business_id, :author_id, :client_id, :original_template_id]
 
-  @valid_days ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+  @cast_fields [
+    :name,
+    :description,
+    :status,
+    :start_date,
+    :end_date,
+    :rest_days
+  ]
 
   @spec statuses() :: [atom()]
   def statuses, do: @statuses
@@ -39,59 +48,42 @@ defmodule Easy.Training.TrainingPlan do
     timestamps(type: :utc_datetime_usec)
   end
 
-  @cast_fields [
-    :name,
-    :description,
-    :status,
-    :start_date,
-    :end_date,
-    :rest_days
-  ]
-
-  @spec insert_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, author_id, attrs) do
+  @spec create_changeset(String.t(), String.t(), map()) :: Ecto.Changeset.t()
+  def create_changeset(business_id, author_id, attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> put_change(:business_id, business_id)
     |> put_change(:author_id, author_id)
-    |> reject_relationship_attrs(attrs)
-    |> common_validations()
-    |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:author_id)
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:original_template_id)
+    |> reject_trusted_fields(attrs)
+    |> validate_fields()
+    |> constrain_relationships()
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(plan, attrs) do
     plan
     |> cast(attrs, @cast_fields)
-    |> reject_relationship_attrs(attrs)
-    |> common_validations()
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:original_template_id)
+    |> reject_trusted_fields(attrs)
+    |> validate_fields()
+    |> constrain_relationships()
   end
 
-  defp reject_relationship_attrs(changeset, attrs) do
-    Enum.reduce(
-      [:business_id, :author_id, :client_id, :original_template_id],
-      changeset,
-      fn field, changeset ->
-        if Map.has_key?(attrs, field) || Map.has_key?(attrs, Atom.to_string(field)) do
-          add_error(changeset, field, "cannot be set directly")
-        else
-          changeset
-        end
+  defp reject_trusted_fields(changeset, attrs) do
+    Enum.reduce(@trusted_fields, changeset, fn field, changeset ->
+      if Map.has_key?(attrs, field) || Map.has_key?(attrs, Atom.to_string(field)) do
+        add_error(changeset, field, "cannot be set directly")
+      else
+        changeset
       end
-    )
+    end)
   end
 
-  defp common_validations(changeset) do
+  defp validate_fields(changeset) do
     changeset
-    |> validate_required([:name])
+    |> validate_required([:name, :rest_days])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
-    |> validate_date_range()
+    |> validate_assigned_dates()
     |> validate_rest_days()
     |> check_constraint(:start_date,
       name: :valid_date_range,
@@ -103,7 +95,15 @@ defmodule Easy.Training.TrainingPlan do
     )
   end
 
-  defp validate_date_range(changeset) do
+  defp constrain_relationships(changeset) do
+    changeset
+    |> foreign_key_constraint(:business_id)
+    |> foreign_key_constraint(:author_id)
+    |> foreign_key_constraint(:client_id)
+    |> foreign_key_constraint(:original_template_id)
+  end
+
+  defp validate_assigned_dates(changeset) do
     start_date = get_field(changeset, :start_date)
     end_date = get_field(changeset, :end_date)
     client_id = get_field(changeset, :client_id)
@@ -126,17 +126,21 @@ defmodule Easy.Training.TrainingPlan do
   end
 
   defp validate_rest_days(changeset) do
-    validate_change(changeset, :rest_days, fn :rest_days, days ->
-      cond do
-        not Enum.all?(days, &(&1 in @valid_days)) ->
-          [rest_days: "must contain valid day names"]
+    validate_change(changeset, :rest_days, fn
+      :rest_days, days when is_list(days) ->
+        cond do
+          not Enum.all?(days, &(&1 in @rest_days)) ->
+            [rest_days: "must contain valid day names"]
 
-        length(days) != length(Enum.uniq(days)) ->
-          [rest_days: "must not contain duplicates"]
+          length(days) != length(Enum.uniq(days)) ->
+            [rest_days: "must not contain duplicates"]
 
-        true ->
-          []
-      end
+          true ->
+            []
+        end
+
+      :rest_days, _days ->
+        [rest_days: "must be a list"]
     end)
   end
 
@@ -145,10 +149,10 @@ defmodule Easy.Training.TrainingPlan do
     from(t in query, where: t.business_id == ^business_id)
   end
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(t in query, where: t.client_id == ^client_id)
-  end
+  @spec for_client(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, client_id)
+  def for_client(query, nil), do: query
+  def for_client(query, client_id), do: from(t in query, where: t.client_id == ^client_id)
 
   @spec templates(Ecto.Queryable.t()) :: Ecto.Query.t()
   def templates(query \\ __MODULE__) do
@@ -160,11 +164,11 @@ defmodule Easy.Training.TrainingPlan do
   def with_status(query, nil), do: query
   def with_status(query, status), do: from(t in query, where: t.status == ^status)
 
-  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def search(query \\ __MODULE__, term)
-  def search(query, nil), do: query
-  def search(query, ""), do: query
-  def search(query, term), do: from(t in query, where: ilike(t.name, ^"%#{term}%"))
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query \\ __MODULE__, term)
+  def for_search(query, nil), do: query
+  def for_search(query, ""), do: query
+  def for_search(query, term), do: from(t in query, where: ilike(t.name, ^"%#{term}%"))
 
   @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
   def newest(query \\ __MODULE__) do

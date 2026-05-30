@@ -4,10 +4,10 @@ defmodule EasyWeb.Coaches.ExerciseController do
   alias Easy.Exercises
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def create(conn, params) do
-    %{business_id: business_id} = conn.assigns.claims
+  def create(conn, _) do
+    ctx = conn.assigns.ctx
 
-    with {:ok, exercise} <- Exercises.create_exercise(business_id, params) do
+    with {:ok, exercise} <- Exercises.create_exercise(ctx, conn.body_params) do
       conn
       |> put_status(:created)
       |> render(:show, exercise: exercise)

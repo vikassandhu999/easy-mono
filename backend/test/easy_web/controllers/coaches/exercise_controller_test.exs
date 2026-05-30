@@ -1,6 +1,9 @@
 defmodule EasyWeb.Coaches.ExerciseControllerTest do
   use Easy.ConnCase
 
+  alias Easy.Repo
+  alias Easy.Training.Exercise
+
   setup do
     coach = insert(:coach)
     conn = build_conn() |> authenticate_coach(coach)
@@ -9,8 +12,24 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
   end
 
   describe "POST /v1/coach/exercises" do
-    test "creates exercise", %{conn: conn} do
-      attrs = build(:exercise_attrs)
+    test "creates exercise", %{conn: conn, business: business} do
+      muscle_1 = insert(:muscle, name: "ZZZ Traps Test")
+      muscle_2 = insert(:muscle, name: "AAA Biceps Test")
+
+      equipment_1 = insert(:equipment, name: "Barbell 00")
+      equipment_2 = insert(:equipment, name: "Tripod 00")
+
+      attrs =
+        build(
+          :exercise_attrs,
+          %{
+            muscle_ids: [muscle_1.id, muscle_2.id],
+            equipment_ids: [equipment_1.id, equipment_2.id]
+          }
+        )
+
+      expected_muscle_ids = sorted_ids([muscle_1, muscle_2])
+      expected_equipment_ids = sorted_ids([equipment_1, equipment_2])
 
       conn = post(conn, "/v1/coach/exercises", attrs)
       assert %{"data" => data} = json_response(conn, 201)
@@ -18,6 +37,20 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["name"] == attrs["name"]
       assert data["mechanics"] == attrs["mechanics"]
       assert data["force"] == attrs["force"]
+      assert response_ids(data["muscles"]) == expected_muscle_ids
+      assert response_ids(data["equipment"]) == expected_equipment_ids
+
+      exercise =
+        Exercise
+        |> Repo.get!(data["id"])
+        |> Repo.preload([:muscles, :equipment])
+
+      assert exercise.business_id == business.id
+      assert exercise.name == attrs["name"]
+      assert exercise.mechanics == String.to_existing_atom(attrs["mechanics"])
+      assert exercise.force == String.to_existing_atom(attrs["force"])
+      assert sorted_ids(exercise.muscles) == expected_muscle_ids
+      assert sorted_ids(exercise.equipment) == expected_equipment_ids
     end
 
     test "returns 422 for invalid payload", %{conn: conn} do
@@ -97,4 +130,7 @@ defmodule EasyWeb.Coaches.ExerciseControllerTest do
       assert data["business_id"] == business.id
     end
   end
+
+  defp sorted_ids(records), do: records |> Enum.map(& &1.id) |> Enum.sort()
+  defp response_ids(records), do: records |> Enum.map(& &1["id"]) |> Enum.sort()
 end

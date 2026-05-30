@@ -4,12 +4,7 @@ defmodule Easy.Identity.Token do
   alias Easy.Identity
   alias Easy.Identity
 
-  @type claims :: %{
-          user_id: String.t(),
-          session_id: String.t(),
-          role: String.t(),
-          business_id: String.t() | nil
-        }
+  @type claims :: %{required(String.t()) => term()}
 
   @impl true
   def token_config do
@@ -29,10 +24,10 @@ defmodule Easy.Identity.Token do
       Joken.generate_and_sign!(
         token_config(),
         %{
-          user_id: user.id,
-          session_id: session.id,
-          role: session.role,
-          business_id: session.business_id
+          "user_id" => user.id,
+          "session_id" => session.id,
+          "role" => session.role,
+          "business_id" => session.business_id
         },
         signer()
       )

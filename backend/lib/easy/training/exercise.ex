@@ -1,8 +1,10 @@
 defmodule Easy.Training.Exercise do
   use Ecto.Schema
 
+  alias Ecto.Changeset
+  alias Easy.Training.Equipment
+  alias Easy.Training.Muscle
   alias Easy.Orgs
-  alias Easy.Training.{ExerciseMuscle, ExerciseEquipment}
 
   import Ecto.Changeset
   import Ecto.Query
@@ -23,83 +25,49 @@ defmodule Easy.Training.Exercise do
 
     belongs_to :business, Orgs.Business
 
-    has_many :exercise_muscles, ExerciseMuscle, on_replace: :delete
-    has_many :muscles, through: [:exercise_muscles, :muscle]
-
-    has_many :exercise_equipment, ExerciseEquipment, on_replace: :delete
-    has_many :equipment, through: [:exercise_equipment, :equipment]
+    many_to_many :muscles, Muscle, join_through: "exercise_muscles", on_replace: :delete
+    many_to_many :equipment, Equipment, join_through: "exercise_equipment", on_replace: :delete
 
     timestamps(type: :utc_datetime_usec)
   end
 
   @cast_fields [:name, :description, :instructions, :mechanics, :force, :images]
 
-  @spec insert_changeset(String.t() | nil, map()) :: Ecto.Changeset.t()
-  def insert_changeset(business_id, attrs) do
+  @spec create_changset(Ecto.UUID.t(), map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Changeset.t()
+  def create_changset(business_id, attrs, muscles, equipment) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> maybe_put_business_id(business_id)
+    |> put_change(:business_id, business_id)
     |> validate_required([:name])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_length(:instructions, max: 10000)
-    |> put_muscle_ids(attrs)
-    |> put_equipment_ids(attrs)
+    |> maybe_put_muscles(muscles)
+    |> maybe_put_equipment(equipment)
     |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
     |> foreign_key_constraint(:business_id)
   end
 
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(exercise, attrs) do
+  @spec update_changeset(t(), map(), [Muscle.t()] | nil, [Equipment.t()] | nil) :: Ecto.Changeset.t()
+  def update_changeset(exercise, attrs, muscles, equipment) do
     exercise
     |> cast(attrs, @cast_fields)
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 5000)
     |> validate_length(:instructions, max: 10000)
-    |> put_muscle_ids(attrs)
-    |> put_equipment_ids(attrs)
+    |> maybe_put_muscles(muscles)
+    |> maybe_put_equipment(equipment)
     |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
     |> foreign_key_constraint(:business_id)
   end
 
-  defp maybe_put_business_id(changeset, nil), do: changeset
+  @spec maybe_put_muscles(Changeset.t(), [Muscle.t()] | nil) :: Changeset.t()
+  defp maybe_put_muscles(exercise, nil), do: exercise
+  defp maybe_put_muscles(exercise, muscles), do: put_assoc(exercise, :muscles, muscles)
 
-  defp maybe_put_business_id(changeset, business_id),
-    do: put_change(changeset, :business_id, business_id)
-
-  defp put_muscle_ids(changeset, %{muscle_ids: muscle_ids}) when is_list(muscle_ids) do
-    exercise_muscles =
-      Enum.map(muscle_ids, fn muscle_id -> %{muscle_id: muscle_id, role: :primary} end)
-
-    put_assoc(changeset, :exercise_muscles, exercise_muscles)
-  end
-
-  defp put_muscle_ids(changeset, %{"muscle_ids" => muscle_ids}) when is_list(muscle_ids) do
-    exercise_muscles =
-      Enum.map(muscle_ids, fn muscle_id -> %{muscle_id: muscle_id, role: :primary} end)
-
-    put_assoc(changeset, :exercise_muscles, exercise_muscles)
-  end
-
-  defp put_muscle_ids(changeset, _), do: changeset
-
-  defp put_equipment_ids(changeset, %{equipment_ids: equipment_ids})
-       when is_list(equipment_ids) do
-    exercise_equipment =
-      Enum.map(equipment_ids, fn equipment_id -> %{equipment_id: equipment_id} end)
-
-    put_assoc(changeset, :exercise_equipment, exercise_equipment)
-  end
-
-  defp put_equipment_ids(changeset, %{"equipment_ids" => equipment_ids})
-       when is_list(equipment_ids) do
-    exercise_equipment =
-      Enum.map(equipment_ids, fn equipment_id -> %{equipment_id: equipment_id} end)
-
-    put_assoc(changeset, :exercise_equipment, exercise_equipment)
-  end
-
-  defp put_equipment_ids(changeset, _), do: changeset
+  @spec maybe_put_equipment(Changeset.t(), [Equipment.t()] | nil) :: Changeset.t()
+  defp maybe_put_equipment(exercise, nil), do: exercise
+  defp maybe_put_equipment(exercise, equipment), do: put_assoc(exercise, :equipment, equipment)
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
@@ -124,7 +92,7 @@ defmodule Easy.Training.Exercise do
 
   def with_muscle_ids(query, muscle_ids) do
     exercise_ids =
-      from(em in ExerciseMuscle, where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
+      from(em in "exercise_muscles", where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
 
     from(e in query, where: e.id in subquery(exercise_ids))
   end
@@ -135,33 +103,15 @@ defmodule Easy.Training.Exercise do
   end
 
   @spec with_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_preloads(query, business_id) do
+  def with_preloads(query, _business_id) do
     from(e in query,
       preload: [
-        exercise_muscles: ^muscle_preload_query(business_id),
-        exercise_equipment: ^equipment_preload_query(business_id)
+        muscles: ^from(m in Muscle, order_by: m.name),
+        equipment: ^from(eq in Equipment, order_by: eq.name)
       ]
     )
   end
 
   @spec system(Ecto.Queryable.t()) :: Ecto.Query.t()
   def system(query \\ __MODULE__), do: from(e in query, where: is_nil(e.business_id))
-
-  defp muscle_preload_query(business_id) do
-    from(em in ExerciseMuscle,
-      join: e in assoc(em, :exercise),
-      join: m in assoc(em, :muscle),
-      where: e.business_id == ^business_id or is_nil(e.business_id),
-      preload: [muscle: m]
-    )
-  end
-
-  defp equipment_preload_query(business_id) do
-    from(ee in ExerciseEquipment,
-      join: e in assoc(ee, :exercise),
-      join: eq in assoc(ee, :equipment),
-      where: e.business_id == ^business_id or is_nil(e.business_id),
-      preload: [equipment: eq]
-    )
-  end
 end

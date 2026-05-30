@@ -21,24 +21,24 @@ defmodule EasyWeb.Coaches.ExerciseJSON do
       force: exercise.force,
       images: exercise.images || [],
       business_id: exercise.business_id,
-      muscles: muscles_data(exercise.exercise_muscles),
-      equipment: equipment_data(exercise.exercise_equipment),
+      muscles: muscles_data(exercise.muscles),
+      equipment: equipment_data(exercise.equipment),
       inserted_at: exercise.inserted_at,
       updated_at: exercise.updated_at
     }
   end
 
-  defp muscles_data(exercise_muscles) when is_list(exercise_muscles) do
-    Enum.map(exercise_muscles, fn em ->
-      %{id: em.muscle.id, name: em.muscle.name, description: em.muscle.description}
+  defp muscles_data(muscles) when is_list(muscles) do
+    Enum.map(muscles, fn muscle ->
+      %{id: muscle.id, name: muscle.name, description: muscle.description}
     end)
   end
 
   defp muscles_data(_), do: []
 
-  defp equipment_data(exercise_equipment) when is_list(exercise_equipment) do
-    Enum.map(exercise_equipment, fn ee ->
-      %{id: ee.equipment.id, name: ee.equipment.name, description: ee.equipment.description}
+  defp equipment_data(equipment) when is_list(equipment) do
+    Enum.map(equipment, fn item ->
+      %{id: item.id, name: item.name, description: item.description}
     end)
   end
 

@@ -2,9 +2,8 @@ defmodule Easy.Exercises do
   alias Easy.Repo
   alias Easy.Training.Equipment
   alias Easy.Training.Exercise
-  alias Easy.Training.ExerciseEquipment
-  alias Easy.Training.ExerciseMuscle
   alias Easy.Training.Muscle
+  alias Easy.Ctx
 
   import Ecto.Query
 
@@ -78,20 +77,58 @@ defmodule Easy.Exercises do
     {:ok, equipment}
   end
 
-  @spec create_exercise(String.t() | nil, map()) ::
-          {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
-  def create_exercise(business_id, attrs) do
+  @spec create_exercise(Ctx.t(), map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
+  def create_exercise(%Ctx{} = ctx, attrs) do
+    insert_exercise(ctx.business_id, attrs)
+  end
+
+  defp insert_exercise(business_id, attrs) do
+    muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids) || []
+    equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids) || []
+
+    muscles = load_muscles(muscle_ids)
+    equipment = load_equipment(equipment_ids)
+
     business_id
-    |> Exercise.insert_changeset(attrs)
+    |> Exercise.create_changset(attrs, muscles, equipment)
     |> Repo.insert()
     |> preload_exercise()
   end
 
+  @spec load_muscles([String.t()] | nil) :: [Muscle.t()] | nil
+  defp load_muscles(ids) when is_list(ids) do
+    ids = Enum.uniq(ids)
+
+    Muscle
+    |> where([m], m.id in ^ids)
+    |> Repo.all()
+  end
+
+  defp load_muscles(_ids), do: nil
+
+  @spec load_equipment([String.t()] | nil) :: [Equipment.t()] | nil
+  defp load_equipment(ids) when is_list(ids) do
+    ids = Enum.uniq(ids)
+
+    Equipment
+    |> where([m], m.id in ^ids)
+    |> Repo.all()
+  end
+
+  defp load_equipment(_ids), do: nil
+
   @spec update_exercise(Exercise.t(), map()) ::
           {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def update_exercise(%Exercise{} = exercise, attrs) do
+    muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids)
+    equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids)
+
+    muscles = load_muscles(muscle_ids)
+    equipment = load_equipment(equipment_ids)
+
     exercise
-    |> Exercise.update_changeset(attrs)
+    |> Repo.preload([:muscles, :equipment])
+    |> Exercise.update_changeset(attrs, muscles, equipment)
     |> Repo.update()
     |> preload_exercise()
   end
@@ -119,11 +156,7 @@ defmodule Easy.Exercises do
           {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_exercise(%Exercise{} = exercise, business_id) do
     with :ok <- authorize_exercise_access(exercise, business_id) do
-      exercise =
-        Repo.preload(exercise,
-          exercise_muscles: exercise_muscle_preload_query(business_id),
-          exercise_equipment: exercise_equipment_preload_query(business_id)
-        )
+      exercise = Repo.preload(exercise, [:muscles, :equipment])
 
       attrs = %{
         name: generate_copy_name(exercise.name, business_id),
@@ -131,11 +164,11 @@ defmodule Easy.Exercises do
         instructions: exercise.instructions,
         mechanics: exercise.mechanics,
         force: exercise.force,
-        muscle_ids: Enum.map(exercise.exercise_muscles, & &1.muscle_id),
-        equipment_ids: Enum.map(exercise.exercise_equipment, & &1.equipment_id)
+        muscle_ids: Enum.map(exercise.muscles, & &1.id),
+        equipment_ids: Enum.map(exercise.equipment, & &1.id)
       }
 
-      create_exercise(business_id, attrs)
+      insert_exercise(business_id, attrs)
     end
   end
 
@@ -216,34 +249,10 @@ defmodule Easy.Exercises do
   end
 
   defp preload_exercise({:ok, %Exercise{} = exercise}) do
-    business_id = exercise.business_id
-
-    {:ok,
-     Repo.preload(exercise,
-       exercise_muscles: exercise_muscle_preload_query(business_id),
-       exercise_equipment: exercise_equipment_preload_query(business_id)
-     )}
+    {:ok, Repo.preload(exercise, [:muscles, :equipment])}
   end
 
   defp preload_exercise(error), do: error
-
-  defp exercise_muscle_preload_query(business_id) do
-    from(em in ExerciseMuscle,
-      join: e in assoc(em, :exercise),
-      join: m in assoc(em, :muscle),
-      where: e.business_id == ^business_id or is_nil(e.business_id),
-      preload: [muscle: m]
-    )
-  end
-
-  defp exercise_equipment_preload_query(business_id) do
-    from(ee in ExerciseEquipment,
-      join: e in assoc(ee, :exercise),
-      join: eq in assoc(ee, :equipment),
-      where: e.business_id == ^business_id or is_nil(e.business_id),
-      preload: [equipment: eq]
-    )
-  end
 
   defp ok_or_not_found(nil), do: {:error, :not_found}
   defp ok_or_not_found(record), do: {:ok, record}

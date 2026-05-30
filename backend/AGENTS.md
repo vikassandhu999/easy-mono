@@ -363,7 +363,7 @@ Do not add `@moduledoc`.
 
 Do not add `@doc`.
 
-Use better names, smaller functions, tests, and API contracts instead.
+Use better names, smaller functions, tests, and OpenAPI contracts instead.
 
 Remove module/function docs when touching nearby code unless explicitly instructed otherwise.
 
@@ -371,7 +371,7 @@ Remove module/function docs when touching nearby code unless explicitly instruct
 
 Swagger is not decoration.
 
-OpenAPI is part of the API contract. A Phoenix endpoint is unfinished until the implementation, generated OpenAPI, Swagger UI, and checked-in contract agree.
+OpenAPI is the API contract. A Phoenix endpoint is unfinished until the implementation, generated OpenAPI, and Swagger UI agree.
 
 Use `OpenApiSpex` for:
 
@@ -393,6 +393,8 @@ For every public JSON endpoint, document:
 - success responses
 - error responses
 - auth/security requirements
+
+Every new public JSON endpoint must have an OpenApiSpex operation before the endpoint is considered complete.
 
 Do not add fields to JSON responses without updating the schema.
 
@@ -462,25 +464,11 @@ Keep Swagger UI useful. If it cannot be used to understand and try the API, fix 
 
 ## API Contract
 
-`docs/api_contract.yaml` is part of the code.
+The generated OpenAPI spec is the source of truth.
 
-Update it when you:
+Do not update `docs/api_contract.yaml` or `docs/api_contract.yml` as part of normal endpoint work. Treat those files as legacy/static artifacts unless the user explicitly asks to edit them.
 
-- create an endpoint
-- delete an endpoint
-- change an endpoint path
-- change an endpoint method
-- change a request body
-- change a response body
-- change a status code
-- change an enum
-- change a schema type
-- change validation that affects API behavior
-- change authentication or authorization behavior visible to clients
-
-Follow `docs/api_contract_rules.md` for the contract edit workflow and validation checklist.
-
-If Phoenix behavior, generated OpenAPI, Swagger UI, and `docs/api_contract.yaml` disagree, the change is not done.
+When endpoint behavior changes, update the OpenApiSpex operation, request schemas, response schemas, and validation so generated OpenAPI and Swagger UI match Phoenix behavior.
 
 ## Testing
 
@@ -525,11 +513,10 @@ For controllers, test:
 - auth failures
 - Swagger/OpenAPI request validation where relevant
 
-For API contract changes, test or validate:
+For OpenAPI changes, test or validate:
 
 - generated OpenAPI renders
 - Swagger UI still loads
-- checked-in contract matches behavior
 - documented examples are realistic and safe
 
 ## Refactoring Protocol
@@ -589,7 +576,7 @@ Before finishing, check:
 - [ ] Associations are preloaded where response data needs them.
 - [ ] Database constraints protect important invariants.
 - [ ] Swagger/OpenAPI specs are updated when endpoint behavior changes.
-- [ ] `docs/api_contract.yaml` is updated when endpoint behavior changes.
+- [ ] New public JSON endpoints include an OpenApiSpex operation.
 - [ ] Swagger UI still renders after API changes.
 - [ ] Tests cover success and failure.
 - [ ] Tests cover tenant isolation for tenant-owned data.

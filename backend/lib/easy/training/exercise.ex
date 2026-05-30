@@ -58,7 +58,6 @@ defmodule Easy.Training.Exercise do
     |> maybe_put_muscles(muscles)
     |> maybe_put_equipment(equipment)
     |> unique_constraint([:name, :business_id], name: :exercises_name_business_id_index)
-    |> foreign_key_constraint(:business_id)
   end
 
   @spec maybe_put_muscles(Changeset.t(), [Muscle.t()] | nil) :: Changeset.t()
@@ -71,39 +70,39 @@ defmodule Easy.Training.Exercise do
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
-    from(e in query, where: e.business_id == ^business_id or is_nil(e.business_id))
-  end
-
-  @spec for_business_only(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business_only(query \\ __MODULE__, business_id) do
     from(e in query, where: e.business_id == ^business_id)
   end
 
-  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def search(query \\ __MODULE__, term)
-  def search(query, nil), do: query
-  def search(query, ""), do: query
-  def search(query, term), do: from(e in query, where: ilike(e.name, ^"%#{term}%"))
+  @spec owned_or_system(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
+  def owned_or_system(query \\ __MODULE__, business_id) do
+    from(e in query, where: e.business_id == ^business_id or is_nil(e.business_id))
+  end
 
-  @spec with_muscle_ids(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
-  def with_muscle_ids(query \\ __MODULE__, muscle_ids)
-  def with_muscle_ids(query, nil), do: query
-  def with_muscle_ids(query, []), do: query
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query \\ __MODULE__, term)
+  def for_search(query, nil), do: query
+  def for_search(query, ""), do: query
+  def for_search(query, term), do: from(e in query, where: ilike(e.name, ^"%#{term}%"))
 
-  def with_muscle_ids(query, muscle_ids) do
+  @spec for_muscle_ids(Ecto.Queryable.t(), [String.t()] | nil) :: Ecto.Query.t()
+  def for_muscle_ids(query \\ __MODULE__, muscle_ids)
+  def for_muscle_ids(query, nil), do: query
+  def for_muscle_ids(query, []), do: query
+
+  def for_muscle_ids(query, muscle_ids) do
     exercise_ids =
       from(em in "exercise_muscles", where: em.muscle_id in ^muscle_ids, select: em.exercise_id)
 
     from(e in query, where: e.id in subquery(exercise_ids))
   end
 
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__) do
+  @spec newest_first(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def newest_first(query \\ __MODULE__) do
     from(e in query, order_by: [desc: e.inserted_at, desc: e.id])
   end
 
-  @spec with_preloads(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def with_preloads(query, _business_id) do
+  @spec load_muscles_and_equipment(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def load_muscles_and_equipment(query) do
     from(e in query,
       preload: [
         muscles: ^from(m in Muscle, order_by: m.name),
@@ -111,7 +110,4 @@ defmodule Easy.Training.Exercise do
       ]
     )
   end
-
-  @spec system(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def system(query \\ __MODULE__), do: from(e in query, where: is_nil(e.business_id))
 end

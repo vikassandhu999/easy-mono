@@ -35,6 +35,61 @@ defmodule EasyWeb.OpenApi.Schemas.ExerciseCreateRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ExerciseDuplicateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "ExerciseDuplicateRequest",
+      description: "Request body for duplicating an exercise.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        name: %Schema{type: :string, maxLength: 255}
+      },
+      required: [:name],
+      example: %{
+        "name" => "Trap Bar Deadlift"
+      }
+    },
+    struct?: false
+  )
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ExerciseUpdateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      title: "ExerciseUpdateRequest",
+      description: "Request body for updating a coach exercise.",
+      type: :object,
+      additionalProperties: false,
+      properties: %{
+        name: %Schema{type: :string, maxLength: 255},
+        description: %Schema{type: :string, maxLength: 5000, nullable: true},
+        instructions: %Schema{type: :string, maxLength: 10000, nullable: true},
+        mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
+        force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
+        images: %Schema{type: :array, items: %Schema{type: :string}},
+        muscle_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}},
+        equipment_ids: %Schema{type: :array, items: %Schema{type: :string, format: :uuid}}
+      },
+      example: %{
+        "name" => "High-Bar Back Squat",
+        "description" => "Upright squat variation.",
+        "instructions" => "Stay tall and controlled.",
+        "mechanics" => "compound"
+      }
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ExerciseRelation do
   require OpenApiSpex
 
@@ -89,6 +144,42 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
       :inserted_at,
       :updated_at
     ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ExerciseListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Exercise
+
+  OpenApiSpex.schema(%{
+    title: "ExerciseListResponse",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      data: %Schema{type: :array, items: Exercise},
+      count: %Schema{type: :integer, minimum: 0}
+    },
+    required: [:data, :count],
+    example: %{
+      "data" => [
+        %{
+          "id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+          "name" => "Barbell Back Squat",
+          "description" => "Main lower-body strength movement.",
+          "instructions" => "Brace, descend to depth, drive up.",
+          "mechanics" => "compound",
+          "force" => "push",
+          "images" => ["https://cdn.example.com/exercises/back-squat.png"],
+          "muscles" => [],
+          "equipment" => [],
+          "inserted_at" => "2026-05-30T12:00:00Z",
+          "updated_at" => "2026-05-30T12:00:00Z"
+        }
+      ],
+      "count" => 1
+    }
   })
 end
 

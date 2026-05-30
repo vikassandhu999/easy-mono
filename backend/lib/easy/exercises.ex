@@ -4,54 +4,52 @@ defmodule Easy.Exercises do
   alias Easy.Training.Exercise
   alias Easy.Training.Muscle
   alias Easy.Ctx
+  alias Easy.Utils
 
   import Ecto.Query
 
-  @spec get_exercise(String.t(), String.t()) :: {:ok, Exercise.t()} | {:error, :not_found}
-  def get_exercise(business_id, exercise_id) do
+  @type exercise_response :: {:ok, Exercise.t()} | {:error, :not_found}
+
+  @spec get_exercise(Ctx.t() | String.t(), String.t()) :: exercise_response()
+  def get_exercise(%Ctx{} = ctx, exercise_id) do
     Exercise
-    |> Exercise.for_business(business_id)
-    |> Exercise.with_preloads(business_id)
+    |> Exercise.owned_or_system(ctx.business_id)
+    |> Exercise.load_muscles_and_equipment()
     |> Repo.get(exercise_id)
     |> ok_or_not_found()
   end
 
-  @spec get_business_exercise(String.t(), String.t()) ::
-          {:ok, Exercise.t()} | {:error, :not_found}
-  def get_business_exercise(business_id, exercise_id) do
+  @spec get_owned_exercise(Ctx.t() | String.t(), String.t()) :: exercise_response()
+  def get_owned_exercise(%Ctx{} = ctx, exercise_id) do
     Exercise
-    |> Exercise.for_business_only(business_id)
-    |> Exercise.with_preloads(business_id)
+    |> Exercise.for_business(ctx.business_id)
+    |> Exercise.load_muscles_and_equipment()
     |> Repo.get(exercise_id)
     |> ok_or_not_found()
   end
 
-  @spec list_exercises(
-          String.t(),
-          String.t() | nil,
-          [String.t()] | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
-          {:ok, %{count: non_neg_integer(), exercises: [Exercise.t()]}}
-  def list_exercises(business_id, search, muscle_ids, offset, limit) do
+  @spec list_exercises(Ctx.t(), String.t() | nil, [String.t()] | nil, integer(), integer()) ::
+          {:ok, %{count: integer(), exercises: [Exercise.t()]}}
+  def list_exercises(%Ctx{} = ctx, search, muscle_ids, offset, limit) do
     search = String.trim(search || "")
 
     base =
       Exercise
-      |> Exercise.for_business(business_id)
-      |> Exercise.search(search)
-      |> Exercise.with_muscle_ids(muscle_ids)
+      |> Exercise.owned_or_system(ctx.business_id)
+      |> Exercise.for_search(search)
+      |> Exercise.for_muscle_ids(muscle_ids)
+
+    exercises =
+      base
+      |> Exercise.newest_first()
+      |> Utils.paginate(offset, limit)
+      |> Exercise.load_muscles_and_equipment()
+      |> Repo.all()
 
     {:ok,
      %{
        count: Repo.aggregate(base, :count, :id),
-       exercises:
-         base
-         |> Exercise.newest()
-         |> Easy.Utils.paginate(offset, limit)
-         |> Exercise.with_preloads(business_id)
-         |> Repo.all()
+       exercises: exercises
      }}
   end
 
@@ -79,20 +77,15 @@ defmodule Easy.Exercises do
 
   @spec create_exercise(Ctx.t(), map()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
   def create_exercise(%Ctx{} = ctx, attrs) do
-    insert_exercise(ctx.business_id, attrs)
-  end
-
-  defp insert_exercise(business_id, attrs) do
     muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids) || []
     equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids) || []
 
     muscles = load_muscles(muscle_ids)
     equipment = load_equipment(equipment_ids)
 
-    business_id
+    ctx.business_id
     |> Exercise.create_changset(attrs, muscles, equipment)
     |> Repo.insert()
-    |> preload_exercise()
   end
 
   @spec load_muscles([String.t()] | nil) :: [Muscle.t()] | nil
@@ -117,64 +110,45 @@ defmodule Easy.Exercises do
 
   defp load_equipment(_ids), do: nil
 
-  @spec update_exercise(Exercise.t(), map()) ::
-          {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
-  def update_exercise(%Exercise{} = exercise, attrs) do
-    muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids)
-    equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids)
+  @spec update_exercise(Ctx.t(), String.t(), map()) :: exercise_response()
+  def update_exercise(%Ctx{} = ctx, exercise_id, attrs) do
+    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
+      muscle_ids = Map.get(attrs, "muscle_ids") || Map.get(attrs, :muscle_ids)
+      equipment_ids = Map.get(attrs, "equipment_ids") || Map.get(attrs, :equipment_ids)
 
-    muscles = load_muscles(muscle_ids)
-    equipment = load_equipment(equipment_ids)
+      muscles = load_muscles(muscle_ids)
+      equipment = load_equipment(equipment_ids)
 
-    exercise
-    |> Repo.preload([:muscles, :equipment])
-    |> Exercise.update_changeset(attrs, muscles, equipment)
-    |> Repo.update()
-    |> preload_exercise()
-  end
-
-  @spec update_exercise(String.t(), String.t(), map()) ::
-          {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_exercise(business_id, exercise_id, attrs) do
-    with {:ok, exercise} <- get_business_exercise(business_id, exercise_id) do
-      update_exercise(exercise, attrs)
+      exercise
+      |> Exercise.update_changeset(attrs, muscles, equipment)
+      |> Repo.update()
     end
   end
 
-  @spec delete_exercise(Exercise.t()) :: {:ok, Exercise.t()} | {:error, Ecto.Changeset.t()}
-  def delete_exercise(%Exercise{} = exercise), do: Repo.delete(exercise)
-
-  @spec delete_exercise(String.t(), String.t()) ::
-          {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def delete_exercise(business_id, exercise_id) do
-    with {:ok, exercise} <- get_business_exercise(business_id, exercise_id) do
-      delete_exercise(exercise)
+  @spec delete_exercise(Ctx.t(), String.t()) :: exercise_response()
+  def delete_exercise(%Ctx{} = ctx, exercise_id) do
+    with {:ok, exercise} <- get_owned_exercise(ctx, exercise_id) do
+      Repo.delete(exercise)
     end
   end
 
-  @spec duplicate_exercise(Exercise.t() | String.t(), String.t()) ::
+  @spec duplicate_exercise(Ctx.t(), String.t(), map()) ::
           {:ok, Exercise.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def duplicate_exercise(%Exercise{} = exercise, business_id) do
-    with :ok <- authorize_exercise_access(exercise, business_id) do
-      exercise = Repo.preload(exercise, [:muscles, :equipment])
-
+  def duplicate_exercise(%Ctx{} = ctx, exercise_id, attrs) do
+    with {:ok, exercise} <- get_exercise(ctx, exercise_id) do
       attrs = %{
-        name: generate_copy_name(exercise.name, business_id),
+        name: Map.get(attrs, "name") || Map.get(attrs, :name),
         description: exercise.description,
         instructions: exercise.instructions,
         mechanics: exercise.mechanics,
         force: exercise.force,
-        muscle_ids: Enum.map(exercise.muscles, & &1.id),
-        equipment_ids: Enum.map(exercise.equipment, & &1.id)
+        images: exercise.images || []
       }
 
-      insert_exercise(business_id, attrs)
-    end
-  end
-
-  def duplicate_exercise(business_id, exercise_id) do
-    with {:ok, exercise} <- get_exercise(business_id, exercise_id) do
-      duplicate_exercise(exercise, business_id)
+      ctx.business_id
+      |> Exercise.create_changset(attrs, exercise.muscles, exercise.equipment)
+      |> Repo.insert()
+      |> preload_exercise()
     end
   end
 
@@ -212,41 +186,6 @@ defmodule Easy.Exercises do
 
   @spec delete_equipment(Equipment.t()) :: {:ok, Equipment.t()} | {:error, Ecto.Changeset.t()}
   def delete_equipment(%Equipment{} = equipment), do: Repo.delete(equipment)
-
-  defp authorize_exercise_access(%Exercise{business_id: nil}, _business_id), do: :ok
-  defp authorize_exercise_access(%Exercise{business_id: business_id}, business_id), do: :ok
-  defp authorize_exercise_access(_exercise, _business_id), do: {:error, :not_found}
-
-  defp generate_copy_name(original_name, business_id) do
-    base_name =
-      original_name
-      |> String.replace(~r/\s*\(Copy\s*\d*\)\s*$/, "")
-      |> String.trim()
-
-    existing_names =
-      Exercise
-      |> Exercise.for_business_only(business_id)
-      |> where([e], e.name == ^base_name or like(e.name, ^"#{base_name} (Copy%)"))
-      |> select([e], e.name)
-      |> Repo.all()
-      |> MapSet.new()
-
-    find_available_copy_name(base_name, existing_names, 1)
-  end
-
-  defp find_available_copy_name(base_name, existing_names, attempt) when attempt <= 100 do
-    candidate = if attempt == 1, do: "#{base_name} (Copy)", else: "#{base_name} (Copy #{attempt})"
-
-    if MapSet.member?(existing_names, candidate) do
-      find_available_copy_name(base_name, existing_names, attempt + 1)
-    else
-      candidate
-    end
-  end
-
-  defp find_available_copy_name(base_name, _existing_names, _attempt) do
-    "#{base_name} (Copy #{System.system_time(:second)})"
-  end
 
   defp preload_exercise({:ok, %Exercise{} = exercise}) do
     {:ok, Repo.preload(exercise, [:muscles, :equipment])}

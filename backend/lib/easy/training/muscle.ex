@@ -18,8 +18,8 @@ defmodule Easy.Training.Muscle do
 
   @cast_fields [:name, :description]
 
-  @spec insert_changeset(map()) :: Ecto.Changeset.t()
-  def insert_changeset(attrs) do
+  @spec create_changeset(map()) :: Ecto.Changeset.t()
+  def create_changeset(attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
     |> validate_required([:name])
@@ -37,11 +37,11 @@ defmodule Easy.Training.Muscle do
     |> unique_constraint(:name)
   end
 
-  @spec search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
-  def search(query \\ __MODULE__, term)
-  def search(query, nil), do: query
-  def search(query, ""), do: query
-  def search(query, term), do: from(m in query, where: ilike(m.name, ^"%#{term}%"))
+  @spec for_search(Ecto.Queryable.t(), String.t() | nil) :: Ecto.Query.t()
+  def for_search(query \\ __MODULE__, term)
+  def for_search(query, nil), do: query
+  def for_search(query, ""), do: query
+  def for_search(query, term), do: from(m in query, where: ilike(m.name, ^"%#{term}%"))
 
   @spec alphabetical(Ecto.Queryable.t()) :: Ecto.Query.t()
   def alphabetical(query \\ __MODULE__) do

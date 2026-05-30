@@ -57,7 +57,7 @@ defmodule Easy.Exercises do
   def list_muscles(search) do
     muscles =
       Muscle
-      |> Muscle.search(String.trim(search || ""))
+      |> Muscle.for_search(String.trim(search || ""))
       |> Muscle.alphabetical()
       |> Repo.all()
 
@@ -68,7 +68,7 @@ defmodule Easy.Exercises do
   def list_equipment(search) do
     equipment =
       Equipment
-      |> Equipment.search(String.trim(search || ""))
+      |> Equipment.for_search(String.trim(search || ""))
       |> Equipment.alphabetical()
       |> Repo.all()
 
@@ -155,7 +155,7 @@ defmodule Easy.Exercises do
   @spec create_muscle(map()) :: {:ok, Muscle.t()} | {:error, Ecto.Changeset.t()}
   def create_muscle(attrs) do
     attrs
-    |> Muscle.insert_changeset()
+    |> Muscle.create_changeset()
     |> Repo.insert()
   end
 
@@ -172,7 +172,7 @@ defmodule Easy.Exercises do
   @spec create_equipment(map()) :: {:ok, Equipment.t()} | {:error, Ecto.Changeset.t()}
   def create_equipment(attrs) do
     attrs
-    |> Equipment.insert_changeset()
+    |> Equipment.create_changeset()
     |> Repo.insert()
   end
 

@@ -1,7 +1,38 @@
 defmodule EasyWeb.Public.StorefrontController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Storefront
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    PublicStorefrontResponse,
+    StorefrontInquiryRequest,
+    StorefrontInquiryResponse
+  }
+
+  tags ["public storefront"]
+
+  operation :show,
+    summary: "Get public storefront",
+    operation_id: "getPublicStorefront",
+    parameters: [Operation.parameter(:slug, :path, :string, "Storefront slug")],
+    responses: [
+      ok: {"Public storefront", "application/json", PublicStorefrontResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :create_inquiry,
+    summary: "Create storefront inquiry",
+    operation_id: "createStorefrontInquiry",
+    parameters: [Operation.parameter(:slug, :path, :string, "Storefront slug")],
+    request_body: {"Storefront inquiry request", "application/json", StorefrontInquiryRequest, required: true},
+    responses: [
+      created: {"Storefront inquiry", "application/json", StorefrontInquiryResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"slug" => slug}) do

@@ -1,7 +1,110 @@
 defmodule EasyWeb.Coaches.WorkoutController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Workouts
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    WorkoutListResponse,
+    WorkoutRequest,
+    WorkoutResponse,
+    WorkoutUpdateRequest
+  }
+
+  tags ["coach workouts"]
+
+  operation :index,
+    summary: "List workouts",
+    description: "Lists workouts in a training plan.",
+    operation_id: "listWorkouts",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:plan_id, :path, :string, "Training plan id"),
+      Operation.parameter(:offset, :query, :integer, "Number of workouts to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum workouts to return", required: false)
+    ],
+    responses: [
+      ok: {"Workouts", "application/json", WorkoutListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :create,
+    summary: "Create workout",
+    description: "Creates a workout in a training plan.",
+    operation_id: "createWorkout",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:plan_id, :path, :string, "Training plan id")
+    ],
+    request_body: {"Workout create request", "application/json", WorkoutRequest, required: true},
+    responses: [
+      created: {"Workout created", "application/json", WorkoutResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get workout",
+    description: "Loads one workout with workout elements.",
+    operation_id: "getWorkout",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Workout id")
+    ],
+    responses: [
+      ok: {"Workout", "application/json", WorkoutResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update workout",
+    description: "Updates a workout.",
+    operation_id: "updateWorkout",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Workout id")
+    ],
+    request_body: {"Workout update request", "application/json", WorkoutUpdateRequest, required: true},
+    responses: [
+      ok: {"Workout updated", "application/json", WorkoutResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete workout",
+    description: "Deletes a workout.",
+    operation_id: "deleteWorkout",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Workout id")
+    ],
+    responses: [
+      no_content: "Workout deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :duplicate,
+    summary: "Duplicate workout",
+    description: "Copies a workout with its elements and planned sets.",
+    operation_id: "duplicateWorkout",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Workout id")
+    ],
+    responses: [
+      created: {"Workout duplicated", "application/json", WorkoutResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do

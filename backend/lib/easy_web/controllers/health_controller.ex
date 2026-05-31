@@ -1,6 +1,20 @@
 defmodule EasyWeb.HealthController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
+  alias EasyWeb.OpenApi.Schemas.HealthResponse
+
+  tags ["health"]
+
+  operation :index,
+    summary: "Health check",
+    description: "Returns basic service health metadata.",
+    operation_id: "healthCheck",
+    responses: [
+      ok: {"Health", "application/json", HealthResponse}
+    ]
+
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     conn
     |> put_status(:ok)

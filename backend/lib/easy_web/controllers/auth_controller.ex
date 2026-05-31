@@ -3,9 +3,111 @@ defmodule EasyWeb.AuthController do
   alias Easy.Identity
   alias Easy.Utils
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
+
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    AcceptInviteRequest,
+    AcceptInviteVerifyRequest,
+    AuthTokenResponse,
+    ErrorResponse,
+    InvitationPreviewResponse,
+    MessageResponse,
+    OtpRequest,
+    SignupRequest,
+    SignupResponse,
+    TokenRequest,
+    VerifyRequest
+  }
 
   @allowed_roles ["owner", "coach", "client", "guest"]
 
+  tags ["auth"]
+
+  operation :signup,
+    summary: "Sign up",
+    description: "Creates a user and sends an email confirmation OTP.",
+    operation_id: "signup",
+    request_body: {"Signup request", "application/json", SignupRequest, required: true},
+    responses: [
+      created: {"Signup", "application/json", SignupResponse},
+      conflict: {"Conflict", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show_invitation,
+    summary: "Preview invitation",
+    description: "Returns invitation state and prefill details for an invitation token.",
+    operation_id: "showInvitation",
+    parameters: [
+      Operation.parameter(:token, :path, :string, "Invitation token")
+    ],
+    responses: [
+      ok: {"Invitation preview", "application/json", InvitationPreviewResponse}
+    ]
+
+  operation :accept_invite,
+    summary: "Accept invitation",
+    description: "Starts invitation acceptance by sending an OTP to the invited email.",
+    operation_id: "acceptInvite",
+    request_body: {"Accept invite request", "application/json", AcceptInviteRequest, required: true},
+    responses: [
+      ok: {"OTP sent", "application/json", MessageResponse},
+      gone: {"Invitation unavailable", "application/json", ErrorResponse},
+      not_found: {"Invitation not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :accept_invite_verify,
+    summary: "Verify invitation OTP",
+    description: "Verifies an invitation OTP, links or creates the user, and returns auth tokens.",
+    operation_id: "verifyInvitation",
+    request_body: {"Accept invite verification request", "application/json", AcceptInviteVerifyRequest, required: true},
+    responses: [
+      ok: {"Auth token", "application/json", AuthTokenResponse},
+      conflict: {"Already active elsewhere", "application/json", ErrorResponse},
+      gone: {"Invitation or OTP expired", "application/json", ErrorResponse},
+      not_found: {"Invitation not found", "application/json", ErrorResponse},
+      unauthorized: {"Invalid OTP", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :otp,
+    summary: "Send OTP",
+    description: "Sends an OTP for email confirmation or authentication.",
+    operation_id: "sendOtp",
+    request_body: {"OTP request", "application/json", OtpRequest, required: true},
+    responses: [
+      ok: {"OTP sent", "application/json", MessageResponse},
+      not_found: {"User not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :verify,
+    summary: "Verify email or OTP",
+    description: "Verifies an email confirmation token or email OTP and returns auth tokens.",
+    operation_id: "verifyAuth",
+    request_body: {"Verify request", "application/json", VerifyRequest, required: true},
+    responses: [
+      ok: {"Auth token", "application/json", AuthTokenResponse},
+      gone: {"Token expired", "application/json", ErrorResponse},
+      unauthorized: {"Invalid token or OTP", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :token,
+    summary: "Create auth token",
+    description: "Creates auth tokens from a refresh token or an OTP grant.",
+    operation_id: "createAuthToken",
+    request_body: {"Token request", "application/json", TokenRequest, required: true},
+    responses: [
+      ok: {"Auth token", "application/json", AuthTokenResponse},
+      unauthorized: {"Invalid grant", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  @spec signup(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def signup(conn, params) do
     with {:ok, user} <- Easy.Identity.signup(params) do
       conn
@@ -20,6 +122,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  @spec accept_invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def accept_invite(conn, %{"invitation_token" => _, "email" => _} = params) do
     with {:ok, :otp_sent} <- Identity.accept_invite(params) do
       conn
@@ -51,6 +154,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  @spec verify(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def verify(conn, %{"token" => token_hash}) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
     user_agent = get_req_header(conn, "user-agent") |> List.first() || "unknown"
@@ -97,6 +201,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  @spec otp(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def otp(conn, %{"email" => email, "type" => type}) do
     with {:ok, _} <- Easy.Identity.send_otp(email, type) do
       conn
@@ -105,6 +210,7 @@ defmodule EasyWeb.AuthController do
     end
   end
 
+  @spec token(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def token(
         conn,
         %{

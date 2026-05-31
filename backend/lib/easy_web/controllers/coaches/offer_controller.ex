@@ -1,9 +1,67 @@
 defmodule EasyWeb.Coaches.OfferController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Repo
   alias Easy.Storefront.Offer
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, OfferListResponse, OfferRequest, OfferResponse}
 
+  tags ["coach offers"]
+
+  operation :index,
+    summary: "List offers",
+    operation_id: "listOffers",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of offers to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum offers to return", required: false)
+    ],
+    responses: [ok: {"Offers", "application/json", OfferListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :create,
+    summary: "Create offer",
+    operation_id: "createOffer",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Offer request", "application/json", OfferRequest, required: true},
+    responses: [
+      created: {"Offer created", "application/json", OfferResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get offer",
+    operation_id: "getOffer",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Offer id")],
+    responses: [
+      ok: {"Offer", "application/json", OfferResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update offer",
+    operation_id: "updateOffer",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Offer id")],
+    request_body: {"Offer request", "application/json", OfferRequest, required: true},
+    responses: [
+      ok: {"Offer updated", "application/json", OfferResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete offer",
+    operation_id: "deleteOffer",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Offer id")],
+    responses: [no_content: "Offer deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
+
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -22,6 +80,7 @@ defmodule EasyWeb.Coaches.OfferController do
     render(conn, :index, offers: offers, count: count)
   end
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -32,6 +91,7 @@ defmodule EasyWeb.Coaches.OfferController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -41,6 +101,7 @@ defmodule EasyWeb.Coaches.OfferController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -55,6 +116,7 @@ defmodule EasyWeb.Coaches.OfferController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 

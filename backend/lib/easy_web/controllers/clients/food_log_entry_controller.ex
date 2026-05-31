@@ -1,7 +1,75 @@
 defmodule EasyWeb.Clients.FoodLogEntryController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.MealLogs
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    FoodLogEntryListResponse,
+    FoodLogEntryRequest,
+    FoodLogEntryResponse
+  }
+
+  tags ["client food log entries"]
+
+  operation :create,
+    summary: "Create food log entry",
+    operation_id: "createFoodLogEntry",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Food log entry request", "application/json", FoodLogEntryRequest, required: true},
+    responses: [
+      created: {"Food log entry created", "application/json", FoodLogEntryResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :log_meal,
+    summary: "Log planned meal",
+    operation_id: "logMeal",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Log meal request", "application/json", FoodLogEntryRequest, required: true},
+    responses: [
+      created: {"Food log entries", "application/json", FoodLogEntryListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :log_day,
+    summary: "Log planned day",
+    operation_id: "logDay",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Log day request", "application/json", FoodLogEntryRequest, required: true},
+    responses: [
+      created: {"Food log entries", "application/json", FoodLogEntryListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update food log entry",
+    operation_id: "updateFoodLogEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Food log entry id")],
+    request_body: {"Food log entry request", "application/json", FoodLogEntryRequest, required: true},
+    responses: [
+      ok: {"Food log entry updated", "application/json", FoodLogEntryResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete food log entry",
+    operation_id: "deleteFoodLogEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Food log entry id")],
+    responses: [
+      no_content: "Food log entry deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

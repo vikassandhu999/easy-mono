@@ -1,9 +1,73 @@
 defmodule EasyWeb.Coaches.TestimonialController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Repo
   alias Easy.Storefront.Testimonial
+  alias OpenApiSpex.Operation
 
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    TestimonialListResponse,
+    TestimonialRequest,
+    TestimonialResponse
+  }
+
+  tags ["coach testimonials"]
+
+  operation :index,
+    summary: "List testimonials",
+    operation_id: "listTestimonials",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of testimonials to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum testimonials to return", required: false)
+    ],
+    responses: [ok: {"Testimonials", "application/json", TestimonialListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :create,
+    summary: "Create testimonial",
+    operation_id: "createTestimonial",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Testimonial request", "application/json", TestimonialRequest, required: true},
+    responses: [
+      created: {"Testimonial created", "application/json", TestimonialResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get testimonial",
+    operation_id: "getTestimonial",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Testimonial id")],
+    responses: [
+      ok: {"Testimonial", "application/json", TestimonialResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update testimonial",
+    operation_id: "updateTestimonial",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Testimonial id")],
+    request_body: {"Testimonial request", "application/json", TestimonialRequest, required: true},
+    responses: [
+      ok: {"Testimonial updated", "application/json", TestimonialResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete testimonial",
+    operation_id: "deleteTestimonial",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Testimonial id")],
+    responses: [no_content: "Testimonial deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
+
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -22,6 +86,7 @@ defmodule EasyWeb.Coaches.TestimonialController do
     render(conn, :index, testimonials: testimonials, count: count)
   end
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -32,6 +97,7 @@ defmodule EasyWeb.Coaches.TestimonialController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -41,6 +107,7 @@ defmodule EasyWeb.Coaches.TestimonialController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -55,6 +122,7 @@ defmodule EasyWeb.Coaches.TestimonialController do
     end
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     %{business_id: business_id} = conn.assigns.claims
 

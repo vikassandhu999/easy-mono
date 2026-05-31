@@ -1,7 +1,77 @@
 defmodule EasyWeb.Coaches.RecipeController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Recipes
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, RecipeListResponse, RecipeRequest, RecipeResponse}
+
+  tags ["coach recipes"]
+
+  operation :create,
+    summary: "Create recipe",
+    description: "Creates a recipe in the authenticated business.",
+    operation_id: "createRecipe",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Recipe request", "application/json", RecipeRequest, required: true},
+    responses: [
+      created: {"Recipe created", "application/json", RecipeResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get recipe",
+    description: "Loads one recipe in the authenticated business.",
+    operation_id: "getRecipe",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
+    responses: [
+      ok: {"Recipe", "application/json", RecipeResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update recipe",
+    description: "Updates a recipe in the authenticated business.",
+    operation_id: "updateRecipe",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
+    request_body: {"Recipe request", "application/json", RecipeRequest, required: true},
+    responses: [
+      ok: {"Recipe updated", "application/json", RecipeResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete recipe",
+    description: "Deletes a recipe in the authenticated business.",
+    operation_id: "deleteRecipe",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
+    responses: [
+      no_content: "Recipe deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List recipes",
+    description: "Lists recipes in the authenticated business.",
+    operation_id: "listRecipes",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of recipes to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum recipes to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive recipe search", required: false)
+    ],
+    responses: [
+      ok: {"Recipes", "application/json", RecipeListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

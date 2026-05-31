@@ -1,7 +1,114 @@
 defmodule EasyWeb.Coaches.ClientController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Clients
+  alias OpenApiSpex.{Operation, Schema}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ClientInviteRequest,
+    ClientListResponse,
+    ClientResponse,
+    ClientUpdateRequest,
+    ErrorResponse
+  }
+
+  tags ["coach clients"]
+
+  operation :invite,
+    summary: "Invite client",
+    description: "Creates a pending client invitation in the authenticated business.",
+    operation_id: "inviteClient",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Client invite request", "application/json", ClientInviteRequest, required: true},
+    responses: [
+      created: {"Client invited", "application/json", ClientResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      conflict: {"Conflict", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :resend_invite,
+    summary: "Resend client invitation",
+    description: "Refreshes and resends a pending client invitation.",
+    operation_id: "resendClientInvite",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Client id")
+    ],
+    responses: [
+      ok: {"Client", "application/json", ClientResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get client",
+    description: "Loads one client in the authenticated business.",
+    operation_id: "getClient",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Client id")
+    ],
+    responses: [
+      ok: {"Client", "application/json", ClientResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update client",
+    description: "Updates coach-editable client fields and allowed status transitions.",
+    operation_id: "updateClient",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Client id")
+    ],
+    request_body: {"Client update request", "application/json", ClientUpdateRequest, required: true},
+    responses: [
+      ok: {"Client updated", "application/json", ClientResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Revoke client invitation",
+    description: "Deletes a pending client invitation and related pending assignments.",
+    operation_id: "deleteClient",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Client id")
+    ],
+    responses: [
+      no_content: "Client invitation revoked",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List clients",
+    description: "Lists clients in the authenticated business with status summary counts.",
+    operation_id: "listClients",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of clients to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum clients to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive client search", required: false),
+      Operation.parameter(
+        :status,
+        :query,
+        %Schema{type: :string, enum: ["active", "pending", "inactive", "archived"]},
+        "Only clients with this status",
+        required: false
+      )
+    ],
+    responses: [
+      ok: {"Clients", "application/json", ClientListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
 
   @spec invite(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def invite(conn, params) do

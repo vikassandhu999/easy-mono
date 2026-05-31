@@ -1,7 +1,41 @@
 defmodule EasyWeb.Clients.FoodController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Foods
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodResponse}
+
+  tags ["client foods"]
+
+  operation :index,
+    summary: "List client foods",
+    description: "Lists system and business foods visible to the authenticated client.",
+    operation_id: "listClientFoods",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of foods to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum foods to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false)
+    ],
+    responses: [
+      ok: {"Foods", "application/json", FoodListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get client food",
+    description: "Loads one system or business food visible to the authenticated client.",
+    operation_id: "getClientFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Food id")
+    ],
+    responses: [
+      ok: {"Food", "application/json", FoodResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

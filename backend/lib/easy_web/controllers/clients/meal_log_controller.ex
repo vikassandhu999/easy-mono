@@ -1,7 +1,30 @@
 defmodule EasyWeb.Clients.MealLogController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.MealLogs
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, MealLogListResponse, MealLogResponse}
+
+  tags ["client meal logs"]
+
+  operation :index,
+    summary: "List client meal logs",
+    operation_id: "listClientMealLogs",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:date, :query, :string, "Exact date", required: false)],
+    responses: [ok: {"Meal logs", "application/json", MealLogListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :show,
+    summary: "Get client meal log",
+    operation_id: "getClientMealLog",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Meal log id")],
+    responses: [
+      ok: {"Meal log", "application/json", MealLogResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

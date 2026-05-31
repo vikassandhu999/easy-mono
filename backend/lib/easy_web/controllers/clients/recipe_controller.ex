@@ -1,7 +1,39 @@
 defmodule EasyWeb.Clients.RecipeController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Recipes
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, RecipeListResponse, RecipeResponse}
+
+  tags ["client recipes"]
+
+  operation :index,
+    summary: "List client recipes",
+    description: "Lists recipes visible to the authenticated client.",
+    operation_id: "listClientRecipes",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of recipes to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum recipes to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive recipe search", required: false)
+    ],
+    responses: [
+      ok: {"Recipes", "application/json", RecipeListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get client recipe",
+    description: "Loads one recipe visible to the authenticated client.",
+    operation_id: "getClientRecipe",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Recipe id")],
+    responses: [
+      ok: {"Recipe", "application/json", RecipeResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

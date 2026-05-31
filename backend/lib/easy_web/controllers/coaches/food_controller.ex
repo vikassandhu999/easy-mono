@@ -1,7 +1,83 @@
 defmodule EasyWeb.Coaches.FoodController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Foods
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, FoodListResponse, FoodRequest, FoodResponse, FoodUpdateRequest}
+
+  tags ["coach foods"]
+
+  operation :create,
+    summary: "Create food",
+    description: "Creates a coach-owned food in the authenticated business.",
+    operation_id: "createFood",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Food create request", "application/json", FoodRequest, required: true},
+    responses: [
+      created: {"Food created", "application/json", FoodResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get food",
+    description: "Loads one system or business food visible to the authenticated coach.",
+    operation_id: "getFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Food id")
+    ],
+    responses: [
+      ok: {"Food", "application/json", FoodResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update food",
+    description: "Updates a coach-owned food in the authenticated business.",
+    operation_id: "updateFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Food id")
+    ],
+    request_body: {"Food update request", "application/json", FoodUpdateRequest, required: true},
+    responses: [
+      ok: {"Food updated", "application/json", FoodResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete food",
+    description: "Deletes a coach-owned food from the authenticated business.",
+    operation_id: "deleteFood",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Food id")
+    ],
+    responses: [
+      no_content: "Food deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List foods",
+    description: "Lists system and business foods visible to the authenticated coach.",
+    operation_id: "listFoods",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of foods to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum foods to return", required: false),
+      Operation.parameter(:search, :query, :string, "Case-insensitive food name search", required: false)
+    ],
+    responses: [
+      ok: {"Foods", "application/json", FoodListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

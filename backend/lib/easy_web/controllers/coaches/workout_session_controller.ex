@@ -1,8 +1,95 @@
 defmodule EasyWeb.Coaches.WorkoutSessionController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
   alias Easy.Training.WorkoutSession
+  alias OpenApiSpex.{Operation, Schema}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    WorkoutSessionCompleteRequest,
+    WorkoutSessionListResponse,
+    WorkoutSessionRequest,
+    WorkoutSessionResponse
+  }
+
+  tags ["coach workout sessions"]
+
+  operation :index,
+    summary: "List workout sessions",
+    operation_id: "listWorkoutSessions",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of sessions to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum sessions to return", required: false),
+      Operation.parameter(:client_id, :query, :string, "Client id", required: false),
+      Operation.parameter(
+        :state,
+        :query,
+        %Schema{type: :string, enum: ["active", "completed", "discarded"]},
+        "Only sessions with this state",
+        required: false
+      )
+    ],
+    responses: [ok: {"Workout sessions", "application/json", WorkoutSessionListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :create,
+    summary: "Create workout session",
+    operation_id: "createWorkoutSession",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Workout session request", "application/json", WorkoutSessionRequest, required: true},
+    responses: [
+      created: {"Workout session created", "application/json", WorkoutSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get workout session",
+    operation_id: "getWorkoutSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
+    responses: [
+      ok: {"Workout session", "application/json", WorkoutSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :complete,
+    summary: "Complete workout session",
+    operation_id: "completeWorkoutSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
+    request_body: {"Workout session completion request", "application/json", WorkoutSessionCompleteRequest, required: true},
+    responses: [
+      ok: {"Workout session completed", "application/json", WorkoutSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :discard,
+    summary: "Discard workout session",
+    operation_id: "discardWorkoutSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
+    responses: [
+      ok: {"Workout session discarded", "application/json", WorkoutSessionResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete workout session",
+    operation_id: "deleteWorkoutSession",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Workout session id")],
+    responses: [
+      no_content: "Workout session deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"client_id" => client_id} = params) do

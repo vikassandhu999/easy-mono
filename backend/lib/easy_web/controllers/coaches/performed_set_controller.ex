@@ -1,7 +1,43 @@
 defmodule EasyWeb.Coaches.PerformedSetController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Sessions
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, PerformedSetRequest, PerformedSetResponse}
+
+  tags ["coach performed sets"]
+
+  operation :create,
+    summary: "Create performed set",
+    operation_id: "createPerformedSet",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Performed set request", "application/json", PerformedSetRequest, required: true},
+    responses: [
+      created: {"Performed set created", "application/json", PerformedSetResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update performed set",
+    operation_id: "updatePerformedSet",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Performed set id")],
+    request_body: {"Performed set request", "application/json", PerformedSetRequest, required: true},
+    responses: [
+      ok: {"Performed set updated", "application/json", PerformedSetResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete performed set",
+    operation_id: "deletePerformedSet",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Performed set id")],
+    responses: [no_content: "Performed set deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"workout_session_id" => session_id} = params) do

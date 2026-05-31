@@ -1,7 +1,43 @@
 defmodule EasyWeb.Coaches.MealLogController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.MealLogs
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, MealLogListResponse, NutritionArrayResponse}
+
+  tags ["coach meal logs"]
+
+  operation :index,
+    summary: "List client meal logs",
+    operation_id: "listCoachMealLogs",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:client_id, :query, :string, "Client id"),
+      Operation.parameter(:date, :query, :string, "Exact date", required: false),
+      Operation.parameter(:from, :query, :string, "Start date", required: false),
+      Operation.parameter(:to, :query, :string, "End date", required: false)
+    ],
+    responses: [
+      ok: {"Meal logs", "application/json", MealLogListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :summary,
+    summary: "Summarize client meal logs",
+    operation_id: "summarizeCoachMealLogs",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:client_id, :query, :string, "Client id"),
+      Operation.parameter(:from, :query, :string, "Start date"),
+      Operation.parameter(:to, :query, :string, "End date")
+    ],
+    responses: [
+      ok: {"Meal log summaries", "application/json", NutritionArrayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"client_id" => client_id} = params) do

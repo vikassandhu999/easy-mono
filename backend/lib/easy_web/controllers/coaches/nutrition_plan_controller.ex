@@ -1,8 +1,160 @@
 defmodule EasyWeb.Coaches.NutritionPlanController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Nutrition.Plan
   alias Easy.NutritionPlans, as: Plans
+  alias OpenApiSpex.{Operation, Schema}
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    NutritionArrayResponse,
+    NutritionMapResponse,
+    NutritionPlanAssignRequest,
+    NutritionPlanCopyDayRequest,
+    NutritionPlanListResponse,
+    NutritionPlanRequest,
+    NutritionPlanResponse,
+    NutritionPlanItemListResponse
+  }
+
+  tags ["coach nutrition plans"]
+
+  operation :create,
+    summary: "Create nutrition plan",
+    description: "Creates a nutrition plan template in the authenticated business.",
+    operation_id: "createNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Nutrition plan request", "application/json", NutritionPlanRequest, required: true},
+    responses: [
+      created: {"Nutrition plan created", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :show,
+    summary: "Get nutrition plan",
+    description: "Loads one nutrition plan with meals and scheduled plan items.",
+    operation_id: "getNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    responses: [
+      ok: {"Nutrition plan", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update nutrition plan",
+    description: "Updates a nutrition plan.",
+    operation_id: "updateNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    request_body: {"Nutrition plan request", "application/json", NutritionPlanRequest, required: true},
+    responses: [
+      ok: {"Nutrition plan updated", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete nutrition plan",
+    description: "Deletes a nutrition plan.",
+    operation_id: "deleteNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    responses: [
+      no_content: "Nutrition plan deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List nutrition plans",
+    description: "Lists nutrition plan templates in the authenticated business.",
+    operation_id: "listNutritionPlans",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:offset, :query, :integer, "Number of nutrition plans to skip", required: false),
+      Operation.parameter(:limit, :query, :integer, "Maximum nutrition plans to return", required: false),
+      Operation.parameter(
+        :status,
+        :query,
+        %Schema{type: :string, enum: ["active", "archived"]},
+        "Only nutrition plans with this status",
+        required: false
+      )
+    ],
+    responses: [
+      ok: {"Nutrition plans", "application/json", NutritionPlanListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse}
+    ]
+
+  operation :assign,
+    summary: "Assign nutrition plan",
+    description: "Copies a nutrition plan template to a client.",
+    operation_id: "assignNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    request_body: {"Nutrition plan assign request", "application/json", NutritionPlanAssignRequest, required: true},
+    responses: [
+      created: {"Nutrition plan assigned", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :duplicate,
+    summary: "Duplicate nutrition plan",
+    description: "Copies a nutrition plan template.",
+    operation_id: "duplicateNutritionPlan",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    responses: [
+      created: {"Nutrition plan duplicated", "application/json", NutritionPlanResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :copy_day,
+    summary: "Copy nutrition plan day",
+    description: "Copies scheduled meals from one day to another day.",
+    operation_id: "copyNutritionPlanDay",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    request_body: {"Nutrition plan copy day request", "application/json", NutritionPlanCopyDayRequest, required: true},
+    responses: [
+      ok: {"Copied plan items", "application/json", NutritionPlanItemListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :shopping_list,
+    summary: "Get nutrition plan shopping list",
+    description: "Builds the shopping list for a nutrition plan.",
+    operation_id: "getNutritionPlanShoppingList",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    responses: [
+      ok: {"Shopping list", "application/json", NutritionArrayResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :macros,
+    summary: "Get nutrition plan macros",
+    description: "Calculates macro totals for a nutrition plan.",
+    operation_id: "getNutritionPlanMacros",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan id")],
+    responses: [
+      ok: {"Macros", "application/json", NutritionMapResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do

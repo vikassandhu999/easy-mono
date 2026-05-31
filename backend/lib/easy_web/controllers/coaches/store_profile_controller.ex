@@ -1,8 +1,42 @@
 defmodule EasyWeb.Coaches.StoreProfileController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Storefront.StoreProfile
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, SlugCheckRequest, SlugCheckResponse, StoreProfileRequest, StoreProfileResponse}
 
+  tags ["coach storefront profile"]
+
+  operation :show,
+    summary: "Get storefront profile",
+    operation_id: "getStorefrontProfile",
+    security: [%{"bearerAuth" => []}],
+    responses: [ok: {"Store profile", "application/json", StoreProfileResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :update,
+    summary: "Update storefront profile",
+    operation_id: "updateStorefrontProfile",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Store profile request", "application/json", StoreProfileRequest, required: true},
+    responses: [
+      ok: {"Store profile updated", "application/json", StoreProfileResponse},
+      created: {"Store profile created", "application/json", StoreProfileResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :check_slug,
+    summary: "Check storefront slug",
+    operation_id: "checkStorefrontSlug",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Slug check request", "application/json", SlugCheckRequest, required: true},
+    responses: [
+      ok: {"Slug availability", "application/json", SlugCheckResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, _params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -12,6 +46,7 @@ defmodule EasyWeb.Coaches.StoreProfileController do
     end
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, params) do
     %{business_id: business_id} = conn.assigns.claims
 
@@ -30,6 +65,7 @@ defmodule EasyWeb.Coaches.StoreProfileController do
     end
   end
 
+  @spec check_slug(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, Easy.Error.t()}
   def check_slug(conn, %{"slug" => slug}) do
     %{business_id: business_id} = conn.assigns.claims
     available = StoreProfile.slug_available?(slug, business_id)

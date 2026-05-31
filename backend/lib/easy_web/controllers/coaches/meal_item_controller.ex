@@ -1,7 +1,70 @@
 defmodule EasyWeb.Coaches.MealItemController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.Meals
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    NutritionMealItemListResponse,
+    NutritionMealItemRequest,
+    NutritionMealItemResponse
+  }
+
+  tags ["coach meal items"]
+
+  operation :create,
+    summary: "Create meal item",
+    description: "Adds a food or recipe item to a meal.",
+    operation_id: "createMealItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:meal_id, :path, :string, "Meal id")],
+    request_body: {"Meal item request", "application/json", NutritionMealItemRequest, required: true},
+    responses: [
+      created: {"Meal item created", "application/json", NutritionMealItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List meal items",
+    description: "Lists food and recipe items in a meal.",
+    operation_id: "listMealItems",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:meal_id, :path, :string, "Meal id")],
+    responses: [
+      ok: {"Meal items", "application/json", NutritionMealItemListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update meal item",
+    description: "Updates a meal item amount, unit, weight, or position.",
+    operation_id: "updateMealItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Meal item id")],
+    request_body: {"Meal item request", "application/json", NutritionMealItemRequest, required: true},
+    responses: [
+      ok: {"Meal item updated", "application/json", NutritionMealItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete meal item",
+    description: "Deletes a meal item.",
+    operation_id: "deleteMealItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Meal item id")],
+    responses: [
+      no_content: "Meal item deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"meal_id" => meal_id} = params) do

@@ -1,7 +1,71 @@
 defmodule EasyWeb.Coaches.PlanItemController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.NutritionPlans, as: Plans
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    NutritionPlanItemListResponse,
+    NutritionPlanItemRequest,
+    NutritionPlanItemResponse,
+    NutritionPlanItemUpdateRequest
+  }
+
+  tags ["coach nutrition plan items"]
+
+  operation :create,
+    summary: "Create nutrition plan item",
+    description: "Schedules a meal on a nutrition plan day.",
+    operation_id: "createNutritionPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:plan_id, :path, :string, "Nutrition plan id")],
+    request_body: {"Nutrition plan item request", "application/json", NutritionPlanItemRequest, required: true},
+    responses: [
+      created: {"Nutrition plan item created", "application/json", NutritionPlanItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List nutrition plan items",
+    description: "Lists scheduled meals for a nutrition plan.",
+    operation_id: "listNutritionPlanItems",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:plan_id, :path, :string, "Nutrition plan id")],
+    responses: [
+      ok: {"Nutrition plan items", "application/json", NutritionPlanItemListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update nutrition plan item",
+    description: "Updates a scheduled meal item.",
+    operation_id: "updateNutritionPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan item id")],
+    request_body: {"Nutrition plan item update request", "application/json", NutritionPlanItemUpdateRequest, required: true},
+    responses: [
+      ok: {"Nutrition plan item updated", "application/json", NutritionPlanItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete nutrition plan item",
+    description: "Deletes a scheduled meal item.",
+    operation_id: "deleteNutritionPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Nutrition plan item id")],
+    responses: [
+      no_content: "Nutrition plan item deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do

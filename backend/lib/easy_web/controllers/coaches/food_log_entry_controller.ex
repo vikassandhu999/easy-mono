@@ -1,7 +1,23 @@
 defmodule EasyWeb.Coaches.FoodLogEntryController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.MealLogs
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.ErrorResponse
+
+  tags ["coach food log entries"]
+
+  operation :delete,
+    summary: "Delete client food log entry",
+    operation_id: "deleteCoachFoodLogEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Food log entry id")],
+    responses: [
+      no_content: "Food log entry deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do

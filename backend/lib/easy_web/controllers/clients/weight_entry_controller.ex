@@ -1,7 +1,37 @@
 defmodule EasyWeb.Clients.WeightEntryController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.WeightEntries
+  alias OpenApiSpex.Operation
+  alias EasyWeb.OpenApi.Schemas.{ErrorResponse, WeightEntryListResponse, WeightEntryRequest, WeightEntryResponse}
+
+  tags ["client weight entries"]
+
+  operation :index,
+    summary: "List weight entries",
+    operation_id: "listWeightEntries",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:since, :query, :string, "Only entries since this date", required: false)],
+    responses: [ok: {"Weight entries", "application/json", WeightEntryListResponse}, unauthorized: {"Unauthorized", "application/json", ErrorResponse}]
+
+  operation :create,
+    summary: "Create weight entry",
+    operation_id: "createWeightEntry",
+    security: [%{"bearerAuth" => []}],
+    request_body: {"Weight entry request", "application/json", WeightEntryRequest, required: true},
+    responses: [
+      created: {"Weight entry created", "application/json", WeightEntryResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete weight entry",
+    operation_id: "deleteWeightEntry",
+    security: [%{"bearerAuth" => []}],
+    parameters: [Operation.parameter(:id, :path, :string, "Weight entry id")],
+    responses: [no_content: "Weight entry deleted", unauthorized: {"Unauthorized", "application/json", ErrorResponse}, not_found: {"Not found", "application/json", ErrorResponse}]
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do

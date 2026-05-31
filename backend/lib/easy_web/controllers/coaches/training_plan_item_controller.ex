@@ -1,7 +1,78 @@
 defmodule EasyWeb.Coaches.TrainingPlanItemController do
   use EasyWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Easy.TrainingPlans, as: Plans
+  alias OpenApiSpex.Operation
+
+  alias EasyWeb.OpenApi.Schemas.{
+    ErrorResponse,
+    PlanItemRequest,
+    TrainingPlanItemListResponse,
+    TrainingPlanItemResponse
+  }
+
+  tags ["coach training plan items"]
+
+  operation :create,
+    summary: "Create training plan item",
+    description: "Schedules a workout on a training plan day.",
+    operation_id: "createTrainingPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:plan_id, :path, :string, "Training plan id")
+    ],
+    request_body: {"Training plan item request", "application/json", PlanItemRequest, required: true},
+    responses: [
+      created: {"Training plan item created", "application/json", TrainingPlanItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :index,
+    summary: "List training plan items",
+    description: "Lists scheduled workout items for a training plan.",
+    operation_id: "listTrainingPlanItems",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:plan_id, :path, :string, "Training plan id")
+    ],
+    responses: [
+      ok: {"Training plan items", "application/json", TrainingPlanItemListResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
+
+  operation :update,
+    summary: "Update training plan item",
+    description: "Updates a scheduled workout item.",
+    operation_id: "updateTrainingPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Training plan item id")
+    ],
+    request_body: {"Training plan item request", "application/json", PlanItemRequest, required: true},
+    responses: [
+      ok: {"Training plan item updated", "application/json", TrainingPlanItemResponse},
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse},
+      unprocessable_entity: {"Validation error", "application/json", ErrorResponse}
+    ]
+
+  operation :delete,
+    summary: "Delete training plan item",
+    description: "Deletes a scheduled workout item.",
+    operation_id: "deleteTrainingPlanItem",
+    security: [%{"bearerAuth" => []}],
+    parameters: [
+      Operation.parameter(:id, :path, :string, "Training plan item id")
+    ],
+    responses: [
+      no_content: "Training plan item deleted",
+      unauthorized: {"Unauthorized", "application/json", ErrorResponse},
+      not_found: {"Not found", "application/json", ErrorResponse}
+    ]
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"plan_id" => plan_id} = params) do

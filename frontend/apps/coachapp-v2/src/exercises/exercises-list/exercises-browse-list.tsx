@@ -29,7 +29,7 @@ const ExercisesBrowseList = memo(function ExercisesBrowseList({hasFilter, muscle
           onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
           renderItem={(exercise) => (
             <ExerciseListItem
-              className="!transition-none active:!scale-100 data-[pressed=true]:!scale-100"
+              className="transition-none! active:scale-100! data-[pressed=true]:scale-100!"
               exercise={exercise}
             />
           )}

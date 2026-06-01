@@ -5,8 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {exerciseToCreateRequest} from '@/api/mappers/exercises';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
+import {exerciseToCreateRequest} from '@/api/mappers/exercises';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
 
@@ -31,31 +31,32 @@ export default function CreateExercise() {
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup>
-          <Page.Title>Create exercise</Page.Title>
-          <Page.Description>Add muscles, equipment, instructions, and images</Page.Description>
+          <div className={'flex items-center gap-1'}>
+            <Button
+              onPress={goBack}
+              size="md"
+              variant="ghost"
+              isIconOnly
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Page.Title>Create exercise</Page.Title>
+          </div>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar>
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Exercises
-        </Button>
-      </Page.Toolbar>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <ExerciseForm
-          equipment={equipmentData?.data ?? []}
-          form={form}
-          isSubmitting={isLoading}
-          muscles={musclesData?.data ?? []}
-          onCancel={() => navigate(ROUTES.EXERCISES)}
-          onSubmit={onSubmit}
-          submitLabel="Create exercise"
-          submittingLabel="Creating exercise"
-        />
+        <div className={'max-w-160 mt-4'}>
+          <ExerciseForm
+            equipment={equipmentData?.data ?? []}
+            form={form}
+            isSubmitting={isLoading}
+            muscles={musclesData?.data ?? []}
+            onCancel={() => navigate(ROUTES.EXERCISES)}
+            onSubmit={onSubmit}
+            submitLabel="Create exercise"
+            submittingLabel="Creating exercise"
+          />
+        </div>
       </Page.Content>
     </Page>
   );

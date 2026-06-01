@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {workoutSessionFromApi, performedSetFromApi} from '@/api/mappers/workoutSessions';
+import {performedSetFromApi, workoutSessionFromApi} from '@/api/mappers/workoutSessions';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 export type WorkoutSessionState = 'active' | 'completed' | 'discarded';

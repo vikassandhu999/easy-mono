@@ -2,7 +2,7 @@ import {Button, Description, ErrorMessage, Fieldset, Form, Spinner} from '@herou
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Calculator} from 'lucide-react';
 import {useCallback, useMemo, useState} from 'react';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';

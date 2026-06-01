@@ -5,7 +5,7 @@ import {useState} from 'react';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useIsMobile} from '@/@hooks/use-is-mobile';
 import type {Client} from '@/api/clients';
-import ClientListBox from '@/clients/clients-list/client-list-box';
+import ClientsList from '@/clients/clients-list/client-list-box';
 import ClientListItem from '@/clients/clients-list/client-list-item';
 import ClientsListQuery from '@/clients/clients-list/clients-list-query';
 
@@ -99,7 +99,7 @@ export default function ClientPickerDialog({
                   </div>
                 </Modal.Header>
                 <Modal.Body>
-                  <ClientListBox
+                  <ClientsList
                     clients={clients}
                     emptyState={<EmptyState>No result found</EmptyState>}
                     fetchNextPage={fetchNextPage}

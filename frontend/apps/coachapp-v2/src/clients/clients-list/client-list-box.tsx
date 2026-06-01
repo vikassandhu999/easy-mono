@@ -21,7 +21,7 @@ type Props = {
   selectionMode?: ClientSelectionMode;
 };
 
-export default function ClientListBox({
+export default function ClientsList({
   'aria-label': ariaLabel = 'Clients',
   clients,
   emptyState,

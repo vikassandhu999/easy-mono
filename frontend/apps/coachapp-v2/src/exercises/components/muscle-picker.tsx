@@ -28,11 +28,12 @@ export default function MusclePicker({value, onChange}: MusclePickerProps) {
 
   return (
     <Autocomplete
-      className="w-full sm:w-44"
+      className="w-full"
       onChange={(keys) => onChange(keys as string[])}
       placeholder="Muscle groups"
       selectionMode="multiple"
       value={value}
+      variant={'secondary'}
     >
       <Autocomplete.Trigger>
         <Autocomplete.Value>
@@ -53,6 +54,7 @@ export default function MusclePicker({value, onChange}: MusclePickerProps) {
               <TagGroup
                 onRemove={onRemoveTag}
                 size="sm"
+                variant={'surface'}
               >
                 <TagGroup.List>
                   {selectedItemsKeys.map((key) => {

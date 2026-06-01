@@ -1,11 +1,5 @@
+import type {Equipment, Exercise, ExerciseCreateRequest, ExerciseUpdateRequest, Muscle} from '@/api/exercises';
 import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
-import type {
-  Equipment,
-  Exercise,
-  ExerciseCreateRequest,
-  ExerciseUpdateRequest,
-  Muscle,
-} from '@/api/exercises';
 import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form';
 
 function toOptionalArray<T>(value: T[] | undefined): T[] | undefined {

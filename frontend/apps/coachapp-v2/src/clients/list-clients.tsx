@@ -46,7 +46,7 @@ export default function ListClients() {
 
   return (
     <Page>
-      <Page.Header className={'pt-4 pb-2'}>
+      <Page.Header>
         <Page.TitleGroup>
           <Page.Title>Clients</Page.Title>
         </Page.TitleGroup>
@@ -60,20 +60,17 @@ export default function ListClients() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar
-        className={
-          'sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100'
-        }
-      >
+      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 border-b bg-surface'}>
         <SearchField
           aria-label="Search clients"
           className="w-full sm:max-w-xs"
           onChange={setSearch}
           value={search}
+          variant={'secondary'}
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search clients..." />
+            <SearchField.Input placeholder="Search clients" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
@@ -84,10 +81,10 @@ export default function ListClients() {
           selectedKey={activeFilter}
         >
           <Tabs.ListContainer className="scrollbar-hide max-w-full overflow-x-auto">
-            <Tabs.List className="!w-max min-w-max">
+            <Tabs.List className="w-max! min-w-max">
               {FILTER_OPTIONS.map((option) => (
                 <Tabs.Tab
-                  className="!w-auto h-6 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
+                  className="w-auto! h-6 whitespace-nowrap data-[selected=true]:bg-segment data-[selected=true]:text-segment-foreground data-[selected=true]:shadow-sm"
                   id={option.id}
                   key={option.id}
                 >

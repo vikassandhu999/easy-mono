@@ -1,4 +1,4 @@
-import {formatIsoDateLong, formatIsoDateShort} from './date';
+import {formatIsoDateLong, formatIsoDateShort, parseIsoDateToDate} from './date';
 
 // ── Day helpers (weekday mapping for training plans) ────────
 
@@ -83,12 +83,12 @@ export function formatDuration(startedAt: string, endedAt: null | string): null 
   if (!endedAt) {
     return null;
   }
-  const diffMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+  const diffMs = parseIsoDateToDate(endedAt).getTime() - parseIsoDateToDate(startedAt).getTime();
   return formatMinutes(Math.round(diffMs / 60_000));
 }
 
 export function formatDurationFromNow(startedAt: string): string {
-  const diffMs = Date.now() - new Date(startedAt).getTime();
+  const diffMs = Date.now() - parseIsoDateToDate(startedAt).getTime();
   return formatMinutes(Math.round(diffMs / 60_000));
 }
 

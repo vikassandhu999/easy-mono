@@ -37,6 +37,7 @@ export function FormNumberField<T extends FieldValues>({
             onValueChange?.(nextValue);
           }}
           value={field.value}
+          variant={'secondary'}
         >
           <Label>{label}</Label>
           {description ? <Description>{description}</Description> : null}

@@ -23,6 +23,7 @@ export function FormOtpField<T extends FieldValues>({control, label, name}: Form
               onChange={field.onChange}
               pattern={REGEXP_ONLY_DIGITS}
               value={field.value}
+              variant={'secondary'}
             >
               <InputOTP.Group>
                 <InputOTP.Slot index={0} />

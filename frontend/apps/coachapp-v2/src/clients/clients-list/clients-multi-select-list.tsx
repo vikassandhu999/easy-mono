@@ -4,7 +4,7 @@ import {memo} from 'react';
 
 import type {Client} from '@/api/clients';
 import ClientEmptyState from './client-empty-state';
-import ClientListBox from './client-list-box';
+import ClientsList from './client-list-box';
 import ClientListItem from './client-list-item';
 import ClientsListQuery from './clients-list-query';
 import type {ClientListSelection, ClientsListFilters} from './types';
@@ -28,7 +28,7 @@ const ClientsMultiSelectList = memo(function ClientsMultiSelectList({
       status={status}
     >
       {({clients, fetchNextPage, isLoading}) => (
-        <ClientListBox
+        <ClientsList
           clients={clients}
           emptyState={<ClientEmptyState hasFilter={hasFilter || !!search} />}
           fetchNextPage={fetchNextPage}

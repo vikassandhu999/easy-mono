@@ -24,54 +24,40 @@ const STATUS_MAP: Record<ClientStatus, StatusConfig> = {
   pending: {color: 'default', label: 'Pending'},
 };
 
+export default function ClientListItem({className, client, showIndicator = false, showQuickActions = true}: Props) {
+  const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
+  const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
 
-export function getClientSubtitle(client: Client): string {
+  let subtitle = client.email ?? client.phone ?? client.status;
   if (client.status === 'active') {
-    return `Active · since ${formatIsoDateShort(client.inserted_at)}`;
+    subtitle = `Active · since ${formatIsoDateShort(client.inserted_at)}`;
   }
   if (client.status === 'pending') {
-    return `Invited · ${formatTimeAgo(client.inserted_at)}`;
+    subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
   }
-  return client.email ?? client.phone ?? client.status;
-}
 
-export function getClientDisplayName(client: Client): string {
-  const parts = [client.first_name, client.last_name].filter(Boolean);
-  return parts.length > 0 ? parts.join(' ') : (client.email ?? client.phone ?? 'Unknown');
-}
-
-function getInitials(client: Client): string {
-  if (client.first_name) {
-    const first = client.first_name[0] ?? '';
-    const last = client.last_name?.[0] ?? '';
-    return (first + last).toUpperCase();
-  }
-  return (client.email?.[0] ?? '?').toUpperCase();
-}
-
-export default function ClientListItem({className, client, showIndicator = false, showQuickActions = true}: Props) {
   const status = STATUS_MAP[client.status] ?? {color: 'default' as const, label: client.status};
-  const whatsappNumber = client.phone?.replace(/\D/g, '');
+  const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit rounded-none px-4 py-3 sm:px-8', className)}
+      className={cn('min-h-fit px-4 py-3 sm:px-8', className)}
       id={client.id}
-      textValue={getClientDisplayName(client)}
+      textValue={name}
     >
       <Avatar size="sm">
-        <Avatar.Fallback>{getInitials(client)}</Avatar.Fallback>
+        <Avatar.Fallback>{initials}</Avatar.Fallback>
       </Avatar>
       <div className="flex min-w-0 flex-col">
-        <Label className="truncate">{getClientDisplayName(client)}</Label>
-        <Description className="truncate">{getClientSubtitle(client)}</Description>
+        <Label className="truncate">{name}</Label>
+        <Description className="truncate">{subtitle}</Description>
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2">
-        {showQuickActions && whatsappNumber ? (
+        {showQuickActions && whatsapp ? (
           <a
-            aria-label={`Message ${getClientDisplayName(client)} on WhatsApp`}
+            aria-label={`Message ${name} on WhatsApp`}
             className="flex min-h-9 min-w-9 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 hover:text-success active:bg-default-200"
-            href={`https://wa.me/${whatsappNumber}`}
+            href={`https://wa.me/${whatsapp}`}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             rel="noopener noreferrer"
@@ -89,10 +75,6 @@ export default function ClientListItem({className, client, showIndicator = false
         </Chip>
         {showIndicator && <ListBox.ItemIndicator />}
       </div>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
-      />
     </ListBox.Item>
   );
 }

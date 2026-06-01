@@ -1,6 +1,6 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
-import {Apple} from 'lucide-react';
+import {HandPlatter} from 'lucide-react';
 
 import type {Food} from '@/api/foods';
 
@@ -30,7 +30,7 @@ export default function FoodListItem({className, food}: {className?: string; foo
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit rounded-none px-4 py-2 sm:px-8', className)}
+      className={cn('min-h-fit px-4 py-2 sm:px-8 hover:bg-surface-secondary-hover', className)}
       id={food.id}
       textValue={food.name}
     >
@@ -42,10 +42,7 @@ export default function FoodListItem({className, food}: {className?: string; foo
             src={food.image_url}
           />
         ) : (
-          <Apple
-            className="text-foreground-400"
-            size={20}
-          />
+          <HandPlatter />
         )}
       </div>
 
@@ -74,10 +71,6 @@ export default function FoodListItem({className, food}: {className?: string; foo
           })}
         </div>
       )}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
-      />
     </ListBox.Item>
   );
 }

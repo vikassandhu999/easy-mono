@@ -29,7 +29,7 @@ export default function TrainingPlanListItem({plan, className}: {plan: TrainingP
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit rounded-none px-4 py-2 sm:px-8', className)}
+      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
       id={plan.id}
       textValue={plan.name}
     >
@@ -47,10 +47,6 @@ export default function TrainingPlanListItem({plan, className}: {plan: TrainingP
           {status.label}
         </Chip>
       </div>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-4 bottom-0 border-t-[0.5px] border-divider/70 sm:inset-x-8"
-      />
     </ListBox.Item>
   );
 }

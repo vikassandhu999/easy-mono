@@ -4,7 +4,6 @@ import {Navigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {exerciseToFormValues, exerciseToUpdateRequest} from '@/api/mappers/exercises';
 import {
   type Exercise,
   useGetExerciseQuery,
@@ -12,6 +11,7 @@ import {
   useListMusclesQuery,
   useUpdateExerciseMutation,
 } from '@/api/exercises';
+import {exerciseToFormValues, exerciseToUpdateRequest} from '@/api/mappers/exercises';
 import {applyFormErrors} from '@/api/shared';
 import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
 
@@ -47,31 +47,33 @@ function EditExerciseForm({
     <Page>
       <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
         <Page.TitleGroup>
-          <Page.Title>Edit exercise</Page.Title>
+          <div className={'flex items-center gap-1'}>
+            <Button
+              onPress={goBack}
+              size="md"
+              variant="ghost"
+              isIconOnly
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Page.Title>Edit exercise</Page.Title>
+          </div>
           <Page.Description>{exercise.name}</Page.Description>
         </Page.TitleGroup>
       </Page.Header>
-      <Page.Toolbar>
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Exercise
-        </Button>
-      </Page.Toolbar>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <ExerciseForm
-          equipment={equipmentData?.data ?? []}
-          form={form}
-          isSubmitting={isUpdating}
-          muscles={musclesData?.data ?? []}
-          onCancel={goBack}
-          onSubmit={onSubmit}
-          submitLabel="Save changes"
-          submittingLabel="Saving changes"
-        />
+        <div className={'max-w-160 mt-4'}>
+          <ExerciseForm
+            equipment={equipmentData?.data ?? []}
+            form={form}
+            isSubmitting={isUpdating}
+            muscles={musclesData?.data ?? []}
+            onCancel={goBack}
+            onSubmit={onSubmit}
+            submitLabel="Save changes"
+            submittingLabel="Saving changes"
+          />
+        </div>
       </Page.Content>
     </Page>
   );

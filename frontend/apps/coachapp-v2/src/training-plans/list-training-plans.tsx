@@ -19,8 +19,17 @@ export default function ListTrainingPlans() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2">
-        <Page.TitleGroup>
+      <Page.Header>
+        <Page.TitleGroup className="flex items-center">
+          <Button
+            onPress={goBack}
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            className={'lg:hidden'}
+          >
+            <ArrowLeft size={18} />
+          </Button>
           <Page.Title>Training Plans</Page.Title>
         </Page.TitleGroup>
         <Page.Actions>
@@ -33,24 +42,13 @@ export default function ListTrainingPlans() {
           </Button>
         </Page.Actions>
       </Page.Header>
-      <Page.Toolbar
-        className={
-          'sticky top-0 z-10 flex flex-col gap-3 bg-background pt-2 pb-3 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-divider after:opacity-0 after:transition-opacity group-data-[scrolled=true]/page:after:opacity-100'
-        }
-      >
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Library
-        </Button>
+      <Page.Toolbar className={'sticky top-0 z-10 flex flex-col gap-3 pt-2 pb-3 border-b'}>
         <SearchField
           aria-label="Search training plans"
           className="w-full sm:max-w-xs"
           onChange={setSearch}
           value={search}
+          variant={'secondary'}
         >
           <SearchField.Group>
             <SearchField.SearchIcon />

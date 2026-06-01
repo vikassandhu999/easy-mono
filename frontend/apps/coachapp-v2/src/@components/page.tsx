@@ -1,4 +1,4 @@
-import {Typography} from '@heroui/react';
+import {Surface, Typography} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import type {ReactNode, UIEvent} from 'react';
 import {useState} from 'react';
@@ -26,21 +26,26 @@ function PageRoot({children, className}: PageProps) {
   }
 
   return (
-    <div className={cn('easy_page relative z-0 mr-0 ml-0 block flex-1', className)}>
+    <Surface
+      className={cn('easy_page relative z-0 mr-0 ml-0 block flex-1', className)}
+      data-scrollbar="thin"
+    >
       <div
-        className="easy_main-content group/page absolute inset-0 overflow-y-scroll"
+        className="easy_main-content group/page absolute inset-0 overflow-y-auto scrollbar"
         data-scrolled={isScrolled}
         onScroll={handleScroll}
       >
         {children}
       </div>
-    </div>
+    </Surface>
   );
 }
 
 function PageHeader({children, className}: PageProps) {
   return (
-    <div className={cn('flex shrink-0 flex-row items-center justify-between gap-3 px-4 md:px-6 lg:px-8', className)}>
+    <div
+      className={cn('flex shrink-0 flex-row items-center justify-between gap-3 pt-4 px-4 md:px-6 lg:px-8', className)}
+    >
       {children}
     </div>
   );
@@ -54,7 +59,7 @@ function PageTitle({children, className}: PageTitleProps) {
   return (
     <Typography
       className={className}
-      type="h4"
+      type="h6"
     >
       {children}
     </Typography>

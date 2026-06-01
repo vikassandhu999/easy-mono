@@ -28,6 +28,7 @@ export function FormSelectField<T extends FieldValues>({
           isInvalid={!!fieldState.error}
           onChange={(key) => field.onChange(key ?? undefined)}
           value={field.value || null}
+          variant={'secondary'}
         >
           <Label>{label}</Label>
           {description ? <Description>{description}</Description> : null}

@@ -3,9 +3,9 @@ import type {Food} from '@/api/foods';
 import {foodFromApi} from '@/api/mappers/foods';
 import {mealFromApi} from '@/api/mappers/meals';
 import {nutritionPlanFromApi} from '@/api/mappers/nutritionPlans';
+import {recipeFromApi} from '@/api/mappers/recipes';
 import type {Meal} from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
-import {recipeFromApi} from '@/api/mappers/recipes';
 import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
 import type {PlanClient} from '@/api/trainingPlans';
 

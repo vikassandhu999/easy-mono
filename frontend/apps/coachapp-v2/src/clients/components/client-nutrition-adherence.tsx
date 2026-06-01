@@ -1,4 +1,4 @@
-import {formatWeekday} from '@easy/utils';
+import {formatWeekday, getCurrentWeekRange, getDateForWeekdayIndex} from '@easy/utils';
 import {Button, Separator, Spinner} from '@heroui/react';
 import {useMemo, useState} from 'react';
 
@@ -8,14 +8,12 @@ import type {Macros} from '@/api/shared';
 import ClientNutritionDetail from '@/clients/components/client-nutrition-detail';
 import {
   ADHERENCE_STYLES,
+  type AdherenceLevel,
   buildRecentNutritionDaySubtitle,
   getAdherenceLevel,
-  getCurrentWeekRange,
-  getDateForWeekdayIndex,
   getDayPercent,
   getPlannedDailyCalories,
   resolveNutritionMacrosGoal,
-  type AdherenceLevel,
 } from '@/domain/client-nutrition';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

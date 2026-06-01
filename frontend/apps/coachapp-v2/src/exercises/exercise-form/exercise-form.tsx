@@ -1,20 +1,26 @@
+import type {Key} from '@heroui/react';
+
 import {
+  Autocomplete,
   Button,
-  Checkbox,
-  CheckboxGroup,
   Description,
+  EmptyState,
   ErrorMessage,
   FieldError,
   Fieldset,
   Form,
   Label,
   ListBox,
+  SearchField,
   Spinner,
+  Tag,
+  TagGroup,
   Typography,
+  useFilter,
 } from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ImageOff, Plus, X} from 'lucide-react';
-import {useState} from 'react';
+import {type ReactNode, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
@@ -103,6 +109,149 @@ function ImageThumbnail({url}: {url: string}) {
   );
 }
 
+type MultiSelectOption = {
+  id: string;
+  name: string;
+};
+
+type AutocompleteValueRenderProps = {
+  defaultChildren: ReactNode;
+  isPlaceholder: boolean;
+  state: {selectedItems: {key: Key}[]};
+};
+
+type MultiSelectAutocompleteProps = {
+  emptyMessage: string;
+  errorMessage?: string;
+  isInvalid?: boolean;
+  items: MultiSelectOption[];
+  label: string;
+  name: string;
+  onChange: (ids: string[]) => void;
+  placeholder: string;
+  searchPlaceholder: string;
+  value: string[];
+};
+
+function normalizeSelectedKeys(keys: Key | Key[] | null): string[] {
+  if (keys == null) {
+    return [];
+  }
+
+  if (Array.isArray(keys)) {
+    return keys.map(String);
+  }
+
+  return [String(keys)];
+}
+
+function MultiSelectAutocomplete({
+  emptyMessage,
+  errorMessage,
+  isInvalid = false,
+  items,
+  label,
+  name,
+  onChange,
+  placeholder,
+  searchPlaceholder,
+  value,
+}: MultiSelectAutocompleteProps) {
+  const {contains} = useFilter({sensitivity: 'base'});
+
+  const handleRemoveTags = (keys: Set<Key>) => {
+    onChange(value.filter((id) => !keys.has(id)));
+  };
+
+  return (
+    <Autocomplete
+      className="w-full"
+      isInvalid={isInvalid}
+      name={name}
+      onChange={(keys) => onChange(normalizeSelectedKeys(keys))}
+      placeholder={placeholder}
+      selectionMode="multiple"
+      value={value}
+      variant="secondary"
+    >
+      <Label>{label}</Label>
+      <Autocomplete.Trigger>
+        <Autocomplete.Value>
+          {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
+            if (isPlaceholder || state.selectedItems.length === 0) {
+              return defaultChildren;
+            }
+
+            const selectedItemKeys = state.selectedItems.map((item) => item.key);
+
+            return (
+              <TagGroup
+                onRemove={handleRemoveTags}
+                size="sm"
+                variant="surface"
+              >
+                <TagGroup.List>
+                  {selectedItemKeys.map((key) => {
+                    const item = items.find((option) => option.id === String(key));
+
+                    if (!item) {
+                      return null;
+                    }
+
+                    return (
+                      <Tag
+                        id={item.id}
+                        key={item.id}
+                        textValue={item.name}
+                      >
+                        {item.name}
+                      </Tag>
+                    );
+                  })}
+                </TagGroup.List>
+              </TagGroup>
+            );
+          }}
+        </Autocomplete.Value>
+        <Autocomplete.ClearButton />
+        <Autocomplete.Indicator />
+      </Autocomplete.Trigger>
+      <Autocomplete.Popover>
+        <Autocomplete.Filter filter={contains}>
+          <SearchField
+            autoFocus
+            className="sticky top-0 z-10"
+            name={`${name}-search`}
+            variant="secondary"
+          >
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder={searchPlaceholder} />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
+          <ListBox
+            className="max-h-[280px] overflow-y-auto"
+            renderEmptyState={() => <EmptyState>{emptyMessage}</EmptyState>}
+          >
+            {items.map((item) => (
+              <ListBox.Item
+                id={item.id}
+                key={item.id}
+                textValue={item.name}
+              >
+                {item.name}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Autocomplete.Filter>
+      </Autocomplete.Popover>
+      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+    </Autocomplete>
+  );
+}
+
 export default function ExerciseForm({
   equipment,
   form,
@@ -126,26 +275,26 @@ export default function ExerciseForm({
   const images = watch('images') ?? [];
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <Form
+      onSubmit={handleSubmit(onSubmit)}
+      className={'flex flex-col gap-4'}
+    >
       <Fieldset>
-        <Fieldset.Legend>Exercise details</Fieldset.Legend>
-        <Description>Name the exercise and add coaching instructions</Description>
-
         <Fieldset.Group>
           <FormTextField
             control={control}
-            description="Use the name coaches and clients will recognize"
             fullWidth
             isRequired
-            label="Name (required)"
+            label="Name"
             name="name"
+            variant={'secondary'}
           />
 
           <FormTextAreaField
             control={control}
             description="Summarize what this exercise is for"
             fullWidth
-            label="Description (optional)"
+            label="Description"
             name="description"
             textAreaProps={{rows: 2}}
           />
@@ -154,7 +303,7 @@ export default function ExerciseForm({
             control={control}
             description="Add cues, setup notes, and execution steps"
             fullWidth
-            label="Instructions (optional)"
+            label="Instructions"
             name="instructions"
             textAreaProps={{rows: 3}}
           />
@@ -162,13 +311,10 @@ export default function ExerciseForm({
       </Fieldset>
 
       <Fieldset>
-        <Fieldset.Legend>Classification</Fieldset.Legend>
-        <Description>Choose how this exercise should be categorized</Description>
-
         <Fieldset.Group>
           <FormSelectField
             control={control}
-            label="Mechanics (optional)"
+            label="Mechanics"
             name="mechanics"
           >
             {MECHANICS_OPTIONS.map((option) => (
@@ -185,7 +331,7 @@ export default function ExerciseForm({
 
           <FormSelectField
             control={control}
-            label="Force (optional)"
+            label="Force"
             name="force"
           >
             {FORCE_OPTIONS.map((option) => (
@@ -204,35 +350,22 @@ export default function ExerciseForm({
 
       {muscles.length > 0 && (
         <Fieldset>
-          <Fieldset.Legend>Target muscles</Fieldset.Legend>
-          <Description>Select all muscles this exercise targets</Description>
-
           <Controller
             control={control}
             name="muscle_ids"
-            render={({field}) => (
-              <CheckboxGroup
-                isInvalid={!!errors.muscle_ids}
+            render={({field, fieldState}) => (
+              <MultiSelectAutocomplete
+                emptyMessage="No muscles found"
+                errorMessage={fieldState.error?.message}
+                isInvalid={!!fieldState.error}
+                items={muscles}
+                label="Muscles"
+                name={field.name}
                 onChange={field.onChange}
+                placeholder="Search and select muscles"
+                searchPlaceholder="Search muscles..."
                 value={field.value ?? []}
-              >
-                {errors.muscle_ids && <FieldError>{errors.muscle_ids.message}</FieldError>}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                  {muscles.map((muscle) => (
-                    <Checkbox
-                      key={muscle.id}
-                      value={muscle.id}
-                    >
-                      <Checkbox.Control>
-                        <Checkbox.Indicator />
-                      </Checkbox.Control>
-                      <Checkbox.Content>
-                        <Label>{muscle.name}</Label>
-                      </Checkbox.Content>
-                    </Checkbox>
-                  ))}
-                </div>
-              </CheckboxGroup>
+              />
             )}
           />
         </Fieldset>
@@ -240,35 +373,22 @@ export default function ExerciseForm({
 
       {equipment.length > 0 && (
         <Fieldset>
-          <Fieldset.Legend>Equipment</Fieldset.Legend>
-          <Description>Select all equipment needed</Description>
-
           <Controller
             control={control}
             name="equipment_ids"
-            render={({field}) => (
-              <CheckboxGroup
-                isInvalid={!!errors.equipment_ids}
+            render={({field, fieldState}) => (
+              <MultiSelectAutocomplete
+                emptyMessage="No equipment found"
+                errorMessage={fieldState.error?.message}
+                isInvalid={!!fieldState.error}
+                items={equipment}
+                label="Equipment"
+                name={field.name}
                 onChange={field.onChange}
+                placeholder="Search and select equipment"
+                searchPlaceholder="Search equipment..."
                 value={field.value ?? []}
-              >
-                {errors.equipment_ids && <FieldError>{errors.equipment_ids.message}</FieldError>}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                  {equipment.map((item) => (
-                    <Checkbox
-                      key={item.id}
-                      value={item.id}
-                    >
-                      <Checkbox.Control>
-                        <Checkbox.Indicator />
-                      </Checkbox.Control>
-                      <Checkbox.Content>
-                        <Label>{item.name}</Label>
-                      </Checkbox.Content>
-                    </Checkbox>
-                  ))}
-                </div>
-              </CheckboxGroup>
+              />
             )}
           />
         </Fieldset>
@@ -382,7 +502,7 @@ export default function ExerciseForm({
 
       {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
 
-      <Fieldset.Actions>
+      <Fieldset.Actions className={'mt-4 flex gap-4'}>
         <Button
           isPending={isSubmitting}
           type="submit"

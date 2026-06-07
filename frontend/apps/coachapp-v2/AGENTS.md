@@ -1,46 +1,118 @@
-- Stack: Vite + React 19 + TS strict, HeroUI v3 + Tailwind v4, Redux Toolkit + RTK Query, react-hook-form + zod, react-router v7 data mode.
-- Dev: `pnpm -C apps/coachapp-v2 dev` (port 2021). Build: `pnpm -C apps/coachapp-v2 build`. Lint: `pnpm -C apps/coachapp-v2 lint`.
-- `src/` layout: feature modules (`clients/`, `exercises/`, etc.) own their UI + screens. Shared folders: `api/` (RTK Query endpoints, one file per domain), `@components/`, `@hooks/`, `@hoc/`, `@config/`.
-- Use RTK Query hooks for all server data. No `useEffect` for fetching.
-- Routes live in `router.tsx` using `createBrowserRouter()` data mode. Wrap protected screens with `withAuth` from `@/@hoc/with-auth`. No route loaders — RTK Query handles data.
-- New screen for existing feature → `src/{feature}/screen-name.tsx`. Component used by 1 feature → `src/{feature}/components/`. Component used by 2+ features → `src/@components/`. New API endpoint → matching file in `src/api/` (new domain = new file). New route → add to `router.tsx` + path constant in `@/@config/routes.ts`. HOC/guard → `src/@hoc/`.
-- Naming: screens and components `kebab-case` (`list-clients.tsx`, `client-card.tsx`). API files `camelCase` (`nutritionPlans.ts`, `trainingPlans.ts`).
-- Component files contain only: imports, Props type, the component (plus the form's `zod` schema if it's a form). Pure (non-React) helpers and non-trivial constants live in `src/{feature}/lib/{topic}.ts`; data-shape helpers live in the matching `src/api/*.ts`. No helpers, derived-state functions, or constants beyond this inside the component file.
-- Don't re-declare existing shapes. Derive types from API/domain types with `Partial<T>`, `Pick<T, K>`, `Omit<T, K>` when the meaning is the same.
-- No section-divider comments (`// ── X ──`). No JSDoc on props or internal helpers — the name is the doc. No JSX section labels (`{/* Header */}`, `{/* Actions */}`). Comments only when the WHY is non-obvious.
-- Structure code to minimize cognitive load. Avoid clever tricks that sacrifice readability.
-- Every form MUST use react-hook-form + zod. No native FormData. No `useState` for form fields. Schema + type defined in the same file as the form component.
-  ```tsx
-  const schema = z.object({email: z.string().min(1, 'Required').email()});
-  type FormValues = z.infer<typeof schema>;
-  const {register, handleSubmit, control, formState: {errors}, setError} = useForm<FormValues>({resolver: zodResolver(schema)});
-  ```
-- Server/API errors in forms: use `applyFormErrors(err, fallback, setError)` from `@/api/shared`. Handles per-field + root errors.
-  ```tsx
-  try { await mutate(body).unwrap(); } catch (err) { applyFormErrors(err, 'Failed.', setError); }
-  ```
-- Create form after successful save: `navigate(targetPath, {replace: true})` so Back skips the empty create route.
+# CoachApp v2 Agent Instructions
+
+Use this file as the app contract. If it conflicts with older README text, trust this file and the live source.
+
+## Stack And Commands
+
+- Stack: Vite, React 19, TypeScript strict, HeroUI v3, Tailwind v4, Redux Toolkit, RTK Query, react-hook-form, zod, React Router v7 data mode.
+- Dev server: `pnpm -C apps/coachapp-v2 dev` on port 2021.
+- Build/type-check: `pnpm -C apps/coachapp-v2 build`.
+- Lint/format: `pnpm -C apps/coachapp-v2 lint`. This runs Biome with `--write`, so expect file changes.
+- There is no app test suite configured. For code changes, use build plus focused manual/browser verification when behavior or UI changed.
+
+## Working Style
+
+- Start from the code in front of you. Read the owning files before making architectural or UI claims.
+- Keep the diff small. Every changed line should trace to the user's request.
+- Prefer boring, direct code over clever abstractions. Do not add flexibility, configuration, or shared helpers for a single use.
+- State assumptions when they matter. Ask only when ambiguity changes the behavior, data contract, or UX.
+- Clean up only the unused code your change created. Mention unrelated dead code; do not remove it.
+- Use comments sparingly, only for non-obvious why. No section-divider comments, JSX labels, or JSDoc for internal props/helpers.
+
+## Source Layout
+
+- Feature modules own their screens and one-feature UI: `src/clients/`, `src/exercises/`, `src/foods/`, `src/nutrition-plans/`, `src/training-plans/`, etc.
+- Shared app folders:
+  - `src/api/`: RTK Query endpoints and API-facing types, one domain per file.
+  - `src/api/mappers/`: request/response mapping between API and form/domain shapes.
+  - `src/domain/`: domain types/helpers not tied to a component render.
+  - `src/@components/`: UI used by two or more features.
+  - `src/@hooks/`: shared hooks.
+  - `src/@hoc/`: route guards and screen wrappers.
+  - `src/@config/`: route constants and config.
+- New screen for an existing feature: `src/{feature}/screen-name.tsx`.
+- Component used by one feature: `src/{feature}/components/component-name.tsx`.
+- Component used by two or more features: `src/@components/component-name.tsx`.
+- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts`, `src/domain/*.ts`, or `src/api/mappers/*.ts`, depending on ownership.
+
+## Names, Types, And Imports
+
+- Screen and component files use kebab-case: `list-clients.tsx`, `client-card.tsx`.
+- API endpoint files use camelCase for existing compound domains: `nutritionPlans.ts`, `trainingPlans.ts`.
+- Use direct `@/...` imports. Do not add new barrel files or re-export surfaces.
+- Do not duplicate existing shapes. Derive types from API/domain types with `Pick`, `Omit`, `Partial`, indexed access, or local zod inference when the meaning is the same.
+- Component files should stay shallow: imports, props type, component, and form schema/type/hook if the file owns a form. If helpers or constants grow, move them to the owning `lib`, `domain`, or mapper file.
+
+## Data And API
+
+- Use RTK Query hooks for server data. Do not fetch in `useEffect`.
+- Add endpoints to the matching `src/api/{domain}.ts`; create a new file only for a new API domain.
+- Keep data-shape conversion in `src/api/mappers/{domain}.ts`, not in screens.
+- Use `.unwrap()` for mutations that need navigation or form error handling.
+- Surface API errors through existing helpers: `applyFormErrors`, `getApiErrorMessage`, or `getApiErrorCode` from `@/api/shared`.
+
+## Routing And Navigation
+
+- Routes live in `src/router.tsx` with `createBrowserRouter()`.
+- Route paths live in `src/@config/routes.ts`. Add or change both the route constant and router entry together.
+- Protected app screens are wrapped through `withAuth`; guest-only screens use `withNotAuth`.
+- Do not add route loaders for server data. RTK Query owns data loading.
+- Back buttons use `useGoBack(fallback)` from `@/@hooks/use-go-back`; do not hand-roll `navigate(-1)` or plain fallback paths for Back.
+
+## Form Navigation
+
+- Create form save: navigate to the created resource with `{replace: true}` so Back skips the empty create form.
   ```tsx
   const result = await createFoo(body).unwrap();
   navigate(`/library/foos/${result.data.id}`, {replace: true});
   ```
-- Edit form after successful save: `goBack()` from `useGoBack(backPath)` so Back pops history with `backPath` as deep-link fallback.
+- Edit form save: call `goBack()` from `useGoBack(detailPath)` after a successful mutation.
   ```tsx
   const goBack = useGoBack(`/library/foos/${id}`);
-  await updateFoo({body, id}).unwrap();
+  await updateFoo({id, body}).unwrap();
   goBack();
   ```
-- Cancel on any form calls `goBack()` from `useGoBack(fallback)` — same as the header Back button.
-- Navigation exceptions: in-place confirmation screens, live-preview editors, multi-step wizards where the forward step must stay reachable via browser back.
-- Back buttons: use `useGoBack(fallback)` from `@/@hooks/use-go-back` — `navigate(-1)` when history exists, falls back to the route on deep links. Never `navigate('/path')` for Back.
-- Imports: direct file paths via `@/...` alias. No barrel `index.ts` files. No re-exports.
+- Header Back and form Cancel should use the same destination semantics for the screen. Current create screens may use either `goBack(fallback)` or a normal list-route navigation; preserve the local pattern unless changing it is the task.
+- Exceptions are rare: in-place confirmations, live-preview editors, and multi-step flows where the next step must remain reachable through browser Back.
+
+## Forms
+
+- Every form uses react-hook-form plus zod. No native `FormData`. No `useState` for ordinary form fields.
+- Define the zod schema, inferred `FormValues` type, defaults, and `useXForm` hook beside the form component unless an existing feature pattern says otherwise.
+- Use `Controller` for HeroUI or custom inputs that do not work cleanly with `register`.
+- Server errors in forms go through `applyFormErrors(err, fallback, form.setError, knownFields?)`.
   ```tsx
-  import {useListClientsQuery} from '@/api/clients';
-  import {withAuth} from '@/@hoc/with-auth';
-  import ClientCard from '@/clients/components/client-card';
-  import {ROUTES} from '@/@config/routes';
+  try {
+    await mutate(body).unwrap();
+  } catch (err) {
+    applyFormErrors(err, "Thing wasn't saved. Check the details and try again", form.setError);
+  }
   ```
-- Mobile-first: app must work at 375px AND 1280px. Base Tailwind classes target mobile; `sm:`/`md:`/`lg:` enhance up. Style with Tailwind utility classes — no per-component `.css` files.
-- Container decision before building any input/action. Text input involved? 1 field that fits → INLINE; 2+ fields → NEW PAGE. No keyboard? Yes/no confirm → DIALOG; read-only preview or tap-only select → DRAWER (bottom sheet); complex/multi-step → NEW PAGE; else INLINE. On desktop, DRAWER may become POPOVER; other containers stay as-is.
-- Keyboard rule: if the virtual keyboard will open, container MUST be INLINE or NEW PAGE. Never dialog, modal, or drawer.
-- Touch targets `min-h-11` (44px) on every interactive element. No hover-only interactions. Don't show raw HTML tables on mobile — use cards, lists, or horizontal scroll. Forms single-column by default, `md:grid-cols-2` when wider.
+- Prefer existing form-field wrappers in `src/@components/form-fields/` for common fields.
+
+## UI Rules
+
+- Build mobile-first. The app must work at 375px and at 1280px.
+- Base Tailwind classes target mobile; `sm:`, `md:`, and `lg:` enhance wider layouts.
+- Style with Tailwind utilities and HeroUI props. Do not add per-component CSS files.
+- Use `Page` from `@/@components/page` for app screens unless the owning feature has a stronger established pattern.
+- Interactive targets must be at least `min-h-11` / 44px. Do not rely on hover-only actions.
+- Do not show raw HTML tables on mobile. Use cards/lists or horizontal scrolling when tabular data is unavoidable.
+- Forms are single-column on mobile; use `md:grid-cols-2` only when the wider layout remains easy to scan.
+- Use lucide-react icons for common actions when an icon helps recognition.
+
+## Choosing Containers
+
+- Inline: one field, quick edits, filters, or actions that fit without hiding context.
+- New page: two or more text fields, complex forms, multi-step flows, or anything that opens the virtual keyboard for sustained input.
+- Dialog: yes/no confirmation without keyboard input.
+- Drawer or bottom sheet: read-only preview or tap-only selection. On desktop this may become a popover.
+- Never put keyboard-heavy work in a dialog, modal, or drawer.
+
+## Verification
+
+- Docs-only changes: proofread the rendered Markdown/diff; no build required.
+- TypeScript or data-flow changes: run `pnpm -C apps/coachapp-v2 build`.
+- UI changes: run the app and verify the touched flow at 375px and desktop width.
+- If you run `pnpm -C apps/coachapp-v2 lint`, review its writes before finalizing.
+- Never claim something passes unless the command or manual check was run in this checkout.

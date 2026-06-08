@@ -3,7 +3,7 @@ import {AlertDialog, Button, Chip, Form, Spinner, Typography, toast} from '@hero
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Archive, ArchiveRestore, ArrowLeft, Pencil, Plus, Trash2} from 'lucide-react';
 import {useCallback, useState} from 'react';
-import {Controller, useForm} from 'react-hook-form';
+import {useForm} from 'react-hook-form';
 import {useNavigate, useParams} from 'react-router-dom';
 import {z} from 'zod';
 import ClientPicker from '@/@components/client-picker';
@@ -144,10 +144,7 @@ function DailyTotals({totals, goal}: {goal?: Macros; totals: Macros}) {
                 {total}
                 {meta ? meta.unit : ''}
                 {goalVal ? (
-                  <Typography
-                    color="muted"
-                    elementType="span"
-                  >
+                  <Typography color="muted">
                     {' '}
                     / {goalVal}
                     {meta ? meta.unit : ''}
@@ -329,96 +326,95 @@ export default function NutritionPlanDetail() {
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
-        <Page.TitleGroup>
-          <Page.Title>Nutrition plan</Page.Title>
-        </Page.TitleGroup>
-      </Page.Header>
-      <Page.Toolbar className="flex flex-wrap items-center gap-2">
+      <Page.Header className="py-4 max-w-4xl sm:py-8 items-center">
         <Button
+          className={'-ml-3'}
           onPress={goBack}
-          size="sm"
-          variant="ghost"
+          size={'sm'}
+          variant={'ghost'}
         >
-          <ArrowLeft size={16} />
-          Nutrition plans
+          <ArrowLeft />
+          Back
         </Button>
-        <Button
-          onPress={() => navigate(`/library/nutrition-plans/${plan.id}/edit`)}
-          size="sm"
-          variant="secondary"
-        >
-          <Pencil size={16} />
-          Edit
-        </Button>
-        <CopyMenu
-          clientId={plan.client_id}
-          onCopyToClient={() => setShowCopyToClient((v) => !v)}
-          onDuplicate={handleDuplicate}
-        />
-        {plan.status === 'active' ? (
+        <div className={'flex gap-2'}></div>
+        <Page.Actions className={'flex flex-wrap'}>
           <Button
-            isPending={isUpdatingStatus}
-            onPress={() => handleToggleArchive('archived')}
+            onPress={() => navigate(`/library/nutrition-plans/${plan.id}/edit`)}
             size="sm"
             variant="secondary"
           >
-            <Archive size={16} />
-            Archive
+            <Pencil />
+            Edit
           </Button>
-        ) : (
-          <Button
-            isPending={isUpdatingStatus}
-            onPress={() => handleToggleArchive('active')}
-            size="sm"
-            variant="secondary"
-          >
-            <ArchiveRestore size={16} />
-            Unarchive
-          </Button>
-        )}
-        <AlertDialog>
-          <Button
-            size="sm"
-            variant="danger"
-          >
-            <Trash2 size={16} />
-            Delete
-          </Button>
-          <AlertDialog.Backdrop>
-            <AlertDialog.Container>
-              <AlertDialog.Dialog className="sm:max-w-[400px]">
-                <AlertDialog.CloseTrigger />
-                <AlertDialog.Header>
-                  <AlertDialog.Icon status="danger" />
-                  <AlertDialog.Heading>Delete plan?</AlertDialog.Heading>
-                </AlertDialog.Header>
-                <AlertDialog.Body>
-                  <Typography>
-                    This will permanently delete <strong>{plan.name}</strong> and all its meals. This action cannot be
-                    undone.
-                  </Typography>
-                </AlertDialog.Body>
-                <AlertDialog.Footer>
-                  <Button
-                    slot="close"
-                    variant="tertiary"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    isPending={isDeleting}
-                    onPress={handleDeletePlan}
-                    variant="danger"
-                  >
-                    {isDeleting ? 'Deleting' : 'Delete'}
-                  </Button>
-                </AlertDialog.Footer>
-              </AlertDialog.Dialog>
-            </AlertDialog.Container>
-          </AlertDialog.Backdrop>
-        </AlertDialog>
-      </Page.Toolbar>
+          <CopyMenu
+            clientId={plan.client_id}
+            onCopyToClient={() => setShowCopyToClient((v) => !v)}
+            onDuplicate={handleDuplicate}
+          />
+          {plan.status === 'active' ? (
+            <Button
+              isPending={isUpdatingStatus}
+              onPress={() => handleToggleArchive('archived')}
+              size="sm"
+              variant="secondary"
+            >
+              <Archive />
+              Archive
+            </Button>
+          ) : (
+            <Button
+              isPending={isUpdatingStatus}
+              onPress={() => handleToggleArchive('active')}
+              size="sm"
+              variant="secondary"
+            >
+              <ArchiveRestore />
+              Unarchive
+            </Button>
+          )}
+          <AlertDialog>
+            <Button
+              size="sm"
+              variant="danger"
+            >
+              <Trash2 />
+              Delete
+            </Button>
+            <AlertDialog.Backdrop>
+              <AlertDialog.Container>
+                <AlertDialog.Dialog className="sm:max-w-100">
+                  <AlertDialog.CloseTrigger />
+                  <AlertDialog.Header>
+                    <AlertDialog.Icon status="danger" />
+                    <AlertDialog.Heading>Delete plan?</AlertDialog.Heading>
+                  </AlertDialog.Header>
+                  <AlertDialog.Body>
+                    <Typography>
+                      This will permanently delete <strong>{plan.name}</strong> and all its meals. This action cannot be
+                      undone.
+                    </Typography>
+                  </AlertDialog.Body>
+                  <AlertDialog.Footer>
+                    <Button
+                      slot="close"
+                      variant="tertiary"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      isPending={isDeleting}
+                      onPress={handleDeletePlan}
+                      variant="danger"
+                    >
+                      {isDeleting ? 'Deleting' : 'Delete'}
+                    </Button>
+                  </AlertDialog.Footer>
+                </AlertDialog.Dialog>
+              </AlertDialog.Container>
+            </AlertDialog.Backdrop>
+          </AlertDialog>
+        </Page.Actions>
+      </Page.Header>
 
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         {showCopyToClient && (

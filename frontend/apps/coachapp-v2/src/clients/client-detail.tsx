@@ -7,8 +7,8 @@ import {Link, useNavigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {clientNotesToUpdateRequest} from '@/api/mappers/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
+import {clientNotesToUpdateRequest} from '@/api/mappers/clients';
 import {
   type NutritionPlan,
   useAssignNutritionPlanMutation,
@@ -18,14 +18,7 @@ import {type TrainingPlan, useAssignTrainingPlanMutation, useListClientTrainingP
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
 import InvitationWidget from '@/clients/components/invitation-widget';
-import {
-  getFullName,
-  getInitials,
-  getWhatsAppUrl,
-  PLAN_STATUS_MAP,
-  STATUS_CHIP_COLOR,
-  UNKNOWN_PLAN_STATUS,
-} from '@/clients/lib/client';
+import {getWhatsAppUrl, PLAN_STATUS_MAP, STATUS_CHIP_COLOR, UNKNOWN_PLAN_STATUS} from '@/clients/lib/client';
 import NutritionPlanPicker from '@/nutrition-plans/components/nutrition-plan-picker';
 import TrainingPlanPicker from '@/training-plans/components/training-plan-picker';
 
@@ -389,38 +382,52 @@ export default function ClientDetail() {
   }
 
   const client = data.data;
-  const fullName = getFullName(client.first_name, client.last_name);
-  const initials = getInitials(client.first_name, client.last_name);
   const statusColor = STATUS_CHIP_COLOR[client.status] ?? 'default';
+
+  const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
+  const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
+
+  // let subtitle = client.email ?? client.phone ?? client.status;
+  // if (client.status === 'active') {
+  //   subtitle = `Active · since ${formatIsoDateShort(client.inserted_at)}`;
+  // }
+  // if (client.status === 'pending') {
+  //   subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
+  // }
+
+  // const status = STATUS_MAP[client.status] ?? {color: 'default' as const, label: client.status};
+  // const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (
     <Page>
-      <Page.Header className="pt-4 pb-2 md:pt-6 lg:pt-8">
+      <Page.Header className="py-4 max-w-xl sm:py-8 items-center">
         <Page.TitleGroup>
-          <Page.Title>Client</Page.Title>
+          <div className={'flex items-center gap-1'}>
+            <Button
+              onPress={goBack}
+              size="md"
+              variant="ghost"
+              isIconOnly
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <Page.Title>{name}</Page.Title>
+          </div>
         </Page.TitleGroup>
+        <Page.Actions>
+          <Button
+            onPress={() => navigate(`/clients/${client.id}/edit`)}
+            size="sm"
+            variant="secondary"
+          >
+            <Pencil size={16} />
+            Edit
+          </Button>
+        </Page.Actions>
       </Page.Header>
-      <Page.Toolbar className="flex items-center justify-between">
-        <Button
-          onPress={goBack}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft size={16} />
-          Clients
-        </Button>
-        <Button
-          onPress={() => navigate(`/clients/${client.id}/edit`)}
-          size="sm"
-          variant="secondary"
-        >
-          <Pencil size={16} />
-          Edit
-        </Button>
-      </Page.Toolbar>
 
-      <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
-        <div className="max-w-lg">
+      <Page.Content className={'px-4 md:px-6 lg:px-8'}>
+        <div className=" max-w-xl overflow-hidden">
           <div className="rounded-xl border border-divider bg-content1 p-4">
             <div className="flex items-center gap-3">
               <Avatar
@@ -434,7 +441,7 @@ export default function ClientDetail() {
                   truncate
                   type="h5"
                 >
-                  {fullName}
+                  {name}
                 </Typography>
                 {client.phone ? (
                   <Typography

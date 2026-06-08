@@ -5,26 +5,32 @@ import {MessageCircle} from 'lucide-react';
 
 import type {Client, ClientStatus} from '@/api/clients';
 
-type StatusConfig = {
-  color: 'default' | 'success';
-  label: string;
+const getStatusConfig = (status: ClientStatus) => {
+  switch (status) {
+    case 'active':
+      return {color: 'success' as const, label: 'Active'};
+    case 'archived':
+      return {color: 'default' as const, label: 'Archived'};
+    case 'inactive':
+      return {color: 'default' as const, label: 'Inactive'};
+    case 'pending':
+      return {color: 'default' as const, label: 'Pending'};
+    default:
+      return {color: 'default' as const, label: ''};
+  }
 };
 
-type Props = {
+export default function ClientListItem({
+  className,
+  client,
+  showIndicator = false,
+  showQuickActions = true,
+}: {
   className?: string;
   client: Client;
   showIndicator?: boolean;
   showQuickActions?: boolean;
-};
-
-const STATUS_MAP: Record<ClientStatus, StatusConfig> = {
-  active: {color: 'success', label: 'Active'},
-  archived: {color: 'default', label: 'Archived'},
-  inactive: {color: 'default', label: 'Inactive'},
-  pending: {color: 'default', label: 'Pending'},
-};
-
-export default function ClientListItem({className, client, showIndicator = false, showQuickActions = true}: Props) {
+}) {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
   const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
 
@@ -36,7 +42,7 @@ export default function ClientListItem({className, client, showIndicator = false
     subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
   }
 
-  const status = STATUS_MAP[client.status] ?? {color: 'default' as const, label: client.status};
+  const status = getStatusConfig(client.status);
   const whatsapp = client.phone?.replace(/\D/g, '');
 
   return (

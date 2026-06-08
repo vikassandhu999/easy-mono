@@ -1,12 +1,11 @@
+import {formatDateLong, formatIsoDate} from '@easy/utils';
 import {Button, Chip, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
 import {useParams} from 'react-router-dom';
-
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetTrainingPlanQuery} from '@/api/trainingPlans';
-import {formatDateLong, formatIsoDate} from '@easy/utils';
 
 import {PlanActions} from './plan-actions';
 import {PlanAddToClient} from './plan-add-to-client';

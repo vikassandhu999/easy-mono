@@ -1,0 +1,2 @@
+defmodule Easy do
+end

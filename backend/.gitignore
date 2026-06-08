@@ -1,0 +1,48 @@
+# The directory Mix will write compiled artifacts to.
+/_build/
+
+# If you run "mix test --cover", coverage assets end up here.
+/cover/
+
+# The directory Mix downloads your dependencies sources to.
+/deps/
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+/.fetch
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Temporary files, for example, from tests.
+/tmp/
+
+# Ignore package tarball (built via "mix hex.build").
+easy-*.tar
+
+# Secret files
+.env
+.env.local
+*.secret
+*.key
+*.pem
+*.crt
+
+# SSH keys - should never be committed
+*_droplet
+*_droplet.pub
+id_rsa*
+id_ed25519*
+*.pub
+
+# macOS
+.DS_Store
+
+# Large seed data files (seeded manually, not in Docker image)
+priv/repo/exercises.json
+priv/repo/foods_database.csv

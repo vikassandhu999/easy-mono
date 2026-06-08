@@ -1,0 +1,86 @@
+import {formatIsoDateShort, formatTimeAgo} from '@easy/utils';
+import {Avatar, Chip, Description, Label, ListBox} from '@heroui/react';
+import {cn} from '@heroui/styles';
+import {MessageCircle} from 'lucide-react';
+
+import type {Client, ClientStatus} from '@/api/clients';
+
+const getStatusConfig = (status: ClientStatus) => {
+  switch (status) {
+    case 'active':
+      return {color: 'success' as const, label: 'Active'};
+    case 'archived':
+      return {color: 'default' as const, label: 'Archived'};
+    case 'inactive':
+      return {color: 'default' as const, label: 'Inactive'};
+    case 'pending':
+      return {color: 'default' as const, label: 'Pending'};
+    default:
+      return {color: 'default' as const, label: ''};
+  }
+};
+
+export default function ClientListItem({
+  className,
+  client,
+  showIndicator = false,
+  showQuickActions = true,
+}: {
+  className?: string;
+  client: Client;
+  showIndicator?: boolean;
+  showQuickActions?: boolean;
+}) {
+  const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
+  const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
+
+  let subtitle = client.email ?? client.phone ?? client.status;
+  if (client.status === 'active') {
+    subtitle = `Active · since ${formatIsoDateShort(client.inserted_at)}`;
+  }
+  if (client.status === 'pending') {
+    subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
+  }
+
+  const status = getStatusConfig(client.status);
+  const whatsapp = client.phone?.replace(/\D/g, '');
+
+  return (
+    <ListBox.Item
+      className={cn('min-h-fit px-4 py-3 sm:px-8', className)}
+      id={client.id}
+      textValue={name}
+    >
+      <Avatar size="sm">
+        <Avatar.Fallback>{initials}</Avatar.Fallback>
+      </Avatar>
+      <div className="flex min-w-0 flex-col">
+        <Label className="truncate">{name}</Label>
+        <Description className="truncate">{subtitle}</Description>
+      </div>
+      <div className="ms-auto flex shrink-0 items-center gap-2">
+        {showQuickActions && whatsapp ? (
+          <a
+            aria-label={`Message ${name} on WhatsApp`}
+            className="flex min-h-9 min-w-9 items-center justify-center rounded-lg text-foreground-400 transition-colors hover:bg-default-100 hover:text-success active:bg-default-200"
+            href={`https://wa.me/${whatsapp}`}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <MessageCircle size={16} />
+          </a>
+        ) : null}
+        <Chip
+          color={status.color}
+          size="sm"
+          variant="soft"
+        >
+          {status.label}
+        </Chip>
+        {showIndicator && <ListBox.ItemIndicator />}
+      </div>
+    </ListBox.Item>
+  );
+}

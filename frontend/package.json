@@ -1,0 +1,24 @@
+{
+  "name": "@easy/root",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --recursive dev",
+    "build": "pnpm --recursive build",
+    "lint": "biome check --write .",
+    "clean": "pnpm --recursive clean",
+    "dev:clientapp-v2": "pnpm --filter @easy/clientapp-v2 dev",
+    "dev:coachapp": "pnpm --filter @easy/coachapp-v2 dev",
+    "dev:website": "pnpm --filter @easy/website dev",
+    "build:clientapp-v2": "pnpm --filter @easy/clientapp-v2 build",
+    "build:coachapp": "pnpm --filter @easy/coachapp-v2 build",
+    "build:website": "pnpm --filter @easy/website build",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "typescript": "^5.5.3"
+  },
+  "packageManager": "pnpm@10.27.0"
+}

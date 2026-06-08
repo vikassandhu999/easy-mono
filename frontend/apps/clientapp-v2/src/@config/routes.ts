@@ -1,0 +1,15 @@
+export const ROUTES = {
+  LOGIN: '/login',
+  VERIFY_LOGIN_OTP: '/verify-login',
+  ACCEPT_INVITE: '/invite/:token',
+  VERIFY_INVITE_OTP: '/invite/:token/verify',
+  TRAINING: '/',
+  NUTRITION: '/nutrition',
+  NUTRITION_ADD_FOOD: '/nutrition/add-food',
+  PROGRESS: '/progress',
+  TRAINING_PLAN: '/plan/:planId',
+  WORKOUT_ACTIVE: '/workout',
+  WORKOUT_HISTORY: '/history',
+  SESSION_DETAIL: '/history/:sessionId',
+  SETTINGS: '/settings',
+} as const;

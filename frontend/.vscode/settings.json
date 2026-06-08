@@ -1,0 +1,30 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "search.useIgnoreFiles": false,
+  "explorer.excludeGitIgnore": false,
+  "search.exclude": {
+    "pnpm-lock.yaml": true,
+  },
+  "npm.packageManager": "pnpm",
+  "explorer.fileNesting.patterns": {
+    "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml",
+  },
+  "editor.formatOnSave": true,
+  "editor.fontSize": 13,
+  "window.zoomLevel": 1,
+  "eslint.format.enable": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+  },
+  "tailwindCSS.experimental.configFile": {
+    "apps/clientapp-v2/src/index.css": "apps/clientapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
+    "apps/coachapp-v2/src/index.css": "apps/coachapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
+    "apps/website/app/globals.css": "apps/website/**/*.{js,jsx,ts,tsx,mdx,css}",
+  },
+  "editor.quickSuggestions": {
+    "strings": true,
+  },
+  "tailwindCSS.emmetCompletions": true,
+  "security.workspace.trust.enabled": false,
+}

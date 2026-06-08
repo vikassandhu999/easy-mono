@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm:*)",
+      "Bash(sort:*)",
+      "Bash(grep:*)",
+      "Bash(gh pr:*)",
+      "Bash(git:*)",
+      "WebFetch(domain:heroui.com)",
+      "WebFetch(domain:v3.heroui.com)",
+      "Bash(cd:*)",
+      "Bash(find:*)",
+      "Bash(npx:*)",
+      "Bash(pkill:*)",
+      "Bash(mkdir:*)",
+      "Bash(tsc:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(lsof:*)",
+      "Bash(grep \"^\\\\s\\\\s/\" /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp/docs/api_contract.yml | sed 's/:$//' | sed 's/^[[:space:]]*//' | sort | uniq)",
+      "Bash(cp -r /Users/vikassandhu/Desktop/10x/easy-apps/.agents/skills /Users/vikassandhu/Desktop/10x/easy-apps/.claude/skills)",
+      "Bash(wc -l /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/*.tsx /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/*.ts 2>/dev/null | sort -rn | head -20)",
+      "Bash(wc -l /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/nutrition-plans/*.tsx /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/nutrition-plans/*.ts 2>/dev/null | sort -rn | head -20)",
+      "Bash(wc -l /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/training-plans/*.tsx /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/library/training-plans/*.ts 2>/dev/null | sort -rn | head -20)",
+      "Bash(wc -l /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/clients/*.tsx /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src/features/clients/*.ts 2>/dev/null | sort -rn | head -20)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(node -e \"console.log\\('Saving\\\\u2026'\\)\")",
+      "Bash(cd /Users/vikassandhu/Desktop/10x/easy-apps/apps/coachapp-v2/src && find . -name '*.tsx' -o -name '*.ts' | xargs grep -l '\\\\\\\\u2026' | while read f; do LC_ALL=C sed -i '' 's/\\\\\\\\u2026/…/g' \"$f\"; done)",
+      "Bash(wc -l /Users/vikassandhu/Desktop/10x/easy-apps/.claude/skills/*/*.md)"
+    ]
+  }
+}

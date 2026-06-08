@@ -1,0 +1,90 @@
+import type {
+  FaqItem,
+  IntakeQuestion,
+  PublicStoreProfile,
+  StoreProfileThemeColor,
+  TrustStat,
+} from '@easy/storefront-types';
+
+import {api} from '@/api/base';
+import {storefrontProfileFromApi} from '@/api/mappers/storefront';
+import {ApiResponse} from '@/api/shared';
+
+export type StoreProfile = PublicStoreProfile & {
+  id: string;
+  is_published: boolean;
+  inserted_at: string;
+  updated_at: string;
+};
+
+export type StoreProfileUpsertRequest = {
+  slug: string;
+  display_name: string;
+  headline?: null | string;
+  bio?: null | string;
+  photo_url?: null | string;
+  cover_image_url?: null | string;
+  social_links?: Record<string, string>;
+  theme_color?: StoreProfileThemeColor;
+  is_published?: boolean;
+  intake_questions?: IntakeQuestion[];
+  trust_stats?: TrustStat[];
+  faq_items?: FaqItem[];
+  whatsapp_cta_enabled?: boolean;
+  whatsapp_cta_message?: null | string;
+};
+
+/** Response wraps `data` as either a StoreProfile or null (when no profile exists yet). */
+export type StoreProfileResponse = {
+  data: null | StoreProfile;
+};
+
+export type SlugCheckRequest = {
+  slug: string;
+};
+
+export type SlugCheckResponse = {
+  available: boolean;
+};
+
+function mapStoreProfileResponse(response: ApiResponse<StoreProfile>): ApiResponse<StoreProfile> {
+  return {
+    ...response,
+    data: storefrontProfileFromApi(response.data),
+  };
+}
+
+function mapNullableStoreProfileResponse(response: StoreProfileResponse): StoreProfileResponse {
+  return {
+    ...response,
+    data: response.data ? storefrontProfileFromApi(response.data) : null,
+  };
+}
+
+export const storefrontApi = api.injectEndpoints({
+  endpoints: (build) => ({
+    getStoreProfile: build.query<StoreProfileResponse, void>({
+      query: () => '/v1/coach/storefront/profile',
+      transformResponse: mapNullableStoreProfileResponse,
+      providesTags: [{type: 'StoreProfile', id: 'PROFILE'}],
+    }),
+    upsertStoreProfile: build.mutation<ApiResponse<StoreProfile>, StoreProfileUpsertRequest>({
+      query: (body) => ({
+        url: '/v1/coach/storefront/profile',
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: mapStoreProfileResponse,
+      invalidatesTags: [{type: 'StoreProfile', id: 'PROFILE'}],
+    }),
+    checkSlugAvailability: build.mutation<SlugCheckResponse, SlugCheckRequest>({
+      query: (body) => ({
+        url: '/v1/coach/storefront/check-slug',
+        method: 'POST',
+        body,
+      }),
+    }),
+  }),
+});
+
+export const {useCheckSlugAvailabilityMutation, useGetStoreProfileQuery, useUpsertStoreProfileMutation} = storefrontApi;

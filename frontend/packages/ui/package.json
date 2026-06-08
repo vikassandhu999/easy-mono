@@ -1,0 +1,42 @@
+{
+  "name": "@easy/ui",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc && vite build",
+    "lint": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/react": "~18.3.12",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.10",
+    "vite-plugin-dts": "^4.3.0"
+  },
+  "dependencies": {
+    "@internationalized/date": "^3.6.0",
+    "@react-aria/button": "^3.11.0",
+    "@react-aria/calendar": "^3.6.0",
+    "@react-aria/focus": "^3.19.0",
+    "@react-aria/i18n": "^3.12.4",
+    "@react-aria/utils": "^3.26.0",
+    "@react-stately/calendar": "^3.6.0",
+    "immer": "^10.0.3",
+    "tailwind-merge": "^2.5.5",
+    "tailwind-variants": "^0.3.0"
+  },
+  "peerDependencies": {
+    "@easy/websocket": "workspace:*",
+    "@lexical/react": "~0.20.0",
+    "@tabler/icons-react": "3.17.0",
+    "@tanstack/react-query": "^5.56.2",
+    "lexical": "~0.20.0",
+    "react": "^18.3.1"
+  }
+}

@@ -85,3 +85,19 @@ Point DNS to Fly, then set `PHX_HOST`:
 fly secrets set PHX_HOST="api.coacheasy.app"
 fly deploy
 ```
+
+## Monorepo note (post-merge)
+
+The backend now lives under `backend/` in `easy-mono`. Always deploy from
+inside that directory so the Docker build context is rooted correctly:
+
+```bash
+cd backend && fly deploy
+# or from repo root:
+just deploy
+```
+
+No Dockerfile or fly.toml changes are required — `app = 'easy-backend'` is unchanged.
+
+> Note: before the first real deploy from the monorepo, validate the build once with
+> `cd backend && fly deploy --build-only --remote-only`.

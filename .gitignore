@@ -1,0 +1,20 @@
+# --- JS / frontend ---
+node_modules
+dist
+.next
+.nx/cache
+.nx/workspace-data
+llm_samples
+astro
+
+# --- Elixir / backend ---
+/backend/_build/
+/backend/deps/
+/backend/.elixir_ls/
+/backend/*.ez
+erl_crash.dump
+/backend/priv/static/assets/
+
+# --- editors / OS ---
+.DS_Store
+.elixir_ls

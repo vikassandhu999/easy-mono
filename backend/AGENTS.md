@@ -1,16 +1,8 @@
 # AGENTS.md
 
-This file is the authority for this repository.
+This file is the authority for this repository. If another repository instruction conflicts with it, this file wins.
 
-Keep the code clear, small, boring, and hard to misuse. Prefer direct names, explicit data flow, simple functions, database constraints, and tests over clever abstractions.
-
-If another repository instruction conflicts with this file, this file wins.
-
-## Core Principle
-
-Clear is better than clever.
-
-A good change is small, named well, easy to test, and easy to delete. Do not build frameworks inside the application. Do not hide work behind magic. Do not add an abstraction until two real call sites prove it belongs.
+Build small, explicit, boring software. Prefer simple data flow, direct names, database guarantees, and tests over clever abstractions.
 
 Prefer:
 
@@ -18,12 +10,68 @@ Prefer:
 - names over comments
 - functions over macros
 - explicit arguments over hidden state
-- boring code over impressive code
 - local clarity over global cleverness
 
-## Project Shape
+## Working Rules
 
-Use this dependency direction:
+### Think First
+
+Do not guess silently.
+
+- State assumptions when they affect the change.
+- If the request has multiple valid interpretations, name them before choosing.
+- If the simple path is better, say so and take it.
+- If the request is unclear enough that a reasonable change would be risky, stop and ask.
+- Surface tradeoffs when the requested path has meaningful cost, risk, or scope.
+
+### Keep It Small
+
+Write the least code that solves the problem.
+
+- No speculative features.
+- No abstractions for one call site.
+- No hidden magic.
+- No configurability that was not requested.
+- No defensive handling for impossible states.
+- No new dependencies without explicit approval.
+
+Do not build frameworks inside the application.
+
+If the solution feels large, simplify it before continuing.
+
+### Change Surgically
+
+Every changed line must trace back to the user's request.
+
+- Inspect the code before editing.
+- Preserve behavior unless the request asks for a behavior change.
+- Touch only the files needed.
+- Match the local style where it does not conflict with this file.
+- Do not invent architecture.
+- Clean up only unused code your change creates.
+- Mention unrelated dead code or design debt; do not delete it unless asked.
+
+### Verify the Goal
+
+Turn work into checks.
+
+```text
+1. [Step] -> verify: [check]
+2. [Step] -> verify: [check]
+3. [Step] -> verify: [check]
+```
+
+Examples:
+
+- "Add validation" -> test invalid input, then make it pass.
+- "Fix a bug" -> reproduce it with a test, then make it pass.
+- "Refactor X" -> verify behavior before and after when practical.
+
+Run the narrowest relevant checks. Do not claim tests passed unless they were run.
+
+## Architecture
+
+The dependency direction is one-way:
 
 ```text
 router
@@ -49,7 +97,7 @@ Never reverse it.
 
 Every query that touches tenant-owned data must be scoped by `business_id`.
 
-If you are unsure whether data is tenant-owned, assume it is.
+If unsure whether data is tenant-owned, assume it is.
 
 Never trust `business_id` from request params.
 
@@ -63,9 +111,7 @@ Order
 |> Repo.get(id)
 ```
 
-Set `business_id` and `user_id` from trusted runtime context.
-
-Do not cast trusted identifiers from client input.
+Set trusted identifiers from runtime context, not client input.
 
 ```elixir
 # Bad
@@ -78,11 +124,11 @@ struct
 |> put_change(:user_id, user_id)
 ```
 
-Tenant isolation must be tested for context functions that read, update, delete, or list tenant-owned data.
+Test tenant isolation for context functions that read, list, update, or delete tenant-owned data.
 
-## Return Values and Errors
+## Return Values
 
-Public context and service functions return one of these:
+Public context and service functions return:
 
 ```elixir
 {:ok, value}
@@ -91,9 +137,9 @@ Public context and service functions return one of these:
 
 Expected failures are values, not exceptions.
 
-Use bang functions only for tests, migrations, seeds, and truly impossible states. Controllers must not call bang functions.
+Use bang functions only in tests, migrations, seeds, and truly impossible states. Controllers must not call bang functions.
 
-Prefer clear error reasons:
+Use specific error reasons:
 
 ```elixir
 :error_atom
@@ -103,17 +149,9 @@ Prefer clear error reasons:
 {:external, service, reason}
 ```
 
-Do not hide errors behind vague values.
+Do not hide errors behind vague strings.
 
-```elixir
-# Bad
-{:error, "Something went wrong"}
-
-# Good
-{:error, {:not_found, Order}}
-```
-
-## Phoenix Rules
+## Controllers
 
 Controllers are HTTP adapters.
 
@@ -149,9 +187,9 @@ def create(conn, params) do
 end
 ```
 
-Keep controller actions short. If an action needs comments to explain the workflow, move the workflow into a context.
+If an action needs comments to explain the workflow, move the workflow into a context.
 
-## Context Rules
+## Contexts
 
 Contexts expose application verbs.
 
@@ -207,7 +245,7 @@ def list_active_orders(business_id, opts) do
 end
 ```
 
-## Ecto Schema Rules
+## Schemas
 
 Schemas define data.
 
@@ -241,9 +279,7 @@ end
 
 Avoid generic `changeset/2` unless the schema truly has one valid write path.
 
-Cast only client-editable fields.
-
-Set trusted fields programmatically with `put_change/3`.
+Cast only client-editable fields. Set trusted fields with `put_change/3`.
 
 Read changeset values with `Ecto.Changeset.get_field/2`.
 
@@ -255,13 +291,11 @@ changeset.changes.email
 Ecto.Changeset.get_field(changeset, :email)
 ```
 
-Changesets should translate database constraint errors into useful error values.
+Changesets should translate database constraint errors into useful changeset errors.
 
 ### Query Builders
 
-Query functions are pure and composable.
-
-They take an optional queryable as the first argument and return `Ecto.Query`.
+Query builders are pure and composable. They take an optional queryable first and return `Ecto.Query`.
 
 ```elixir
 def for_business(query \\ __MODULE__, business_id) do
@@ -277,7 +311,7 @@ def newest(query \\ __MODULE__) do
 end
 ```
 
-Use query builders like this:
+Use them at the context boundary.
 
 ```elixir
 Invoice
@@ -288,9 +322,7 @@ Invoice
 
 Do not hide trivial `list`, `get`, or `paginate` wrappers in schemas.
 
-The context composes the query and calls `Repo`.
-
-## Preloads and N+1
+## Preloads
 
 Preload deliberately.
 
@@ -307,7 +339,7 @@ Order
 
 For list endpoints, check the rendered JSON. If the response includes associated data, the query path must preload it.
 
-## Postgres Rules
+## Postgres
 
 Application validation is not enough.
 
@@ -328,7 +360,7 @@ Use Ecto constraints to convert database errors into changeset errors where appr
 
 Never call `String.to_atom/1` on user input.
 
-Use explicit mappings for user-controlled strings.
+Map user-controlled strings explicitly.
 
 ```elixir
 def status_from_param("draft"), do: {:ok, :draft}
@@ -351,7 +383,7 @@ PaymentsClient.capture(payment_id, amount_cents)
 #=> {:ok, response} | {:error, reason}
 ```
 
-External boundary modules should normalize errors before returning them to contexts.
+External boundary modules must normalize errors before returning them to contexts.
 
 ## Specs and Docs
 
@@ -363,15 +395,13 @@ Do not add `@moduledoc`.
 
 Do not add `@doc`.
 
-Use better names, smaller functions, tests, and OpenAPI contracts instead.
+Use names, small functions, tests, and OpenAPI contracts instead.
 
-Remove module/function docs when touching nearby code unless explicitly instructed otherwise.
+Remove nearby module/function docs when touching code unless explicitly instructed otherwise.
 
-## Swagger / OpenAPI
+## OpenAPI
 
-Swagger is not decoration.
-
-OpenAPI is the API contract. A Phoenix endpoint is unfinished until the implementation, generated OpenAPI, and Swagger UI agree.
+OpenAPI is the API contract. A public JSON endpoint is unfinished until the implementation, generated OpenAPI, and Swagger UI agree.
 
 Use `OpenApiSpex` for:
 
@@ -394,13 +424,9 @@ For every public JSON endpoint, document:
 - error responses
 - auth/security requirements
 
-Every new public JSON endpoint must have an OpenApiSpex operation before the endpoint is considered complete.
+Every new public JSON endpoint must have an OpenApiSpex operation before the endpoint is complete.
 
-Do not add fields to JSON responses without updating the schema.
-
-Do not accept new request fields without updating the schema.
-
-Do not change status codes without updating operation responses.
+Do not add fields to JSON responses, accept request fields, or change status codes without updating the operation and schemas.
 
 Keep the OpenAPI operation close to the controller action.
 
@@ -441,7 +467,7 @@ attrs = conn.body_params
 
 Prefer explicit schema modules over inline anonymous maps when the schema is reused or public.
 
-Expose the generated spec and Swagger UI intentionally.
+Expose generated OpenAPI and Swagger UI intentionally.
 
 ```elixir
 pipeline :api do
@@ -460,23 +486,21 @@ scope "/" do
 end
 ```
 
-Keep Swagger UI useful. If it cannot be used to understand and try the API, fix the spec.
+Keep Swagger UI usable. If it cannot explain and try the API, fix the spec.
 
 ## API Contract
 
 The generated OpenAPI spec is the source of truth.
 
-Do not update `docs/api_contract.yaml` or `docs/api_contract.yml` as part of normal endpoint work. Treat those files as legacy/static artifacts unless the user explicitly asks to edit them.
+Do not update `docs/api_contract.yaml` or `docs/api_contract.yml` as part of normal endpoint work. Treat those files as legacy/static artifacts unless explicitly asked to edit them.
 
-When endpoint behavior changes, update the OpenApiSpex operation, request schemas, response schemas, and validation so generated OpenAPI and Swagger UI match Phoenix behavior.
+When endpoint behavior changes, update OpenApiSpex operations, request schemas, response schemas, and validation so generated OpenAPI and Swagger UI match Phoenix behavior.
 
 ## Testing
 
 Use `SchemaCase` for schema/model tests.
 
-Use factories.
-
-Do not hand-roll persisted structs unless the test requires it.
+Use factories. Do not hand-roll persisted structs unless the test requires it.
 
 ```elixir
 # Bad
@@ -519,11 +543,13 @@ For OpenAPI changes, test or validate:
 - Swagger UI still loads
 - documented examples are realistic and safe
 
-## Refactoring Protocol
+## Refactoring
+
+Refactor by removing complexity, not moving it.
 
 When asked to refactor:
 
-1. Delete dead code first.
+1. Delete dead code inside the requested surface.
 2. Inline needless indirection.
 3. Rename unclear functions.
 4. Extract only when the extracted name improves understanding.
@@ -534,31 +560,9 @@ When asked to refactor:
 9. Add tests around risky behavior before changing it.
 10. Keep the diff small enough to review.
 
-A refactor that only moves complexity is not a refactor.
+Do not preserve a bad pattern when it is part of the boundary you touch or it conflicts with this file. Fix only the boundary you touch.
 
-A refactor that reduces names, branches, and hidden state is usually good.
-
-Do not preserve a bad pattern for consistency. Fix the pattern at the boundary you touch.
-
-## Change Discipline
-
-Before editing, inspect the existing code.
-
-Identify the smallest useful change.
-
-Preserve behavior unless the task explicitly asks for a behavior change.
-
-Change only the files needed.
-
-Add or update tests for the behavior touched.
-
-Run the narrowest relevant checks.
-
-Do not do drive-by rewrites.
-
-Do not invent architecture.
-
-Do not add dependencies without explicit approval.
+Unrelated dead code is a note, not a change.
 
 ## Review Checklist
 
@@ -582,7 +586,7 @@ Before finishing, check:
 - [ ] Tests cover tenant isolation for tenant-owned data.
 - [ ] New code is simpler than the code it replaced.
 
-## Agent Response Format
+## Response Format
 
 When reporting back, be direct:
 
@@ -601,4 +605,4 @@ Do not claim tests were run if they were not.
 
 Do not hide uncertainty.
 
-Do not say a refactor is complete if contract, tests, tenant isolation, or Swagger/OpenAPI behavior are still unresolved.
+Do not call work complete if contract, tests, tenant isolation, or Swagger/OpenAPI behavior are unresolved.

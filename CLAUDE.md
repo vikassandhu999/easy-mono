@@ -8,7 +8,7 @@ This is a full-stack monorepo. Two ecosystems, one tree:
   - Shared packages: `frontend/packages/{ui,chat,hooks,utils,websocket,error-parser,storefront-types,typings}`
   - Lint/format: Biome (`frontend/biome.json`). Run from `frontend/`.
   - Detailed FE guide: `frontend/AGENTS.md`
-- **`backend/`** — Elixir / Phoenix / Ash API.
+- **`backend/`** — Elixir / Phoenix / Ecto API.
   - Domain: `backend/lib/easy`; web layer: `backend/lib/easy_web`
   - Migrations: `backend/priv/repo`. Deploys to Fly.io.
   - Detailed BE guide: `backend/AGENTS.md`

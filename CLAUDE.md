@@ -25,3 +25,17 @@ This is a full-stack monorepo. Two ecosystems, one tree:
 - `just web` / `just backend` / `just dev`
 - `just lint` / `just test` / `just build`
 - `just deploy` — deploy backend to Fly (from `backend/`)
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live in **Linear**, accessed via the Linear MCP server. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root cover the whole monorepo. See `docs/agents/domain.md`.

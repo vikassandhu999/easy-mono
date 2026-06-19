@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Users} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Client, useListClientsQuery} from '@/api/clients';
 
 type ClientPickerProps = {
@@ -34,10 +33,10 @@ export default function ClientPicker({
   autoFocus = false,
 }: ClientPickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListClientsQuery(shouldQuery ? {search: debouncedSearch, limit: 10} : undefined, {
+  const {data, isFetching} = useListClientsQuery(shouldQuery ? {search: deferredSearch, limit: 10} : undefined, {
     skip: !shouldQuery,
   });
 

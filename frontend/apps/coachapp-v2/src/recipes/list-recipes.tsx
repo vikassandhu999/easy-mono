@@ -1,13 +1,12 @@
 import {Button, SearchField} from '@heroui/react';
 import {ArrowLeft, Plus} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useRecipesInfiniteQuery} from '@/api/recipes';
@@ -19,8 +18,8 @@ export default function ListRecipes() {
   const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
 
-  const debouncedSearch = useDebouncedValue(search);
-  const list = useRecipesInfiniteQuery({search: debouncedSearch});
+  const deferredSearch = useDeferredValue(search);
+  const list = useRecipesInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (
@@ -71,7 +70,7 @@ export default function ListRecipes() {
               createLabel="Create Recipe"
               createRoute={ROUTES.CREATE_RECIPE}
               emptyDescription="Create your first recipe to get started."
-              hasFilter={!!debouncedSearch}
+              hasFilter={!!deferredSearch}
               nounPlural="recipes"
             />
           }

@@ -1,13 +1,12 @@
 import {Button, SearchField} from '@heroui/react';
 import {ArrowLeft, Plus} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useExercisesInfiniteQuery} from '@/api/exercises';
@@ -21,8 +20,8 @@ export default function ListExercises() {
   const [search, setSearch] = useState('');
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
-  const debouncedSearch = useDebouncedValue(search);
-  const list = useExercisesInfiniteQuery({muscle_ids: selectedMuscleIds, search: debouncedSearch});
+  const deferredSearch = useDeferredValue(search);
+  const list = useExercisesInfiniteQuery({muscle_ids: selectedMuscleIds, search: deferredSearch});
   const {fetchNextPage, isLoading, items, isFetchingNextPage} = useInfiniteItems(list);
 
   return (
@@ -80,7 +79,7 @@ export default function ListExercises() {
               createRoute={ROUTES.CREATE_EXERCISE}
               emptyDescription="Create your first exercise to get started."
               filterDescription="Try adjusting your search or filters to find what you're looking for."
-              hasFilter={!!debouncedSearch || selectedMuscleIds.length > 0}
+              hasFilter={!!deferredSearch || selectedMuscleIds.length > 0}
               nounPlural="exercises"
             />
           }

@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type TrainingPlan, useListTrainingPlansQuery} from '@/api/trainingPlans';
 
 type TrainingPlanPickerProps = {
@@ -28,10 +27,10 @@ export default function TrainingPlanPicker({
   placeholder = 'Search training plans...',
 }: TrainingPlanPickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListTrainingPlansQuery(shouldQuery ? {limit: 10, search: debouncedSearch} : undefined, {
+  const {data, isFetching} = useListTrainingPlansQuery(shouldQuery ? {limit: 10, search: deferredSearch} : undefined, {
     skip: !shouldQuery,
   });
 

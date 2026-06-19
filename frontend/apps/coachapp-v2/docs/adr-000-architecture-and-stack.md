@@ -188,7 +188,6 @@ RTK Query 2.9's native `build.infiniteQuery` is used for all list screens. Key p
 | Hook                | File                     | Purpose                                          |
 | ------------------- | ------------------------ | ------------------------------------------------ |
 | `useInfiniteScroll` | `use-infinite-scroll.ts` | IntersectionObserver for infinite scroll trigger |
-| `useDebouncedValue` | `use-debounced-value.ts` | Debounces any value (used for search inputs)     |
 | `useInstallPrompt`  | `use-install-prompt.ts`  | Captures `beforeinstallprompt` event for PWA install banner (sessionStorage dismiss) |
 | `useGoBack`         | `use-go-back.ts`         | Back navigation: `navigate(-1)` if history exists (enables scroll restore), fallback route on deep links |
 
@@ -267,7 +266,7 @@ Every library entity (exercises, foods, recipes, nutrition plans, training plans
 ### List Screen Pattern
 
 - `use{Entity}InfiniteQuery` with search term state
-- `useDebouncedValue` for search input
+- React `useDeferredValue` for search input query params
 - `useInfiniteScroll` for pagination trigger
 - `<InfiniteList<T>>` renders cards
 - `PageLayout` with `action` slot for "Create" button

@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Dumbbell} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Exercise, useListExercisesQuery} from '@/api/exercises';
 
 type ExercisePickerProps = {
@@ -27,10 +26,10 @@ export default function ExercisePicker({
   placeholder = 'Search exercises to add...',
 }: ExercisePickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListExercisesQuery(shouldQuery ? {search: debouncedSearch, limit: 10} : undefined, {
+  const {data, isFetching} = useListExercisesQuery(shouldQuery ? {search: deferredSearch, limit: 10} : undefined, {
     skip: !shouldQuery,
   });
 

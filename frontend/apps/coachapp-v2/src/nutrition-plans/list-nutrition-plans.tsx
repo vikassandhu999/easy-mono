@@ -1,13 +1,12 @@
 import {Button, Chip, Description, Label, ListBox, SearchField} from '@heroui/react';
 import {ArrowLeft, Plus} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import BrowseListBox, {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {type NutritionPlan, type NutritionPlanStatus, useNutritionPlansInfiniteQuery} from '@/api/nutritionPlans';
@@ -33,8 +32,8 @@ export default function ListNutritionPlans() {
   const goBack = useGoBack(ROUTES.LIBRARY);
   const [search, setSearch] = useState('');
 
-  const debouncedSearch = useDebouncedValue(search);
-  const list = useNutritionPlansInfiniteQuery({search: debouncedSearch});
+  const deferredSearch = useDeferredValue(search);
+  const list = useNutritionPlansInfiniteQuery({search: deferredSearch});
   const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (
@@ -86,7 +85,7 @@ export default function ListNutritionPlans() {
               createLabel="Create Nutrition Plan"
               createRoute={ROUTES.CREATE_NUTRITION_PLAN}
               emptyDescription="Create your first nutrition plan to get started."
-              hasFilter={!!debouncedSearch}
+              hasFilter={!!deferredSearch}
               nounPlural="nutrition plans"
             />
           }

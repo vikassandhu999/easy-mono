@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {ClipboardList} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type NutritionPlan, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 
 type NutritionPlanPickerProps = {
@@ -20,11 +19,11 @@ export default function NutritionPlanPicker({
   placeholder = 'Search nutrition plans...',
 }: NutritionPlanPickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
   const {data, isFetching} = useListNutritionPlansQuery(
-    shouldQuery ? {search: debouncedSearch, limit: 10} : undefined,
+    shouldQuery ? {search: deferredSearch, limit: 10} : undefined,
     {skip: !shouldQuery},
   );
 

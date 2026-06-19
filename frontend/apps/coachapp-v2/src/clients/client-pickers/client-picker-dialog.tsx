@@ -1,8 +1,7 @@
 import type {Key, UseOverlayStateReturn} from '@heroui/react';
 import {cn, EmptyState, Modal, SearchField, Spinner} from '@heroui/react';
 import type {ReactNode} from 'react';
-import {useState} from 'react';
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
+import {useDeferredValue, useState} from 'react';
 import {useIsMobile} from '@/@hooks/use-is-mobile';
 import type {Client} from '@/api/clients';
 import ClientsList from '@/clients/clients-list/client-list-box';
@@ -49,7 +48,7 @@ export default function ClientPickerDialog({
 }: Props) {
   const isMobile = useIsMobile();
   const [filterText, setFilterText] = useState('');
-  const queryFilterText = useDebouncedValue(filterText);
+  const queryFilterText = useDeferredValue(filterText);
 
   return (
     <Modal.Backdrop

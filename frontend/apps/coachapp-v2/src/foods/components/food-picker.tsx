@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Apple} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useDeferredValue, useMemo, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 
 type FoodPickerProps = {
@@ -23,10 +22,10 @@ export default function FoodPicker({
   excludeIds = [],
 }: FoodPickerProps) {
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListFoodsQuery(shouldQuery ? {search: debouncedSearch, limit: 10} : undefined, {
+  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 10} , {
     skip: !shouldQuery,
   });
 
@@ -97,7 +96,7 @@ export default function FoodPicker({
             </SearchField.Group>
           </SearchField>
           <ListBox
-            className="max-h-[280px] overflow-y-auto"
+            className="max-h-70 overflow-y-auto"
             items={foods}
             renderEmptyState={() => <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>}
           >

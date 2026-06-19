@@ -2,9 +2,8 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Button, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Apple, ChefHat} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
 import {type Recipe, useListRecipesQuery} from '@/api/recipes';
 
@@ -25,17 +24,17 @@ export default function MealItemPicker({
 }: MealItemPickerProps) {
   const [activeTab, setActiveTab] = useState<PickerTab>('food');
   const [searchInput, setSearchInput] = useState('');
-  const debouncedSearch = useDebouncedValue(searchInput);
-  const shouldQuery = debouncedSearch.length >= 1;
+  const deferredSearch = useDeferredValue(searchInput);
+  const shouldQuery = deferredSearch.length >= 1;
 
   const {data: foodData, isFetching: isFetchingFoods} = useListFoodsQuery(
-    shouldQuery && activeTab === 'food' ? {search: debouncedSearch, limit: 10} : undefined,
+    shouldQuery && activeTab === 'food' ? {search: deferredSearch, limit: 10} : undefined,
     {skip: !shouldQuery || activeTab !== 'food'},
   );
   const foods = foodData?.data ?? [];
 
   const {data: recipeData, isFetching: isFetchingRecipes} = useListRecipesQuery(
-    shouldQuery && activeTab === 'recipe' ? {search: debouncedSearch, limit: 10} : undefined,
+    shouldQuery && activeTab === 'recipe' ? {search: deferredSearch, limit: 10} : undefined,
     {skip: !shouldQuery || activeTab !== 'recipe'},
   );
   const recipes = recipeData?.data ?? [];

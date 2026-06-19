@@ -2,12 +2,11 @@ import type {Key} from '@heroui/react';
 
 import {Button, SearchField, Tabs} from '@heroui/react';
 import {Plus} from 'lucide-react';
-import {useState} from 'react';
+import {useDeferredValue, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 
 import {ClientsBrowseList} from './clients-list';
@@ -40,7 +39,7 @@ export default function ListClients() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<Key>('all');
 
-  const debouncedSearch = useDebouncedValue(search);
+  const deferredSearch = useDeferredValue(search);
 
   const {data: summaryData} = useListClientsQuery({limit: 0});
 
@@ -97,8 +96,8 @@ export default function ListClients() {
       </Page.Toolbar>
       <Page.Content>
         <ClientsBrowseList
-          hasFilter={!!debouncedSearch || activeFilter !== 'all'}
-          search={debouncedSearch}
+          hasFilter={!!deferredSearch || activeFilter !== 'all'}
+          search={deferredSearch}
           status={FILTER_OPTIONS.find((o) => o.id === activeFilter)?.filter.status}
         />
       </Page.Content>

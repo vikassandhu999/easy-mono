@@ -2,7 +2,7 @@ import {api} from '@/api/base';
 import type {Food} from '@/api/foods';
 import {mealFromApi, mealItemFromApi} from '@/api/mappers/meals';
 import type {Recipe} from '@/api/recipes';
-import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
+import {ApiResponse, Macros} from '@/api/shared';
 
 export type MealItem = {
   id: string;
@@ -51,9 +51,6 @@ export type Meal = {
   updated_at: string;
 };
 
-export type ApiMeal = Meal;
-export type ApiMealItem = MealItem;
-
 export type MealCreateRequest = {
   name: string;
   macros?: Macros;
@@ -65,40 +62,20 @@ export type MealUpdateRequest = {
   macros?: Macros;
 };
 
-export type ListMealsParams = {
-  planId: string;
-  offset?: number;
-  limit?: number;
-};
-
 const getMealScopedId = (mealId: string) => `MEAL_${mealId}`;
 const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
-function mapMealResponse(response: ApiResponse<ApiMeal>): ApiResponse<Meal> {
+function mapMealResponse(response: ApiResponse<Meal>): ApiResponse<Meal> {
   return {
     ...response,
     data: mealFromApi(response.data),
   };
 }
 
-function mapMealListResponse(response: ApiListResponse<ApiMeal>): ApiListResponse<Meal> {
-  return {
-    ...response,
-    data: response.data.map(mealFromApi),
-  };
-}
-
-function mapMealItemResponse(response: ApiResponse<ApiMealItem>): ApiResponse<MealItem> {
+function mapMealItemResponse(response: ApiResponse<MealItem>): ApiResponse<MealItem> {
   return {
     ...response,
     data: mealItemFromApi(response.data),
-  };
-}
-
-function mapMealItemListResponse(response: ApiResponse<ApiMealItem[]>): ApiResponse<MealItem[]> {
-  return {
-    ...response,
-    data: response.data.map(mealItemFromApi),
   };
 }
 
@@ -114,34 +91,6 @@ export const mealsApi = api.injectEndpoints({
       invalidatesTags: (_, __, {planId}) => [
         {type: 'NutritionPlan', id: planId},
         {type: 'Meal', id: getPlanScopedId(planId)},
-      ],
-    }),
-    listMeals: build.query<ApiListResponse<Meal>, ListMealsParams>({
-      query: ({limit, offset, planId}) => ({
-        url: `/v1/coach/nutrition_plans/${planId}/meals`,
-        params: {
-          limit,
-          offset,
-        },
-      }),
-      transformResponse: mapMealListResponse,
-      providesTags: (result, __, {planId}) =>
-        result
-          ? [
-              ...result.data.map((meal) => ({
-                type: 'Meal' as const,
-                id: meal.id,
-              })),
-              {type: 'Meal' as const, id: getPlanScopedId(planId)},
-            ]
-          : [{type: 'Meal' as const, id: getPlanScopedId(planId)}],
-    }),
-    getMeal: build.query<ApiResponse<Meal>, string>({
-      query: (id) => `/v1/coach/meals/${id}`,
-      transformResponse: mapMealResponse,
-      providesTags: (_, __, id) => [
-        {type: 'Meal', id},
-        {type: 'MealItem', id: getMealScopedId(id)},
       ],
     }),
     updateMeal: build.mutation<ApiResponse<Meal>, {body: MealUpdateRequest; id: string; planId: string}>({
@@ -185,20 +134,6 @@ export const mealsApi = api.injectEndpoints({
         {type: 'MealItem', id: getMealScopedId(mealId)},
       ],
     }),
-    listMealItems: build.query<ApiResponse<MealItem[]>, string>({
-      query: (mealId) => `/v1/coach/meals/${mealId}/items`,
-      transformResponse: mapMealItemListResponse,
-      providesTags: (result, __, mealId) =>
-        result
-          ? [
-              ...result.data.map((item) => ({
-                type: 'MealItem' as const,
-                id: item.id,
-              })),
-              {type: 'MealItem' as const, id: getMealScopedId(mealId)},
-            ]
-          : [{type: 'MealItem' as const, id: getMealScopedId(mealId)}],
-    }),
     updateMealItem: build.mutation<
       ApiResponse<MealItem>,
       {
@@ -241,9 +176,6 @@ export const {
   useCreateMealMutation,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
-  useGetMealQuery,
-  useListMealItemsQuery,
-  useListMealsQuery,
   useUpdateMealItemMutation,
   useUpdateMealMutation,
 } = mealsApi;

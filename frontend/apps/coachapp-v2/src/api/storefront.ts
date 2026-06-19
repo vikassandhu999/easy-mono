@@ -7,7 +7,6 @@ import type {
 } from '@easy/storefront-types';
 
 import {api} from '@/api/base';
-import {storefrontProfileFromApi} from '@/api/mappers/storefront';
 import {ApiResponse} from '@/api/shared';
 
 export type StoreProfile = PublicStoreProfile & {
@@ -47,25 +46,10 @@ export type SlugCheckResponse = {
   available: boolean;
 };
 
-function mapStoreProfileResponse(response: ApiResponse<StoreProfile>): ApiResponse<StoreProfile> {
-  return {
-    ...response,
-    data: storefrontProfileFromApi(response.data),
-  };
-}
-
-function mapNullableStoreProfileResponse(response: StoreProfileResponse): StoreProfileResponse {
-  return {
-    ...response,
-    data: response.data ? storefrontProfileFromApi(response.data) : null,
-  };
-}
-
 export const storefrontApi = api.injectEndpoints({
   endpoints: (build) => ({
     getStoreProfile: build.query<StoreProfileResponse, void>({
       query: () => '/v1/coach/storefront/profile',
-      transformResponse: mapNullableStoreProfileResponse,
       providesTags: [{type: 'StoreProfile', id: 'PROFILE'}],
     }),
     upsertStoreProfile: build.mutation<ApiResponse<StoreProfile>, StoreProfileUpsertRequest>({
@@ -74,7 +58,6 @@ export const storefrontApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      transformResponse: mapStoreProfileResponse,
       invalidatesTags: [{type: 'StoreProfile', id: 'PROFILE'}],
     }),
     checkSlugAvailability: build.mutation<SlugCheckResponse, SlugCheckRequest>({

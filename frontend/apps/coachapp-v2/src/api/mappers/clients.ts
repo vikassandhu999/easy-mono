@@ -1,19 +1,8 @@
 import {toNullableText, toOptionalText} from '@/api/mappers/shared';
-import type {AllowedUpdateStatus, Client, ClientInviteRequest, ClientListResponse, ClientUpdateRequest} from '@/api/clients';
+import type {AllowedUpdateStatus, Client, ClientInviteRequest, ClientUpdateRequest} from '@/api/clients';
 import type {EditClientFormValues} from '@/clients/client-form/edit-client-form';
 import type {InviteClientFormValues} from '@/clients/client-invite-form/invite-client-form';
 import {splitName} from '@/clients/lib/invite-client';
-
-export function clientFromApi(client: Client): Client {
-  return client;
-}
-
-export function clientListFromApi(response: ClientListResponse): ClientListResponse {
-  return {
-    ...response,
-    data: response.data.map(clientFromApi),
-  };
-}
 
 export function clientToEditFormValues(client: Client): EditClientFormValues {
   return {

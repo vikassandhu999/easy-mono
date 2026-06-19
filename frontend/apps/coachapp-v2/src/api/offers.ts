@@ -1,5 +1,4 @@
 import {api} from '@/api/base';
-import {offerFromApi} from '@/api/mappers/storefront';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -61,25 +60,6 @@ export type ListOffersParams = {
   limit?: number;
 };
 
-/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
-export type ListOffersFilters = Record<string, never>;
-
-export type ApiOffer = Offer;
-
-function mapOfferResponse(response: ApiResponse<ApiOffer>): ApiResponse<Offer> {
-  return {
-    ...response,
-    data: offerFromApi(response.data),
-  };
-}
-
-function mapOfferListResponse(response: ApiListResponse<ApiOffer>): ApiListResponse<Offer> {
-  return {
-    ...response,
-    data: response.data.map(offerFromApi),
-  };
-}
-
 export const offersApi = api.injectEndpoints({
   endpoints: (build) => ({
     createOffer: build.mutation<ApiResponse<Offer>, OfferCreateRequest>({
@@ -88,12 +68,10 @@ export const offersApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      transformResponse: mapOfferResponse,
       invalidatesTags: [{type: 'Offer', id: 'LIST'}],
     }),
     getOffer: build.query<ApiResponse<Offer>, string>({
       query: (id) => `/v1/coach/offers/${id}`,
-      transformResponse: mapOfferResponse,
       providesTags: (_, __, id) => [{type: 'Offer', id}],
     }),
     listOffers: build.query<ApiListResponse<Offer>, ListOffersParams | void>({
@@ -104,7 +82,6 @@ export const offersApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/offers',
-      transformResponse: mapOfferListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -116,7 +93,7 @@ export const offersApi = api.injectEndpoints({
             ]
           : [{type: 'Offer' as const, id: 'LIST'}],
     }),
-    offers: build.infiniteQuery<ApiListResponse<Offer>, ListOffersFilters | void, number>({
+    offers: build.infiniteQuery<ApiListResponse<Offer>, void, number>({
       query: ({pageParam}) => ({
         url: '/v1/coach/offers',
         params: {
@@ -124,7 +101,6 @@ export const offersApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
-      transformResponse: mapOfferListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -151,7 +127,6 @@ export const offersApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      transformResponse: mapOfferResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Offer', id},
         {type: 'Offer', id: 'LIST'},

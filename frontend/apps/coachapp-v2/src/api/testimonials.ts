@@ -1,5 +1,4 @@
 import {api} from '@/api/base';
-import {testimonialFromApi} from '@/api/mappers/storefront';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 const PAGE_SIZE = 20;
@@ -64,25 +63,6 @@ export type ListTestimonialsParams = {
   limit?: number;
 };
 
-/** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
-export type ListTestimonialsFilters = Record<string, never>;
-
-export type ApiTestimonial = Testimonial;
-
-function mapTestimonialResponse(response: ApiResponse<ApiTestimonial>): ApiResponse<Testimonial> {
-  return {
-    ...response,
-    data: testimonialFromApi(response.data),
-  };
-}
-
-function mapTestimonialListResponse(response: ApiListResponse<ApiTestimonial>): ApiListResponse<Testimonial> {
-  return {
-    ...response,
-    data: response.data.map(testimonialFromApi),
-  };
-}
-
 export const testimonialsApi = api.injectEndpoints({
   endpoints: (build) => ({
     createTestimonial: build.mutation<ApiResponse<Testimonial>, TestimonialCreateRequest>({
@@ -91,12 +71,10 @@ export const testimonialsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      transformResponse: mapTestimonialResponse,
       invalidatesTags: [{type: 'Testimonial', id: 'LIST'}],
     }),
     getTestimonial: build.query<ApiResponse<Testimonial>, string>({
       query: (id) => `/v1/coach/testimonials/${id}`,
-      transformResponse: mapTestimonialResponse,
       providesTags: (_, __, id) => [{type: 'Testimonial', id}],
     }),
     listTestimonials: build.query<ApiListResponse<Testimonial>, ListTestimonialsParams | void>({
@@ -107,7 +85,6 @@ export const testimonialsApi = api.injectEndpoints({
               params,
             }
           : '/v1/coach/testimonials',
-      transformResponse: mapTestimonialListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -119,7 +96,7 @@ export const testimonialsApi = api.injectEndpoints({
             ]
           : [{type: 'Testimonial' as const, id: 'LIST'}],
     }),
-    testimonials: build.infiniteQuery<ApiListResponse<Testimonial>, ListTestimonialsFilters | void, number>({
+    testimonials: build.infiniteQuery<ApiListResponse<Testimonial>, void, number>({
       query: ({pageParam}) => ({
         url: '/v1/coach/testimonials',
         params: {
@@ -127,7 +104,6 @@ export const testimonialsApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
-      transformResponse: mapTestimonialListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -154,7 +130,6 @@ export const testimonialsApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      transformResponse: mapTestimonialResponse,
       invalidatesTags: (_, __, {id}) => [
         {type: 'Testimonial', id},
         {type: 'Testimonial', id: 'LIST'},

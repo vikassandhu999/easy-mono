@@ -1,12 +1,6 @@
 import {TRAINING_DAY_LABELS} from '@easy/utils';
 
 import {api} from '@/api/base';
-import {
-  trainingPlanFromApi,
-  trainingPlanItemFromApi,
-  workoutElementFromApi,
-  workoutFromApi,
-} from '@/api/mappers/trainingPlans';
 import {ApiListResponse, ApiResponse, getValidationErrors} from '@/api/shared';
 import {
   removeTrainingPlanItemFromPlan,
@@ -209,64 +203,10 @@ export type ListWorkoutsParams = {
   planId: string;
 };
 
-export type ApiTrainingPlan = TrainingPlan;
-export type ApiWorkout = Workout;
-export type ApiTrainingPlanItem = TrainingPlanItem;
-export type ApiWorkoutElement = WorkoutElement;
-
 const PAGE_SIZE = 20;
 
 const getPlanScopedPlanItemsId = (planId: string) => `TRAINING_PLAN_ITEMS_${planId}`;
 const getPlanScopedWorkoutsId = (planId: string) => `TRAINING_WORKOUTS_${planId}`;
-
-function mapTrainingPlanResponse(response: ApiResponse<ApiTrainingPlan>): ApiResponse<TrainingPlan> {
-  return {
-    ...response,
-    data: trainingPlanFromApi(response.data),
-  };
-}
-
-function mapTrainingPlanListResponse(response: ApiListResponse<ApiTrainingPlan>): ApiListResponse<TrainingPlan> {
-  return {
-    ...response,
-    data: response.data.map(trainingPlanFromApi),
-  };
-}
-
-function mapWorkoutResponse(response: ApiResponse<ApiWorkout>): ApiResponse<Workout> {
-  return {
-    ...response,
-    data: workoutFromApi(response.data),
-  };
-}
-
-function mapWorkoutListResponse(response: ApiListResponse<ApiWorkout>): ApiListResponse<Workout> {
-  return {
-    ...response,
-    data: response.data.map(workoutFromApi),
-  };
-}
-
-function mapTrainingPlanItemResponse(response: ApiResponse<ApiTrainingPlanItem>): ApiResponse<TrainingPlanItem> {
-  return {
-    ...response,
-    data: trainingPlanItemFromApi(response.data),
-  };
-}
-
-function mapTrainingPlanItemListResponse(response: ApiResponse<ApiTrainingPlanItem[]>): ApiResponse<TrainingPlanItem[]> {
-  return {
-    ...response,
-    data: response.data.map(trainingPlanItemFromApi),
-  };
-}
-
-function mapWorkoutElementResponse(response: ApiResponse<ApiWorkoutElement>): ApiResponse<WorkoutElement> {
-  return {
-    ...response,
-    data: workoutElementFromApi(response.data),
-  };
-}
 
 export const trainingPlansApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -276,7 +216,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/training_plans',
       }),
-      transformResponse: mapTrainingPlanResponse,
       invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}],
     }),
     listTrainingPlans: build.query<ApiListResponse<TrainingPlan>, ListTrainingPlansParams | void>({
@@ -287,7 +226,6 @@ export const trainingPlansApi = api.injectEndpoints({
               url: '/v1/coach/training_plans',
             }
           : '/v1/coach/training_plans',
-      transformResponse: mapTrainingPlanListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -309,7 +247,6 @@ export const trainingPlansApi = api.injectEndpoints({
           offset: pageParam,
         },
       }),
-      transformResponse: mapTrainingPlanListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -339,7 +276,6 @@ export const trainingPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/clients/${clientId}/training_plans`,
       }),
-      transformResponse: mapTrainingPlanListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -353,7 +289,6 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     getTrainingPlan: build.query<ApiResponse<TrainingPlan>, string>({
       query: (id) => `/v1/coach/training_plans/${id}`,
-      transformResponse: mapTrainingPlanResponse,
       providesTags: (_, __, id) => [{type: 'TrainingPlan', id}],
     }),
     updateTrainingPlan: build.mutation<ApiResponse<TrainingPlan>, {body: TrainingPlanUpdateRequest; id: string}>({
@@ -362,7 +297,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/training_plans/${id}`,
       }),
-      transformResponse: mapTrainingPlanResponse,
       async onQueryStarted({id}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -399,7 +333,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${id}/assign`,
       }),
-      transformResponse: mapTrainingPlanResponse,
       invalidatesTags: (_, __, {body}) => [
         {type: 'TrainingPlan', id: 'LIST'},
         {type: 'TrainingPlan', id: 'CLIENT_LIST'},
@@ -412,7 +345,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${id}/duplicate`,
       }),
-      transformResponse: mapTrainingPlanResponse,
       invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}],
     }),
     createWorkout: build.mutation<ApiResponse<Workout>, {body: WorkoutCreateRequest; planId: string}>({
@@ -421,7 +353,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
-      transformResponse: mapWorkoutResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -444,7 +375,6 @@ export const trainingPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
-      transformResponse: mapWorkoutListResponse,
       providesTags: (result, __, {planId}) =>
         result
           ? [
@@ -458,7 +388,6 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     getWorkout: build.query<ApiResponse<Workout>, string>({
       query: (id) => `/v1/coach/workouts/${id}`,
-      transformResponse: mapWorkoutResponse,
       providesTags: (_, __, id) => [{type: 'Workout', id}],
     }),
     updateWorkout: build.mutation<ApiResponse<Workout>, {body: WorkoutUpdateRequest; id: string; planId: string}>({
@@ -467,7 +396,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workouts/${id}`,
       }),
-      transformResponse: mapWorkoutResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -514,7 +442,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/workouts/${id}/duplicate`,
       }),
-      transformResponse: mapWorkoutResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -541,7 +468,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: `/v1/coach/training_plans/${planId}/training_plan_items`,
       }),
-      transformResponse: mapTrainingPlanItemResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -558,7 +484,6 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     listTrainingPlanItems: build.query<ApiResponse<TrainingPlanItem[]>, string>({
       query: (planId) => `/v1/coach/training_plans/${planId}/training_plan_items`,
-      transformResponse: mapTrainingPlanItemListResponse,
       providesTags: (result, __, planId) =>
         result
           ? [
@@ -579,7 +504,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/training_plan_items/${id}`,
       }),
-      transformResponse: mapTrainingPlanItemResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         try {
           const {data} = await queryFulfilled;
@@ -632,7 +556,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'POST',
         url: '/v1/coach/workout_elements',
       }),
-      transformResponse: mapWorkoutElementResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         if (!planId) {
           return;
@@ -659,7 +582,6 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     getWorkoutElement: build.query<ApiResponse<WorkoutElement>, string>({
       query: (id) => `/v1/coach/workout_elements/${id}`,
-      transformResponse: mapWorkoutElementResponse,
       providesTags: (_, __, id) => [{type: 'WorkoutElement', id}],
     }),
     updateWorkoutElement: build.mutation<
@@ -676,7 +598,6 @@ export const trainingPlansApi = api.injectEndpoints({
         method: 'PATCH',
         url: `/v1/coach/workout_elements/${id}`,
       }),
-      transformResponse: mapWorkoutElementResponse,
       async onQueryStarted({planId}, {dispatch, queryFulfilled}) {
         if (!planId) {
           return;

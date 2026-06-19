@@ -1,5 +1,4 @@
 import {api} from '@/api/base';
-import {performedSetFromApi, workoutSessionFromApi} from '@/api/mappers/workoutSessions';
 import {ApiListResponse, ApiResponse} from '@/api/shared';
 
 export type WorkoutSessionState = 'active' | 'completed' | 'discarded';
@@ -82,56 +81,6 @@ export type WorkoutSession = {
   updated_at: string;
 };
 
-export type WorkoutSessionCreateRequest = {
-  client_id: string;
-  notes?: null | string;
-  workout_id?: null | string;
-};
-
-export type WorkoutSessionUpdateRequest = {
-  notes?: null | string;
-  soreness_rating?: null | number;
-};
-
-export type WorkoutSessionCompleteRequest = {
-  notes?: null | string;
-  soreness_rating?: null | number;
-};
-
-export type PerformedSetCreateRequest = {
-  actual_reps?: null | string;
-  completed?: boolean;
-  distance_unit?: DistanceUnit;
-  distance_value?: null | number;
-  duration_seconds?: null | number;
-  exercise_id: string;
-  intensity_felt?: null | string;
-  load_unit?: LoadUnit;
-  load_value?: null | number;
-  notes?: null | string;
-  position: number;
-  rir?: null | number;
-  rpe?: null | number;
-  tempo_actual?: null | string;
-  workout_element_id?: null | string;
-  workout_session_id: string;
-};
-
-export type PerformedSetUpdateRequest = {
-  actual_reps?: null | string;
-  completed?: boolean;
-  distance_unit?: DistanceUnit;
-  distance_value?: null | number;
-  duration_seconds?: null | number;
-  intensity_felt?: null | string;
-  load_unit?: LoadUnit;
-  load_value?: null | number;
-  notes?: null | string;
-  rir?: null | number;
-  rpe?: null | number;
-  tempo_actual?: null | string;
-};
-
 export type ListWorkoutSessionsParams = {
   client_id?: string;
   limit?: number;
@@ -144,43 +93,10 @@ export type ListWorkoutSessionsFilters = {
   state?: WorkoutSessionState;
 };
 
-export type ApiWorkoutSession = WorkoutSession;
-export type ApiPerformedSet = PerformedSet;
-
 const PAGE_SIZE = 20;
-
-function mapWorkoutSessionResponse(response: ApiResponse<ApiWorkoutSession>): ApiResponse<WorkoutSession> {
-  return {
-    ...response,
-    data: workoutSessionFromApi(response.data),
-  };
-}
-
-function mapWorkoutSessionListResponse(response: ApiListResponse<ApiWorkoutSession>): ApiListResponse<WorkoutSession> {
-  return {
-    ...response,
-    data: response.data.map(workoutSessionFromApi),
-  };
-}
-
-function mapPerformedSetResponse(response: ApiResponse<ApiPerformedSet>): ApiResponse<PerformedSet> {
-  return {
-    ...response,
-    data: performedSetFromApi(response.data),
-  };
-}
 
 export const workoutSessionsApi = api.injectEndpoints({
   endpoints: (build) => ({
-    createWorkoutSession: build.mutation<ApiResponse<WorkoutSession>, WorkoutSessionCreateRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/v1/coach/workout_sessions',
-      }),
-      transformResponse: mapWorkoutSessionResponse,
-      invalidatesTags: [{type: 'WorkoutSession', id: 'LIST'}],
-    }),
     listWorkoutSessions: build.query<ApiListResponse<WorkoutSession>, ListWorkoutSessionsParams | void>({
       query: (params) =>
         params
@@ -189,7 +105,6 @@ export const workoutSessionsApi = api.injectEndpoints({
               url: '/v1/coach/workout_sessions',
             }
           : '/v1/coach/workout_sessions',
-      transformResponse: mapWorkoutSessionListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -211,7 +126,6 @@ export const workoutSessionsApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
-      transformResponse: mapWorkoutSessionListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -234,110 +148,13 @@ export const workoutSessionsApi = api.injectEndpoints({
     }),
     getWorkoutSession: build.query<ApiResponse<WorkoutSession>, string>({
       query: (id) => `/v1/coach/workout_sessions/${id}`,
-      transformResponse: mapWorkoutSessionResponse,
       providesTags: (_, __, id) => [{type: 'WorkoutSession', id}],
-    }),
-    updateWorkoutSession: build.mutation<ApiResponse<WorkoutSession>, {body: WorkoutSessionUpdateRequest; id: string}>({
-      query: ({body, id}) => ({
-        body,
-        method: 'PATCH',
-        url: `/v1/coach/workout_sessions/${id}`,
-      }),
-      transformResponse: mapWorkoutSessionResponse,
-      invalidatesTags: (_, __, {id}) => [
-        {type: 'WorkoutSession', id},
-        {type: 'WorkoutSession', id: 'LIST'},
-      ],
-    }),
-    completeWorkoutSession: build.mutation<
-      ApiResponse<WorkoutSession>,
-      {body?: WorkoutSessionCompleteRequest; id: string}
-    >({
-      query: ({body, id}) => ({
-        body: body ?? {},
-        method: 'POST',
-        url: `/v1/coach/workout_sessions/${id}/complete`,
-      }),
-      transformResponse: mapWorkoutSessionResponse,
-      invalidatesTags: (_, __, {id}) => [
-        {type: 'WorkoutSession', id},
-        {type: 'WorkoutSession', id: 'LIST'},
-      ],
-    }),
-    discardWorkoutSession: build.mutation<ApiResponse<WorkoutSession>, string>({
-      query: (id) => ({
-        method: 'POST',
-        url: `/v1/coach/workout_sessions/${id}/discard`,
-      }),
-      transformResponse: mapWorkoutSessionResponse,
-      invalidatesTags: (_, __, id) => [
-        {type: 'WorkoutSession', id},
-        {type: 'WorkoutSession', id: 'LIST'},
-      ],
-    }),
-    deleteWorkoutSession: build.mutation<void, string>({
-      query: (id) => ({
-        method: 'DELETE',
-        url: `/v1/coach/workout_sessions/${id}`,
-      }),
-      invalidatesTags: (_, __, id) => [
-        {type: 'WorkoutSession', id},
-        {type: 'WorkoutSession', id: 'LIST'},
-      ],
-    }),
-    createPerformedSet: build.mutation<ApiResponse<PerformedSet>, PerformedSetCreateRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/v1/coach/performed_sets',
-      }),
-      transformResponse: mapPerformedSetResponse,
-      invalidatesTags: (result) =>
-        result
-          ? [
-              {type: 'WorkoutSession', id: result.data.workout_session_id},
-              {type: 'PerformedSet', id: 'LIST'},
-            ]
-          : [{type: 'PerformedSet', id: 'LIST'}],
-    }),
-    updatePerformedSet: build.mutation<
-      ApiResponse<PerformedSet>,
-      {body: PerformedSetUpdateRequest; id: string; sessionId: string}
-    >({
-      query: ({body, id}) => ({
-        body,
-        method: 'PATCH',
-        url: `/v1/coach/performed_sets/${id}`,
-      }),
-      transformResponse: mapPerformedSetResponse,
-      invalidatesTags: (_, __, {id, sessionId}) => [
-        {type: 'PerformedSet', id},
-        {type: 'WorkoutSession', id: sessionId},
-      ],
-    }),
-    deletePerformedSet: build.mutation<void, {id: string; sessionId: string}>({
-      query: ({id}) => ({
-        method: 'DELETE',
-        url: `/v1/coach/performed_sets/${id}`,
-      }),
-      invalidatesTags: (_, __, {id, sessionId}) => [
-        {type: 'PerformedSet', id},
-        {type: 'WorkoutSession', id: sessionId},
-      ],
     }),
   }),
 });
 
 export const {
-  useCompleteWorkoutSessionMutation,
-  useCreatePerformedSetMutation,
-  useCreateWorkoutSessionMutation,
-  useDeletePerformedSetMutation,
-  useDeleteWorkoutSessionMutation,
-  useDiscardWorkoutSessionMutation,
   useGetWorkoutSessionQuery,
   useListWorkoutSessionsQuery,
-  useUpdatePerformedSetMutation,
-  useUpdateWorkoutSessionMutation,
   useWorkoutSessionsInfiniteQuery,
 } = workoutSessionsApi;

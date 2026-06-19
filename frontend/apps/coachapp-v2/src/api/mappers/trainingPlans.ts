@@ -3,11 +3,8 @@ import type {
   PlannedSet,
   TrainingPlan,
   TrainingPlanCreateRequest,
-  TrainingPlanItem,
   TrainingPlanUpdateRequest,
-  Workout,
   WorkoutCreateRequest,
-  WorkoutElement,
   WorkoutElementCreateRequest,
   WorkoutElementUpdateRequest,
   WorkoutUpdateRequest,
@@ -16,29 +13,6 @@ import type {TrainingPlanFormValues} from '@/training-plans/training-plan-form/t
 
 function toNullableDate(value: string): null | string {
   return value || null;
-}
-
-export function workoutElementFromApi(element: WorkoutElement): WorkoutElement {
-  return element;
-}
-
-export function workoutFromApi(workout: Workout): Workout {
-  return {
-    ...workout,
-    workout_elements: workout.workout_elements.map(workoutElementFromApi),
-  };
-}
-
-export function trainingPlanItemFromApi(item: TrainingPlanItem): TrainingPlanItem {
-  return item;
-}
-
-export function trainingPlanFromApi(plan: TrainingPlan): TrainingPlan {
-  return {
-    ...plan,
-    plan_items: plan.plan_items.map(trainingPlanItemFromApi),
-    workouts: plan.workouts.map(workoutFromApi),
-  };
 }
 
 export function trainingPlanToFormValues(plan: TrainingPlan): TrainingPlanFormValues {

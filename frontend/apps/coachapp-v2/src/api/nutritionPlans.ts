@@ -35,8 +35,6 @@ export type NutritionPlan = {
   updated_at: string;
 };
 
-export type ApiNutritionPlan = NutritionPlan;
-
 export type NutritionPlanCreateRequest = {
   description?: string;
   macros_goal?: Macros;
@@ -121,14 +119,14 @@ const PAGE_SIZE = 20;
 
 const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
-function mapNutritionPlanResponse(response: ApiResponse<ApiNutritionPlan>): ApiResponse<NutritionPlan> {
+function mapNutritionPlanResponse(response: ApiResponse<NutritionPlan>): ApiResponse<NutritionPlan> {
   return {
     ...response,
     data: nutritionPlanFromApi(response.data),
   };
 }
 
-function mapNutritionPlanListResponse(response: ApiListResponse<ApiNutritionPlan>): ApiListResponse<NutritionPlan> {
+function mapNutritionPlanListResponse(response: ApiListResponse<NutritionPlan>): ApiListResponse<NutritionPlan> {
   return {
     ...response,
     data: response.data.map(nutritionPlanFromApi),

@@ -1,25 +1,9 @@
-import type {Equipment, Exercise, ExerciseCreateRequest, ExerciseUpdateRequest, Muscle} from '@/api/exercises';
+import type {Exercise, ExerciseCreateRequest, ExerciseUpdateRequest} from '@/api/exercises';
 import {omitUndefined, toOptionalText} from '@/api/mappers/shared';
 import type {ExerciseFormValues} from '@/exercises/exercise-form/exercise-form';
 
 function toOptionalArray<T>(value: T[] | undefined): T[] | undefined {
   return value && value.length > 0 ? value : undefined;
-}
-
-export function muscleFromApi(muscle: Muscle): Muscle {
-  return muscle;
-}
-
-export function equipmentFromApi(equipment: Equipment): Equipment {
-  return equipment;
-}
-
-export function exerciseFromApi(exercise: Exercise): Exercise {
-  return {
-    ...exercise,
-    equipment: exercise.equipment.map(equipmentFromApi),
-    muscles: exercise.muscles.map(muscleFromApi),
-  };
 }
 
 export function exerciseToFormValues(exercise: Exercise): ExerciseFormValues {

@@ -39,8 +39,6 @@ export type Recipe = {
   updated_at: string;
 };
 
-export type ApiRecipe = Recipe;
-
 export type ListRecipesParams = {
   offset?: number;
   limit?: number;
@@ -80,14 +78,14 @@ export type RecipeUpdateRequest = {
   recipe_ingredients?: RecipeIngredientInput[];
 };
 
-function mapRecipeResponse(response: ApiResponse<ApiRecipe>): ApiResponse<Recipe> {
+function mapRecipeResponse(response: ApiResponse<Recipe>): ApiResponse<Recipe> {
   return {
     ...response,
     data: recipeFromApi(response.data),
   };
 }
 
-function mapRecipeListResponse(response: ApiListResponse<ApiRecipe>): ApiListResponse<Recipe> {
+function mapRecipeListResponse(response: ApiListResponse<Recipe>): ApiListResponse<Recipe> {
   return {
     ...response,
     data: response.data.map(recipeFromApi),

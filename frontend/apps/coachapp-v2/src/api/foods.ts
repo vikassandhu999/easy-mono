@@ -19,8 +19,6 @@ export type Food = {
   updated_at: string;
 };
 
-export type ApiFood = Food;
-
 export type ListFoodsParams = {
   offset?: number;
   limit?: number;
@@ -54,14 +52,14 @@ export type FoodUpdateRequest = {
   serving_sizes?: ServingSize[];
 };
 
-function mapFoodResponse(response: ApiResponse<ApiFood>): ApiResponse<Food> {
+function mapFoodResponse(response: ApiResponse<Food>): ApiResponse<Food> {
   return {
     ...response,
     data: foodFromApi(response.data),
   };
 }
 
-function mapFoodListResponse(response: ApiListResponse<ApiFood>): ApiListResponse<Food> {
+function mapFoodListResponse(response: ApiListResponse<Food>): ApiListResponse<Food> {
   return {
     ...response,
     data: response.data.map(foodFromApi),

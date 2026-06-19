@@ -19,10 +19,6 @@ function toOptionalSocialLinks(values: EditorFormValues): Record<string, string>
   return Object.keys(socialLinks).length > 0 ? socialLinks : undefined;
 }
 
-export function offerFromApi(offer: Offer): Offer {
-  return offer;
-}
-
 export function offerToFormValues(offer: Offer): OfferFormValues {
   return {
     cta_text: offer.cta_text ?? '',
@@ -52,10 +48,6 @@ export function offerToCreateRequest(values: OfferFormValues): OfferCreateReques
 
 export function offerToUpdateRequest(values: OfferFormValues): OfferUpdateRequest {
   return offerToCreateRequest(values);
-}
-
-export function testimonialFromApi(testimonial: Testimonial): Testimonial {
-  return testimonial;
 }
 
 export function testimonialToFormValues(testimonial: Testimonial): TestimonialFormValues {
@@ -94,10 +86,6 @@ export function testimonialToCreateRequest(values: TestimonialFormValues): Testi
 
 export function testimonialToUpdateRequest(values: TestimonialFormValues): TestimonialUpdateRequest {
   return testimonialToCreateRequest(values);
-}
-
-export function storefrontProfileFromApi(profile: StoreProfile): StoreProfile {
-  return profile;
 }
 
 export function storefrontProfileToFormValues(profile: StoreProfile): EditorFormValues {

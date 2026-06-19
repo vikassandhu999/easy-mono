@@ -1,5 +1,4 @@
 import {api} from '@/api/base';
-import {coachMealLogFromApi, dailyNutritionSummaryFromApi} from '@/api/mappers/mealLogs';
 
 export type PlannedSnapshotItem = {
   amount: number;
@@ -80,38 +79,13 @@ export type MealLogSummaryParams = {
 type CoachMealLogListResponse = {data: CoachMealLog[]};
 type CoachMealLogSummaryResponse = {data: DailyNutritionSummary[]};
 
-function mapCoachMealLogListResponse(response: CoachMealLogListResponse): CoachMealLogListResponse {
-  return {
-    ...response,
-    data: response.data.map(coachMealLogFromApi),
-  };
-}
-
-function mapCoachMealLogSummaryResponse(response: CoachMealLogSummaryResponse): CoachMealLogSummaryResponse {
-  return {
-    ...response,
-    data: response.data.map(dailyNutritionSummaryFromApi),
-  };
-}
-
 export const coachMealLogsApi = api.injectEndpoints({
   endpoints: (build) => ({
-    deleteCoachFoodLogEntry: build.mutation<void, string>({
-      query: (id) => ({
-        method: 'DELETE',
-        url: `/v1/coach/food_log_entries/${id}`,
-      }),
-      invalidatesTags: [
-        {type: 'MealLog', id: 'LIST'},
-        {type: 'MealLog', id: 'SUMMARY'},
-      ],
-    }),
     getCoachMealLogSummary: build.query<CoachMealLogSummaryResponse, MealLogSummaryParams>({
       query: (params) => ({
         params,
         url: '/v1/coach/meal_logs/summary',
       }),
-      transformResponse: mapCoachMealLogSummaryResponse,
       providesTags: [{type: 'MealLog', id: 'SUMMARY'}],
     }),
     listCoachMealLogs: build.query<CoachMealLogListResponse, ListCoachMealLogsParams>({
@@ -119,7 +93,6 @@ export const coachMealLogsApi = api.injectEndpoints({
         params,
         url: '/v1/coach/meal_logs',
       }),
-      transformResponse: mapCoachMealLogListResponse,
       providesTags: (result) =>
         result
           ? [
@@ -134,5 +107,4 @@ export const coachMealLogsApi = api.injectEndpoints({
   }),
 });
 
-export const {useDeleteCoachFoodLogEntryMutation, useGetCoachMealLogSummaryQuery, useListCoachMealLogsQuery} =
-  coachMealLogsApi;
+export const {useGetCoachMealLogSummaryQuery, useListCoachMealLogsQuery} = coachMealLogsApi;

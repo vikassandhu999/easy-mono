@@ -3,12 +3,16 @@ import {ArrowLeft, Plus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import BrowseListBox from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useTrainingPlansInfiniteQuery} from '@/api/trainingPlans';
 
-import {TrainingPlansBrowseList} from './training-plans-list';
+import TrainingPlanListItem from './training-plan-list-item';
 
 export default function ListTrainingPlans() {
   const navigate = useNavigate();
@@ -16,6 +20,8 @@ export default function ListTrainingPlans() {
   const [search, setSearch] = useState('');
 
   const debouncedSearch = useDebouncedValue(search);
+  const list = useTrainingPlansInfiniteQuery({search: debouncedSearch});
+  const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -58,9 +64,23 @@ export default function ListTrainingPlans() {
         </SearchField>
       </Page.Toolbar>
       <Page.Content>
-        <TrainingPlansBrowseList
-          hasFilter={!!debouncedSearch}
-          search={debouncedSearch}
+        <BrowseListBox
+          ariaLabel="Training plans"
+          className="flex-1 gap-0"
+          emptyState={
+            <ListEmptyState
+              createLabel="Create Training Plan"
+              createRoute={ROUTES.CREATE_TRAINING_PLAN}
+              emptyDescription="Create your first training plan to get started."
+              hasFilter={!!debouncedSearch}
+              nounPlural="training plans"
+            />
+          }
+          fetchNextPage={fetchNextPage}
+          isLoading={isLoading}
+          items={items}
+          onAction={(key) => navigate(ROUTES.TRAINING_PLAN_DETAIL.replace(':id', String(key)))}
+          renderItem={(plan) => <TrainingPlanListItem plan={plan} />}
         />
       </Page.Content>
     </Page>

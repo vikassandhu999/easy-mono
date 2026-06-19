@@ -2,6 +2,7 @@ import {Chip, Description, Label, ListBox} from '@heroui/react';
 import {cn} from '@heroui/styles';
 import {HandPlatter} from 'lucide-react';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {Food} from '@/api/foods';
 
 const MACRO_DISPLAY: {key: string; label: string; unit: string}[] = [
@@ -24,13 +25,13 @@ function getSubtitle(food: Food, isSystem: boolean): string {
   return 'No category';
 }
 
-export default function FoodListItem({className, food}: {className?: string; food: Food}) {
+export default function FoodListItem({food}: {food: Food}) {
   const hasMacros = Object.keys(food.macros).length > 0;
   const isSystem = food.source === 'system';
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-2 sm:px-8 hover:bg-surface-secondary-hover', className)}
+      className={cn(LIST_ITEM_CLASS, 'hover:bg-surface-secondary-hover')}
       id={food.id}
       textValue={food.name}
     >

@@ -1,7 +1,7 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {ChefHat} from 'lucide-react';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {Recipe} from '@/api/recipes';
 
 function getRecipeSubtitle(recipe: Recipe): string {
@@ -16,13 +16,13 @@ function getRecipeSubtitle(recipe: Recipe): string {
   return 'No category';
 }
 
-export default function RecipeListItem({className, recipe}: {className?: string; recipe: Recipe}) {
+export default function RecipeListItem({recipe}: {recipe: Recipe}) {
   const ingredientCount = recipe.recipe_ingredients.length;
   const calories = recipe.macros.calories_per_100g;
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
+      className={LIST_ITEM_CLASS}
       id={recipe.id}
       textValue={recipe.name}
     >

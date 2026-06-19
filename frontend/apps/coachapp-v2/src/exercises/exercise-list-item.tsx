@@ -1,7 +1,7 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {cn} from '@heroui/styles';
 import {Dumbbell} from 'lucide-react';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {Exercise} from '@/api/exercises';
 
 const MECHANICS_MAP: Record<string, {color: 'accent' | 'default' | 'warning'; label: string}> = {
@@ -32,13 +32,13 @@ function getExerciseSubtitle(exercise: Exercise): string {
   return 'No muscles assigned';
 }
 
-export default function ExerciseListItem({className, exercise}: {className?: string; exercise: Exercise}) {
+export default function ExerciseListItem({exercise}: {exercise: Exercise}) {
   const mechanics = exercise.mechanics ? MECHANICS_MAP[exercise.mechanics] : null;
   const force = exercise.force ? FORCE_MAP[exercise.force] : null;
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
+      className={LIST_ITEM_CLASS}
       id={exercise.id}
       textValue={exercise.name}
     >

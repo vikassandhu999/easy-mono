@@ -1,6 +1,6 @@
 import {Chip, Description, Label, ListBox} from '@heroui/react';
-import {cn} from '@heroui/styles';
 
+import {LIST_ITEM_CLASS} from '@/@components/browse-list-box';
 import type {TrainingPlan, TrainingPlanStatus} from '@/api/trainingPlans';
 
 const STATUS_MAP: Record<TrainingPlanStatus, {color: 'default' | 'success' | 'warning'; label: string}> = {
@@ -24,12 +24,12 @@ function getTrainingPlanSubtitle(plan: TrainingPlan): string {
   return subtitle || plan.description || 'No workouts yet';
 }
 
-export default function TrainingPlanListItem({plan, className}: {plan: TrainingPlan; className?: string}) {
+export default function TrainingPlanListItem({plan}: {plan: TrainingPlan}) {
   const status = STATUS_MAP[plan.status] ?? UNKNOWN_STATUS;
 
   return (
     <ListBox.Item
-      className={cn('min-h-fit px-4 py-2 sm:px-8', className)}
+      className={LIST_ITEM_CLASS}
       id={plan.id}
       textValue={plan.name}
     >

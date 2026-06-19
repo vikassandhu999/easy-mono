@@ -3,13 +3,17 @@ import {ArrowLeft, Plus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import BrowseListBox from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useExercisesInfiniteQuery} from '@/api/exercises';
 import MusclePicker from '@/exercises/components/muscle-picker';
 
-import {ExercisesBrowseList} from './exercises-list';
+import ExerciseListItem from './exercise-list-item';
 
 export default function ListExercises() {
   const navigate = useNavigate();
@@ -18,6 +22,8 @@ export default function ListExercises() {
   const [selectedMuscleIds, setSelectedMuscleIds] = useState<string[]>([]);
 
   const debouncedSearch = useDebouncedValue(search);
+  const list = useExercisesInfiniteQuery({muscle_ids: selectedMuscleIds, search: debouncedSearch});
+  const {fetchNextPage, isLoading, items, isFetchingNextPage} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -66,10 +72,23 @@ export default function ListExercises() {
         </div>
       </Page.Toolbar>
       <Page.Content>
-        <ExercisesBrowseList
-          hasFilter={!!debouncedSearch || selectedMuscleIds.length > 0}
-          muscleIds={selectedMuscleIds}
-          search={debouncedSearch}
+        <BrowseListBox
+          ariaLabel="Exercises"
+          emptyState={
+            <ListEmptyState
+              createLabel="Create Exercise"
+              createRoute={ROUTES.CREATE_EXERCISE}
+              emptyDescription="Create your first exercise to get started."
+              filterDescription="Try adjusting your search or filters to find what you're looking for."
+              hasFilter={!!debouncedSearch || selectedMuscleIds.length > 0}
+              nounPlural="exercises"
+            />
+          }
+          fetchNextPage={fetchNextPage}
+          isLoading={isLoading || isFetchingNextPage}
+          items={items}
+          onAction={(key) => navigate(ROUTES.EXERCISE_DETAIL.replace(':id', String(key)))}
+          renderItem={(exercise) => <ExerciseListItem exercise={exercise} />}
         />
       </Page.Content>
     </Page>

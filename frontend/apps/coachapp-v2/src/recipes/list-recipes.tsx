@@ -3,12 +3,16 @@ import {ArrowLeft, Plus} from 'lucide-react';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+import BrowseListBox from '@/@components/browse-list-box';
+import ListEmptyState from '@/@components/list-empty-state';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {useGoBack} from '@/@hooks/use-go-back';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
+import {useRecipesInfiniteQuery} from '@/api/recipes';
 
-import {RecipesBrowseList} from './recipes-list';
+import RecipeListItem from './recipe-list-item';
 
 export default function ListRecipes() {
   const navigate = useNavigate();
@@ -16,6 +20,8 @@ export default function ListRecipes() {
   const [search, setSearch] = useState('');
 
   const debouncedSearch = useDebouncedValue(search);
+  const list = useRecipesInfiniteQuery({search: debouncedSearch});
+  const {fetchNextPage, isLoading, items} = useInfiniteItems(list);
 
   return (
     <Page>
@@ -58,9 +64,22 @@ export default function ListRecipes() {
         </SearchField>
       </Page.Toolbar>
       <Page.Content>
-        <RecipesBrowseList
-          hasFilter={!!debouncedSearch}
-          search={debouncedSearch}
+        <BrowseListBox
+          ariaLabel="Recipes"
+          emptyState={
+            <ListEmptyState
+              createLabel="Create Recipe"
+              createRoute={ROUTES.CREATE_RECIPE}
+              emptyDescription="Create your first recipe to get started."
+              hasFilter={!!debouncedSearch}
+              nounPlural="recipes"
+            />
+          }
+          fetchNextPage={fetchNextPage}
+          isLoading={isLoading}
+          items={items}
+          onAction={(key) => navigate(ROUTES.RECIPE_DETAIL.replace(':id', String(key)))}
+          renderItem={(recipe) => <RecipeListItem recipe={recipe} />}
         />
       </Page.Content>
     </Page>

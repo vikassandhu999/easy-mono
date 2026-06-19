@@ -6,27 +6,26 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  --font-sans:  'Inter Variable', sans-serif;
+  --font-sans: "Inter Variable", sans-serif;
 }
-
 
 html,
 body,
 #root {
-    height: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    background-color: var(--color-background);
+  margin: 0;
+  background-color: var(--color-background);
 }
 
 /* Hide scrollbar but keep scrollability */
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }

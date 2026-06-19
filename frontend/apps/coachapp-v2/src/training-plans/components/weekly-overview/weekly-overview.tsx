@@ -24,6 +24,7 @@ import {
   createPlanItemsByDay,
   createRestDaysSet,
   createWorkoutsById,
+  type DayState,
   findWorkoutById,
   getAssignedDays,
   getCopyTargets,
@@ -34,7 +35,6 @@ import {
   sortWorkoutsByName,
   summarizeDayStates,
   toggleWeekdaySelection,
-  type DayState,
 } from '@/domain/training-weekly-overview';
 import WorkoutNameForm, {type WorkoutNameFormValues} from '@/training-plans/components/workout-name-form';
 

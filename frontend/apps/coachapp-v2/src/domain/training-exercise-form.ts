@@ -82,13 +82,10 @@ export function deriveFormFromSets(
   };
 }
 
-export function toggleRestUnitValue({
-  rest,
-  restUnit,
-}: {
+export function toggleRestUnitValue({rest, restUnit}: {rest: string; restUnit: 'min' | 'sec'}): {
   rest: string;
   restUnit: 'min' | 'sec';
-}): {rest: string; restUnit: 'min' | 'sec'} {
+} {
   const nextUnit: 'min' | 'sec' = restUnit === 'sec' ? 'min' : 'sec';
   const trimmed = rest.trim();
   if (!trimmed) {

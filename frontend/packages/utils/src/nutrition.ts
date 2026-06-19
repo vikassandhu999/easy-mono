@@ -169,4 +169,3 @@ export function formatMacroValue(value: number, unit: string): string {
   const rounded = Math.round(value);
   return `${rounded}${unit}`;
 }
-

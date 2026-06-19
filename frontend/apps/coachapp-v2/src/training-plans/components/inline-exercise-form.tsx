@@ -34,10 +34,7 @@ const schema = z.object({
   reps: z.string().min(1, 'Required'),
   rest: z.string().default(''),
   restUnit: z.enum(['min', 'sec']).default('sec'),
-  sets: z
-    .string()
-    .min(1, 'Required')
-    .refine(isValidSetCountInput, 'Must be at least 1'),
+  sets: z.string().min(1, 'Required').refine(isValidSetCountInput, 'Must be at least 1'),
 });
 
 export const PRESETS = [
@@ -56,7 +53,6 @@ export const EMPTY_DEFAULTS: InlineExerciseFormValues = {
   restUnit: 'sec',
   sets: '4',
 };
-
 
 type InlineExerciseFormProps = {
   actionLabel: 'Add' | 'Save';

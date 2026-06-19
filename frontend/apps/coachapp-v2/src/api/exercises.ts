@@ -134,11 +134,11 @@ export const exercisesApi = api.injectEndpoints({
         {type: 'Exercise', id: 'LIST'},
       ],
     }),
-    listMuscles: build.query<ApiResponse<Muscle[]>, void | {search?: string}>({
+    listMuscles: build.query<ApiResponse<Muscle[]>, undefined | {search?: string}>({
       query: (params) => ({url: '/v1/coach/muscles', params}),
       providesTags: [{type: 'Muscle', id: 'LIST'}],
     }),
-    listEquipment: build.query<ApiResponse<Equipment[]>, void | {search?: string}>({
+    listEquipment: build.query<ApiResponse<Equipment[]>, undefined | {search?: string}>({
       query: (params) => ({url: '/v1/coach/equipment', params}),
       providesTags: [{type: 'Equipment', id: 'LIST'}],
     }),

@@ -10,13 +10,9 @@
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
+        "source.organizeImports.biome": true
       },
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "tailwindcss-language-server",
-      ],
+      "language_servers": ["biome", "typescript-language-server", "tailwindcss-language-server"]
     },
     "TypeScript": {
       "formatter": {
@@ -26,13 +22,9 @@
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
+        "source.organizeImports.biome": true
       },
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "tailwindcss-language-server",
-      ],
+      "language_servers": ["biome", "typescript-language-server", "tailwindcss-language-server"]
     },
     "TSX": {
       "formatter": {
@@ -42,36 +34,26 @@
       },
       "code_actions_on_format": {
         "source.fixAll.biome": true,
-        "source.organizeImports.biome": true,
+        "source.organizeImports.biome": true
       },
-      "language_servers": [
-        "biome",
-        "typescript-language-server",
-        "tailwindcss-language-server",
-      ],
-    },
+      "language_servers": ["biome", "typescript-language-server", "tailwindcss-language-server"]
+    }
   },
   "lsp": {
     "tailwindcss-language-server": {
       "settings": {
         "tailwindCSS": {
-          "classFunctions": [
-            "cva",
-            "cx",
-            "cn"
-          ],
+          "classFunctions": ["cva", "cx", "cn"],
           "experimental": {
-            "classRegex": [
-              "[cls|className]\\s\\:\\=\\s\"([^\"]*)"
-            ],
+            "classRegex": ["[cls|className]\\s\\:\\=\\s\"([^\"]*)"],
             "configFile": {
               "apps/clientapp-v2/src/index.css": "apps/clientapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
               "apps/coachapp-v2/src/index.css": "apps/coachapp-v2/src/**/*.{js,jsx,ts,tsx,css}",
-              "apps/website/app/globals.css": "apps/website/**/*.{js,jsx,ts,tsx,mdx,css}",
-            },
-          },
-        },
-      },
-    },
-  },
+              "apps/website/app/globals.css": "apps/website/**/*.{js,jsx,ts,tsx,mdx,css}"
+            }
+          }
+        }
+      }
+    }
+  }
 }

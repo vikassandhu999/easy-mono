@@ -66,7 +66,6 @@ function formatSetSummary(sets: PlannedSet[]): string {
   return `${sets.length} sets (mixed)${rest}`;
 }
 
-
 function ExerciseCard({element, index}: {element: ClientWorkoutElement; index: number}) {
   const summary = formatSetSummary(element.planned_sets);
 

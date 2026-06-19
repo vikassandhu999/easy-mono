@@ -61,7 +61,11 @@ export function createDayStates({
   return map;
 }
 
-export function summarizeDayStates(dayStates: Map<TrainingWeekday, DayState>): {empty: number; rest: number; workouts: number} {
+export function summarizeDayStates(dayStates: Map<TrainingWeekday, DayState>): {
+  empty: number;
+  rest: number;
+  workouts: number;
+} {
   let workouts = 0;
   let rest = 0;
   let empty = 0;
@@ -81,7 +85,10 @@ export function buildWeeklySummaryLabel(summary: {empty: number; rest: number; w
   return `${summary.workouts} workout${summary.workouts !== 1 ? 's' : ''} · ${summary.rest} rest${summary.rest !== 1 ? ' days' : ' day'} · ${summary.empty} empty`;
 }
 
-export function getAssignedDays(planItems: TrainingPlanItem[], excludedDay: TrainingWeekday): Array<[TrainingWeekday, TrainingPlanItem]> {
+export function getAssignedDays(
+  planItems: TrainingPlanItem[],
+  excludedDay: TrainingWeekday,
+): Array<[TrainingWeekday, TrainingPlanItem]> {
   const map = new Map<TrainingWeekday, TrainingPlanItem>();
   for (const item of planItems) {
     if (item.workout_type === 'primary' && !map.has(item.day)) {
@@ -122,15 +129,13 @@ export function getPrimaryAssignedItem(state: Extract<DayState, {kind: 'assigned
   return state.items.find((item) => item.workout_type === 'primary') ?? state.items[0];
 }
 
-export function getRowContentMeta({
-  state,
-  workoutsById,
-}: {
-  state: DayState;
-  workoutsById: Map<string, Workout>;
-}):
-  | {exerciseCount: number; isIncomplete: boolean; isMissing: boolean; workout: Workout | null; alternativeCount: number}
-  | null {
+export function getRowContentMeta({state, workoutsById}: {state: DayState; workoutsById: Map<string, Workout>}): {
+  exerciseCount: number;
+  isIncomplete: boolean;
+  isMissing: boolean;
+  workout: Workout | null;
+  alternativeCount: number;
+} | null {
   if (state.kind !== 'assigned') {
     return null;
   }
@@ -175,7 +180,10 @@ export function toggleWeekdaySelection(selected: Set<TrainingWeekday>, day: Trai
   return next;
 }
 
-export function buildConflictDaysLabel(conflictDays: Set<TrainingWeekday>, shortLabels: Record<string, string>): string {
+export function buildConflictDaysLabel(
+  conflictDays: Set<TrainingWeekday>,
+  shortLabels: Record<string, string>,
+): string {
   return [...conflictDays].map((day) => shortLabels[day]).join(', ');
 }
 

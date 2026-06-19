@@ -82,7 +82,10 @@ export function buildRecentNutritionDaySubtitle(summary: DailyNutritionSummary):
   return parts.join(' · ');
 }
 
-export function buildMealLogComparison(mealLog: CoachMealLog): {comparison: ComparisonItem[]; unplanned: FoodLogEntry[]} {
+export function buildMealLogComparison(mealLog: CoachMealLog): {
+  comparison: ComparisonItem[];
+  unplanned: FoodLogEntry[];
+} {
   const entries = mealLog.food_log_entries;
   const planned = mealLog.planned_snapshot?.items ?? [];
 

@@ -129,19 +129,12 @@ export const clientMealLogsApi = api.injectEndpoints({
     }),
     listMyMealLogs: build.query<MealLogListResponse, ListMealLogsParams | void>({
       query: (params) => {
-        const queryParams: Record<string, string> = {};
-        if (params?.date) {
-          queryParams.date = params.date;
-        }
-        if (params?.from) {
-          queryParams.from = params.from;
-        }
-        if (params?.to) {
-          queryParams.to = params.to;
-        }
-        return Object.keys(queryParams).length > 0
-          ? {params: queryParams, url: '/v1/client/meal_logs'}
-          : '/v1/client/meal_logs';
+        const queryParams = {
+          ...(params?.date && {date: params.date}),
+          ...(params?.from && {from: params.from}),
+          ...(params?.to && {to: params.to}),
+        };
+        return {url: '/v1/client/meal_logs', params: Object.keys(queryParams).length ? queryParams : undefined};
       },
       providesTags: (result) =>
         result

@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -40,20 +40,7 @@ export type OfferCreateRequest = {
   position?: number;
 };
 
-export type OfferUpdateRequest = {
-  name?: string;
-  description?: null | string;
-  type?: null | OfferType;
-  duration_text?: null | string;
-  price?: null | number;
-  currency?: null | string;
-  price_display?: null | string;
-  features?: string[];
-  is_featured?: boolean;
-  status?: OfferStatus;
-  cta_text?: null | string;
-  position?: number;
-};
+export type OfferUpdateRequest = Partial<OfferCreateRequest> & {status?: OfferStatus};
 
 export type ListOffersParams = {
   offset?: number;
@@ -75,23 +62,8 @@ export const offersApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Offer', id}],
     }),
     listOffers: build.query<ApiListResponse<Offer>, ListOffersParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/offers',
-              params,
-            }
-          : '/v1/coach/offers',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((offer) => ({
-                type: 'Offer' as const,
-                id: offer.id,
-              })),
-              {type: 'Offer' as const, id: 'LIST'},
-            ]
-          : [{type: 'Offer' as const, id: 'LIST'}],
+      query: (params) => ({url: '/v1/coach/offers', params}),
+      providesTags: (result) => listTags('Offer', result),
     }),
     offers: build.infiniteQuery<ApiListResponse<Offer>, void, number>({
       query: ({pageParam}) => ({
@@ -108,18 +80,7 @@ export const offersApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((offer) => ({
-                  type: 'Offer' as const,
-                  id: offer.id,
-                })),
-              ),
-              {type: 'Offer' as const, id: 'LIST'},
-            ]
-          : [{type: 'Offer' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Offer', result),
     }),
     updateOffer: build.mutation<ApiResponse<Offer>, {body: OfferUpdateRequest; id: string}>({
       query: ({body, id}) => ({

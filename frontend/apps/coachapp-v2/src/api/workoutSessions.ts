@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
 
 export type WorkoutSessionState = 'active' | 'completed' | 'discarded';
 export type LoadUnit = 'bodyweight' | 'kg' | 'lbs' | 'none' | 'percent_1rm' | 'rpe';
@@ -98,23 +98,8 @@ const PAGE_SIZE = 20;
 export const workoutSessionsApi = api.injectEndpoints({
   endpoints: (build) => ({
     listWorkoutSessions: build.query<ApiListResponse<WorkoutSession>, ListWorkoutSessionsParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/coach/workout_sessions',
-            }
-          : '/v1/coach/workout_sessions',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((session) => ({
-                type: 'WorkoutSession' as const,
-                id: session.id,
-              })),
-              {type: 'WorkoutSession' as const, id: 'LIST'},
-            ]
-          : [{type: 'WorkoutSession' as const, id: 'LIST'}],
+      query: (params) => ({url: '/v1/coach/workout_sessions', params}),
+      providesTags: (result) => listTags('WorkoutSession', result),
     }),
     workoutSessions: build.infiniteQuery<ApiListResponse<WorkoutSession>, ListWorkoutSessionsFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -133,18 +118,7 @@ export const workoutSessionsApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((session) => ({
-                  type: 'WorkoutSession' as const,
-                  id: session.id,
-                })),
-              ),
-              {type: 'WorkoutSession' as const, id: 'LIST'},
-            ]
-          : [{type: 'WorkoutSession' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('WorkoutSession', result),
     }),
     getWorkoutSession: build.query<ApiResponse<WorkoutSession>, string>({
       query: (id) => `/v1/coach/workout_sessions/${id}`,
@@ -153,8 +127,5 @@ export const workoutSessionsApi = api.injectEndpoints({
   }),
 });
 
-export const {
-  useGetWorkoutSessionQuery,
-  useListWorkoutSessionsQuery,
-  useWorkoutSessionsInfiniteQuery,
-} = workoutSessionsApi;
+export const {useGetWorkoutSessionQuery, useListWorkoutSessionsQuery, useWorkoutSessionsInfiniteQuery} =
+  workoutSessionsApi;

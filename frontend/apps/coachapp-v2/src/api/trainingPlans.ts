@@ -1,7 +1,7 @@
 import {TRAINING_DAY_LABELS} from '@easy/utils';
 
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse, getValidationErrors} from '@/api/shared';
+import {ApiListResponse, ApiResponse, getValidationErrors, listTags, pageTags} from '@/api/shared';
 import {
   removeTrainingPlanItemFromPlan,
   removeWorkoutElementFromPlan,
@@ -219,23 +219,8 @@ export const trainingPlansApi = api.injectEndpoints({
       invalidatesTags: [{type: 'TrainingPlan', id: 'LIST'}],
     }),
     listTrainingPlans: build.query<ApiListResponse<TrainingPlan>, ListTrainingPlansParams | void>({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/coach/training_plans',
-            }
-          : '/v1/coach/training_plans',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((plan) => ({
-                type: 'TrainingPlan' as const,
-                id: plan.id,
-              })),
-              {type: 'TrainingPlan' as const, id: 'LIST'},
-            ]
-          : [{type: 'TrainingPlan' as const, id: 'LIST'}],
+      query: (params) => ({url: '/v1/coach/training_plans', params}),
+      providesTags: (result) => listTags('TrainingPlan', result),
     }),
     trainingPlans: build.infiniteQuery<ApiListResponse<TrainingPlan>, ListTrainingPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -254,18 +239,7 @@ export const trainingPlansApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((plan) => ({
-                  type: 'TrainingPlan' as const,
-                  id: plan.id,
-                })),
-              ),
-              {type: 'TrainingPlan' as const, id: 'LIST'},
-            ]
-          : [{type: 'TrainingPlan' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('TrainingPlan', result),
     }),
     /**
      * List training plans assigned to a single client.
@@ -276,16 +250,7 @@ export const trainingPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/clients/${clientId}/training_plans`,
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((plan) => ({
-                type: 'TrainingPlan' as const,
-                id: plan.id,
-              })),
-              {type: 'TrainingPlan' as const, id: 'CLIENT_LIST'},
-            ]
-          : [{type: 'TrainingPlan' as const, id: 'CLIENT_LIST'}],
+      providesTags: (result) => listTags('TrainingPlan', result, 'CLIENT_LIST'),
     }),
     getTrainingPlan: build.query<ApiResponse<TrainingPlan>, string>({
       query: (id) => `/v1/coach/training_plans/${id}`,
@@ -375,16 +340,7 @@ export const trainingPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/training_plans/${planId}/workouts`,
       }),
-      providesTags: (result, __, {planId}) =>
-        result
-          ? [
-              ...result.data.map((workout) => ({
-                type: 'Workout' as const,
-                id: workout.id,
-              })),
-              {type: 'Workout' as const, id: getPlanScopedWorkoutsId(planId)},
-            ]
-          : [{type: 'Workout' as const, id: getPlanScopedWorkoutsId(planId)}],
+      providesTags: (result, __, {planId}) => listTags('Workout', result, getPlanScopedWorkoutsId(planId)),
     }),
     getWorkout: build.query<ApiResponse<Workout>, string>({
       query: (id) => `/v1/coach/workouts/${id}`,
@@ -484,16 +440,7 @@ export const trainingPlansApi = api.injectEndpoints({
     }),
     listTrainingPlanItems: build.query<ApiResponse<TrainingPlanItem[]>, string>({
       query: (planId) => `/v1/coach/training_plans/${planId}/training_plan_items`,
-      providesTags: (result, __, planId) =>
-        result
-          ? [
-              ...result.data.map((item) => ({
-                type: 'TrainingPlanItem' as const,
-                id: item.id,
-              })),
-              {type: 'TrainingPlanItem' as const, id: getPlanScopedPlanItemsId(planId)},
-            ]
-          : [{type: 'TrainingPlanItem' as const, id: getPlanScopedPlanItemsId(planId)}],
+      providesTags: (result, __, planId) => listTags('TrainingPlanItem', result, getPlanScopedPlanItemsId(planId)),
     }),
     updateTrainingPlanItem: build.mutation<
       ApiResponse<TrainingPlanItem>,

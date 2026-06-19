@@ -2,7 +2,7 @@ import {api} from '@/api/base';
 import {type Food, foodFromApi} from '@/api/foods';
 import {type Meal, mealFromApi} from '@/api/meals';
 import {type Recipe, recipeFromApi} from '@/api/recipes';
-import {ApiListResponse, ApiResponse, Macros} from '@/api/shared';
+import {ApiListResponse, ApiResponse, getPlanScopedId, listTags, Macros, pageTags} from '@/api/shared';
 import type {PlanClient} from '@/api/trainingPlans';
 
 export type NutritionPlanStatus = 'active' | 'archived';
@@ -39,13 +39,7 @@ export type NutritionPlanCreateRequest = {
   tags?: string[];
 };
 
-export type NutritionPlanUpdateRequest = {
-  description?: string;
-  macros_goal?: Macros;
-  name?: string;
-  status?: NutritionPlanStatus;
-  tags?: string[];
-};
+export type NutritionPlanUpdateRequest = Partial<NutritionPlanCreateRequest>;
 
 export type PlanItem = {
   id: string;
@@ -112,8 +106,6 @@ export type ShoppingListItem = {
 };
 
 const PAGE_SIZE = 20;
-
-const getPlanScopedId = (planId: string) => `PLAN_${planId}`;
 
 export function nutritionPlanFromApi(plan: NutritionPlan): NutritionPlan {
   return {
@@ -217,24 +209,9 @@ export const nutritionPlansApi = api.injectEndpoints({
       ],
     }),
     listNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListNutritionPlansParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/nutrition_plans',
-              params,
-            }
-          : '/v1/coach/nutrition_plans',
+      query: (params) => ({url: '/v1/coach/nutrition_plans', params}),
       transformResponse: mapNutritionPlanListResponse,
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((plan) => ({
-                type: 'NutritionPlan' as const,
-                id: plan.id,
-              })),
-              {type: 'NutritionPlan' as const, id: 'LIST'},
-            ]
-          : [{type: 'NutritionPlan' as const, id: 'LIST'}],
+      providesTags: (result) => listTags('NutritionPlan', result),
     }),
     nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -254,18 +231,7 @@ export const nutritionPlansApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((plan) => ({
-                  type: 'NutritionPlan' as const,
-                  id: plan.id,
-                })),
-              ),
-              {type: 'NutritionPlan' as const, id: 'LIST'},
-            ]
-          : [{type: 'NutritionPlan' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('NutritionPlan', result),
     }),
     /**
      * List nutrition plans assigned to a single client.
@@ -277,16 +243,7 @@ export const nutritionPlansApi = api.injectEndpoints({
         url: `/v1/coach/clients/${clientId}/nutrition_plans`,
       }),
       transformResponse: mapNutritionPlanListResponse,
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((plan) => ({
-                type: 'NutritionPlan' as const,
-                id: plan.id,
-              })),
-              {type: 'NutritionPlan' as const, id: 'CLIENT_LIST'},
-            ]
-          : [{type: 'NutritionPlan' as const, id: 'CLIENT_LIST'}],
+      providesTags: (result) => listTags('NutritionPlan', result, 'CLIENT_LIST'),
     }),
     updateNutritionPlan: build.mutation<ApiResponse<NutritionPlan>, {body: NutritionPlanUpdateRequest; id: string}>({
       query: ({body, id}) => ({
@@ -372,16 +329,7 @@ export const nutritionPlansApi = api.injectEndpoints({
     }),
     listPlanItems: build.query<ApiResponse<PlanItem[]>, string>({
       query: (planId) => `/v1/coach/nutrition_plans/${planId}/plan_items`,
-      providesTags: (result, __, planId) =>
-        result
-          ? [
-              ...result.data.map((planItem) => ({
-                type: 'PlanItem' as const,
-                id: planItem.id,
-              })),
-              {type: 'PlanItem' as const, id: getPlanScopedId(planId)},
-            ]
-          : [{type: 'PlanItem' as const, id: getPlanScopedId(planId)}],
+      providesTags: (result, __, planId) => listTags('PlanItem', result, getPlanScopedId(planId)),
     }),
     updatePlanItem: build.mutation<ApiResponse<PlanItem>, {body: PlanItemUpdateRequest; id: string; planId: string}>({
       query: ({body, id}) => ({

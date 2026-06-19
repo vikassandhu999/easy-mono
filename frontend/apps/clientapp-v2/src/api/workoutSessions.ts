@@ -160,13 +160,7 @@ export const clientWorkoutSessionsApi = api.injectEndpoints({
       ApiListResponse<ClientWorkoutSession>,
       ListClientWorkoutSessionsParams | void
     >({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/workout_sessions',
-            }
-          : '/v1/client/workout_sessions',
+      query: (params) => ({url: '/v1/client/workout_sessions', params}),
       providesTags: (result) =>
         result
           ? [

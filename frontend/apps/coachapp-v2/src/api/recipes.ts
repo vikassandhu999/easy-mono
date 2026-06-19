@@ -1,6 +1,6 @@
 import {api} from '@/api/base';
 import {type Food, foodFromApi} from '@/api/foods';
-import {ApiListResponse, ApiResponse, Macros, normalizeMacros, ServingSize} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, Macros, normalizeMacros, pageTags, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -63,19 +63,7 @@ export type RecipeCreateRequest = {
   recipe_ingredients?: RecipeIngredientInput[];
 };
 
-export type RecipeUpdateRequest = {
-  name?: string;
-  macros?: Macros;
-  source?: string;
-  category?: string;
-  tags?: string[];
-  instructions?: string;
-  image_url?: string;
-  cooked_weight_g?: number;
-  service_size_type?: string;
-  serving_sizes?: ServingSize[];
-  recipe_ingredients?: RecipeIngredientInput[];
-};
+export type RecipeUpdateRequest = Partial<RecipeCreateRequest>;
 
 export function recipeFromApi(recipe: Recipe): Recipe {
   return {
@@ -120,24 +108,9 @@ export const recipesApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Recipe', id}],
     }),
     listRecipes: build.query<ApiListResponse<Recipe>, ListRecipesParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/recipes',
-              params,
-            }
-          : '/v1/coach/recipes',
+      query: (params) => ({url: '/v1/coach/recipes', params}),
       transformResponse: mapRecipeListResponse,
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((recipe) => ({
-                type: 'Recipe' as const,
-                id: recipe.id,
-              })),
-              {type: 'Recipe' as const, id: 'LIST'},
-            ]
-          : [{type: 'Recipe' as const, id: 'LIST'}],
+      providesTags: (result) => listTags('Recipe', result),
     }),
     deleteRecipe: build.mutation<void, string>({
       query: (id) => ({
@@ -166,18 +139,7 @@ export const recipesApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((recipe) => ({
-                  type: 'Recipe' as const,
-                  id: recipe.id,
-                })),
-              ),
-              {type: 'Recipe' as const, id: 'LIST'},
-            ]
-          : [{type: 'Recipe' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Recipe', result),
     }),
     updateRecipe: build.mutation<ApiResponse<Recipe>, {body: RecipeUpdateRequest; id: string}>({
       query: ({id, body}) => ({

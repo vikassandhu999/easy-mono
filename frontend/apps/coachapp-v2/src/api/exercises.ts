@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -57,16 +57,7 @@ export type ExerciseCreateRequest = {
   name: string;
 };
 
-export type ExerciseUpdateRequest = {
-  description?: string;
-  equipment_ids?: string[];
-  force?: ExerciseForce;
-  images?: string[];
-  instructions?: string;
-  mechanics?: ExerciseMechanics;
-  muscle_ids?: string[];
-  name?: string;
-};
+export type ExerciseUpdateRequest = Partial<ExerciseCreateRequest>;
 
 export const exercisesApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -83,29 +74,13 @@ export const exercisesApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Exercise', id}],
     }),
     listExercises: build.query<ApiListResponse<Exercise>, ListExercisesParams | void>({
-      query: (params) => {
-        if (!params) {
-          return '/v1/coach/exercises';
-        }
-
-        return {
-          url: '/v1/coach/exercises',
-          params: {
-            ...params,
-            muscle_ids: params.muscle_ids?.length ? params.muscle_ids.join(',') : undefined,
-          },
-        };
-      },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((exercise) => ({
-                type: 'Exercise' as const,
-                id: exercise.id,
-              })),
-              {type: 'Exercise' as const, id: 'LIST'},
-            ]
-          : [{type: 'Exercise' as const, id: 'LIST'}],
+      query: (params) => ({
+        url: '/v1/coach/exercises',
+        params: params
+          ? {...params, muscle_ids: params.muscle_ids?.length ? params.muscle_ids.join(',') : undefined}
+          : undefined,
+      }),
+      providesTags: (result) => listTags('Exercise', result),
     }),
     exercises: build.infiniteQuery<ApiListResponse<Exercise>, ListExercisesFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -126,18 +101,7 @@ export const exercisesApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((exercise) => ({
-                  type: 'Exercise' as const,
-                  id: exercise.id,
-                })),
-              ),
-              {type: 'Exercise' as const, id: 'LIST'},
-            ]
-          : [{type: 'Exercise' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Exercise', result),
     }),
     updateExercise: build.mutation<ApiResponse<Exercise>, {body: ExerciseUpdateRequest; id: string}>({
       query: ({body, id}) => ({
@@ -171,23 +135,11 @@ export const exercisesApi = api.injectEndpoints({
       ],
     }),
     listMuscles: build.query<ApiResponse<Muscle[]>, void | {search?: string}>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/muscles',
-              params,
-            }
-          : '/v1/coach/muscles',
+      query: (params) => ({url: '/v1/coach/muscles', params}),
       providesTags: [{type: 'Muscle', id: 'LIST'}],
     }),
     listEquipment: build.query<ApiResponse<Equipment[]>, void | {search?: string}>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/equipment',
-              params,
-            }
-          : '/v1/coach/equipment',
+      query: (params) => ({url: '/v1/coach/equipment', params}),
       providesTags: [{type: 'Equipment', id: 'LIST'}],
     }),
   }),

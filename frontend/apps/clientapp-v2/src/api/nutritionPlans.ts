@@ -137,13 +137,10 @@ export const clientNutritionPlansApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'NutritionPlan', id}],
     }),
     getTodayPlan: build.query<ApiResponse<TodayPlan>, TodayPlanParams | void>({
-      query: (params) =>
-        params?.date
-          ? {
-              params: {date: params.date},
-              url: '/v1/client/nutrition_plans/today',
-            }
-          : '/v1/client/nutrition_plans/today',
+      query: (params) => ({
+        url: '/v1/client/nutrition_plans/today',
+        params: params?.date ? {date: params.date} : undefined,
+      }),
       providesTags: (result) =>
         result
           ? [
@@ -156,13 +153,7 @@ export const clientNutritionPlansApi = api.injectEndpoints({
       ApiListResponse<ClientNutritionPlanSummary>,
       ListClientNutritionPlansParams | void
     >({
-      query: (params) =>
-        params
-          ? {
-              params,
-              url: '/v1/client/nutrition_plans',
-            }
-          : '/v1/client/nutrition_plans',
+      query: (params) => ({url: '/v1/client/nutrition_plans', params}),
       providesTags: (result) =>
         result
           ? [

@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse} from '@/api/shared';
+import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -41,22 +41,7 @@ export type TestimonialCreateRequest = {
   position?: number;
 };
 
-export type TestimonialUpdateRequest = {
-  client_name?: string;
-  client_handle?: null | string;
-  quote?: null | string;
-  rating?: null | number;
-  result_tag?: null | string;
-  program_name?: null | string;
-  duration_text?: null | string;
-  before_image_url?: null | string;
-  after_image_url?: null | string;
-  before_weight?: null | number;
-  after_weight?: null | number;
-  is_featured?: boolean;
-  status?: TestimonialStatus;
-  position?: number;
-};
+export type TestimonialUpdateRequest = Partial<TestimonialCreateRequest> & {status?: TestimonialStatus};
 
 export type ListTestimonialsParams = {
   offset?: number;
@@ -78,23 +63,8 @@ export const testimonialsApi = api.injectEndpoints({
       providesTags: (_, __, id) => [{type: 'Testimonial', id}],
     }),
     listTestimonials: build.query<ApiListResponse<Testimonial>, ListTestimonialsParams | void>({
-      query: (params) =>
-        params
-          ? {
-              url: '/v1/coach/testimonials',
-              params,
-            }
-          : '/v1/coach/testimonials',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((testimonial) => ({
-                type: 'Testimonial' as const,
-                id: testimonial.id,
-              })),
-              {type: 'Testimonial' as const, id: 'LIST'},
-            ]
-          : [{type: 'Testimonial' as const, id: 'LIST'}],
+      query: (params) => ({url: '/v1/coach/testimonials', params}),
+      providesTags: (result) => listTags('Testimonial', result),
     }),
     testimonials: build.infiniteQuery<ApiListResponse<Testimonial>, void, number>({
       query: ({pageParam}) => ({
@@ -111,18 +81,7 @@ export const testimonialsApi = api.injectEndpoints({
           return nextOffset < lastPage.count ? nextOffset : undefined;
         },
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.pages.flatMap((page) =>
-                page.data.map((testimonial) => ({
-                  type: 'Testimonial' as const,
-                  id: testimonial.id,
-                })),
-              ),
-              {type: 'Testimonial' as const, id: 'LIST'},
-            ]
-          : [{type: 'Testimonial' as const, id: 'LIST'}],
+      providesTags: (result) => pageTags('Testimonial', result),
     }),
     updateTestimonial: build.mutation<ApiResponse<Testimonial>, {body: TestimonialUpdateRequest; id: string}>({
       query: ({body, id}) => ({

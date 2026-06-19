@@ -19,9 +19,8 @@ defmodule Easy.MealLogs do
   def list_meal_logs(business_id, client_id, date, from_date, to_date) do
     meal_logs =
       MealLog
-      |> MealLog.for_business(business_id)
-      |> MealLog.for_client(client_id)
-      |> apply_date_filters(date, from_date, to_date)
+      |> MealLog.for_client(business_id, client_id)
+      |> MealLog.for_date_range(date, from_date, to_date)
       |> MealLog.ordered()
       |> MealLog.with_entries()
       |> Repo.all()

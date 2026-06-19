@@ -15,16 +15,16 @@ defmodule Easy.Nutrition.MealLog do
   @foreign_key_type :binary_id
 
   schema "meal_logs" do
-    field :date, :date
-    field :meal_slot, :string
-    field :planned_snapshot, :map
-    field :planned_calories, :float
-    field :logged_calories, :float, default: 0.0
+    field(:date, :date)
+    field(:meal_slot, :string)
+    field(:planned_snapshot, :map)
+    field(:planned_calories, :float)
+    field(:logged_calories, :float, default: 0.0)
 
-    belongs_to :client, Client
-    belongs_to :business, Orgs.Business
+    belongs_to(:client, Client)
+    belongs_to(:business, Orgs.Business)
 
-    has_many :food_log_entries, FoodLogEntry
+    has_many(:food_log_entries, FoodLogEntry)
 
     timestamps(type: :utc_datetime)
   end
@@ -46,9 +46,9 @@ defmodule Easy.Nutrition.MealLog do
 
   # Queries
 
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(ml in query, where: ml.client_id == ^client_id)
+  @spec for_client(Ecto.Queryable.t(), String.t(), String.t()) :: Ecto.Query.t()
+  def for_client(query \\ __MODULE__, business_id, client_id) do
+    from(ml in query, where: ml.business_id == ^business_id and ml.client_id == ^client_id)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

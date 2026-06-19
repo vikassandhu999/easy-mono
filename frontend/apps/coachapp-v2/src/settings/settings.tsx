@@ -8,7 +8,6 @@ import {api} from '@/api/base';
 import {type CoachProfile, useGetCoachProfileQuery, useUpdateCoachProfileMutation} from '@/api/profile';
 import EditableRow from '@/settings/components/editable-row';
 import SectionHeading from '@/settings/components/section-heading';
-import {getFullName, getInitials, splitName} from '@/settings/lib/profile';
 import {store} from '@/store';
 
 function ProfileSection({
@@ -20,13 +19,13 @@ function ProfileSection({
   ) => ReturnType<ReturnType<typeof useUpdateCoachProfileMutation>[0]>;
   profile: CoachProfile;
 }) {
-  const fullName = getFullName(profile.first_name, profile.last_name);
-  const initials = getInitials(profile.first_name, profile.last_name);
+  const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+  const initials = (profile.first_name?.[0] || '' + profile.last_name?.[0] || '').toLowerCase()
 
   const handleNameSave = useCallback(
     async (value: string) => {
-      const {first_name: firstName, last_name: lastName} = splitName(value.trim());
-      await onUpdate({first_name: firstName, last_name: lastName}).unwrap();
+      const [firstName = '', ...lastName] = value.trim().split(/\s+/);
+      await onUpdate({first_name: firstName, last_name: lastName.join(' ')}).unwrap();
     },
     [onUpdate],
   );
@@ -57,7 +56,7 @@ function ProfileSection({
             <Avatar.Fallback className="text-base">{initials}</Avatar.Fallback>
           </Avatar>
           <div className="min-w-0">
-            <Typography weight="medium">{fullName || 'No name'}</Typography>
+            <Typography weight="medium">{name || 'No name'}</Typography>
             <Typography
               color="muted"
               type="body-sm"
@@ -70,7 +69,7 @@ function ProfileSection({
         <EditableRow
           label="Name"
           onSave={handleNameSave}
-          value={fullName}
+          value={name}
         />
         <EditableRow
           label="Business"

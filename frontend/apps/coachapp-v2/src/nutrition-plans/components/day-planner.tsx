@@ -13,13 +13,13 @@ import {
 import MealPicker from '@/nutrition-plans/components/meal-picker';
 
 const DAYS = [
-  {label: 'Mon', value: 'monday'},
-  {label: 'Tue', value: 'tuesday'},
-  {label: 'Wed', value: 'wednesday'},
-  {label: 'Thu', value: 'thursday'},
-  {label: 'Fri', value: 'friday'},
-  {label: 'Sat', value: 'saturday'},
-  {label: 'Sun', value: 'sunday'},
+  {label: 'Mon', name: 'Monday', value: 'monday'},
+  {label: 'Tue', name: 'Tuesday', value: 'tuesday'},
+  {label: 'Wed', name: 'Wednesday', value: 'wednesday'},
+  {label: 'Thu', name: 'Thursday', value: 'thursday'},
+  {label: 'Fri', name: 'Friday', value: 'friday'},
+  {label: 'Sat', name: 'Saturday', value: 'saturday'},
+  {label: 'Sun', name: 'Sunday', value: 'sunday'},
 ] as const;
 
 const MEAL_TYPES = [
@@ -42,65 +42,49 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
   const [deletePlanItem] = useDeletePlanItemMutation();
   const [copyDay, {isLoading: isCopying}] = useCopyNutritionPlanDayMutation();
 
-  // State for which slot is currently being assigned
   const [assigningSlot, setAssigningSlot] = useState<null | string>(null);
   const [savingSlot, setSavingSlot] = useState<null | string>(null);
-
-  // Copy day state
   const [copyTargetDay, setCopyTargetDay] = useState<null | string>(null);
   const [clearExisting, setClearExisting] = useState(true);
 
-  // Build a lookup: { day: { meal_type: PlanItem } }
-  const planItemMap = useMemo(() => {
-    const map = new Map<string, PlanItem>();
-    for (const item of planItems) {
-      map.set(`${item.day}:${item.meal_type}`, item);
-    }
-    return map;
-  }, [planItems]);
+  const planItemMap = useMemo(
+    () => new Map(planItems.map((item) => [`${item.day}:${item.meal_type}`, item] as const)),
+    [planItems],
+  );
 
-  // Build meal name lookup
-  const mealMap = useMemo(() => {
-    const map = new Map<string, Meal>();
-    for (const meal of meals) {
-      map.set(meal.id, meal);
-    }
-    return map;
-  }, [meals]);
+  const mealMap = useMemo(() => new Map(meals.map((meal) => [meal.id, meal] as const)), [meals]);
 
-  const handleAssign = async (day: string, mealType: string, meal: Meal) => {
-    const slotKey = `${day}:${mealType}`;
+  const handleAssign = async (mealType: (typeof MEAL_TYPES)[number], meal: Meal) => {
+    const slotKey = `${selectedDay}:${mealType.value}`;
     setSavingSlot(slotKey);
     try {
       await createPlanItem({
         planId,
-        body: {day, meal_type: mealType, meal_id: meal.id},
+        body: {day: selectedDay, meal_type: mealType.value, meal_id: meal.id},
       }).unwrap();
       setAssigningSlot(null);
     } catch {
-      // Error handled by RTK Query
+      toast.danger('Failed to assign meal.');
     } finally {
       setSavingSlot(null);
     }
   };
 
-  const handleCreateAndAssign = async (day: string, mealType: string, name: string) => {
-    const slotKey = `${day}:${mealType}`;
-    const mealTypeLabel = MEAL_TYPES.find((mt) => mt.value === mealType)?.label ?? mealType;
-    const mealName = name || mealTypeLabel;
+  const handleCreateAndAssign = async (mealType: (typeof MEAL_TYPES)[number], name: string) => {
+    const slotKey = `${selectedDay}:${mealType.value}`;
     setSavingSlot(slotKey);
     try {
       const result = await createMeal({
         planId,
-        body: {name: mealName},
+        body: {name: name || mealType.label},
       }).unwrap();
       await createPlanItem({
         planId,
-        body: {day, meal_type: mealType, meal_id: result.data.id},
+        body: {day: selectedDay, meal_type: mealType.value, meal_id: result.data.id},
       }).unwrap();
       setAssigningSlot(null);
     } catch {
-      // Error handled by RTK Query
+      toast.danger('Failed to create meal.');
     } finally {
       setSavingSlot(null);
     }
@@ -112,7 +96,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
     try {
       await deletePlanItem({id: planItem.id, planId}).unwrap();
     } catch {
-      // Error handled by RTK Query
+      toast.danger('Failed to remove meal.');
     } finally {
       setSavingSlot(null);
     }
@@ -126,6 +110,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
   });
 
   const currentDayHasItems = planItems.some((pi) => pi.day === selectedDay);
+  const selectedDayName = DAYS.find((day) => day.value === selectedDay)?.name ?? selectedDay;
 
   return (
     <div className="min-w-0">
@@ -180,9 +165,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                       <>
                         <AlertDialog.CloseTrigger />
                         <AlertDialog.Header>
-                          <AlertDialog.Heading>
-                            Copy {selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}&apos;s meals to&hellip;
-                          </AlertDialog.Heading>
+                          <AlertDialog.Heading>Copy {selectedDayName}&apos;s meals to&hellip;</AlertDialog.Heading>
                         </AlertDialog.Header>
                         <AlertDialog.Body>
                           <p className="mb-2 text-sm font-medium text-foreground-500">Target day</p>
@@ -245,6 +228,8 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                               if (!copyTargetDay) {
                                 return;
                               }
+                              const targetDayName =
+                                DAYS.find((day) => day.value === copyTargetDay)?.name ?? copyTargetDay;
                               try {
                                 await copyDay({
                                   id: planId,
@@ -254,9 +239,7 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                                     clear_existing: clearExisting,
                                   },
                                 }).unwrap();
-                                toast.success(
-                                  `Copied to ${copyTargetDay.charAt(0).toUpperCase() + copyTargetDay.slice(1)}`,
-                                );
+                                toast.success(`Copied to ${targetDayName}`);
                                 setSelectedDay(copyTargetDay);
                                 setCopyTargetDay(null);
                                 setClearExisting(true);
@@ -317,8 +300,8 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                       <MealPicker
                         autoFocus
                         meals={meals}
-                        onCreate={(name) => handleCreateAndAssign(selectedDay, mealType.value, name)}
-                        onSelect={(meal) => handleAssign(selectedDay, mealType.value, meal)}
+                        onCreate={(name) => handleCreateAndAssign(mealType, name)}
+                        onSelect={(meal) => handleAssign(mealType, meal)}
                         placeholder={`Pick meal for ${mealType.label}...`}
                       />
                     </div>

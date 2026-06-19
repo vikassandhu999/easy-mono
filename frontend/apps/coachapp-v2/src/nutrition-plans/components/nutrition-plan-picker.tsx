@@ -20,11 +20,13 @@ export default function NutritionPlanPicker({
 }: NutritionPlanPickerProps) {
   const [searchInput, setSearchInput] = useState('');
   const deferredSearch = useDeferredValue(searchInput);
-  const shouldQuery = deferredSearch.length >= 1;
+  const skipQuery = deferredSearch.length < 1;
 
   const {data, isFetching} = useListNutritionPlansQuery(
-    shouldQuery ? {search: deferredSearch, limit: 10} : undefined,
-    {skip: !shouldQuery},
+    {search: deferredSearch, limit: 10},
+    {
+      skip: !skipQuery,
+    },
   );
 
   const plans = data?.data ?? [];
@@ -80,10 +82,10 @@ export default function NutritionPlanPicker({
             </SearchField.Group>
           </SearchField>
           <ListBox
-            className="max-h-[280px] overflow-y-auto"
+            className="max-h-70 overflow-y-auto"
             items={plans}
             renderEmptyState={() => (
-              <EmptyState>{shouldQuery ? 'No plans found' : 'Type to search nutrition plans'}</EmptyState>
+              <EmptyState>{skipQuery ? 'No plans found' : 'Type to search nutrition plans'}</EmptyState>
             )}
           >
             {(plan: NutritionPlan) => (

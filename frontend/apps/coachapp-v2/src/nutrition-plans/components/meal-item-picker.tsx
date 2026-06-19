@@ -25,17 +25,17 @@ export default function MealItemPicker({
   const [activeTab, setActiveTab] = useState<PickerTab>('food');
   const [searchInput, setSearchInput] = useState('');
   const deferredSearch = useDeferredValue(searchInput);
-  const shouldQuery = deferredSearch.length >= 1;
+  const skipQuery = deferredSearch.length >= 1;
 
   const {data: foodData, isFetching: isFetchingFoods} = useListFoodsQuery(
-    shouldQuery && activeTab === 'food' ? {search: deferredSearch, limit: 10} : undefined,
-    {skip: !shouldQuery || activeTab !== 'food'},
+    {search: deferredSearch, limit: 10},
+    {skip: skipQuery || activeTab !== 'food'},
   );
   const foods = foodData?.data ?? [];
 
   const {data: recipeData, isFetching: isFetchingRecipes} = useListRecipesQuery(
-    shouldQuery && activeTab === 'recipe' ? {search: deferredSearch, limit: 10} : undefined,
-    {skip: !shouldQuery || activeTab !== 'recipe'},
+    {search: deferredSearch, limit: 10},
+    {skip: skipQuery || activeTab !== 'recipe'},
   );
   const recipes = recipeData?.data ?? [];
 
@@ -134,10 +134,10 @@ export default function MealItemPicker({
 
             {activeTab === 'food' ? (
               <ListBox
-                className="max-h-[280px] overflow-y-auto"
+                className="max-h-70 overflow-y-auto"
                 items={foods}
                 renderEmptyState={() => (
-                  <EmptyState>{shouldQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>
+                  <EmptyState>{skipQuery ? 'No foods found' : 'Type to search foods'}</EmptyState>
                 )}
               >
                 {(food: Food) => {
@@ -184,10 +184,10 @@ export default function MealItemPicker({
               </ListBox>
             ) : (
               <ListBox
-                className="max-h-[280px] overflow-y-auto"
+                className="max-h-70 overflow-y-auto"
                 items={recipes}
                 renderEmptyState={() => (
-                  <EmptyState>{shouldQuery ? 'No recipes found' : 'Type to search recipes'}</EmptyState>
+                  <EmptyState>{skipQuery ? 'No recipes found' : 'Type to search recipes'}</EmptyState>
                 )}
               >
                 {(recipe: Recipe) => {

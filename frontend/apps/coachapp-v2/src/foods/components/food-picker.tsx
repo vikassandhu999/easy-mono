@@ -25,9 +25,12 @@ export default function FoodPicker({
   const deferredSearch = useDeferredValue(searchInput);
   const shouldQuery = deferredSearch.length >= 1;
 
-  const {data, isFetching} = useListFoodsQuery({search: deferredSearch, limit: 10} , {
-    skip: !shouldQuery,
-  });
+  const {data, isFetching} = useListFoodsQuery(
+    {search: deferredSearch, limit: 10},
+    {
+      skip: !shouldQuery,
+    },
+  );
 
   const foods = useMemo(() => data?.data ?? [], [data]);
 

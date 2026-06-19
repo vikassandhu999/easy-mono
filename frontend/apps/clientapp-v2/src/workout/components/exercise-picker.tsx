@@ -28,13 +28,11 @@ export default function ExercisePicker({
   const shouldQuery = hasSearch || !!defaultMuscleIds;
 
   const {data, isFetching} = useListClientExercisesQuery(
-    shouldQuery
-      ? {
-          ...(hasSearch && {search: debouncedSearch}),
-          ...(defaultMuscleIds && !hasSearch && {muscle_ids: defaultMuscleIds}),
-          limit: 10,
-        }
-      : undefined,
+    {
+      ...(hasSearch && {search: debouncedSearch}),
+      ...(defaultMuscleIds && !hasSearch && {muscle_ids: defaultMuscleIds}),
+      limit: 10,
+    },
     {skip: !shouldQuery},
   );
 
@@ -100,7 +98,7 @@ export default function ExercisePicker({
             </SearchField.Group>
           </SearchField>
           <ListBox
-            className="max-h-[280px] overflow-y-auto"
+            className="max-h-70 overflow-y-auto"
             items={exercises}
             renderEmptyState={() => (
               <EmptyState>

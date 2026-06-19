@@ -3,21 +3,17 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {Apple, Check, ChefHat, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
-import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
 import {mealItemToUpdateRequest} from '@/api/mappers/meals';
 import type {MealItem} from '@/api/meals';
 
 import {useUpdateMealItemMutation} from '@/api/meals';
-
-const mealItemFormSchema = z.object({
-  amount: z.number().min(0, 'Use 0 or higher').optional(),
-  unit: z.string().optional(),
-  weight_g: z.number().min(0, 'Use 0 or higher').optional(),
-});
-
-type MealItemFormValues = z.infer<typeof mealItemFormSchema>;
+import {
+  MealItemAmountFields,
+  type MealItemAmountValues,
+  mealItemAmountSchema,
+  mealItemAmountValues,
+} from '@/nutrition-plans/components/meal-item-amount-fields';
 
 type MealItemRowProps = {
   isRemoving: boolean;
@@ -35,27 +31,18 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
 
   const [updateMealItem, {isLoading: isSaving}] = useUpdateMealItemMutation();
   const [isEditing, setIsEditing] = useState(false);
+  const currentValues = mealItemAmountValues(item);
 
-  const form = useForm<MealItemFormValues>({
-    defaultValues: {
-      amount: item.amount ?? undefined,
-      unit: item.unit ?? '',
-      weight_g: item.weight_g ?? undefined,
-    },
-    resolver: zodResolver(mealItemFormSchema),
-    values: isEditing
-      ? {
-          amount: item.amount ?? undefined,
-          unit: item.unit ?? '',
-          weight_g: item.weight_g ?? undefined,
-        }
-      : undefined,
+  const form = useForm<MealItemAmountValues>({
+    defaultValues: currentValues,
+    resolver: zodResolver(mealItemAmountSchema),
+    values: isEditing ? currentValues : undefined,
   });
 
   const startEditing = () => setIsEditing(true);
   const cancelEditing = () => setIsEditing(false);
 
-  const handleSave = async (values: MealItemFormValues) => {
+  const handleSave = async (values: MealItemAmountValues) => {
     const body = mealItemToUpdateRequest(values);
 
     if (Object.keys(body).length === 0) {
@@ -116,28 +103,7 @@ export default function MealItemRow({item, mealId, planId, onRemove, isRemoving}
           className="gap-2"
           onSubmit={form.handleSubmit(handleSave)}
         >
-          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-            <FormNumberField
-              control={form.control}
-              fullWidth
-              label="Amount"
-              minValue={0}
-              name="amount"
-            />
-            <FormTextField
-              control={form.control}
-              fullWidth
-              label="Unit"
-              name="unit"
-            />
-            <FormNumberField
-              control={form.control}
-              fullWidth
-              label="Weight, grams"
-              minValue={0}
-              name="weight_g"
-            />
-          </div>
+          <MealItemAmountFields control={form.control} />
           <div className="flex gap-2">
             <Button
               isPending={isSaving}

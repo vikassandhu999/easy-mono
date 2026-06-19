@@ -2,16 +2,13 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {ClipboardList} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type NutritionPlan, useListNutritionPlansQuery} from '@/api/nutritionPlans';
 
 type NutritionPlanPickerProps = {
   autoFocus?: boolean;
-  description?: string;
-  excludeIds?: string[];
-  label?: string;
   onSelect: (plan: NutritionPlan) => void;
   placeholder?: string;
 };
@@ -19,9 +16,6 @@ type NutritionPlanPickerProps = {
 // Backed by GET /v1/coach/nutrition_plans, which strictly returns templates only.
 export default function NutritionPlanPicker({
   autoFocus = false,
-  description,
-  excludeIds = [],
-  label,
   onSelect,
   placeholder = 'Search nutrition plans...',
 }: NutritionPlanPickerProps) {
@@ -34,51 +28,37 @@ export default function NutritionPlanPicker({
     {skip: !shouldQuery},
   );
 
-  const plans = useMemo(() => data?.data ?? [], [data]);
+  const plans = data?.data ?? [];
 
-  const planMap = useMemo(() => {
-    const map = new Map<string, NutritionPlan>();
-    for (const plan of plans) {
-      map.set(plan.id, plan);
+  const handleChange = (key: Key | Key[] | null) => {
+    if (key == null) {
+      return;
     }
-    return map;
-  }, [plans]);
-
-  const handleChange = useCallback(
-    (key: Key | Key[] | null) => {
-      if (key == null) {
-        return;
-      }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) {
-        return;
-      }
-      const plan = planMap.get(id);
-      if (plan) {
-        onSelect(plan);
-        setSearchInput('');
-      }
-    },
-    [onSelect, planMap],
-  );
+    const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
+    if (!id) {
+      return;
+    }
+    const plan = plans.find((item) => item.id === id);
+    if (plan) {
+      onSelect(plan);
+      setSearchInput('');
+    }
+  };
 
   return (
     <Autocomplete
       allowsEmptyCollection
       className="w-full"
       defaultOpen={autoFocus}
-      disabledKeys={excludeIds}
       onChange={handleChange}
       placeholder={placeholder}
       selectionMode="single"
       value={null}
     >
-      {label && <Label>{label}</Label>}
       <Autocomplete.Trigger>
         <Autocomplete.Value />
         <Autocomplete.Indicator />
       </Autocomplete.Trigger>
-      {description && <Description>{description}</Description>}
       <Autocomplete.Popover>
         <Autocomplete.Filter
           inputValue={searchInput}

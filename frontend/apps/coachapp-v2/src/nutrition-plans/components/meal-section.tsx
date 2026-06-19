@@ -3,8 +3,6 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {Pencil, Plus, Trash2} from 'lucide-react';
 import {type Ref, useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
-import {z} from 'zod';
-import {FormNumberField, FormTextField} from '@/@components/form-fields';
 
 import type {Food} from '@/api/foods';
 import type {Meal} from '@/api/meals';
@@ -24,17 +22,14 @@ import {
 import type {Recipe} from '@/api/recipes';
 import type {ServingSize} from '@/api/shared';
 import {getMealMacroSummary} from '@/domain/nutrition-plans';
+import {
+  EMPTY_MEAL_ITEM_AMOUNT_VALUES,
+  MealItemAmountFields,
+  type MealItemAmountValues,
+  mealItemAmountSchema,
+} from '@/nutrition-plans/components/meal-item-amount-fields';
 import MealItemPicker from '@/nutrition-plans/components/meal-item-picker';
 import MealItemRow from '@/nutrition-plans/components/meal-item-row';
-
-
-const mealItemFormSchema = z.object({
-  amount: z.number().min(0, 'Use 0 or higher').optional(),
-  unit: z.string().optional(),
-  weight_g: z.number().min(0, 'Use 0 or higher').optional(),
-});
-
-type MealItemFormValues = z.infer<typeof mealItemFormSchema>;
 
 function formatServingLabel(s: ServingSize): string {
   const amt = s.amount ?? 1;
@@ -59,13 +54,13 @@ function AddMealItemForm({
   isSubmitting: boolean;
   itemName: string;
   onCancel: () => void;
-  onSubmit: (values: MealItemFormValues) => Promise<void>;
+  onSubmit: (values: MealItemAmountValues) => Promise<void>;
   servingSizes: ServingSize[];
 }) {
   const [selectedServingIdx, setSelectedServingIdx] = useState<null | number>(null);
-  const form = useForm<MealItemFormValues>({
-    defaultValues: {amount: undefined, unit: '', weight_g: undefined},
-    resolver: zodResolver(mealItemFormSchema),
+  const form = useForm<MealItemAmountValues>({
+    defaultValues: EMPTY_MEAL_ITEM_AMOUNT_VALUES,
+    resolver: zodResolver(mealItemAmountSchema),
   });
 
   return (
@@ -107,31 +102,10 @@ function AddMealItemForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-        <FormNumberField
-          control={form.control}
-          fullWidth
-          label="Amount"
-          minValue={0}
-          name="amount"
-          onValueChange={() => setSelectedServingIdx(null)}
-        />
-        <FormTextField
-          control={form.control}
-          fullWidth
-          label="Unit"
-          name="unit"
-          onValueChange={() => setSelectedServingIdx(null)}
-        />
-        <FormNumberField
-          control={form.control}
-          fullWidth
-          label="Weight, grams"
-          minValue={0}
-          name="weight_g"
-          onValueChange={() => setSelectedServingIdx(null)}
-        />
-      </div>
+      <MealItemAmountFields
+        control={form.control}
+        onValueChange={() => setSelectedServingIdx(null)}
+      />
       <div className="flex gap-2">
         <Button
           isPending={isSubmitting}
@@ -219,7 +193,7 @@ export default function MealSection({meal, planId, sectionRef}: MealSectionProps
     setSelectedItem({kind: 'recipe', recipe});
   };
 
-  const handleAddItem = async (values: MealItemFormValues) => {
+  const handleAddItem = async (values: MealItemAmountValues) => {
     if (!selectedItem) {
       return;
     }

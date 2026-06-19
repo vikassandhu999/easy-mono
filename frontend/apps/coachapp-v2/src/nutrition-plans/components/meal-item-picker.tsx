@@ -2,7 +2,7 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, Button, Description, EmptyState, Label, ListBox, SearchField, Spinner} from '@heroui/react';
 import {Apple, ChefHat} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {useDebouncedValue} from '@/@hooks/use-debounced-value';
 import {type Food, useListFoodsQuery} from '@/api/foods';
@@ -28,62 +28,44 @@ export default function MealItemPicker({
   const debouncedSearch = useDebouncedValue(searchInput);
   const shouldQuery = debouncedSearch.length >= 1;
 
-  // Food query
   const {data: foodData, isFetching: isFetchingFoods} = useListFoodsQuery(
     shouldQuery && activeTab === 'food' ? {search: debouncedSearch, limit: 10} : undefined,
     {skip: !shouldQuery || activeTab !== 'food'},
   );
-  const foods = useMemo(() => foodData?.data ?? [], [foodData]);
-  const foodMap = useMemo(() => {
-    const map = new Map<string, Food>();
-    for (const f of foods) {
-      map.set(f.id, f);
-    }
-    return map;
-  }, [foods]);
+  const foods = foodData?.data ?? [];
 
-  // Recipe query
   const {data: recipeData, isFetching: isFetchingRecipes} = useListRecipesQuery(
     shouldQuery && activeTab === 'recipe' ? {search: debouncedSearch, limit: 10} : undefined,
     {skip: !shouldQuery || activeTab !== 'recipe'},
   );
-  const recipes = useMemo(() => recipeData?.data ?? [], [recipeData]);
-  const recipeMap = useMemo(() => {
-    const map = new Map<string, Recipe>();
-    for (const r of recipes) {
-      map.set(r.id, r);
-    }
-    return map;
-  }, [recipes]);
+  const recipes = recipeData?.data ?? [];
 
   const isFetching = activeTab === 'food' ? isFetchingFoods : isFetchingRecipes;
 
-  const handleChange = useCallback(
-    (key: Key | Key[] | null) => {
-      if (key == null) {
-        return;
-      }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) {
-        return;
-      }
+  const handleChange = (key: Key | Key[] | null) => {
+    if (key == null) {
+      return;
+    }
+    const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
+    if (!id) {
+      return;
+    }
 
-      if (activeTab === 'food') {
-        const food = foodMap.get(id);
-        if (food) {
-          onSelectFood(food);
-          setSearchInput('');
-        }
-      } else {
-        const recipe = recipeMap.get(id);
-        if (recipe) {
-          onSelectRecipe(recipe);
-          setSearchInput('');
-        }
+    if (activeTab === 'food') {
+      const food = foods.find((item) => item.id === id);
+      if (food) {
+        onSelectFood(food);
+        setSearchInput('');
       }
-    },
-    [activeTab, foodMap, recipeMap, onSelectFood, onSelectRecipe],
-  );
+      return;
+    }
+
+    const recipe = recipes.find((item) => item.id === id);
+    if (recipe) {
+      onSelectRecipe(recipe);
+      setSearchInput('');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">

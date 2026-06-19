@@ -2,7 +2,7 @@ import type {Key} from '@heroui/react';
 
 import {Autocomplete, EmptyState, Label, ListBox, SearchField} from '@heroui/react';
 import {Plus, UtensilsCrossed} from 'lucide-react';
-import {useCallback, useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import type {Meal} from '@/api/meals';
 
@@ -27,62 +27,34 @@ export default function MealPicker({
 }: MealPickerProps) {
   const [searchInput, setSearchInput] = useState('');
 
-  const filteredMeals = useMemo(() => {
-    if (!searchInput) {
-      return meals;
+  const q = searchInput.toLowerCase();
+  const filteredMeals = searchInput ? meals.filter((meal) => meal.name.toLowerCase().includes(q)) : meals;
+  const items: PickerItem[] = [
+    ...(onCreate ? [{id: CREATE_NEW_ID, kind: 'create' as const, name: searchInput.trim()}] : []),
+    ...filteredMeals.map((meal) => ({id: meal.id, kind: 'meal' as const, meal})),
+  ];
+
+  const handleChange = (key: Key | Key[] | null) => {
+    if (key == null) {
+      return;
     }
-    const q = searchInput.toLowerCase();
-    return meals.filter((m) => m.name.toLowerCase().includes(q));
-  }, [meals, searchInput]);
-
-  const mealMap = useMemo(() => {
-    const map = new Map<string, Meal>();
-    for (const meal of meals) {
-      map.set(meal.id, meal);
+    const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
+    if (!id) {
+      return;
     }
-    return map;
-  }, [meals]);
 
-  // Build combined items list: create action first, then filtered meals
-  const items = useMemo<PickerItem[]>(() => {
-    const list: PickerItem[] = [];
-    if (onCreate) {
-      list.push({
-        id: CREATE_NEW_ID,
-        kind: 'create',
-        name: searchInput.trim(),
-      });
+    if (id === CREATE_NEW_ID && onCreate) {
+      onCreate(searchInput.trim());
+      setSearchInput('');
+      return;
     }
-    for (const meal of filteredMeals) {
-      list.push({id: meal.id, kind: 'meal', meal});
+
+    const meal = meals.find((item) => item.id === id);
+    if (meal) {
+      onSelect(meal);
+      setSearchInput('');
     }
-    return list;
-  }, [onCreate, searchInput, filteredMeals]);
-
-  const handleChange = useCallback(
-    (key: Key | Key[] | null) => {
-      if (key == null) {
-        return;
-      }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
-      if (!id) {
-        return;
-      }
-
-      if (id === CREATE_NEW_ID && onCreate) {
-        onCreate(searchInput.trim());
-        setSearchInput('');
-        return;
-      }
-
-      const meal = mealMap.get(id);
-      if (meal) {
-        onSelect(meal);
-        setSearchInput('');
-      }
-    },
-    [onSelect, onCreate, mealMap, searchInput],
-  );
+  };
 
   return (
     <Autocomplete

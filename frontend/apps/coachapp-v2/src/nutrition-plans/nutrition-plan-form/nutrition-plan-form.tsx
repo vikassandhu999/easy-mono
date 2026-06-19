@@ -43,39 +43,12 @@ type NutritionPlanFormProps = {
   submittingLabel: string;
 };
 
-type MacroFieldName = 'calories' | 'carbs_g' | 'fats_g' | 'protein_g';
-
-type MacroFieldConfig = {
-  label: string;
-  name: MacroFieldName;
-  step?: number;
-};
-
-const MACRO_FIELDS: MacroFieldConfig[] = [
-  {label: 'Calories (optional)', name: 'calories'},
+const MACRO_FIELDS = [
+  {label: 'Calories (optional)', name: 'calories', step: undefined},
   {label: 'Protein, grams (optional)', name: 'protein_g', step: 0.1},
   {label: 'Carbs, grams (optional)', name: 'carbs_g', step: 0.1},
   {label: 'Fat, grams (optional)', name: 'fats_g', step: 0.1},
-];
-
-function MacroNumberField({
-  fieldConfig,
-  form,
-}: {
-  fieldConfig: MacroFieldConfig;
-  form: ReturnType<typeof useNutritionPlanForm>;
-}) {
-  return (
-    <FormNumberField
-      control={form.control}
-      fullWidth
-      label={fieldConfig.label}
-      minValue={0}
-      name={fieldConfig.name}
-      step={fieldConfig.step}
-    />
-  );
-}
+] as const;
 
 export default function NutritionPlanForm({
   form,
@@ -124,10 +97,14 @@ export default function NutritionPlanForm({
 
         <Fieldset.Group>
           {MACRO_FIELDS.map((fieldConfig) => (
-            <MacroNumberField
-              fieldConfig={fieldConfig}
-              form={form}
+            <FormNumberField
+              control={control}
+              fullWidth
+              label={fieldConfig.label}
               key={fieldConfig.name}
+              minValue={0}
+              name={fieldConfig.name}
+              step={fieldConfig.step}
             />
           ))}
         </Fieldset.Group>

@@ -4,7 +4,8 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import {type AllowedUpdateStatus, allowedStatusesFor, type Client} from '@/api/clients';
+import {type AllowedUpdateStatus, allowedStatusesFor, type Client, type ClientUpdateRequest} from '@/api/clients';
+import {toNullableText, toOptionalText} from '@/api/shared';
 
 const STATUS_LABELS: Record<AllowedUpdateStatus, string> = {
   active: 'Active',
@@ -24,6 +25,28 @@ export const editClientFormSchema = z.object({
 export type EditClientFormValues = z.infer<typeof editClientFormSchema>;
 
 export const EDIT_CLIENT_FORM_FIELDS = ['email', 'first_name', 'last_name', 'notes', 'phone', 'status'] as const;
+
+export function clientToEditFormValues(client: Client): EditClientFormValues {
+  return {
+    email: client.email ?? '',
+    first_name: client.first_name ?? '',
+    last_name: client.last_name ?? '',
+    notes: client.notes ?? '',
+    phone: client.phone ?? '',
+    status: client.status === 'pending' ? undefined : client.status,
+  };
+}
+
+export function editClientToUpdateRequest(values: EditClientFormValues): ClientUpdateRequest {
+  return {
+    email: toNullableText(values.email),
+    first_name: toOptionalText(values.first_name),
+    last_name: toOptionalText(values.last_name),
+    notes: toNullableText(values.notes),
+    phone: toNullableText(values.phone),
+    status: values.status as AllowedUpdateStatus | undefined,
+  };
+}
 
 export function useEditClientForm(options?: {values?: EditClientFormValues}) {
   return useForm<EditClientFormValues>({

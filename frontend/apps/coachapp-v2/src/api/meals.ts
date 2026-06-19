@@ -1,7 +1,6 @@
 import {api} from '@/api/base';
-import type {Food} from '@/api/foods';
-import {mealFromApi, mealItemFromApi} from '@/api/mappers/meals';
-import type {Recipe} from '@/api/recipes';
+import {type Food, foodFromApi} from '@/api/foods';
+import {type Recipe, recipeFromApi} from '@/api/recipes';
 import {ApiResponse, Macros} from '@/api/shared';
 
 export type MealItem = {
@@ -61,6 +60,21 @@ export type MealUpdateRequest = {
   name?: string;
   macros?: Macros;
 };
+
+export function mealItemFromApi(item: MealItem): MealItem {
+  return {
+    ...item,
+    food: item.food ? foodFromApi(item.food) : null,
+    recipe: item.recipe ? recipeFromApi(item.recipe) : null,
+  };
+}
+
+export function mealFromApi(meal: Meal): Meal {
+  return {
+    ...meal,
+    meal_items: meal.meal_items.map(mealItemFromApi),
+  };
+}
 
 const getMealScopedId = (mealId: string) => `MEAL_${mealId}`;
 const getPlanScopedId = (planId: string) => `PLAN_${planId}`;

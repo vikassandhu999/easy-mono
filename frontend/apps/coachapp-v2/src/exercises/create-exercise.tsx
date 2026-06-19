@@ -6,9 +6,12 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useCreateExerciseMutation, useListEquipmentQuery, useListMusclesQuery} from '@/api/exercises';
-import {exerciseToCreateRequest} from '@/api/mappers/exercises';
 import {applyFormErrors} from '@/api/shared';
-import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
+import ExerciseForm, {
+  type ExerciseFormValues,
+  exerciseToCreateRequest,
+  useExerciseForm,
+} from '@/exercises/exercise-form/exercise-form';
 
 export default function CreateExercise() {
   const navigate = useNavigate();

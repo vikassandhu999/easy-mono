@@ -5,11 +5,11 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {nutritionPlanToCreateRequest} from '@/api/mappers/nutritionPlans';
 import {useCreateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
+  nutritionPlanToCreateRequest,
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 

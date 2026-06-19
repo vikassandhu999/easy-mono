@@ -4,10 +4,14 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {offerToFormValues, offerToUpdateRequest} from '@/api/mappers/storefront';
 import {useDeleteOfferMutation, useGetOfferQuery, useUpdateOfferMutation} from '@/api/offers';
 import {applyFormErrors} from '@/api/shared';
-import OfferForm, {type OfferFormValues, useOfferForm} from '@/storefront/offer-form/offer-form';
+import OfferForm, {
+  type OfferFormValues,
+  offerToFormValues,
+  offerToRequest,
+  useOfferForm,
+} from '@/storefront/offer-form/offer-form';
 
 function EditOfferForm({offerId}: {offerId: string}) {
   const navigate = useNavigate();
@@ -24,7 +28,7 @@ function EditOfferForm({offerId}: {offerId: string}) {
   const onSubmit = async (formData: OfferFormValues) => {
     try {
       await updateOffer({
-        body: offerToUpdateRequest(formData),
+        body: offerToRequest(formData),
         id: offerId,
       }).unwrap();
       navigate(ROUTES.STOREFRONT_OFFERS);

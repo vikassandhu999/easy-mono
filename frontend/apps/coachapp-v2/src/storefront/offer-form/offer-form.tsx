@@ -4,6 +4,8 @@ import {Plus, X} from 'lucide-react';
 import {useFieldArray, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormSelectField, FormSwitchField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import type {Offer, OfferCreateRequest, OfferType} from '@/api/offers';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 
 const offerFormSchema = z.object({
   cta_text: z.string().optional(),
@@ -51,6 +53,33 @@ export function featuresToFormValues(features: string[]): OfferFormValues['featu
 
 export function formValuesToFeatures(features: OfferFormValues['features']): string[] {
   return features.map((feature) => feature.value).filter(Boolean);
+}
+
+export function offerToFormValues(offer: Offer): OfferFormValues {
+  return {
+    cta_text: offer.cta_text ?? '',
+    description: offer.description ?? '',
+    duration_text: offer.duration_text ?? '',
+    features: featuresToFormValues(offer.features ?? []),
+    is_featured: offer.is_featured,
+    name: offer.name,
+    price_display: offer.price_display ?? '',
+    type: offer.type ?? undefined,
+  };
+}
+
+export function offerToRequest(values: OfferFormValues): OfferCreateRequest {
+  const features = formValuesToFeatures(values.features);
+  return omitUndefined({
+    cta_text: toOptionalText(values.cta_text),
+    description: toOptionalText(values.description),
+    duration_text: toOptionalText(values.duration_text),
+    features: features.length > 0 ? features : undefined,
+    is_featured: values.is_featured,
+    name: values.name,
+    price_display: toOptionalText(values.price_display),
+    type: values.type as OfferType | undefined,
+  });
 }
 
 type OfferFormProps = {

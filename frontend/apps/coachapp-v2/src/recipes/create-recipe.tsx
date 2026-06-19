@@ -5,11 +5,14 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {recipeToCreateRequest} from '@/api/mappers/recipes';
 import {useCreateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
-import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
+import RecipeForm, {
+  type RecipeFormValues,
+  recipeToCreateRequest,
+  useRecipeForm,
+} from '@/recipes/recipe-form/recipe-form';
 
 export default function CreateRecipe() {
   const navigate = useNavigate();

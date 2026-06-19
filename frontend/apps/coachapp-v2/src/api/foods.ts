@@ -1,6 +1,5 @@
 import {api} from '@/api/base';
-import {foodFromApi} from '@/api/mappers/foods';
-import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
+import {ApiListResponse, ApiResponse, Macros, normalizeMacros, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -51,6 +50,13 @@ export type FoodUpdateRequest = {
   image_url?: string;
   serving_sizes?: ServingSize[];
 };
+
+export function foodFromApi(food: Food): Food {
+  return {
+    ...food,
+    macros: normalizeMacros(food.macros),
+  };
+}
 
 function mapFoodResponse(response: ApiResponse<Food>): ApiResponse<Food> {
   return {

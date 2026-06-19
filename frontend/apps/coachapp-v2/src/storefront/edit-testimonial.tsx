@@ -4,11 +4,12 @@ import {useNavigate, useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
-import {testimonialToFormValues, testimonialToUpdateRequest} from '@/api/mappers/storefront';
 import {applyFormErrors} from '@/api/shared';
 import {useDeleteTestimonialMutation, useGetTestimonialQuery, useUpdateTestimonialMutation} from '@/api/testimonials';
 import TestimonialForm, {
   type TestimonialFormValues,
+  testimonialToFormValues,
+  testimonialToRequest,
   useTestimonialForm,
 } from '@/storefront/testimonial-form/testimonial-form';
 
@@ -27,7 +28,7 @@ function EditTestimonialForm({testimonialId}: {testimonialId: string}) {
   const onSubmit = async (formData: TestimonialFormValues) => {
     try {
       await updateTestimonial({
-        body: testimonialToUpdateRequest(formData),
+        body: testimonialToRequest(formData),
         id: testimonialId,
       }).unwrap();
       navigate(ROUTES.STOREFRONT_TESTIMONIALS);

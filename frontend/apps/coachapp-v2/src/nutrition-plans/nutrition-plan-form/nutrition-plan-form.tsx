@@ -3,6 +3,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import type {NutritionPlan, NutritionPlanCreateRequest, NutritionPlanUpdateRequest} from '@/api/nutritionPlans';
+import {omitUndefined, pickDefined, toOptionalText} from '@/api/shared';
 
 const optionalNumber = z.number().min(0, 'Use 0 or higher').optional();
 
@@ -25,6 +27,40 @@ export const NUTRITION_PLAN_FORM_DEFAULTS: NutritionPlanFormValues = {
   name: '',
   protein_g: undefined,
 };
+
+const NUTRITION_PLAN_MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fats_g'] as const;
+
+function toOptionalMacrosGoal(values: NutritionPlanFormValues): NutritionPlanCreateRequest['macros_goal'] | undefined {
+  const macros = pickDefined(values, NUTRITION_PLAN_MACRO_KEYS);
+  return Object.keys(macros).length > 0 ? macros : undefined;
+}
+
+export function nutritionPlanToFormValues(plan: NutritionPlan): NutritionPlanFormValues {
+  return {
+    calories: plan.macros_goal?.calories,
+    carbs_g: plan.macros_goal?.carbs_g,
+    description: plan.description ?? '',
+    fats_g: plan.macros_goal?.fats_g,
+    name: plan.name,
+    protein_g: plan.macros_goal?.protein_g,
+  };
+}
+
+export function nutritionPlanToCreateRequest(values: NutritionPlanFormValues): NutritionPlanCreateRequest {
+  return omitUndefined({
+    name: values.name,
+    description: toOptionalText(values.description),
+    macros_goal: toOptionalMacrosGoal(values),
+  });
+}
+
+export function nutritionPlanToUpdateRequest(values: NutritionPlanFormValues): NutritionPlanUpdateRequest {
+  return omitUndefined({
+    name: values.name,
+    description: toOptionalText(values.description),
+    macros_goal: toOptionalMacrosGoal(values),
+  });
+}
 
 export function useNutritionPlanForm(options?: {values?: NutritionPlanFormValues}) {
   return useForm<NutritionPlanFormValues>({

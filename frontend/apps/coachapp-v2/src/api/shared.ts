@@ -1,6 +1,29 @@
 export type ApiResponse<T> = {data: T};
 export type ApiListResponse<T> = {data: T[]; count: number};
 
+export function omitUndefined<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
+}
+
+export function pickDefined<T extends Record<string, unknown>, K extends keyof T>(
+  value: T,
+  keys: readonly K[],
+): Partial<Pick<T, K>> {
+  return Object.fromEntries(keys.flatMap((key) => (value[key] === undefined ? [] : [[key, value[key]]]))) as Partial<
+    Pick<T, K>
+  >;
+}
+
+export function toOptionalText(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+export function toNullableText(value: string | undefined): null | string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export type ErrorResponse = {
   error_code: string;
   error_message: string;

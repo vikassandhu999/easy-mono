@@ -5,22 +5,17 @@ import {type Ref, useCallback, useMemo, useState} from 'react';
 import {useForm} from 'react-hook-form';
 
 import type {Food} from '@/api/foods';
-import type {Meal} from '@/api/meals';
 import {
-  mealItemToCreateRequest,
-  mealToUpdateRequest,
-  getSelectedMealItemName,
-  getSelectedMealItemServingSizes,
-  type SelectedMealItem,
-} from '@/api/mappers/meals';
-import {
+  type Meal,
+  type MealItemCreateRequest,
+  type MealUpdateRequest,
   useCreateMealItemMutation,
   useDeleteMealItemMutation,
   useDeleteMealMutation,
   useUpdateMealMutation,
 } from '@/api/meals';
 import type {Recipe} from '@/api/recipes';
-import type {ServingSize} from '@/api/shared';
+import {omitUndefined, type ServingSize, toOptionalText} from '@/api/shared';
 import {getMealMacroSummary} from '@/domain/nutrition-plans';
 import {
   EMPTY_MEAL_ITEM_AMOUNT_VALUES,
@@ -30,6 +25,43 @@ import {
 } from '@/nutrition-plans/components/meal-item-amount-fields';
 import MealItemPicker from '@/nutrition-plans/components/meal-item-picker';
 import MealItemRow from '@/nutrition-plans/components/meal-item-row';
+
+type SelectedMealItem = {kind: 'food'; food: Food} | {kind: 'recipe'; recipe: Recipe};
+
+function mealItemToCreateRequest({
+  selectedItem,
+  values,
+}: {
+  selectedItem: SelectedMealItem;
+  values: MealItemAmountValues;
+}): MealItemCreateRequest {
+  return omitUndefined({
+    ...(selectedItem.kind === 'food' ? {food_id: selectedItem.food.id} : {recipe_id: selectedItem.recipe.id}),
+    amount: values.amount,
+    unit: toOptionalText(values.unit),
+    weight_g: values.weight_g,
+  });
+}
+
+function mealToUpdateRequest(name: string): MealUpdateRequest {
+  return {name: name.trim()};
+}
+
+function getSelectedMealItemName(selectedItem: null | SelectedMealItem): string {
+  if (!selectedItem) {
+    return '';
+  }
+  return selectedItem.kind === 'food' ? selectedItem.food.name : selectedItem.recipe.name;
+}
+
+function getSelectedMealItemServingSizes(selectedItem: null | SelectedMealItem): ServingSize[] {
+  if (!selectedItem) {
+    return [];
+  }
+  return selectedItem.kind === 'food'
+    ? (selectedItem.food.serving_sizes ?? [])
+    : (selectedItem.recipe.serving_sizes ?? []);
+}
 
 function formatServingLabel(s: ServingSize): string {
   const amt = s.amount ?? 1;

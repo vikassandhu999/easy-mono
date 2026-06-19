@@ -19,7 +19,8 @@ import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-import type {ServingSize} from '@/api/shared';
+import type {Food, FoodCreateRequest, FoodUpdateRequest} from '@/api/foods';
+import {omitUndefined, pickDefined, type ServingSize, toOptionalText} from '@/api/shared';
 
 export const foodFormSchema = z.object({
   name: z.string().min(1, 'Enter food name'),
@@ -48,6 +49,70 @@ export const FOOD_FORM_DEFAULTS: FoodFormValues = {
   fiber_g: undefined,
   sugar_g: undefined,
 };
+
+const FOOD_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
+
+function toOptionalMacros(values: FoodFormValues): FoodCreateRequest['macros'] | undefined {
+  const macros = pickDefined(values, FOOD_MACRO_KEYS);
+  return Object.keys(macros).length > 0 ? macros : undefined;
+}
+
+export function foodToFormValues(food: Food): FoodFormValues {
+  return {
+    name: food.name,
+    category: food.category ?? '',
+    source: food.source ?? '',
+    notes: food.notes ?? '',
+    calories_per_100g: food.macros.calories_per_100g,
+    protein_g: food.macros.protein_g,
+    carbs_g: food.macros.carbs_g,
+    fats_g: food.macros.fats_g,
+    fiber_g: food.macros.fiber_g,
+    sugar_g: food.macros.sugar_g,
+  };
+}
+
+export function foodToDuplicateFormValues(food: Food): FoodFormValues {
+  return {
+    ...foodToFormValues(food),
+    name: `${food.name} (copy)`,
+    source: '',
+  };
+}
+
+export function foodToCreateRequest({
+  servingSizes,
+  values,
+}: {
+  servingSizes: ServingSize[];
+  values: FoodFormValues;
+}): FoodCreateRequest {
+  return omitUndefined({
+    name: values.name,
+    category: toOptionalText(values.category),
+    source: toOptionalText(values.source),
+    notes: toOptionalText(values.notes),
+    macros: toOptionalMacros(values),
+    serving_sizes: servingSizes.length > 0 ? servingSizes : undefined,
+  });
+}
+
+export function foodToUpdateRequest({
+  servingSizes,
+  values,
+}: {
+  servingSizes: ServingSize[];
+  values: FoodFormValues;
+}): FoodUpdateRequest {
+  return omitUndefined({
+    name: values.name,
+    category: toOptionalText(values.category),
+    source: toOptionalText(values.source),
+    notes: toOptionalText(values.notes),
+    macros: toOptionalMacros(values),
+    serving_sizes: servingSizes,
+  });
+}
 
 export function useFoodForm(options?: {defaultValues?: FoodFormValues; values?: FoodFormValues}) {
   return useForm<FoodFormValues>({

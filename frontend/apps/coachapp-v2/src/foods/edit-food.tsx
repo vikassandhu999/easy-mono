@@ -5,10 +5,14 @@ import {Navigate, useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetFoodQuery, useUpdateFoodMutation} from '@/api/foods';
-import {foodToFormValues, foodToUpdateRequest} from '@/api/mappers/foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
+import FoodForm, {
+  type FoodFormValues,
+  foodToFormValues,
+  foodToUpdateRequest,
+  useFoodForm,
+} from '@/foods/food-form/food-form';
 
 // Rendered only when food data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

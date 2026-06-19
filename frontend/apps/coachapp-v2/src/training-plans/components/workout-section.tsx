@@ -9,24 +9,27 @@ import {z} from 'zod';
 
 import {FormTextField} from '@/@components/form-fields';
 import type {Exercise} from '@/api/exercises';
+import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
 import {
-  workoutElementToCreateRequest,
-  workoutNameToUpdateRequest,
-  workoutNotesToUpdateRequest,
-} from '@/api/mappers/trainingPlans';
-import type {TrainingPlanItem, Workout, WorkoutElement} from '@/api/trainingPlans';
-import {
+  type PlannedSet,
+  type TrainingPlanItem,
   useCreateWorkoutElementMutation,
   useDeleteWorkoutElementMutation,
   useDeleteWorkoutMutation,
   useDuplicateWorkoutMutation,
   useUpdateWorkoutMutation,
+  type Workout,
+  type WorkoutElement,
+  type WorkoutElementCreateRequest,
 } from '@/api/trainingPlans';
 import {buildPlannedSetsFromForm} from '@/domain/training-exercise-form';
 import {findWorkoutById, getNextWorkoutElementPosition} from '@/domain/training-plans';
 import ExerciseElement from '@/training-plans/components/exercise-element';
 import ExercisePicker from '@/training-plans/components/exercise-picker';
-import InlineExerciseForm, {EMPTY_DEFAULTS, type InlineExerciseFormValues} from '@/training-plans/components/inline-exercise-form';
+import InlineExerciseForm, {
+  EMPTY_DEFAULTS,
+  type InlineExerciseFormValues,
+} from '@/training-plans/components/inline-exercise-form';
 import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 
 type WorkoutSectionProps = {
@@ -39,6 +42,28 @@ type WorkoutSectionProps = {
   sectionRef?: Ref<HTMLDivElement>;
   workout: Workout;
 };
+
+function workoutElementToCreateRequest({
+  exerciseId,
+  notes,
+  plannedSets,
+  position,
+  workoutId,
+}: {
+  exerciseId: string;
+  notes: string;
+  plannedSets: PlannedSet[];
+  position: number;
+  workoutId: string;
+}): WorkoutElementCreateRequest {
+  return omitUndefined({
+    exercise_id: exerciseId,
+    notes: toOptionalText(notes),
+    planned_sets: plannedSets,
+    position,
+    workout_id: workoutId,
+  });
+}
 
 export default function WorkoutSection({
   allWorkouts,
@@ -82,7 +107,7 @@ export default function WorkoutSection({
       return;
     }
     try {
-      await updateWorkout({id: workout.id, planId, body: workoutNameToUpdateRequest(trimmed)}).unwrap();
+      await updateWorkout({id: workout.id, planId, body: {name: trimmed}}).unwrap();
       setIsEditingName(false);
     } catch {
       setIsEditingName(false);
@@ -100,7 +125,7 @@ export default function WorkoutSection({
       return;
     }
     try {
-      await updateWorkout({id: workout.id, planId, body: workoutNotesToUpdateRequest(notes)}).unwrap();
+      await updateWorkout({id: workout.id, planId, body: {notes: toNullableText(notes)}}).unwrap();
       setIsEditingNotes(false);
     } catch {
       setIsEditingNotes(false);

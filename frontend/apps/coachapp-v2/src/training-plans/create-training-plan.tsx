@@ -5,11 +5,11 @@ import {useNavigate} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {trainingPlanToCreateRequest} from '@/api/mappers/trainingPlans';
 import {applyFormErrors} from '@/api/shared';
 import {useCreateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
+  trainingPlanToCreateRequest,
   useTrainingPlanForm,
 } from '@/training-plans/training-plan-form/training-plan-form';
 

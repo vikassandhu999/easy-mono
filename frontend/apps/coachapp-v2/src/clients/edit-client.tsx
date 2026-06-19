@@ -4,12 +4,13 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {clientToEditFormValues, editClientToUpdateRequest} from '@/api/mappers/clients';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
 import {applyFormErrors} from '@/api/shared';
 import EditClientForm, {
+  clientToEditFormValues,
   EDIT_CLIENT_FORM_FIELDS,
   type EditClientFormValues,
+  editClientToUpdateRequest,
   useEditClientForm,
 } from '@/clients/client-form/edit-client-form';
 

@@ -8,12 +8,12 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useGetClientQuery, useUpdateClientMutation} from '@/api/clients';
-import {clientNotesToUpdateRequest} from '@/api/mappers/clients';
 import {
   type NutritionPlan,
   useAssignNutritionPlanMutation,
   useListClientNutritionPlansQuery,
 } from '@/api/nutritionPlans';
+import {toNullableText} from '@/api/shared';
 import {type TrainingPlan, useAssignTrainingPlanMutation, useListClientTrainingPlansQuery} from '@/api/trainingPlans';
 import ClientNutritionAdherence from '@/clients/components/client-nutrition-adherence';
 import ClientWorkoutHistory from '@/clients/components/client-workout-history';
@@ -259,7 +259,7 @@ function InlineNotes({clientId, initialNotes}: {clientId: string; initialNotes: 
 
   const handleSave = async () => {
     try {
-      await updateClient({id: clientId, body: clientNotesToUpdateRequest(draft)}).unwrap();
+      await updateClient({id: clientId, body: {notes: toNullableText(draft)}}).unwrap();
       setIsEditing(false);
     } catch {
       toast.danger("Notes weren't saved");

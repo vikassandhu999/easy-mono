@@ -4,11 +4,12 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {nutritionPlanToFormValues, nutritionPlanToUpdateRequest} from '@/api/mappers/nutritionPlans';
 import {useGetNutritionPlanQuery, useUpdateNutritionPlanMutation} from '@/api/nutritionPlans';
 import {applyFormErrors} from '@/api/shared';
 import NutritionPlanForm, {
   type NutritionPlanFormValues,
+  nutritionPlanToFormValues,
+  nutritionPlanToUpdateRequest,
   useNutritionPlanForm,
 } from '@/nutrition-plans/nutrition-plan-form/nutrition-plan-form';
 

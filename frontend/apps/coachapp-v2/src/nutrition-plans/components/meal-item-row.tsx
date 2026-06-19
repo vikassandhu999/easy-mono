@@ -4,16 +4,24 @@ import {Apple, Check, ChefHat, Trash2} from 'lucide-react';
 import {useState} from 'react';
 import {useForm} from 'react-hook-form';
 
-import {mealItemToUpdateRequest} from '@/api/mappers/meals';
-import type {MealItem} from '@/api/meals';
+import type {MealItem, MealItemUpdateRequest} from '@/api/meals';
 
 import {useUpdateMealItemMutation} from '@/api/meals';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 import {
   MealItemAmountFields,
   type MealItemAmountValues,
   mealItemAmountSchema,
   mealItemAmountValues,
 } from '@/nutrition-plans/components/meal-item-amount-fields';
+
+function mealItemToUpdateRequest(values: MealItemAmountValues): MealItemUpdateRequest {
+  return omitUndefined({
+    amount: values.amount,
+    unit: toOptionalText(values.unit),
+    weight_g: values.weight_g,
+  });
+}
 
 type MealItemRowProps = {
   isRemoving: boolean;

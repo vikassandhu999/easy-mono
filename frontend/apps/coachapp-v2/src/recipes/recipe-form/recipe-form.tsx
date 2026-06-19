@@ -7,6 +7,14 @@ import {z} from 'zod';
 
 import {FormNumberField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
 import type {Food} from '@/api/foods';
+import type {
+  Recipe,
+  RecipeCreateRequest,
+  RecipeIngredient,
+  RecipeIngredientInput,
+  RecipeUpdateRequest,
+} from '@/api/recipes';
+import {omitUndefined, pickDefined, toOptionalText} from '@/api/shared';
 import {
   canComputeRecipeNutrition,
   computeRecipeNutritionFromIngredients,
@@ -46,6 +54,100 @@ export const RECIPE_FORM_DEFAULTS: RecipeFormValues = {
   fiber_g: undefined,
   sugar_g: undefined,
 };
+
+const RECIPE_MACRO_KEYS = ['calories_per_100g', 'protein_g', 'carbs_g', 'fats_g', 'fiber_g', 'sugar_g'] as const;
+
+function toOptionalNumber(value: number | string): number | undefined {
+  if (value === '' || value == null) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function toOptionalMacros(values: RecipeFormValues): RecipeCreateRequest['macros'] | undefined {
+  const macros = pickDefined(values, RECIPE_MACRO_KEYS);
+  return Object.keys(macros).length > 0 ? macros : undefined;
+}
+
+function recipeIngredientToDraft(ingredient: RecipeIngredient): IngredientItem {
+  return {
+    food: ingredient.food,
+    food_id: ingredient.food_id,
+    amount: ingredient.amount ?? '',
+    unit: ingredient.unit ?? '',
+    weight_g: ingredient.weight_g ?? '',
+  };
+}
+
+export function recipeIngredientsToDrafts(ingredients: RecipeIngredient[]): IngredientItem[] {
+  return ingredients.map(recipeIngredientToDraft);
+}
+
+function recipeIngredientDraftToApi(item: IngredientItem): RecipeIngredientInput {
+  return omitUndefined({
+    food_id: item.food_id,
+    unit: toOptionalText(item.unit),
+    amount: toOptionalNumber(item.amount),
+    weight_g: toOptionalNumber(item.weight_g),
+  });
+}
+
+function toOptionalRecipeIngredients(items: IngredientItem[]): RecipeIngredientInput[] | undefined {
+  return items.length > 0 ? items.map(recipeIngredientDraftToApi) : undefined;
+}
+
+export function recipeToFormValues(recipe: Recipe): RecipeFormValues {
+  return {
+    name: recipe.name,
+    category: recipe.category ?? '',
+    source: recipe.source ?? '',
+    instructions: recipe.instructions ?? '',
+    cooked_weight_g: recipe.cooked_weight_g ?? undefined,
+    calories_per_100g: recipe.macros.calories_per_100g,
+    protein_g: recipe.macros.protein_g,
+    carbs_g: recipe.macros.carbs_g,
+    fats_g: recipe.macros.fats_g,
+    fiber_g: recipe.macros.fiber_g,
+    sugar_g: recipe.macros.sugar_g,
+  };
+}
+
+export function recipeToCreateRequest({
+  ingredients,
+  values,
+}: {
+  ingredients: IngredientItem[];
+  values: RecipeFormValues;
+}): RecipeCreateRequest {
+  return omitUndefined({
+    name: values.name,
+    category: toOptionalText(values.category),
+    source: toOptionalText(values.source),
+    instructions: toOptionalText(values.instructions),
+    cooked_weight_g: values.cooked_weight_g,
+    macros: toOptionalMacros(values),
+    recipe_ingredients: toOptionalRecipeIngredients(ingredients),
+  });
+}
+
+export function recipeToUpdateRequest({
+  ingredients,
+  values,
+}: {
+  ingredients: IngredientItem[];
+  values: RecipeFormValues;
+}): RecipeUpdateRequest {
+  return omitUndefined({
+    name: values.name,
+    category: toOptionalText(values.category),
+    source: toOptionalText(values.source),
+    instructions: toOptionalText(values.instructions),
+    cooked_weight_g: values.cooked_weight_g,
+    macros: toOptionalMacros(values),
+    recipe_ingredients: ingredients.map(recipeIngredientDraftToApi),
+  });
+}
 
 export function useRecipeForm(options?: {values?: RecipeFormValues}) {
   return useForm<RecipeFormValues>({

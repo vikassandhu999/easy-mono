@@ -4,6 +4,8 @@ import {Star} from 'lucide-react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
 import {z} from 'zod';
 import {FormNumberField, FormSwitchField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {omitUndefined, toOptionalText} from '@/api/shared';
+import type {Testimonial, TestimonialCreateRequest} from '@/api/testimonials';
 
 const optionalUrl = z.string().url('Enter a valid URL').optional().or(z.literal(''));
 const optionalPositiveNumber = z.number().positive('Use a number above 0').optional();
@@ -45,6 +47,40 @@ export function useTestimonialForm(options?: {values?: TestimonialFormValues}) {
     defaultValues: options?.values ? undefined : TESTIMONIAL_FORM_DEFAULTS,
     resolver: zodResolver(testimonialFormSchema),
     values: options?.values,
+  });
+}
+
+export function testimonialToFormValues(testimonial: Testimonial): TestimonialFormValues {
+  return {
+    after_image_url: testimonial.after_image_url ?? '',
+    after_weight: testimonial.after_weight ? parseFloat(testimonial.after_weight) : undefined,
+    before_image_url: testimonial.before_image_url ?? '',
+    before_weight: testimonial.before_weight ? parseFloat(testimonial.before_weight) : undefined,
+    client_handle: testimonial.client_handle ?? '',
+    client_name: testimonial.client_name,
+    duration_text: testimonial.duration_text ?? '',
+    is_featured: testimonial.is_featured,
+    program_name: testimonial.program_name ?? '',
+    quote: testimonial.quote ?? '',
+    rating: testimonial.rating ?? undefined,
+    result_tag: testimonial.result_tag ?? '',
+  };
+}
+
+export function testimonialToRequest(values: TestimonialFormValues): TestimonialCreateRequest {
+  return omitUndefined({
+    after_image_url: toOptionalText(values.after_image_url),
+    after_weight: values.after_weight,
+    before_image_url: toOptionalText(values.before_image_url),
+    before_weight: values.before_weight,
+    client_handle: toOptionalText(values.client_handle),
+    client_name: values.client_name,
+    duration_text: toOptionalText(values.duration_text),
+    is_featured: values.is_featured,
+    program_name: toOptionalText(values.program_name),
+    quote: toOptionalText(values.quote),
+    rating: values.rating,
+    result_tag: toOptionalText(values.result_tag),
   });
 }
 

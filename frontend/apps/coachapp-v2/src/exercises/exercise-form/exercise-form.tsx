@@ -24,8 +24,16 @@ import {type ReactNode, useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
-
-import {type Equipment, type ExerciseForce, type ExerciseMechanics, type Muscle} from '@/api/exercises';
+import {
+  type Equipment,
+  type Exercise,
+  type ExerciseCreateRequest,
+  type ExerciseForce,
+  type ExerciseMechanics,
+  type ExerciseUpdateRequest,
+  type Muscle,
+} from '@/api/exercises';
+import {omitUndefined, toOptionalText} from '@/api/shared';
 
 const MECHANICS_OPTIONS: {label: string; value: ExerciseMechanics}[] = [
   {label: 'Compound', value: 'compound'},
@@ -71,6 +79,46 @@ export function useExerciseForm(options?: {values?: ExerciseFormValues}) {
     resolver: zodResolver(exerciseFormSchema),
     values: options?.values,
   });
+}
+
+export function exerciseToFormValues(exercise: Exercise): ExerciseFormValues {
+  return {
+    description: exercise.description ?? '',
+    equipment_ids: exercise.equipment.map((item) => item.id),
+    force: exercise.force ?? '',
+    image_url: '',
+    images: exercise.images,
+    instructions: exercise.instructions ?? '',
+    mechanics: exercise.mechanics ?? '',
+    muscle_ids: exercise.muscles.map((item) => item.id),
+    name: exercise.name,
+  };
+}
+
+export function exerciseToCreateRequest(values: ExerciseFormValues): ExerciseCreateRequest {
+  return omitUndefined({
+    name: values.name,
+    description: toOptionalText(values.description),
+    instructions: toOptionalText(values.instructions),
+    mechanics: values.mechanics || undefined,
+    force: values.force || undefined,
+    muscle_ids: values.muscle_ids?.length ? values.muscle_ids : undefined,
+    equipment_ids: values.equipment_ids?.length ? values.equipment_ids : undefined,
+    images: values.images?.length ? values.images : undefined,
+  });
+}
+
+export function exerciseToUpdateRequest(values: ExerciseFormValues): ExerciseUpdateRequest {
+  return {
+    name: values.name,
+    description: toOptionalText(values.description),
+    instructions: toOptionalText(values.instructions),
+    mechanics: values.mechanics || undefined,
+    force: values.force || undefined,
+    muscle_ids: values.muscle_ids ?? [],
+    equipment_ids: values.equipment_ids ?? [],
+    images: values.images ?? [],
+  };
 }
 
 type ExerciseFormProps = {

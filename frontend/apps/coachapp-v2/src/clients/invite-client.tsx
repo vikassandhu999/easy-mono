@@ -7,11 +7,11 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {type Client, useInviteClientMutation} from '@/api/clients';
-import {inviteClientToRequest} from '@/api/mappers/clients';
 import {applyFormErrors} from '@/api/shared';
 import InviteClientForm, {
   INVITE_CLIENT_FORM_FIELDS,
   type InviteClientFormValues,
+  inviteClientToRequest,
   useInviteClientForm,
 } from '@/clients/client-invite-form/invite-client-form';
 import {getFullName, getWhatsAppUrl} from '@/clients/lib/invite-client';

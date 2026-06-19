@@ -11,9 +11,13 @@ import {
   useListMusclesQuery,
   useUpdateExerciseMutation,
 } from '@/api/exercises';
-import {exerciseToFormValues, exerciseToUpdateRequest} from '@/api/mappers/exercises';
 import {applyFormErrors} from '@/api/shared';
-import ExerciseForm, {type ExerciseFormValues, useExerciseForm} from '@/exercises/exercise-form/exercise-form';
+import ExerciseForm, {
+  type ExerciseFormValues,
+  exerciseToFormValues,
+  exerciseToUpdateRequest,
+  useExerciseForm,
+} from '@/exercises/exercise-form/exercise-form';
 
 // Mounts only when exercise data is available, so useState(exercise.images) initialises without useEffect.
 function EditExerciseForm({

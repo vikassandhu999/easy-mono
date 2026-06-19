@@ -4,11 +4,12 @@ import {useParams} from 'react-router-dom';
 
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {trainingPlanToFormValues, trainingPlanToUpdateRequest} from '@/api/mappers/trainingPlans';
 import {applyFormErrors} from '@/api/shared';
 import {useGetTrainingPlanQuery, useUpdateTrainingPlanMutation} from '@/api/trainingPlans';
 import TrainingPlanForm, {
   type TrainingPlanFormValues,
+  trainingPlanToFormValues,
+  trainingPlanToUpdateRequest,
   useTrainingPlanForm,
 } from '@/training-plans/training-plan-form/training-plan-form';
 

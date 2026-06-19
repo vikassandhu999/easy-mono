@@ -4,11 +4,16 @@ import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {recipeIngredientsToDrafts, recipeToFormValues, recipeToUpdateRequest} from '@/api/mappers/recipes';
 import {useGetRecipeQuery, useUpdateRecipeMutation} from '@/api/recipes';
 import {applyFormErrors} from '@/api/shared';
 import type {IngredientItem} from '@/foods/components/ingredient-list';
-import RecipeForm, {type RecipeFormValues, useRecipeForm} from '@/recipes/recipe-form/recipe-form';
+import RecipeForm, {
+  type RecipeFormValues,
+  recipeIngredientsToDrafts,
+  recipeToFormValues,
+  recipeToUpdateRequest,
+  useRecipeForm,
+} from '@/recipes/recipe-form/recipe-form';
 
 // Rendered only when recipe data is available, avoiding useEffect to sync server state
 // into local state (which the React Compiler lint rule forbids).

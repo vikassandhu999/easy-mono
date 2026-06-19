@@ -1,7 +1,6 @@
 import {api} from '@/api/base';
-import {Food} from '@/api/foods';
-import {recipeFromApi} from '@/api/mappers/recipes';
-import {ApiListResponse, ApiResponse, Macros, ServingSize} from '@/api/shared';
+import {type Food, foodFromApi} from '@/api/foods';
+import {ApiListResponse, ApiResponse, Macros, normalizeMacros, ServingSize} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -77,6 +76,18 @@ export type RecipeUpdateRequest = {
   serving_sizes?: ServingSize[];
   recipe_ingredients?: RecipeIngredientInput[];
 };
+
+export function recipeFromApi(recipe: Recipe): Recipe {
+  return {
+    ...recipe,
+    macros: normalizeMacros(recipe.macros),
+    foods: recipe.foods.map(foodFromApi),
+    recipe_ingredients: recipe.recipe_ingredients.map((ingredient) => ({
+      ...ingredient,
+      food: foodFromApi(ingredient.food),
+    })),
+  };
+}
 
 function mapRecipeResponse(response: ApiResponse<Recipe>): ApiResponse<Recipe> {
   return {

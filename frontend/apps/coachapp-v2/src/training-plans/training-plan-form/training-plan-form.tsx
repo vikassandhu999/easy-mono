@@ -3,6 +3,8 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import {omitUndefined, toNullableText, toOptionalText} from '@/api/shared';
+import type {TrainingPlan, TrainingPlanCreateRequest, TrainingPlanUpdateRequest} from '@/api/trainingPlans';
 
 export const schema = z.object({
   description: z.string().optional(),
@@ -19,6 +21,33 @@ export const TRAINING_PLAN_FORM_DEFAULTS: TrainingPlanFormValues = {
   name: '',
   start_date: '',
 };
+
+export function trainingPlanToFormValues(plan: TrainingPlan): TrainingPlanFormValues {
+  return {
+    description: plan.description ?? '',
+    end_date: plan.end_date ?? '',
+    name: plan.name,
+    start_date: plan.start_date ?? '',
+  };
+}
+
+export function trainingPlanToCreateRequest(values: TrainingPlanFormValues): TrainingPlanCreateRequest {
+  return omitUndefined({
+    name: values.name,
+    description: toOptionalText(values.description),
+    start_date: values.start_date || undefined,
+    end_date: values.end_date || undefined,
+  });
+}
+
+export function trainingPlanToUpdateRequest(values: TrainingPlanFormValues): TrainingPlanUpdateRequest {
+  return {
+    name: values.name,
+    description: toNullableText(values.description),
+    start_date: values.start_date || null,
+    end_date: values.end_date || null,
+  };
+}
 
 export function useTrainingPlanForm(options?: {values?: TrainingPlanFormValues}) {
   return useForm<TrainingPlanFormValues>({

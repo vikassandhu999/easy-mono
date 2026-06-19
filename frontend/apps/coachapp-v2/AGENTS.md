@@ -24,7 +24,6 @@ Use this file as the app contract. If it conflicts with older README text, trust
 - Feature modules own their screens and one-feature UI: `src/clients/`, `src/exercises/`, `src/foods/`, `src/nutrition-plans/`, `src/training-plans/`, etc.
 - Shared app folders:
   - `src/api/`: RTK Query endpoints and API-facing types, one domain per file.
-  - `src/api/mappers/`: request/response mapping between API and form/domain shapes.
   - `src/domain/`: domain types/helpers not tied to a component render.
   - `src/@components/`: UI used by two or more features.
   - `src/@hooks/`: shared hooks.
@@ -33,7 +32,7 @@ Use this file as the app contract. If it conflicts with older README text, trust
 - New screen for an existing feature: `src/{feature}/screen-name.tsx`.
 - Component used by one feature: `src/{feature}/components/component-name.tsx`.
 - Component used by two or more features: `src/@components/component-name.tsx`.
-- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts`, `src/domain/*.ts`, or `src/api/mappers/*.ts`, depending on ownership.
+- Pure helpers and non-trivial constants: `src/{feature}/lib/topic.ts`, `src/domain/*.ts`, or the owning form/API file, depending on ownership.
 
 ## Names, Types, And Imports
 
@@ -47,7 +46,7 @@ Use this file as the app contract. If it conflicts with older README text, trust
 
 - Use RTK Query hooks for server data. Do not fetch in `useEffect`.
 - Add endpoints to the matching `src/api/{domain}.ts`; create a new file only for a new API domain.
-- Keep data-shape conversion in `src/api/mappers/{domain}.ts`, not in screens.
+- Keep API response normalization in the owning `src/api/{domain}.ts` file. Keep form/request conversion beside the owning form or feature.
 - Use `.unwrap()` for mutations that need navigation or form error handling.
 - Surface API errors through existing helpers: `applyFormErrors`, `getApiErrorMessage`, or `getApiErrorCode` from `@/api/shared`.
 

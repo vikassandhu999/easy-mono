@@ -7,14 +7,18 @@ import {Link} from 'react-router-dom';
 import {ROUTES} from '@/@config/routes';
 import type {Offer} from '@/api/offers';
 import {useListOffersQuery} from '@/api/offers';
-import {storefrontProfileToFormValues, storefrontProfileToUpsertRequest} from '@/api/mappers/storefront';
 import {applyFormErrors} from '@/api/shared';
 import type {StoreProfile} from '@/api/storefront';
 import {useGetStoreProfileQuery, useUpsertStoreProfileMutation} from '@/api/storefront';
 import type {Testimonial} from '@/api/testimonials';
 import {useListTestimonialsQuery} from '@/api/testimonials';
 import EditorPanel from '@/storefront/components/editor-panel';
-import {type EditorFormValues, editorSchema} from '@/storefront/components/editor-schema';
+import {
+  type EditorFormValues,
+  editorSchema,
+  storefrontProfileToFormValues,
+  storefrontProfileToUpsertRequest,
+} from '@/storefront/components/editor-schema';
 import PreviewPanel from '@/storefront/components/preview-panel';
 
 const PREVIEW_BASE_URL = import.meta.env.VITE_WEBSITE_URL ?? 'https://coacheasy.app';

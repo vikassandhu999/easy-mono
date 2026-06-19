@@ -7,10 +7,14 @@ import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import type {Food} from '@/api/foods';
 import {useCreateFoodMutation} from '@/api/foods';
-import {foodToCreateRequest, foodToDuplicateFormValues} from '@/api/mappers/foods';
 import type {ServingSize} from '@/api/shared';
 import {applyFormErrors} from '@/api/shared';
-import FoodForm, {type FoodFormValues, useFoodForm} from '@/foods/food-form';
+import FoodForm, {
+  type FoodFormValues,
+  foodToCreateRequest,
+  foodToDuplicateFormValues,
+  useFoodForm,
+} from '@/foods/food-form/food-form';
 
 export default function CreateFood() {
   const navigate = useNavigate();

@@ -3,6 +3,9 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormTextAreaField, FormTextField} from '@/@components/form-fields';
+import type {ClientInviteRequest} from '@/api/clients';
+import {toOptionalText} from '@/api/shared';
+import {splitName} from '@/clients/lib/invite-client';
 
 export const inviteClientFormSchema = z
   .object({
@@ -26,6 +29,17 @@ export const inviteClientFormSchema = z
 export type InviteClientFormValues = z.infer<typeof inviteClientFormSchema>;
 
 export const INVITE_CLIENT_FORM_FIELDS = ['email', 'name', 'notes', 'phone'] as const;
+
+export function inviteClientToRequest(values: InviteClientFormValues): ClientInviteRequest {
+  const {firstName, lastName} = splitName(values.name);
+  return {
+    email: toOptionalText(values.email),
+    first_name: firstName,
+    last_name: lastName,
+    notes: toOptionalText(values.notes),
+    phone: toOptionalText(values.phone),
+  };
+}
 
 export function useInviteClientForm() {
   return useForm<InviteClientFormValues>({

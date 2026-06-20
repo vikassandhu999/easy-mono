@@ -126,7 +126,9 @@ See `assets/.../03-width-discipline.html`.
 - `set_type` and unit (kg/lb/bodyweight) are taps. Numbers use the keypad.
 - Advanced (rest timer, notes) behind a disclosure.
 - Desktop equivalent: a **popover** anchored to the set row.
-- Enhancement: swipe to the next/previous set without closing the sheet.
+- **Prev / Next buttons** in the sheet header move between sets without closing
+  (cross-platform; replaces a mobile-only swipe gesture, which is rejected — it
+  doesn't exist on desktop and fights scroll/keyboard).
 
 See `assets/.../04-picker-and-set-sheet.html`.
 

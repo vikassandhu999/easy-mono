@@ -12,14 +12,6 @@ defmodule Easy.NutritionPlans do
   import Ecto.Changeset
   import Ecto.Query
 
-  @spec get_plan(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
-  def get_plan(business_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
-  end
-
   @spec get_plan_full(String.t(), String.t()) :: {:ok, Plan.t()} | {:error, :not_found}
   def get_plan_full(business_id, plan_id) do
     Plan
@@ -30,22 +22,16 @@ defmodule Easy.NutritionPlans do
     |> ok_or_not_found()
   end
 
-  @spec get_client_plan_full(String.t(), String.t(), String.t()) ::
-          {:ok, Plan.t()} | {:error, :not_found}
-  def get_client_plan_full(business_id, client_id, plan_id) do
-    Plan
-    |> Plan.for_business(business_id)
-    |> Plan.for_client(client_id)
-    |> with_full_preloads(business_id)
-    |> Repo.get(plan_id)
-    |> ok_or_not_found()
-  end
-
   @spec get_client_plan_full_for_user(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found}
   def get_client_plan_full_for_user(business_id, user_id, plan_id) do
     with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      get_client_plan_full(business_id, client.id, plan_id)
+      Plan
+      |> Plan.for_business(business_id)
+      |> Plan.for_client(client.id)
+      |> with_full_preloads(business_id)
+      |> Repo.get(plan_id)
+      |> ok_or_not_found()
     end
   end
 
@@ -58,68 +44,20 @@ defmodule Easy.NutritionPlans do
       |> Plan.with_status(status)
       |> Plan.templates()
 
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans: base |> Plan.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
-     }}
+    {:ok, paginated(base, offset, limit)}
   end
 
-  @spec list_client_plans(String.t(), String.t(), atom() | nil, non_neg_integer(), pos_integer()) ::
-          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
-  def list_client_plans(business_id, client_id, status, offset, limit) do
-    base =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.for_client(client_id)
-      |> Plan.with_status(status)
-
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans: base |> Plan.newest() |> Easy.Utils.paginate(offset, limit) |> Repo.all()
-     }}
-  end
-
-  @spec list_client_plans_full(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
-          {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}}
-  def list_client_plans_full(business_id, client_id, status, offset, limit) do
-    base =
-      Plan
-      |> Plan.for_business(business_id)
-      |> Plan.for_client(client_id)
-      |> Plan.with_status(status)
-
-    {:ok,
-     %{
-       count: Repo.aggregate(base, :count, :id),
-       plans:
-         base
-         |> Plan.newest()
-         |> Easy.Utils.paginate(offset, limit)
-         |> with_full_preloads(business_id)
-         |> preload(client: ^Client.for_business(business_id))
-         |> Repo.all()
-     }}
-  end
-
-  @spec list_client_plans_for_user(
-          String.t(),
-          String.t(),
-          atom() | nil,
-          non_neg_integer(),
-          pos_integer()
-        ) ::
+  @spec list_client_plans_for_user(String.t(), String.t(), atom() | nil, non_neg_integer(), pos_integer()) ::
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
   def list_client_plans_for_user(business_id, user_id, status, offset, limit) do
     with {:ok, client} <- get_client_for_user(business_id, user_id) do
-      list_client_plans(business_id, client.id, status, offset, limit)
+      base =
+        Plan
+        |> Plan.for_business(business_id)
+        |> Plan.for_client(client.id)
+        |> Plan.with_status(status)
+
+      {:ok, paginated(base, offset, limit)}
     end
   end
 
@@ -133,30 +71,19 @@ defmodule Easy.NutritionPlans do
           {:ok, %{count: non_neg_integer(), plans: [Plan.t()]}} | {:error, :not_found}
   def list_client_plans_full_for_client(business_id, client_id, status, offset, limit) do
     with {:ok, _client} <- get_client(business_id, client_id) do
-      list_client_plans_full(business_id, client_id, status, offset, limit)
-    end
-  end
+      base =
+        Plan
+        |> Plan.for_business(business_id)
+        |> Plan.for_client(client_id)
+        |> Plan.with_status(status)
 
-  @spec get_active_plan_day(String.t(), String.t(), Date.t()) ::
-          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
-          | {:error, :not_found}
-  def get_active_plan_day(business_id, client_id, date) do
-    case active_plan(business_id, client_id, date) do
-      nil ->
-        {:error, :not_found}
+      full = fn query ->
+        query
+        |> with_full_preloads(business_id)
+        |> preload(client: ^Client.for_business(business_id))
+      end
 
-      plan ->
-        day = Easy.Utils.weekday_name(date)
-
-        plan_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_day(day)
-          |> with_meal_and_items(business_id)
-          |> Repo.all()
-
-        {:ok, %{plan: plan, plan_items: plan_items, date: date, day: day}}
+      {:ok, paginated(base, offset, limit, full)}
     end
   end
 
@@ -169,14 +96,6 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec create_plan(String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def create_plan(business_id, creator_id, attrs) do
-    business_id
-    |> Plan.insert_changeset(creator_id, attrs)
-    |> Repo.insert()
-  end
-
   @spec create_plan_for_coach_user(String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_for_coach_user(business_id, user_id, attrs) do
@@ -185,111 +104,60 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec update_plan(Plan.t(), map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def update_plan(%Plan{} = plan, attrs) do
-    plan
-    |> Plan.update_changeset(attrs)
-    |> Repo.update()
-  end
-
   @spec update_plan(String.t(), String.t(), map()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan(business_id, plan_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      update_plan(plan, attrs)
+      plan
+      |> Plan.update_changeset(attrs)
+      |> Repo.update()
     end
   end
-
-  @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def delete_plan(%Plan{} = plan), do: Repo.delete(plan)
 
   @spec delete_plan(String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      delete_plan(plan)
+      Repo.delete(plan)
     end
-  end
-
-  @spec shopping_list(Plan.t()) :: {:ok, [map()]}
-  def shopping_list(plan) do
-    plan = Repo.preload(plan, meals: meals_with_items(plan.business_id))
-
-    items =
-      plan.meals
-      |> Enum.flat_map(& &1.meal_items)
-      |> Enum.reduce(%{}, fn item, acc ->
-        key = {item.food_id, item.recipe_id, item.unit}
-        entry = Map.get(acc, key, build_shopping_item(item))
-
-        Map.put(acc, key, %{
-          entry
-          | amount: add_number(entry.amount, item.amount),
-            weight_g: add_number(entry.weight_g, item.weight_g)
-        })
-      end)
-      |> Map.values()
-
-    {:ok, items}
   end
 
   @spec shopping_list(String.t(), String.t()) :: {:ok, [map()]} | {:error, :not_found}
   def shopping_list(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      shopping_list(plan)
+      plan = Repo.preload(plan, meals: meals_with_items(plan.business_id))
+
+      items =
+        plan.meals
+        |> Enum.flat_map(& &1.meal_items)
+        |> Enum.reduce(%{}, fn item, acc ->
+          key = {item.food_id, item.recipe_id, item.unit}
+          entry = Map.get(acc, key, build_shopping_item(item))
+
+          Map.put(acc, key, %{
+            entry
+            | amount: add_number(entry.amount, item.amount),
+              weight_g: add_number(entry.weight_g, item.weight_g)
+          })
+        end)
+        |> Map.values()
+
+      {:ok, items}
     end
-  end
-
-  @spec macros(Plan.t()) :: {:ok, map()}
-  def macros(plan) do
-    plan =
-      Repo.preload(plan, meals: Meal |> Meal.for_business(plan.business_id) |> Meal.ordered())
-
-    totals =
-      Enum.reduce(plan.meals, %{}, fn meal, acc ->
-        merge_macros(acc, meal.macros || %{})
-      end)
-
-    {:ok, totals}
   end
 
   @spec macros(String.t(), String.t()) :: {:ok, map()} | {:error, :not_found}
   def macros(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      macros(plan)
-    end
-  end
+      plan =
+        Repo.preload(plan, meals: Meal |> Meal.for_business(plan.business_id) |> Meal.ordered())
 
-  @spec copy_day(Plan.t(), String.t(), String.t(), String.t(), boolean()) ::
-          {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day(plan, source_day, target_day, creator_id, clear_existing) do
-    with :ok <- validate_copy_day(source_day, target_day) do
-      Repo.transaction(fn ->
-        source_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(source_day)
-          |> Repo.all()
-
-        if clear_existing do
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(plan.business_id)
-          |> PlanItem.for_day(target_day)
-          |> Repo.delete_all()
-        end
-
-        Enum.map(source_items, fn item ->
-          attrs = %{day: target_day, meal_type: item.meal_type, meal_id: item.meal_id}
-
-          case PlanItem.insert_changeset(plan.id, plan.business_id, creator_id, attrs)
-               |> Repo.insert() do
-            {:ok, new_item} -> new_item
-            {:error, reason} -> Repo.rollback(reason)
-          end
+      totals =
+        Enum.reduce(plan.meals, %{}, fn meal, acc ->
+          merge_macros(acc, meal.macros || %{})
         end)
-      end)
+
+      {:ok, totals}
     end
   end
 
@@ -302,30 +170,11 @@ defmodule Easy.NutritionPlans do
           boolean()
         ) ::
           {:ok, [PlanItem.t()]} | {:error, any()}
-  def copy_day_for_coach_user(
-        business_id,
-        user_id,
-        plan_id,
-        source_day,
-        target_day,
-        clear_existing
-      ) do
+  def copy_day_for_coach_user(business_id, user_id, plan_id, source_day, target_day, clear_existing) do
     with {:ok, coach} <- get_coach_for_user(business_id, user_id),
          {:ok, plan} <- get_plan(business_id, plan_id) do
       copy_day(plan, source_day, target_day, coach.id, clear_existing)
     end
-  end
-
-  @spec assign_to_client(Plan.t(), String.t(), String.t(), map()) ::
-          {:ok, Plan.t()} | {:error, any()}
-  def assign_to_client(plan, client_id, creator_id, attrs \\ %{}) do
-    copy_plan(plan, creator_id,
-      client_id: client_id,
-      source_template_id: plan.id,
-      status: :active,
-      start_date: Map.get(attrs, "start_date") || Map.get(attrs, :start_date),
-      end_date: Map.get(attrs, "end_date") || Map.get(attrs, :end_date)
-    )
   end
 
   @spec assign_to_client_for_coach_user(String.t(), String.t(), String.t(), String.t(), map()) ::
@@ -338,16 +187,6 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec duplicate(Plan.t(), String.t()) :: {:ok, Plan.t()} | {:error, any()}
-  def duplicate(plan, creator_id) do
-    copy_plan(plan, creator_id,
-      name: "#{plan.name} (Copy)",
-      client_id: nil,
-      source_template_id: plan.source_template_id || plan.id,
-      status: :active
-    )
-  end
-
   @spec duplicate_for_coach_user(String.t(), String.t(), String.t()) ::
           {:ok, Plan.t()} | {:error, any()}
   def duplicate_for_coach_user(business_id, user_id, plan_id) do
@@ -355,14 +194,6 @@ defmodule Easy.NutritionPlans do
          {:ok, plan} <- get_plan(business_id, plan_id) do
       duplicate(plan, coach.id)
     end
-  end
-
-  @spec get_plan_item(String.t(), String.t()) :: {:ok, PlanItem.t()} | {:error, :not_found}
-  def get_plan_item(business_id, plan_item_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
-    |> Repo.get(plan_item_id)
-    |> ok_or_not_found()
   end
 
   @spec list_plan_items(String.t(), String.t()) ::
@@ -399,10 +230,11 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec update_plan_item(PlanItem.t(), map()) ::
+  @spec update_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan_item(%PlanItem{} = plan_item, attrs) do
-    with {:ok, :valid} <-
+  def update_plan_item(business_id, plan_item_id, attrs) do
+    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id),
+         {:ok, :valid} <-
            ensure_meal_for_plan(
              plan_item.plan_id,
              plan_item.business_id,
@@ -414,26 +246,117 @@ defmodule Easy.NutritionPlans do
     end
   end
 
-  @spec update_plan_item(String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_plan_item(business_id, plan_item_id, attrs) do
-    with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      update_plan_item(plan_item, attrs)
-    end
-  end
-
-  @spec delete_plan_item(PlanItem.t()) :: {:ok, PlanItem.t()} | {:error, Ecto.Changeset.t()}
-  def delete_plan_item(%PlanItem{} = plan_item), do: Repo.delete(plan_item)
-
   @spec delete_plan_item(String.t(), String.t()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      delete_plan_item(plan_item)
+      Repo.delete(plan_item)
     end
   end
 
   # Private
+
+  defp get_plan(business_id, plan_id) do
+    Plan
+    |> Plan.for_business(business_id)
+    |> Repo.get(plan_id)
+    |> ok_or_not_found()
+  end
+
+  defp get_active_plan_day(business_id, client_id, date) do
+    case active_plan(business_id, client_id, date) do
+      nil ->
+        {:error, :not_found}
+
+      plan ->
+        day = Easy.Utils.weekday_name(date)
+
+        plan_items =
+          PlanItem
+          |> PlanItem.for_plan(plan.id)
+          |> PlanItem.for_business(business_id)
+          |> PlanItem.for_day(day)
+          |> with_meal_and_items(business_id)
+          |> Repo.all()
+
+        {:ok, %{plan: plan, plan_items: plan_items, date: date, day: day}}
+    end
+  end
+
+  defp create_plan(business_id, creator_id, attrs) do
+    business_id
+    |> Plan.insert_changeset(creator_id, attrs)
+    |> Repo.insert()
+  end
+
+  defp copy_day(plan, source_day, target_day, creator_id, clear_existing) do
+    with :ok <- validate_copy_day(source_day, target_day) do
+      Repo.transaction(fn ->
+        source_items =
+          PlanItem
+          |> PlanItem.for_plan(plan.id)
+          |> PlanItem.for_business(plan.business_id)
+          |> PlanItem.for_day(source_day)
+          |> Repo.all()
+
+        if clear_existing do
+          PlanItem
+          |> PlanItem.for_plan(plan.id)
+          |> PlanItem.for_business(plan.business_id)
+          |> PlanItem.for_day(target_day)
+          |> Repo.delete_all()
+        end
+
+        Enum.map(source_items, fn item ->
+          attrs = %{day: target_day, meal_type: item.meal_type, meal_id: item.meal_id}
+
+          case PlanItem.insert_changeset(plan.id, plan.business_id, creator_id, attrs)
+               |> Repo.insert() do
+            {:ok, new_item} -> new_item
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+      end)
+    end
+  end
+
+  defp assign_to_client(plan, client_id, creator_id, attrs) do
+    copy_plan(plan, creator_id,
+      client_id: client_id,
+      source_template_id: plan.id,
+      status: :active,
+      start_date: Map.get(attrs, "start_date") || Map.get(attrs, :start_date),
+      end_date: Map.get(attrs, "end_date") || Map.get(attrs, :end_date)
+    )
+  end
+
+  defp duplicate(plan, creator_id) do
+    copy_plan(plan, creator_id,
+      name: "#{plan.name} (Copy)",
+      client_id: nil,
+      source_template_id: plan.source_template_id || plan.id,
+      status: :active
+    )
+  end
+
+  defp get_plan_item(business_id, plan_item_id) do
+    PlanItem
+    |> PlanItem.for_business(business_id)
+    |> Repo.get(plan_item_id)
+    |> ok_or_not_found()
+  end
+
+  defp paginated(base, offset, limit, preload_fun \\ & &1) do
+    %{
+      count: Repo.aggregate(base, :count, :id),
+      plans:
+        base
+        |> Plan.newest()
+        |> Easy.Utils.paginate(offset, limit)
+        |> preload_fun.()
+        |> Repo.all()
+    }
+  end
 
   defp with_full_preloads(query, business_id) do
     from(p in query,

@@ -1,6 +1,12 @@
 defmodule Easy.Factory do
   use ExMachina.Ecto, repo: Easy.Repo
 
+  alias Easy.ClientProfiles.ClientProfile
+  alias Easy.ClientProfiles.FormAssignment
+  alias Easy.ClientProfiles.FormSubmission
+  alias Easy.ClientProfiles.FormTemplate
+  alias Easy.ClientProfiles.ProfileFieldDefinition
+  alias Easy.ClientProfiles.ProfileFieldValue
   alias Easy.Clients.Client
   alias Easy.Fitness.WeightEntry
   alias Easy.Identity.User
@@ -63,8 +69,16 @@ defmodule Easy.Factory do
   end
 
   def client_factory do
-    business = build(:business)
-    creator = build(:coach, business: business)
+    business =
+      build(:business,
+        owner: build(:user, email: sequence(:business_owner_email, &"business-owner-#{&1}@test.com"))
+      )
+
+    creator =
+      build(:coach,
+        business: business,
+        user: build(:user, email: sequence(:coach_user_email, &"coach-user-#{&1}@test.com"))
+      )
 
     %Client{
       email: sequence(:client_email, &"client-#{&1}@test.com"),
@@ -73,7 +87,7 @@ defmodule Easy.Factory do
       phone: "123-456-7890",
       notes: "Test client",
       status: :active,
-      user: build(:user),
+      user: build(:user, email: sequence(:client_user_email, &"client-user-#{&1}@test.com")),
       business: business,
       creator: creator
     }
@@ -86,6 +100,103 @@ defmodule Easy.Factory do
       "last_name" => "Client",
       "phone" => "123-555-7890",
       "notes" => "Invited via test"
+    }
+  end
+
+  def client_profile_factory do
+    client = build(:client)
+
+    %ClientProfile{
+      business: client.business,
+      client: client,
+      general: %{},
+      nutrition: %{},
+      training: %{},
+      lifestyle: %{},
+      intake_status: :assigned
+    }
+  end
+
+  def profile_field_definition_factory do
+    %ProfileFieldDefinition{
+      business: build(:business),
+      section: "nutrition",
+      label: "Meal prep ability",
+      key: sequence(:profile_field_key, &"meal_prep_ability_#{&1}"),
+      field_type: "select",
+      options: ["low", "medium", "high"],
+      filterable: true
+    }
+  end
+
+  def profile_field_value_factory do
+    client = build(:client)
+    definition = build(:profile_field_definition, business: client.business)
+
+    %ProfileFieldValue{
+      business: client.business,
+      client: client,
+      profile_field_definition: definition,
+      value: %{"value" => "medium"},
+      updated_by_type: "coach",
+      updated_by_id: client.creator_id
+    }
+  end
+
+  def form_template_factory do
+    %FormTemplate{
+      business: build(:business),
+      name: sequence(:form_template_name, &"Intake #{&1}"),
+      purpose: "intake",
+      sections: [
+        %{
+          "title" => "Nutrition",
+          "section" => "nutrition",
+          "questions" => [
+            %{
+              "id" => "meal_prep_ability",
+              "label" => "Meal prep ability",
+              "type" => "select",
+              "required" => true,
+              "options" => ["low", "medium", "high"],
+              "profile_mapping" => %{
+                "kind" => "custom_field",
+                "field_key" => "meal_prep_ability"
+              }
+            }
+          ]
+        }
+      ],
+      status: "active"
+    }
+  end
+
+  def form_assignment_factory do
+    client = build(:client)
+    template = build(:form_template, business: client.business)
+
+    %FormAssignment{
+      business: client.business,
+      client: client,
+      form_template: template,
+      purpose: "intake",
+      priority: "high",
+      status: "assigned"
+    }
+  end
+
+  def form_submission_factory do
+    assignment = build(:form_assignment)
+
+    %FormSubmission{
+      business: assignment.business,
+      client: assignment.client,
+      form_assignment: assignment,
+      question_snapshot: assignment.form_template.sections,
+      answers: %{"meal_prep_ability" => "high"},
+      submitted_by_type: "client",
+      submitted_by_id: assignment.client_id,
+      submitted_at: DateTime.utc_now(:second)
     }
   end
 

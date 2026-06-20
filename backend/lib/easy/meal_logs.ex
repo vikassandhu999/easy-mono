@@ -20,7 +20,7 @@ defmodule Easy.MealLogs do
     meal_logs =
       MealLog
       |> MealLog.for_client(business_id, client_id)
-      |> MealLog.for_date_range(date, from_date, to_date)
+      |> apply_date_filters(date, from_date, to_date)
       |> MealLog.ordered()
       |> MealLog.with_entries()
       |> Repo.all()
@@ -60,8 +60,7 @@ defmodule Easy.MealLogs do
           {:ok, MealLog.t()} | {:error, :not_found}
   def get_client_meal_log(business_id, client_id, meal_log_id) do
     MealLog
-    |> MealLog.for_business(business_id)
-    |> MealLog.for_client(client_id)
+    |> MealLog.for_client(business_id, client_id)
     |> MealLog.with_entries()
     |> Repo.get(meal_log_id)
     |> ok_or_not_found()
@@ -497,8 +496,7 @@ defmodule Easy.MealLogs do
 
   defp get_existing_meal_log(business_id, client_id, date, meal_slot) do
     MealLog
-    |> MealLog.for_business(business_id)
-    |> MealLog.for_client(client_id)
+    |> MealLog.for_client(business_id, client_id)
     |> MealLog.for_date(date)
     |> MealLog.for_meal_slot(meal_slot)
     |> Repo.one()

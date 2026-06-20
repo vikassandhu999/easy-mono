@@ -74,7 +74,11 @@ defmodule Easy.ClientProfiles do
   @spec archive_profile_field(String.t(), String.t()) ::
           {:ok, ProfileFieldDefinition.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def archive_profile_field(business_id, field_id) do
-    update_profile_field(business_id, field_id, %{archived_at: DateTime.utc_now(:second)})
+    with {:ok, field} <- get_profile_field(business_id, field_id) do
+      field
+      |> ProfileFieldDefinition.archive_changeset()
+      |> Repo.update()
+    end
   end
 
   @spec upsert_profile_field_value(String.t(), String.t(), String.t(), any(), any()) ::

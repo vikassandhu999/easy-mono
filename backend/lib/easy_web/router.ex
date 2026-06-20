@@ -79,6 +79,11 @@ defmodule EasyWeb.Router do
     get "/clients/:client_id/profile", ClientProfileController, :show
     patch "/clients/:client_id/profile", ClientProfileController, :update
 
+    get "/profile-fields", ProfileFieldController, :index
+    post "/profile-fields", ProfileFieldController, :create
+    patch "/profile-fields/:id", ProfileFieldController, :update
+    delete "/profile-fields/:id", ProfileFieldController, :delete
+
     # Client-scoped plan lists
     get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
     get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans

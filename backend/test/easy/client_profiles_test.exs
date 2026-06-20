@@ -105,6 +105,34 @@ defmodule Easy.ClientProfilesTest do
       assert "has already been taken" in errors_on(changeset).key
     end
 
+    test "create_profile_field ignores archived_at attrs" do
+      business = insert(:business)
+
+      assert {:ok, field} =
+               ClientProfiles.create_profile_field(business.id, %{
+                 "section" => "nutrition",
+                 "label" => "Meal prep ability",
+                 "key" => "meal_prep_ability",
+                 "field_type" => "select",
+                 "options" => ["low", "medium", "high"],
+                 "archived_at" => DateTime.utc_now(:second)
+               })
+
+      assert field.archived_at == nil
+    end
+
+    test "update_profile_field ignores archived_at attrs" do
+      business = insert(:business)
+      field = insert(:profile_field_definition, business: business)
+
+      assert {:ok, updated} =
+               ClientProfiles.update_profile_field(business.id, field.id, %{
+                 "archived_at" => DateTime.utc_now(:second)
+               })
+
+      assert updated.archived_at == nil
+    end
+
     test "stores one custom field value per client and field" do
       client = insert_client()
       field = insert(:profile_field_definition, business: client.business)

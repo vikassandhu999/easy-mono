@@ -33,7 +33,7 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
   @spec insert_changeset(String.t(), map()) :: Ecto.Changeset.t()
   def insert_changeset(business_id, attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable, :archived_at])
+    |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable])
     |> put_change(:business_id, business_id)
     |> validate_required([:business_id, :section, :label, :key, :field_type])
     |> validate_inclusion(:section, @sections)
@@ -52,7 +52,7 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(definition, attrs) do
     definition
-    |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable, :archived_at])
+    |> cast(attrs, [:section, :label, :key, :field_type, :options, :filterable])
     |> validate_required([:section, :label, :key, :field_type])
     |> validate_inclusion(:section, @sections)
     |> validate_inclusion(:field_type, @field_types)
@@ -64,6 +64,11 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
       name: :profile_field_definitions_filterable_field_type_check,
       message: "cannot be filterable"
     )
+  end
+
+  @spec archive_changeset(t()) :: Ecto.Changeset.t()
+  def archive_changeset(definition) do
+    change(definition, archived_at: DateTime.utc_now(:second))
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

@@ -13,6 +13,19 @@ The shared layers — client profile, forms, threads, attention — are defined 
 the nutrition spec and are **not** re-specified here. Training reuses them
 (`module = training`).
 
+## Naming conventions
+
+Mirror the nutrition spec:
+
+* Tables are `training_`-prefixed (`training_workouts`, `training_exercises`,
+  `training_sessions`).
+* Structural foreign keys keep the prefix (`training_plan_id`,
+  `training_workout_id`, `training_session_id`).
+* The library foreign key stays bare — `exercise_id`, exactly as nutrition uses
+  `food_id` for table `nutrition_foods`.
+* Public API paths are kebab-case and `training-`-prefixed (`/training-plans`,
+  `/training-exercises`, `/training-sessions`).
+
 ## Product rules
 
 * Plans are personalized copies. Assigning a template creates a client-owned
@@ -29,10 +42,10 @@ the nutrition spec and are **not** re-specified here. Training reuses them
   endpoint. Editing an exercise changes only descriptive metadata (name, cues,
   muscles) — it never recomputes prescribed sets, so there is no impact
   endpoint.
-* Sessions snapshot at log time. `workout_sessions.planned_snapshot` stores the
+* Sessions snapshot at log time. `training_sessions.planned_snapshot` stores the
   prescribed workout as names and values only (no references), and each
-  `performed_set` carries `exercise_name`. History never changes when a plan or
-  exercise is edited later.
+  `training_performed_sets` row carries `exercise_name`. History never changes
+  when a plan or exercise is edited later.
 
 ## Database guarantees
 
@@ -40,10 +53,10 @@ Use database constraints for invariants that must survive concurrent writes:
 
 * one active assigned `training_plans` row per client overlapping date range
 * one `training_schedule_entries` row per `(plan, day_of_week)`
-* unique `(name, business_id)` on `exercises`
-* one `workout_exercises` row per `(workout, position)`
-* one active `workout_sessions` row per client
-* one `performed_sets` row per `(session, position)`
+* unique `(name, business_id)` on `training_exercises`
+* one `training_workout_exercises` row per `(workout, position)`
+* one active `training_sessions` row per client
+* one `training_performed_sets` row per `(session, position)`
 
 ## Training schema
 
@@ -84,7 +97,7 @@ training_schedule_entries
   creator_id
   training_plan_id
   day_of_week
-  workout_id
+  training_workout_id
   inserted_at
   updated_at
 ```
@@ -112,7 +125,7 @@ One workout per weekday. A day with no entry is a rest day. There is no
 is removed with multi-week support.
 
 ```text
-workouts
+training_workouts
   id
   business_id
   creator_id
@@ -128,10 +141,10 @@ no standalone reusable workout library in v1; reuse happens by duplicating a
 plan.
 
 ```text
-workout_exercises
+training_workout_exercises
   id
   business_id
-  workout_id
+  training_workout_id
   exercise_id
   position
   superset_group_id
@@ -144,10 +157,10 @@ workout_exercises
 Unique index:
 
 ```text
-workout_id, position
+training_workout_id, position
 ```
 
-A `workout_exercise` is one exercise as it appears in a workout: the exercise
+A workout exercise is one exercise as it appears in a workout: the exercise
 reference, its order, an optional superset grouping, and its embedded
 `planned_sets`.
 
@@ -161,7 +174,7 @@ model the logging tier (Strong, Hevy, FitNotes) converged on, proven by their
 one-row-per-set CSV exports, and it makes planned↔logged a clean 1:1 join.
 
 ```text
-planned_sets (embedded in workout_exercise)
+planned_sets (embedded in training_workout_exercises)
   set_type
   reps
   load_value
@@ -174,11 +187,13 @@ planned_sets (embedded in workout_exercise)
   notes
 ```
 
+Planned sets have no `position` — order is the embedded array order.
+
 ```text
-performed_sets
+training_performed_sets
   id
   business_id
-  workout_session_id
+  training_session_id
   exercise_id
   exercise_name
   set_type
@@ -199,7 +214,7 @@ performed_sets
 Unique index:
 
 ```text
-workout_session_id, position
+training_session_id, position
 ```
 
 `set_type` values:
@@ -249,7 +264,7 @@ Field rules:
 ### Exercises
 
 ```text
-exercises
+training_exercises
   id
   business_id
   creator_id
@@ -326,24 +341,24 @@ static
 ```
 
 ```text
-muscles            -- reference
-equipment          -- reference
-exercise_muscles   -- many-to-many join
-exercise_equipment -- many-to-many join
+training_muscles            -- reference
+training_equipment          -- reference
+training_exercise_muscles   -- many-to-many join
+training_exercise_equipment -- many-to-many join
 ```
 
 Exercises link to muscles and equipment through the join tables. These are
-unchanged reference data.
+reference data.
 
 ### Logging
 
 ```text
-workout_sessions
+training_sessions
   id
   business_id
   client_id
-  workout_id
-  schedule_entry_id
+  training_workout_id
+  training_schedule_entry_id
   date
   started_at
   ended_at
@@ -365,9 +380,9 @@ completed
 discarded
 ```
 
-`schedule_entry_id` is nullable: a scheduled workout sets it; an ad-hoc workout
-leaves it null. `date` keys the session for adherence — adherence is scheduled
-entries with no completed session for that date.
+`training_schedule_entry_id` is nullable: a scheduled workout sets it; an ad-hoc
+workout leaves it null. `date` keys the session for adherence — adherence is
+scheduled entries with no completed session for that date.
 
 `planned_snapshot` is a frozen copy of the prescribed workout as **names and
 values only, no references**, captured at session start:
@@ -387,7 +402,7 @@ values only, no references**, captured at session start:
 }
 ```
 
-`performed_sets` is a flat list under the session. Each set carries
+`training_performed_sets` is a flat list under the session. Each set carries
 `exercise_id` (a soft reference — nilify on delete — kept solely as the
 aggregation key for PRs and progression, which are computed against exercises
 only) and `exercise_name` (the display snapshot, so a deleted exercise does not
@@ -401,7 +416,7 @@ needs later. No table, no work now.
 
 ## Training API
 
-Use kebab-case public paths.
+Use kebab-case `training-`-prefixed public paths.
 
 ### Plans
 
@@ -430,25 +445,25 @@ GET /v1/client/training-plans/today?date=YYYY-MM-DD
 Coach:
 
 ```text
-GET    /v1/coach/training-plans/:plan_id/workouts
-POST   /v1/coach/training-plans/:plan_id/workouts
-GET    /v1/coach/workouts/:id
-PATCH  /v1/coach/workouts/:id
-DELETE /v1/coach/workouts/:id
-POST   /v1/coach/workouts/:workout_id/exercises
-PATCH  /v1/coach/workout-exercises/:id
-DELETE /v1/coach/workout-exercises/:id
+GET    /v1/coach/training-plans/:plan_id/training-workouts
+POST   /v1/coach/training-plans/:plan_id/training-workouts
+GET    /v1/coach/training-workouts/:id
+PATCH  /v1/coach/training-workouts/:id
+DELETE /v1/coach/training-workouts/:id
+POST   /v1/coach/training-workouts/:workout_id/exercises
+PATCH  /v1/coach/training-workout-exercises/:id
+DELETE /v1/coach/training-workout-exercises/:id
 GET    /v1/coach/training-plans/:plan_id/schedule
 PUT    /v1/coach/training-plans/:plan_id/schedule/:day
 ```
 
-Adding a `workout_exercise` includes its `planned_sets` in the request body.
+Adding a workout exercise includes its `planned_sets` in the request body.
 There is no separate planned-set CRUD.
 
 `PUT /schedule/:day` replaces that day as desired state:
 
 ```json
-{"workout_id": "workout-id"}
+{"training_workout_id": "workout-id"}
 ```
 
 An empty body clears the day (rest). This mirrors the nutrition schedule PUT.
@@ -458,14 +473,14 @@ An empty body clears the day (rest). This mirrors the nutrition schedule PUT.
 Coach:
 
 ```text
-GET    /v1/coach/exercises
-POST   /v1/coach/exercises
-GET    /v1/coach/exercises/:id
-PATCH  /v1/coach/exercises/:id
-DELETE /v1/coach/exercises/:id
-POST   /v1/coach/exercises/:id/copy
-GET    /v1/coach/muscles
-GET    /v1/coach/equipment
+GET    /v1/coach/training-exercises
+POST   /v1/coach/training-exercises
+GET    /v1/coach/training-exercises/:id
+PATCH  /v1/coach/training-exercises/:id
+DELETE /v1/coach/training-exercises/:id
+POST   /v1/coach/training-exercises/:id/copy
+GET    /v1/coach/training-muscles
+GET    /v1/coach/training-equipment
 ```
 
 There is no `/impact` endpoint — editing an exercise recomputes no plan math.
@@ -473,8 +488,8 @@ There is no `/impact` endpoint — editing an exercise recomputes no plan math.
 Client:
 
 ```text
-GET /v1/client/exercises
-GET /v1/client/exercises/:id
+GET /v1/client/training-exercises
+GET /v1/client/training-exercises/:id
 ```
 
 Clients can read the exercise library. Clients cannot mutate exercises.
@@ -484,23 +499,23 @@ Clients can read the exercise library. Clients cannot mutate exercises.
 Client:
 
 ```text
-GET    /v1/client/workout-sessions?from=YYYY-MM-DD&to=YYYY-MM-DD
-GET    /v1/client/workout-sessions/:id
-POST   /v1/client/workout-sessions
-PATCH  /v1/client/workout-sessions/:id
-POST   /v1/client/workout-sessions/:id/performed-sets
-PATCH  /v1/client/performed-sets/:id
-DELETE /v1/client/performed-sets/:id
+GET    /v1/client/training-sessions?from=YYYY-MM-DD&to=YYYY-MM-DD
+GET    /v1/client/training-sessions/:id
+POST   /v1/client/training-sessions
+PATCH  /v1/client/training-sessions/:id
+POST   /v1/client/training-sessions/:id/performed-sets
+PATCH  /v1/client/training-performed-sets/:id
+DELETE /v1/client/training-performed-sets/:id
 ```
 
-`POST /workout-sessions` starts a session (one active per client) and captures
+`POST /training-sessions` starts a session (one active per client) and captures
 `planned_snapshot`. `PATCH` ends, discards, or updates soreness/notes.
 
 Coach:
 
 ```text
-GET /v1/coach/clients/:client_id/workout-sessions?from=YYYY-MM-DD&to=YYYY-MM-DD
-GET /v1/coach/clients/:client_id/workout-sessions/:id
+GET /v1/coach/clients/:client_id/training-sessions?from=YYYY-MM-DD&to=YYYY-MM-DD
+GET /v1/coach/clients/:client_id/training-sessions/:id
 ```
 
 Coach access to client sessions is read-only.
@@ -527,4 +542,3 @@ Defined in the nutrition spec; training reuses them.
 * Tempo, RIR, `%1RM`, and free-text intensity as columns (use `notes`)
 * `failure` as a set type (use the `reps` string)
 </content>
-</invoke>

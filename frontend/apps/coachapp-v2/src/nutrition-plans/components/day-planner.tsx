@@ -1,4 +1,4 @@
-import {AlertDialog, Button, Label, Radio, RadioGroup, Spinner, toast} from '@heroui/react';
+import {AlertDialog, Button, Radio, RadioGroup, Spinner, toast} from '@heroui/react';
 import {Copy, Plus, X} from 'lucide-react';
 import {useMemo, useState} from 'react';
 
@@ -192,19 +192,19 @@ export default function DayPlanner({planId, planItems, meals}: DayPlannerProps) 
                               value={clearExisting ? 'replace' : 'keep'}
                             >
                               <Radio value="replace">
-                                <Radio.Control>
-                                  <Radio.Indicator />
-                                </Radio.Control>
                                 <Radio.Content>
-                                  <Label>Replace existing meals</Label>
+                                  <Radio.Control>
+                                    <Radio.Indicator />
+                                  </Radio.Control>
+                                  Replace existing meals
                                 </Radio.Content>
                               </Radio>
                               <Radio value="keep">
-                                <Radio.Control>
-                                  <Radio.Indicator />
-                                </Radio.Control>
                                 <Radio.Content>
-                                  <Label>Keep existing and add copied meals</Label>
+                                  <Radio.Control>
+                                    <Radio.Indicator />
+                                  </Radio.Control>
+                                  Keep existing and add copied meals
                                 </Radio.Content>
                               </Radio>
                             </RadioGroup>

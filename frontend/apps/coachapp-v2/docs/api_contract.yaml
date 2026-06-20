@@ -1782,6 +1782,435 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
+  /v1/coach/clients/{client_id}/profile:
+    get:
+      summary: Get client profile
+      description: Loads or creates the coaching profile for one client in the authenticated business.
+      operationId: getCoachingClientProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Client profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachingClientProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update client profile
+      description: Updates the structured coaching profile sections for one client in the authenticated business.
+      operationId: updateCoachingClientProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoachingClientProfileRequest"
+      responses:
+        "200":
+          description: Client profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachingClientProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/profile-fields:
+    get:
+      summary: List profile fields
+      description: Lists active custom profile fields in the authenticated coach business.
+      operationId: listProfileFields
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFieldListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create profile field
+      description: Creates a custom client profile field in the authenticated coach business.
+      operationId: createProfileField
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFieldRequest"
+      responses:
+        "201":
+          description: Profile field created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFieldResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/profile-fields/{id}:
+    patch:
+      summary: Update profile field
+      description: Updates a custom client profile field in the authenticated coach business.
+      operationId: updateProfileField
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFieldUpdateRequest"
+      responses:
+        "200":
+          description: Profile field updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFieldResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete profile field
+      description: Archives a custom client profile field in the authenticated coach business.
+      operationId: deleteProfileField
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Profile field archived; no content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/form-templates:
+    get:
+      summary: List form templates
+      description: Lists form templates in the authenticated coach business.
+      operationId: listFormTemplates
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Form templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormTemplateListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create form template
+      description: Creates a form template in the authenticated coach business.
+      operationId: createFormTemplate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFormTemplateRequest"
+      responses:
+        "201":
+          description: Form template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormTemplateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/form-templates/{id}:
+    get:
+      summary: Get form template
+      description: Loads one form template in the authenticated coach business.
+      operationId: getFormTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Form template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormTemplateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update form template
+      description: Updates a form template in the authenticated coach business.
+      operationId: updateFormTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFormTemplateUpdateRequest"
+      responses:
+        "200":
+          description: Form template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormTemplateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+    delete:
+      summary: Delete form template
+      description: Deletes a form template in the authenticated coach business.
+      operationId: deleteFormTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "204":
+          description: Form template deleted; no content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/form-templates/{id}/assign:
+    post:
+      summary: Assign form template
+      description: Assigns a form template to a client in the authenticated coach business.
+      operationId: assignFormTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFormAssignmentAssignRequest"
+      responses:
+        "201":
+          description: Form assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormAssignmentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/coach/clients/{client_id}/form-assignments:
+    get:
+      summary: List client form assignments
+      description: Lists form assignments for one client in the authenticated coach business.
+      operationId: listClientFormAssignmentsForCoach
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Form assignments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormAssignmentListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/coach/form-assignments/{id}:
+    patch:
+      summary: Update form assignment
+      description: Updates coach-editable form assignment fields.
+      operationId: updateFormAssignment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFormAssignmentUpdateRequest"
+      responses:
+        "200":
+          description: Form assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormAssignmentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/client/profile:
+    get:
+      summary: Get client coaching profile
+      description: Loads or creates the authenticated client's coaching profile.
+      operationId: getClientCoachingProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Client coaching profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientCoachingProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update client coaching profile
+      description: Updates the authenticated client's structured coaching profile sections.
+      operationId: updateClientCoachingProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoachingClientProfileRequest"
+      responses:
+        "200":
+          description: Client coaching profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientCoachingProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+  /v1/client/form-assignments:
+    get:
+      summary: List form assignments
+      description: Lists form assignments for the authenticated client.
+      operationId: listClientFormAssignments
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Form assignments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormAssignmentListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/client/form-assignments/{id}:
+    get:
+      summary: Get form assignment
+      description: Loads one form assignment for the authenticated client.
+      operationId: getClientFormAssignment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Form assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormAssignmentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/client/form-assignments/{id}/submit:
+    post:
+      summary: Submit form assignment
+      description: Submits answers for a form assignment and applies profile mappings.
+      operationId: submitClientFormAssignment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientProfileFormSubmissionRequest"
+      responses:
+        "201":
+          description: Form submission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientProfileFormSubmissionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
   /v1/coach/clients/{client_id}/training_plans:
     get:
       summary: List client training plans
@@ -5302,6 +5731,392 @@ components:
           type: integer
         summary:
           $ref: "#/components/schemas/ClientSummary"
+    ProfileSection:
+      type: object
+      additionalProperties: true
+    CoachingClientProfileRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        general:
+          $ref: "#/components/schemas/ProfileSection"
+        nutrition:
+          $ref: "#/components/schemas/ProfileSection"
+        training:
+          $ref: "#/components/schemas/ProfileSection"
+        lifestyle:
+          $ref: "#/components/schemas/ProfileSection"
+        intake_status:
+          type: string
+          enum: [assigned, in_progress, completed, dismissed]
+        intake_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+    CoachingClientProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CoachingClientProfile"
+    ClientCoachingProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientCoachingProfile"
+    CoachingClientProfile:
+      type: object
+      required:
+        [id, business_id, client_id, general, nutrition, training, lifestyle, intake_status, intake_completed_at, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        general:
+          $ref: "#/components/schemas/ProfileSection"
+        nutrition:
+          $ref: "#/components/schemas/ProfileSection"
+        training:
+          $ref: "#/components/schemas/ProfileSection"
+        lifestyle:
+          $ref: "#/components/schemas/ProfileSection"
+        intake_status:
+          type: string
+          enum: [assigned, in_progress, completed, dismissed]
+        intake_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientCoachingProfile:
+      type: object
+      required: [id, client_id, general, nutrition, training, lifestyle, intake_status, intake_completed_at, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        general:
+          $ref: "#/components/schemas/ProfileSection"
+        nutrition:
+          $ref: "#/components/schemas/ProfileSection"
+        training:
+          $ref: "#/components/schemas/ProfileSection"
+        lifestyle:
+          $ref: "#/components/schemas/ProfileSection"
+        intake_status:
+          type: string
+          enum: [assigned, in_progress, completed, dismissed]
+        intake_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientProfileFieldRequest:
+      type: object
+      additionalProperties: false
+      required: [section, label, key, field_type]
+      properties:
+        section:
+          type: string
+          enum: [general, nutrition, training, lifestyle]
+        label:
+          type: string
+        key:
+          type: string
+        field_type:
+          type: string
+          enum: [text, number, boolean, date, select, multi_select]
+        options:
+          type: array
+          items:
+            type: string
+        filterable:
+          type: boolean
+    ClientProfileFieldUpdateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        section:
+          type: string
+          enum: [general, nutrition, training, lifestyle]
+        label:
+          type: string
+        key:
+          type: string
+        field_type:
+          type: string
+          enum: [text, number, boolean, date, select, multi_select]
+        options:
+          type: array
+          items:
+            type: string
+        filterable:
+          type: boolean
+    ClientProfileFieldResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientProfileField"
+    ClientProfileFieldListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientProfileField"
+    ClientProfileField:
+      type: object
+      required: [id, section, label, key, field_type, options, filterable, archived_at, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        section:
+          type: string
+          enum: [general, nutrition, training, lifestyle]
+        label:
+          type: string
+        key:
+          type: string
+        field_type:
+          type: string
+          enum: [text, number, boolean, date, select, multi_select]
+        options:
+          type: array
+          items:
+            type: string
+        filterable:
+          type: boolean
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientProfileFormTemplateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, purpose, sections]
+      properties:
+        name:
+          type: string
+        purpose:
+          type: string
+          enum: [intake, weekly_check_in, nutrition_update, training_update, custom]
+        sections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        status:
+          type: string
+          enum: [active, archived]
+    ClientProfileFormTemplateUpdateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        purpose:
+          type: string
+          enum: [intake, weekly_check_in, nutrition_update, training_update, custom]
+        sections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        status:
+          type: string
+          enum: [active, archived]
+    ClientProfileFormTemplateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientProfileFormTemplate"
+    ClientProfileFormTemplateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientProfileFormTemplate"
+    ClientProfileFormTemplate:
+      type: object
+      required: [id, name, purpose, sections, status, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        purpose:
+          type: string
+          enum: [intake, weekly_check_in, nutrition_update, training_update, custom]
+        sections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        status:
+          type: string
+          enum: [active, archived]
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientProfileFormAssignmentAssignRequest:
+      type: object
+      additionalProperties: false
+      required: [client_id]
+      properties:
+        client_id:
+          type: string
+          format: uuid
+        priority:
+          type: string
+          enum: [high, normal]
+        due_date:
+          type: string
+          format: date
+          nullable: true
+    ClientProfileFormAssignmentUpdateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        priority:
+          type: string
+          enum: [high, normal]
+        status:
+          type: string
+          enum: [assigned, in_progress, completed, dismissed]
+        due_date:
+          type: string
+          format: date
+          nullable: true
+    ClientProfileFormAssignmentResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientProfileFormAssignment"
+    ClientProfileFormAssignmentListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClientProfileFormAssignment"
+    ClientProfileFormAssignment:
+      type: object
+      required:
+        [id, client_id, form_template_id, purpose, priority, status, due_date, completed_at, form_template, inserted_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        form_template_id:
+          type: string
+          format: uuid
+        purpose:
+          type: string
+          enum: [intake, weekly_check_in, nutrition_update, training_update, custom]
+        priority:
+          type: string
+          enum: [high, normal]
+        status:
+          type: string
+          enum: [assigned, in_progress, completed, dismissed]
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        form_template:
+          $ref: "#/components/schemas/ClientProfileFormTemplate"
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ClientProfileFormSubmissionRequest:
+      type: object
+      additionalProperties: false
+      required: [answers]
+      properties:
+        answers:
+          type: object
+          additionalProperties: true
+    ClientProfileFormSubmissionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ClientProfileFormSubmission"
+    ClientProfileFormSubmission:
+      type: object
+      required: [id, form_assignment_id, question_snapshot, answers, submitted_by_type, submitted_at, inserted_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        form_assignment_id:
+          type: string
+          format: uuid
+        question_snapshot:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        answers:
+          type: object
+          additionalProperties: true
+        submitted_by_type:
+          type: string
+          enum: [coach, client, system]
+        submitted_at:
+          type: string
+          format: date-time
+        inserted_at:
+          type: string
+          format: date-time
     ClientSummary:
       type: object
       description: Badge counts for dashboard tabs. Computed from all business clients regardless of current list filters.

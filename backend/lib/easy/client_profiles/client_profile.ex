@@ -47,6 +47,7 @@ defmodule Easy.ClientProfiles.ClientProfile do
     |> check_constraint(:intake_status, name: :client_profiles_intake_status_check)
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id)
+    |> foreign_key_constraint(:client_id, name: :client_profiles_client_business_id_fkey)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

@@ -50,6 +50,8 @@ defmodule Easy.ClientProfiles.FormAssignment do
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:form_template_id)
+    |> foreign_key_constraint(:client_id, name: :form_assignments_client_business_id_fkey)
+    |> foreign_key_constraint(:form_template_id, name: :form_assignments_template_business_id_fkey)
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

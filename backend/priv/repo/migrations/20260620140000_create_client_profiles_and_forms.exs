@@ -2,6 +2,8 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
   use Ecto.Migration
 
   def change do
+    create unique_index(:clients, [:id, :business_id], name: :clients_id_business_id_index)
+
     create table(:client_profiles, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :general, :map, default: %{}, null: false
@@ -25,6 +27,17 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
 
     create unique_index(:client_profiles, [:client_id])
     create index(:client_profiles, [:business_id])
+
+    execute(
+      """
+      ALTER TABLE client_profiles
+      ADD CONSTRAINT client_profiles_client_business_id_fkey
+      FOREIGN KEY (client_id, business_id)
+      REFERENCES clients(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE client_profiles DROP CONSTRAINT client_profiles_client_business_id_fkey"
+    )
 
     create table(:profile_field_definitions, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -57,6 +70,11 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
            )
 
     create unique_index(:profile_field_definitions, [:business_id, :key])
+
+    create unique_index(:profile_field_definitions, [:id, :business_id],
+             name: :profile_field_definitions_id_business_id_index
+           )
+
     create index(:profile_field_definitions, [:business_id, :section])
 
     create table(:profile_field_values, primary_key: false) do
@@ -85,6 +103,28 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
     create unique_index(:profile_field_values, [:client_id, :profile_field_definition_id])
     create index(:profile_field_values, [:business_id, :client_id])
 
+    execute(
+      """
+      ALTER TABLE profile_field_values
+      ADD CONSTRAINT profile_field_values_client_business_id_fkey
+      FOREIGN KEY (client_id, business_id)
+      REFERENCES clients(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE profile_field_values DROP CONSTRAINT profile_field_values_client_business_id_fkey"
+    )
+
+    execute(
+      """
+      ALTER TABLE profile_field_values
+      ADD CONSTRAINT profile_field_values_definition_business_id_fkey
+      FOREIGN KEY (profile_field_definition_id, business_id)
+      REFERENCES profile_field_definitions(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE profile_field_values DROP CONSTRAINT profile_field_values_definition_business_id_fkey"
+    )
+
     create table(:form_templates, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
@@ -108,6 +148,10 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
            )
 
     create index(:form_templates, [:business_id, :purpose])
+
+    create unique_index(:form_templates, [:id, :business_id],
+             name: :form_templates_id_business_id_index
+           )
 
     create table(:form_assignments, primary_key: false) do
       add :id, :binary_id, primary_key: true
@@ -144,6 +188,36 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
     create index(:form_assignments, [:business_id, :client_id])
     create index(:form_assignments, [:business_id, :purpose, :status])
 
+    create unique_index(:form_assignments, [:id, :business_id],
+             name: :form_assignments_id_business_id_index
+           )
+
+    create unique_index(:form_assignments, [:id, :client_id, :business_id],
+             name: :form_assignments_id_client_id_business_id_index
+           )
+
+    execute(
+      """
+      ALTER TABLE form_assignments
+      ADD CONSTRAINT form_assignments_client_business_id_fkey
+      FOREIGN KEY (client_id, business_id)
+      REFERENCES clients(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE form_assignments DROP CONSTRAINT form_assignments_client_business_id_fkey"
+    )
+
+    execute(
+      """
+      ALTER TABLE form_assignments
+      ADD CONSTRAINT form_assignments_template_business_id_fkey
+      FOREIGN KEY (form_template_id, business_id)
+      REFERENCES form_templates(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE form_assignments DROP CONSTRAINT form_assignments_template_business_id_fkey"
+    )
+
     create table(:form_submissions, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :question_snapshot, {:array, :map}, default: [], null: false
@@ -170,5 +244,27 @@ defmodule Easy.Repo.Migrations.CreateClientProfilesAndForms do
 
     create index(:form_submissions, [:business_id, :client_id])
     create index(:form_submissions, [:form_assignment_id])
+
+    execute(
+      """
+      ALTER TABLE form_submissions
+      ADD CONSTRAINT form_submissions_client_business_id_fkey
+      FOREIGN KEY (client_id, business_id)
+      REFERENCES clients(id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE form_submissions DROP CONSTRAINT form_submissions_client_business_id_fkey"
+    )
+
+    execute(
+      """
+      ALTER TABLE form_submissions
+      ADD CONSTRAINT form_submissions_assignment_client_business_id_fkey
+      FOREIGN KEY (form_assignment_id, client_id, business_id)
+      REFERENCES form_assignments(id, client_id, business_id)
+      ON DELETE CASCADE
+      """,
+      "ALTER TABLE form_submissions DROP CONSTRAINT form_submissions_assignment_client_business_id_fkey"
+    )
   end
 end

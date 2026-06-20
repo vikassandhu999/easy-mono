@@ -133,6 +133,87 @@ defmodule Easy.ClientProfilesTest do
       assert updated.archived_at == nil
     end
 
+    test "database rejects profiles for clients from another business" do
+      client = insert_client()
+      other_business = insert(:business)
+
+      assert {:error, changeset} =
+               other_business.id
+               |> ClientProfile.insert_changeset(client.id)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(changeset).client_id
+    end
+
+    test "database rejects custom field values that cross client or field businesses" do
+      client = insert_client()
+      other_client = insert_client()
+      field = insert(:profile_field_definition, business: client.business)
+      other_field = insert(:profile_field_definition, business: other_client.business)
+
+      attrs = %{"value" => %{"value" => "high"}, "updated_by_type" => "coach"}
+
+      assert {:error, client_changeset} =
+               client.business_id
+               |> ProfileFieldValue.insert_changeset(other_client.id, field.id, attrs)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(client_changeset).client_id
+
+      assert {:error, field_changeset} =
+               client.business_id
+               |> ProfileFieldValue.insert_changeset(client.id, other_field.id, attrs)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(field_changeset).profile_field_definition_id
+    end
+
+    test "database rejects form assignments that cross client or template businesses" do
+      client = insert_client()
+      other_client = insert_client()
+      template = insert(:form_template, business: client.business)
+      other_template = insert(:form_template, business: other_client.business)
+
+      attrs = %{"purpose" => "intake", "priority" => "normal", "status" => "assigned"}
+
+      assert {:error, client_changeset} =
+               client.business_id
+               |> FormAssignment.insert_changeset(other_client.id, template.id, attrs)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(client_changeset).client_id
+
+      assert {:error, template_changeset} =
+               client.business_id
+               |> FormAssignment.insert_changeset(client.id, other_template.id, attrs)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(template_changeset).form_template_id
+    end
+
+    test "database rejects form submissions for a different assignment client" do
+      business = insert(:business)
+      coach = insert(:coach, business: business)
+      assigned_client = insert(:client, business: business, creator: coach, user: insert(:user))
+      submitting_client = insert(:client, business: business, creator: coach, user: insert(:user))
+      template = insert(:form_template, business: business)
+      assignment = insert(:form_assignment, business: business, client: assigned_client, form_template: template)
+
+      attrs = %{
+        "question_snapshot" => [],
+        "answers" => %{},
+        "submitted_by_type" => "client",
+        "submitted_at" => DateTime.utc_now(:second)
+      }
+
+      assert {:error, changeset} =
+               business.id
+               |> FormSubmission.insert_changeset(submitting_client.id, assignment.id, attrs)
+               |> Repo.insert()
+
+      assert "does not exist" in errors_on(changeset).form_assignment_id
+    end
+
     test "stores one custom field value per client and field" do
       client = insert_client()
       field = insert(:profile_field_definition, business: client.business)
@@ -253,12 +334,13 @@ defmodule Easy.ClientProfilesTest do
 
     test "does not return or submit assignments with cross-business templates" do
       client = insert_client()
-      other_template = insert(:form_template)
+      other_client = insert_client()
+      other_template = insert(:form_template, business: other_client.business)
 
       assignment =
         insert(:form_assignment,
-          business: client.business,
-          client: client,
+          business: other_client.business,
+          client: other_client,
           form_template: other_template
         )
 

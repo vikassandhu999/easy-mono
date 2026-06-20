@@ -935,38 +935,31 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       assert %{"data" => [], "count" => 0} = json_response(conn, 200)
     end
 
-    test "does not match another business's custom profile field value or definition", %{
+    test "does not match another business's custom profile field", %{
       conn: conn,
       coach: coach,
       business: business
     } do
-      client = insert(:client, creator: coach, business: business)
-      other_business = insert(:business)
+      insert(:client, creator: coach, business: business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
-      current_definition =
-        insert(:profile_field_definition,
-          business: business,
-          key: "meal_prep_ability",
-          filterable: true
-        )
+      insert(:profile_field_definition,
+        business: business,
+        key: "meal_prep_ability",
+        filterable: true
+      )
 
       other_definition =
         insert(:profile_field_definition,
-          business: other_business,
+          business: other_coach.business,
           key: "meal_prep_ability",
           filterable: true
         )
 
       insert(:profile_field_value,
-        business: other_business,
-        client: client,
-        profile_field_definition: current_definition,
-        value: %{"value" => "high"}
-      )
-
-      insert(:profile_field_value,
-        business: business,
-        client: client,
+        business: other_coach.business,
+        client: other_client,
         profile_field_definition: other_definition,
         value: %{"value" => "high"}
       )
@@ -984,12 +977,13 @@ defmodule EasyWeb.Coaches.ClientControllerTest do
       coach: coach,
       business: business
     } do
-      client = insert(:client, creator: coach, business: business)
-      other_business = insert(:business)
+      insert(:client, creator: coach, business: business)
+      other_coach = insert(:coach)
+      other_client = insert(:client, creator: other_coach, business: other_coach.business)
 
       insert(:client_profile,
-        business: other_business,
-        client: client,
+        business: other_coach.business,
+        client: other_client,
         nutrition: %{"goal" => "fat_loss"}
       )
 

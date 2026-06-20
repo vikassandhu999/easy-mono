@@ -50,6 +50,10 @@ defmodule Easy.ClientProfiles.FormSubmission do
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:form_assignment_id)
+    |> foreign_key_constraint(:client_id, name: :form_submissions_client_business_id_fkey)
+    |> foreign_key_constraint(:form_assignment_id,
+      name: :form_submissions_assignment_client_business_id_fkey
+    )
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

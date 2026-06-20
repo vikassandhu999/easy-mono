@@ -50,6 +50,10 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
     |> foreign_key_constraint(:business_id)
     |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:profile_field_definition_id)
+    |> foreign_key_constraint(:client_id, name: :profile_field_values_client_business_id_fkey)
+    |> foreign_key_constraint(:profile_field_definition_id,
+      name: :profile_field_values_definition_business_id_fkey
+    )
   end
 
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()

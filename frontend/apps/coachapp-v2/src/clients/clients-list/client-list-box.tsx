@@ -6,8 +6,6 @@ import type {Client} from '@/api/clients';
 
 import type {ClientListSelection} from './types';
 
-type ClientSelectionMode = 'multiple' | 'none' | 'single';
-
 type Props = {
   'aria-label'?: string;
   clients: Client[];
@@ -18,7 +16,7 @@ type Props = {
   onSelectionChange?: (keys: ClientListSelection) => void;
   renderItem: (client: Client) => ReactNode;
   selectedKeys?: 'all' | Iterable<Key>;
-  selectionMode?: ClientSelectionMode;
+  selectionMode?: 'multiple' | 'none' | 'single';
 };
 
 export default function ClientsList({

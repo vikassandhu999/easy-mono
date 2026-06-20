@@ -9,7 +9,7 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {type ClientSummary, type ListClientsFilters, useListClientsQuery} from '@/api/clients';
 
-import {ClientsBrowseList} from './clients-list';
+import ClientsBrowseList from './clients-list/clients-browse-list';
 
 type FilterOption = {
   id: string;

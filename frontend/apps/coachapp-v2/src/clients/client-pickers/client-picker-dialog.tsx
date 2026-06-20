@@ -6,7 +6,7 @@ import {useIsMobile} from '@/@hooks/use-is-mobile';
 import type {Client} from '@/api/clients';
 import ClientsList from '@/clients/clients-list/client-list-box';
 import ClientListItem from '@/clients/clients-list/client-list-item';
-import ClientsListQuery from '@/clients/clients-list/clients-list-query';
+import useClientsSearch from '@/clients/clients-list/use-clients-search';
 
 const classNames = {
   backdrop: [
@@ -49,6 +49,7 @@ export default function ClientPickerDialog({
   const isMobile = useIsMobile();
   const [filterText, setFilterText] = useState('');
   const queryFilterText = useDeferredValue(filterText);
+  const {clients, fetchNextPage, isLoading} = useClientsSearch({enabled: state.isOpen, search: queryFilterText});
 
   return (
     <Modal.Backdrop
@@ -66,59 +67,50 @@ export default function ClientPickerDialog({
           aria-label={heading}
           className={'p-0'}
         >
-          <ClientsListQuery
-            enabled={state.isOpen}
-            search={queryFilterText}
-          >
-            {({clients, fetchNextPage, isLoading}) => (
-              <>
-                <Modal.Header className={'p-2 sm:p-4 border flex'}>
-                  <div className={'flex items-center space-between gap-4'}>
-                    <SearchField
-                      autoFocus
-                      className={'flex-1'}
-                      name="search"
-                      onChange={setFilterText}
-                      value={filterText}
-                      variant="secondary"
-                    >
-                      <SearchField.Group>
-                        <SearchField.SearchIcon />
-                        <SearchField.Input placeholder="Choose client..." />
-                        <Spinner
-                          className={cn('absolute top-1/2 right-2 -translate-y-1/2', {
-                            'pointer-events-none opacity-0': !isLoading,
-                          })}
-                          size="sm"
-                        />
-                        <SearchField.ClearButton className={cn({'pointer-events-none opacity-0': isLoading})} />
-                      </SearchField.Group>
-                    </SearchField>
-                    <Modal.CloseTrigger className={'!static h-9 w-9'} />
-                  </div>
-                </Modal.Header>
-                <Modal.Body>
-                  <ClientsList
-                    clients={clients}
-                    emptyState={<EmptyState>No result found</EmptyState>}
-                    fetchNextPage={fetchNextPage}
-                    isLoading={isLoading}
-                    onSelectionChange={(keys) => onSelectionChange(keys, clients)}
-                    renderItem={(client) => (
-                      <ClientListItem
-                        client={client}
-                        showIndicator
-                        showQuickActions={false}
-                      />
-                    )}
-                    selectedKeys={selectedKeys}
-                    selectionMode={selectionMode}
+          <Modal.Header className={'p-2 sm:p-4 border flex'}>
+            <div className={'flex items-center space-between gap-4'}>
+              <SearchField
+                autoFocus
+                className={'flex-1'}
+                name="search"
+                onChange={setFilterText}
+                value={filterText}
+                variant="secondary"
+              >
+                <SearchField.Group>
+                  <SearchField.SearchIcon />
+                  <SearchField.Input placeholder="Choose client..." />
+                  <Spinner
+                    className={cn('absolute top-1/2 right-2 -translate-y-1/2', {
+                      'pointer-events-none opacity-0': !isLoading,
+                    })}
+                    size="sm"
                   />
-                </Modal.Body>
-                {footer?.(clients)}
-              </>
-            )}
-          </ClientsListQuery>
+                  <SearchField.ClearButton className={cn({'pointer-events-none opacity-0': isLoading})} />
+                </SearchField.Group>
+              </SearchField>
+              <Modal.CloseTrigger className={'!static h-9 w-9'} />
+            </div>
+          </Modal.Header>
+          <Modal.Body>
+            <ClientsList
+              clients={clients}
+              emptyState={<EmptyState>No result found</EmptyState>}
+              fetchNextPage={fetchNextPage}
+              isLoading={isLoading}
+              onSelectionChange={(keys) => onSelectionChange(keys, clients)}
+              renderItem={(client) => (
+                <ClientListItem
+                  client={client}
+                  showIndicator
+                  showQuickActions={false}
+                />
+              )}
+              selectedKeys={selectedKeys}
+              selectionMode={selectionMode}
+            />
+          </Modal.Body>
+          {footer?.(clients)}
         </Modal.Dialog>
       </Modal.Container>
     </Modal.Backdrop>

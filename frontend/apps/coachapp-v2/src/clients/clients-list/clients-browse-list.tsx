@@ -1,4 +1,3 @@
-import {memo} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {ROUTES} from '@/@config/routes';
@@ -12,10 +11,10 @@ type Props = ClientsListFilters & {
   hasFilter: boolean;
 };
 
-const ClientsBrowseList = memo(function ClientsBrowseList({hasFilter, search, status}: Props) {
+export default function ClientsBrowseList({hasFilter, search, status}: Props) {
   const navigate = useNavigate();
 
-  const {clients, fetchNextPage, isLoading} = useClientsSearch({search, status, enabled: true});
+  const {clients, fetchNextPage, isLoading} = useClientsSearch({search, status});
 
   return (
     <ClientsList
@@ -28,6 +27,4 @@ const ClientsBrowseList = memo(function ClientsBrowseList({hasFilter, search, st
       selectionMode="none"
     />
   );
-});
-
-export default ClientsBrowseList;
+}

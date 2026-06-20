@@ -4,8 +4,11 @@ defmodule Easy.ClientProfilesTest do
   alias Easy.ClientProfiles
   alias Easy.ClientProfiles.ClientProfile
   alias Easy.ClientProfiles.FormAssignment
+  alias Easy.ClientProfiles.FormSubmission
   alias Easy.ClientProfiles.FormTemplate
   alias Easy.ClientProfiles.ProfileFieldDefinition
+  alias Easy.ClientProfiles.ProfileFieldValue
+  alias Easy.Repo
 
   describe "client profile schemas" do
     test "client factory creator belongs to the same business" do
@@ -128,6 +131,47 @@ defmodule Easy.ClientProfilesTest do
 
       assert updated.id == value.id
       assert updated.value == %{"value" => "low"}
+
+      assert 1 ==
+               ProfileFieldValue
+               |> ProfileFieldValue.for_client(client.id)
+               |> ProfileFieldValue.for_field(field.id)
+               |> Repo.aggregate(:count, :id)
+    end
+
+    test "accepts string-keyed actors and rejects invalid actor types" do
+      client = insert_client()
+      field = insert(:profile_field_definition, business: client.business)
+
+      assert {:ok, value} =
+               ClientProfiles.upsert_profile_field_value(
+                 client.business_id,
+                 client.id,
+                 field.id,
+                 "high",
+                 %{"type" => "coach", "id" => client.creator_id}
+               )
+
+      assert value.updated_by_type == "coach"
+      assert value.updated_by_id == client.creator_id
+
+      assert {:error, :invalid_actor} =
+               ClientProfiles.upsert_profile_field_value(
+                 client.business_id,
+                 client.id,
+                 field.id,
+                 "low",
+                 %{type: "admin", id: client.creator_id}
+               )
+
+      assert {:error, :invalid_actor} =
+               ClientProfiles.upsert_profile_field_value(
+                 client.business_id,
+                 client.id,
+                 field.id,
+                 "low",
+                 %{"id" => client.creator_id}
+               )
     end
 
     test "form assignment statuses are constrained" do
@@ -143,6 +187,171 @@ defmodule Easy.ClientProfilesTest do
 
       refute changeset.valid?
       assert "is invalid" in errors_on(changeset).status
+    end
+
+    test "does not return or submit assignments with cross-business templates" do
+      client = insert_client()
+      other_template = insert(:form_template)
+
+      assignment =
+        insert(:form_assignment,
+          business: client.business,
+          client: client,
+          form_template: other_template
+        )
+
+      assert {:ok, []} = ClientProfiles.list_form_assignments_for_client(client.business_id, client.id)
+
+      assert {:error, :not_found} =
+               ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
+                 "answers" => %{}
+               })
+    end
+
+    test "submits form assignments into core profile and custom field values" do
+      client = insert_client()
+
+      field =
+        insert(:profile_field_definition,
+          business: client.business,
+          key: "meal_prep_ability",
+          section: "nutrition"
+        )
+
+      template =
+        insert(:form_template,
+          business: client.business,
+          sections: [
+            %{
+              "title" => "Nutrition",
+              "section" => "nutrition",
+              "questions" => [
+                %{
+                  "id" => "protein_goal",
+                  "label" => "Protein goal",
+                  "type" => "text",
+                  "profile_mapping" => %{
+                    "kind" => "core",
+                    "section" => "nutrition",
+                    "field" => "protein_goal"
+                  }
+                },
+                %{
+                  "id" => "meal_prep_ability",
+                  "label" => "Meal prep ability",
+                  "type" => "select",
+                  "profile_mapping" => %{
+                    "kind" => "custom_field",
+                    "field_key" => "meal_prep_ability"
+                  }
+                }
+              ]
+            }
+          ]
+        )
+
+      assignment =
+        insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:ok, submission} =
+               ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
+                 "answers" => %{
+                   "protein_goal" => "120g",
+                   "meal_prep_ability" => "high"
+                 }
+               })
+
+      profile = Repo.get_by!(ClientProfile, client_id: client.id)
+      value = Repo.get_by!(ProfileFieldValue, client_id: client.id, profile_field_definition_id: field.id)
+
+      assert profile.nutrition["protein_goal"] == "120g"
+      assert value.value == %{"value" => "high"}
+      assert value.updated_by_type == "client"
+      assert value.updated_from_submission_id == submission.id
+      assert Repo.get!(FormAssignment, assignment.id).status == "completed"
+    end
+
+    test "malformed core profile mappings roll back submission and profile writes" do
+      for mapping <- [
+            %{"kind" => "core", "section" => "nutrition", "field" => nil},
+            %{"kind" => "core", "section" => "nutrition"},
+            %{"kind" => "core", "section" => "nutrition", "field" => ""},
+            %{"kind" => "core", "section" => "nutrition", "field" => 123}
+          ] do
+        client = insert_client()
+
+        template =
+          insert(:form_template,
+            business: client.business,
+            sections: [
+              %{
+                "title" => "Nutrition",
+                "section" => "nutrition",
+                "questions" => [
+                  %{
+                    "id" => "protein_goal",
+                    "label" => "Protein goal",
+                    "type" => "text",
+                    "profile_mapping" => mapping
+                  }
+                ]
+              }
+            ]
+          )
+
+        assignment =
+          insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+        assert {:error, :invalid_profile_mapping} =
+                 ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
+                   "answers" => %{"protein_goal" => "120g"}
+                 })
+
+        refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+        refute Repo.get_by(ClientProfile, client_id: client.id)
+        assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      end
+    end
+
+    test "malformed custom field mappings roll back submission and profile writes" do
+      for mapping <- [
+            %{"kind" => "custom_field", "field_key" => nil},
+            %{"kind" => "custom_field"}
+          ] do
+        client = insert_client()
+
+        template =
+          insert(:form_template,
+            business: client.business,
+            sections: [
+              %{
+                "title" => "Nutrition",
+                "section" => "nutrition",
+                "questions" => [
+                  %{
+                    "id" => "meal_prep_ability",
+                    "label" => "Meal prep ability",
+                    "type" => "select",
+                    "profile_mapping" => mapping
+                  }
+                ]
+              }
+            ]
+          )
+
+        assignment =
+          insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+        assert {:error, :invalid_profile_mapping} =
+                 ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
+                   "answers" => %{"meal_prep_ability" => "high"}
+                 })
+
+        refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
+        refute Repo.get_by(ClientProfile, client_id: client.id)
+        refute Repo.get_by(ProfileFieldValue, client_id: client.id)
+        assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
+      end
     end
   end
 

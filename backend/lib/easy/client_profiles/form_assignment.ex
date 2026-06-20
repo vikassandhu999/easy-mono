@@ -55,13 +55,22 @@ defmodule Easy.ClientProfiles.FormAssignment do
   @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
   def update_changeset(assignment, attrs) do
     assignment
-    |> cast(attrs, [:purpose, :priority, :status, :due_date, :completed_at])
+    |> cast(attrs, [:priority, :status, :due_date])
     |> validate_required([:purpose, :priority, :status])
     |> validate_inclusion(:purpose, @purposes)
     |> validate_inclusion(:priority, @priorities)
     |> validate_inclusion(:status, @assignment_statuses)
     |> check_constraint(:purpose, name: :form_assignments_purpose_check)
     |> check_constraint(:priority, name: :form_assignments_priority_check)
+    |> check_constraint(:status, name: :form_assignments_status_check)
+  end
+
+  @spec complete_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()
+  def complete_changeset(assignment, completed_at) do
+    assignment
+    |> change(status: "completed", completed_at: completed_at)
+    |> validate_required([:purpose, :priority, :status, :completed_at])
+    |> validate_inclusion(:status, @assignment_statuses)
     |> check_constraint(:status, name: :form_assignments_status_check)
   end
 

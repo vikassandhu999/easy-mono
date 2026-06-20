@@ -150,6 +150,280 @@ defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldListResponse do
   OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileField}, "ClientProfileFieldListResponse"))
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
+  @statuses ["active", "archived"]
+  @section %Schema{type: :object, additionalProperties: true}
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormTemplateRequest",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      name: %Schema{type: :string},
+      purpose: %Schema{type: :string, enum: @purposes},
+      sections: %Schema{type: :array, items: @section},
+      status: %Schema{type: :string, enum: @statuses}
+    },
+    required: [:name, :purpose, :sections],
+    example: %{
+      "name" => "Initial intake",
+      "purpose" => "intake",
+      "sections" => [
+        %{
+          "title" => "Nutrition",
+          "questions" => [
+            %{"id" => "meal_prep_ability", "label" => "Meal prep ability", "type" => "select"}
+          ]
+        }
+      ]
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateUpdateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
+  @statuses ["active", "archived"]
+  @section %Schema{type: :object, additionalProperties: true}
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormTemplateUpdateRequest",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      name: %Schema{type: :string},
+      purpose: %Schema{type: :string, enum: @purposes},
+      sections: %Schema{type: :array, items: @section},
+      status: %Schema{type: :string, enum: @statuses}
+    },
+    example: %{
+      "name" => "Updated intake",
+      "status" => "archived"
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplate do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
+
+  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
+  @statuses ["active", "archived"]
+  @section %Schema{type: :object, additionalProperties: true}
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormTemplate",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          purpose: %Schema{type: :string, enum: @purposes},
+          sections: %Schema{type: :array, items: @section},
+          status: %Schema{type: :string, enum: @statuses}
+        },
+        Shared.timestamps()
+      ),
+    required: [:id, :name, :purpose, :sections, :status, :inserted_at, :updated_at]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+
+  OpenApiSpex.schema(Shared.data_response(ClientProfileFormTemplate, "ClientProfileFormTemplateResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormTemplateListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileFormTemplate}, "ClientProfileFormTemplateListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentAssignRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  @priorities ["high", "normal"]
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormAssignmentAssignRequest",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      client_id: %Schema{type: :string, format: :uuid},
+      priority: %Schema{type: :string, enum: @priorities},
+      due_date: %Schema{type: :string, format: :date, nullable: true}
+    },
+    required: [:client_id],
+    example: %{
+      "client_id" => "00000000-0000-0000-0000-000000000000",
+      "priority" => "high"
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentUpdateRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  @statuses ["assigned", "in_progress", "completed", "dismissed"]
+  @priorities ["high", "normal"]
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormAssignmentUpdateRequest",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      priority: %Schema{type: :string, enum: @priorities},
+      status: %Schema{type: :string, enum: @statuses},
+      due_date: %Schema{type: :string, format: :date, nullable: true}
+    },
+    example: %{
+      "priority" => "normal",
+      "status" => "in_progress"
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignment do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormTemplate, Shared}
+
+  @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
+  @statuses ["assigned", "in_progress", "completed", "dismissed"]
+  @priorities ["high", "normal"]
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormAssignment",
+    type: :object,
+    additionalProperties: false,
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          client_id: %Schema{type: :string, format: :uuid},
+          form_template_id: %Schema{type: :string, format: :uuid},
+          purpose: %Schema{type: :string, enum: @purposes},
+          priority: %Schema{type: :string, enum: @priorities},
+          status: %Schema{type: :string, enum: @statuses},
+          due_date: %Schema{type: :string, format: :date, nullable: true},
+          completed_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          form_template: ClientProfileFormTemplate
+        },
+        Shared.timestamps()
+      ),
+    required: [
+      :id,
+      :client_id,
+      :form_template_id,
+      :purpose,
+      :priority,
+      :status,
+      :due_date,
+      :completed_at,
+      :form_template,
+      :inserted_at,
+      :updated_at
+    ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormAssignment, Shared}
+
+  OpenApiSpex.schema(Shared.data_response(ClientProfileFormAssignment, "ClientProfileFormAssignmentResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormAssignmentListResponse do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormAssignment, Shared}
+
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: ClientProfileFormAssignment}, "ClientProfileFormAssignmentListResponse"))
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionRequest do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormSubmissionRequest",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      answers: %Schema{type: :object, additionalProperties: true}
+    },
+    required: [:answers],
+    example: %{
+      "answers" => %{"meal_prep_ability" => "high"}
+    }
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmission do
+  require OpenApiSpex
+
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "ClientProfileFormSubmission",
+    type: :object,
+    additionalProperties: false,
+    properties: %{
+      id: %Schema{type: :string, format: :uuid},
+      form_assignment_id: %Schema{type: :string, format: :uuid},
+      question_snapshot: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+      answers: %Schema{type: :object, additionalProperties: true},
+      submitted_by_type: %Schema{type: :string, enum: ["coach", "client", "system"]},
+      submitted_at: %Schema{type: :string, format: :"date-time"},
+      inserted_at: %Schema{type: :string, format: :"date-time"}
+    },
+    required: [
+      :id,
+      :form_assignment_id,
+      :question_snapshot,
+      :answers,
+      :submitted_by_type,
+      :submitted_at,
+      :inserted_at
+    ]
+  })
+end
+
+defmodule EasyWeb.OpenApi.Schemas.ClientProfileFormSubmissionResponse do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.{ClientProfileFormSubmission, Shared}
+
+  OpenApiSpex.schema(Shared.data_response(ClientProfileFormSubmission, "ClientProfileFormSubmissionResponse"))
+end
+
 defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfile do
   require OpenApiSpex
 

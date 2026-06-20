@@ -217,6 +217,40 @@ defmodule Easy.ClientProfilesTest do
       assert "is invalid" in errors_on(changeset).status
     end
 
+    test "assign_form_template forces template purpose and assigned status" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business, purpose: "weekly_check_in")
+      completed_at = DateTime.utc_now(:second)
+
+      assert {:ok, assignment} =
+               ClientProfiles.assign_form_template(client.business_id, template.id, client.id, %{
+                 "priority" => "high",
+                 "due_date" => "2026-06-30",
+                 "purpose" => "custom",
+                 "status" => "completed",
+                 "completed_at" => completed_at
+               })
+
+      assert assignment.purpose == "weekly_check_in"
+      assert assignment.priority == "high"
+      assert assignment.status == "assigned"
+      assert assignment.due_date == ~D[2026-06-30]
+      assert assignment.completed_at == nil
+    end
+
+    test "delete_form_template rejects templates with assignments" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business)
+      assignment = insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
+               ClientProfiles.delete_form_template(client.business_id, template.id)
+
+      assert detail == %{fields: %{form_template_id: ["has assignments"]}}
+      assert Repo.get!(FormTemplate, template.id)
+      assert Repo.get!(FormAssignment, assignment.id)
+    end
+
     test "does not return or submit assignments with cross-business templates" do
       client = insert_client()
       other_template = insert(:form_template)
@@ -330,11 +364,12 @@ defmodule Easy.ClientProfilesTest do
         assignment =
           insert(:form_assignment, business: client.business, client: client, form_template: template)
 
-        assert {:error, :invalid_profile_mapping} =
+        assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
                  ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
                    "answers" => %{"protein_goal" => "120g"}
                  })
 
+        assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
         assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
@@ -370,11 +405,12 @@ defmodule Easy.ClientProfilesTest do
         assignment =
           insert(:form_assignment, business: client.business, client: client, form_template: template)
 
-        assert {:error, :invalid_profile_mapping} =
+        assert {:error, %Easy.Error{status: :unprocessable_entity, detail: detail}} =
                  ClientProfiles.submit_form_assignment(client.business_id, client.id, assignment.id, %{
                    "answers" => %{"meal_prep_ability" => "high"}
                  })
 
+        assert detail == %{fields: %{profile_mapping: ["is invalid"]}}
         refute Repo.get_by(FormSubmission, form_assignment_id: assignment.id)
         refute Repo.get_by(ClientProfile, client_id: client.id)
         refute Repo.get_by(ProfileFieldValue, client_id: client.id)

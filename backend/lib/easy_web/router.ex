@@ -84,6 +84,15 @@ defmodule EasyWeb.Router do
     patch "/profile-fields/:id", ProfileFieldController, :update
     delete "/profile-fields/:id", ProfileFieldController, :delete
 
+    get "/form-templates", FormTemplateController, :index
+    post "/form-templates", FormTemplateController, :create
+    get "/form-templates/:id", FormTemplateController, :show
+    patch "/form-templates/:id", FormTemplateController, :update
+    delete "/form-templates/:id", FormTemplateController, :delete
+    post "/form-templates/:id/assign", FormTemplateController, :assign
+    get "/clients/:client_id/form-assignments", FormAssignmentController, :index
+    patch "/form-assignments/:id", FormAssignmentController, :update
+
     # Client-scoped plan lists
     get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
     get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
@@ -204,6 +213,10 @@ defmodule EasyWeb.Router do
     patch "/me", ProfileController, :update
     get "/profile", ClientProfileController, :show
     patch "/profile", ClientProfileController, :update
+
+    get "/form-assignments", FormAssignmentController, :index
+    get "/form-assignments/:id", FormAssignmentController, :show
+    post "/form-assignments/:id/submit", FormAssignmentController, :submit
 
     # Training plans (read-only)
     get "/training_plans", TrainingPlanController, :index

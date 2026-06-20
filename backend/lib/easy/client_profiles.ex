@@ -134,6 +134,14 @@ defmodule Easy.ClientProfiles do
     |> Repo.insert()
   end
 
+  @spec get_form_template(String.t(), String.t()) :: {:ok, FormTemplate.t()} | {:error, :not_found}
+  def get_form_template(business_id, template_id) do
+    FormTemplate
+    |> FormTemplate.for_business(business_id)
+    |> Repo.get(template_id)
+    |> ok_or_not_found()
+  end
+
   @spec update_form_template(String.t(), String.t(), map()) ::
           {:ok, FormTemplate.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_form_template(business_id, template_id, attrs) do
@@ -145,10 +153,14 @@ defmodule Easy.ClientProfiles do
   end
 
   @spec delete_form_template(String.t(), String.t()) ::
-          {:ok, FormTemplate.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, FormTemplate.t()} | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
   def delete_form_template(business_id, template_id) do
     with {:ok, template} <- get_form_template(business_id, template_id) do
-      Repo.delete(template)
+      if form_template_has_assignments?(business_id, template.id) do
+        {:error, Easy.Error.unprocessable(%{fields: %{form_template_id: ["has assignments"]}})}
+      else
+        Repo.delete(template)
+      end
     end
   end
 
@@ -159,12 +171,17 @@ defmodule Easy.ClientProfiles do
          {:ok, client} <- get_client(business_id, client_id) do
       attrs =
         attrs
-        |> Map.put_new("purpose", template.purpose)
+        |> Map.take(["priority", "due_date"])
         |> Map.put_new("priority", "normal")
+        |> Map.put("purpose", template.purpose)
+        |> Map.put("status", "assigned")
 
-      business_id
-      |> FormAssignment.insert_changeset(client.id, template.id, attrs)
-      |> Repo.insert()
+      with {:ok, assignment} <-
+             business_id
+             |> FormAssignment.insert_changeset(client.id, template.id, attrs)
+             |> Repo.insert() do
+        get_form_assignment(business_id, assignment.id)
+      end
     end
   end
 
@@ -194,14 +211,26 @@ defmodule Easy.ClientProfiles do
     end
   end
 
+  @spec get_client_form_assignment(String.t(), String.t(), String.t()) ::
+          {:ok, FormAssignment.t()} | {:error, :not_found}
+  def get_client_form_assignment(business_id, client_id, assignment_id) do
+    FormAssignment
+    |> FormAssignment.for_business(business_id)
+    |> FormAssignment.for_client(client_id)
+    |> with_business_template(business_id)
+    |> Repo.get(assignment_id)
+    |> ok_or_not_found()
+  end
+
   @spec submit_form_assignment(String.t(), String.t(), String.t(), map()) ::
           {:ok, FormSubmission.t()}
-          | {:error, :not_found | :invalid_profile_mapping | Ecto.Changeset.t()}
+          | {:error, :not_found | Easy.Error.t() | Ecto.Changeset.t()}
   def submit_form_assignment(business_id, client_id, assignment_id, attrs) do
-    with {:ok, assignment} <- get_client_form_assignment(business_id, client_id, assignment_id) do
+    with {:ok, answers} <- answers_from_attrs(attrs),
+         {:ok, assignment} <- get_client_form_assignment(business_id, client_id, assignment_id),
+         :ok <- ensure_assignment_submittable(assignment) do
       Repo.transaction(fn ->
         template = assignment.form_template
-        answers = Map.get(attrs, "answers", %{})
 
         submitted_at = DateTime.utc_now(:second)
 
@@ -228,10 +257,7 @@ defmodule Easy.ClientProfiles do
         apply_profile_mappings!(business_id, client_id, template.sections, answers, submission)
 
         case assignment
-             |> FormAssignment.update_changeset(%{
-               "status" => "completed",
-               "completed_at" => submitted_at
-             })
+             |> FormAssignment.complete_changeset(submitted_at)
              |> Repo.update() do
           {:ok, _assignment} -> submission
           {:error, reason} -> Repo.rollback(reason)
@@ -301,14 +327,36 @@ defmodule Easy.ClientProfiles do
   end
 
   defp apply_profile_mapping!(_business_id, _client_id, _mapping, _answer, _submission) do
-    Repo.rollback(:invalid_profile_mapping)
+    Repo.rollback(invalid_profile_mapping_error())
   end
 
   defp core_profile_section("general"), do: {:ok, :general}
   defp core_profile_section("nutrition"), do: {:ok, :nutrition}
   defp core_profile_section("training"), do: {:ok, :training}
   defp core_profile_section("lifestyle"), do: {:ok, :lifestyle}
-  defp core_profile_section(_), do: {:error, :invalid_profile_mapping}
+  defp core_profile_section(_), do: {:error, invalid_profile_mapping_error()}
+
+  defp answers_from_attrs(%{"answers" => answers}) when is_map(answers), do: {:ok, answers}
+
+  defp answers_from_attrs(%{"answers" => _answers}) do
+    {:error, Easy.Error.unprocessable(%{fields: %{answers: ["is invalid"]}})}
+  end
+
+  defp answers_from_attrs(_attrs) do
+    {:error, Easy.Error.unprocessable(%{fields: %{answers: ["can't be blank"]}})}
+  end
+
+  defp ensure_assignment_submittable(%FormAssignment{status: status}) when status in ["assigned", "in_progress"] do
+    :ok
+  end
+
+  defp ensure_assignment_submittable(_assignment) do
+    {:error, Easy.Error.unprocessable(%{fields: %{status: ["cannot be submitted"]}})}
+  end
+
+  defp invalid_profile_mapping_error do
+    Easy.Error.unprocessable(%{fields: %{profile_mapping: ["is invalid"]}})
+  end
 
   defp get_client(business_id, client_id) do
     Client
@@ -332,13 +380,6 @@ defmodule Easy.ClientProfiles do
     |> ok_or_not_found()
   end
 
-  defp get_form_template(business_id, template_id) do
-    FormTemplate
-    |> FormTemplate.for_business(business_id)
-    |> Repo.get(template_id)
-    |> ok_or_not_found()
-  end
-
   defp get_form_assignment(business_id, assignment_id) do
     FormAssignment
     |> FormAssignment.for_business(business_id)
@@ -347,13 +388,11 @@ defmodule Easy.ClientProfiles do
     |> ok_or_not_found()
   end
 
-  defp get_client_form_assignment(business_id, client_id, assignment_id) do
+  defp form_template_has_assignments?(business_id, template_id) do
     FormAssignment
     |> FormAssignment.for_business(business_id)
-    |> FormAssignment.for_client(client_id)
-    |> with_business_template(business_id)
-    |> Repo.get(assignment_id)
-    |> ok_or_not_found()
+    |> where([a], a.form_template_id == ^template_id)
+    |> Repo.exists?()
   end
 
   defp with_business_template(query, business_id) do

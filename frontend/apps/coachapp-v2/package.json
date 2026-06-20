@@ -23,6 +23,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "7.13.1",
     "tailwindcss": "^4.1.18",
+    "workbox-window": "^7.4.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

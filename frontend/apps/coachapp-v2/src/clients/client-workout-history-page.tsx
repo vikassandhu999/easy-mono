@@ -1,38 +1,23 @@
 import {Button, Spinner, Typography} from '@heroui/react';
 import {ArrowLeft} from 'lucide-react';
-import {useMemo} from 'react';
-import {useParams} from 'react-router-dom';
-import InfiniteList from '@/@components/infinite-list';
+import {useNavigate, useParams} from 'react-router-dom';
+import BrowseListBox from '@/@components/browse-list-box';
 import {Page} from '@/@components/page';
 import {useGoBack} from '@/@hooks/use-go-back';
-import {useInfiniteScroll} from '@/@hooks/use-infinite-scroll';
+import {useInfiniteItems} from '@/@hooks/use-infinite-items';
 import {useGetClientQuery} from '@/api/clients';
-import type {WorkoutSession} from '@/api/workoutSessions';
 import {useWorkoutSessionsInfiniteQuery} from '@/api/workoutSessions';
-import {SessionCard} from '@/clients/components/client-workout-history';
+import {SessionListItem} from '@/clients/components/client-workout-history';
 
 export default function ClientWorkoutHistoryPage() {
   const {id} = useParams<{id: string}>();
+  const navigate = useNavigate();
   const goBack = useGoBack(`/clients/${id}`);
   const {data: clientData, isLoading: isLoadingClient} = useGetClientQuery(id!);
   const client = clientData?.data;
 
-  const {data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isLoading} = useWorkoutSessionsInfiniteQuery({
-    client_id: id!,
-  });
-
-  const sessions = useMemo<WorkoutSession[]>(() => {
-    if (!data?.pages) {
-      return [];
-    }
-    return data.pages.flatMap((page) => page.data);
-  }, [data]);
-
-  const {sentinelRef} = useInfiniteScroll({
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  });
+  const list = useWorkoutSessionsInfiniteQuery({client_id: id!});
+  const {fetchNextPage, isFetchingNextPage, isLoading, items: sessions} = useInfiniteItems(list);
 
   const clientName = client ? [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
 
@@ -73,37 +58,36 @@ export default function ClientWorkoutHistoryPage() {
       </Page.Toolbar>
       <Page.Content className="px-4 pb-6 md:px-6 lg:px-8">
         <div className="max-w-lg">
-          <InfiniteList
-            emptyState={
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                <Typography
-                  type="body-sm"
-                  weight="medium"
-                >
-                  No workouts logged yet
-                </Typography>
-                <Typography
-                  color="muted"
-                  type="body-xs"
-                >
-                  Workout sessions will appear here once the client starts logging
-                </Typography>
-              </div>
-            }
-            hasNextPage={hasNextPage}
-            isError={isError}
-            isFetchingNextPage={isFetchingNextPage}
-            isLoading={isLoading}
-            items={sessions}
-            keyExtractor={(session) => session.id}
-            renderItem={(session) => (
-              <SessionCard
-                clientId={id!}
-                session={session}
-              />
-            )}
-            sentinelRef={sentinelRef}
-          />
+          {isLoading && sessions.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner color="accent" />
+            </div>
+          ) : (
+            <BrowseListBox
+              ariaLabel="Workout history"
+              emptyState={
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                  <Typography
+                    type="body-sm"
+                    weight="medium"
+                  >
+                    No workouts logged yet
+                  </Typography>
+                  <Typography
+                    color="muted"
+                    type="body-xs"
+                  >
+                    Workout sessions will appear here once the client starts logging
+                  </Typography>
+                </div>
+              }
+              fetchNextPage={fetchNextPage}
+              isLoading={isFetchingNextPage}
+              items={sessions}
+              onAction={(key) => navigate(`/clients/${id}/sessions/${key}`)}
+              renderItem={(session) => <SessionListItem session={session} />}
+            />
+          )}
         </div>
       </Page.Content>
     </Page>

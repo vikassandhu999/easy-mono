@@ -1,5 +1,5 @@
 import {formatSessionDate, SESSION_STATE_CHIP} from '@easy/utils';
-import {Chip, Separator, Spinner} from '@heroui/react';
+import {Chip, ListBox, Separator, Spinner} from '@heroui/react';
 import {Activity, ChevronRight, Dumbbell} from 'lucide-react';
 import {Link} from 'react-router-dom';
 
@@ -10,17 +10,17 @@ import {buildWorkoutSessionSubtitle, getWorkoutSessionTitle} from '@/domain/work
 
 const PREVIEW_LIMIT = 7;
 
-export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
+const SESSION_CARD_CLASS =
+  'flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2';
+
+function SessionCardContent({session}: {session: WorkoutSession}) {
   const title = getWorkoutSessionTitle(session);
   const dateStr = formatSessionDate(session.started_at);
   const subtitle = buildWorkoutSessionSubtitle(session);
   const stateChip = SESSION_STATE_CHIP[session.state];
 
   return (
-    <Link
-      className="flex min-h-11 items-center gap-3 rounded-xl border border-divider bg-content1 p-3 transition-colors hover:bg-content2 active:bg-content2"
-      to={`/clients/${clientId}/sessions/${session.id}`}
-    >
+    <>
       <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-content2">
         {session.planned_snapshot ? (
           <Dumbbell
@@ -59,7 +59,32 @@ export function SessionCard({clientId, session}: {clientId: string; session: Wor
           size={16}
         />
       </div>
+    </>
+  );
+}
+
+/** Link-card variant — used in the plain-list preview on the client detail page. */
+export function SessionCard({clientId, session}: {clientId: string; session: WorkoutSession}) {
+  return (
+    <Link
+      className={SESSION_CARD_CLASS}
+      to={`/clients/${clientId}/sessions/${session.id}`}
+    >
+      <SessionCardContent session={session} />
     </Link>
+  );
+}
+
+/** ListBox.Item variant — used in the infinite workout-history list; navigation is handled by the parent ListBox's onAction. */
+export function SessionListItem({session}: {session: WorkoutSession}) {
+  return (
+    <ListBox.Item
+      className={`${SESSION_CARD_CLASS} active:scale-100! data-[pressed=true]:scale-100!`}
+      id={session.id}
+      textValue={getWorkoutSessionTitle(session)}
+    >
+      <SessionCardContent session={session} />
+    </ListBox.Item>
   );
 }
 

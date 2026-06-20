@@ -76,6 +76,9 @@ defmodule EasyWeb.Router do
     delete "/clients/:id", ClientController, :delete
     get "/clients", ClientController, :index
 
+    get "/clients/:client_id/profile", ClientProfileController, :show
+    patch "/clients/:client_id/profile", ClientProfileController, :update
+
     # Client-scoped plan lists
     get "/clients/:client_id/training_plans", ClientPlanController, :training_plans
     get "/clients/:client_id/nutrition_plans", ClientPlanController, :nutrition_plans
@@ -194,6 +197,8 @@ defmodule EasyWeb.Router do
 
     get "/me", ProfileController, :show
     patch "/me", ProfileController, :update
+    get "/profile", ClientProfileController, :show
+    patch "/profile", ClientProfileController, :update
 
     # Training plans (read-only)
     get "/training_plans", TrainingPlanController, :index

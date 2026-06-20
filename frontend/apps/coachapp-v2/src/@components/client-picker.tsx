@@ -42,14 +42,6 @@ export default function ClientPicker({
 
   const clients = useMemo(() => data?.data ?? [], [data]);
 
-  const clientMap = useMemo(() => {
-    const map = new Map<string, Client>();
-    for (const client of clients) {
-      map.set(client.id, client);
-    }
-    return map;
-  }, [clients]);
-
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
       if (key == null) {
@@ -59,13 +51,13 @@ export default function ClientPicker({
       if (!id) {
         return;
       }
-      const client = clientMap.get(id);
+      const client = clients.find((c) => c.id === id);
       if (client) {
         onSelect(client);
         setSearchInput('');
       }
     },
-    [onSelect, clientMap],
+    [onSelect, clients],
   );
 
   return (

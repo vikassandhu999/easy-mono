@@ -10,7 +10,7 @@
 
 Indian coaches acquire clients primarily through WhatsApp and in-person referrals. For the MVP, the only path is a manual invite from inside the coach app: the coach enters a name and contact, the backend generates an invite URL, the coach shares it via WhatsApp.
 
-There is no storefront intake form in the MVP (see ADR-003 — the storefront feature is hidden). There are no leads. Every person in the client list was created by the coach via the invite flow.
+There is no storefront intake form in the MVP (see ADR-003 — the storefront feature was removed from coachapp-v2 on 2026-06-20, parked for v2 and still in git history). There are no leads. Every person in the client list was created by the coach via the invite flow.
 
 The client model itself is intentionally small — see [ADR-005: Client Management](adr-005-client-management.md) for the current MVP `Client` type and the full list of fields that were removed (program, payment, intake, offer, status_override).
 
@@ -121,7 +121,7 @@ The API uses `status: "pending"` for clients who haven't been activated yet. The
 
 ### 7. No leads, no storefront intake
 
-The storefront feature is hidden for MVP (see ADR-003). There is no public intake form creating pending clients. Every client is created by the coach via the invite flow inside the app. When the storefront ships in v2, it will also create clients with `status: pending` rather than introducing a separate Lead entity.
+The storefront feature was removed from coachapp-v2 on 2026-06-20 (parked for v2, still in git history; see ADR-003). There is no public intake form creating pending clients. Every client is created by the coach via the invite flow inside the app. When the storefront ships in v2, it will also create clients with `status: pending` rather than introducing a separate Lead entity.
 
 ---
 

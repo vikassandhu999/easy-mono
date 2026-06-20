@@ -34,32 +34,23 @@ export default function FoodPicker({
 
   const foods = useMemo(() => data?.data ?? [], [data]);
 
-  // Build a lookup map so we can resolve the full Food object from a Key on selection
-  const foodMap = useMemo(() => {
-    const map = new Map<string, Food>();
-    for (const food of foods) {
-      map.set(food.id, food);
-    }
-    return map;
-  }, [foods]);
-
   const handleChange = useCallback(
     (key: Key | Key[] | null) => {
       if (key == null) {
         return;
       }
-      const id = typeof key === 'string' ? key : Array.isArray(key) ? String(key[0]) : String(key);
+      const id = String(Array.isArray(key) ? (key[0] ?? '') : key);
       if (!id) {
         return;
       }
-      const food = foodMap.get(id);
+      const food = foods.find((f) => f.id === id);
       if (food) {
         onSelect(food);
         // Clear the search after selection
         setSearchInput('');
       }
     },
-    [onSelect, foodMap],
+    [onSelect, foods],
   );
 
   return (

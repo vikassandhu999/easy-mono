@@ -387,17 +387,6 @@ export default function ClientDetail() {
   const name = [client.first_name, client.last_name].filter(Boolean).join(' ');
   const initials = (client.first_name?.[0] || '' + client.last_name?.[0] || '')?.toUpperCase();
 
-  // let subtitle = client.email ?? client.phone ?? client.status;
-  // if (client.status === 'active') {
-  //   subtitle = `Active · since ${formatIsoDateShort(client.inserted_at)}`;
-  // }
-  // if (client.status === 'pending') {
-  //   subtitle = `Invited · ${formatTimeAgo(client.inserted_at)}`;
-  // }
-
-  // const status = STATUS_MAP[client.status] ?? {color: 'default' as const, label: client.status};
-  // const whatsapp = client.phone?.replace(/\D/g, '');
-
   return (
     <Page>
       <Page.Header className="py-4 max-w-xl sm:py-8 items-center">

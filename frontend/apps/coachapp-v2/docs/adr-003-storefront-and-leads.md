@@ -1,5 +1,7 @@
 # ADR-003: Coach Storefront & Client Acquisition
 
+> **⚠️ Status (2026-06-20): The storefront feature has been removed from coachapp-v2.** It was previously hidden behind "hidden for MVP" flags and is now fully removed (routes, screens, components, `api/storefront.ts`, `api/offers.ts`, `api/testimonials.ts`, and the `@easy/storefront-types` dependency) — parked for a future v2 release and still recoverable from git history. This document is retained as the design of record.
+
 **Date:** 2026-04-05
 **Last updated:** 2026-04-11 (MVP client simplification — intake_answers/offer/source removed from Client; see ADR-005)
 **Status:** Hidden for MVP — sidebar nav and routes commented out in `app-shell.tsx`. All code, API endpoints, and the public website remain intact for v2 release.
@@ -271,7 +273,7 @@ The section title adapts: "Results" if photos exist, "What Clients Say" if only 
 
 ### 12. Sidebar structure: Storefront group + Clients with pending badge
 
-The sidebar (`app-shell.tsx`) defines a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. **For MVP, this group is commented out** — the storefront feature module, API endpoints, and public website pages remain intact but are not navigable from the coach app UI. The "Clients" item has a `PendingClientBadge` showing the count of pending clients (storefront applications) from `ClientSummary`, fetched via `useListClientsQuery({ status: 'pending', limit: 0 })`. The badge is hidden when count is 0.
+The sidebar (`app-shell.tsx`) defined a "Storefront" collapsible group containing "My Page", "Offers", and "Testimonials" sub-items. **For MVP, this group was commented out**, and as of 2026-06-20 the storefront feature module and its coachapp-v2 API endpoints have been removed entirely (parked for v2; recoverable from git history). The public website pages are out of scope for this app. The "Clients" item has a `PendingClientBadge` showing the count of pending clients (storefront applications) from `ClientSummary`, fetched via `useListClientsQuery({ status: 'pending', limit: 0 })`. The badge is hidden when count is 0.
 
 ---
 

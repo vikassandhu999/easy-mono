@@ -59,12 +59,6 @@ export type PlanItemCreateRequest = {
   meal_id: string;
 };
 
-export type PlanItemUpdateRequest = {
-  day?: string;
-  meal_type?: string;
-  meal_id?: string;
-};
-
 export type CopyDayRequest = {
   source_day: string;
   target_day: string;
@@ -95,16 +89,6 @@ export type ListClientNutritionPlansParams = {
   status?: NutritionPlanStatus;
 };
 
-export type ShoppingListItem = {
-  type: string;
-  name: null | string;
-  food_id: null | string;
-  recipe_id: null | string;
-  unit: null | string;
-  amount: number;
-  weight_g: number;
-};
-
 const PAGE_SIZE = 20;
 
 export function nutritionPlanFromApi(plan: NutritionPlan): NutritionPlan {
@@ -118,13 +102,6 @@ function mapNutritionPlanResponse(response: ApiResponse<NutritionPlan>): ApiResp
   return {
     ...response,
     data: nutritionPlanFromApi(response.data),
-  };
-}
-
-function mapNutritionPlanListResponse(response: ApiListResponse<NutritionPlan>): ApiListResponse<NutritionPlan> {
-  return {
-    ...response,
-    data: response.data.map(nutritionPlanFromApi),
   };
 }
 
@@ -210,7 +187,6 @@ export const nutritionPlansApi = api.injectEndpoints({
     }),
     listNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListNutritionPlansParams>({
       query: (params) => ({url: '/v1/coach/nutrition_plans', params}),
-      transformResponse: mapNutritionPlanListResponse,
       providesTags: (result) => listTags('NutritionPlan', result),
     }),
     nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters, number>({
@@ -223,7 +199,6 @@ export const nutritionPlansApi = api.injectEndpoints({
           limit: PAGE_SIZE,
         },
       }),
-      transformResponse: mapNutritionPlanListResponse,
       infiniteQueryOptions: {
         initialPageParam: 0,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -238,7 +213,6 @@ export const nutritionPlansApi = api.injectEndpoints({
         params,
         url: `/v1/coach/clients/${clientId}/nutrition_plans`,
       }),
-      transformResponse: mapNutritionPlanListResponse,
       providesTags: (result) => listTags('NutritionPlan', result, 'CLIENT_LIST'),
     }),
     updateNutritionPlan: build.mutation<ApiResponse<NutritionPlan>, {body: NutritionPlanUpdateRequest; id: string}>({
@@ -304,10 +278,6 @@ export const nutritionPlansApi = api.injectEndpoints({
         {type: 'PlanItem', id: getPlanScopedId(id)},
       ],
     }),
-    getNutritionPlanShoppingList: build.query<ApiResponse<ShoppingListItem[]>, string>({
-      query: (id) => `/v1/coach/nutrition_plans/${id}/shopping-list`,
-      providesTags: (_, __, id) => [{type: 'NutritionPlan', id}],
-    }),
     getNutritionPlanMacros: build.query<ApiResponse<Macros>, string>({
       query: (id) => `/v1/coach/nutrition_plans/${id}/macros`,
       providesTags: (_, __, id) => [{type: 'NutritionPlan', id}],
@@ -320,22 +290,6 @@ export const nutritionPlansApi = api.injectEndpoints({
       }),
       invalidatesTags: (_, __, {planId}) => [
         {type: 'NutritionPlan', id: planId},
-        {type: 'PlanItem', id: getPlanScopedId(planId)},
-      ],
-    }),
-    listPlanItems: build.query<ApiResponse<PlanItem[]>, string>({
-      query: (planId) => `/v1/coach/nutrition_plans/${planId}/plan_items`,
-      providesTags: (result, __, planId) => listTags('PlanItem', result, getPlanScopedId(planId)),
-    }),
-    updatePlanItem: build.mutation<ApiResponse<PlanItem>, {body: PlanItemUpdateRequest; id: string; planId: string}>({
-      query: ({body, id}) => ({
-        url: `/v1/coach/plan_items/${id}`,
-        method: 'PATCH',
-        body,
-      }),
-      invalidatesTags: (_, __, {id, planId}) => [
-        {type: 'NutritionPlan', id: planId},
-        {type: 'PlanItem', id},
         {type: 'PlanItem', id: getPlanScopedId(planId)},
       ],
     }),
@@ -363,11 +317,8 @@ export const {
   useDuplicateNutritionPlanMutation,
   useGetNutritionPlanMacrosQuery,
   useGetNutritionPlanQuery,
-  useGetNutritionPlanShoppingListQuery,
   useListClientNutritionPlansQuery,
   useListNutritionPlansQuery,
-  useListPlanItemsQuery,
   useNutritionPlansInfiniteQuery,
   useUpdateNutritionPlanMutation,
-  useUpdatePlanItemMutation,
 } = nutritionPlansApi;

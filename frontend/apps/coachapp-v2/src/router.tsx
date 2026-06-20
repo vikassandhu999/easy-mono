@@ -34,15 +34,6 @@ import CreateRecipe from '@/recipes/create-recipe';
 import EditRecipe from '@/recipes/edit-recipe';
 import ListRecipes from '@/recipes/list-recipes';
 import RecipeDetail from '@/recipes/recipe-detail';
-// Storefront hidden for MVP — uncomment for v2 release
-// import CreateOffer from '@/storefront/create-offer';
-// import CreateTestimonial from '@/storefront/create-testimonial';
-// import EditOffer from '@/storefront/edit-offer';
-// import EditTestimonial from '@/storefront/edit-testimonial';
-// import ListOffers from '@/storefront/list-offers';
-// import ListTestimonials from '@/storefront/list-testimonials';
-// import Storefront from '@/storefront/storefront';
-// import StorefrontEditor from '@/storefront/storefront-editor';
 import Settings from '@/settings/settings';
 import CreateTrainingPlan from '@/training-plans/create-training-plan';
 import EditTrainingPlan from '@/training-plans/edit-training-plan';
@@ -116,15 +107,6 @@ export const router = createBrowserRouter([
       {path: ROUTES.CREATE_TRAINING_PLAN, Component: CreateTrainingPlan},
       {path: ROUTES.TRAINING_PLAN_DETAIL, Component: TrainingPlanDetail},
       {path: ROUTES.EDIT_TRAINING_PLAN, Component: EditTrainingPlan},
-      // Storefront routes hidden for MVP — uncomment for v2 release
-      // {path: ROUTES.STOREFRONT, Component: Storefront},
-      // {path: ROUTES.STOREFRONT_PAGE, Component: StorefrontEditor},
-      // {path: ROUTES.STOREFRONT_OFFERS, Component: ListOffers},
-      // {path: ROUTES.CREATE_OFFER, Component: CreateOffer},
-      // {path: ROUTES.EDIT_OFFER, Component: EditOffer},
-      // {path: ROUTES.STOREFRONT_TESTIMONIALS, Component: ListTestimonials},
-      // {path: ROUTES.CREATE_TESTIMONIAL, Component: CreateTestimonial},
-      // {path: ROUTES.EDIT_TESTIMONIAL, Component: EditTestimonial},
       {path: ROUTES.SETTINGS, Component: Settings},
     ],
   },

@@ -117,9 +117,6 @@ importers:
 
   apps/coachapp-v2:
     dependencies:
-      '@easy/storefront-types':
-        specifier: workspace:^
-        version: link:../../packages/storefront-types
       '@easy/utils':
         specifier: workspace:^
         version: link:../../packages/utils
@@ -135,24 +132,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.10.0(react-hook-form@7.62.0(react@19.1.1))
-      '@internationalized/date':
-        specifier: ^3.11.0
-        version: 3.11.0
-      '@react-aria/utils':
-        specifier: ^3.26.0
-        version: 3.34.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/data':
-        specifier: ^3.16.0
-        version: 3.16.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@reduxjs/toolkit':
         specifier: ^2.9.0
         version: 2.9.0(react-redux@9.2.0(@types/react@19.2.7)(react@19.1.1)(redux@5.0.1))(react@19.1.1)
       lucide-react:
         specifier: ^0.408.0
         version: 0.408.0(react@19.1.1)
-      qrcode.react:
-        specifier: ^4.2.0
-        version: 4.2.0(react@19.1.1)
       react:
         specifier: ^19.1.0
         version: 19.1.1
@@ -165,18 +150,12 @@ importers:
       react-redux:
         specifier: ^9.2.0
         version: 9.2.0(@types/react@19.2.7)(react@19.1.1)(redux@5.0.1)
-      react-router:
-        specifier: ^7.8.2
-        version: 7.8.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react-router-dom:
         specifier: 7.13.1
         version: 7.13.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
-      workbox-window:
-        specifier: ^7.4.0
-        version: 7.4.0
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -2175,12 +2154,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
 
-  '@react-stately/data@3.16.0':
-    resolution: {integrity: sha512-1bxU6mgKJsTR/exvqRHMmgwZTnKhEEAETj/94uBiCndYvowTHBQwON8rZjXkjpee7ZAAzk8YpVVb3ZkNw/ib/g==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-      react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-
   '@react-stately/dnd@3.7.4':
     resolution: {integrity: sha512-YD0TVR5JkvTqskc1ouBpVKs6t/QS4RYCIyu8Ug8RgO122iIizuf2pfKnRLjYMdu5lXzBXGaIgd49dvnLzEXHIw==}
     peerDependencies:
@@ -3988,11 +3961,6 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
-
-  qrcode.react@4.2.0:
-    resolution: {integrity: sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   quansync@0.2.11:
     resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
@@ -7167,13 +7135,6 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@react-stately/data@3.16.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      react-stately: 3.46.0(react@19.1.1)
-
   '@react-stately/dnd@3.7.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@react-stately/selection': 3.20.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -9071,10 +9032,6 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
-
-  qrcode.react@4.2.0(react@19.1.1):
-    dependencies:
-      react: 19.1.1
 
   quansync@0.2.11: {}
 

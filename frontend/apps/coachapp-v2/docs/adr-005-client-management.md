@@ -8,7 +8,7 @@
 
 ## Context
 
-For the MVP, client management is stripped down to the minimum a coach needs to run the core coaching loop with their first 10-20 clients. Payments are tracked on WhatsApp/UPI, there is no storefront intake form, and there are no program dates driving auto-computed status. Clients are a flat list of people the coach is coaching, invited, or has archived.
+For the MVP, client management is stripped down to the minimum a coach needs to run the core coaching loop with their first 10-20 clients. Payments are tracked on WhatsApp/UPI, there is no storefront intake form (the storefront feature was removed from coachapp-v2 on 2026-06-20, parked for a future v2 release; still in git history), and there are no program dates driving auto-computed status. Clients are a flat list of people the coach is coaching, invited, or has archived.
 
 The previous design (hero card + program strip + intake + collapsible form sections + renew flow) was removed because the underlying fields were removed from the backend. The current design is deliberately simple: a list with a status filter, a detail page focused on plans and notes, and a flat edit form.
 
@@ -67,7 +67,7 @@ The detail page is a vertical stack of focused sections. No hero card with conso
 - **Contact actions** (WhatsApp, Call) — deferred, not in MVP
 - **Program strip** — no program data to show
 - **Payment status / Mark as paid** — payments tracked externally
-- **Intake section** — no storefront intake
+- **Intake section** — no storefront intake (storefront feature removed from coachapp-v2 on 2026-06-20, parked for v2; still in git history)
 - **Renew button** — no program dates to renew
 - **Archive button** — archiving is done via the edit form status dropdown
 

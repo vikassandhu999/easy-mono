@@ -1,6 +1,17 @@
-import {useViewportSize} from '@react-aria/utils';
+import {useEffect, useState} from 'react';
+
+const QUERY = '(max-width: 767px)';
 
 export function useIsMobile() {
-  const {width} = useViewportSize();
-  return width < 768;
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(QUERY).matches);
+
+  useEffect(() => {
+    const mql = window.matchMedia(QUERY);
+    const onChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  return isMobile;
 }

@@ -84,18 +84,6 @@ const LIBRARY_GROUP: NavGroup = {
   pathPrefix: ROUTES.LIBRARY,
 };
 
-// Storefront group — hidden for MVP, uncomment for v2 release
-// const STOREFRONT_GROUP: NavGroup = {
-//   icon: <Store size={ICON_SIZE} />,
-//   items: [
-//     {icon: <Store size={ICON_SIZE} />, label: 'My Page', path: ROUTES.STOREFRONT_PAGE},
-//     {icon: <Gift size={ICON_SIZE} />, label: 'Offers', path: ROUTES.STOREFRONT_OFFERS},
-//     {icon: <MessageSquareQuote size={ICON_SIZE} />, label: 'Testimonials', path: ROUTES.STOREFRONT_TESTIMONIALS},
-//   ],
-//   label: 'Storefront',
-//   pathPrefix: ROUTES.STOREFRONT,
-// };
-
 // Bottom sidebar items
 const SIDEBAR_BOTTOM: NavItem[] = [
   {
@@ -261,8 +249,6 @@ export default function AppShell() {
               />
             ))}
             <SidebarNavGroupSection group={LIBRARY_GROUP} />
-            {/* Storefront hidden for MVP — uncomment for v2 release */}
-            {/* <SidebarNavGroupSection group={STOREFRONT_GROUP} /> */}
           </div>
           <Separator className="my-2" />
           <div className="space-y-1 pt-2">

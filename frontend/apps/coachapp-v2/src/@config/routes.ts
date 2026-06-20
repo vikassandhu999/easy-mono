@@ -32,13 +32,5 @@ export const ROUTES = {
   CREATE_TRAINING_PLAN: '/library/training-plans/create',
   TRAINING_PLAN_DETAIL: '/library/training-plans/:id',
   EDIT_TRAINING_PLAN: '/library/training-plans/:id/edit',
-  STOREFRONT: '/storefront',
-  STOREFRONT_PAGE: '/storefront/page',
-  STOREFRONT_OFFERS: '/storefront/offers',
-  CREATE_OFFER: '/storefront/offers/create',
-  EDIT_OFFER: '/storefront/offers/:id/edit',
-  STOREFRONT_TESTIMONIALS: '/storefront/testimonials',
-  CREATE_TESTIMONIAL: '/storefront/testimonials/create',
-  EDIT_TESTIMONIAL: '/storefront/testimonials/:id/edit',
   SETTINGS: '/settings',
 } as const;

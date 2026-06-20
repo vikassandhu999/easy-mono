@@ -20,16 +20,6 @@ export const PLAN_STATUS_MAP: Record<PlanStatus, {color: 'default' | 'success' |
 // that escaped migration). Keeps the UI resilient instead of crashing on undefined lookups.
 export const UNKNOWN_PLAN_STATUS = {color: 'default' as const, label: 'Unknown'};
 
-export function getInitials(firstName: null | string, lastName: null | string): string {
-  const first = firstName?.charAt(0)?.toUpperCase() ?? '';
-  const last = lastName?.charAt(0)?.toUpperCase() ?? '';
-  return first + last || '?';
-}
-
-export function getFullName(firstName: null | string, lastName: null | string): string {
-  return [firstName, lastName].filter(Boolean).join(' ') || 'No name';
-}
-
 export function getWhatsAppUrl(phone: string): string {
   const cleanPhone = phone.replace(/\D/g, '');
   return `https://wa.me/${cleanPhone}`;

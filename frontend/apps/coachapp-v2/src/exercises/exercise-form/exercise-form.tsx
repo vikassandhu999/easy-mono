@@ -1,26 +1,7 @@
-import type {Key} from '@heroui/react';
-
-import {
-  Autocomplete,
-  Button,
-  Description,
-  EmptyState,
-  ErrorMessage,
-  FieldError,
-  Fieldset,
-  Form,
-  Label,
-  ListBox,
-  SearchField,
-  Spinner,
-  Tag,
-  TagGroup,
-  Typography,
-  useFilter,
-} from '@heroui/react';
+import {Button, Description, ErrorMessage, Fieldset, Form, ListBox, Spinner, Typography} from '@heroui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {ImageOff, Plus, X} from 'lucide-react';
-import {type ReactNode, useState} from 'react';
+import {useState} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {FormSelectField, FormTextAreaField, FormTextField} from '@/@components/form-fields';
@@ -34,6 +15,7 @@ import {
   type Muscle,
 } from '@/api/exercises';
 import {omitUndefined, toOptionalText} from '@/api/shared';
+import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 const MECHANICS_OPTIONS: {label: string; value: ExerciseMechanics}[] = [
   {label: 'Compound', value: 'compound'},
@@ -154,149 +136,6 @@ function ImageThumbnail({url}: {url: string}) {
       onError={() => setFailed(true)}
       src={url}
     />
-  );
-}
-
-type MultiSelectOption = {
-  id: string;
-  name: string;
-};
-
-type AutocompleteValueRenderProps = {
-  defaultChildren: ReactNode;
-  isPlaceholder: boolean;
-  state: {selectedItems: {key: Key}[]};
-};
-
-type MultiSelectAutocompleteProps = {
-  emptyMessage: string;
-  errorMessage?: string;
-  isInvalid?: boolean;
-  items: MultiSelectOption[];
-  label: string;
-  name: string;
-  onChange: (ids: string[]) => void;
-  placeholder: string;
-  searchPlaceholder: string;
-  value: string[];
-};
-
-function normalizeSelectedKeys(keys: Key | Key[] | null): string[] {
-  if (keys == null) {
-    return [];
-  }
-
-  if (Array.isArray(keys)) {
-    return keys.map(String);
-  }
-
-  return [String(keys)];
-}
-
-function MultiSelectAutocomplete({
-  emptyMessage,
-  errorMessage,
-  isInvalid = false,
-  items,
-  label,
-  name,
-  onChange,
-  placeholder,
-  searchPlaceholder,
-  value,
-}: MultiSelectAutocompleteProps) {
-  const {contains} = useFilter({sensitivity: 'base'});
-
-  const handleRemoveTags = (keys: Set<Key>) => {
-    onChange(value.filter((id) => !keys.has(id)));
-  };
-
-  return (
-    <Autocomplete
-      className="w-full"
-      isInvalid={isInvalid}
-      name={name}
-      onChange={(keys) => onChange(normalizeSelectedKeys(keys))}
-      placeholder={placeholder}
-      selectionMode="multiple"
-      value={value}
-      variant="secondary"
-    >
-      <Label>{label}</Label>
-      <Autocomplete.Trigger>
-        <Autocomplete.Value>
-          {({defaultChildren, isPlaceholder, state}: AutocompleteValueRenderProps) => {
-            if (isPlaceholder || state.selectedItems.length === 0) {
-              return defaultChildren;
-            }
-
-            const selectedItemKeys = state.selectedItems.map((item) => item.key);
-
-            return (
-              <TagGroup
-                onRemove={handleRemoveTags}
-                size="sm"
-                variant="surface"
-              >
-                <TagGroup.List>
-                  {selectedItemKeys.map((key) => {
-                    const item = items.find((option) => option.id === String(key));
-
-                    if (!item) {
-                      return null;
-                    }
-
-                    return (
-                      <Tag
-                        id={item.id}
-                        key={item.id}
-                        textValue={item.name}
-                      >
-                        {item.name}
-                      </Tag>
-                    );
-                  })}
-                </TagGroup.List>
-              </TagGroup>
-            );
-          }}
-        </Autocomplete.Value>
-        <Autocomplete.ClearButton />
-        <Autocomplete.Indicator />
-      </Autocomplete.Trigger>
-      <Autocomplete.Popover>
-        <Autocomplete.Filter filter={contains}>
-          <SearchField
-            autoFocus
-            className="sticky top-0 z-10"
-            name={`${name}-search`}
-            variant="secondary"
-          >
-            <SearchField.Group>
-              <SearchField.SearchIcon />
-              <SearchField.Input placeholder={searchPlaceholder} />
-              <SearchField.ClearButton />
-            </SearchField.Group>
-          </SearchField>
-          <ListBox
-            className="max-h-[280px] overflow-y-auto"
-            renderEmptyState={() => <EmptyState>{emptyMessage}</EmptyState>}
-          >
-            {items.map((item) => (
-              <ListBox.Item
-                id={item.id}
-                key={item.id}
-                textValue={item.name}
-              >
-                {item.name}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Autocomplete.Filter>
-      </Autocomplete.Popover>
-      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-    </Autocomplete>
   );
 }
 

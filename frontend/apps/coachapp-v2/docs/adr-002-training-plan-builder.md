@@ -1,5 +1,7 @@
 # ADR-002: Training plan builder
 
+> **⚠️ Status (2026-06-20): the in-app training-plan builder has been removed from coachapp-v2.** The interactive builder UI (`weekly-overview`, `workout-section`, `inline-exercise-form`, `exercise-element`, `exercise-picker`, `workout-name-form`, `unit-picker`) and the workout / plan-item / workout-element CRUD endpoints were deleted; the training-plan detail view is now read-only (create / list / assign / delete still work, but no in-app workout or exercise editing). The components and endpoints remain in git history. This document is retained as the design of record.
+
 **Date:** 2026-03-29
 **Last updated:** 2026-06-19
 **Status:** Accepted for the coach-app surface that exists today. The backend training-context refactor in `docs/superpowers/specs/2026-05-31-training-context-refactor-design.md` supersedes several data-model choices but has not been reflected in the coach app API types yet.

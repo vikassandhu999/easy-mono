@@ -1,5 +1,5 @@
 import {api} from '@/api/base';
-import {ApiListResponse, ApiResponse, listTags, pageTags} from '@/api/shared';
+import {ApiListResponse, ApiResponse, pageTags} from '@/api/shared';
 
 const PAGE_SIZE = 20;
 
@@ -31,13 +31,6 @@ export type Exercise = {
   muscles: Muscle[];
   name: string;
   updated_at: string;
-};
-
-export type ListExercisesParams = {
-  limit?: number;
-  muscle_ids?: string[];
-  offset?: number;
-  search?: string;
 };
 
 /** Filter params for infinite query — no offset/limit (pagination handled by infiniteQuery) */
@@ -72,15 +65,6 @@ export const exercisesApi = api.injectEndpoints({
     getExercise: build.query<ApiResponse<Exercise>, string>({
       query: (id) => `/v1/coach/exercises/${id}`,
       providesTags: (_, __, id) => [{type: 'Exercise', id}],
-    }),
-    listExercises: build.query<ApiListResponse<Exercise>, ListExercisesParams | void>({
-      query: (params) => ({
-        url: '/v1/coach/exercises',
-        params: params
-          ? {...params, muscle_ids: params.muscle_ids?.length ? params.muscle_ids.join(',') : undefined}
-          : undefined,
-      }),
-      providesTags: (result) => listTags('Exercise', result),
     }),
     exercises: build.infiniteQuery<ApiListResponse<Exercise>, ListExercisesFilters | void, number>({
       query: ({queryArg, pageParam}) => ({
@@ -152,7 +136,6 @@ export const {
   useExercisesInfiniteQuery,
   useGetExerciseQuery,
   useListEquipmentQuery,
-  useListExercisesQuery,
   useListMusclesQuery,
   useUpdateExerciseMutation,
 } = exercisesApi;

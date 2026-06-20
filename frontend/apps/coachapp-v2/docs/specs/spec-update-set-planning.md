@@ -1,5 +1,7 @@
 # Spec Update: Exercise Set Planning
 
+> **⚠️ Status (2026-06-20): the exercise set-planning edit flow described here has been removed from coachapp-v2.** The interactive plan builder — including `exercise-element.tsx` and the inline exercise form, along with the per-set bulk-edit and rest-picker surfaces — was deleted; the training-plan detail view is now read-only (create / list / assign / delete only, no in-app workout/exercise editing). Still in git history. This document is retained as the design of record.
+
 **Date:** 2026-04-23
 **Based on QA report:** [qa-report-set-planning.md](./qa-report-set-planning.md)
 **Targets:** [ux-spec-exercise-set-planning-2026-04-22.md](./ux-spec-exercise-set-planning-2026-04-22.md)

@@ -9,8 +9,8 @@ import {Page} from '@/@components/page';
 import {ROUTES} from '@/@config/routes';
 import {useGoBack} from '@/@hooks/use-go-back';
 import {useInfiniteItems} from '@/@hooks/use-infinite-items';
-import {useExercisesInfiniteQuery} from '@/api/exercises';
-import MusclePicker from '@/exercises/components/muscle-picker';
+import {useExercisesInfiniteQuery, useListMusclesQuery} from '@/api/exercises';
+import MultiSelectAutocomplete from '@/exercises/components/multi-select-autocomplete';
 
 import ExerciseListItem from './exercise-list-item';
 
@@ -23,6 +23,9 @@ export default function ListExercises() {
   const deferredSearch = useDeferredValue(search);
   const list = useExercisesInfiniteQuery({muscle_ids: selectedMuscleIds, search: deferredSearch});
   const {fetchNextPage, isLoading, items, isFetchingNextPage} = useInfiniteItems(list);
+
+  const {data: musclesData} = useListMusclesQuery();
+  const muscles = musclesData?.data ?? [];
 
   return (
     <Page>
@@ -63,12 +66,19 @@ export default function ListExercises() {
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
-        <div className="lg:min-w-40 space-y-4 rounded-3xl">
-          <MusclePicker
-            onChange={setSelectedMuscleIds}
-            value={selectedMuscleIds}
-          />
-        </div>
+        {muscles.length > 0 && (
+          <div className="lg:min-w-40 space-y-4 rounded-3xl">
+            <MultiSelectAutocomplete
+              emptyMessage="No muscles found"
+              items={muscles}
+              name="muscle_ids"
+              onChange={setSelectedMuscleIds}
+              placeholder="Muscle groups"
+              searchPlaceholder="Search muscles..."
+              value={selectedMuscleIds}
+            />
+          </div>
+        )}
       </Page.Toolbar>
       <Page.Content>
         <BrowseListBox

@@ -135,13 +135,7 @@ type FoodFormProps = {
 
 type MacroFieldName = 'calories_per_100g' | 'carbs_g' | 'fats_g' | 'fiber_g' | 'protein_g' | 'sugar_g';
 
-type MacroFieldConfig = {
-  label: string;
-  name: MacroFieldName;
-  step?: number;
-};
-
-const MACRO_FIELDS: MacroFieldConfig[] = [
+const MACRO_FIELDS: {label: string; name: MacroFieldName; step?: number}[] = [
   {label: 'Calories (optional)', name: 'calories_per_100g'},
   {label: 'Protein, grams (optional)', name: 'protein_g', step: 0.1},
   {label: 'Carbs, grams (optional)', name: 'carbs_g', step: 0.1},
@@ -149,19 +143,6 @@ const MACRO_FIELDS: MacroFieldConfig[] = [
   {label: 'Fiber, grams (optional)', name: 'fiber_g', step: 0.1},
   {label: 'Sugar, grams (optional)', name: 'sugar_g', step: 0.1},
 ];
-
-function MacroNumberField({fieldConfig, form}: {fieldConfig: MacroFieldConfig; form: ReturnType<typeof useFoodForm>}) {
-  return (
-    <FormNumberField
-      control={form.control}
-      fullWidth
-      label={fieldConfig.label}
-      minValue={0}
-      name={fieldConfig.name}
-      step={fieldConfig.step}
-    />
-  );
-}
 
 export default function FoodForm({
   form,
@@ -261,10 +242,14 @@ export default function FoodForm({
         <Description>Enter values for 100 g so plans calculate macros correctly</Description>
         <Fieldset.Group>
           {MACRO_FIELDS.map((fieldConfig) => (
-            <MacroNumberField
-              fieldConfig={fieldConfig}
-              form={form}
+            <FormNumberField
+              control={control}
+              fullWidth
               key={fieldConfig.name}
+              label={fieldConfig.label}
+              minValue={0}
+              name={fieldConfig.name}
+              step={fieldConfig.step}
             />
           ))}
         </Fieldset.Group>

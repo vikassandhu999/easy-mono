@@ -208,12 +208,12 @@ export const nutritionPlansApi = api.injectEndpoints({
         {type: 'PlanItem', id: getPlanScopedId(id)},
       ],
     }),
-    listNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListNutritionPlansParams | void>({
+    listNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListNutritionPlansParams>({
       query: (params) => ({url: '/v1/coach/nutrition_plans', params}),
       transformResponse: mapNutritionPlanListResponse,
       providesTags: (result) => listTags('NutritionPlan', result),
     }),
-    nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters | void, number>({
+    nutritionPlans: build.infiniteQuery<ApiListResponse<NutritionPlan>, ListNutritionPlansFilters, number>({
       query: ({queryArg, pageParam}) => ({
         url: '/v1/coach/nutrition_plans',
         params: {
@@ -233,10 +233,6 @@ export const nutritionPlansApi = api.injectEndpoints({
       },
       providesTags: (result) => pageTags('NutritionPlan', result),
     }),
-    /**
-     * List nutrition plans assigned to a single client.
-     * Separate from the template list — cached under CLIENT_LIST.
-     */
     listClientNutritionPlans: build.query<ApiListResponse<NutritionPlan>, ListClientNutritionPlansParams>({
       query: ({clientId, ...params}) => ({
         params,

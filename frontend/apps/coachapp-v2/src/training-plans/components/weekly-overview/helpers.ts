@@ -6,7 +6,7 @@ import {
   TRAINING_WEEKDAYS,
 } from '@easy/utils';
 
-import type {TrainingPlan, TrainingPlanItem, TrainingWeekday, Workout} from '@/api/trainingPlans';
+import type {TrainingPlanItem, TrainingWeekday, Workout} from '@/api/trainingPlans';
 
 export type DayState =
   | {items: [TrainingPlanItem, ...TrainingPlanItem[]]; kind: 'assigned'}
@@ -189,11 +189,4 @@ export function buildConflictDaysLabel(
 
 export function findWorkoutById(workouts: Workout[], workoutId: string): null | Workout {
   return workouts.find((workout) => workout.id === workoutId) ?? null;
-}
-
-export function getWorkoutCountSummary(plan: TrainingPlan): {exerciseCount: number; workoutCount: number} {
-  return {
-    exerciseCount: plan.workouts.reduce((sum, workout) => sum + workout.workout_elements.length, 0),
-    workoutCount: plan.workouts.length,
-  };
 }

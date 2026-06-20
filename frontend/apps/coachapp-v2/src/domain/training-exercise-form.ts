@@ -1,6 +1,7 @@
 import type {PlannedSet} from '@/api/trainingPlans';
-import type {LoadUnitValue} from '@/training-plans/components/unit-picker';
 import {parseNonNegativeInt, parseNonNegativeNumber} from '@/training-plans/lib/parse';
+
+type LoadUnitValue = NonNullable<PlannedSet['load_unit']>;
 
 export type InlineExerciseDraft = {
   exerciseNotes: string;

@@ -35,7 +35,7 @@ import {
   sortWorkoutsByName,
   summarizeDayStates,
   toggleWeekdaySelection,
-} from '@/domain/training-weekly-overview';
+} from '@/training-plans/components/weekly-overview/helpers';
 import WorkoutNameForm, {type WorkoutNameFormValues} from '@/training-plans/components/workout-name-form';
 
 // ── Types ────────────────────────────────────────────────────────────

@@ -23,7 +23,6 @@ import {
   type WorkoutElementCreateRequest,
 } from '@/api/trainingPlans';
 import {buildPlannedSetsFromForm} from '@/domain/training-exercise-form';
-import {findWorkoutById, getNextWorkoutElementPosition} from '@/domain/training-plans';
 import ExerciseElement from '@/training-plans/components/exercise-element';
 import ExercisePicker from '@/training-plans/components/exercise-picker';
 import InlineExerciseForm, {
@@ -63,6 +62,14 @@ function workoutElementToCreateRequest({
     position,
     workout_id: workoutId,
   });
+}
+
+function getNextWorkoutElementPosition(elements: WorkoutElement[]): number {
+  return elements.length > 0 ? Math.max(...elements.map((element) => element.position)) + 1 : 0;
+}
+
+function findWorkoutById(workouts: Workout[], workoutId: string): undefined | Workout {
+  return workouts.find((item) => item.id === workoutId);
 }
 
 export default function WorkoutSection({

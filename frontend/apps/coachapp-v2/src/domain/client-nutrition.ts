@@ -1,4 +1,4 @@
-import {getCurrentWeekRange, getDateForWeekdayIndex, isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
+import {isFutureDate, MEAL_SLOT_LABELS, MEAL_SLOTS} from '@easy/utils';
 
 import type {CoachMealLog, DailyNutritionSummary, FoodLogEntry, PlannedSnapshotItem} from '@/api/mealLogs';
 import type {Macros} from '@/api/shared';

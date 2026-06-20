@@ -1,0 +1,143 @@
+<h2>Logging a set — the gym moment</h2>
+<p class="subtitle">Continuous list (A). Current exercise glows, current set is a big block with steppers + one giant ✓. Pre-filled from the plan, so most sets = one tap. Keypad only when you change a number, and it docks above the keyboard. Three steps of the loop. Tap to confirm the pattern.</p>
+
+<style>
+  .row{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:320px}
+  .ptitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:24px;padding:9px;background:#111;cursor:pointer;transition:border-color .15s}
+  .phone.selected,.phone:hover{border-color:#6c8cff}
+  .scr{position:relative;background:#0c0c0e;border-radius:16px;height:600px;overflow:hidden;font-size:13px;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1f1f25}
+  .nm{font-weight:700}.clk{color:#7f8cff;font-size:12px;font-weight:600}
+  .fin{font-size:11px;color:#5fe08a;border:1px solid #2f7d4a;border-radius:7px;padding:4px 9px}
+  .body{flex:1;overflow:hidden;padding:12px}
+  .exc{border:1px solid #2a2a31;background:#16161b;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  .exc.dim{opacity:.5}
+  .exc.cur{border-color:#6c8cff;box-shadow:0 0 0 1px #6c8cff,0 0 20px rgba(108,140,255,.18)}
+  .exh{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .exn{font-weight:600}.exs{font-size:11px;color:#888}
+  .curtag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7f8cff;font-weight:700}
+  .donerow{display:grid;grid-template-columns:26px 1fr 26px;gap:8px;align-items:center;font-size:12px;color:#7c8;padding:5px 0;border-top:1px solid #202026}
+  .donerow .v{color:#9aa}
+  .uprow{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:12px;color:#666;padding:5px 0;border-top:1px solid #202026}
+  /* current set block */
+  .curset{border-top:1px solid #202026;margin-top:4px;padding-top:10px}
+  .csl{font-size:11px;color:#888;margin-bottom:8px}
+  .steppers{display:flex;gap:10px;margin-bottom:10px}
+  .stp{flex:1;display:flex;align-items:center;border:1px solid #34343d;border-radius:10px;overflow:hidden}
+  .stp b{flex:1;text-align:center;font-size:18px;font-weight:700;padding:9px 0}
+  .stp small{display:block;font-size:8px;color:#777;letter-spacing:.06em}
+  .stp .pm{width:34px;text-align:center;font-size:20px;color:#9fb0ff;background:#1a1d2a;padding:11px 0}
+  .stp .val{flex:1;text-align:center}
+  .stp .val.tap{border-bottom:1.5px solid #3a4170}
+  .logbtn{background:#3ad07a;color:#06200f;font-weight:800;border-radius:12px;text-align:center;padding:15px;font-size:15px}
+  .muted{color:#777}
+  /* keypad */
+  .sheet{position:absolute;left:0;right:0;bottom:34%;background:#16161b;border-top:1px solid #34343d;border-radius:14px 14px 0 0;padding:12px 14px}
+  .sheet .ttl{display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px}
+  .kfield{display:flex;gap:10px;margin-bottom:6px}
+  .kf{flex:1;border:1px solid #34343d;border-radius:9px;padding:8px;text-align:center}
+  .kf.on{border-color:#6c8cff;background:#10131f}
+  .kf small{display:block;font-size:8px;color:#777}.kf b{font-size:18px}
+  .kb{position:absolute;left:0;right:0;bottom:0;height:34%;background:#1a1a1f;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px}
+  .key{background:#2a2a31;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600}
+  .kbnote{position:absolute;left:0;right:0;bottom:34%;text-align:center;font-size:9px;color:#5fe08a;background:#0c0c0e;padding:2px}
+  /* rest timer */
+  .rest{position:absolute;left:9px;right:9px;bottom:9px;background:#16213a;border:1px solid #2c3350;border-radius:13px;padding:11px 14px;display:flex;align-items:center;gap:10px}
+  .rest .ring{width:34px;height:34px;border-radius:99px;border:3px solid #6c8cff;border-right-color:#2c3350;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#9fb0ff}
+  .rest .t{flex:1}.rest .t b{font-size:14px}.rest .t small{display:block;color:#888;font-size:10px}
+  .rest .a{font-size:11px;color:#9fb0ff;border:1px solid #34343d;border-radius:7px;padding:5px 9px}
+  .cap{text-align:center;font-size:12px;color:#aaa;margin-top:8px}
+</style>
+
+<div class="row">
+
+  <!-- 1: ready to log -->
+  <div class="col">
+    <div class="ptitle">1 · Current set — one giant ✓</div>
+    <div class="phone" data-choice="ready" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div class="nm">Push Day</div><div class="clk">⏱ 12:34</div><div class="fin">Finish</div></div>
+        <div class="body">
+          <div class="exc dim"><div class="exh"><span class="exn">Bench Press</span><span class="exs">3/3 ✓</span></div></div>
+          <div class="exc cur">
+            <div class="exh"><span class="exn">Incline DB Press</span><span class="curtag">● Now</span></div>
+            <div class="donerow"><span>1</span><span class="v">30kg × 10</span><span>✓</span></div>
+            <div class="curset">
+              <div class="csl">Set 2 of 3 · target 30kg × 10</div>
+              <div class="steppers">
+                <div class="stp"><span class="pm">−</span><span class="val"><small>KG</small><b>30</b></span><span class="pm">+</span></div>
+                <div class="stp"><span class="pm">−</span><span class="val"><small>REPS</small><b>10</b></span><span class="pm">+</span></div>
+              </div>
+              <div class="logbtn">✓ Log set</div>
+            </div>
+            <div class="uprow"><span>3</span><span>30kg × 10</span></div>
+          </div>
+          <div class="exc dim"><div class="exh"><span class="exn">Cable Fly</span><span class="exs">0/3</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><b>1</b> · Hit the target? One tap on ✓. Quick ± with steppers. No keyboard needed.</div>
+  </div>
+
+  <!-- 2: editing a number -->
+  <div class="col">
+    <div class="ptitle">2 · Changed the weight → keypad docks</div>
+    <div class="phone" data-choice="keypad" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div class="nm">Push Day</div><div class="clk">⏱ 12:34</div><div class="fin">Finish</div></div>
+        <div class="body" style="filter:brightness(.55)">
+          <div class="exc cur" style="box-shadow:none;border-color:#2a2a31">
+            <div class="exh"><span class="exn">Incline DB Press</span><span class="curtag">● Now</span></div>
+            <div class="donerow"><span>1</span><span class="v">30kg × 10</span><span>✓</span></div>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="ttl"><span>Incline DB · Set 2</span><span class="muted">Done</span></div>
+          <div class="kfield">
+            <div class="kf on"><small>KG</small><b>32.5</b></div>
+            <div class="kf"><small>REPS</small><b>10</b></div>
+          </div>
+          <div class="logbtn" style="padding:11px">✓ Log set</div>
+        </div>
+        <div class="kbnote">▼ keypad — sheet sits right on top of it, set stays visible</div>
+        <div class="kb"><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">.</div><div class="key">0</div><div class="key">⌫</div></div>
+      </div>
+    </div>
+    <div class="cap"><b>2</b> · Tap a number to change it; keypad rises, docked above keyboard (same rule as the coach side).</div>
+  </div>
+
+  <!-- 3: logged → resting -->
+  <div class="col">
+    <div class="ptitle">3 · Logged → rest timer + next set glows</div>
+    <div class="phone" data-choice="rest" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="top"><div class="nm">Push Day</div><div class="clk">⏱ 13:01</div><div class="fin">Finish</div></div>
+        <div class="body">
+          <div class="exc dim"><div class="exh"><span class="exn">Bench Press</span><span class="exs">3/3 ✓</span></div></div>
+          <div class="exc cur">
+            <div class="exh"><span class="exn">Incline DB Press</span><span class="curtag">● Now</span></div>
+            <div class="donerow"><span>1</span><span class="v">30kg × 10</span><span>✓</span></div>
+            <div class="donerow"><span>2</span><span class="v">32.5kg × 10</span><span>✓</span></div>
+            <div class="curset">
+              <div class="csl">Set 3 of 3 · target 30kg × 10</div>
+              <div class="steppers">
+                <div class="stp"><span class="pm">−</span><span class="val"><small>KG</small><b>32.5</b></span><span class="pm">+</span></div>
+                <div class="stp"><span class="pm">−</span><span class="val"><small>REPS</small><b>10</b></span><span class="pm">+</span></div>
+              </div>
+              <div class="logbtn">✓ Log set</div>
+            </div>
+          </div>
+        </div>
+        <div class="rest"><div class="ring">1:15</div><div class="t"><b>Rest</b><small>Incline DB · before set 3</small></div><div class="a">Skip</div><div class="a">+15s</div></div>
+      </div>
+    </div>
+    <div class="cap"><b>3</b> · ✓ logs it (saved), rest timer auto-starts from the plan's rest, next set lights up + carries your last weight.</div>
+  </div>
+
+</div>
+
+<div style="max-width:680px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>The loop:</b> current exercise glows + "● Now"; current set is a big block with ± steppers and one giant <b>✓ Log set</b>, pre-filled from the plan. Tap ✓ → saved, rest timer starts from the planned rest, next set lights up carrying your last weight. Only tap a number when it differs → keypad docks above the keyboard. Done sets shrink to tidy green rows above.
+</div>

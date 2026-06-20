@@ -1,0 +1,90 @@
+<h2>The set block across tracking types</h2>
+<p class="subtitle">Same loop (glow → fill → ✓ → rest), fields driven by the exercise's tracking_type — exactly like the coach builder. Four representative shapes. Duration gets a live hold-timer so you never type. Tap to confirm.</p>
+
+<style>
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:720px;margin:0 auto}
+  .col{}
+  .ptitle{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .card{border:2px solid #6c8cff;box-shadow:0 0 0 1px #6c8cff,0 0 18px rgba(108,140,255,.15);background:#16161b;border-radius:14px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+  .card:hover,.card.selected{border-color:#9fb0ff}
+  .exh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .exn{font-weight:600}.curtag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7f8cff;font-weight:700}
+  .tt{font-size:9px;color:#9fb0ff;border:1px solid #34343d;border-radius:5px;padding:1px 6px}
+  .donerow{display:grid;grid-template-columns:24px 1fr 22px;gap:8px;font-size:12px;color:#7c8;padding:5px 0;border-top:1px solid #202026}
+  .donerow .v{color:#9aa}
+  .csl{font-size:11px;color:#888;margin:8px 0}
+  .steppers{display:flex;gap:9px;margin-bottom:10px}
+  .stp{flex:1;display:flex;align-items:center;border:1px solid #34343d;border-radius:10px;overflow:hidden}
+  .stp .pm{width:30px;text-align:center;font-size:18px;color:#9fb0ff;background:#1a1d2a;padding:10px 0}
+  .stp .val{flex:1;text-align:center;padding:6px 0}
+  .stp .val small{display:block;font-size:8px;color:#777;letter-spacing:.06em}
+  .stp .val b{font-size:17px}
+  .logbtn{background:#3ad07a;color:#06200f;font-weight:800;border-radius:11px;text-align:center;padding:13px;font-size:14px}
+  .timer{display:flex;align-items:center;gap:12px;border:1px solid #34343d;border-radius:12px;padding:12px;margin-bottom:10px;background:#10131f}
+  .timer .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;flex:1;text-align:center;color:#9fb0ff}
+  .timer .pl{width:46px;height:46px;border-radius:99px;background:#6c8cff;color:#06122e;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .hint{font-size:10px;color:#666;margin-top:7px}
+  .muted{color:#777}
+</style>
+
+<div class="grid">
+
+  <div class="col">
+    <div class="ptitle">Pull-ups · bodyweight_reps</div>
+    <div class="card" data-choice="bwreps" onclick="toggleSelect(this)">
+      <div class="exh"><span class="exn">Pull-ups</span><span class="tt">reps</span></div>
+      <div class="donerow"><span>1</span><span class="v">12 reps</span><span>✓</span></div>
+      <div class="csl">Set 2 of 3 · target 10</div>
+      <div class="steppers"><div class="stp"><span class="pm">−</span><span class="val"><small>REPS</small><b>10</b></span><span class="pm">+</span></div></div>
+      <div class="logbtn">✓ Log set</div>
+      <div class="hint">Weighted / assisted variants add one ±KG field (added or assist −).</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="ptitle">Plank · duration</div>
+    <div class="card" data-choice="duration" onclick="toggleSelect(this)">
+      <div class="exh"><span class="exn">Plank</span><span class="tt">duration</span></div>
+      <div class="donerow"><span>1</span><span class="v">0:60</span><span>✓</span></div>
+      <div class="csl">Set 2 of 3 · target 0:45</div>
+      <div class="timer"><div class="pl">▶</div><div class="big">0:00</div><span class="muted" style="font-size:11px">tap time to type</span></div>
+      <div class="logbtn">✓ Log set</div>
+      <div class="hint">Live hold-timer counts up; stop → fills the time. No typing.</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="ptitle">Row erg · distance_duration</div>
+    <div class="card" data-choice="distdur" onclick="toggleSelect(this)">
+      <div class="exh"><span class="exn">Row erg</span><span class="tt">dist + time</span></div>
+      <div class="donerow"><span>1</span><span class="v">500m · 1:52</span><span>✓</span></div>
+      <div class="csl">Set 2 of 3 · target 500m</div>
+      <div class="steppers">
+        <div class="stp"><span class="pm">−</span><span class="val"><small>METERS</small><b>500</b></span><span class="pm">+</span></div>
+        <div class="stp"><span class="pm">−</span><span class="val"><small>TIME</small><b>1:50</b></span><span class="pm">+</span></div>
+      </div>
+      <div class="logbtn">✓ Log set</div>
+      <div class="hint">Distance + time. Time can use the hold-timer too.</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="ptitle">Farmer's carry · weight_distance</div>
+    <div class="card" data-choice="wtdist" onclick="toggleSelect(this)">
+      <div class="exh"><span class="exn">Farmer's Carry</span><span class="tt">weight + dist</span></div>
+      <div class="donerow"><span>1</span><span class="v">40kg · 20m</span><span>✓</span></div>
+      <div class="csl">Set 2 of 3 · target 40kg · 20m</div>
+      <div class="steppers">
+        <div class="stp"><span class="pm">−</span><span class="val"><small>KG</small><b>40</b></span><span class="pm">+</span></div>
+        <div class="stp"><span class="pm">−</span><span class="val"><small>METERS</small><b>20</b></span><span class="pm">+</span></div>
+      </div>
+      <div class="logbtn">✓ Log set</div>
+      <div class="hint">Any two-field combo lays out the same way.</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:700px;margin:22px auto 0;background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;font-size:14px">
+  <b>One rule covers all 9 types:</b> the block shows 1–2 fields the tracking_type names (reps / weight / time / distance), as ± steppers with tap-to-type. <b>Duration fields</b> add a live hold-timer (▶ count-up → fills the value) so planks and timed carries need zero typing. RPE-based plans show a small RPE field after ✓ ("how hard? 1–10"). The ✓, glow, rest-timer, and carry-forward loop is identical everywhere.
+</div>

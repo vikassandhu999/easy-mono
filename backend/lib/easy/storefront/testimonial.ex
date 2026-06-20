@@ -157,19 +157,9 @@ defmodule Easy.Storefront.Testimonial do
     from(t in query, where: t.status == ^:active)
   end
 
-  @spec featured(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def featured(query \\ __MODULE__) do
-    from(t in query, where: t.is_featured == true)
-  end
-
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
     from(t in query, order_by: [asc: t.position, asc: t.inserted_at])
-  end
-
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__) do
-    from(t in query, order_by: [desc: t.inserted_at])
   end
 
   # Actions

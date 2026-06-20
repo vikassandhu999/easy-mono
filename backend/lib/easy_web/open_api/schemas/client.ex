@@ -62,27 +62,30 @@ defmodule EasyWeb.OpenApi.Schemas.Client do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "Client",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      email: %Schema{type: :string, format: :email, nullable: true},
-      first_name: %Schema{type: :string, nullable: true},
-      last_name: %Schema{type: :string, nullable: true},
-      phone: %Schema{type: :string, nullable: true},
-      notes: %Schema{type: :string, nullable: true},
-      goal_weight_value: %Schema{type: :number, nullable: true},
-      goal_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"], nullable: true},
-      status: %Schema{type: :string, enum: ["active", "pending", "inactive", "archived"]},
-      invite_url: %Schema{type: :string, nullable: true},
-      invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
-      invitation_expires_at: %Schema{type: :string, format: :"date-time", nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          email: %Schema{type: :string, format: :email, nullable: true},
+          first_name: %Schema{type: :string, nullable: true},
+          last_name: %Schema{type: :string, nullable: true},
+          phone: %Schema{type: :string, nullable: true},
+          notes: %Schema{type: :string, nullable: true},
+          goal_weight_value: %Schema{type: :number, nullable: true},
+          goal_weight_unit: %Schema{type: :string, enum: ["kg", "lbs"], nullable: true},
+          status: %Schema{type: :string, enum: ["active", "pending", "inactive", "archived"]},
+          invite_url: %Schema{type: :string, nullable: true},
+          invitation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          invitation_expires_at: %Schema{type: :string, format: :"date-time", nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :email,
@@ -124,15 +127,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.ClientResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Client
+  alias EasyWeb.OpenApi.Schemas.{Client, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "ClientResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Client},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(Client, "ClientResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ClientListResponse do

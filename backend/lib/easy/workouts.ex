@@ -81,29 +81,21 @@ defmodule Easy.Workouts do
     end
   end
 
-  @spec update_workout(Workout.t(), map()) :: {:ok, Workout.t()} | {:error, Ecto.Changeset.t()}
-  def update_workout(%Workout{} = workout, attrs) do
-    workout
-    |> Workout.update_changeset(attrs)
-    |> Repo.update()
-  end
-
   @spec update_workout(String.t(), String.t(), map()) ::
           {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_workout(business_id, workout_id, attrs) do
     with {:ok, workout} <- get_workout(business_id, workout_id) do
-      update_workout(workout, attrs)
+      workout
+      |> Workout.update_changeset(attrs)
+      |> Repo.update()
     end
   end
-
-  @spec delete_workout(Workout.t()) :: {:ok, Workout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_workout(%Workout{} = workout), do: Repo.delete(workout)
 
   @spec delete_workout(String.t(), String.t()) ::
           {:ok, Workout.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_workout(business_id, workout_id) do
     with {:ok, workout} <- get_workout(business_id, workout_id) do
-      delete_workout(workout)
+      Repo.delete(workout)
     end
   end
 
@@ -151,10 +143,11 @@ defmodule Easy.Workouts do
     end
   end
 
-  @spec update_workout_element(WorkoutElement.t(), map()) ::
+  @spec update_workout_element(String.t(), String.t(), map()) ::
           {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_workout_element(%WorkoutElement{} = element, attrs) do
-    with {:ok, changeset} <-
+  def update_workout_element(business_id, element_id, attrs) do
+    with {:ok, element} <- get_workout_element_with_exercise(business_id, element_id),
+         {:ok, changeset} <-
            element
            |> WorkoutElement.update_changeset(attrs)
            |> validate_exercise_in_business() do
@@ -164,23 +157,11 @@ defmodule Easy.Workouts do
     end
   end
 
-  @spec update_workout_element(String.t(), String.t(), map()) ::
-          {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
-  def update_workout_element(business_id, element_id, attrs) do
-    with {:ok, element} <- get_workout_element_with_exercise(business_id, element_id) do
-      update_workout_element(element, attrs)
-    end
-  end
-
-  @spec delete_workout_element(WorkoutElement.t()) ::
-          {:ok, WorkoutElement.t()} | {:error, Ecto.Changeset.t()}
-  def delete_workout_element(%WorkoutElement{} = element), do: Repo.delete(element)
-
   @spec delete_workout_element(String.t(), String.t()) ::
           {:ok, WorkoutElement.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_workout_element(business_id, element_id) do
     with {:ok, element} <- get_workout_element(business_id, element_id) do
-      delete_workout_element(element)
+      Repo.delete(element)
     end
   end
 

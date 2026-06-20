@@ -78,11 +78,6 @@ defmodule Easy.Fitness.WeightEntry do
     from(e in query, where: e.date >= ^date)
   end
 
-  @spec between(Ecto.Queryable.t(), Date.t(), Date.t()) :: Ecto.Query.t()
-  def between(query \\ __MODULE__, from_date, to_date) do
-    from(e in query, where: e.date >= ^from_date and e.date <= ^to_date)
-  end
-
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()
   def ordered(query \\ __MODULE__) do
     from(e in query, order_by: [asc: e.date])

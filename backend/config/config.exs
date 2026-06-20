@@ -13,8 +13,7 @@ config :easy, EasyWeb.Endpoint,
     formats: [json: EasyWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Easy.PubSub,
-  live_view: [signing_salt: "RAAfGUm9"]
+  pubsub_server: Easy.PubSub
 
 # Configures the mailer
 #

@@ -34,30 +34,33 @@ defmodule EasyWeb.OpenApi.Schemas.FoodLogEntry do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "FoodLogEntry",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      food_name: %Schema{type: :string, nullable: true},
-      amount: %Schema{type: :number, nullable: true},
-      unit: %Schema{type: :string, nullable: true},
-      weight_g: %Schema{type: :number, nullable: true},
-      calories: %Schema{type: :number, nullable: true},
-      protein_g: %Schema{type: :number, nullable: true},
-      carbs_g: %Schema{type: :number, nullable: true},
-      fat_g: %Schema{type: :number, nullable: true},
-      notes: %Schema{type: :string, nullable: true},
-      source: %Schema{type: :string, nullable: true},
-      planned_item_index: %Schema{type: :integer, nullable: true},
-      food_id: %Schema{type: :string, format: :uuid, nullable: true},
-      recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
-      meal_log_id: %Schema{type: :string, format: :uuid},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          food_name: %Schema{type: :string, nullable: true},
+          amount: %Schema{type: :number, nullable: true},
+          unit: %Schema{type: :string, nullable: true},
+          weight_g: %Schema{type: :number, nullable: true},
+          calories: %Schema{type: :number, nullable: true},
+          protein_g: %Schema{type: :number, nullable: true},
+          carbs_g: %Schema{type: :number, nullable: true},
+          fat_g: %Schema{type: :number, nullable: true},
+          notes: %Schema{type: :string, nullable: true},
+          source: %Schema{type: :string, nullable: true},
+          planned_item_index: %Schema{type: :integer, nullable: true},
+          food_id: %Schema{type: :string, format: :uuid, nullable: true},
+          recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+          meal_log_id: %Schema{type: :string, format: :uuid}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :food_name, :amount, :unit, :weight_g, :meal_log_id, :inserted_at, :updated_at]
   })
 end
@@ -66,24 +69,26 @@ defmodule EasyWeb.OpenApi.Schemas.MealLog do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodLogEntry
+  alias EasyWeb.OpenApi.Schemas.{FoodLogEntry, Shared}
 
   OpenApiSpex.schema(%{
     title: "MealLog",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      date: %Schema{type: :string, format: :date},
-      meal_slot: %Schema{type: :string},
-      planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
-      planned_calories: %Schema{type: :number, nullable: true},
-      logged_calories: %Schema{type: :number, nullable: true},
-      client_id: %Schema{type: :string, format: :uuid, nullable: true},
-      food_log_entries: %Schema{type: :array, items: FoodLogEntry},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          date: %Schema{type: :string, format: :date},
+          meal_slot: %Schema{type: :string},
+          planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
+          planned_calories: %Schema{type: :number, nullable: true},
+          logged_calories: %Schema{type: :number, nullable: true},
+          client_id: %Schema{type: :string, format: :uuid, nullable: true},
+          food_log_entries: %Schema{type: :array, items: FoodLogEntry}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :date, :meal_slot, :food_log_entries, :inserted_at, :updated_at]
   })
 end
@@ -91,59 +96,35 @@ end
 defmodule EasyWeb.OpenApi.Schemas.MealLogResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.MealLog
+  alias EasyWeb.OpenApi.Schemas.{MealLog, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "MealLogResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: MealLog},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(MealLog, "MealLogResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.MealLogListResponse do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.MealLog
+  alias EasyWeb.OpenApi.Schemas.{MealLog, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "MealLogListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: MealLog}},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: MealLog}, "MealLogListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodLogEntryResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.FoodLogEntry
+  alias EasyWeb.OpenApi.Schemas.{FoodLogEntry, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "FoodLogEntryResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: FoodLogEntry},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(FoodLogEntry, "FoodLogEntryResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodLogEntryListResponse do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodLogEntry
+  alias EasyWeb.OpenApi.Schemas.{FoodLogEntry, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "FoodLogEntryListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: FoodLogEntry}},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(%Schema{type: :array, items: FoodLogEntry}, "FoodLogEntryListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.WeightEntryRequest do
@@ -193,15 +174,9 @@ end
 defmodule EasyWeb.OpenApi.Schemas.WeightEntryResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.WeightEntry
+  alias EasyWeb.OpenApi.Schemas.{WeightEntry, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "WeightEntryResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: WeightEntry},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(WeightEntry, "WeightEntryResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.WeightEntryListResponse do

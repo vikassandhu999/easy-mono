@@ -14,14 +14,6 @@ defmodule Easy.Coaches do
     |> Repo.insert()
   end
 
-  @spec get_by_id(String.t()) :: {:ok, Coach.t()} | {:error, Easy.Error.t()}
-  def get_by_id(id) do
-    case Repo.get(Coach, id) do
-      nil -> {:error, Easy.Error.not_found("Coach not found")}
-      coach -> {:ok, coach}
-    end
-  end
-
   @spec get_by_user_id(String.t(), String.t()) :: {:ok, Coach.t()} | {:error, Easy.Error.t()}
   def get_by_user_id(user_id, business_id) do
     Coach.get_for_user(business_id, user_id)

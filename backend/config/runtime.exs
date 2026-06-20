@@ -81,8 +81,6 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :easy, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
-
   config :cors_plug,
     origin: cors_origins,
     credentials: true
@@ -99,8 +97,8 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :easy, Easy.Accounts.Token, secret_key: jwt_secret
-  config :joken, default_signer: jwt_secret
+  # In prod the JWT secret must come from the environment, never the dev fallback.
+  config :easy, jwt_secret: jwt_secret
 
   # ## SSL Support
   #

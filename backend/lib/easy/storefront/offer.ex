@@ -116,11 +116,6 @@ defmodule Easy.Storefront.Offer do
     from(o in query, order_by: [asc: o.position, asc: o.inserted_at])
   end
 
-  @spec newest(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def newest(query \\ __MODULE__) do
-    from(o in query, order_by: [desc: o.inserted_at])
-  end
-
   # Actions
 
   @spec create(map(), String.t()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}

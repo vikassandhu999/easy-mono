@@ -92,45 +92,36 @@ end
 
 defmodule EasyWeb.OpenApi.Schemas.ExerciseRelation do
   require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.Shared
 
-  alias OpenApiSpex.Schema
-
-  OpenApiSpex.schema(%{
-    title: "ExerciseRelation",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true}
-    },
-    required: [:id, :name, :description]
-  })
+  OpenApiSpex.schema(Shared.named_ref("ExerciseRelation"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.Exercise do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.ExerciseRelation
+  alias EasyWeb.OpenApi.Schemas.{ExerciseRelation, Shared}
 
   OpenApiSpex.schema(%{
     title: "Exercise",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true},
-      instructions: %Schema{type: :string, nullable: true},
-      mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
-      force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
-      images: %Schema{type: :array, items: %Schema{type: :string}},
-      muscles: %Schema{type: :array, items: ExerciseRelation},
-      equipment: %Schema{type: :array, items: ExerciseRelation},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          description: %Schema{type: :string, nullable: true},
+          instructions: %Schema{type: :string, nullable: true},
+          mechanics: %Schema{type: :string, enum: ["compound", "isolation", "isometric"], nullable: true},
+          force: %Schema{type: :string, enum: ["push", "pull", "static"], nullable: true},
+          images: %Schema{type: :array, items: %Schema{type: :string}},
+          muscles: %Schema{type: :array, items: ExerciseRelation},
+          equipment: %Schema{type: :array, items: ExerciseRelation}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -143,85 +134,47 @@ defmodule EasyWeb.OpenApi.Schemas.Exercise do
       :equipment,
       :inserted_at,
       :updated_at
-    ]
+    ],
+    example: %{
+      "id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
+      "name" => "Barbell Back Squat",
+      "description" => "Main lower-body strength movement.",
+      "instructions" => "Brace, descend to depth, drive up.",
+      "mechanics" => "compound",
+      "force" => "push",
+      "images" => ["https://cdn.example.com/exercises/back-squat.png"],
+      "muscles" => [
+        %{
+          "id" => "8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0",
+          "name" => "Quadriceps",
+          "description" => "Primary knee extension muscle group."
+        }
+      ],
+      "equipment" => [
+        %{
+          "id" => "7d72f2c3-8ed7-4b78-bf1f-c883df192772",
+          "name" => "Barbell",
+          "description" => "Straight Olympic barbell."
+        }
+      ],
+      "inserted_at" => "2026-05-30T12:00:00Z",
+      "updated_at" => "2026-05-30T12:00:00Z"
+    }
   })
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ExerciseListResponse do
   require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{Exercise, Shared}
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Exercise
-
-  OpenApiSpex.schema(%{
-    title: "ExerciseListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: Exercise},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count],
-    example: %{
-      "data" => [
-        %{
-          "id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-          "name" => "Barbell Back Squat",
-          "description" => "Main lower-body strength movement.",
-          "instructions" => "Brace, descend to depth, drive up.",
-          "mechanics" => "compound",
-          "force" => "push",
-          "images" => ["https://cdn.example.com/exercises/back-squat.png"],
-          "muscles" => [],
-          "equipment" => [],
-          "inserted_at" => "2026-05-30T12:00:00Z",
-          "updated_at" => "2026-05-30T12:00:00Z"
-        }
-      ],
-      "count" => 1
-    }
-  })
+  OpenApiSpex.schema(Shared.list_response(Exercise, "ExerciseListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ExerciseResponse do
   require OpenApiSpex
+  alias EasyWeb.OpenApi.Schemas.{Exercise, Shared}
 
-  alias EasyWeb.OpenApi.Schemas.Exercise
-
-  OpenApiSpex.schema(%{
-    title: "ExerciseResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Exercise},
-    required: [:data],
-    example: %{
-      "data" => %{
-        "id" => "d6c7104f-74a4-4f9f-b1e9-a9bb07ab4a7c",
-        "name" => "Barbell Back Squat",
-        "description" => "Main lower-body strength movement.",
-        "instructions" => "Brace, descend to depth, drive up.",
-        "mechanics" => "compound",
-        "force" => "push",
-        "images" => ["https://cdn.example.com/exercises/back-squat.png"],
-        "muscles" => [
-          %{
-            "id" => "8f5db7e0-9b18-4d5f-9c2a-1f5d8f1131f0",
-            "name" => "Quadriceps",
-            "description" => "Primary knee extension muscle group."
-          }
-        ],
-        "equipment" => [
-          %{
-            "id" => "7d72f2c3-8ed7-4b78-bf1f-c883df192772",
-            "name" => "Barbell",
-            "description" => "Straight Olympic barbell."
-          }
-        ],
-        "inserted_at" => "2026-05-30T12:00:00Z",
-        "updated_at" => "2026-05-30T12:00:00Z"
-      }
-    }
-  })
+  OpenApiSpex.schema(Shared.data_response(Exercise, "ExerciseResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.ErrorResponse do

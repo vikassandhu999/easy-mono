@@ -43,34 +43,36 @@ defmodule EasyWeb.OpenApi.Schemas.PerformedSet do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.TrainingPlanExercise
+  alias EasyWeb.OpenApi.Schemas.{Shared, TrainingPlanExercise}
 
   OpenApiSpex.schema(%{
     title: "PerformedSet",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      position: %Schema{type: :integer},
-      actual_reps: %Schema{type: :string, nullable: true},
-      load_value: %Schema{type: :number, nullable: true},
-      load_unit: %Schema{type: :string, nullable: true},
-      intensity_felt: %Schema{type: :string, nullable: true},
-      rpe: %Schema{type: :number, nullable: true},
-      rir: %Schema{type: :integer, nullable: true},
-      duration_seconds: %Schema{type: :integer, nullable: true},
-      distance_value: %Schema{type: :number, nullable: true},
-      distance_unit: %Schema{type: :string, nullable: true},
-      tempo_actual: %Schema{type: :string, nullable: true},
-      completed: %Schema{type: :boolean},
-      notes: %Schema{type: :string, nullable: true},
-      exercise_id: %Schema{type: :string, format: :uuid},
-      workout_element_id: %Schema{type: :string, format: :uuid, nullable: true},
-      workout_session_id: %Schema{type: :string, format: :uuid, nullable: true},
-      exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          position: %Schema{type: :integer},
+          actual_reps: %Schema{type: :string, nullable: true},
+          load_value: %Schema{type: :number, nullable: true},
+          load_unit: %Schema{type: :string, nullable: true},
+          intensity_felt: %Schema{type: :string, nullable: true},
+          rpe: %Schema{type: :number, nullable: true},
+          rir: %Schema{type: :integer, nullable: true},
+          duration_seconds: %Schema{type: :integer, nullable: true},
+          distance_value: %Schema{type: :number, nullable: true},
+          distance_unit: %Schema{type: :string, nullable: true},
+          tempo_actual: %Schema{type: :string, nullable: true},
+          completed: %Schema{type: :boolean},
+          notes: %Schema{type: :string, nullable: true},
+          exercise_id: %Schema{type: :string, format: :uuid},
+          workout_element_id: %Schema{type: :string, format: :uuid, nullable: true},
+          workout_session_id: %Schema{type: :string, format: :uuid, nullable: true},
+          exercise: %Schema{allOf: [TrainingPlanExercise], nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :position,
@@ -134,26 +136,28 @@ defmodule EasyWeb.OpenApi.Schemas.WorkoutSession do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.PerformedSet
+  alias EasyWeb.OpenApi.Schemas.{PerformedSet, Shared}
 
   OpenApiSpex.schema(%{
     title: "WorkoutSession",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      started_at: %Schema{type: :string, format: :"date-time"},
-      ended_at: %Schema{type: :string, format: :"date-time", nullable: true},
-      state: %Schema{type: :string, enum: ["active", "completed", "discarded"]},
-      soreness_rating: %Schema{type: :integer, nullable: true},
-      notes: %Schema{type: :string, nullable: true},
-      client_id: %Schema{type: :string, format: :uuid, nullable: true},
-      workout_id: %Schema{type: :string, format: :uuid, nullable: true},
-      planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
-      performed_sets: %Schema{type: :array, items: PerformedSet},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          started_at: %Schema{type: :string, format: :"date-time"},
+          ended_at: %Schema{type: :string, format: :"date-time", nullable: true},
+          state: %Schema{type: :string, enum: ["active", "completed", "discarded"]},
+          soreness_rating: %Schema{type: :integer, nullable: true},
+          notes: %Schema{type: :string, nullable: true},
+          client_id: %Schema{type: :string, format: :uuid, nullable: true},
+          workout_id: %Schema{type: :string, format: :uuid, nullable: true},
+          planned_snapshot: %Schema{type: :object, additionalProperties: true, nullable: true},
+          performed_sets: %Schema{type: :array, items: PerformedSet}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :started_at, :ended_at, :state, :performed_sets, :inserted_at, :updated_at]
   })
 end
@@ -161,45 +165,23 @@ end
 defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.WorkoutSession
+  alias EasyWeb.OpenApi.Schemas.{Shared, WorkoutSession}
 
-  OpenApiSpex.schema(%{
-    title: "WorkoutSessionResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: WorkoutSession},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(WorkoutSession, "WorkoutSessionResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.WorkoutSessionListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.WorkoutSession
+  alias EasyWeb.OpenApi.Schemas.{Shared, WorkoutSession}
 
-  OpenApiSpex.schema(%{
-    title: "WorkoutSessionListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: WorkoutSession},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
+  OpenApiSpex.schema(Shared.list_response(WorkoutSession, "WorkoutSessionListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.PerformedSetResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.PerformedSet
+  alias EasyWeb.OpenApi.Schemas.{PerformedSet, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "PerformedSetResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: PerformedSet},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(PerformedSet, "PerformedSetResponse"))
 end

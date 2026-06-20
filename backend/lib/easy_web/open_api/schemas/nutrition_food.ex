@@ -88,26 +88,28 @@ defmodule EasyWeb.OpenApi.Schemas.Food do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.FoodServingSize
+  alias EasyWeb.OpenApi.Schemas.{FoodServingSize, Shared}
 
   OpenApiSpex.schema(%{
     title: "Food",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      macros: %Schema{type: :object, additionalProperties: true},
-      source: %Schema{type: :string, nullable: true},
-      category: %Schema{type: :string, nullable: true},
-      tags: %Schema{type: :array, items: %Schema{type: :string}},
-      notes: %Schema{type: :string, nullable: true},
-      image_url: %Schema{type: :string, nullable: true},
-      serving_sizes: %Schema{type: :array, items: FoodServingSize},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          macros: %Schema{type: :object, additionalProperties: true},
+          source: %Schema{type: :string, nullable: true},
+          category: %Schema{type: :string, nullable: true},
+          tags: %Schema{type: :array, items: %Schema{type: :string}},
+          notes: %Schema{type: :string, nullable: true},
+          image_url: %Schema{type: :string, nullable: true},
+          serving_sizes: %Schema{type: :array, items: FoodServingSize},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -127,31 +129,15 @@ end
 defmodule EasyWeb.OpenApi.Schemas.FoodResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Food
+  alias EasyWeb.OpenApi.Schemas.{Food, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "FoodResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Food},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(Food, "FoodResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.FoodListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Food
+  alias EasyWeb.OpenApi.Schemas.{Food, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "FoodListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: Food},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
+  OpenApiSpex.schema(Shared.list_response(Food, "FoodListResponse"))
 end

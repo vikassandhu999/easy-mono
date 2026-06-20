@@ -27,19 +27,22 @@ end
 defmodule EasyWeb.OpenApi.Schemas.SignupResponse do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.Shared
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "SignupResponse",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      email: %Schema{type: :string, format: :email},
-      confirmation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          email: %Schema{type: :string, format: :email},
+          confirmation_sent_at: %Schema{type: :string, format: :"date-time", nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :email, :confirmation_sent_at, :inserted_at, :updated_at]
   })
 end
@@ -47,14 +50,12 @@ end
 defmodule EasyWeb.OpenApi.Schemas.InvitationPreviewResponse do
   require OpenApiSpex
 
+  alias EasyWeb.OpenApi.Schemas.Shared
   alias OpenApiSpex.Schema
 
-  OpenApiSpex.schema(%{
-    title: "InvitationPreviewResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{
         type: :object,
         additionalProperties: false,
         properties: %{
@@ -65,10 +66,10 @@ defmodule EasyWeb.OpenApi.Schemas.InvitationPreviewResponse do
           expires_at: %Schema{type: :string, format: :"date-time", nullable: true}
         },
         required: [:state]
-      }
-    },
-    required: [:data]
-  })
+      },
+      "InvitationPreviewResponse"
+    )
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.AcceptInviteRequest do

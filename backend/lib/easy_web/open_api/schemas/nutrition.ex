@@ -86,31 +86,34 @@ defmodule EasyWeb.OpenApi.Schemas.Recipe do
   alias EasyWeb.OpenApi.Schemas.{
     Food,
     FoodServingSize,
-    RecipeIngredient
+    RecipeIngredient,
+    Shared
   }
 
   OpenApiSpex.schema(%{
     title: "Recipe",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      macros: %Schema{type: :object, additionalProperties: true, nullable: true},
-      source: %Schema{type: :string, nullable: true},
-      category: %Schema{type: :string, nullable: true},
-      tags: %Schema{type: :array, items: %Schema{type: :string}},
-      instructions: %Schema{type: :string, nullable: true},
-      image_url: %Schema{type: :string, nullable: true},
-      cooked_weight_g: %Schema{type: :number, nullable: true},
-      service_size_type: %Schema{type: :string, enum: ["serving_based", "weight_based"]},
-      serving_sizes: %Schema{type: :array, items: FoodServingSize},
-      recipe_ingredients: %Schema{type: :array, items: RecipeIngredient},
-      foods: %Schema{type: :array, items: Food},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          macros: %Schema{type: :object, additionalProperties: true, nullable: true},
+          source: %Schema{type: :string, nullable: true},
+          category: %Schema{type: :string, nullable: true},
+          tags: %Schema{type: :array, items: %Schema{type: :string}},
+          instructions: %Schema{type: :string, nullable: true},
+          image_url: %Schema{type: :string, nullable: true},
+          cooked_weight_g: %Schema{type: :number, nullable: true},
+          service_size_type: %Schema{type: :string, enum: ["serving_based", "weight_based"]},
+          serving_sizes: %Schema{type: :array, items: FoodServingSize},
+          recipe_ingredients: %Schema{type: :array, items: RecipeIngredient},
+          foods: %Schema{type: :array, items: Food},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -133,33 +136,17 @@ end
 defmodule EasyWeb.OpenApi.Schemas.RecipeResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.Recipe
+  alias EasyWeb.OpenApi.Schemas.{Recipe, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "RecipeResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: Recipe},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(Recipe, "RecipeResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.RecipeListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.Recipe
+  alias EasyWeb.OpenApi.Schemas.{Recipe, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "RecipeListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: Recipe},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
+  OpenApiSpex.schema(Shared.list_response(Recipe, "RecipeListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemRequest do
@@ -195,23 +182,26 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMealItem do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "NutritionMealItem",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      weight_g: %Schema{type: :number, nullable: true},
-      amount: %Schema{type: :number, nullable: true},
-      unit: %Schema{type: :string, nullable: true},
-      position: %Schema{type: :integer, minimum: 0},
-      recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
-      food_id: %Schema{type: :string, format: :uuid, nullable: true},
-      meal_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          weight_g: %Schema{type: :number, nullable: true},
+          amount: %Schema{type: :number, nullable: true},
+          unit: %Schema{type: :string, nullable: true},
+          position: %Schema{type: :integer, minimum: 0},
+          recipe_id: %Schema{type: :string, format: :uuid, nullable: true},
+          food_id: %Schema{type: :string, format: :uuid, nullable: true},
+          meal_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :weight_g, :amount, :unit, :position, :recipe_id, :food_id, :inserted_at, :updated_at]
   })
 end
@@ -244,22 +234,24 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionMeal do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.NutritionMealItem
+  alias EasyWeb.OpenApi.Schemas.{NutritionMealItem, Shared}
 
   OpenApiSpex.schema(%{
     title: "NutritionMeal",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      macros: %Schema{type: :object, additionalProperties: true, nullable: true},
-      meal_items: %Schema{type: :array, items: NutritionMealItem},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      plan_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          macros: %Schema{type: :object, additionalProperties: true, nullable: true},
+          meal_items: %Schema{type: :array, items: NutritionMealItem},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true},
+          plan_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :name, :macros, :meal_items, :inserted_at, :updated_at]
   })
 end
@@ -268,6 +260,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(
     %{
@@ -277,7 +270,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemRequest do
       properties: %{
         day: %Schema{
           type: :string,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+          enum: Shared.days_of_week()
         },
         meal_type: %Schema{
           type: :string,
@@ -300,6 +293,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemUpdateRequest do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(
     %{
@@ -309,7 +303,7 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemUpdateRequest do
       properties: %{
         day: %Schema{
           type: :string,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+          enum: Shared.days_of_week()
         },
         meal_type: %Schema{
           type: :string,
@@ -325,21 +319,24 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItem do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
   OpenApiSpex.schema(%{
     title: "NutritionPlanItem",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      day: %Schema{type: :string},
-      meal_type: %Schema{type: :string},
-      meal_id: %Schema{type: :string, format: :uuid},
-      plan_id: %Schema{type: :string, format: :uuid, nullable: true},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          day: %Schema{type: :string},
+          meal_type: %Schema{type: :string},
+          meal_id: %Schema{type: :string, format: :uuid},
+          plan_id: %Schema{type: :string, format: :uuid, nullable: true},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true}
+        },
+        Shared.timestamps()
+      ),
     required: [:id, :day, :meal_type, :meal_id, :inserted_at, :updated_at]
   })
 end
@@ -424,31 +421,34 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionPlan do
 
   alias EasyWeb.OpenApi.Schemas.{
     NutritionMeal,
-    NutritionPlanItem
+    NutritionPlanItem,
+    Shared
   }
 
   OpenApiSpex.schema(%{
     title: "NutritionPlan",
     type: :object,
     additionalProperties: false,
-    properties: %{
-      id: %Schema{type: :string, format: :uuid},
-      name: %Schema{type: :string},
-      description: %Schema{type: :string, nullable: true},
-      tags: %Schema{type: :array, items: %Schema{type: :string}},
-      macros_goal: %Schema{type: :object, additionalProperties: true, nullable: true},
-      status: %Schema{type: :string, enum: ["active", "archived"]},
-      start_date: %Schema{type: :string, format: :date, nullable: true},
-      end_date: %Schema{type: :string, format: :date, nullable: true},
-      client_id: %Schema{type: :string, format: :uuid, nullable: true},
-      client: %Schema{type: :object, additionalProperties: true, nullable: true},
-      source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
-      creator_id: %Schema{type: :string, format: :uuid, nullable: true},
-      meals: %Schema{type: :array, items: NutritionMeal},
-      plan_items: %Schema{type: :array, items: NutritionPlanItem},
-      inserted_at: %Schema{type: :string, format: :"date-time"},
-      updated_at: %Schema{type: :string, format: :"date-time"}
-    },
+    properties:
+      Map.merge(
+        %{
+          id: %Schema{type: :string, format: :uuid},
+          name: %Schema{type: :string},
+          description: %Schema{type: :string, nullable: true},
+          tags: %Schema{type: :array, items: %Schema{type: :string}},
+          macros_goal: %Schema{type: :object, additionalProperties: true, nullable: true},
+          status: %Schema{type: :string, enum: ["active", "archived"]},
+          start_date: %Schema{type: :string, format: :date, nullable: true},
+          end_date: %Schema{type: :string, format: :date, nullable: true},
+          client_id: %Schema{type: :string, format: :uuid, nullable: true},
+          client: %Schema{type: :object, additionalProperties: true, nullable: true},
+          source_template_id: %Schema{type: :string, format: :uuid, nullable: true},
+          creator_id: %Schema{type: :string, format: :uuid, nullable: true},
+          meals: %Schema{type: :array, items: NutritionMeal},
+          plan_items: %Schema{type: :array, items: NutritionPlanItem}
+        },
+        Shared.timestamps()
+      ),
     required: [
       :id,
       :name,
@@ -467,123 +467,77 @@ end
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.NutritionPlan
+  alias EasyWeb.OpenApi.Schemas.{NutritionPlan, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionPlanResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: NutritionPlan},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionPlan, "NutritionPlanResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.NutritionPlan
+  alias EasyWeb.OpenApi.Schemas.{NutritionPlan, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionPlanListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: NutritionPlan},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
+  OpenApiSpex.schema(Shared.list_response(NutritionPlan, "NutritionPlanListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.NutritionMeal
+  alias EasyWeb.OpenApi.Schemas.{NutritionMeal, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionMealResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: NutritionMeal},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionMeal, "NutritionMealResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealListResponse do
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.NutritionMeal
+  alias EasyWeb.OpenApi.Schemas.{NutritionMeal, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionMealListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{
-      data: %Schema{type: :array, items: NutritionMeal},
-      count: %Schema{type: :integer, minimum: 0}
-    },
-    required: [:data, :count]
-  })
+  OpenApiSpex.schema(Shared.list_response(NutritionMeal, "NutritionMealListResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.NutritionMealItem
+  alias EasyWeb.OpenApi.Schemas.{NutritionMealItem, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionMealItemResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: NutritionMealItem},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionMealItem, "NutritionMealItemResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMealItemListResponse do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.NutritionMealItem
+  alias EasyWeb.OpenApi.Schemas.{NutritionMealItem, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionMealItemListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: NutritionMealItem}},
-    required: [:data]
-  })
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: NutritionMealItem},
+      "NutritionMealItemListResponse"
+    )
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemResponse do
   require OpenApiSpex
 
-  alias EasyWeb.OpenApi.Schemas.NutritionPlanItem
+  alias EasyWeb.OpenApi.Schemas.{NutritionPlanItem, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionPlanItemResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: NutritionPlanItem},
-    required: [:data]
-  })
+  OpenApiSpex.schema(Shared.data_response(NutritionPlanItem, "NutritionPlanItemResponse"))
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionPlanItemListResponse do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
-  alias EasyWeb.OpenApi.Schemas.NutritionPlanItem
+  alias EasyWeb.OpenApi.Schemas.{NutritionPlanItem, Shared}
 
-  OpenApiSpex.schema(%{
-    title: "NutritionPlanItemListResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: NutritionPlanItem}},
-    required: [:data]
-  })
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: NutritionPlanItem},
+      "NutritionPlanItemListResponse"
+    )
+  )
 end
 
 defmodule EasyWeb.OpenApi.Schemas.NutritionMapResponse do
@@ -604,12 +558,12 @@ defmodule EasyWeb.OpenApi.Schemas.NutritionArrayResponse do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema
+  alias EasyWeb.OpenApi.Schemas.Shared
 
-  OpenApiSpex.schema(%{
-    title: "NutritionArrayResponse",
-    type: :object,
-    additionalProperties: false,
-    properties: %{data: %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}}},
-    required: [:data]
-  })
+  OpenApiSpex.schema(
+    Shared.data_response(
+      %Schema{type: :array, items: %Schema{type: :object, additionalProperties: true}},
+      "NutritionArrayResponse"
+    )
+  )
 end

@@ -8,6 +8,8 @@ defmodule EasyWeb.Coaches.ClientPlanController do
   alias Easy.Training.TrainingPlan
   alias OpenApiSpex.{Operation, Schema}
 
+  alias EasyWeb.Coaches.{NutritionPlanJSON, TrainingPlanJSON}
+
   alias EasyWeb.OpenApi.Schemas.{
     ClientTrainingPlanListResponse,
     ErrorResponse,
@@ -76,7 +78,9 @@ defmodule EasyWeb.Coaches.ClientPlanController do
              offset,
              limit
            ) do
-      render(conn, :training_plans, plans: plans, count: count)
+      conn
+      |> put_view(json: TrainingPlanJSON)
+      |> render(:index, plans: plans, count: count)
     end
   end
 
@@ -96,7 +100,9 @@ defmodule EasyWeb.Coaches.ClientPlanController do
              offset,
              limit
            ) do
-      render(conn, :nutrition_plans, plans: plans, count: count)
+      conn
+      |> put_view(json: NutritionPlanJSON)
+      |> render(:index, plans: plans, count: count)
     end
   end
 end

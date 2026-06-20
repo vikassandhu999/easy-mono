@@ -49,29 +49,21 @@ defmodule Easy.Foods do
     end
   end
 
-  @spec update_food(Food.t(), map()) :: {:ok, Food.t()} | {:error, Ecto.Changeset.t()}
-  def update_food(%Food{} = food, attrs) do
-    food
-    |> Food.update_changeset(attrs)
-    |> Repo.update()
-  end
-
   @spec update_food(String.t(), String.t(), map()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_food(business_id, food_id, attrs) do
     with {:ok, food} <- get_business_food(business_id, food_id) do
-      update_food(food, attrs)
+      food
+      |> Food.update_changeset(attrs)
+      |> Repo.update()
     end
   end
-
-  @spec delete_food(Food.t()) :: {:ok, Food.t()} | {:error, Ecto.Changeset.t()}
-  def delete_food(%Food{} = food), do: Repo.delete(food)
 
   @spec delete_food(String.t(), String.t()) ::
           {:ok, Food.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_food(business_id, food_id) do
     with {:ok, food} <- get_business_food(business_id, food_id) do
-      delete_food(food)
+      Repo.delete(food)
     end
   end
 

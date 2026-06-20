@@ -60,31 +60,22 @@ defmodule Easy.Recipes do
     end
   end
 
-  @spec update_recipe(Recipe.t(), map()) ::
-          {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
-  def update_recipe(%Recipe{} = recipe, attrs) do
-    recipe
-    |> Recipe.update_changeset(attrs)
-    |> validate_ingredient_foods(recipe.business_id)
-    |> Repo.update()
-  end
-
   @spec update_recipe(String.t(), String.t(), map()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_recipe(business_id, recipe_id, attrs) do
     with {:ok, recipe} <- get_recipe(business_id, recipe_id) do
-      update_recipe(recipe, attrs)
+      recipe
+      |> Recipe.update_changeset(attrs)
+      |> validate_ingredient_foods(recipe.business_id)
+      |> Repo.update()
     end
   end
-
-  @spec delete_recipe(Recipe.t()) :: {:ok, Recipe.t()} | {:error, Ecto.Changeset.t()}
-  def delete_recipe(%Recipe{} = recipe), do: Repo.delete(recipe)
 
   @spec delete_recipe(String.t(), String.t()) ::
           {:ok, Recipe.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_recipe(business_id, recipe_id) do
     with {:ok, recipe} <- get_recipe_plain(business_id, recipe_id) do
-      delete_recipe(recipe)
+      Repo.delete(recipe)
     end
   end
 

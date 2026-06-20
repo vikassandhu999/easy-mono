@@ -20,18 +20,6 @@ defmodule Easy.MacroCalc do
     Float.round(result, 1)
   end
 
-  @spec calories_keys() :: [String.t()]
-  def calories_keys, do: ["calories_per_100g", "calories"]
-
-  @spec protein_keys() :: [String.t()]
-  def protein_keys, do: ["protein_g", "protein"]
-
-  @spec carbs_keys() :: [String.t()]
-  def carbs_keys, do: ["carbs_g", "carbs"]
-
-  @spec fat_keys() :: [String.t()]
-  def fat_keys, do: ["fat_g", "fat"]
-
   @spec compute_all(map(), float() | nil, float() | nil) :: %{
           calories: float(),
           protein_g: float(),
@@ -40,10 +28,10 @@ defmodule Easy.MacroCalc do
         }
   def compute_all(macros, weight_g, cooked_weight_g) do
     %{
-      calories: compute(macros, calories_keys(), weight_g, cooked_weight_g),
-      protein_g: compute(macros, protein_keys(), weight_g, cooked_weight_g),
-      carbs_g: compute(macros, carbs_keys(), weight_g, cooked_weight_g),
-      fat_g: compute(macros, fat_keys(), weight_g, cooked_weight_g)
+      calories: compute(macros, ["calories_per_100g", "calories"], weight_g, cooked_weight_g),
+      protein_g: compute(macros, ["protein_g", "protein"], weight_g, cooked_weight_g),
+      carbs_g: compute(macros, ["carbs_g", "carbs"], weight_g, cooked_weight_g),
+      fat_g: compute(macros, ["fat_g", "fat"], weight_g, cooked_weight_g)
     }
   end
 end

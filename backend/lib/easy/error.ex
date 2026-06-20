@@ -3,23 +3,7 @@ defmodule Easy.Error do
 
   @type t :: %__MODULE__{}
 
-  @impl true
-  def exception(opts) do
-    code = Keyword.get(opts, :code, :internal_error)
-    message = Keyword.get(opts, :message, "An internal error occurred")
-    detail = Keyword.get(opts, :detail, %{})
-    status = Keyword.get(opts, :status, :bad_request)
-
-    %__MODULE__{
-      code: code,
-      message: message,
-      detail: detail,
-      status: status
-    }
-  end
-
   def new(code, message, detail \\ %{}, status \\ :bad_request) do
-    # 3. Return the error tuple with the struct
     %__MODULE__{
       code: code,
       message: message,
@@ -43,15 +27,6 @@ defmodule Easy.Error do
       message,
       %{},
       :forbidden
-    )
-  end
-
-  def unauthenticated(message \\ "You must be authenticated to access this resource.") do
-    new(
-      :unauthenticated,
-      message,
-      %{},
-      :unauthorized
     )
   end
 

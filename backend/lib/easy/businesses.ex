@@ -26,20 +26,6 @@ defmodule Easy.Businesses do
     )
   end
 
-  @spec get_one_for_coach(Identity.User.t(), String.t()) ::
-          Orgs.Business.t()
-  def get_one_for_coach(user, business_id) do
-    Easy.Repo.one(
-      from(
-        b in Orgs.Business,
-        join: c in Orgs.Coach,
-        on: c.business_id == b.id,
-        where: c.user_id == ^user.id and c.business_id == ^business_id,
-        limit: 1
-      )
-    )
-  end
-
   def get_one(business_id) do
     case Repo.get(Orgs.Business, business_id) do
       nil -> {:error, Easy.Error.not_found("Business not found")}

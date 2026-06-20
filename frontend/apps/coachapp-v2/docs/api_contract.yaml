@@ -1737,6 +1737,36 @@ paths:
           schema:
             type: string
             enum: [active, pending, inactive, archived]
+        - name: profile_filter
+          in: query
+          required: false
+          style: deepObject
+          explode: true
+          description: >-
+            Nested profile filters. Example:
+            `profile_filter[nutrition][goal]=fat_loss` or
+            `profile_filter[custom][meal_prep_ability]=high`. Values may be a
+            scalar or repeated list values; list values match any selected
+            value.
+          schema:
+            type: object
+            additionalProperties: true
+            properties:
+              general:
+                type: object
+                additionalProperties: true
+              nutrition:
+                type: object
+                additionalProperties: true
+              training:
+                type: object
+                additionalProperties: true
+              lifestyle:
+                type: object
+                additionalProperties: true
+              custom:
+                type: object
+                additionalProperties: true
       responses:
         "200":
           description: Clients with summary counts
@@ -1746,6 +1776,12 @@ paths:
                 $ref: "#/components/schemas/ClientListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Invalid profile filter shape.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
   /v1/coach/clients/{client_id}/training_plans:
     get:
       summary: List client training plans

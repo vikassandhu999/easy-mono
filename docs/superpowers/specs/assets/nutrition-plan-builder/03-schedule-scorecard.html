@@ -1,0 +1,106 @@
+<h2>Schedule options — case by case</h2>
+<p class="subtitle">Five plan shapes a coach actually builds. Verdict each, tally at the end, then a hybrid that may beat all three. Tap the winner.</p>
+
+<style>
+  .case{margin:0 0 26px}
+  .case h3{margin:0 0 2px;font-size:15px}
+  .case .ask{color:#9aa;font-size:13px;margin:0 0 10px}
+  .lanes{display:flex;gap:10px;flex-wrap:wrap}
+  .lane{flex:1;min-width:200px;border:1px solid #2a2a31;border-radius:10px;padding:10px 12px;background:#0e0e12}
+  .lane.win{border-color:#3ad07a;background:#0c1610}
+  .lane h4{margin:0 0 6px;font-size:12px;color:#bbb;display:flex;justify-content:space-between}
+  .wtag{color:#5fe08a;font-size:10px;border:1px solid #2f7d4a;border-radius:999px;padding:1px 8px}
+  .lane p{margin:0;font-size:12px;color:#9aa;line-height:1.45}
+  .tally{display:flex;gap:22px;justify-content:center;font-size:15px;margin:8px 0 16px}
+  .tally b{font-size:21px}
+  .verdict{background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:15px 18px;font-size:14px;line-height:1.5}
+  .hy{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .hyc{flex:1;min-width:230px;border:1px solid #34506e;border-radius:12px;padding:12px;background:#0e1320}
+  .hyc h4{margin:0 0 6px;font-size:13px;color:#9fb0ff}
+  .mini{font-size:10px;color:#888}
+  .gr{display:grid;grid-template-columns:42px repeat(7,1fr);font-size:8px;border:1px solid #232a3a;border-radius:7px;overflow:hidden;margin-top:8px}
+  .gr>div{padding:3px;border-bottom:1px solid #1a2030;border-right:1px solid #1a2030;text-align:center;overflow:hidden;white-space:nowrap}
+  .gr .hd{color:#778;background:#141a26}.gr .sn{color:#889;text-align:left;background:#141a26}.gr .c{color:#9fb0ff}.gr .e{color:#445}
+  .slotmini{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #1a2030}
+  .slotmini .s{color:#889}.slotmini .m{color:#cde}
+  .options{margin-top:18px}
+</style>
+
+<div class="case">
+  <h3>1 · Same meals every day <span class="wtag">A</span></h3>
+  <p class="ask">Standard cut/bulk — identical 6 slots all week. Most common by far.</p>
+  <div class="lanes">
+    <div class="lane win"><h4>A · template <span class="wtag">win</span></h4><p>Fill 6 slots once. Done. Zero repetition.</p></div>
+    <div class="lane"><h4>B · grid</h4><p>Type the same meal into 7 columns × 6 rows. Tedious.</p></div>
+    <div class="lane"><h4>C · day accordion</h4><p>Rebuild all 7 days by hand. Worst.</p></div>
+  </div>
+</div>
+
+<div class="case">
+  <h3>2 · Weekday / weekend split <span class="wtag">A</span></h3>
+  <p class="ask">Strict Mon–Fri, relaxed Sat–Sun. Very common.</p>
+  <div class="lanes">
+    <div class="lane win"><h4>A · template <span class="wtag">win</span></h4><p>Daily template + override Sat &amp; Sun only. Two overrides.</p></div>
+    <div class="lane"><h4>B · grid</h4><p>Visible, but edit 12 weekend cells individually.</p></div>
+    <div class="lane"><h4>C · day accordion</h4><p>Edit each of 7 days.</p></div>
+  </div>
+</div>
+
+<div class="case">
+  <h3>3 · Fully different every day <span class="wtag">B</span></h3>
+  <p class="ask">High-touch, rotating meals daily. Rare.</p>
+  <div class="lanes">
+    <div class="lane"><h4>A · template</h4><p>Override all 7 days — the template buys nothing here.</p></div>
+    <div class="lane win"><h4>B · grid <span class="wtag">win</span></h4><p>Built for it — fill every cell, see it all.</p></div>
+    <div class="lane"><h4>C · day accordion</h4><p>Works, but no overview while editing.</p></div>
+  </div>
+</div>
+
+<div class="case">
+  <h3>4 · Scan the whole week at a glance <span class="wtag">B</span></h3>
+  <p class="ask">"Is Thursday dinner set? Any gaps?"</p>
+  <div class="lanes">
+    <div class="lane"><h4>A · template</h4><p>Per-day hidden behind "Customize" until opened.</p></div>
+    <div class="lane win"><h4>B · grid <span class="wtag">win</span></h4><p>Everything on one screen; gaps obvious.</p></div>
+    <div class="lane"><h4>C · day accordion</h4><p>One day at a time.</p></div>
+  </div>
+</div>
+
+<div class="case">
+  <h3>5 · Mobile width &amp; tap size <span class="wtag">A</span></h3>
+  <p class="ask">One-page builder, phone.</p>
+  <div class="lanes">
+    <div class="lane win"><h4>A · template <span class="wtag">win</span></h4><p>Full-width single column, big taps.</p></div>
+    <div class="lane"><h4>B · grid</h4><p>42 tiny cells, horizontal scroll — the nesting/width trap.</p></div>
+    <div class="lane"><h4>C · day accordion</h4><p>Fine width, but lots of tapping.</p></div>
+  </div>
+</div>
+
+<div class="tally"><span>A · <b>3</b></span><span>B · <b>2</b></span><span>C · <b>0</b></span></div>
+
+<div class="verdict">
+  <b>Winner: a hybrid — A to edit, B as a read-only overview.</b> Same move we made on the coach training builder (simple edit surface + read-only week projection). A owns the common cases and mobile; B owns whole-week scanning. Combine them: edit in the daily-template column, and a compact read-only week grid sits above/below for the at-a-glance view (tap a cell → jumps you to that day's override). C loses outright.
+  <div class="hy">
+    <div class="hyc"><h4>Edit · daily template (A)</h4>
+      <div class="slotmini"><span class="s">Breakfast</span><span class="m">Oats &amp; Eggs · 420</span></div>
+      <div class="slotmini"><span class="s">Lunch</span><span class="m">Chicken &amp; Rice · 650</span></div>
+      <div class="slotmini"><span class="s">Dinner</span><span class="m">Salmon &amp; Veg · 630</span></div>
+      <div class="mini" style="margin-top:6px">+ Customize days → overrides</div>
+    </div>
+    <div class="hyc"><h4>Overview · read-only week (B)</h4>
+      <div class="gr">
+        <div class="hd"></div><div class="hd">M</div><div class="hd">T</div><div class="hd">W</div><div class="hd">T</div><div class="hd">F</div><div class="hd">S</div><div class="hd">S</div>
+        <div class="sn">Bf</div><div class="c">Oat</div><div class="c">Oat</div><div class="c">Oat</div><div class="c">Oat</div><div class="c">Oat</div><div class="c">Egg</div><div class="c">Egg</div>
+        <div class="sn">Ln</div><div class="c">Chk</div><div class="c">Chk</div><div class="c">Chk</div><div class="c">Chk</div><div class="c">Chk</div><div class="c">Out</div><div class="c">Out</div>
+        <div class="sn">Dn</div><div class="c">Sal</div><div class="c">Sal</div><div class="c">Sal</div><div class="c">Sal</div><div class="c">Sal</div><div class="e">—</div><div class="e">—</div>
+      </div>
+      <div class="mini" style="margin-top:6px">tap a cell → edit that day</div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="hybrid" onclick="toggleSelect(this)"><div class="letter">★</div><div class="content"><h3>Hybrid — A edit + B read-only overview (recommended)</h3><p>Daily template column to build, compact read-only week grid to scan.</p></div></div>
+  <div class="option" data-choice="a" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>A only — daily template + overrides</h3><p>Simplest; no week grid overview.</p></div></div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>B only — full editable grid</h3><p>Most powerful; dense on mobile.</p></div></div>
+</div>

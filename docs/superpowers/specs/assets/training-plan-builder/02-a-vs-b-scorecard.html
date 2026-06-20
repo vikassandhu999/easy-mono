@@ -1,0 +1,176 @@
+<h2>A vs B — case by case</h2>
+<p class="subtitle">Wider panels. Five real coach tasks. A verdict on each, tally at the bottom. The contender for A is "inline + a pinned week bar" so A's tall-page weakness is neutralised. Pick the winner at the end.</p>
+
+<style>
+  .case { margin:0 0 34px; }
+  .case h3 { margin:0 0 2px; }
+  .case .ask { color:#9aa; font-size:13px; margin:0 0 12px; }
+  .pair { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+  .panel { flex:1; min-width:420px; }
+  .ptitle { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#888; margin-bottom:6px; }
+  .frame { border:2px solid #3a3a42; border-radius:18px; padding:14px; background:#0c0c0e; font-size:13px; line-height:1.5; }
+  .win { border-color:#3ad07a; }
+  .win-tag { display:inline-block; background:#16351f; color:#5fe08a; border:1px solid #2f7d4a; border-radius:999px; font-size:11px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
+  .tie-tag { background:#33301a; color:#e0c95f; border-color:#7d6f2f; }
+  .plan { background:#1b1b20; border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; font-weight:600; margin-bottom:10px; }
+  .stick { position:sticky; top:0; background:#15171f; border:1px solid #2c3350; border-radius:8px; padding:6px 10px; font-size:12px; color:#9fb0ff; display:flex; justify-content:space-between; margin-bottom:10px; }
+  .lbl { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#888; margin:10px 0 6px; }
+  .card2 { background:#16161b; border:1px solid #2a2a31; border-radius:10px; padding:9px 12px; margin-bottom:8px; }
+  .row { display:flex; justify-content:space-between; align-items:center; }
+  .ex { padding:6px 0; border-bottom:1px solid #232329; }
+  .ex:last-child{border-bottom:none}
+  .set { color:#aab; font-size:12px; margin:2px 0 0 10px; }
+  .add { color:#6c8cff; font-size:12px; margin-top:6px; }
+  .muted{color:#777}
+  .chip { display:inline-block; background:#23232b; border:1px solid #34343d; border-radius:999px; padding:6px 13px; margin:0 6px 6px 0; font-size:12px; }
+  .chip.new{color:#6c8cff;border-style:dashed}
+  .week div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1d1d22}
+  .pick{color:#6c8cff}
+  .sheet{background:#1b1b20;border:1px solid #34343d;border-radius:14px 14px 0 0;padding:12px;box-shadow:0 -10px 24px rgba(0,0,0,.4)}
+  .grip{width:40px;height:4px;background:#444;border-radius:2px;margin:2px auto 10px}
+  .editor{background:#1d2030;border:1px solid #3a4170;border-radius:8px;padding:9px;margin:6px 0 4px 10px}
+  .fields{display:flex;gap:7px}
+  .fld{flex:1;background:#0c0c0e;border:1px solid #34343d;border-radius:6px;padding:6px;text-align:center}
+  .fld small{display:block;color:#888;font-size:9px;letter-spacing:.08em}
+  .behind{filter:brightness(.45)}
+  .drag{color:#777;cursor:grab}
+  .ghost{opacity:.5;border:1px dashed #6c8cff;border-radius:6px}
+  .tally{display:flex;gap:24px;justify-content:center;font-size:15px;margin:6px 0 18px}
+  .tally b{font-size:22px}
+  .verdict{background:#11210f;border:1px solid #2f7d4a;border-radius:12px;padding:14px 18px;margin-bottom:18px}
+</style>
+
+<!-- CASE 1 -->
+<div class="case">
+  <h3>1 · Deep edit — 5 exercises, set editor open <span class="win-tag tie-tag">slight B</span></h3>
+  <p class="ask">Densest single-workout state. Who stays calmer?</p>
+  <div class="pair">
+    <div class="panel"><div class="ptitle">A · inline + pinned week</div>
+      <div class="frame">
+        <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+        <div class="stick"><span>Week ▸ Mon Push · Tue Rest · Wed Pull</span><span>edit ▾</span></div>
+        <div class="card2">
+          <div class="row"><b>Push Day</b><span class="muted">5 · ▾</span></div>
+          <div class="ex"><b>Bench Press</b><div class="set">working · 3×8 · 100kg</div>
+            <div class="editor"><div class="fields"><div class="fld"><small>REPS</small>8</div><div class="fld"><small>KG</small>100</div><div class="fld"><small>RPE</small>8</div></div><div class="add">advanced · rest · notes ▾</div></div>
+          </div>
+          <div class="ex"><b>Incline DB Press</b><div class="set">3×10 · 30kg</div></div>
+          <div class="ex muted">Cable Fly · Lateral Raise · Triceps …</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="ptitle">B · cards + sheet</div>
+      <div class="frame win">
+        <div class="behind"><div class="plan">Hypertrophy Block</div><div><span class="chip">Push · 5</span><span class="chip">Pull · 3</span></div></div>
+        <div class="sheet"><div class="grip"></div>
+          <div class="row"><b>Push Day</b><span class="muted">✕</span></div>
+          <div class="ex"><b>Bench Press</b><div class="set">3×8 · 100kg</div>
+            <div class="editor"><div class="fields"><div class="fld"><small>REPS</small>8</div><div class="fld"><small>KG</small>100</div><div class="fld"><small>RPE</small>8</div></div></div>
+          </div>
+          <div class="ex"><b>Incline DB Press</b><div class="set">3×10 · 30kg</div></div>
+          <div class="add">+ Add exercise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CASE 2 -->
+<div class="case">
+  <h3>2 · Scan the whole plan at a glance <span class="win-tag">A</span></h3>
+  <p class="ask">"What's in this plan?" — collapse everything and read the structure.</p>
+  <div class="pair">
+    <div class="panel"><div class="ptitle">A · collapse all → outline</div>
+      <div class="frame win">
+        <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+        <div class="card2"><div class="row"><b>Push Day</b><span class="muted">5 ▸</span></div></div>
+        <div class="card2"><div class="row"><b>Pull Day</b><span class="muted">3 ▸</span></div></div>
+        <div class="card2"><div class="row"><b>Leg Day</b><span class="muted">6 ▸</span></div></div>
+        <div class="lbl">Week</div>
+        <div class="week"><div><span>Mon</span><span class="pick">Push</span></div><div><span>Tue</span><span class="muted">Rest</span></div><div><span>Wed</span><span class="pick">Pull</span></div><div><span>Thu</span><span class="pick">Push</span></div></div>
+      </div>
+    </div>
+    <div class="panel"><div class="ptitle">B · chips only</div>
+      <div class="frame">
+        <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+        <div class="lbl">Workouts</div>
+        <div><span class="chip">Push · 5</span><span class="chip">Pull · 3</span><span class="chip">Leg · 6</span><span class="chip new">+ New</span></div>
+        <div class="lbl">Week</div>
+        <div class="week"><div><span>Mon</span><span class="pick">Push</span></div><div><span>Tue</span><span class="muted">Rest</span></div><div><span>Wed</span><span class="pick">Pull</span></div></div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Structure hidden until you open each sheet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CASE 3 -->
+<div class="case">
+  <h3>3 · Cross-check — "is bench already in Pull Day?" <span class="win-tag">A</span></h3>
+  <p class="ask">Comparing two workouts without losing your place.</p>
+  <div class="pair">
+    <div class="panel"><div class="ptitle">A · both expanded, scroll between</div>
+      <div class="frame win">
+        <div class="card2"><div class="row"><b>Push Day ▾</b></div><div class="ex">Bench Press <span class="set">100kg</span></div><div class="ex muted">Incline · Fly …</div></div>
+        <div class="card2"><div class="row"><b>Pull Day ▾</b></div><div class="ex">Barbell Row <span class="set">80kg</span></div><div class="ex muted">Pulldown · Curl …</div></div>
+      </div>
+    </div>
+    <div class="panel"><div class="ptitle">B · open one, close, open other</div>
+      <div class="frame">
+        <div class="sheet"><div class="grip"></div><div class="row"><b>Pull Day</b><span class="muted">✕</span></div><div class="ex">Barbell Row</div><div class="ex muted">Pulldown · Curl …</div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Push Day is closed — close this to check it, then reopen.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CASE 4 -->
+<div class="case">
+  <h3>4 · Schedule a workout to a day while building <span class="win-tag tie-tag">tie</span></h3>
+  <p class="ask">Drop Push onto Mon &amp; Thu. Week must be reachable.</p>
+  <div class="pair">
+    <div class="panel"><div class="ptitle">A · pinned week bar, always one tap</div>
+      <div class="frame win">
+        <div class="stick"><span>Week</span><span>edit ▾</span></div>
+        <div class="week"><div><span>Mon</span><span class="pick">Push ▾</span></div><div><span>Thu</span><span class="pick">Push ▾</span></div></div>
+        <div class="card2 muted" style="margin-top:8px">…workout editor continues below</div>
+      </div>
+    </div>
+    <div class="panel"><div class="ptitle">B · week always on main page</div>
+      <div class="frame win">
+        <div class="lbl">Week</div>
+        <div class="week"><div><span>Mon</span><span class="pick">Push ▾</span></div><div><span>Thu</span><span class="pick">Push ▾</span></div></div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Close the sheet and the week's right there.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CASE 5 -->
+<div class="case">
+  <h3>5 · Reorder exercises (drag) <span class="win-tag tie-tag">tie</span></h3>
+  <p class="ask">Drag Cable Fly above Incline.</p>
+  <div class="pair">
+    <div class="panel"><div class="ptitle">A · drag in flow</div>
+      <div class="frame">
+        <div class="card2"><div class="ex"><span class="drag">⠿</span> Bench Press</div><div class="ghost ex"><span class="drag">⠿</span> Cable Fly</div><div class="ex muted"><span class="drag">⠿</span> Incline DB</div></div>
+      </div>
+    </div>
+    <div class="panel"><div class="ptitle">B · drag inside sheet</div>
+      <div class="frame">
+        <div class="sheet"><div class="grip"></div><div class="ex"><span class="drag">⠿</span> Bench Press</div><div class="ghost ex"><span class="drag">⠿</span> Cable Fly</div><div class="ex muted"><span class="drag">⠿</span> Incline DB</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tally"><span>A · <b>2</b> wins</span><span>B · <b>1</b> win</span><span>ties · <b>2</b></span></div>
+
+<div class="verdict">
+  <b>Recommendation: A — inline accordion + a pinned week bar + collapse-all.</b><br>
+  A wins the two cases unique to a <i>coach building/reviewing a whole template</i> (scan structure, cross-check workouts). B's only clear win is single-workout focus (case 1), and A's pinned-week bar neutralises its old weakness (case 4 was B's natural turf — now a tie). For a builder where the job is composing and eyeballing the full plan, A's continuous overview beats B's focus mode.
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>A — inline + pinned week (recommended)</h3><p>One scroll surface, collapsible workouts, sticky week bar.</p></div></div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>B — cards + bottom-sheet editor</h3><p>Short stable page, focused per-workout editing in a sheet.</p></div></div>
+</div>

@@ -1,0 +1,81 @@
+<h2>A on mobile width — the nesting trap vs the fix</h2>
+<p class="subtitle">Your worry is right IF every level indents. The rule: indent at most once; show depth with weight, dividers, and a 2px left accent — never stack paddings. Left = the trap. Right = the discipline. Tap the one that should be the rule.</p>
+
+<style>
+  .pair{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .col{width:430px}
+  .ptitle{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .phone{border:2px solid #3a3a42;border-radius:20px;padding:8px;background:#111;cursor:pointer;transition:border-color .15s}
+  .phone.selected,.phone:hover{border-color:#6c8cff}
+  .phone.bad{border-color:#5a2a2a}
+  .scr{background:#0c0c0e;border-radius:14px;padding:12px;font-size:13px;line-height:1.45}
+  .ruler{display:flex;justify-content:space-between;font-size:9px;color:#666;border-bottom:1px dashed #333;padding-bottom:3px;margin-bottom:10px}
+  .plan{background:#1b1b20;border-radius:10px;padding:8px 12px;font-weight:600;margin-bottom:10px}
+  /* BAD: cumulative indentation */
+  .b-card{background:#16161b;border:1px solid #2a2a31;border-radius:10px;padding:10px;margin:0 0 8px}
+  .b-card .ti{font-weight:600;margin-bottom:6px}
+  .b-ex{margin-left:14px;padding:8px;background:#131318;border-radius:8px;border:1px solid #232329;margin-bottom:6px}
+  .b-set{margin-left:14px;padding:7px;background:#0f0f13;border-radius:6px;margin-top:5px;color:#aab;font-size:12px}
+  .b-ed{margin-left:14px;margin-top:5px;background:#1d2030;border:1px solid #3a4170;border-radius:6px;padding:7px}
+  .b-ed .fields{display:flex;gap:5px}
+  .b-ed .fld{flex:1;background:#0c0c0e;border:1px solid #34343d;border-radius:5px;padding:5px;text-align:center;font-size:11px}
+  .squeeze{font-size:9px;color:#e06c6c;text-align:right;margin-top:6px}
+  /* GOOD: flat full-width, accent rule */
+  .g-card{background:#16161b;border:1px solid #2a2a31;border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  .g-wtitle{display:flex;justify-content:space-between;font-weight:600;padding-bottom:6px;border-bottom:1px solid #232329;margin-bottom:4px}
+  .g-ex{border-left:2px solid #6c8cff;padding:7px 0 7px 10px;margin-top:6px}
+  .g-ex .name{font-weight:600}
+  .g-set{display:flex;justify-content:space-between;font-size:12px;color:#aab;padding:3px 0 0}
+  .g-fields{display:flex;gap:7px;margin-top:6px}
+  .g-fld{flex:1;background:#0c0c0e;border:1px solid #34343d;border-radius:6px;padding:7px 4px;text-align:center}
+  .g-fld small{display:block;color:#888;font-size:9px;letter-spacing:.06em}
+  .full{font-size:9px;color:#5fe08a;text-align:right;margin-top:6px}
+  .muted{color:#777}
+  .add{color:#6c8cff;font-size:12px;margin-top:7px}
+</style>
+
+<div class="pair">
+
+  <div class="col">
+    <div class="ptitle">The trap — every level indents</div>
+    <div class="phone bad" data-choice="trap" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="ruler"><span>◀ usable width</span><span>shrinking ▶</span></div>
+        <div class="plan">Hypertrophy Block</div>
+        <div class="b-card">
+          <div class="ti">Push Day</div>
+          <div class="b-ex">Bench Press
+            <div class="b-set">working · 3×8 · 100kg</div>
+            <div class="b-ed"><div class="fields"><div class="fld">8</div><div class="fld">100</div><div class="fld">8</div></div></div>
+          </div>
+        </div>
+        <div class="squeeze">content boxed-in 4 levels deep → fields ~55% width, cramped</div>
+      </div>
+    </div>
+    <div class="pros-cons" style="margin-top:8px"><div class="cons"><h4>Why it hurts</h4><ul><li>Plan→card→exercise→set→editor each add padding</li><li>By the set editor you've lost ~45% of the screen</li><li>Numbers wrap, taps get tiny</li></ul></div></div>
+  </div>
+
+  <div class="col">
+    <div class="ptitle">The fix — flat width, accent not indent</div>
+    <div class="phone" data-choice="flat" onclick="toggleSelect(this)">
+      <div class="scr">
+        <div class="ruler"><span>◀ usable width</span><span>full ▶</span></div>
+        <div class="plan">Hypertrophy Block</div>
+        <div class="g-card">
+          <div class="g-wtitle"><span>Push Day</span><span class="muted">5 · ▾</span></div>
+          <div class="g-ex">
+            <div class="name">Bench Press</div>
+            <div class="g-set"><span>working · set 1</span><span class="muted">⋯</span></div>
+            <div class="g-fields"><div class="g-fld"><small>REPS</small>8</div><div class="g-fld"><small>KG</small>100</div><div class="g-fld"><small>RPE</small>8</div></div>
+            <div class="add">+ set</div>
+          </div>
+          <div class="g-ex"><div class="name">Incline DB Press</div><div class="g-set"><span>3×10 · 30kg</span></div></div>
+          <div class="add">+ Add exercise</div>
+        </div>
+        <div class="full">one 10px accent rule = depth. Fields span full width.</div>
+      </div>
+    </div>
+    <div class="pros-cons" style="margin-top:8px"><div class="pros"><h4>Why it works</h4><ul><li>Only the exercise group indents (10px), once</li><li>Set fields use the FULL card width — big tap targets</li><li>Depth read from weight + the blue rule, not boxes</li></ul></div></div>
+  </div>
+
+</div>

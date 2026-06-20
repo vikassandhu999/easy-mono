@@ -18,3 +18,4 @@ erl_crash.dump
 # --- editors / OS ---
 .DS_Store
 .elixir_ls
+.superpowers/

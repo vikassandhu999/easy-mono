@@ -1,0 +1,95 @@
+<h2>One-page training plan builder — overall layout</h2>
+<p class="subtitle">Same plan in three structures. All are one page, no navigation, mobile-first. The hard part is managing depth (plan → workout → exercise → sets). Which structure feels right? Tap to pick.</p>
+
+<style>
+  .phones { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+  .phone { width:300px; border:2px solid var(--border,#444); border-radius:24px; padding:10px; background:var(--bg,#111); }
+  .phone.option { cursor:pointer; transition:border-color .15s; }
+  .phone.option.selected, .phone.option:hover { border-color:#6c8cff; }
+  .scr { background:#0c0c0e; border-radius:16px; padding:12px; font-size:12px; line-height:1.4; min-height:520px; }
+  .plan { background:#1b1b20; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-weight:600; }
+  .lbl { font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#888; margin:10px 0 6px; }
+  .card2 { background:#16161b; border:1px solid #2a2a31; border-radius:10px; padding:8px 10px; margin-bottom:8px; }
+  .row { display:flex; justify-content:space-between; align-items:center; }
+  .ex { padding:6px 0; border-bottom:1px solid #232329; }
+  .ex:last-child { border-bottom:none; }
+  .set { color:#aab; font-size:11px; margin:3px 0 0 8px; }
+  .add { color:#6c8cff; font-size:11px; margin-top:6px; }
+  .chip { display:inline-block; background:#23232b; border:1px solid #34343d; border-radius:999px; padding:6px 12px; margin:0 6px 6px 0; font-size:11px; }
+  .chip.new { color:#6c8cff; border-style:dashed; }
+  .tab { display:inline-block; padding:6px 12px; font-size:11px; border-bottom:2px solid transparent; color:#999; }
+  .tab.on { color:#fff; border-bottom-color:#6c8cff; font-weight:600; }
+  .week { font-size:11px; color:#bbb; }
+  .week div { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #1d1d22; }
+  .pick { color:#6c8cff; }
+  .sheet { position:relative; margin-top:10px; background:#1b1b20; border:1px solid #34343d; border-radius:12px 12px 0 0; padding:10px; }
+  .muted { color:#777; }
+  .caption { text-align:center; font-size:12px; margin-top:8px; color:#aaa; }
+</style>
+
+<div class="phones">
+
+  <!-- A: stacked accordion -->
+  <div class="phone option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="scr">
+      <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+      <div class="lbl">Workouts</div>
+      <div class="card2">
+        <div class="row"><b>Push Day</b><span class="muted">4 · ▾</span></div>
+        <div class="ex"><b>Bench Press</b><div class="set">working · 3×8 · 100kg</div><div class="set muted">warm-up · 2×10</div></div>
+        <div class="ex"><b>Incline DB Press</b><div class="set">3×10 · 30kg</div><div class="add">+ set</div></div>
+        <div class="add">+ Add exercise</div>
+      </div>
+      <div class="card2"><div class="row"><b>Pull Day</b><span class="muted">3 · ▸</span></div></div>
+      <div class="add">+ Add workout</div>
+      <div class="lbl">Week</div>
+      <div class="week">
+        <div><span>Mon</span><span class="pick">Push Day ▾</span></div>
+        <div><span>Tue</span><span class="muted">Rest ▾</span></div>
+        <div><span>Wed</span><span class="pick">Pull Day ▾</span></div>
+      </div>
+    </div>
+    <div class="caption"><b>A · Stacked accordion</b><br>Workouts expand inline, one at a time. Pure scroll.</div>
+  </div>
+
+  <!-- B: cards + bottom sheet -->
+  <div class="phone option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="scr">
+      <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+      <div class="lbl">Workouts</div>
+      <div><span class="chip">Push Day · 4</span><span class="chip">Pull Day · 3</span><span class="chip new">+ New</span></div>
+      <div class="lbl">Week</div>
+      <div class="week">
+        <div><span>Mon</span><span class="pick">Push Day</span></div>
+        <div><span>Tue</span><span class="muted">Rest</span></div>
+        <div><span>Wed</span><span class="pick">Pull Day</span></div>
+      </div>
+      <div class="sheet">
+        <div class="row"><b>Push Day</b><span class="muted">✕</span></div>
+        <div class="ex"><b>Bench Press</b><div class="set">3×8 · 100kg</div></div>
+        <div class="ex"><b>Incline DB Press</b><div class="set">3×10 · 30kg</div></div>
+        <div class="add">+ Add exercise</div>
+      </div>
+    </div>
+    <div class="caption"><b>B · Cards + editor sheet</b><br>Short page; tap a workout, it edits in a bottom sheet.</div>
+  </div>
+
+  <!-- C: tabbed editor -->
+  <div class="phone option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="scr">
+      <div class="plan">Hypertrophy Block <span class="muted">✎</span></div>
+      <div style="border-bottom:1px solid #232329; margin-bottom:10px;">
+        <span class="tab on">Push</span><span class="tab">Pull</span><span class="tab pick">+</span>
+      </div>
+      <div class="card2">
+        <div class="ex"><b>Bench Press</b><div class="set">working · 3×8 · 100kg</div><div class="set muted">warm-up · 2×10</div><div class="add">+ set</div></div>
+        <div class="ex"><b>Incline DB Press</b><div class="set">3×10 · 30kg</div><div class="add">+ set</div></div>
+        <div class="add">+ Add exercise</div>
+      </div>
+      <div class="lbl">Week ▸</div>
+      <div class="week muted" style="font-size:10px;">Mon Push · Tue Rest · Wed Pull · …</div>
+    </div>
+    <div class="caption"><b>C · Tabbed editor</b><br>One workout full-width at a time; tabs to switch. Week collapses.</div>
+  </div>
+
+</div>

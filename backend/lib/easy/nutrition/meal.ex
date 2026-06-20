@@ -19,7 +19,6 @@ defmodule Easy.Nutrition.Meal do
     belongs_to :creator, Orgs.Coach, foreign_key: :creator_id
     belongs_to :business, Orgs.Business
     belongs_to :plan, Easy.Nutrition.Plan
-    has_many :plan_items, Easy.Nutrition.PlanItem
     has_many :meal_items, Easy.Nutrition.MealItem
 
     timestamps(type: :utc_datetime)

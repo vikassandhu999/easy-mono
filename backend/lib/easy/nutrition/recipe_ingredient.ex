@@ -16,8 +16,6 @@ defmodule Easy.Nutrition.RecipeIngredient do
     field :weight_g, :float
     field :amount, :float
     field :unit, :string
-
-    timestamps(type: :utc_datetime)
   end
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()

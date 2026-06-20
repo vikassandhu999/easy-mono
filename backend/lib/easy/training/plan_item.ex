@@ -15,12 +15,6 @@ defmodule Easy.Training.PlanItem do
   @days ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
   @workout_types ["primary", "alternative"]
 
-  @spec days() :: [String.t()]
-  def days, do: @days
-
-  @spec workout_types() :: [String.t()]
-  def workout_types, do: @workout_types
-
   schema "training_plan_items" do
     field :day, :string
     field :workout_type, :string

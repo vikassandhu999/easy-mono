@@ -1,6 +1,8 @@
 defmodule Easy.Training.PlannedSet do
   use Ecto.Schema
 
+  alias Easy.SetValidation
+
   import Ecto.Changeset
 
   @type t() :: %__MODULE__{}
@@ -79,8 +81,8 @@ defmodule Easy.Training.PlannedSet do
     |> validate_number(:load_value, greater_than: 0)
     |> validate_has_target()
     |> validate_target_reps_format()
-    |> validate_load_unit()
-    |> validate_distance_unit()
+    |> SetValidation.require_load_unit()
+    |> SetValidation.require_distance_unit()
   end
 
   defp validate_has_target(changeset) do
@@ -88,39 +90,12 @@ defmodule Easy.Training.PlannedSet do
     duration = get_field(changeset, :duration_seconds)
     distance = get_field(changeset, :distance_value)
 
-    if blank?(reps) and is_nil(duration) and is_nil(distance) do
+    if SetValidation.blank?(reps) and is_nil(duration) and is_nil(distance) do
       add_error(
         changeset,
         :target_reps,
         "must have at least one target: reps, duration, or distance"
       )
-    else
-      changeset
-    end
-  end
-
-  defp blank?(nil), do: true
-  defp blank?(""), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_), do: false
-
-  defp validate_load_unit(changeset) do
-    load = get_field(changeset, :load_value)
-    unit = get_field(changeset, :load_unit)
-
-    if load && (!unit || unit == :none) do
-      add_error(changeset, :load_unit, "required when load_value is set")
-    else
-      changeset
-    end
-  end
-
-  defp validate_distance_unit(changeset) do
-    distance = get_field(changeset, :distance_value)
-    unit = get_field(changeset, :distance_unit)
-
-    if distance && (!unit || unit == :none) do
-      add_error(changeset, :distance_unit, "required when distance_value is set")
     else
       changeset
     end

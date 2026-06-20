@@ -78,9 +78,6 @@ defmodule Easy.Nutrition.MealLog do
 
   @spec with_entries(Ecto.Queryable.t()) :: Ecto.Query.t()
   def with_entries(query \\ __MODULE__) do
-    entry_query =
-      from(e in FoodLogEntry, order_by: [asc: e.planned_item_index, asc: e.inserted_at])
-
-    from(ml in query, preload: [food_log_entries: ^entry_query])
+    from(ml in query, preload: [food_log_entries: ^FoodLogEntry.ordered()])
   end
 end

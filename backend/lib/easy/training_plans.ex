@@ -178,53 +178,37 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec update_training_plan(TrainingPlan.t(), map()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
-  def update_training_plan(%TrainingPlan{} = plan, attrs) do
-    plan
-    |> TrainingPlan.update_changeset(attrs)
-    |> check_rest_days_do_not_overlap_plan_items()
-    |> Repo.update()
-    |> preload_plan()
-  end
-
   @spec update_training_plan(String.t(), String.t(), map()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_training_plan(business_id, plan_id, attrs) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      update_training_plan(plan, attrs)
+      plan
+      |> TrainingPlan.update_changeset(attrs)
+      |> check_rest_days_do_not_overlap_plan_items()
+      |> Repo.update()
+      |> preload_plan()
     end
   end
-
-  @spec delete_training_plan(TrainingPlan.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
-  def delete_training_plan(%TrainingPlan{} = plan), do: Repo.delete(plan)
 
   @spec delete_training_plan(String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_training_plan(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
-      delete_training_plan(plan)
+      Repo.delete(plan)
     end
-  end
-
-  @spec duplicate_training_plan(TrainingPlan.t()) ::
-          {:ok, TrainingPlan.t()} | {:error, Ecto.Changeset.t()}
-  def duplicate_training_plan(%TrainingPlan{} = plan) do
-    attrs = %{
-      name: generate_copy_name(plan.name, plan.business_id),
-      description: plan.description,
-      rest_days: plan.rest_days
-    }
-
-    clone_plan(plan, attrs, original_template_id: plan.id)
   end
 
   @spec duplicate_training_plan(String.t(), String.t()) ::
           {:ok, TrainingPlan.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def duplicate_training_plan(business_id, plan_id) do
     with {:ok, plan} <- get_plan_full(business_id, plan_id) do
-      duplicate_training_plan(plan)
+      attrs = %{
+        name: generate_copy_name(plan.name, plan.business_id),
+        description: plan.description,
+        rest_days: plan.rest_days
+      }
+
+      clone_plan(plan, attrs, original_template_id: plan.id)
     end
   end
 
@@ -285,32 +269,23 @@ defmodule Easy.TrainingPlans do
     end
   end
 
-  @spec update_plan_item(PlanItem.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, Ecto.Changeset.t()}
-  def update_plan_item(%PlanItem{} = plan_item, attrs) do
-    plan_item
-    |> PlanItem.update_changeset(attrs)
-    |> validate_workout_belongs_to_plan()
-    |> validate_day_is_not_rest_day()
-    |> Repo.update()
-  end
-
   @spec update_plan_item(String.t(), String.t(), map()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      update_plan_item(plan_item, attrs)
+      plan_item
+      |> PlanItem.update_changeset(attrs)
+      |> validate_workout_belongs_to_plan()
+      |> validate_day_is_not_rest_day()
+      |> Repo.update()
     end
   end
-
-  @spec delete_plan_item(PlanItem.t()) :: {:ok, PlanItem.t()} | {:error, Ecto.Changeset.t()}
-  def delete_plan_item(%PlanItem{} = plan_item), do: Repo.delete(plan_item)
 
   @spec delete_plan_item(String.t(), String.t()) ::
           {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
-      delete_plan_item(plan_item)
+      Repo.delete(plan_item)
     end
   end
 
@@ -344,14 +319,7 @@ defmodule Easy.TrainingPlans do
   defp ensure_workout_for_plan(_plan_id, _business_id, ""), do: :ok
 
   defp ensure_workout_for_plan(plan_id, business_id, workout_id) do
-    exists? =
-      Workout
-      |> Workout.for_business(business_id)
-      |> Workout.for_plan(plan_id)
-      |> where([w], w.id == ^workout_id)
-      |> Repo.exists?()
-
-    if exists?, do: :ok, else: {:error, :not_found}
+    if workout_for_plan?(plan_id, business_id, workout_id), do: :ok, else: {:error, :not_found}
   end
 
   defp validate_workout_belongs_to_plan(%{valid?: false} = changeset), do: changeset

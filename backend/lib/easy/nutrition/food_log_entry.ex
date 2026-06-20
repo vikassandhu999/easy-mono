@@ -15,9 +15,6 @@ defmodule Easy.Nutrition.FoodLogEntry do
 
   @sources [:planned, :replacement, :unplanned]
 
-  @spec sources() :: [atom()]
-  def sources, do: @sources
-
   schema "food_log_entries" do
     field :food_name, :string
     field :amount, :float

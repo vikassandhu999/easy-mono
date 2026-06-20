@@ -21,9 +21,6 @@ defmodule Easy.Nutrition.PlanItem do
     "evening_snack"
   ]
 
-  @spec days() :: [String.t()]
-  def days, do: @days
-
   @spec meal_types() :: [String.t()]
   def meal_types, do: @meal_types
 

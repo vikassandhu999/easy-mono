@@ -12,7 +12,6 @@ defmodule Easy.Nutrition.Food do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  # TODO: Add barcode.
   schema "foods" do
     field :name, :string
     field :macros, :map

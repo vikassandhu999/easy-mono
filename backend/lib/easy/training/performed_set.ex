@@ -2,6 +2,7 @@ defmodule Easy.Training.PerformedSet do
   use Ecto.Schema
 
   alias Easy.Orgs
+  alias Easy.SetValidation
   alias Easy.Training.{WorkoutSession, WorkoutElement, Exercise}
 
   import Ecto.Changeset
@@ -82,8 +83,8 @@ defmodule Easy.Training.PerformedSet do
     |> validate_number(:rir, greater_than_or_equal_to: 0)
     |> validate_number(:duration_seconds, greater_than_or_equal_to: 0)
     |> validate_at_least_one_performance_metric()
-    |> validate_load_requires_unit()
-    |> validate_distance_requires_unit()
+    |> SetValidation.require_load_unit()
+    |> SetValidation.require_distance_unit()
     |> unique_constraint([:workout_session_id, :position],
       name: :performed_sets_workout_session_id_position_index,
       message: "position already exists in this workout session"
@@ -99,7 +100,7 @@ defmodule Easy.Training.PerformedSet do
     duration = get_field(changeset, :duration_seconds)
     distance = get_field(changeset, :distance_value)
 
-    if blank?(reps) and is_nil(duration) and is_nil(distance) do
+    if SetValidation.blank?(reps) and is_nil(duration) and is_nil(distance) do
       add_error(
         changeset,
         :actual_reps,
@@ -110,41 +111,9 @@ defmodule Easy.Training.PerformedSet do
     end
   end
 
-  defp blank?(nil), do: true
-  defp blank?(""), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_), do: false
-
-  defp validate_load_requires_unit(changeset) do
-    load = get_field(changeset, :load_value)
-    unit = get_field(changeset, :load_unit)
-
-    if load && (!unit || unit == :none) do
-      add_error(changeset, :load_unit, "required when load_value is set")
-    else
-      changeset
-    end
-  end
-
-  defp validate_distance_requires_unit(changeset) do
-    distance = get_field(changeset, :distance_value)
-    unit = get_field(changeset, :distance_unit)
-
-    if distance && (!unit || unit == :none) do
-      add_error(changeset, :distance_unit, "required when distance_value is set")
-    else
-      changeset
-    end
-  end
-
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
   def for_business(query \\ __MODULE__, business_id) do
     from(s in query, where: s.business_id == ^business_id)
-  end
-
-  @spec for_session(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_session(query \\ __MODULE__, session_id) do
-    from(s in query, where: s.workout_session_id == ^session_id)
   end
 
   @spec ordered(Ecto.Queryable.t()) :: Ecto.Query.t()

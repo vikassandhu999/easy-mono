@@ -1,4 +1,4 @@
-defmodule Easy.Nutrition.PlanItem do
+defmodule Easy.Nutrition.ScheduleEntry do
   use Ecto.Schema
 
   alias Easy.Orgs

@@ -4,7 +4,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
 
   @spec show(map()) :: map()
@@ -39,7 +39,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
     }
   end
 
-  defp today_meal_items(%PlanItem{meal: %Meal{meal_items: items}}) when is_list(items) do
+  defp today_meal_items(%ScheduleEntry{meal: %Meal{meal_items: items}}) when is_list(items) do
     Enum.map(items, &today_item_data/1)
   end
 
@@ -182,7 +182,7 @@ defmodule EasyWeb.Clients.NutritionPlanJSON do
   defp plan_items_data(items) when is_list(items), do: Enum.map(items, &plan_item_data/1)
   defp plan_items_data(_), do: []
 
-  defp plan_item_data(%PlanItem{} = item) do
+  defp plan_item_data(%ScheduleEntry{} = item) do
     %{
       id: item.id,
       day_of_week: item.day_of_week,

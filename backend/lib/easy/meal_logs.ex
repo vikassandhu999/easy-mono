@@ -7,7 +7,7 @@ defmodule Easy.MealLogs do
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Repo
@@ -252,10 +252,10 @@ defmodule Easy.MealLogs do
         day = Easy.Utils.weekday_name(date)
 
         plan_items =
-          PlanItem
-          |> PlanItem.for_plan(plan_id)
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_day(day)
+          ScheduleEntry
+          |> ScheduleEntry.for_plan(plan_id)
+          |> ScheduleEntry.for_business(business_id)
+          |> ScheduleEntry.for_day(day)
           |> Repo.all()
 
         Repo.transaction(fn ->
@@ -557,11 +557,11 @@ defmodule Easy.MealLogs do
     day = Easy.Utils.weekday_name(date)
 
     plan_item =
-      PlanItem
-      |> PlanItem.for_plan(plan.id)
-      |> PlanItem.for_business(plan.business_id)
-      |> PlanItem.for_day(day)
-      |> PlanItem.for_meal_slot(meal_slot)
+      ScheduleEntry
+      |> ScheduleEntry.for_plan(plan.id)
+      |> ScheduleEntry.for_business(plan.business_id)
+      |> ScheduleEntry.for_day(day)
+      |> ScheduleEntry.for_meal_slot(meal_slot)
       |> Repo.one()
 
     if is_nil(plan_item), do: nil, else: do_snapshot(plan_item)

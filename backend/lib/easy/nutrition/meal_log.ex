@@ -3,7 +3,7 @@ defmodule Easy.Nutrition.MealLog do
 
   alias Easy.Clients.Client
   alias Easy.Nutrition.FoodLogEntry
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Orgs
 
   import Ecto.Changeset
@@ -36,7 +36,7 @@ defmodule Easy.Nutrition.MealLog do
     |> put_change(:business_id, business_id)
     |> put_change(:client_id, client_id)
     |> validate_required([:date, :meal_slot, :business_id, :client_id])
-    |> validate_inclusion(:meal_slot, PlanItem.meal_slots())
+    |> validate_inclusion(:meal_slot, ScheduleEntry.meal_slots())
     |> unique_constraint([:client_id, :date, :meal_slot],
       name: :nutrition_meal_logs_client_id_date_meal_slot_index
     )

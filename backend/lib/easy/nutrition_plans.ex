@@ -4,7 +4,7 @@ defmodule Easy.NutritionPlans do
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Orgs.Coach
@@ -89,7 +89,7 @@ defmodule Easy.NutritionPlans do
   end
 
   @spec get_active_plan_day_for_user(String.t(), String.t(), Date.t()) ::
-          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [PlanItem.t()]}}
+          {:ok, %{date: Date.t(), day: String.t(), plan: Plan.t(), plan_items: [ScheduleEntry.t()]}}
           | {:error, :not_found}
   def get_active_plan_day_for_user(business_id, user_id, date) do
     with {:ok, client} <- get_client_for_user(business_id, user_id) do
@@ -143,13 +143,13 @@ defmodule Easy.NutritionPlans do
   end
 
   @spec list_plan_items(String.t(), String.t()) ::
-          {:ok, [PlanItem.t()]} | {:error, :not_found}
+          {:ok, [ScheduleEntry.t()]} | {:error, :not_found}
   def list_plan_items(business_id, plan_id) do
     with {:ok, plan} <- get_plan(business_id, plan_id) do
       plan_items =
-        PlanItem
-        |> PlanItem.for_business(business_id)
-        |> PlanItem.for_plan(plan.id)
+        ScheduleEntry
+        |> ScheduleEntry.for_business(business_id)
+        |> ScheduleEntry.for_plan(plan.id)
         |> with_meal(business_id)
         |> Repo.all()
 
@@ -158,20 +158,20 @@ defmodule Easy.NutritionPlans do
   end
 
   @spec create_plan_item(String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item(plan_id, business_id, attrs) do
     meal_ref = Map.get(attrs, "nutrition_meal_id") || Map.get(attrs, "meal_id")
 
     with {:ok, plan} <- get_plan(business_id, plan_id),
          {:ok, :valid} <- ensure_meal_for_plan(plan.id, business_id, meal_ref) do
       plan.id
-      |> PlanItem.insert_changeset(business_id, attrs)
+      |> ScheduleEntry.insert_changeset(business_id, attrs)
       |> Repo.insert()
     end
   end
 
   @spec create_plan_item_for_coach_user(String.t(), String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def create_plan_item_for_coach_user(business_id, user_id, plan_id, attrs) do
     with {:ok, _coach} <- get_coach_for_user(business_id, user_id) do
       create_plan_item(plan_id, business_id, attrs)
@@ -179,7 +179,7 @@ defmodule Easy.NutritionPlans do
   end
 
   @spec update_plan_item(String.t(), String.t(), map()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def update_plan_item(business_id, plan_item_id, attrs) do
     meal_ref = Map.get(attrs, "nutrition_meal_id") || Map.get(attrs, "meal_id")
 
@@ -191,13 +191,13 @@ defmodule Easy.NutritionPlans do
              meal_ref
            ) do
       plan_item
-      |> PlanItem.update_changeset(attrs)
+      |> ScheduleEntry.update_changeset(attrs)
       |> Repo.update()
     end
   end
 
   @spec delete_plan_item(String.t(), String.t()) ::
-          {:ok, PlanItem.t()} | {:error, :not_found | Ecto.Changeset.t()}
+          {:ok, ScheduleEntry.t()} | {:error, :not_found | Ecto.Changeset.t()}
   def delete_plan_item(business_id, plan_item_id) do
     with {:ok, plan_item} <- get_plan_item(business_id, plan_item_id) do
       Repo.delete(plan_item)
@@ -222,10 +222,10 @@ defmodule Easy.NutritionPlans do
         day = Easy.Utils.weekday_name(date)
 
         plan_items =
-          PlanItem
-          |> PlanItem.for_plan(plan.id)
-          |> PlanItem.for_business(business_id)
-          |> PlanItem.for_day(day)
+          ScheduleEntry
+          |> ScheduleEntry.for_plan(plan.id)
+          |> ScheduleEntry.for_business(business_id)
+          |> ScheduleEntry.for_day(day)
           |> with_meal_and_items(business_id)
           |> Repo.all()
 
@@ -259,8 +259,8 @@ defmodule Easy.NutritionPlans do
   end
 
   defp get_plan_item(business_id, plan_item_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
+    ScheduleEntry
+    |> ScheduleEntry.for_business(business_id)
     |> Repo.get(plan_item_id)
     |> ok_or_not_found()
   end
@@ -302,8 +302,8 @@ defmodule Easy.NutritionPlans do
   end
 
   defp plan_items_with_meal(business_id) do
-    PlanItem
-    |> PlanItem.for_business(business_id)
+    ScheduleEntry
+    |> ScheduleEntry.for_business(business_id)
     |> with_meal(business_id)
   end
 
@@ -373,7 +373,7 @@ defmodule Easy.NutritionPlans do
         |> Meal.ordered()
         |> preload(meal_items: ^MealItem.for_business(MealItem, plan.business_id))
 
-      plan_item_query = PlanItem.for_business(PlanItem, plan.business_id)
+      plan_item_query = ScheduleEntry.for_business(ScheduleEntry, plan.business_id)
       plan = Repo.preload(plan, meals: meal_query, plan_items: plan_item_query)
 
       attrs = %{
@@ -463,7 +463,7 @@ defmodule Easy.NutritionPlans do
           nutrition_meal_id: new_meal.id
         }
 
-        case PlanItem.insert_changeset(new_plan_id, business_id, attrs)
+        case ScheduleEntry.insert_changeset(new_plan_id, business_id, attrs)
              |> Repo.insert() do
           {:ok, new_plan_item} -> {:cont, {:ok, [new_plan_item | acc]}}
           {:error, reason} -> {:halt, {:error, reason}}

@@ -19,7 +19,7 @@ defmodule Easy.Factory do
   alias Easy.Nutrition.MealLog
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
   alias Easy.Nutrition.Recipe
   alias Easy.Nutrition.RecipeIngredient
   alias Easy.Storefront.Offer
@@ -347,11 +347,11 @@ defmodule Easy.Factory do
     }
   end
 
-  def plan_item_factory do
+  def schedule_entry_factory do
     plan = build(:plan)
     meal = build(:meal, plan: plan, creator: plan.creator)
 
-    %PlanItem{
+    %ScheduleEntry{
       day_of_week: "monday",
       meal_slot: "breakfast",
       business: plan.business,
@@ -360,7 +360,7 @@ defmodule Easy.Factory do
     }
   end
 
-  def plan_item_attrs_factory do
+  def schedule_entry_attrs_factory do
     %{
       "day_of_week" => "monday",
       "meal_slot" => "breakfast"

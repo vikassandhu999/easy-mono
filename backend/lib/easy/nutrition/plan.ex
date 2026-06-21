@@ -39,7 +39,7 @@ defmodule Easy.Nutrition.Plan do
     belongs_to :client, Client
     belongs_to :source_template, __MODULE__, foreign_key: :source_template_id
     has_many :meals, Meal, foreign_key: :nutrition_plan_id
-    has_many :plan_items, Easy.Nutrition.PlanItem, foreign_key: :nutrition_plan_id
+    has_many :plan_items, Easy.Nutrition.ScheduleEntry, foreign_key: :nutrition_plan_id
 
     timestamps(type: :utc_datetime)
   end

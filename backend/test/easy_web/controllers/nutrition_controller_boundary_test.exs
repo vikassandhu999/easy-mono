@@ -50,7 +50,7 @@ defmodule EasyWeb.NutritionControllerBoundaryTest do
       refute source =~ "alias Easy.Nutrition.MealLogging", path
 
       refute source =~
-               ~r/\b(Food|Recipe|Meal|MealItem|PlanItem)\.(create|update|delete)\(/,
+               ~r/\b(Food|Recipe|Meal|MealItem|ScheduleEntry)\.(create|update|delete)\(/,
              path
     end
   end

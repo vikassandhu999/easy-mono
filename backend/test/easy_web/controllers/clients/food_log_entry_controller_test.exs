@@ -361,7 +361,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         weight_g: 100
       )
 
-      insert(:plan_item,
+      insert(:schedule_entry,
         plan: plan,
         meal: meal,
         business: ctx.business,
@@ -445,7 +445,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       )
 
       # 2026-03-30 is a Monday
-      insert(:plan_item,
+      insert(:schedule_entry,
         plan: plan,
         meal: meal1,
         business: ctx.business,
@@ -453,7 +453,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         meal_slot: "breakfast"
       )
 
-      insert(:plan_item,
+      insert(:schedule_entry,
         plan: plan,
         meal: meal2,
         business: ctx.business,

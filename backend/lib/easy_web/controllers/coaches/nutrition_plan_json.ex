@@ -4,7 +4,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
   alias Easy.Nutrition.Meal
   alias Easy.Nutrition.MealItem
   alias Easy.Nutrition.Plan
-  alias Easy.Nutrition.PlanItem
+  alias Easy.Nutrition.ScheduleEntry
 
   @spec show(map()) :: map()
   def show(%{plan: plan}) do
@@ -104,7 +104,7 @@ defmodule EasyWeb.Coaches.NutritionPlanJSON do
 
   defp plan_items_data(_), do: []
 
-  defp plan_item_data(%PlanItem{} = plan_item) do
+  defp plan_item_data(%ScheduleEntry{} = plan_item) do
     %{
       id: plan_item.id,
       day_of_week: plan_item.day_of_week,

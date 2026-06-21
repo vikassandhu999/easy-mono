@@ -24,7 +24,12 @@ V1 uses three fixed page templates:
 
 The coach edits the page through a guided form. There is no page builder, block editor, section drag/drop, or custom layout control in V1.
 
-Visual reference: `assets/coach-landing-funnel/01-template-and-section-board.html`.
+Visual references:
+
+* `assets/coach-landing-funnel/01-template-and-section-board.html`
+* `assets/coach-landing-funnel/02-mobile-template-board.html`
+
+Mobile pages should show the hero CTA on load. A slim sticky apply bar can appear after the visitor scrolls, but it must not cover the form or stack with another bottom bar.
 
 ## Retired storefront scope
 

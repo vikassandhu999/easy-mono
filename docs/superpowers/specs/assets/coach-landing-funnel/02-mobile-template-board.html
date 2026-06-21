@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coach landing funnel mobile visuals</title>
+    <style>
+      :root {
+        --ink: #17201b;
+        --muted: #67746c;
+        --line: #d9e1dc;
+        --paper: #fbfaf7;
+        --panel: #ffffff;
+        --green: #1d6b4f;
+        --green-soft: #e7f2eb;
+        --coral: #cf5c45;
+        --coral-soft: #fae8e2;
+        --blue: #315c8f;
+        --blue-soft: #e6eef7;
+        --shadow: 0 14px 34px rgba(23, 32, 27, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      h1, h2, h3, h4, p { margin: 0; }
+
+      h1 { font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+      h2 { margin-top: 38px; font-size: 24px; letter-spacing: 0; }
+      h3 { font-size: 16px; letter-spacing: 0; }
+
+      .lede {
+        margin-top: 10px;
+        max-width: 780px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 7px 11px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .phones {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+        margin-top: 18px;
+        align-items: start;
+      }
+
+      .phone-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .phone-card > p {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .phone {
+        width: 100%;
+        max-width: 360px;
+        margin: 14px auto 0;
+        border: 10px solid #1c211e;
+        border-radius: 30px;
+        background: #1c211e;
+        overflow: hidden;
+      }
+
+      .screen {
+        position: relative;
+        height: 700px;
+        overflow: hidden;
+        border-radius: 20px;
+        background: #f5f3ee;
+        font-size: 12px;
+      }
+
+      .status {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 14px 6px;
+        background: #fff;
+        color: #425046;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        font-weight: 850;
+        white-space: nowrap;
+      }
+
+      .nav-cta,
+      .primary,
+      .secondary {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9px;
+        padding: 0 11px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .nav-cta,
+      .primary {
+        background: var(--green);
+        color: white;
+      }
+
+      .secondary {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .hero {
+        padding: 18px 16px 14px;
+      }
+
+      .eyebrow {
+        color: var(--green);
+        font-size: 10px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .hero h4 {
+        margin-top: 7px;
+        font-size: 28px;
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .hero p {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .hero-photo {
+        margin-top: 14px;
+        min-height: 145px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background:
+          linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0)),
+          #dfe5df;
+        display: flex;
+        align-items: end;
+        padding: 12px;
+        color: #334038;
+        font-weight: 800;
+      }
+
+      .cta-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .section {
+        padding: 15px 16px;
+        border-top: 1px solid var(--line);
+      }
+
+      .section.white { background: #fff; }
+      .section.green { background: var(--green-soft); }
+      .section.coral { background: var(--coral-soft); }
+      .section.blue { background: var(--blue-soft); }
+
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .section-head span {
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+      }
+
+      .metric,
+      .program,
+      .fit-item,
+      .field,
+      .answer {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .metric b,
+      .program b,
+      .answer b {
+        display: block;
+        font-size: 13px;
+      }
+
+      .metric span,
+      .program span,
+      .answer span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .programs {
+        display: grid;
+        gap: 8px;
+      }
+
+      .program.selected {
+        border-color: var(--green);
+        box-shadow: inset 0 0 0 1px var(--green);
+      }
+
+      .fit-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .fit-item {
+        border-left: 4px solid var(--coral);
+        font-size: 12px;
+      }
+
+      .bio {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 10px;
+      }
+
+      .avatar {
+        width: 72px;
+        height: 72px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #dfe5df;
+      }
+
+      .form {
+        display: grid;
+        gap: 8px;
+      }
+
+      .form.two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .field {
+        min-height: 42px;
+        color: var(--muted);
+      }
+
+      .field.wide {
+        grid-column: 1 / -1;
+        min-height: 70px;
+      }
+
+      .sticky {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: 1px solid rgba(29, 107, 79, 0.25);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.94);
+        padding: 9px;
+        box-shadow: 0 12px 28px rgba(23, 32, 27, 0.18);
+      }
+
+      .sticky span {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .success {
+        border: 1px solid #b6d7c4;
+        border-radius: 14px;
+        background: #f4fbf6;
+        padding: 12px;
+      }
+
+      .whatsapp {
+        margin-top: 10px;
+        border: 1px solid #9bc5ac;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .flow-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .flow-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        padding: 15px;
+        box-shadow: 0 10px 22px rgba(23, 32, 27, 0.06);
+      }
+
+      .mini-screen {
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #f5f3ee;
+        min-height: 230px;
+      }
+
+      .mini-screen .section { border-top: 0; }
+
+      .notes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .note {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        padding: 15px;
+      }
+
+      .note p {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 1120px) {
+        .phones,
+        .flow-grid,
+        .notes { grid-template-columns: 1fr; }
+
+        .phone { max-width: 390px; }
+      }
+
+      @media (max-width: 460px) {
+        .wrap { padding-inline: 12px; }
+        h1 { font-size: 28px; }
+        .screen { height: 680px; }
+        .form.two,
+        .metric-row,
+        .bio { grid-template-columns: 1fr; }
+        .sticky { position: static; margin: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Mobile landing funnel visuals</h1>
+      <p class="lede">
+        Phone-first versions of the three landing page templates. These show
+        first viewport composition, vertical order, Program selection, the
+        shared apply form, and the optional WhatsApp follow-up.
+      </p>
+
+      <div class="pills">
+        <span class="pill">375px-first</span>
+        <span class="pill">Hero CTA visible on load</span>
+        <span class="pill">Hint of next section</span>
+        <span class="pill">Programs are stacked cards</span>
+        <span class="pill">One apply form</span>
+        <span class="pill">Optional sticky apply bar</span>
+      </div>
+
+      <h2>Mobile template previews</h2>
+      <div class="phones">
+        <article class="phone-card">
+          <h3>Proof-first mobile</h3>
+          <p>Lead with result promise, proof band, then Programs.</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="status"><span>9:41</span><span>LTE 100%</span></div>
+              <div class="nav">
+                <span class="brand">Kavya Strength</span>
+                <span class="nav-cta">Apply</span>
+              </div>
+              <section class="hero">
+                <div class="eyebrow">Online coaching for busy lifters</div>
+                <h4>Build strength without guessing what to do next.</h4>
+                <p>Personal coaching for people who train hard but need structure and feedback.</p>
+                <div class="cta-row">
+                  <span class="primary">Apply for coaching</span>
+                  <span class="secondary">Programs</span>
+                </div>
+                <div class="hero-photo">Coach or training image</div>
+              </section>
+              <section class="section green">
+                <div class="section-head">
+                  <h3>Proof</h3>
+                  <span>first scroll</span>
+                </div>
+                <div class="metric-row">
+                  <div class="metric"><b>220+</b><span>clients</span></div>
+                  <div class="metric"><b>8 yrs</b><span>coaching</span></div>
+                  <div class="metric"><b>4.9/5</b><span>feedback</span></div>
+                </div>
+              </section>
+              <section class="section white">
+                <div class="section-head">
+                  <h3>Choose your focus</h3>
+                  <span>up to 3</span>
+                </div>
+                <div class="programs">
+                  <div class="program selected"><b>Fat loss</b><span>For busy professionals</span></div>
+                  <div class="program"><b>Strength</b><span>For gym regulars</span></div>
+                </div>
+              </section>
+              <div class="sticky">
+                <span>Ready to apply?</span>
+                <span class="primary">Start</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone-card">
+          <h3>Problem-fit mobile</h3>
+          <p>Use the first scroll to qualify the visitor before they apply.</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="status"><span>9:41</span><span>LTE 100%</span></div>
+              <div class="nav">
+                <span class="brand">Fit After 35</span>
+                <span class="nav-cta">Apply</span>
+              </div>
+              <section class="hero">
+                <div class="eyebrow">For people restarting after 35</div>
+                <h4>Lose weight and rebuild routine without extreme dieting.</h4>
+                <p>A direct page for visitors asking, "Is this for someone like me?"</p>
+                <div class="cta-row">
+                  <span class="primary">Check fit</span>
+                </div>
+              </section>
+              <section class="section coral">
+                <div class="section-head">
+                  <h3>This is for you if</h3>
+                  <span>high priority</span>
+                </div>
+                <div class="fit-list">
+                  <div class="fit-item">You have tried plans but cannot stay consistent.</div>
+                  <div class="fit-item">You want normal food and practical training.</div>
+                  <div class="fit-item">You want weekly review from a coach.</div>
+                </div>
+              </section>
+              <section class="section white">
+                <div class="section-head">
+                  <h3>Programs</h3>
+                  <span>select interest</span>
+                </div>
+                <div class="programs">
+                  <div class="program selected"><b>Fat loss</b><span>12-week focus</span></div>
+                  <div class="program"><b>Habit reset</b><span>Routine first</span></div>
+                </div>
+              </section>
+              <div class="sticky">
+                <span>Apply if this fits</span>
+                <span class="primary">Apply</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone-card">
+          <h3>Coach-story mobile</h3>
+          <p>Use the first viewport for trust and coach voice, then show ways to start.</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="status"><span>9:41</span><span>LTE 100%</span></div>
+              <div class="nav">
+                <span class="brand">Arjun Coaching</span>
+                <span class="nav-cta">Apply</span>
+              </div>
+              <section class="hero">
+                <div class="eyebrow">Personal coaching, not a generic plan</div>
+                <h4>I help you train and eat around your actual life.</h4>
+                <p>Lead with the coach's voice, then let visitors apply when the fit is clear.</p>
+                <div class="hero-photo">Coach portrait</div>
+                <div class="cta-row">
+                  <span class="primary">Work with me</span>
+                </div>
+              </section>
+              <section class="section blue">
+                <div class="bio">
+                  <div class="avatar"></div>
+                  <div>
+                    <h3>Meet your coach</h3>
+                    <p>I coach busy people who need plans that survive work weeks.</p>
+                  </div>
+                </div>
+              </section>
+              <section class="section white">
+                <div class="programs">
+                  <div class="program selected"><b>Starter</b><span>Build routine</span></div>
+                  <div class="program"><b>Transformation</b><span>Higher support</span></div>
+                </div>
+              </section>
+              <div class="sticky">
+                <span>Apply to work together</span>
+                <span class="primary">Apply</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <h2>Mobile apply flow</h2>
+      <div class="flow-grid">
+        <article class="flow-card">
+          <h3>1. Program tap</h3>
+          <p class="lede">Tapping a Program scrolls to the same form and stores interest.</p>
+          <div class="mini-screen">
+            <section class="section white">
+              <div class="programs">
+                <div class="program selected"><b>Fat loss coaching</b><span>Selected</span></div>
+                <div class="program"><b>Muscle gain</b><span>Tap to choose</span></div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="flow-card">
+          <h3>2. Contact fields</h3>
+          <p class="lede">Name required. Phone or email required. Instagram is optional.</p>
+          <div class="mini-screen">
+            <section class="section white">
+              <div class="form">
+                <div class="field">Name</div>
+                <div class="field">Phone</div>
+                <div class="field">Email</div>
+                <div class="field">Instagram or profile link</div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="flow-card">
+          <h3>3. Fit questions</h3>
+          <p class="lede">Up to five page-level questions. No program-specific form in V1.</p>
+          <div class="mini-screen">
+            <section class="section white">
+              <div class="form">
+                <div class="field wide">What is your main goal?</div>
+                <div class="field wide">What has stopped you before?</div>
+                <div class="field wide">How soon do you want to start?</div>
+              </div>
+              <div class="cta-row">
+                <span class="primary">Submit application</span>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="flow-card">
+          <h3>4. Success</h3>
+          <p class="lede">Prospect is saved first. WhatsApp appears only if configured.</p>
+          <div class="mini-screen">
+            <section class="section">
+              <div class="success">
+                <h3>Application received</h3>
+                <p>Your coach will review this and get back to you.</p>
+                <div class="whatsapp">
+                  <b>Recommended next step</b>
+                  <span>Send your summary on WhatsApp so the coach can reply faster.</span>
+                  <div class="cta-row">
+                    <span class="primary">Send on WhatsApp</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+      </div>
+
+      <h2>Mobile decisions to keep</h2>
+      <div class="notes">
+        <article class="note">
+          <h3>First viewport</h3>
+          <p>Show brand, coach positioning, headline, primary CTA, and a hint of the next section. Do not make visitors scroll before understanding the offer.</p>
+        </article>
+        <article class="note">
+          <h3>CTA behavior</h3>
+          <p>Hero CTA is always present. A slim sticky apply bar can appear after scroll, but it must not cover the form or stack with another bottom bar.</p>
+        </article>
+        <article class="note">
+          <h3>Section order</h3>
+          <p>Each template changes order, not components: proof-first moves proof up, problem-fit moves fit up, coach-story moves bio up.</p>
+        </article>
+      </div>
+    </main>
+  </body>
+</html>

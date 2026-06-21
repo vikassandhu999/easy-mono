@@ -64,7 +64,7 @@ defmodule EasyWeb.Clients.FoodControllerTest do
       assert %{"data" => data} = json_response(conn, 200)
       assert data["id"] == food.id
       assert data["name"] == "Dal"
-      assert data["macros"] != nil
+      assert data["calories_per_100g"] != nil
     end
 
     test "returns 404 for other business food", ctx do

@@ -91,7 +91,6 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       insert(:plan_item,
         plan: plan,
         meal: meal,
-        creator: ctx.coach,
         business: ctx.business
       )
 
@@ -161,10 +160,9 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       insert(:plan_item,
         plan: plan,
         meal: meal,
-        creator: ctx.coach,
         business: ctx.business,
-        day: day,
-        meal_type: "breakfast"
+        day_of_week: day,
+        meal_slot: "breakfast"
       )
 
       conn = get(ctx.conn, "/v1/client/nutrition_plans/today")
@@ -226,10 +224,9 @@ defmodule EasyWeb.Clients.NutritionPlanControllerTest do
       insert(:plan_item,
         plan: plan,
         meal: meal,
-        creator: ctx.coach,
         business: ctx.business,
-        day: "monday",
-        meal_type: "lunch"
+        day_of_week: "monday",
+        meal_slot: "lunch"
       )
 
       # Query for a known Monday

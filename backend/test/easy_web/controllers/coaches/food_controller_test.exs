@@ -16,12 +16,16 @@ defmodule EasyWeb.Coaches.FoodControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == attrs["name"]
-      assert data["macros"] == attrs["macros"]
+      assert data["calories_per_100g"] == attrs["calories_per_100g"]
+      assert data["protein_g_per_100g"] == attrs["protein_g_per_100g"]
+      assert data["carbs_g_per_100g"] == attrs["carbs_g_per_100g"]
+      assert data["fat_g_per_100g"] == attrs["fat_g_per_100g"]
+      assert data["fiber_g_per_100g"] == attrs["fiber_g_per_100g"]
       assert data["source"] == attrs["source"]
-      assert data["category"] == attrs["category"]
-      assert data["tags"] == attrs["tags"]
-      assert data["notes"] == attrs["notes"]
-      assert [%{"unit" => "cup", "weight_g" => 240.0, "amount" => 1.0}] = data["serving_sizes"]
+
+      assert [%{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}] =
+               data["serving_sizes"]
+
       assert data["id"]
       assert data["creator_id"]
       assert data["inserted_at"]

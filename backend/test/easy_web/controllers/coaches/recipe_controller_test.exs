@@ -16,14 +16,13 @@ defmodule EasyWeb.Coaches.RecipeControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == attrs["name"]
-      assert data["source"] == attrs["source"]
-      assert data["category"] == attrs["category"]
-      assert data["tags"] == attrs["tags"]
+      assert data["description"] == attrs["description"]
       assert data["instructions"] == attrs["instructions"]
+      assert data["servings_count"] == attrs["servings_count"]
       assert data["cooked_weight_g"] == attrs["cooked_weight_g"]
-      assert data["service_size_type"] == attrs["service_size_type"]
+      assert data["nutrition"]
 
-      assert [%{"unit" => "serving", "weight_g" => 200.0, "amount" => 1.0}] =
+      assert [%{"label" => "1 serving", "unit" => "serving", "weight_g" => 200.0, "amount" => 1.0, "is_default" => true}] =
                data["serving_sizes"]
 
       assert data["id"]

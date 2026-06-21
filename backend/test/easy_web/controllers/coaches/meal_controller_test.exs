@@ -17,7 +17,7 @@ defmodule EasyWeb.Coaches.MealControllerTest do
       assert %{"data" => data} = json_response(conn, 201)
 
       assert data["name"] == attrs["name"]
-      assert data["plan_id"] == plan.id
+      assert data["nutrition_plan_id"] == plan.id
       assert data["creator_id"] == coach.id
     end
 

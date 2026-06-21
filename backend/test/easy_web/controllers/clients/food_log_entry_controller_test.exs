@@ -11,12 +11,10 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
         creator: coach,
         business: coach.business,
         name: "Oats",
-        macros: %{
-          "calories_per_100g" => 389,
-          "protein_g" => 16.9,
-          "carbs_g" => 66.3,
-          "fat_g" => 6.9
-        }
+        calories_per_100g: 389.0,
+        protein_g_per_100g: 16.9,
+        carbs_g_per_100g: 66.3,
+        fat_g_per_100g: 6.9
       )
 
     %{conn: conn, coach: coach, client: client, business: coach.business, food: food}
@@ -44,7 +42,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       assert data["protein_g"] == 16.9
       assert data["source"] == "planned"
       assert data["planned_item_index"] == 0
-      assert data["meal_log_id"] != nil
+      assert data["nutrition_meal_log_id"] != nil
     end
 
     test "auto-fills food_name from food when not provided", ctx do
@@ -66,14 +64,19 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
     end
 
     test "creates entry with recipe", ctx do
+      # 800 cal across 500g cooked: one ingredient at 800 cal/100g x 100g = 800 cal total.
+      recipe_food =
+        insert(:food, creator: ctx.coach, business: ctx.business, calories_per_100g: 800.0)
+
       recipe =
         insert(:recipe,
           creator: ctx.coach,
           business: ctx.business,
           name: "Dal Tadka",
-          macros: %{"calories" => 800, "protein_g" => 40, "carbs_g" => 90, "fat_g" => 20},
           cooked_weight_g: 500.0
         )
+
+      insert(:recipe_ingredient, recipe: recipe, food: recipe_food, weight_g: 100.0)
 
       attrs = %{
         "date" => "2026-03-25",
@@ -150,12 +153,10 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           name: "Milk",
-          macros: %{
-            "calories_per_100g" => 61,
-            "protein_g" => 3.2,
-            "carbs_g" => 4.8,
-            "fat_g" => 3.3
-          }
+          calories_per_100g: 61.0,
+          protein_g_per_100g: 3.2,
+          carbs_g_per_100g: 4.8,
+          fat_g_per_100g: 3.3
         )
 
       base_attrs = %{
@@ -193,7 +194,7 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
 
       assert %{"data" => d2} = json_response(conn2, 201)
 
-      assert d1["meal_log_id"] == d2["meal_log_id"]
+      assert d1["nutrition_meal_log_id"] == d2["nutrition_meal_log_id"]
     end
 
     test "returns 403 without auth" do
@@ -288,12 +289,10 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           name: "Milk",
-          macros: %{
-            "calories_per_100g" => 61,
-            "protein_g" => 3.2,
-            "carbs_g" => 4.8,
-            "fat_g" => 3.3
-          }
+          calories_per_100g: 61.0,
+          protein_g_per_100g: 3.2,
+          carbs_g_per_100g: 4.8,
+          fat_g_per_100g: 3.3
         )
 
       insert(:meal_item,
@@ -362,10 +361,9 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       insert(:plan_item,
         plan: plan,
         meal: meal,
-        creator: ctx.coach,
         business: ctx.business,
-        day: "tuesday",
-        meal_type: "breakfast"
+        day_of_week: "tuesday",
+        meal_slot: "breakfast"
       )
 
       post(ctx.conn, "/v1/client/food_log_entries/log_meal", %{
@@ -428,12 +426,10 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
           creator: ctx.coach,
           business: ctx.business,
           name: "Rice",
-          macros: %{
-            "calories_per_100g" => 130,
-            "protein_g" => 2.7,
-            "carbs_g" => 28,
-            "fat_g" => 0.3
-          }
+          calories_per_100g: 130.0,
+          protein_g_per_100g: 2.7,
+          carbs_g_per_100g: 28.0,
+          fat_g_per_100g: 0.3
         )
 
       insert(:meal_item,
@@ -449,19 +445,17 @@ defmodule EasyWeb.Clients.FoodLogEntryControllerTest do
       insert(:plan_item,
         plan: plan,
         meal: meal1,
-        creator: ctx.coach,
         business: ctx.business,
-        day: "monday",
-        meal_type: "breakfast"
+        day_of_week: "monday",
+        meal_slot: "breakfast"
       )
 
       insert(:plan_item,
         plan: plan,
         meal: meal2,
-        creator: ctx.coach,
         business: ctx.business,
-        day: "monday",
-        meal_type: "lunch"
+        day_of_week: "monday",
+        meal_slot: "lunch"
       )
 
       conn =

@@ -224,15 +224,16 @@ defmodule Easy.Factory do
   def food_factory do
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),
+      source: "custom",
+      category: "protein",
       calories_per_100g: 200.0,
       protein_g_per_100g: 20.0,
       carbs_g_per_100g: 30.0,
       fat_g_per_100g: 5.0,
-      fiber_g_per_100g: 0.0,
-      source: "custom",
-      category: "protein",
+      fiber_g_per_100g: 2.0,
+      allergens: [],
+      dietary_tags: ["high_protein"],
       notes: "Test food",
-      image_url: nil,
       serving_sizes: [],
       creator: build(:coach),
       business: build(:business)
@@ -242,13 +243,14 @@ defmodule Easy.Factory do
   def food_attrs_factory do
     %{
       "name" => sequence(:food_attr_name, &"New Food #{&1}"),
-      "macros" => %{"calories" => 150, "protein" => 10, "carbs" => 20, "fat" => 3},
       "source" => "custom",
-      "category" => "grain",
-      "tags" => ["test"],
-      "notes" => "Created via test",
+      "calories_per_100g" => 150.0,
+      "protein_g_per_100g" => 10.0,
+      "carbs_g_per_100g" => 20.0,
+      "fat_g_per_100g" => 3.0,
+      "fiber_g_per_100g" => 1.0,
       "serving_sizes" => [
-        %{"unit" => "cup", "weight_g" => 240.0, "amount" => 1.0}
+        %{"label" => "1 cup", "unit" => "cup", "weight_g" => 100.0, "amount" => 1.0, "is_default" => true}
       ]
     }
   end
@@ -256,8 +258,12 @@ defmodule Easy.Factory do
   def recipe_factory do
     %Recipe{
       name: sequence(:recipe_name, &"Recipe #{&1}"),
-      instructions: "Mix and cook.",
-      cooked_weight_g: 500.0,
+      description: "Test recipe",
+      instructions: "Mix and serve",
+      servings_count: 2,
+      cooked_weight_g: 400.0,
+      allergens: [],
+      dietary_tags: [],
       serving_sizes: [],
       recipe_ingredients: [],
       creator: build(:coach),
@@ -268,23 +274,22 @@ defmodule Easy.Factory do
   def recipe_ingredient_factory do
     %RecipeIngredient{
       food: build(:food),
-      weight_g: 100.0,
       amount: 1.0,
-      unit: "cup"
+      unit: "g",
+      weight_g: 50.0,
+      position: 0
     }
   end
 
   def recipe_attrs_factory do
     %{
       "name" => sequence(:recipe_attr_name, &"New Recipe #{&1}"),
-      "source" => "custom",
-      "category" => "dinner",
-      "tags" => ["test"],
-      "instructions" => "Step 1: Cook. Step 2: Eat.",
-      "cooked_weight_g" => 600.0,
-      "service_size_type" => "serving_based",
+      "description" => "New recipe",
+      "instructions" => "Cook",
+      "servings_count" => 2,
+      "cooked_weight_g" => 400.0,
       "serving_sizes" => [
-        %{"unit" => "serving", "weight_g" => 200.0, "amount" => 1.0}
+        %{"label" => "1 serving", "unit" => "serving", "weight_g" => 200.0, "amount" => 1.0, "is_default" => true}
       ]
     }
   end
@@ -301,6 +306,7 @@ defmodule Easy.Factory do
       target_protein_g: 150.0,
       target_carbs_g: 200.0,
       target_fat_g: 60.0,
+      target_fiber_g: 30.0,
       status: :active,
       creator: creator,
       business: business
@@ -312,7 +318,11 @@ defmodule Easy.Factory do
       "name" => sequence(:plan_attr_name, &"New Plan #{&1}"),
       "description" => "Plan created via test",
       "tags" => ["test"],
-      "macros_goal" => %{"calories" => 1800, "protein" => 120, "carbs" => 180, "fat" => 50},
+      "target_calories" => 1800.0,
+      "target_protein_g" => 120.0,
+      "target_carbs_g" => 180.0,
+      "target_fat_g" => 50.0,
+      "target_fiber_g" => 25.0,
       "status" => "active"
     }
   end
@@ -322,6 +332,8 @@ defmodule Easy.Factory do
 
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
+      notes: nil,
+      default_meal_slot: "breakfast",
       creator: plan.creator,
       business: plan.business,
       plan: plan
@@ -331,7 +343,7 @@ defmodule Easy.Factory do
   def meal_attrs_factory do
     %{
       "name" => sequence(:meal_attr_name, &"New Meal #{&1}"),
-      "macros" => %{"calories" => 450, "protein" => 35, "carbs" => 45, "fat" => 12}
+      "default_meal_slot" => "lunch"
     }
   end
 
@@ -350,8 +362,8 @@ defmodule Easy.Factory do
 
   def plan_item_attrs_factory do
     %{
-      "day" => "monday",
-      "meal_type" => "breakfast"
+      "day_of_week" => "monday",
+      "meal_slot" => "breakfast"
     }
   end
 
@@ -362,7 +374,7 @@ defmodule Easy.Factory do
     %MealItem{
       weight_g: 100.0,
       amount: 1.0,
-      unit: "cup",
+      unit: "serving",
       position: 0,
       food: food,
       business: meal.plan.business,
@@ -372,9 +384,9 @@ defmodule Easy.Factory do
 
   def meal_item_attrs_factory do
     %{
-      "weight_g" => 120.0,
+      "weight_g" => 100.0,
       "amount" => 1.0,
-      "unit" => "cup",
+      "unit" => "serving",
       "position" => 0
     }
   end

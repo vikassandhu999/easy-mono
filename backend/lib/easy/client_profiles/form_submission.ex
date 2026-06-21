@@ -6,7 +6,6 @@ defmodule Easy.ClientProfiles.FormSubmission do
   alias Easy.Orgs
 
   import Ecto.Changeset
-  import Ecto.Query
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -48,21 +47,9 @@ defmodule Easy.ClientProfiles.FormSubmission do
     |> validate_inclusion(:submitted_by_type, @actors)
     |> check_constraint(:submitted_by_type, name: :form_submissions_submitted_by_type_check)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:form_assignment_id)
     |> foreign_key_constraint(:client_id, name: :form_submissions_client_business_id_fkey)
     |> foreign_key_constraint(:form_assignment_id,
       name: :form_submissions_assignment_client_business_id_fkey
     )
-  end
-
-  @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_business(query \\ __MODULE__, business_id) do
-    from(s in query, where: s.business_id == ^business_id)
-  end
-
-  @spec for_client(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_client(query \\ __MODULE__, client_id) do
-    from(s in query, where: s.client_id == ^client_id)
   end
 end

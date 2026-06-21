@@ -11,6 +11,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
 
   @purposes ["intake", "weekly_check_in", "nutrition_update", "training_update", "custom"]
   @statuses ["active", "archived"]
+  @core_sections ["general", "nutrition", "training", "lifestyle"]
 
   @type t :: %__MODULE__{}
 
@@ -34,6 +35,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
     |> validate_required([:business_id, :name, :purpose, :sections, :status])
     |> validate_inclusion(:purpose, @purposes)
     |> validate_inclusion(:status, @statuses)
+    |> validate_sections()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)
     |> foreign_key_constraint(:business_id)
@@ -46,6 +48,7 @@ defmodule Easy.ClientProfiles.FormTemplate do
     |> validate_required([:name, :purpose, :sections, :status])
     |> validate_inclusion(:purpose, @purposes)
     |> validate_inclusion(:status, @statuses)
+    |> validate_sections()
     |> check_constraint(:purpose, name: :form_templates_purpose_check)
     |> check_constraint(:status, name: :form_templates_status_check)
   end
@@ -55,8 +58,48 @@ defmodule Easy.ClientProfiles.FormTemplate do
     from(t in query, where: t.business_id == ^business_id)
   end
 
-  @spec for_purpose(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_purpose(query \\ __MODULE__, purpose) do
-    from(t in query, where: t.purpose == ^purpose)
+  # Rejects template content the submission path can't safely consume: a section's `questions`
+  # must be a list of maps, and any `profile_mapping` must match a shape submit_form_assignment
+  # recognizes. Catching it here means a bad template never blocks a client at submit time.
+  defp validate_sections(changeset) do
+    sections = get_field(changeset, :sections)
+
+    if is_nil(sections) or valid_sections?(sections) do
+      changeset
+    else
+      add_error(changeset, :sections, "has invalid structure")
+    end
   end
+
+  defp valid_sections?(sections) when is_list(sections), do: Enum.all?(sections, &valid_section?/1)
+  defp valid_sections?(_), do: false
+
+  defp valid_section?(%{} = section) do
+    case Map.get(section, "questions") do
+      nil -> true
+      questions when is_list(questions) -> Enum.all?(questions, &valid_question?/1)
+      _ -> false
+    end
+  end
+
+  defp valid_section?(_), do: false
+
+  defp valid_question?(%{} = question) do
+    case Map.get(question, "profile_mapping") do
+      nil -> true
+      mapping -> valid_mapping?(mapping)
+    end
+  end
+
+  defp valid_question?(_), do: false
+
+  defp valid_mapping?(%{"kind" => "core", "section" => section, "field" => field})
+       when is_binary(field) and field != "",
+       do: section in @core_sections
+
+  defp valid_mapping?(%{"kind" => "custom_field", "field_key" => field_key})
+       when is_binary(field_key) and field_key != "",
+       do: true
+
+  defp valid_mapping?(_), do: false
 end

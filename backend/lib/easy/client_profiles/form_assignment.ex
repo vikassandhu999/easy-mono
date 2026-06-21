@@ -48,8 +48,6 @@ defmodule Easy.ClientProfiles.FormAssignment do
     |> check_constraint(:priority, name: :form_assignments_priority_check)
     |> check_constraint(:status, name: :form_assignments_status_check)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:form_template_id)
     |> foreign_key_constraint(:client_id, name: :form_assignments_client_business_id_fkey)
     |> foreign_key_constraint(:form_template_id, name: :form_assignments_template_business_id_fkey)
   end
@@ -62,9 +60,30 @@ defmodule Easy.ClientProfiles.FormAssignment do
     |> validate_inclusion(:purpose, @purposes)
     |> validate_inclusion(:priority, @priorities)
     |> validate_inclusion(:status, @assignment_statuses)
+    |> sync_completed_at()
     |> check_constraint(:purpose, name: :form_assignments_purpose_check)
     |> check_constraint(:priority, name: :form_assignments_priority_check)
     |> check_constraint(:status, name: :form_assignments_status_check)
+  end
+
+  # Keep completed_at consistent with status so a coach edit can't leave a "completed"
+  # assignment with a nil completed_at (or a stale stamp after re-opening it).
+  defp sync_completed_at(changeset) do
+    completed_at = get_field(changeset, :completed_at)
+
+    case get_field(changeset, :status) do
+      "completed" when is_nil(completed_at) ->
+        put_change(changeset, :completed_at, DateTime.utc_now(:second))
+
+      "completed" ->
+        changeset
+
+      _other when not is_nil(completed_at) ->
+        put_change(changeset, :completed_at, nil)
+
+      _other ->
+        changeset
+    end
   end
 
   @spec complete_changeset(t(), DateTime.t()) :: Ecto.Changeset.t()

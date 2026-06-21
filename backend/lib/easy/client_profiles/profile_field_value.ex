@@ -48,21 +48,10 @@ defmodule Easy.ClientProfiles.ProfileFieldValue do
     )
     |> check_constraint(:updated_by_type, name: :profile_field_values_updated_by_type_check)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:client_id)
-    |> foreign_key_constraint(:profile_field_definition_id)
     |> foreign_key_constraint(:client_id, name: :profile_field_values_client_business_id_fkey)
     |> foreign_key_constraint(:profile_field_definition_id,
       name: :profile_field_values_definition_business_id_fkey
     )
-  end
-
-  @spec update_changeset(t(), map()) :: Ecto.Changeset.t()
-  def update_changeset(value, attrs) do
-    value
-    |> cast(attrs, [:value, :updated_by_type, :updated_by_id, :updated_from_submission_id])
-    |> validate_required([:value, :updated_by_type])
-    |> validate_inclusion(:updated_by_type, @actors)
-    |> check_constraint(:updated_by_type, name: :profile_field_values_updated_by_type_check)
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

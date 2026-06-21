@@ -46,7 +46,6 @@ defmodule Easy.ClientProfiles.ClientProfile do
     |> unique_constraint(:client_id, name: :client_profiles_client_id_index)
     |> check_constraint(:intake_status, name: :client_profiles_intake_status_check)
     |> foreign_key_constraint(:business_id)
-    |> foreign_key_constraint(:client_id)
     |> foreign_key_constraint(:client_id, name: :client_profiles_client_business_id_fkey)
   end
 
@@ -56,6 +55,17 @@ defmodule Easy.ClientProfiles.ClientProfile do
     |> cast(attrs, [:general, :nutrition, :training, :lifestyle, :intake_status, :intake_completed_at])
     |> validate_required([:general, :nutrition, :training, :lifestyle, :intake_status])
     |> check_constraint(:intake_status, name: :client_profiles_intake_status_check)
+  end
+
+  @doc """
+  Client self-service update: structured sections only. Deliberately omits intake_status and
+  intake_completed_at so a client cannot drive the coach-owned intake workflow state.
+  """
+  @spec update_sections_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_sections_changeset(profile, attrs) do
+    profile
+    |> cast(attrs, [:general, :nutrition, :training, :lifestyle])
+    |> validate_required([:general, :nutrition, :training, :lifestyle])
   end
 
   @spec for_business(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()

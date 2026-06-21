@@ -248,41 +248,6 @@ defmodule Easy.ClientProfilesTest do
                |> Repo.aggregate(:count, :id)
     end
 
-    test "accepts string-keyed actors and rejects invalid actor types" do
-      client = insert_client()
-      field = insert(:profile_field_definition, business: client.business)
-
-      assert {:ok, value} =
-               ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
-                 client.id,
-                 field.id,
-                 "high",
-                 %{"type" => "coach", "id" => client.creator_id}
-               )
-
-      assert value.updated_by_type == "coach"
-      assert value.updated_by_id == client.creator_id
-
-      assert {:error, :invalid_actor} =
-               ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
-                 client.id,
-                 field.id,
-                 "low",
-                 %{type: "admin", id: client.creator_id}
-               )
-
-      assert {:error, :invalid_actor} =
-               ClientProfiles.upsert_profile_field_value(
-                 client.business_id,
-                 client.id,
-                 field.id,
-                 "low",
-                 %{"id" => client.creator_id}
-               )
-    end
-
     test "form assignment statuses are constrained" do
       client = insert_client()
       template = insert(:form_template, business: client.business)
@@ -498,6 +463,157 @@ defmodule Easy.ClientProfilesTest do
         refute Repo.get_by(ProfileFieldValue, client_id: client.id)
         assert Repo.get!(FormAssignment, assignment.id).status == "assigned"
       end
+    end
+  end
+
+  describe "tenant isolation and write-path guards" do
+    test "upsert_profile_field_value rejects a field from another business" do
+      client = insert_client()
+      other_client = insert_client()
+      other_field = insert(:profile_field_definition, business: other_client.business)
+
+      assert {:error, :not_found} =
+               ClientProfiles.upsert_profile_field_value(
+                 client.business_id,
+                 client.id,
+                 other_field.id,
+                 "high",
+                 %{type: "coach", id: client.creator_id, submission_id: nil}
+               )
+    end
+
+    test "upsert_profile_field_value rejects a client from another business" do
+      client = insert_client()
+      other_client = insert_client()
+      field = insert(:profile_field_definition, business: client.business)
+
+      assert {:error, :not_found} =
+               ClientProfiles.upsert_profile_field_value(
+                 client.business_id,
+                 other_client.id,
+                 field.id,
+                 "high",
+                 %{type: "coach", id: client.creator_id, submission_id: nil}
+               )
+    end
+
+    test "field and template verbs return not_found for another business's resources" do
+      business = insert(:business)
+      other_client = insert_client()
+      other_field = insert(:profile_field_definition, business: other_client.business)
+      other_template = insert(:form_template, business: other_client.business)
+
+      other_assignment =
+        insert(:form_assignment,
+          business: other_client.business,
+          client: other_client,
+          form_template: other_template
+        )
+
+      assert {:error, :not_found} =
+               ClientProfiles.update_profile_field(business.id, other_field.id, %{"label" => "x"})
+
+      assert {:error, :not_found} = ClientProfiles.archive_profile_field(business.id, other_field.id)
+      assert {:error, :not_found} = ClientProfiles.get_form_template(business.id, other_template.id)
+
+      assert {:error, :not_found} =
+               ClientProfiles.update_form_template(business.id, other_template.id, %{"name" => "x"})
+
+      assert {:error, :not_found} =
+               ClientProfiles.delete_form_template(business.id, other_template.id)
+
+      assert {:error, :not_found} =
+               ClientProfiles.update_form_assignment(business.id, other_assignment.id, %{
+                 "priority" => "high"
+               })
+    end
+
+    test "update_profile rejects a nil section" do
+      client = insert_client()
+
+      assert {:error, changeset} =
+               ClientProfiles.update_profile(client.business_id, client.id, %{"nutrition" => nil})
+
+      assert "can't be blank" in errors_on(changeset).nutrition
+    end
+
+    test "update_profile_sections ignores client-supplied intake workflow fields" do
+      client = insert_client()
+
+      assert {:ok, profile} =
+               ClientProfiles.update_profile_sections(client.business_id, client.id, %{
+                 "general" => %{"goal" => "strength"},
+                 "intake_status" => "completed",
+                 "intake_completed_at" => DateTime.utc_now(:second)
+               })
+
+      assert profile.general == %{"goal" => "strength"}
+      assert profile.intake_status == :assigned
+      assert profile.intake_completed_at == nil
+    end
+
+    test "update_form_assignment stamps and clears completed_at to match status" do
+      client = insert_client()
+      template = insert(:form_template, business: client.business)
+
+      assignment =
+        insert(:form_assignment, business: client.business, client: client, form_template: template)
+
+      assert {:ok, completed} =
+               ClientProfiles.update_form_assignment(client.business_id, assignment.id, %{
+                 "status" => "completed"
+               })
+
+      assert completed.status == "completed"
+      refute is_nil(completed.completed_at)
+
+      assert {:ok, reopened} =
+               ClientProfiles.update_form_assignment(client.business_id, assignment.id, %{
+                 "status" => "assigned"
+               })
+
+      assert reopened.status == "assigned"
+      assert reopened.completed_at == nil
+    end
+
+    test "form template changeset rejects malformed section structure" do
+      business = insert(:business)
+      base = %{"name" => "Intake", "purpose" => "intake", "status" => "active"}
+
+      bad_questions =
+        FormTemplate.insert_changeset(business.id, Map.put(base, "sections", [%{"questions" => "nope"}]))
+
+      refute bad_questions.valid?
+      assert "has invalid structure" in errors_on(bad_questions).sections
+
+      bad_mapping =
+        FormTemplate.insert_changeset(
+          business.id,
+          Map.put(base, "sections", [
+            %{
+              "questions" => [
+                %{"id" => "q1", "profile_mapping" => %{"kind" => "core", "section" => "nutrition", "field" => ""}}
+              ]
+            }
+          ])
+        )
+
+      refute bad_mapping.valid?
+      assert "has invalid structure" in errors_on(bad_mapping).sections
+
+      good =
+        FormTemplate.insert_changeset(
+          business.id,
+          Map.put(base, "sections", [
+            %{
+              "questions" => [
+                %{"id" => "q1", "profile_mapping" => %{"kind" => "custom_field", "field_key" => "meal_prep"}}
+              ]
+            }
+          ])
+        )
+
+      assert good.valid?
     end
   end
 

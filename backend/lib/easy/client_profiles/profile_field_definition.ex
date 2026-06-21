@@ -76,11 +76,6 @@ defmodule Easy.ClientProfiles.ProfileFieldDefinition do
     from(d in query, where: d.business_id == ^business_id)
   end
 
-  @spec for_section(Ecto.Queryable.t(), String.t()) :: Ecto.Query.t()
-  def for_section(query \\ __MODULE__, section) do
-    from(d in query, where: d.section == ^section)
-  end
-
   defp validate_filterable_type(changeset) do
     type = get_field(changeset, :field_type)
     filterable = get_field(changeset, :filterable)

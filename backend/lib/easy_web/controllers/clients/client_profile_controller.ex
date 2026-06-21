@@ -7,7 +7,7 @@ defmodule EasyWeb.Clients.ClientProfileController do
 
   alias EasyWeb.OpenApi.Schemas.{
     ClientCoachingProfileResponse,
-    CoachingClientProfileRequest,
+    ClientCoachingProfileUpdateRequest,
     ErrorResponse
   }
 
@@ -29,7 +29,7 @@ defmodule EasyWeb.Clients.ClientProfileController do
     description: "Updates the authenticated client's structured coaching profile sections.",
     operation_id: "updateClientCoachingProfile",
     security: [%{"bearerAuth" => []}],
-    request_body: {"Client profile update request", "application/json", CoachingClientProfileRequest, required: true},
+    request_body: {"Client profile update request", "application/json", ClientCoachingProfileUpdateRequest, required: true},
     responses: [
       ok: {"Client coaching profile updated", "application/json", ClientCoachingProfileResponse},
       unauthorized: {"Unauthorized", "application/json", ErrorResponse},
@@ -52,7 +52,8 @@ defmodule EasyWeb.Clients.ClientProfileController do
     %{business_id: business_id, user_id: user_id} = conn.assigns.claims
 
     with {:ok, client} <- Clients.get_client_for_user(business_id, user_id),
-         {:ok, profile} <- ClientProfiles.update_profile(business_id, client.id, conn.body_params) do
+         {:ok, profile} <-
+           ClientProfiles.update_profile_sections(business_id, client.id, conn.body_params) do
       render(conn, :show, profile: profile)
     end
   end

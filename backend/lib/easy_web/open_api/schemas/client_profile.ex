@@ -44,6 +44,31 @@ defmodule EasyWeb.OpenApi.Schemas.CoachingClientProfileRequest do
   )
 end
 
+defmodule EasyWeb.OpenApi.Schemas.ClientCoachingProfileUpdateRequest do
+  require OpenApiSpex
+
+  alias EasyWeb.OpenApi.Schemas.ClientProfile.Common
+
+  # Client self-service update: structured sections only. Intentionally excludes the
+  # coach-owned intake_status / intake_completed_at fields (additionalProperties: false
+  # rejects them at the edge; the context changeset also refuses to cast them).
+  OpenApiSpex.schema(
+    %{
+      title: "ClientCoachingProfileUpdateRequest",
+      type: :object,
+      additionalProperties: false,
+      properties: Common.section_properties(),
+      example: %{
+        "general" => %{"goal" => "strength"},
+        "nutrition" => %{"protein_goal" => "120g"},
+        "training" => %{"experience" => "intermediate"},
+        "lifestyle" => %{"sleep_hours" => 7}
+      }
+    },
+    struct?: false
+  )
+end
+
 defmodule EasyWeb.OpenApi.Schemas.ClientProfileFieldRequest do
   require OpenApiSpex
 

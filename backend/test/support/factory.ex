@@ -224,10 +224,13 @@ defmodule Easy.Factory do
   def food_factory do
     %Food{
       name: sequence(:food_name, &"Food #{&1}"),
-      macros: %{"calories" => 200, "protein" => 20, "carbs" => 30, "fat" => 5},
+      calories_per_100g: 200.0,
+      protein_g_per_100g: 20.0,
+      carbs_g_per_100g: 30.0,
+      fat_g_per_100g: 5.0,
+      fiber_g_per_100g: 0.0,
       source: "custom",
       category: "protein",
-      tags: ["healthy"],
       notes: "Test food",
       image_url: nil,
       serving_sizes: [],
@@ -253,14 +256,8 @@ defmodule Easy.Factory do
   def recipe_factory do
     %Recipe{
       name: sequence(:recipe_name, &"Recipe #{&1}"),
-      macros: %{"calories" => 400, "protein" => 30, "carbs" => 40, "fat" => 10},
-      source: "custom",
-      category: "lunch",
-      tags: ["healthy"],
       instructions: "Mix and cook.",
-      image_url: nil,
       cooked_weight_g: 500.0,
-      service_size_type: :serving_based,
       serving_sizes: [],
       recipe_ingredients: [],
       creator: build(:coach),
@@ -300,7 +297,10 @@ defmodule Easy.Factory do
       name: sequence(:plan_name, &"Plan #{&1}"),
       description: "Weekly plan",
       tags: ["balanced"],
-      macros_goal: %{"calories" => 2000, "protein" => 150, "carbs" => 200, "fat" => 60},
+      target_calories: 2000.0,
+      target_protein_g: 150.0,
+      target_carbs_g: 200.0,
+      target_fat_g: 60.0,
       status: :active,
       creator: creator,
       business: business
@@ -322,7 +322,6 @@ defmodule Easy.Factory do
 
     %Meal{
       name: sequence(:meal_name, &"Meal #{&1}"),
-      macros: %{"calories" => 500, "protein" => 40, "carbs" => 50, "fat" => 15},
       creator: plan.creator,
       business: plan.business,
       plan: plan
@@ -341,9 +340,8 @@ defmodule Easy.Factory do
     meal = build(:meal, plan: plan, creator: plan.creator)
 
     %PlanItem{
-      day: "monday",
-      meal_type: "breakfast",
-      creator: plan.creator,
+      day_of_week: "monday",
+      meal_slot: "breakfast",
       business: plan.business,
       plan: plan,
       meal: meal
